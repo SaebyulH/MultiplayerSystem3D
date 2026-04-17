@@ -4,16 +4,11 @@
 [ext_resource type="Script" uid="uid://dqtlwc44t1kfa" path="res://player_input.gd" id="2_onrkg"]
 [ext_resource type="Script" uid="uid://bwfuexv1s2dga" path="res://name_2.gd" id="3_dw050"]
 [ext_resource type="Script" uid="uid://koojmgraholq" path="res://weapon.gd" id="3_i3pqv"]
+[ext_resource type="PackedScene" uid="uid://dkh0xpm6y7tat" path="res://plasma_rifle_doom_2016.glb" id="4_b26j0"]
 [ext_resource type="PackedScene" uid="uid://cbvuyb8cafegs" path="res://projectile.tscn" id="4_hqtel"]
 [ext_resource type="Script" uid="uid://c4uv27n00ycfc" path="res://hurtbox_component.gd" id="5_2hs0m"]
 [ext_resource type="Script" uid="uid://cg1glglog46jg" path="res://hurt_component.gd" id="6_1jxqw"]
 [ext_resource type="Script" uid="uid://cxit1cumphn3q" path="res://attribute_component.gd" id="7_1jxqw"]
-
-[sub_resource type="BoxMesh" id="BoxMesh_dw050"]
-size = Vector3(0.35, 0.435, 3.295)
-
-[sub_resource type="BoxMesh" id="BoxMesh_b26j0"]
-size = Vector3(0.35, 0.435, 1.48)
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_sh265"]
 
@@ -73,17 +68,12 @@ projectile = ExtResource("4_hqtel")
 projectile_spawn_parent = NodePath("../../ProjectilesParent")
 _parent_player = NodePath("../..")
 
+[node name="Sketchfab_Scene" parent="Head/Weapon" unique_id=1960333603 instance=ExtResource("4_b26j0")]
+transform = Transform3D(-0.3, 0, -4.5298744e-08, 0, 0.3, 0, 4.5298744e-08, 0, -0.3, 0.31363612, -0.4565658, -0.72907376)
+
 [node name="ProjectileSpawner" type="MultiplayerSpawner" parent="Head/Weapon" unique_id=290768895]
 _spawnable_scenes = PackedStringArray("uid://cbvuyb8cafegs")
 spawn_path = NodePath("../../../ProjectilesParent")
-
-[node name="MeshInstance3D" type="MeshInstance3D" parent="Head/Weapon" unique_id=1771225109]
-transform = Transform3D(0.30256546, 0, 0, 0, 0.30256546, 0, 0, 0, 0.30256546, 0.4568907, -0.2407608, -1.048173)
-mesh = SubResource("BoxMesh_dw050")
-
-[node name="MeshInstance3D2" type="MeshInstance3D" parent="Head/Weapon" unique_id=1948806921]
-transform = Transform3D(0.30256546, 0, 0, 0, 0.1568771, -0.25871882, 0, 0.25871882, 0.1568771, 0.4568907, -0.38930053, -0.5249729)
-mesh = SubResource("BoxMesh_b26j0")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=218472258]
 shape = SubResource("CapsuleShape3D_sh265")
