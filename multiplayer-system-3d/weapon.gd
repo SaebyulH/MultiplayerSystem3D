@@ -15,7 +15,7 @@ func _primary_fire():
 @rpc("any_peer", "call_local")
 func _spawn_projectile():
 	if is_multiplayer_authority():
-		var projectile_scene = projectile.instantiate() as Area3D
+		var projectile_scene = projectile.instantiate() as Node3D
 		projectile_scene.global_transform = _parent_player.global_transform
 		projectile_scene.shooter_name = _parent_player.name
 		projectile_spawn_parent.add_child(projectile_scene, true)

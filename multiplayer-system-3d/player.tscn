@@ -2,8 +2,12 @@
 
 [ext_resource type="Script" uid="uid://c10owjifp8g7w" path="res://player.gd" id="1_4flbx"]
 [ext_resource type="Script" uid="uid://dqtlwc44t1kfa" path="res://player_input.gd" id="2_onrkg"]
+[ext_resource type="Script" uid="uid://bwfuexv1s2dga" path="res://name_2.gd" id="3_dw050"]
 [ext_resource type="Script" uid="uid://koojmgraholq" path="res://weapon.gd" id="3_i3pqv"]
 [ext_resource type="PackedScene" uid="uid://cbvuyb8cafegs" path="res://projectile.tscn" id="4_hqtel"]
+[ext_resource type="Script" uid="uid://c4uv27n00ycfc" path="res://hurtbox_component.gd" id="5_2hs0m"]
+[ext_resource type="Script" uid="uid://cg1glglog46jg" path="res://hurt_component.gd" id="6_1jxqw"]
+[ext_resource type="Script" uid="uid://cxit1cumphn3q" path="res://attribute_component.gd" id="7_1jxqw"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_sh265"]
 
@@ -16,9 +20,9 @@ albedo_color = Color(0.0023445897, 0.00234459, 0.00234459, 1)
 properties/0/path = NodePath(".:global_position")
 properties/0/spawn = true
 properties/0/replication_mode = 1
-properties/1/path = NodePath(".:health")
+properties/1/path = NodePath("AttributeComponent:health")
 properties/1/spawn = true
-properties/1/replication_mode = 1
+properties/1/replication_mode = 2
 
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_onrkg"]
 properties/0/path = NodePath(".:input_dir")
@@ -27,6 +31,10 @@ properties/0/replication_mode = 1
 properties/1/path = NodePath(".:jump_input")
 properties/1/spawn = true
 properties/1/replication_mode = 1
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1jxqw"]
+radius = 0.66845703
+height = 2.194336
 
 [node name="Player" type="CharacterBody3D" unique_id=51620469 node_paths=PackedStringArray("player_input", "input_synchronizer")]
 script = ExtResource("1_4flbx")
@@ -57,12 +65,13 @@ modulate = Color(0.16206557, 0.1620656, 0.16206557, 1)
 text = "Player"
 font_size = 200
 
-[node name="Name2" type="Label3D" parent="." unique_id=889122120]
+[node name="Health" type="Label3D" parent="." unique_id=889122120]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.1838, 0)
 billboard = 1
 modulate = Color(0, 0.99215686, 0.14901961, 1)
 text = "Health"
 font_size = 200
+script = ExtResource("3_dw050")
 
 [node name="Weapon" type="Node3D" parent="." unique_id=23788482 node_paths=PackedStringArray("player_input", "projectile_spawn_parent")]
 script = ExtResource("3_i3pqv")
@@ -76,3 +85,20 @@ spawn_path = NodePath("../../ProjectilesParent")
 
 [node name="ProjectilesParent" type="Node3D" parent="." unique_id=1774207359]
 top_level = true
+
+[node name="HurtboxComponent" type="Area3D" parent="." unique_id=481075083]
+script = ExtResource("5_2hs0m")
+metadata/_custom_type_script = "uid://c4uv27n00ycfc"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="HurtboxComponent" unique_id=1595505387]
+shape = SubResource("CapsuleShape3D_1jxqw")
+
+[node name="HurtComponent" type="Node" parent="." unique_id=708236351 node_paths=PackedStringArray("hurtbox_component", "attribute_component")]
+script = ExtResource("6_1jxqw")
+hurtbox_component = NodePath("../HurtboxComponent")
+attribute_component = NodePath("../AttributeComponent")
+metadata/_custom_type_script = "uid://cg1glglog46jg"
+
+[node name="AttributeComponent" type="Node" parent="." unique_id=831078121]
+script = ExtResource("7_1jxqw")
+metadata/_custom_type_script = "uid://cxit1cumphn3q"

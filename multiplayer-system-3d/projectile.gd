@@ -1,10 +1,10 @@
-extends Area3D
+extends Node3D
 class_name Projectile
 var velocity : Vector3 = Vector3(5, 5, 0)
 
 var shooter_name : String
 var damage :int = 10
-
+@onready var _hitbox_component : HitboxComponent= $HitboxComponent
 
 
 
@@ -17,7 +17,7 @@ func _ready():
 		
 		if mat:
 			mesh.set_surface_override_material(i, mat.duplicate())
-
+	_hitbox_component.hit_hurtbox.connect(_hit_hurtbox)
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _physics_process(delta: float) -> void:
@@ -26,20 +26,16 @@ func _physics_process(delta: float) -> void:
 		global_position += velocity * delta
 	
 
-func _on_body_entered(body: Node3D) -> void:
+func _hit_hurtbox(hurtbox: HurtboxComponent) -> void:
 	
 	
 	if is_multiplayer_authority():
-		if body.name == shooter_name:
-			return
 			
-		var mat = $MeshInstance3D.get_surface_override_material(1)
+		var mat = $MeshInstance3D.get_surface_override_material(0)
 		if mat:
 			mat.albedo_color = Color(1, 0, 0)
 			
 		if is_multiplayer_authority():
-			if body is Player:
-				body.change_health(-damage)
 				rpc_hit_flash.rpc()  #across ALL
 			
 @rpc("call_local", "unreliable")
