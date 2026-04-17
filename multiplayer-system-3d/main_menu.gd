@@ -1,7 +1,7 @@
 extends Control
 @onready var address_input = $VBoxContainer/AddressInput
 @onready var ip_label = $VBoxContainer/IPLabel
-
+@onready var option_button = $VBoxContainer/OptionButton
 func _ready():
 	var local_ip = IP.get_local_addresses()
 	for addr in local_ip:
@@ -14,20 +14,22 @@ func _ready():
 	multiplayer.connection_failed.connect(_on_connection_failed)
 	multiplayer.peer_connected.connect(_on_peer_connected)
 
+func _get_selected_map() -> String:
+	return option_button.get_item_text(option_button.selected)
+
 func _on_host_game_pressed() -> void:
 	NetworkManager.create_server()
-	NetworkManager.load_game_scene()
-	
+	NetworkManager.load_game_scene(_get_selected_map())
+
 func _on_join_game_pressed() -> void:
 	var address = address_input.text
 	if address == "":
-		#address = "127.0.0.1"
 		address = "100.92.64.109"
 	NetworkManager.create_client(address)
-	
+
 func _on_connected_to_server():
 	print("Connected! My ID: ", multiplayer.get_unique_id())
-	NetworkManager.load_game_scene()
+	NetworkManager.load_game_scene(_get_selected_map())
 
 func _on_connection_failed():
 	print("Connection failed!")
@@ -40,7 +42,7 @@ func _on_send_test_message_pressed() -> void:
 
 @rpc("any_peer", "call_remote")
 func _send_test_message(message: String):
-	print("Peer [%s] recieved message [%s] from peer [%s]" 
-	%[get_tree().get_multiplayer().get_unique_id(), 
+	print("Peer [%s] recieved message [%s] from peer [%s]"
+	%[get_tree().get_multiplayer().get_unique_id(),
 	message,
 	get_tree().get_multiplayer().get_remote_sender_id()])

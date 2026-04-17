@@ -29,10 +29,13 @@ func _server_disconnected():
 	print("Server has disconnected!")
 	terminate_connection_load_main_menu()
 	
-func load_game_scene():
+func load_game_scene(map_path: String):
 	print("Loading game scene")
-	get_tree().call_deferred(&"change_scene_to_packed", preload(GAME_SCENE))
-
+	var game_scene = preload(GAME_SCENE).instantiate()
+	var map = load(map_path).instantiate()
+	map.name = "Map"
+	game_scene.add_child(map)
+	get_tree().call_deferred(&"change_scene_to", game_scene)
 
 func terminate_connection_load_main_menu():
 	print("Terminate connection, load main menu...")
