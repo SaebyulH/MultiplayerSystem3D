@@ -32,4 +32,5 @@ func rpc_hit_flash() -> void:
 		mesh.set_surface_override_material(0, mat)
 	mat.albedo_color = Color(0.0, 0.578, 0.808, 1.0)
 	await get_tree().create_timer(0.1).timeout
-	mat.albedo_color = Color(1, 1, 1)
+	if is_multiplayer_authority():
+		queue_free()

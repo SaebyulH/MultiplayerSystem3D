@@ -12,11 +12,11 @@ func _physics_process(delta: float) -> void:
 	if get_tree().get_multiplayer().has_multiplayer_peer() and is_multiplayer_authority():
 		input_dir = Input.get_vector("move_left", "move_right", "move_forward", "move_backward")
 		
-		if Input.is_action_just_pressed("ui_accept"):
+		if Input.is_action_pressed("ui_accept"):
 			jump_input = true
 		else:
 			jump_input = false
-		if Input.is_action_just_pressed("primary_fire"):
+		if Input.is_action_pressed("primary_fire"):
 			if Input.get_mouse_mode() != Input.MOUSE_MODE_CAPTURED:
 				Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 			primary_fire.emit()

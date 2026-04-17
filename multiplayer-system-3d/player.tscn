@@ -136,3 +136,31 @@ metadata/_custom_type_script = "uid://cg1glglog46jg"
 [node name="AttributeComponent" type="Node" parent="." unique_id=831078121]
 script = ExtResource("7_1jxqw")
 metadata/_custom_type_script = "uid://cxit1cumphn3q"
+
+[node name="Control" type="Control" parent="." unique_id=253939295]
+layout_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ColorRect" type="ColorRect" parent="Control" unique_id=1196059460]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -4.0
+offset_top = -4.0
+offset_right = 4.0
+offset_bottom = 4.0
+grow_horizontal = 2
+grow_vertical = 2
