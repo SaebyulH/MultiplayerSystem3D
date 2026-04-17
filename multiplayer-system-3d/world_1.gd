@@ -19,3 +19,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		leaderboard.show()
 	else:
 		leaderboard.hide()
+
+func get_random_spawn_location() -> Vector3:
+	# pick random spawn
+	if spawn_points.size() > 0:
+		var index = randi() % spawn_points.size()
+		var spawn_point = spawn_points[index]
+		return spawn_point.global_position
+	else:
+		return Vector3(0, 12, 0)

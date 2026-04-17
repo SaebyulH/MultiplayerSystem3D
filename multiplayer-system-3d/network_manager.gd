@@ -36,6 +36,7 @@ func load_game_scene():
 
 func terminate_connection_load_main_menu():
 	print("Terminate connection, load main menu...")
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	_load_main_menu()
 	_terminate_connection()
 	_disconnect_client_connection_signals()

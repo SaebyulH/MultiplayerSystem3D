@@ -17,6 +17,8 @@ func _physics_process(delta: float) -> void:
 		else:
 			jump_input = false
 		if Input.is_action_just_pressed("primary_fire"):
+			if Input.get_mouse_mode() != Input.MOUSE_MODE_CAPTURED:
+				Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 			primary_fire.emit()
 
 func _input(event):

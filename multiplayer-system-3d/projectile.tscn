@@ -19,10 +19,15 @@ properties/1/replication_mode = 1
 [sub_resource type="SphereShape3D" id="SphereShape3D_qxf0c"]
 radius = 0.65449744
 
-[node name="Projectile" type="Node3D" unique_id=176280423]
+[sub_resource type="SphereShape3D" id="SphereShape3D_dgwo2"]
+
+[node name="Projectile" type="RigidBody3D" unique_id=2041060223]
+collision_layer = 2
+collision_mask = 2
 script = ExtResource("1_a85iw")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1005610509]
+transform = Transform3D(0.61119604, 0, 0, 0, 0.61119604, 0, 0, 0, 0.61119604, 0, 0, 0)
 mesh = SubResource("SphereMesh_a85iw")
 surface_material_override/0 = SubResource("StandardMaterial3D_qxf0c")
 
@@ -35,3 +40,7 @@ metadata/_custom_type_script = "uid://y07sya4qpxdb"
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="HitboxComponent" unique_id=1314331169]
 shape = SubResource("SphereShape3D_qxf0c")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1810742212]
+transform = Transform3D(0.6204253, 0, 0, 0, 0.6204253, 0, 0, 0, 0.6204253, 0, 0, 0)
+shape = SubResource("SphereShape3D_dgwo2")
