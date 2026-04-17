@@ -20,11 +20,12 @@ glow_enabled = true
 
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_cxftf"]
 
-[node name="World1" type="Node3D" unique_id=1030413131 node_paths=PackedStringArray("leaderboard", "leaderboard_component")]
+[node name="World1" type="Node3D" unique_id=1030413131 node_paths=PackedStringArray("leaderboard", "leaderboard_component", "spawn_points")]
 script = ExtResource("1_rf4cw")
 player_scene = ExtResource("2_7dtx0")
 leaderboard = NodePath("GameMenu/VBoxContainer/Leaderboard")
 leaderboard_component = NodePath("LeaderboardComponent")
+spawn_points = [NodePath("Spawn Location 1"), NodePath("Spawn Location 2")]
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1127779866]
 environment = SubResource("Environment_7dtx0")
@@ -93,5 +94,11 @@ metadata/_custom_type_script = "uid://bw1tpu4iexjqo"
 
 [node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="LeaderboardComponent" unique_id=334004896]
 replication_config = SubResource("SceneReplicationConfig_cxftf")
+
+[node name="Spawn Location 1" type="Marker3D" parent="." unique_id=1190022831]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.726851, 10)
+
+[node name="Spawn Location 2" type="Marker3D" parent="." unique_id=1970997343]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 7.111187, -13.091664)
 
 [connection signal="pressed" from="GameMenu/VBoxContainer/HBoxContainer/MainMenu" to="." method="_on_main_menu_pressed"]

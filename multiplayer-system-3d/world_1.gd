@@ -3,7 +3,7 @@ extends Node3D
 @export var player_scene: PackedScene
 @export var leaderboard: ItemList
 @export var leaderboard_component: LeaderboardComponent
-
+@export var spawn_points: Array[Node3D] = []
 func _ready() -> void:
 	if NetworkManager.is_hosting_game:
 		var spawn_manager_scene = load("res://spawn_manager.tscn")
