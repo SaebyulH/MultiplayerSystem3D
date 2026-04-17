@@ -1,14 +1,20 @@
 extends Node
 
 const SERVER_PORT: int = 8080
+const GAME_SCENE = "res://world1.tscn"
+const MAIN_MENU_SCENE = "res://main_menu.tscn"
+
+var is_hosting_game = false
 
 func create_server():
+	is_hosting_game = true
 	var enet_network_peer: ENetMultiplayerPeer = ENetMultiplayerPeer.new()
 	enet_network_peer.create_server(SERVER_PORT)
 	get_tree().get_multiplayer().multiplayer_peer = enet_network_peer
 	print("Server created!")
 	
 func create_client(host_ip: String = "localhost", host_port: int = SERVER_PORT):
+	is_hosting_game = false
 	_setup_client_connection_signals()
 	var enet_network_peer: ENetMultiplayerPeer = ENetMultiplayerPeer.new()
 	enet_network_peer.create_client(host_ip, host_port)
@@ -21,5 +27,27 @@ func _setup_client_connection_signals():
 
 func _server_disconnected():
 	print("Server has disconnected!")
-	get_tree().get_multiplayer().multiplayer_peer = null
+	terminate_connection_load_main_menu()
 	
+func load_game_scene():
+	print("Loading game scene")
+	get_tree().call_deferred(&"change_scene_to_packed", preload(GAME_SCENE))
+
+
+func terminate_connection_load_main_menu():
+	print("Terminate connection, load main menu...")
+	_load_main_menu()
+	_terminate_connection()
+	_disconnect_client_connection_signals()
+
+
+func _load_main_menu():
+	get_tree().call_deferred(&"change_scene_to_packed", preload(MAIN_MENU_SCENE))
+		
+func _terminate_connection():
+	print("terminate connection")
+	get_tree().get_multiplayer().multiplayer_peer = null
+
+func _disconnect_client_connection_signals():
+	if get_tree().get_multiplayer().server_disconnected.has_connections():
+		get_tree().get_multiplayer().server_disconnected.disconnect(_server_disconnected)
