@@ -3,7 +3,9 @@ extends Node3D
 @export var player_scene: PackedScene
 @export var leaderboard: ItemList
 @export var leaderboard_component: LeaderboardComponent
-@export var spawn_points: Array[Node3D] = []
+
+
+
 func _ready() -> void:
 	if NetworkManager.is_hosting_game:
 		var spawn_manager_scene = load("res://spawn_manager.tscn")
@@ -21,10 +23,18 @@ func _unhandled_input(event: InputEvent) -> void:
 		leaderboard.hide()
 
 func get_random_spawn_location() -> Vector3:
-	# pick random spawn
+	var map = get_node_or_null("Map")
+	if map == null:
+		return Vector3(0, 12, 0)
+
+	var spawn_points: Array[Node3D] = []
+
+	for child in map.get_children():
+		if child is Node3D and child.name.begins_with("SpawnLocation"):
+			spawn_points.append(child)
+
 	if spawn_points.size() > 0:
 		var index = randi() % spawn_points.size()
-		var spawn_point = spawn_points[index]
-		return spawn_point.global_position
-	else:
-		return Vector3(0, 12, 0)
+		return spawn_points[index].global_position
+
+	return Vector3(0, 12, 0)

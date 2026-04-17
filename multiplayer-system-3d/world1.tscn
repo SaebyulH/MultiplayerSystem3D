@@ -20,12 +20,11 @@ glow_enabled = true
 
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_cxftf"]
 
-[node name="World1" type="Node3D" unique_id=1030413131 node_paths=PackedStringArray("leaderboard", "leaderboard_component", "spawn_points")]
+[node name="World1" type="Node3D" unique_id=1030413131 node_paths=PackedStringArray("leaderboard", "leaderboard_component")]
 script = ExtResource("1_rf4cw")
 player_scene = ExtResource("2_7dtx0")
 leaderboard = NodePath("GameMenu/VBoxContainer/Leaderboard")
 leaderboard_component = NodePath("LeaderboardComponent")
-spawn_points = [NodePath(""), NodePath("")]
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1127779866]
 environment = SubResource("Environment_7dtx0")
