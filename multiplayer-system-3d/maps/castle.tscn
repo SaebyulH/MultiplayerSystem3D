@@ -1,48 +1,21 @@
-[gd_scene format=3 uid="uid://b0il3x52djkm6"]
-
-[ext_resource type="Script" uid="uid://iefbpqgwinon" path="res://world/game.gd" id="1_80nbo"]
-[ext_resource type="Texture2D" uid="uid://mnu41vwdqady" path="res://world/citrus_orchard_road_puresky_1k.exr" id="2_e2o6t"]
-
-[sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_feb5d"]
-panorama = ExtResource("2_e2o6t")
-energy_multiplier = 0.6
-
-[sub_resource type="Sky" id="Sky_fc0e3"]
-sky_material = SubResource("PanoramaSkyMaterial_feb5d")
-
-[sub_resource type="Environment" id="Environment_7jktm"]
-background_mode = 2
-sky = SubResource("Sky_fc0e3")
-ssr_enabled = true
-ssao_enabled = true
-ssil_enabled = true
-sdfgi_energy = 7.53
-glow_enabled = true
+[gd_scene format=3 uid="uid://bhsrnwae043e1"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_e2o6t"]
 albedo_color = Color(0.31925523, 0.31925526, 0.31925526, 1)
 
 [node name="Game" type="Node3D" unique_id=159294576]
-script = ExtResource("1_80nbo")
-
-[node name="RocketSpawner" type="MultiplayerSpawner" parent="." unique_id=1524072874]
-_spawnable_scenes = PackedStringArray("uid://cr8pb8d16qnu8")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1758273969]
-transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 0.39794922, 0, 0)
+transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 0.39794922, 105, 0)
+light_energy = 2.267
 shadow_enabled = true
+shadow_bias = 0.0
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1829733486]
-environment = SubResource("Environment_7jktm")
+[node name="Spawn Location 1" type="Marker3D" parent="." unique_id=908470764]
+transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, -3.6781845, 3.569233, 56.88979)
 
-[node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="." unique_id=2044530733]
-spawn_path = NodePath("..")
-
-[node name="HostPosition" type="Node3D" parent="." unique_id=1158607876]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -44.36368, 0.71952105, 11.830412)
-
-[node name="ClientPosition" type="Node3D" parent="." unique_id=144583522]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 37.36943, -2.6308784, 15.089996)
+[node name="Spawn Location 2" type="Marker3D" parent="." unique_id=235155852]
+transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 45.128174, 6.28878, 13.977831)
 
 [node name="CSGCombiner3D" type="CSGCombiner3D" parent="." unique_id=1721842706]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -6, 0)
