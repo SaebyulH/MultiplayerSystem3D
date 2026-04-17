@@ -3,7 +3,7 @@ class_name Projectile
 
 var velocity: Vector3 = Vector3(5, 5, 0)
 var shooter_name: String
-var damage: int = 2
+#var damage: int = 2
 
 @onready var _hitbox_component: HitboxComponent = $HitboxComponent
 
