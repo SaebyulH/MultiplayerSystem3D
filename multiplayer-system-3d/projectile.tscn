@@ -3,6 +3,10 @@
 [ext_resource type="Script" uid="uid://dixm8b2dx382j" path="res://projectile.gd" id="1_a85iw"]
 [ext_resource type="Script" uid="uid://y07sya4qpxdb" path="res://hitbox_component.gd" id="2_qxf0c"]
 
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_qxf0c"]
+rough = true
+bounce = 0.5
+
 [sub_resource type="SphereMesh" id="SphereMesh_a85iw"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qxf0c"]
@@ -24,6 +28,7 @@ radius = 0.65449744
 [node name="Projectile" type="RigidBody3D" unique_id=2041060223]
 collision_layer = 2
 collision_mask = 2
+physics_material_override = SubResource("PhysicsMaterial_qxf0c")
 script = ExtResource("1_a85iw")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1005610509]
