@@ -28,3 +28,5 @@ func _add_player_to_game(network_id: int):
 	player_to_add.set_multiplayer_authority(1)
 	spawn_parent.add_child(player_to_add)
 	player_to_add.global_position = Vector3(0, 12, 0)
+	#TODO Fix
+	get_parent().leaderboard_component.request_add_player(str(network_id))

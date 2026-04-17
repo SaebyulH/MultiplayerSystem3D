@@ -3,6 +3,7 @@ class_name AttributeComponent
 
 signal health_changed
 signal no_health
+var last_attacker = "NONE"
 
 @export var starting_health = 100
 

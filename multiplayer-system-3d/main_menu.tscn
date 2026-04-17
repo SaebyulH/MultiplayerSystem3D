@@ -25,6 +25,14 @@ offset_bottom = 20.0
 grow_horizontal = 2
 grow_vertical = 2
 
+[node name="Label" type="Label" parent="VBoxContainer" unique_id=1832888493]
+layout_mode = 2
+text = "Multiplayer System"
+
+[node name="IPLabel" type="Label" parent="VBoxContainer" unique_id=1415127053]
+layout_mode = 2
+text = "IP HERE"
+
 [node name="HostGame" type="Button" parent="VBoxContainer" unique_id=557223411]
 layout_mode = 2
 text = "Host Game"
@@ -36,6 +44,9 @@ text = "Join Game"
 [node name="SendTestMessage" type="Button" parent="VBoxContainer" unique_id=789396056]
 layout_mode = 2
 text = "Send Test Message"
+
+[node name="AddressInput" type="LineEdit" parent="VBoxContainer" unique_id=1603602727]
+layout_mode = 2
 
 [connection signal="pressed" from="VBoxContainer/HostGame" to="." method="_on_host_game_pressed"]
 [connection signal="pressed" from="VBoxContainer/JoinGame" to="." method="_on_join_game_pressed"]

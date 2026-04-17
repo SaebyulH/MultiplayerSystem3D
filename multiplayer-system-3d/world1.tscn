@@ -2,6 +2,8 @@
 
 [ext_resource type="Script" uid="uid://bd6lublcioe52" path="res://world_1.gd" id="1_rf4cw"]
 [ext_resource type="PackedScene" uid="uid://cmix6q8a6hgcu" path="res://player.tscn" id="2_7dtx0"]
+[ext_resource type="Script" uid="uid://dxj6xs40vgdyb" path="res://leaderboard.gd" id="3_cxftf"]
+[ext_resource type="Script" uid="uid://bw1tpu4iexjqo" path="res://leaderboard_component.gd" id="3_rro2w"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_54g3w"]
 sky_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
@@ -16,9 +18,13 @@ sky = SubResource("Sky_rf4cw")
 tonemap_mode = 2
 glow_enabled = true
 
-[node name="World1" type="Node3D" unique_id=1030413131]
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_cxftf"]
+
+[node name="World1" type="Node3D" unique_id=1030413131 node_paths=PackedStringArray("leaderboard", "leaderboard_component")]
 script = ExtResource("1_rf4cw")
 player_scene = ExtResource("2_7dtx0")
+leaderboard = NodePath("GameMenu/VBoxContainer/Leaderboard")
+leaderboard_component = NodePath("LeaderboardComponent")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1127779866]
 environment = SubResource("Environment_7dtx0")
@@ -33,46 +39,45 @@ use_collision = true
 [node name="CSGBox3D" type="CSGBox3D" parent="CSGCombiner3D" unique_id=259199565]
 size = Vector3(32, 1, 32)
 
-[node name="Camera3D" type="Camera3D" parent="." unique_id=1473130804]
-transform = Transform3D(1, 0, 0, 0, 0.4699492, 0.88269347, 0, -0.88269347, 0.4699492, 0, 18.24424, 15.578306)
-
 [node name="GameMenu" type="Control" parent="." unique_id=897483677]
 layout_mode = 3
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -20.0
-offset_right = 20.0
-offset_bottom = 40.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
+grow_vertical = 2
 
 [node name="Panel" type="Panel" parent="GameMenu" unique_id=1568453324]
+visible = false
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="HBoxContainer" type="HBoxContainer" parent="GameMenu/Panel" unique_id=869186600]
+[node name="VBoxContainer" type="VBoxContainer" parent="GameMenu" unique_id=1846671306]
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -48.0
-offset_top = -20.0
-offset_right = 48.0
-offset_bottom = 20.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="MainMenu" type="Button" parent="GameMenu/Panel/HBoxContainer" unique_id=1729705955]
+[node name="HBoxContainer" type="HBoxContainer" parent="GameMenu/VBoxContainer" unique_id=869186600]
+layout_mode = 2
+alignment = 1
+
+[node name="MainMenu" type="Button" parent="GameMenu/VBoxContainer/HBoxContainer" unique_id=1729705955]
 layout_mode = 2
 text = "Main Menu"
+
+[node name="Leaderboard" type="ItemList" parent="GameMenu/VBoxContainer" unique_id=584755671 node_paths=PackedStringArray("leaderboard_component")]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+script = ExtResource("3_cxftf")
+leaderboard_component = NodePath("../../../LeaderboardComponent")
 
 [node name="SpawnParent" type="Node3D" parent="." unique_id=1706707506]
 unique_name_in_owner = true
@@ -82,4 +87,11 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
 _spawnable_scenes = PackedStringArray("uid://cmix6q8a6hgcu")
 spawn_path = NodePath("../SpawnParent")
 
-[connection signal="pressed" from="GameMenu/Panel/HBoxContainer/MainMenu" to="." method="_on_main_menu_pressed"]
+[node name="LeaderboardComponent" type="Node" parent="." unique_id=1513268082]
+script = ExtResource("3_rro2w")
+metadata/_custom_type_script = "uid://bw1tpu4iexjqo"
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="LeaderboardComponent" unique_id=334004896]
+replication_config = SubResource("SceneReplicationConfig_cxftf")
+
+[connection signal="pressed" from="GameMenu/VBoxContainer/HBoxContainer/MainMenu" to="." method="_on_main_menu_pressed"]

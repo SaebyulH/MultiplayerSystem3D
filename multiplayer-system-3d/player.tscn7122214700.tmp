@@ -12,9 +12,6 @@
 [sub_resource type="BoxMesh" id="BoxMesh_dw050"]
 size = Vector3(0.35, 0.435, 3.295)
 
-[sub_resource type="BoxMesh" id="BoxMesh_b26j0"]
-size = Vector3(0.35, 0.435, 1.48)
-
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_sh265"]
 
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_sh265"]
@@ -29,12 +26,6 @@ properties/0/replication_mode = 1
 properties/1/path = NodePath("AttributeComponent:health")
 properties/1/spawn = true
 properties/1/replication_mode = 2
-properties/2/path = NodePath("Head:rotation")
-properties/2/spawn = true
-properties/2/replication_mode = 1
-properties/3/path = NodePath(".:rotation")
-properties/3/spawn = true
-properties/3/replication_mode = 1
 
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_onrkg"]
 properties/0/path = NodePath(".:input_dir")
@@ -43,12 +34,6 @@ properties/0/replication_mode = 1
 properties/1/path = NodePath(".:jump_input")
 properties/1/spawn = true
 properties/1/replication_mode = 1
-properties/2/path = NodePath(".:body_rotation_y")
-properties/2/spawn = true
-properties/2/replication_mode = 1
-properties/3/path = NodePath(".:head_rotation_x")
-properties/3/spawn = true
-properties/3/replication_mode = 1
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1jxqw"]
 radius = 0.66845703
@@ -64,7 +49,6 @@ attribute_component = NodePath("AttributeComponent")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.67056465, 0)
 
 [node name="Camera3D" type="Camera3D" parent="Head" unique_id=1440942893]
-fov = 90.0
 
 [node name="Weapon" type="Node3D" parent="Head" unique_id=23788482 node_paths=PackedStringArray("player_input", "projectile_spawn_parent", "_parent_player")]
 script = ExtResource("3_i3pqv")
@@ -78,12 +62,8 @@ _spawnable_scenes = PackedStringArray("uid://cbvuyb8cafegs")
 spawn_path = NodePath("../../../ProjectilesParent")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Head/Weapon" unique_id=1771225109]
-transform = Transform3D(0.30256546, 0, 0, 0, 0.30256546, 0, 0, 0, 0.30256546, 0.4568907, -0.2407608, -1.048173)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4144888, -1.7105553)
 mesh = SubResource("BoxMesh_dw050")
-
-[node name="MeshInstance3D2" type="MeshInstance3D" parent="Head/Weapon" unique_id=1948806921]
-transform = Transform3D(0.30256546, 0, 0, 0, 0.1568771, -0.25871882, 0, 0.25871882, 0.1568771, 0.4568907, -0.38930053, -0.5249729)
-mesh = SubResource("BoxMesh_b26j0")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=218472258]
 shape = SubResource("CapsuleShape3D_sh265")
