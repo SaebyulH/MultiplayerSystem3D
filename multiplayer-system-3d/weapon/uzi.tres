@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="Weapon" format=3 uid="uid://sbp4tib25r0k"]
+
+[ext_resource type="Script" uid="uid://yvevtn4dsddy" path="res://weapon/recoil_data.gd" id="1_783ai"]
+[ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="1_tuc1m"]
+[ext_resource type="PackedScene" uid="uid://o65k71hjglw5" path="res://assets/uzi.glb" id="2_q16sc"]
+
+[sub_resource type="Resource" id="Resource_783ai"]
+script = ExtResource("1_783ai")
+metadata/_custom_type_script = "uid://yvevtn4dsddy"
+
+[resource]
+script = ExtResource("1_tuc1m")
+display_name = "UZI"
+damage = 5.0
+post_shoot_delay = 0.05
+mag_size = 32
+recoil_data = SubResource("Resource_783ai")
+weapon_model = ExtResource("2_q16sc")
+weapon_rotation = Vector3(0, 180, 0)
+automatic = true
+metadata/_custom_type_script = "uid://qjf4ciit3dqy"

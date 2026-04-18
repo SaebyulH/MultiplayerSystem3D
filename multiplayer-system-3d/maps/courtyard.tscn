@@ -1,9 +1,9 @@
 [gd_scene format=3 uid="uid://x64r4as832eo"]
 
 [ext_resource type="Script" uid="uid://b3gtcm614wpi8" path="res://maps/map.gd" id="1_4t2r1"]
-[ext_resource type="CompressedTexture3D" uid="uid://gj7tu2wrtw4l" path="res://maps/True Cinematic.cube-s33.png" id="1_m2m7f"]
-[ext_resource type="Texture2D" uid="uid://c4ln0bpu3tmo3" path="res://kloppenheim_06_puresky_4k.exr" id="2_4t2r1"]
-[ext_resource type="VoxelGIData" uid="uid://cxp8hl1v368ly" path="res://maps/courtyard.VoxelGI_data.res" id="4_tda7i"]
+[ext_resource type="CompressedTexture3D" uid="uid://gj7tu2wrtw4l" path="res://assets/True Cinematic.cube-s33.png" id="1_m2m7f"]
+[ext_resource type="Texture2D" uid="uid://c4ln0bpu3tmo3" path="res://assets/kloppenheim_06_puresky_4k.exr" id="2_4t2r1"]
+[ext_resource type="VoxelGIData" uid="uid://cxp8hl1v368ly" path="res://maps/voxel_GI/courtyard.VoxelGI_data.res" id="4_tda7i"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_e2o6t"]
 albedo_color = Color(0.31925523, 0.31925526, 0.31925526, 1)

@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://cmdlwcnyllp"]
+
+[ext_resource type="Script" uid="uid://d3i83f8eph4rt" path="res://world/spawn_manager.gd" id="1_svyko"]
+
+[node name="SpawnManager" type="Node" unique_id=1779461930]
+script = ExtResource("1_svyko")
+metadata/_custom_type_script = "uid://d3i83f8eph4rt"
