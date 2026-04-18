@@ -16,7 +16,7 @@ var spawn_manager: SpawnManager
 
 var pitch := 0.0
 
-@onready var leaderboard = get_node("/root/World1/LeaderboardComponent")
+@onready var leaderboard = get_node("/root/Main/World1/LeaderboardComponent")
 
 func _enter_tree() -> void:
 	#The Player Input node is controlled by the LOCAL

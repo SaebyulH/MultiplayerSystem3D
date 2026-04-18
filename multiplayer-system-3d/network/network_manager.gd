@@ -29,7 +29,14 @@ func _setup_client_connection_signals():
 func _server_disconnected():
 	print("Server has disconnected!")
 	terminate_connection_load_main_menu()
-	
+
+func enter_existing_game_scene():
+	print("Entering game scene")
+	game_scene = preload(GAME_SCENE).instantiate()
+	# Add as child of current scene instead of replacing it
+	get_tree().current_scene.add_child(game_scene)
+	get_tree().current_scene.hide_main_menu()
+
 func load_game_scene(map_path: String):
 	print("Loading game scene")
 	game_scene = preload(GAME_SCENE).instantiate()
