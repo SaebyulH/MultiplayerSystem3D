@@ -12,6 +12,17 @@ const JUMP_VELOCITY = 5.0
 @onready var camera := %Camera3D
 @onready var head := %Head
 
+@onready var collider: CollisionShape3D = $CollisionShape3D
+@onready var mesh: MeshInstance3D = $MeshInstance3D
+
+var is_crouching: bool = false
+
+@export var crouch_height: float = 1.0
+@export var stand_height: float = 2.0
+
+@export var crouch_speed_multiplier: float = 0.5
+
+
 var spawn_manager: SpawnManager
 
 var pitch := 0.0
@@ -53,34 +64,61 @@ func _no_health():
 	leaderboard.request_add_kill(attribute_component.last_attacker)
 	spawn_manager.respawn_player(name)
 
-
 func _physics_process(delta: float) -> void:
-	
-	
 	if not get_tree().get_multiplayer().has_multiplayer_peer():
 		return
 
-	# Apply aim for all instances — server drives physics, client sees it locally too
+	# Apply aim for all instances
 	rotation.y = player_input.body_rotation_y
 	head.rotation.x = player_input.head_rotation_x
 
 	if is_multiplayer_authority():
+		# --- UPDATE CROUCH STATE (FIX) ---
+		is_crouching = player_input.crouch
+		_apply_crouch()
+
 		if not is_on_floor():
 			velocity += get_gravity() * delta
+
 		if player_input.jump_input and is_on_floor():
 			velocity.y = JUMP_VELOCITY
+
 		var input_dir := player_input.input_dir
 		var cam_basis: Basis = camera.global_transform.basis
 		var forward := Vector3(cam_basis.z.x, 0, cam_basis.z.z).normalized()
 		var right   := Vector3(cam_basis.x.x, 0, cam_basis.x.z).normalized()
 		var direction := (forward * input_dir.y + right * input_dir.x).normalized()
-		if direction:
-			velocity.x = direction.x * SPEED
-			velocity.z = direction.z * SPEED
-		else:
-			velocity.x = move_toward(velocity.x, 0, SPEED)
-			velocity.z = move_toward(velocity.z, 0, SPEED)
-		move_and_slide()
-		
 
-	
+		var speed := SPEED
+		if is_crouching:
+			speed *= crouch_speed_multiplier
+
+		if direction:
+			velocity.x = direction.x * speed
+			velocity.z = direction.z * speed
+		else:
+			velocity.x = move_toward(velocity.x, 0, speed)
+			velocity.z = move_toward(velocity.z, 0, speed)
+
+		move_and_slide()
+
+func _apply_crouch() -> void:
+	var shape := $CollisionShape3D.shape as CapsuleShape3D
+	if shape == null:
+		return
+
+	var target_height = crouch_height if is_crouching else stand_height
+
+	# capsule height is cylinder only
+	var target_cylinder = target_height - (shape.radius * 2.0)
+
+	shape.height = lerp(shape.height, target_cylinder, 10.0 * get_process_delta_time())
+
+	# IMPORTANT: do NOT scale collision shape
+
+	# Visuals only (safe)
+	var scale_factor := crouch_height / stand_height if is_crouching else 1.0
+	$MeshInstance3D.scale = Vector3(1, scale_factor, 1)
+
+	# Camera / head should NOT be world-scaled either
+	head.position.y = (target_height * 0.9)

@@ -8,6 +8,8 @@ var recoil_rotation: Vector3 = Vector3.ZERO
 
 
 var jump_input: bool
+var crouch: bool
+
 signal primary_fire  # fires every frame the button is held
 signal primary_fire_just_pressed  # fires only on initial press
 signal reload
@@ -28,6 +30,11 @@ func _physics_process(delta: float) -> void:
 			jump_input = true
 		else:
 			jump_input = false
+			
+			
+		crouch = Input.is_action_pressed("crouch")
+			
+			
 		if Input.is_action_just_pressed("primary_fire"):
 			if Input.get_mouse_mode() != Input.MOUSE_MODE_CAPTURED:
 				Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)

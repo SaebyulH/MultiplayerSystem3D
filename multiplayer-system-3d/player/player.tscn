@@ -15,8 +15,10 @@
 [ext_resource type="Resource" uid="uid://yx67ob4xh6nt" path="res://weapon/revolver.tres" id="11_yllr7"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_sh265"]
+resource_local_to_scene = true
 
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_sh265"]
+resource_local_to_scene = true
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4flbx"]
 albedo_color = Color(0.0023445897, 0.00234459, 0.00234459, 1)
@@ -34,6 +36,9 @@ properties/2/replication_mode = 1
 properties/3/path = NodePath(".:rotation")
 properties/3/spawn = true
 properties/3/replication_mode = 1
+properties/4/path = NodePath(".:is_crouching")
+properties/4/spawn = true
+properties/4/replication_mode = 1
 
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_onrkg"]
 properties/0/path = NodePath(".:input_dir")
@@ -48,6 +53,9 @@ properties/2/replication_mode = 1
 properties/3/path = NodePath(".:head_rotation_x")
 properties/3/spawn = true
 properties/3/replication_mode = 1
+properties/4/path = NodePath(".:crouch")
+properties/4/spawn = true
+properties/4/replication_mode = 1
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1jxqw"]
 radius = 0.66845703
