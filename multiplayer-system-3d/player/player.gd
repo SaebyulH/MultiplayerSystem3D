@@ -3,14 +3,14 @@ class_name Player
 
 
 const SPEED = 5.0
-const JUMP_VELOCITY = 4.5
+const JUMP_VELOCITY = 5.0
 
 
 @export var player_input: PlayerInput
 @export var input_synchronizer: MultiplayerSynchronizer
 @export var attribute_component: AttributeComponent
 @onready var camera := %Camera3D
-@onready var head := $Head
+@onready var head := %Head
 
 var spawn_manager: SpawnManager
 
@@ -21,7 +21,7 @@ var pitch := 0.0
 func _enter_tree() -> void:
 	#The Player Input node is controlled by the LOCAL
 	player_input.set_multiplayer_authority(str(name).to_int())
-	$Name.text = ("Host" if (name.to_int() == 1) else "Client") + " Network ID: " + str(name)
+	%Name.text = ("Host" if (name.to_int() == 1) else "Client") + ", NetID: " + str(name)
 
 func _ready() -> void:
 	input_synchronizer.set_visibility_for(1, true)
@@ -55,6 +55,8 @@ func _no_health():
 
 
 func _physics_process(delta: float) -> void:
+	
+	
 	if not get_tree().get_multiplayer().has_multiplayer_peer():
 		return
 
@@ -79,3 +81,6 @@ func _physics_process(delta: float) -> void:
 			velocity.x = move_toward(velocity.x, 0, SPEED)
 			velocity.z = move_toward(velocity.z, 0, SPEED)
 		move_and_slide()
+		
+
+	

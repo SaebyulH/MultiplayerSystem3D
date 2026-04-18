@@ -3,13 +3,17 @@ class_name PlayerInput
 var input_dir: Vector2
 var body_rotation_y: float = 0.0
 var head_rotation_x: float = 0.0
-#var recoil_rotation: Vector3 = Vector3.ZERO
+var recoil_rotation: Vector3 = Vector3.ZERO
 
 
 
 var jump_input: bool
 signal primary_fire  # fires every frame the button is held
 signal primary_fire_just_pressed  # fires only on initial press
+signal reload
+signal previous_weapon
+signal next_weapon
+
 const MOUSE_SENS_X: float = 0.002
 const MOUSE_SENS_Y: float = 0.002
 signal primary_fire_released
@@ -34,6 +38,12 @@ func _physics_process(delta: float) -> void:
 			primary_fire.emit()
 		if Input.is_action_just_released("primary_fire"):
 			primary_fire_released.emit()
+		if Input.is_action_just_pressed("previous_weapon"):
+			previous_weapon.emit()
+		if Input.is_action_just_pressed("next_weapon"):
+			next_weapon.emit()
+		if Input.is_action_just_pressed("reload"):
+			reload.emit()
 
 func _input(event):
 	if event.is_action_pressed("ui_cancel"):

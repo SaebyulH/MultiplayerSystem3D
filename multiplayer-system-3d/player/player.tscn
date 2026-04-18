@@ -3,13 +3,16 @@
 [ext_resource type="Script" uid="uid://c10owjifp8g7w" path="res://player/player.gd" id="1_4flbx"]
 [ext_resource type="Script" uid="uid://dqtlwc44t1kfa" path="res://player/player_input.gd" id="2_onrkg"]
 [ext_resource type="Script" uid="uid://bwfuexv1s2dga" path="res://player/name_2.gd" id="3_dw050"]
+[ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="3_i3pqv"]
+[ext_resource type="Script" uid="uid://2qddsgk3gw1y" path="res://player/ammo.gd" id="4_ebec5"]
 [ext_resource type="Script" uid="uid://c4uv27n00ycfc" path="res://components/hurtbox_component.gd" id="5_2hs0m"]
-[ext_resource type="Script" uid="uid://bk7h6t34yea7r" path="res://weapon/recoil.gd" id="5_2ieo8"]
 [ext_resource type="Script" uid="uid://cg1glglog46jg" path="res://components/hurt_component.gd" id="6_1jxqw"]
 [ext_resource type="Script" uid="uid://d2kgugh2o23ba" path="res://weapon/weapon_controller.gd" id="6_ebec5"]
 [ext_resource type="Script" uid="uid://cxit1cumphn3q" path="res://components/attribute_component.gd" id="7_1jxqw"]
 [ext_resource type="Resource" uid="uid://sbp4tib25r0k" path="res://weapon/uzi.tres" id="7_yllr7"]
 [ext_resource type="Shader" uid="uid://7yui67a2adxs" path="res://assets/new_shader.gdshader" id="10_n7ghd"]
+[ext_resource type="Resource" uid="uid://b7sksxja7iost" path="res://weapon/ak.tres" id="11_2ieo8"]
+[ext_resource type="Resource" uid="uid://yx67ob4xh6nt" path="res://weapon/revolver.tres" id="11_yllr7"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_sh265"]
 
@@ -57,36 +60,16 @@ bottom_radius = 0.0
 render_priority = 0
 shader = ExtResource("10_n7ghd")
 
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_2ieo8"]
+properties/0/path = NodePath(".:current_weapon_index")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+
 [node name="Player" type="CharacterBody3D" unique_id=51620469 node_paths=PackedStringArray("player_input", "input_synchronizer", "attribute_component")]
 script = ExtResource("1_4flbx")
 player_input = NodePath("PlayerInput")
 input_synchronizer = NodePath("PlayerInput/InputSynchronizer")
 attribute_component = NodePath("AttributeComponent")
-
-[node name="Head" type="Node3D" parent="." unique_id=581817051]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.67056465, 0)
-
-[node name="CameraRecoil" type="Node3D" parent="Head" unique_id=906443722]
-unique_name_in_owner = true
-script = ExtResource("5_2ieo8")
-
-[node name="WeaponParent" type="Node3D" parent="Head/CameraRecoil" unique_id=1022201944]
-
-[node name="Camera3D" type="Camera3D" parent="Head/CameraRecoil" unique_id=1440942893]
-unique_name_in_owner = true
-fov = 90.0
-
-[node name="WeaponController" type="Node" parent="Head" unique_id=1956241137 node_paths=PackedStringArray("weapon_model_parent", "projectile_spawn_parent", "player_input")]
-script = ExtResource("6_ebec5")
-current_weapon = ExtResource("7_yllr7")
-weapon_model_parent = NodePath("../CameraRecoil/WeaponParent")
-projectile_spawn_parent = NodePath("../../ProjectilesParent")
-player_input = NodePath("../../PlayerInput")
-metadata/_custom_type_script = "uid://d2kgugh2o23ba"
-
-[node name="ProjectileSpawner" type="MultiplayerSpawner" parent="Head" unique_id=290768895]
-_spawnable_scenes = PackedStringArray("uid://cbvuyb8cafegs")
-spawn_path = NodePath("../../ProjectilesParent")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=218472258]
 shape = SubResource("CapsuleShape3D_sh265")
@@ -104,21 +87,6 @@ script = ExtResource("2_onrkg")
 [node name="InputSynchronizer" type="MultiplayerSynchronizer" parent="PlayerInput" unique_id=1820398100]
 replication_config = SubResource("SceneReplicationConfig_onrkg")
 public_visibility = false
-
-[node name="Name" type="Label3D" parent="." unique_id=1590526754]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5834143, 0)
-billboard = 1
-modulate = Color(0.16206557, 0.1620656, 0.16206557, 1)
-text = "Name"
-font_size = 200
-
-[node name="Health" type="Label3D" parent="." unique_id=889122120]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5309417, 0)
-billboard = 1
-modulate = Color(0, 0.99215686, 0.14901961, 1)
-text = "Health"
-font_size = 200
-script = ExtResource("3_dw050")
 
 [node name="ProjectilesParent" type="Node3D" parent="." unique_id=1774207359]
 top_level = true
@@ -172,3 +140,56 @@ grow_vertical = 2
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.694179, 0)
 mesh = SubResource("CylinderMesh_b26j0")
 surface_material_override/0 = SubResource("ShaderMaterial_nvl01")
+
+[node name="Health" type="Label3D" parent="." unique_id=889122120 node_paths=PackedStringArray("attribute_component")]
+transform = Transform3D(0.24299446, 0, 0, 0, 0.24299446, 0, 0, 0, 0.24299446, 0, 1.5538131, -1.1377158)
+billboard = 1
+modulate = Color(0, 0.99215686, 0.14901961, 1)
+text = "Health"
+font_size = 200
+script = ExtResource("3_dw050")
+attribute_component = NodePath("../AttributeComponent")
+
+[node name="Name" type="Label3D" parent="." unique_id=1590526754]
+unique_name_in_owner = true
+transform = Transform3D(0.2331078, 0, 0, 0, 0.2331078, 0, 0, 0, 0.2331078, 0, 1.3307463, -1.1581887)
+billboard = 1
+modulate = Color(0.16206557, 0.1620656, 0.16206557, 1)
+text = "Name"
+font_size = 200
+
+[node name="Head" type="Node3D" parent="." unique_id=581817051]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.67056465, 0)
+
+[node name="WeaponController" type="Node" parent="Head" unique_id=1956241137 node_paths=PackedStringArray("weapon_model_parent", "projectile_spawn_parent", "player_input")]
+script = ExtResource("6_ebec5")
+weapons = Array[ExtResource("3_i3pqv")]([ExtResource("11_2ieo8"), ExtResource("7_yllr7"), ExtResource("11_yllr7")])
+weapon_model_parent = NodePath("../WeaponParent")
+projectile_spawn_parent = NodePath("../../ProjectilesParent")
+player_input = NodePath("../../PlayerInput")
+metadata/_custom_type_script = "uid://d2kgugh2o23ba"
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="Head/WeaponController" unique_id=829106885]
+replication_config = SubResource("SceneReplicationConfig_2ieo8")
+
+[node name="AudioStreamPlayer3D" type="AudioStreamPlayer3D" parent="Head/WeaponController" unique_id=1913075685]
+
+[node name="ProjectileSpawner" type="MultiplayerSpawner" parent="Head" unique_id=290768895]
+_spawnable_scenes = PackedStringArray("uid://cbvuyb8cafegs", "uid://6mr0d18yn8po")
+spawn_path = NodePath("../../ProjectilesParent")
+
+[node name="Camera3D" type="Camera3D" parent="Head" unique_id=1440942893]
+unique_name_in_owner = true
+fov = 90.0
+
+[node name="WeaponParent" type="Node3D" parent="Head" unique_id=1022201944]
+
+[node name="Ammo" type="Label3D" parent="Head/WeaponParent" unique_id=1596545662 node_paths=PackedStringArray("weapon_controller")]
+transform = Transform3D(0.17002402, 0, 0, 0, 0.17002402, 0, 0, 0, 0.17002402, 0, -0.208, -2.03)
+billboard = 1
+modulate = Color(1, 0.7809618, 0.4214451, 1)
+text = "Ammo"
+font_size = 200
+script = ExtResource("4_ebec5")
+weapon_controller = NodePath("../../WeaponController")

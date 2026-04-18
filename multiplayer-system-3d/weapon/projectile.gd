@@ -1,51 +1,42 @@
-extends RigidBody3D
+extends CollisionObject3D
 class_name Projectile
 
-var velocity: Vector3 = Vector3(5, 5, 0)
+@export var lifetime: float = 1.5
+var velocity: Vector3 = Vector3.ZERO
 var shooter_name: String
-#var damage: int = 2
+var _has_hit := false
+var _time_alive := 0.0
+var gravity := 9.8 # m/s^2
 
-var has_hit := false
-@onready var _hitbox_component: HitboxComponent = $HitboxComponent
+@export var _hitbox_component: HitboxComponent
+@export var _collision: CollisionObject3D
 
 func _ready() -> void:
-	var mesh := $MeshInstance3D
-	for i in mesh.get_surface_override_material_count():
-		var mat = mesh.get_surface_override_material(i)
-		if mat:
-			mesh.set_surface_override_material(i, mat.duplicate())
-
-	_hitbox_component.hit_hurtbox.connect(_hit_hurtbox)
-	
-	
-	
-	if is_multiplayer_authority():
-		linear_velocity = velocity
-		await get_tree().create_timer(1.0).timeout
-		queue_free()
-
-func _hit_hurtbox(hurtbox: HurtboxComponent) -> void:
-	if is_multiplayer_authority():
-		rpc_hit_flash.rpc()
-
-@rpc("call_local", "unreliable")
-func rpc_hit_flash() -> void:
-	var mesh := $MeshInstance3D
-	var mat = mesh.get_surface_override_material(0)
-	if mat == null:
-		mat = StandardMaterial3D.new()
-		mesh.set_surface_override_material(0, mat)
-	mat.albedo_color = Color(0.0, 0.578, 0.808, 1.0)
-	
-	await get_tree().create_timer(0.1).timeout
-	#if is_multiplayer_authority():
-		#queue_free()
+	_hitbox_component.hit_hurtbox.connect(_on_hit_hurtbox)
 
 
-func _on_body_entered(body: Node) -> void:
-	if not is_multiplayer_authority() or has_hit:
+func _physics_process(delta: float) -> void:
+	if not is_multiplayer_authority():
 		return
 
-	has_hit = true
-	rpc_hit_flash.rpc()
+	# Lifetime handling
+	_time_alive += delta
+	if _time_alive >= lifetime:
+		queue_free()
+		return
+
+	# Movement (fixed)
+	velocity.y -= gravity * delta
+	global_position += velocity * delta
+
+
+func _on_hit_hurtbox(hurtbox: HurtboxComponent) -> void:
+	if not is_multiplayer_authority() or _has_hit:
+		return
+
+	_has_hit = true
+	
+	# TODO: apply damage here if needed
+	# hurtbox.apply_damage(...)
+
 	queue_free()

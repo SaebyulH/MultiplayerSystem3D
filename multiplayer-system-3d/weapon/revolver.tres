@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="Weapon" format=3 uid="uid://yx67ob4xh6nt"]
+
+[ext_resource type="AudioStream" uid="uid://bwfdsxbmx4ko8" path="res://assets/empty_gun.mp3" id="1_1vgjo"]
+[ext_resource type="PackedScene" uid="uid://6mr0d18yn8po" path="res://weapon/simple_projectile.tscn" id="1_300bt"]
+[ext_resource type="PackedScene" uid="uid://3vrafas8ntke" path="res://assets/colt_revolver_-_free.glb" id="2_2tk5t"]
+[ext_resource type="Script" uid="uid://yvevtn4dsddy" path="res://weapon/recoil_data.gd" id="2_pxsqf"]
+[ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="3_ij4ki"]
+[ext_resource type="AudioStream" uid="uid://cqbknmbhlwhu" path="res://assets/reload.mp3" id="4_b7pg1"]
+[ext_resource type="AudioStream" uid="uid://u24dsvsfmlr2" path="res://assets/gun_sound.mp3" id="6_6xojt"]
+
+[sub_resource type="Resource" id="Resource_300bt"]
+script = ExtResource("2_pxsqf")
+metadata/_custom_type_script = "uid://yvevtn4dsddy"
+
+[resource]
+script = ExtResource("3_ij4ki")
+display_name = "Revolver"
+damage = 75.0
+pre_shoot_delay = 0.5
+post_shoot_delay = 0.2
+recoil_data = SubResource("Resource_300bt")
+projectile_scene = ExtResource("1_300bt")
+weapon_model = ExtResource("2_2tk5t")
+weapon_offset = Vector3(0.344163, -0.32817888, -0.7512399)
+weapon_rotation = Vector3(0, 1.5707964, 0)
+weapon_scale = Vector3(0.07298671, 0.07298671, 0.07298671)
+shoot_sound = ExtResource("6_6xojt")
+empty_sound = ExtResource("1_1vgjo")
+reload_sound = ExtResource("4_b7pg1")
+metadata/_custom_type_script = "uid://qjf4ciit3dqy"
