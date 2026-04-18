@@ -11,18 +11,23 @@ config_version=5
 [application]
 
 config/name="MultiplayerSystem3D"
-run/main_scene="uid://dmsrhguradefj"
+run/main_scene="uid://b4hbjmuoxr3od"
 config/features=PackedStringArray("4.6", "Forward Plus")
 config/icon="res://icon.svg"
 
 [autoload]
 
 NetworkManager="*uid://c0kxtgivn4uom"
+Console="*uid://ouiu5xh1cs8n"
 
 [display]
 
 window/size/viewport_width=960
 window/size/viewport_height=540
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/console/plugin.cfg")
 
 [input]
 

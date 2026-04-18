@@ -41,6 +41,10 @@ text = "Host Game"
 layout_mode = 2
 text = "Join Game"
 
+[node name="JoinLocal" type="Button" parent="VBoxContainer" unique_id=986033482]
+layout_mode = 2
+text = "Join Local (This Computer)"
+
 [node name="SendTestMessage" type="Button" parent="VBoxContainer" unique_id=789396056]
 layout_mode = 2
 text = "Send Test Message"
@@ -50,9 +54,15 @@ layout_mode = 2
 
 [node name="OptionButton" type="OptionButton" parent="VBoxContainer" unique_id=744683259]
 layout_mode = 2
-item_count = 1
+item_count = 3
+popup/item_0/text = "res://maps/castle.tscn"
 popup/item_0/id = 0
+popup/item_1/text = "res://maps/underground.tscn"
+popup/item_1/id = 1
+popup/item_2/text = "res://maps/courtyard.tscn"
+popup/item_2/id = 2
 
 [connection signal="pressed" from="VBoxContainer/HostGame" to="." method="_on_host_game_pressed"]
 [connection signal="pressed" from="VBoxContainer/JoinGame" to="." method="_on_join_game_pressed"]
+[connection signal="pressed" from="VBoxContainer/JoinLocal" to="." method="_on_join_local_pressed"]
 [connection signal="pressed" from="VBoxContainer/SendTestMessage" to="." method="_on_send_test_message_pressed"]

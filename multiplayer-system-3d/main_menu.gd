@@ -13,11 +13,21 @@ func _ready():
 	multiplayer.connected_to_server.connect(_on_connected_to_server)
 	multiplayer.connection_failed.connect(_on_connection_failed)
 	multiplayer.peer_connected.connect(_on_peer_connected)
+	
+
+	
+
+	
 
 func _get_selected_map() -> String:
+	#if option_button.selected < 0:
+		#return null
 	return option_button.get_item_text(option_button.selected)
 
 func _on_host_game_pressed() -> void:
+	if not _get_selected_map():
+		print("select map first!")
+		return
 	NetworkManager.create_server()
 	NetworkManager.load_game_scene(_get_selected_map())
 
@@ -46,3 +56,8 @@ func _send_test_message(message: String):
 	%[get_tree().get_multiplayer().get_unique_id(),
 	message,
 	get_tree().get_multiplayer().get_remote_sender_id()])
+
+
+func _on_join_local_pressed() -> void:
+	var address = "127.0.0.1"
+	NetworkManager.create_client(address)

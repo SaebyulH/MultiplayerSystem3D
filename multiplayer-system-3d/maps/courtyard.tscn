@@ -1,9 +1,38 @@
-[gd_scene format=3 uid="uid://derifp21mv267"]
+[gd_scene format=3 uid="uid://x64r4as832eo"]
+
+[ext_resource type="Script" uid="uid://b3gtcm614wpi8" path="res://maps/map.gd" id="1_4t2r1"]
+[ext_resource type="CompressedTexture3D" uid="uid://gj7tu2wrtw4l" path="res://maps/True Cinematic.cube-s33.png" id="1_m2m7f"]
+[ext_resource type="Texture2D" uid="uid://c4ln0bpu3tmo3" path="res://kloppenheim_06_puresky_4k.exr" id="2_4t2r1"]
+[ext_resource type="VoxelGIData" uid="uid://cxp8hl1v368ly" path="res://maps/courtyard.VoxelGI_data.res" id="4_tda7i"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_e2o6t"]
 albedo_color = Color(0.31925523, 0.31925526, 0.31925526, 1)
 
-[node name="Game" type="Node3D" unique_id=159294576]
+[sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_tda7i"]
+panorama = ExtResource("2_4t2r1")
+
+[sub_resource type="Sky" id="Sky_wnf2b"]
+sky_material = SubResource("PanoramaSkyMaterial_tda7i")
+
+[sub_resource type="Environment" id="Environment_odqa7"]
+background_mode = 2
+sky = SubResource("Sky_wnf2b")
+tonemap_mode = 2
+ssr_enabled = true
+ssao_enabled = true
+ssil_enabled = true
+sdfgi_use_occlusion = true
+sdfgi_cascades = 1
+sdfgi_y_scale = 0
+glow_enabled = true
+volumetric_fog_enabled = true
+volumetric_fog_density = 0.0042
+adjustment_enabled = true
+adjustment_color_correction = ExtResource("1_m2m7f")
+
+[node name="Game" type="Node3D" unique_id=159294576 node_paths=PackedStringArray("spawn_locations")]
+script = ExtResource("1_4t2r1")
+spawn_locations = [NodePath("Spawn Location 1"), NodePath("Spawn Location 2")]
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1758273969]
 transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 0, 76, 0)
@@ -378,3 +407,11 @@ transform = Transform3D(-0.8660254, -0.4330128, 0.24999999, -0.4330127, 0.399519
 
 [node name="Spawn Location 2" type="Marker3D" parent="." unique_id=1492294772]
 transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 26.156445, -4.220581, 36.966476)
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=2084281230]
+environment = SubResource("Environment_odqa7")
+
+[node name="VoxelGI" type="VoxelGI" parent="." unique_id=1586596759]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 10.58551, 20.77472)
+size = Vector3(196.3811, 66.46106, 119.6803)
+data = ExtResource("4_tda7i")

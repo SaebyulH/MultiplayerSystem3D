@@ -9,6 +9,7 @@
 [ext_resource type="Script" uid="uid://c4uv27n00ycfc" path="res://hurtbox_component.gd" id="5_2hs0m"]
 [ext_resource type="Script" uid="uid://cg1glglog46jg" path="res://hurt_component.gd" id="6_1jxqw"]
 [ext_resource type="Script" uid="uid://cxit1cumphn3q" path="res://attribute_component.gd" id="7_1jxqw"]
+[ext_resource type="Shader" uid="uid://7yui67a2adxs" path="res://new_shader.gdshader" id="10_n7ghd"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_sh265"]
 
@@ -48,6 +49,13 @@ properties/3/replication_mode = 1
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1jxqw"]
 radius = 0.66845703
 height = 2.194336
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_b26j0"]
+bottom_radius = 0.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_nvl01"]
+render_priority = 0
+shader = ExtResource("10_n7ghd")
 
 [node name="Player" type="CharacterBody3D" unique_id=51620469 node_paths=PackedStringArray("player_input", "input_synchronizer", "attribute_component")]
 script = ExtResource("1_4flbx")
@@ -96,11 +104,11 @@ public_visibility = false
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5834143, 0)
 billboard = 1
 modulate = Color(0.16206557, 0.1620656, 0.16206557, 1)
-text = "Player"
+text = "Name"
 font_size = 200
 
 [node name="Health" type="Label3D" parent="." unique_id=889122120]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.1838, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5309417, 0)
 billboard = 1
 modulate = Color(0, 0.99215686, 0.14901961, 1)
 text = "Health"
@@ -154,3 +162,8 @@ offset_right = 4.0
 offset_bottom = 4.0
 grow_horizontal = 2
 grow_vertical = 2
+
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="." unique_id=2008329147]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.694179, 0)
+mesh = SubResource("CylinderMesh_b26j0")
+surface_material_override/0 = SubResource("ShaderMaterial_nvl01")

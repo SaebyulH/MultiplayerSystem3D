@@ -32,10 +32,17 @@ func _server_disconnected():
 func load_game_scene(map_path: String):
 	print("Loading game scene")
 	var game_scene = preload(GAME_SCENE).instantiate()
-	var map = load(map_path).instantiate()
-	map.name = "Map"
-	game_scene.add_child(map)
-	get_tree().call_deferred(&"change_scene_to", game_scene)
+	game_scene.map_path = map_path
+	call_deferred(&"_swap_scene", game_scene)
+
+func _swap_scene(new_scene: Node):
+	var root = get_tree().root
+	var current = get_tree().current_scene
+	if current:
+		root.remove_child(current)
+		current.queue_free()
+	root.add_child(new_scene)
+	get_tree().current_scene = new_scene
 
 func terminate_connection_load_main_menu():
 	print("Terminate connection, load main menu...")

@@ -11,6 +11,9 @@ const JUMP_VELOCITY = 4.5
 @export var attribute_component: AttributeComponent
 @onready var camera := $Head/Camera3D
 @onready var head := $Head
+
+var spawn_manager: SpawnManager
+
 var pitch := 0.0
 
 @onready var leaderboard = get_node("/root/World1/LeaderboardComponent")
@@ -38,18 +41,17 @@ func _ready() -> void:
 	if is_multiplayer_authority():
 		attribute_component.no_health.connect(_no_health)
 		
-
 func _health_changed():
 	print(str(name) + ": Health Changed!")
 
+#executed only by authority anyway
 func _no_health():
-	print("Fake Respawn")
-	global_position += Vector3(0, 12, 0)
+	
 	attribute_component.reset_health()
 	print(name + " KILLED BY " + attribute_component.last_attacker)
 	leaderboard.request_add_death(name)
 	leaderboard.request_add_kill(attribute_component.last_attacker)
-
+	spawn_manager.respawn_player(name)
 
 
 func _physics_process(delta: float) -> void:

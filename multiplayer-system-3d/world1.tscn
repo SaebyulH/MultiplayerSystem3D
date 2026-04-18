@@ -5,33 +5,14 @@
 [ext_resource type="Script" uid="uid://dxj6xs40vgdyb" path="res://leaderboard.gd" id="3_cxftf"]
 [ext_resource type="Script" uid="uid://bw1tpu4iexjqo" path="res://leaderboard_component.gd" id="3_rro2w"]
 
-[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_54g3w"]
-sky_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
-ground_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
-
-[sub_resource type="Sky" id="Sky_rf4cw"]
-sky_material = SubResource("ProceduralSkyMaterial_54g3w")
-
-[sub_resource type="Environment" id="Environment_7dtx0"]
-background_mode = 2
-sky = SubResource("Sky_rf4cw")
-tonemap_mode = 2
-glow_enabled = true
-
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_cxftf"]
 
-[node name="World1" type="Node3D" unique_id=1030413131 node_paths=PackedStringArray("leaderboard", "leaderboard_component")]
+[node name="World1" type="Node3D" unique_id=1030413131 node_paths=PackedStringArray("leaderboard", "leaderboard_component", "spawn_parent")]
 script = ExtResource("1_rf4cw")
 player_scene = ExtResource("2_7dtx0")
 leaderboard = NodePath("GameMenu/VBoxContainer/Leaderboard")
 leaderboard_component = NodePath("LeaderboardComponent")
-
-[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1127779866]
-environment = SubResource("Environment_7dtx0")
-
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=2124524109]
-transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 0, 0, 0)
-shadow_enabled = true
+spawn_parent = NodePath("SpawnParent")
 
 [node name="GameMenu" type="Control" parent="." unique_id=897483677]
 layout_mode = 3
@@ -78,7 +59,7 @@ unique_name_in_owner = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
 
 [node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="." unique_id=267556738]
-_spawnable_scenes = PackedStringArray("uid://cmix6q8a6hgcu")
+_spawnable_scenes = PackedStringArray("uid://cmix6q8a6hgcu", "uid://bhsrnwae043e1", "uid://7ccxfopdhtv8", "uid://x64r4as832eo")
 spawn_path = NodePath("../SpawnParent")
 
 [node name="LeaderboardComponent" type="Node" parent="." unique_id=1513268082]

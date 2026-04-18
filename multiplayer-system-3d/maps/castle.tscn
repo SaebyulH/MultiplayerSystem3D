@@ -1,15 +1,42 @@
 [gd_scene format=3 uid="uid://bhsrnwae043e1"]
 
+[ext_resource type="Script" uid="uid://b3gtcm614wpi8" path="res://maps/map.gd" id="1_8rrov"]
+[ext_resource type="Texture2D" uid="uid://c4ln0bpu3tmo3" path="res://kloppenheim_06_puresky_4k.exr" id="2_wnf2b"]
+[ext_resource type="CompressedTexture3D" uid="uid://gj7tu2wrtw4l" path="res://maps/True Cinematic.cube-s33.png" id="2_yhcpw"]
+
+[sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_wnf2b"]
+panorama = ExtResource("2_wnf2b")
+
+[sub_resource type="Sky" id="Sky_yhcpw"]
+sky_material = SubResource("PanoramaSkyMaterial_wnf2b")
+
+[sub_resource type="Environment" id="Environment_yhcpw"]
+background_mode = 2
+sky = SubResource("Sky_yhcpw")
+tonemap_mode = 2
+ssr_enabled = true
+ssao_enabled = true
+ssil_enabled = true
+sdfgi_use_occlusion = true
+sdfgi_cascades = 1
+sdfgi_y_scale = 0
+glow_enabled = true
+volumetric_fog_enabled = true
+volumetric_fog_density = 0.0042
+adjustment_enabled = true
+adjustment_color_correction = ExtResource("2_yhcpw")
+
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_e2o6t"]
 albedo_color = Color(0.31925523, 0.31925526, 0.31925526, 1)
+uv1_scale = Vector3(0.895, 0.895, 0.895)
+uv1_triplanar = true
 
-[node name="Game" type="Node3D" unique_id=159294576]
+[node name="Game" type="Node3D" unique_id=159294576 node_paths=PackedStringArray("spawn_locations")]
+script = ExtResource("1_8rrov")
+spawn_locations = [NodePath("Spawn Location 1"), NodePath("Spawn Location 2")]
 
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1758273969]
-transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 0.39794922, 105, 0)
-light_energy = 2.267
-shadow_enabled = true
-shadow_bias = 0.0
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=765331845]
+environment = SubResource("Environment_yhcpw")
 
 [node name="Spawn Location 1" type="Marker3D" parent="." unique_id=908470764]
 transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, -3.6781845, 3.569233, 56.88979)
@@ -273,3 +300,7 @@ size = Vector3(4, 15, 4)
 transform = Transform3D(-1, 4.371139e-08, 7.5710346e-08, 0, 0.8660254, -0.5, -8.742278e-08, -0.5, -0.8660254, -34.5, 15, 37)
 operation = 2
 size = Vector3(2, 7, 15)
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=517602722]
+transform = Transform3D(0.72554255, -0.33358252, -0.60192263, 0.68817735, 0.35169467, 0.6346045, 0, -0.87466204, 0.48473334, 0, 9.392839, 0)
+shadow_enabled = true
