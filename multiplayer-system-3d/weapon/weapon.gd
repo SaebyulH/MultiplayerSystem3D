@@ -10,7 +10,11 @@ class_name Weapon
 
 @export var recoil_data: RecoilData = RecoilData.new()
 @export var weapon_model: PackedScene
-@export var weapon_offset: Vector3 = Vector3(0.2, -0.2, -0.3)
-@export var weapon_rotation: Vector3 = Vector3(0.0, 0.0, 0.0)
+@export var projectile_scene: PackedScene
+
+@export var weapon_offset: Vector3 = Vector3(0.3, -0.4, -0.8)
+
+@export_custom(PROPERTY_HINT_RANGE, "-360,360,0.1,radians") 
+var weapon_rotation: Vector3 = Vector3.ZERO
 
 @export var automatic: bool = false

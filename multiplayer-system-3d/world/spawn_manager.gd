@@ -27,11 +27,10 @@ func _add_player_to_game(network_id: int):
 	var player_to_add = player_scene.instantiate()
 	player_to_add.name = str(network_id)
 	player_to_add.set_multiplayer_authority(1)
-	player_to_add.global_position = Vector3(0, 100, 0)
-	player_to_add.global_position = get_random_spawn_location()
 	player_to_add.spawn_manager = self
 	spawn_parent.add_child(player_to_add)
-	
+	player_to_add.global_position = Vector3(0, 100, 0)
+	player_to_add.global_position = get_random_spawn_location()
 	
 
 	get_parent().leaderboard_component.request_add_player(str(network_id))

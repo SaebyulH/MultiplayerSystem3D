@@ -3,8 +3,6 @@
 [ext_resource type="Script" uid="uid://c10owjifp8g7w" path="res://player/player.gd" id="1_4flbx"]
 [ext_resource type="Script" uid="uid://dqtlwc44t1kfa" path="res://player/player_input.gd" id="2_onrkg"]
 [ext_resource type="Script" uid="uid://bwfuexv1s2dga" path="res://player/name_2.gd" id="3_dw050"]
-[ext_resource type="Script" uid="uid://koojmgraholq" path="res://weapon/weapon_old.gd" id="3_i3pqv"]
-[ext_resource type="PackedScene" uid="uid://cbvuyb8cafegs" path="res://weapon/projectile.tscn" id="4_hqtel"]
 [ext_resource type="Script" uid="uid://c4uv27n00ycfc" path="res://components/hurtbox_component.gd" id="5_2hs0m"]
 [ext_resource type="Script" uid="uid://bk7h6t34yea7r" path="res://weapon/recoil.gd" id="5_2ieo8"]
 [ext_resource type="Script" uid="uid://cg1glglog46jg" path="res://components/hurt_component.gd" id="6_1jxqw"]
@@ -33,6 +31,9 @@ properties/2/replication_mode = 1
 properties/3/path = NodePath(".:rotation")
 properties/3/spawn = true
 properties/3/replication_mode = 1
+properties/4/path = NodePath("Head/CameraRecoil:rotation")
+properties/4/spawn = true
+properties/4/replication_mode = 1
 
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_onrkg"]
 properties/0/path = NodePath(".:input_dir")
@@ -78,12 +79,7 @@ returnSpeed = 10.0
 [node name="Camera3D" type="Camera3D" parent="Head/CameraRecoil" unique_id=1440942893]
 fov = 90.0
 
-[node name="WeaponOld" type="Node3D" parent="Head/CameraRecoil" unique_id=23788482 node_paths=PackedStringArray("player_input", "projectile_spawn_parent", "_parent_player")]
-script = ExtResource("3_i3pqv")
-player_input = NodePath("../../../PlayerInput")
-projectile = ExtResource("4_hqtel")
-projectile_spawn_parent = NodePath("../../../ProjectilesParent")
-_parent_player = NodePath("../../..")
+[node name="WeaponOld" type="Node3D" parent="Head/CameraRecoil" unique_id=23788482]
 
 [node name="ProjectileSpawner" type="MultiplayerSpawner" parent="Head/CameraRecoil/WeaponOld" unique_id=290768895]
 _spawnable_scenes = PackedStringArray("uid://cbvuyb8cafegs")
@@ -91,10 +87,12 @@ spawn_path = NodePath("../../../../ProjectilesParent")
 
 [node name="WeaponParent" type="Node3D" parent="Head/CameraRecoil" unique_id=1022201944]
 
-[node name="WeaponController" type="Node" parent="Head" unique_id=1956241137 node_paths=PackedStringArray("weapon_model_parent")]
+[node name="WeaponController" type="Node" parent="Head" unique_id=1956241137 node_paths=PackedStringArray("weapon_model_parent", "projectile_spawn_parent", "player_input")]
 script = ExtResource("6_ebec5")
 current_weapon = ExtResource("7_yllr7")
 weapon_model_parent = NodePath("../CameraRecoil/WeaponParent")
+projectile_spawn_parent = NodePath("../../ProjectilesParent")
+player_input = NodePath("../../PlayerInput")
 metadata/_custom_type_script = "uid://d2kgugh2o23ba"
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=218472258]

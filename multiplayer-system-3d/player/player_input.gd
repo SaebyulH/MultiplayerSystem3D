@@ -4,9 +4,12 @@ var input_dir: Vector2
 var body_rotation_y: float = 0.0
 var head_rotation_x: float = 0.0
 var jump_input: bool
-signal primary_fire
+signal primary_fire  # fires every frame the button is held
+signal primary_fire_just_pressed  # fires only on initial press
 const MOUSE_SENS_X: float = 0.002
 const MOUSE_SENS_Y: float = 0.002
+signal primary_fire_released
+
 
 func _physics_process(delta: float) -> void:
 	if get_tree().get_multiplayer().has_multiplayer_peer() and is_multiplayer_authority():
@@ -19,7 +22,13 @@ func _physics_process(delta: float) -> void:
 		if Input.is_action_just_pressed("primary_fire"):
 			if Input.get_mouse_mode() != Input.MOUSE_MODE_CAPTURED:
 				Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+			primary_fire_just_pressed.emit()
+		if Input.is_action_pressed("primary_fire"):
+			if Input.get_mouse_mode() != Input.MOUSE_MODE_CAPTURED:
+				Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 			primary_fire.emit()
+		if Input.is_action_just_released("primary_fire"):
+			primary_fire_released.emit()
 
 func _input(event):
 	if event.is_action_pressed("ui_cancel"):

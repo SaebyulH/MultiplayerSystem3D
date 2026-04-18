@@ -19,9 +19,9 @@ func _ready():
 
 	
 
-func _get_selected_map() -> String:
-	#if option_button.selected < 0:
-		#return null
+func _get_selected_map():
+	if option_button.selected < 0:
+		return null
 	return option_button.get_item_text(option_button.selected)
 
 func _on_host_game_pressed() -> void:
@@ -39,7 +39,7 @@ func _on_join_game_pressed() -> void:
 
 func _on_connected_to_server():
 	print("Connected! My ID: ", multiplayer.get_unique_id())
-	NetworkManager.load_game_scene(_get_selected_map())
+	NetworkManager.enter_existing_game_scene()
 
 func _on_connection_failed():
 	print("Connection failed!")
