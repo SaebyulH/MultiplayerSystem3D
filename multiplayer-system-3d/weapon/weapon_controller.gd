@@ -6,7 +6,7 @@ class_name WeaponController extends Node
 @export var player_input: PlayerInput
 
 @onready var recoil = %CameraRecoil
-@onready var camera = $"../CameraRecoil/Camera3D"
+@onready var camera = %Camera3D
 @onready var _parent_player: Player = $"../.."
 
 var current_weapon_model: Node3D
@@ -18,10 +18,20 @@ func _ready() -> void:
 		spawn_weapon_model()
 	player_input.primary_fire.connect(_on_primary_fire_held)
 	player_input.primary_fire_released.connect(_on_primary_fire_released)
+	recoil.recoil = current_weapon.recoil_data.recoil
+	recoil.aim_recoil = current_weapon.recoil_data.aim_recoil
+	recoil.snappiness = current_weapon.recoil_data.snappiness
+	recoil.return_speed = current_weapon.recoil_data.return_speed
+	
 
 func _physics_process(delta: float) -> void:
 	if _fire_cooldown > 0.0:
 		_fire_cooldown -= delta
+
+	if multiplayer.get_unique_id() == _parent_player.name.to_int():
+		player_input.recoil_rotation = recoil.rotation
+	else:
+		recoil.rotation = player_input.recoil_rotation
 
 @rpc("authority", "call_local", "reliable")
 func spawn_weapon_model() -> void:
@@ -49,7 +59,7 @@ func _try_fire() -> void:
 		return
 	_fire_cooldown = current_weapon.pre_shoot_delay + current_weapon.post_shoot_delay
 	_spawn_projectile.rpc_id(1)
-	recoil.recoilFire()
+	recoil.recoilFire.rpc()
 
 @rpc("any_peer", "call_local")
 func _spawn_projectile() -> void:
@@ -57,7 +67,7 @@ func _spawn_projectile() -> void:
 		var projectile_scene = current_weapon.projectile_scene.instantiate() as Node3D
 		projectile_scene.global_transform = _parent_player.global_transform
 		projectile_scene.shooter_name = _parent_player.name
-		var forward_dir: Vector3 = camera.global_transform.basis.z
+		var forward_dir: Vector3 = weapon_model_parent.global_transform.basis.z
 		var SPEED := 100
 		projectile_scene.velocity = -forward_dir * SPEED
 		projectile_spawn_parent.add_child(projectile_scene, true)

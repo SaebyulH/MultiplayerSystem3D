@@ -1,38 +1,39 @@
 extends Node3D
 
 # Rotations
-var currentRotation : Vector3
-var targetRotation : Vector3
+var current_rotation : Vector3
+var target_rotation : Vector3
 
 # Recoil vectors
 @export var recoil : Vector3
-@export var aimRecoil : Vector3
+@export var aim_recoil : Vector3
 
 # Settings
 @export var snappiness : float
-@export var returnSpeed : float
+@export var return_speed : float
 
 func _process(delta):
 	# Lerp target rotation to (0,0,0) and lerp current rotation to target rotation
-	targetRotation = lerp(targetRotation, Vector3.ZERO, returnSpeed * delta)
-	currentRotation = lerp(currentRotation, targetRotation, snappiness * delta)
+	target_rotation = lerp(target_rotation, Vector3.ZERO, return_speed * delta)
+	current_rotation = lerp(current_rotation, target_rotation, snappiness * delta)
 	
 	# Set rotation
-	rotation = currentRotation
+	rotation = current_rotation
 	
 	# Camera z axis tilt fix, ignored if tilt intentional
 	# I have no idea why it tilts if recoil.z is set to 0
-	if recoil.z == 0 and aimRecoil.z == 0:
+	if recoil.z == 0 and aim_recoil.z == 0:
 		global_rotation.z = 0
 
+@rpc("any_peer", "call_local", "reliable")
 func recoilFire(isAiming : bool = false):
 	if isAiming:
-		targetRotation += Vector3(aimRecoil.x, randf_range(-aimRecoil.y, aimRecoil.y), randf_range(-aimRecoil.z, aimRecoil.z))
+		target_rotation += Vector3(aim_recoil.x, randf_range(-aim_recoil.y, aim_recoil.y), randf_range(-aim_recoil.z, aim_recoil.z))
 	else:
-		targetRotation += Vector3(recoil.x, randf_range(-recoil.y, recoil.y), randf_range(-recoil.z, recoil.z))
+		target_rotation += Vector3(recoil.x, randf_range(-recoil.y, recoil.y), randf_range(-recoil.z, recoil.z))
 
 func setRecoil(newRecoil : Vector3):
 	recoil = newRecoil
 
 func setAimRecoil(newRecoil : Vector3):
-	aimRecoil = newRecoil
+	aim_recoil = newRecoil

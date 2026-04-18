@@ -9,7 +9,7 @@ const JUMP_VELOCITY = 4.5
 @export var player_input: PlayerInput
 @export var input_synchronizer: MultiplayerSynchronizer
 @export var attribute_component: AttributeComponent
-@onready var camera := $Head/CameraRecoil/Camera3D
+@onready var camera := %Camera3D
 @onready var head := $Head
 
 var spawn_manager: SpawnManager
@@ -55,23 +55,20 @@ func _no_health():
 
 
 func _physics_process(delta: float) -> void:
-	if get_tree().get_multiplayer().has_multiplayer_peer() and is_multiplayer_authority():
+	if not get_tree().get_multiplayer().has_multiplayer_peer():
+		return
 
-		# Apply absolute rotations calculated client-side
-		rotation.y = player_input.body_rotation_y
-		head.rotation.x = player_input.head_rotation_x
+	# Apply aim for all instances — server drives physics, client sees it locally too
+	rotation.y = player_input.body_rotation_y
+	head.rotation.x = player_input.head_rotation_x
 
-		# Gravity
+	if is_multiplayer_authority():
 		if not is_on_floor():
 			velocity += get_gravity() * delta
-		
-		# Jumping
 		if player_input.jump_input and is_on_floor():
 			velocity.y = JUMP_VELOCITY
-		
-		# Walking
 		var input_dir := player_input.input_dir
-		var cam_basis: Basis = head.global_transform.basis
+		var cam_basis: Basis = camera.global_transform.basis
 		var forward := Vector3(cam_basis.z.x, 0, cam_basis.z.z).normalized()
 		var right   := Vector3(cam_basis.x.x, 0, cam_basis.x.z).normalized()
 		var direction := (forward * input_dir.y + right * input_dir.x).normalized()

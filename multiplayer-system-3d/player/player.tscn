@@ -48,6 +48,9 @@ properties/2/replication_mode = 1
 properties/3/path = NodePath(".:head_rotation_x")
 properties/3/spawn = true
 properties/3/replication_mode = 1
+properties/4/path = NodePath(".:recoil_rotation")
+properties/4/spawn = true
+properties/4/replication_mode = 1
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1jxqw"]
 radius = 0.66845703
@@ -72,20 +75,12 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.67056465, 0)
 [node name="CameraRecoil" type="Node3D" parent="Head" unique_id=906443722]
 unique_name_in_owner = true
 script = ExtResource("5_2ieo8")
-recoil = Vector3(0.8, 0.4, 0)
-snappiness = 2.0
-returnSpeed = 10.0
-
-[node name="Camera3D" type="Camera3D" parent="Head/CameraRecoil" unique_id=1440942893]
-fov = 90.0
-
-[node name="WeaponOld" type="Node3D" parent="Head/CameraRecoil" unique_id=23788482]
-
-[node name="ProjectileSpawner" type="MultiplayerSpawner" parent="Head/CameraRecoil/WeaponOld" unique_id=290768895]
-_spawnable_scenes = PackedStringArray("uid://cbvuyb8cafegs")
-spawn_path = NodePath("../../../../ProjectilesParent")
 
 [node name="WeaponParent" type="Node3D" parent="Head/CameraRecoil" unique_id=1022201944]
+
+[node name="Camera3D" type="Camera3D" parent="Head/CameraRecoil" unique_id=1440942893]
+unique_name_in_owner = true
+fov = 90.0
 
 [node name="WeaponController" type="Node" parent="Head" unique_id=1956241137 node_paths=PackedStringArray("weapon_model_parent", "projectile_spawn_parent", "player_input")]
 script = ExtResource("6_ebec5")
@@ -94,6 +89,10 @@ weapon_model_parent = NodePath("../CameraRecoil/WeaponParent")
 projectile_spawn_parent = NodePath("../../ProjectilesParent")
 player_input = NodePath("../../PlayerInput")
 metadata/_custom_type_script = "uid://d2kgugh2o23ba"
+
+[node name="ProjectileSpawner" type="MultiplayerSpawner" parent="Head" unique_id=290768895]
+_spawnable_scenes = PackedStringArray("uid://cbvuyb8cafegs")
+spawn_path = NodePath("../../ProjectilesParent")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=218472258]
 shape = SubResource("CapsuleShape3D_sh265")
