@@ -27,7 +27,7 @@ func _spawn_projectile():
 		var forward_dir: Vector3 = global_transform.basis.z
 
 		# Set velocity (adjust speed as needed)
-		var SPEED := 60
+		var SPEED := 1000
 		projectile_scene.velocity = -forward_dir * SPEED
 
 		projectile_spawn_parent.add_child(projectile_scene, true)

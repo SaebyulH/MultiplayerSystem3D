@@ -5,6 +5,7 @@ var velocity: Vector3 = Vector3(5, 5, 0)
 var shooter_name: String
 #var damage: int = 2
 
+var has_hit := false
 @onready var _hitbox_component: HitboxComponent = $HitboxComponent
 
 func _ready() -> void:
@@ -15,11 +16,15 @@ func _ready() -> void:
 			mesh.set_surface_override_material(i, mat.duplicate())
 
 	_hitbox_component.hit_hurtbox.connect(_hit_hurtbox)
-
+	
+	
+	
 	if is_multiplayer_authority():
 		linear_velocity = velocity
 		await get_tree().create_timer(1.0).timeout
 		queue_free()
+		# NEW: detect collision with world (ground, walls, etc.)
+		body_entered.connect(_on_body_entered)
 
 func _hit_hurtbox(hurtbox: HurtboxComponent) -> void:
 	if is_multiplayer_authority():
@@ -37,3 +42,12 @@ func rpc_hit_flash() -> void:
 	await get_tree().create_timer(0.1).timeout
 	#if is_multiplayer_authority():
 		#queue_free()
+
+
+func _on_body_entered(body: Node) -> void:
+	if not is_multiplayer_authority() or has_hit:
+		return
+
+	has_hit = true
+	rpc_hit_flash.rpc()
+	queue_free()
