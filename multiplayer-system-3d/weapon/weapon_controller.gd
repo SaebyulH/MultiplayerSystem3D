@@ -28,10 +28,10 @@ func _physics_process(delta: float) -> void:
 	if _fire_cooldown > 0.0:
 		_fire_cooldown -= delta
 
-	if multiplayer.get_unique_id() == _parent_player.name.to_int():
-		player_input.recoil_rotation = recoil.rotation
-	else:
-		recoil.rotation = player_input.recoil_rotation
+	#if multiplayer.get_unique_id() == _parent_player.name.to_int():
+		#player_input.recoil_rotation = recoil.rotation
+	#else:
+		#recoil.rotation = player_input.recoil_rotation
 
 @rpc("authority", "call_local", "reliable")
 func spawn_weapon_model() -> void:

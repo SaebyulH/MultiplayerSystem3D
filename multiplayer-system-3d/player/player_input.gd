@@ -3,7 +3,7 @@ class_name PlayerInput
 var input_dir: Vector2
 var body_rotation_y: float = 0.0
 var head_rotation_x: float = 0.0
-var recoil_rotation: Vector3 = Vector3.ZERO
+#var recoil_rotation: Vector3 = Vector3.ZERO
 
 
 

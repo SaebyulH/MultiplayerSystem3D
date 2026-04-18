@@ -45,9 +45,6 @@ properties/2/replication_mode = 1
 properties/3/path = NodePath(".:head_rotation_x")
 properties/3/spawn = true
 properties/3/replication_mode = 1
-properties/4/path = NodePath(".:recoil_rotation")
-properties/4/spawn = true
-properties/4/replication_mode = 1
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1jxqw"]
 radius = 0.66845703

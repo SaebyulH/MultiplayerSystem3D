@@ -1,32 +1,34 @@
 extends Node3D
 
-# Rotations
 var current_rotation : Vector3
 var target_rotation : Vector3
 
-# Recoil vectors
 @export var recoil : Vector3
 @export var aim_recoil : Vector3
-
-# Settings
 @export var snappiness : float
 @export var return_speed : float
 
 func _process(delta):
-	# Lerp target rotation to (0,0,0) and lerp current rotation to target rotation
-	target_rotation = lerp(target_rotation, Vector3.ZERO, return_speed * delta)
-	current_rotation = lerp(current_rotation, target_rotation, snappiness * delta)
+	if is_multiplayer_authority():
+		# Only authority simulates
+		target_rotation = lerp(target_rotation, Vector3.ZERO, return_speed * delta)
+		current_rotation = lerp(current_rotation, target_rotation, snappiness * delta)
+		rotation = current_rotation
+
+		if recoil.z == 0 and aim_recoil.z == 0:
+			global_rotation.z = 0
+
+		# Broadcast the result each frame
+		sync_rotation.rpc(current_rotation)
 	
-	# Set rotation
-	rotation = current_rotation
-	
-	# Camera z axis tilt fix, ignored if tilt intentional
-	# I have no idea why it tilts if recoil.z is set to 0
-	if recoil.z == 0 and aim_recoil.z == 0:
-		global_rotation.z = 0
+@rpc("authority", "call_remote", "unreliable_ordered")
+func sync_rotation(synced_rot : Vector3):
+	rotation = synced_rot
 
 @rpc("any_peer", "call_local", "reliable")
 func recoilFire(isAiming : bool = false):
+	if not is_multiplayer_authority():
+		return  # Only authority should mutate state
 	if isAiming:
 		target_rotation += Vector3(aim_recoil.x, randf_range(-aim_recoil.y, aim_recoil.y), randf_range(-aim_recoil.z, aim_recoil.z))
 	else:
