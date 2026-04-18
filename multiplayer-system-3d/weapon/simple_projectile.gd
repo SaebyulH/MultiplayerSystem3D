@@ -37,7 +37,7 @@ func _physics_process(delta: float) -> void:
 		return
 
 	# Movement (fixed)
-	velocity.y -= gravity * delta
+	#velocity.y -= gravity * delta
 	global_position += velocity * delta
 
 

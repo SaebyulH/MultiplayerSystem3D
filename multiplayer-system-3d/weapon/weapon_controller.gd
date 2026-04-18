@@ -184,7 +184,7 @@ func _spawn_projectile() -> void:
 	# --- Spawn only on authority ---
 	if is_multiplayer_authority():
 		var projectile_scene = weapon.projectile_scene.instantiate() as Node3D
-		projectile_scene.global_transform = _parent_player.global_transform
+		projectile_scene.global_transform = weapon_model_parent.global_transform
 		projectile_scene.shooter_name = _parent_player.name
 		projectile_scene.set_damage(weapon.damage)
 

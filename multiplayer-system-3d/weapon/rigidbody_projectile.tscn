@@ -8,11 +8,12 @@ rough = true
 bounce = 1.0
 
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_qxf0c"]
+radius = 0.091
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qxf0c"]
 albedo_color = Color(1, 0.31764707, 0.18431373, 1)
 emission_enabled = true
-emission = Color(0.85268945, 0.71366084, 0.3015667, 1)
+emission = Color(0.82349575, 0.08574086, 2.8878452e-07, 1)
 emission_energy_multiplier = 21.81
 
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_a85iw"]
@@ -27,6 +28,7 @@ properties/1/replication_mode = 1
 radius = 0.65449744
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_dgwo2"]
+radius = 0.13330078
 
 [node name="RigidBodyProjectile" type="RigidBody3D" unique_id=2041060223 node_paths=PackedStringArray("_hitbox_component", "_collision")]
 collision_layer = 2
