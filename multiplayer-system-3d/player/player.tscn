@@ -124,6 +124,7 @@ public_visibility = false
 top_level = true
 
 [node name="ProjectileSpawner" type="MultiplayerSpawner" parent="ProjectilesParent" unique_id=290768895]
+_spawnable_scenes = PackedStringArray("uid://dy7hw0uphca40", "uid://v27fq461i5vr", "uid://bo0edtxgakruc", "uid://6mr0d18yn8po", "uid://daan6liu8ej2")
 spawn_path = NodePath("..")
 script = ExtResource("3_32hag")
 
