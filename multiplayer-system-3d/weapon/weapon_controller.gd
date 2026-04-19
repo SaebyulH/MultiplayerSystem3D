@@ -262,11 +262,11 @@ func _on_hitscan_hit(hit_position: Vector3, hit_normal: Vector3) -> void:
 	sphere_mesh.radius = 0.05
 	sphere_mesh.height = 0.1
 	mesh_instance.mesh = sphere_mesh
-	mesh_instance.global_position = hit_position
 	projectile_spawn_parent.add_child(mesh_instance)
+	mesh_instance.global_position = hit_position
 	
-	# Auto-remove after 3 seconds.
-	await get_tree().create_timer(3.0).timeout
+	# Auto-remove after 7 seconds.
+	await get_tree().create_timer(7.0).timeout
 	mesh_instance.queue_free()
 
 

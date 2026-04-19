@@ -22,6 +22,7 @@ mag_current = 4
 reload_individually = true
 reload_time = 0.9
 recoil_data = SubResource("Resource_evut6")
+speed_multiplier = 0.7
 bullet_type = 1
 projectile_scene = ExtResource("2_vw4sm")
 weapon_model = ExtResource("7_vw4sm")

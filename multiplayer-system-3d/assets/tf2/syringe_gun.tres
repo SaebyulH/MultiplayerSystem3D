@@ -20,6 +20,7 @@ mag_size = 40
 mag_current = 40
 reload_time = 1.305
 recoil_data = SubResource("Resource_evut6")
+speed_multiplier = 1.1
 bullet_type = 1
 projectile_scene = ExtResource("2_ubd5f")
 weapon_model = ExtResource("6_ubd5f")

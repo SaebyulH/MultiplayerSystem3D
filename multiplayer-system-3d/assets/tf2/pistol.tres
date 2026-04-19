@@ -20,6 +20,7 @@ post_shoot_delay = 0.15
 mag_size = 12
 mag_current = 12
 recoil_data = SubResource("Resource_evut6")
+speed_multiplier = 1.5
 hitscan_damage = 15.0
 projectile_scene = ExtResource("2_thl8w")
 weapon_model = ExtResource("7_la0ju")
