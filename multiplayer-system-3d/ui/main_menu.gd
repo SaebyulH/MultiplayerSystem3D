@@ -34,7 +34,9 @@ func _on_host_game_pressed() -> void:
 func _on_join_game_pressed() -> void:
 	var address = address_input.text
 	if address == "":
-		address = "100.92.64.109"
+		#address = "100.92.64.109"
+		address = "100.104.145.26"
+		
 	NetworkManager.create_client(address)
 
 func _on_connected_to_server():
