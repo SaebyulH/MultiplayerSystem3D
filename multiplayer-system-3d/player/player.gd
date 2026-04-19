@@ -10,7 +10,9 @@ const JUMP_VELOCITY = 5.0
 @export var input_synchronizer: MultiplayerSynchronizer
 @export var attribute_component: AttributeComponent
 @onready var camera := %Camera3D
-@export var head :Node3D
+#@export var head :Node3D
+@export var body :Node3D
+
 
 @onready var collider: CollisionShape3D = $CollisionShape3D
 @onready var mesh: MeshInstance3D = $MeshInstance3D
@@ -32,7 +34,9 @@ var pitch := 0.0
 func _enter_tree() -> void:
 	#The Player Input node is controlled by the LOCAL
 	player_input.set_multiplayer_authority(str(name).to_int())
-	head.set_multiplayer_authority(str(name).to_int())
+	body.set_multiplayer_authority(str(name).to_int())
+	
+	
 	%Name.text = ("Host" if (name.to_int() == 1) else "Client") + ", NetID: " + str(name)
 
 func _ready() -> void:

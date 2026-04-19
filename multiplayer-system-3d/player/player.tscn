@@ -10,10 +10,11 @@
 [ext_resource type="Script" uid="uid://d2kgugh2o23ba" path="res://weapon/weapon_controller.gd" id="6_ebec5"]
 [ext_resource type="Script" uid="uid://cxit1cumphn3q" path="res://components/attribute_component.gd" id="7_1jxqw"]
 [ext_resource type="Resource" uid="uid://sbp4tib25r0k" path="res://weapon/uzi.tres" id="7_yllr7"]
-[ext_resource type="Script" uid="uid://feyro5g13m7d" path="res://player/head.gd" id="8_kb6p2"]
 [ext_resource type="Shader" uid="uid://7yui67a2adxs" path="res://assets/new_shader.gdshader" id="10_n7ghd"]
 [ext_resource type="Resource" uid="uid://b7sksxja7iost" path="res://weapon/ak.tres" id="11_2ieo8"]
 [ext_resource type="Resource" uid="uid://yx67ob4xh6nt" path="res://weapon/revolver.tres" id="11_yllr7"]
+[ext_resource type="Script" uid="uid://w4bkel2abkvv" path="res://player/body.gd" id="13_kb6p2"]
+[ext_resource type="Script" uid="uid://bk7h6t34yea7r" path="res://weapon/recoil.gd" id="14_wodsf"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_kb6p2"]
 
@@ -58,14 +59,34 @@ properties/0/path = NodePath(".:current_weapon_index")
 properties/0/spawn = true
 properties/0/replication_mode = 1
 
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_kb6p2"]
+properties/0/path = NodePath(".:rotation")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+properties/1/path = NodePath("..:rotation")
+properties/1/spawn = true
+properties/1/replication_mode = 1
+properties/2/path = NodePath("../..:rotation")
+properties/2/spawn = true
+properties/2/replication_mode = 1
+
+[sub_resource type="BoxMesh" id="BoxMesh_32hag"]
+size = Vector3(1, 4.005, 1)
+
 [sub_resource type="BoxMesh" id="BoxMesh_wodsf"]
 
-[node name="Player" type="CharacterBody3D" unique_id=51620469 node_paths=PackedStringArray("player_input", "input_synchronizer", "attribute_component", "head")]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kb6p2"]
+albedo_color = Color(0.13077214, 0.13077214, 0.13077211, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_kb6p2"]
+size = Vector3(1, 1.625, 0.54)
+
+[node name="Player" type="CharacterBody3D" unique_id=51620469 node_paths=PackedStringArray("player_input", "input_synchronizer", "attribute_component", "body")]
 script = ExtResource("1_4flbx")
 player_input = NodePath("PlayerInput")
 input_synchronizer = NodePath("PlayerInput/InputSynchronizer")
 attribute_component = NodePath("AttributeComponent")
-head = NodePath("Head")
+body = NodePath("Body")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=218472258]
 shape = SubResource("CapsuleShape3D_kb6p2")
@@ -158,12 +179,13 @@ font_size = 200
 _spawnable_scenes = PackedStringArray("uid://cbvuyb8cafegs", "uid://6mr0d18yn8po")
 spawn_path = NodePath("../ProjectilesParent")
 
-[node name="WeaponController" type="Node" parent="." unique_id=1956241137 node_paths=PackedStringArray("weapon_model_parent", "projectile_spawn_parent", "player_input", "_parent_player")]
+[node name="WeaponController" type="Node" parent="." unique_id=1956241137 node_paths=PackedStringArray("weapon_model_parent", "projectile_spawn_parent", "player_input", "recoil", "_parent_player")]
 script = ExtResource("6_ebec5")
 weapons = Array[ExtResource("3_i3pqv")]([ExtResource("11_2ieo8"), ExtResource("7_yllr7"), ExtResource("11_yllr7")])
-weapon_model_parent = NodePath("../Head/WeaponParent")
+weapon_model_parent = NodePath("../Body/Recoil/Head/WeaponParent")
 projectile_spawn_parent = NodePath("../ProjectilesParent")
 player_input = NodePath("../PlayerInput")
+recoil = NodePath("../Body/Recoil")
 _parent_player = NodePath("..")
 metadata/_custom_type_script = "uid://d2kgugh2o23ba"
 
@@ -172,26 +194,75 @@ replication_config = SubResource("SceneReplicationConfig_2ieo8")
 
 [node name="AudioStreamPlayer3D" type="AudioStreamPlayer3D" parent="WeaponController" unique_id=1913075685]
 
-[node name="Head" type="Node3D" parent="." unique_id=581817051]
+[node name="Body" type="Node3D" parent="." unique_id=598024395 node_paths=PackedStringArray("head")]
+script = ExtResource("13_kb6p2")
+head = NodePath("Recoil/Head")
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="Body" unique_id=187997880]
+root_path = NodePath("../Recoil/Head")
+replication_config = SubResource("SceneReplicationConfig_kb6p2")
+
+[node name="Recoil" type="Node3D" parent="Body" unique_id=274010588]
+unique_name_in_owner = true
+script = ExtResource("14_wodsf")
+
+[node name="Head" type="Node3D" parent="Body/Recoil" unique_id=581817051]
 unique_name_in_owner = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.67056465, 0)
-script = ExtResource("8_kb6p2")
 
-[node name="Camera3D" type="Camera3D" parent="Head" unique_id=1440942893]
+[node name="Camera3D" type="Camera3D" parent="Body/Recoil/Head" unique_id=1440942893]
 unique_name_in_owner = true
 fov = 90.0
 
-[node name="WeaponParent" type="Node3D" parent="Head" unique_id=1022201944]
+[node name="WeaponParent" type="Node3D" parent="Body/Recoil/Head" unique_id=1022201944]
 
-[node name="Ammo" type="Label3D" parent="Head/WeaponParent" unique_id=1596545662 node_paths=PackedStringArray("weapon_controller")]
+[node name="Ammo" type="Label3D" parent="Body/Recoil/Head/WeaponParent" unique_id=1596545662 node_paths=PackedStringArray("weapon_controller")]
 transform = Transform3D(0.17002402, 0, 0, 0, 0.17002402, 0, 0, 0, 0.17002402, 0, -0.208, -2.03)
 billboard = 1
 modulate = Color(1, 0.7809618, 0.4214451, 1)
 text = "Ammo"
 font_size = 200
 script = ExtResource("4_ebec5")
-weapon_controller = NodePath("../../../WeaponController")
+weapon_controller = NodePath("../../../../../WeaponController")
 
-[node name="Skin" type="MeshInstance3D" parent="Head" unique_id=579986966]
-transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0, 0)
+[node name="Skin3" type="MeshInstance3D" parent="Body/Recoil/Head/WeaponParent" unique_id=1367727221]
+transform = Transform3D(0.10900773, -0.025823375, -0.028310906, 0.005643408, 0.09525615, -0.06515722, 0.03790126, 0.06008714, 0.091126695, 0.23865645, -0.43320444, -0.10638954)
+mesh = SubResource("BoxMesh_32hag")
+
+[node name="Skin4" type="MeshInstance3D" parent="Body/Recoil/Head/WeaponParent" unique_id=31490221]
+transform = Transform3D(0.111190766, 0.026063757, -0.017559636, -0.007122735, -0.041980915, -0.1074147, -0.030609254, 0.10444772, -0.038791608, 0.21496771, -0.4859666, -0.3436206)
+mesh = SubResource("BoxMesh_32hag")
+
+[node name="Skin5" type="MeshInstance3D" parent="Body/Recoil/Head/WeaponParent" unique_id=1224638582]
+transform = Transform3D(-0.0834612, 0.07483314, 0.028022842, -0.012521707, 0.027772455, -0.11145826, -0.078920744, -0.083544865, -0.011950865, 0.06130738, -0.43113494, -0.5554546)
+mesh = SubResource("BoxMesh_32hag")
+
+[node name="Skin6" type="MeshInstance3D" parent="Body/Recoil/Head/WeaponParent" unique_id=951024443]
+transform = Transform3D(-0.10240317, 0.048769068, -0.022050275, -0.0012267113, -0.049729396, -0.10429063, -0.05350823, -0.09219336, 0.04459038, -0.18608277, -0.38466528, -0.20437595)
+mesh = SubResource("BoxMesh_32hag")
+
+[node name="Skin" type="MeshInstance3D" parent="Body/Recoil/Head" unique_id=579986966]
+transform = Transform3D(0.326937, 0, 0, 0, 0.326937, 0, 0, 0, 0.326937, 0, 0.046078205, 0)
 mesh = SubResource("BoxMesh_wodsf")
+
+[node name="Skin2" type="MeshInstance3D" parent="Body/Recoil/Head" unique_id=1301557840]
+transform = Transform3D(0.07898294, 0, 0, 0, 0.07898294, 0, 0, 0, 0.07898294, 0.08205414, 0.04202491, -0.15975216)
+mesh = SubResource("BoxMesh_wodsf")
+surface_material_override/0 = SubResource("StandardMaterial3D_kb6p2")
+
+[node name="Skin3" type="MeshInstance3D" parent="Body/Recoil/Head" unique_id=1615018128]
+transform = Transform3D(0.07898294, 0, 0, 0, 0.07898294, 0, 0, 0, 0.07898294, -0.0892587, 0.04202491, -0.15975216)
+mesh = SubResource("BoxMesh_wodsf")
+surface_material_override/0 = SubResource("StandardMaterial3D_kb6p2")
+
+[node name="Skin2" type="MeshInstance3D" parent="Body" unique_id=583927625]
+transform = Transform3D(0.42766076, 0, 0, 0, 0.42766076, 0, 0, 0, 0.42766076, 0, 0.15616643, 0.020640612)
+mesh = SubResource("BoxMesh_kb6p2")
+
+[node name="Skin5" type="MeshInstance3D" parent="Body" unique_id=172419924]
+transform = Transform3D(0.19128741, 0, 0, 0, 0.19128741, 0, 0, 0, 0.19128741, -0.10764241, -0.593606, 0.00477314)
+mesh = SubResource("BoxMesh_32hag")
+
+[node name="Skin6" type="MeshInstance3D" parent="Body" unique_id=1170353479]
+transform = Transform3D(0.19128741, 0, 0, 0, 0.19128741, 0, 0, 0, 0.19128741, 0.10657835, -0.5957482, 0.00477314)
+mesh = SubResource("BoxMesh_32hag")
