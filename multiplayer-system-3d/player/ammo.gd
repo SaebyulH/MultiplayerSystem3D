@@ -18,4 +18,7 @@ func _process(delta: float) -> void:
 		# show remaining reload time (1 decimal is usually enough)
 		text = "Reloading: %.1f" % weapon_controller._reload_timer
 	else:
-		text = "%d/%d" % [weapon.mag_current, weapon.mag_size]
+		if weapon.has_infinite_ammo:
+			text = "Infinite"
+		else:
+			text = "%d/%d" % [weapon.mag_current, weapon.mag_size]

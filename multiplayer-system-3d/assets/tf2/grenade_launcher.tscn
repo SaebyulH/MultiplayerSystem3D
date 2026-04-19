@@ -1,0 +1,19 @@
+[gd_scene format=3 uid="uid://c1q8vj6e4wyxx"]
+
+[ext_resource type="PackedScene" uid="uid://coj3yjoxuyeos" path="res://assets/tf2/tf2_grenade_launcher.glb" id="1_5b7ub"]
+
+[node name="Scattergun" type="Node3D" unique_id=664585380]
+
+[node name="Muzzle" type="Node3D" parent="." unique_id=2026291909]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.0919988, -1.2549708)
+
+[node name="Sketchfab_Scene" parent="." unique_id=523289450 instance=ExtResource("1_5b7ub")]
+transform = Transform3D(-1.9177527, 0, 1.6765527e-07, -1.6765527e-07, -8.3827636e-08, -1.9177527, 7.328444e-15, -1.9177527, 8.3827636e-08, 0, 0, 0)
+
+[node name="Light" parent="Sketchfab_Scene/Sketchfab_model/43f76d152df14cfda4156454da12d8b4_fbx/RootNode" parent_id_path=PackedInt32Array(523289450, 1485897009) index="0" unique_id=2043735583]
+visible = false
+
+[node name="Object_14" parent="Sketchfab_Scene/Sketchfab_model/43f76d152df14cfda4156454da12d8b4_fbx/RootNode/c_grenadelauncher_ARM/Object_9/Skeleton3D" parent_id_path=PackedInt32Array(523289450, 1808012938) index="1" unique_id=1897994801]
+transform = Transform3D(1, 4.555429e-22, 0, 4.555428e-22, 1, 0, 8.4703295e-22, 0, 1, 2.1204718e-08, -0.24255374, 0.23834988)
+
+[editable path="Sketchfab_Scene"]

@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://ccapjs1b2aucy"]
+
+[ext_resource type="PackedScene" uid="uid://butpcai3lpusg" path="res://assets/models/ImageToStl.com_c_sniperrifle/c_sniperrifle.glb" id="1_nxr75"]
+
+[node name="Scattergun" type="Node3D" unique_id=664585380]
+
+[node name="Muzzle" type="Node3D" parent="." unique_id=2026291909]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1271246, -1.3955483)
+
+[node name="c_sniperrifle2" parent="." unique_id=1040062717 instance=ExtResource("1_nxr75")]
+transform = Transform3D(-0.03, 0, -2.6226834e-09, 2.6226834e-09, -1.3113416e-09, -0.03, -1.1464112e-16, -0.03, 1.3113416e-09, 0, 0, 0)

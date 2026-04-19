@@ -124,7 +124,7 @@ func previous_weapon_server() -> void:
 # ---------------------------------------------------------------------------
 
 func start_reload() -> void:
-	if _is_reloading:
+	if _is_reloading or weapons[current_weapon_index].has_infinite_ammo:
 		return
 	_pending_fire = false
 	var weapon = weapons[current_weapon_index]
@@ -137,8 +137,13 @@ func start_reload() -> void:
 
 func _finish_reload() -> void:
 	var weapon = weapons[current_weapon_index]
-	weapon.mag_current = weapon.mag_size
-	_is_reloading      = false
+	if weapon.reload_individually:
+		weapon.mag_current += 1
+		_is_reloading      = false
+		start_reload() #if we want auto
+	else:
+		weapon.mag_current = weapon.mag_size
+		_is_reloading      = false
 
 # ---------------------------------------------------------------------------
 # Firing — input side (owning client only, driven by PlayerInput RPC)
@@ -148,7 +153,7 @@ func _on_primary_fire_held() -> void:
 	if _is_reloading:
 		return
 	var weapon = weapons[current_weapon_index]
-	if weapon.mag_current <= 0:
+	if weapon.mag_current <= 0 and not weapon.has_infinite_ammo:
 		if not _fired_this_press:
 			_play_empty.rpc()
 			_fired_this_press = true
@@ -174,7 +179,8 @@ func _try_fire() -> void:
 
 func _do_fire() -> void:
 	_pending_fire = false
-	weapons[current_weapon_index].mag_current -= 1
+	if not weapons[current_weapon_index].has_infinite_ammo:
+		weapons[current_weapon_index].mag_current -= 1
 	_fire_cooldown = weapons[current_weapon_index].post_shoot_delay
 
 	# rpc_id(1) is silently dropped when you ARE peer 1 (host-as-player).
@@ -198,36 +204,44 @@ func _play_empty() -> void:
 func _request_fire() -> void:
 	if not is_multiplayer_authority():
 		return
-
 	var weapon = weapons[current_weapon_index]
 
-	# Spawn REAL projectile.
-	var projectile_scene = weapon.projectile_scene.instantiate() as Node3D
-	projectile_scene.global_transform = weapon_model_parent.global_transform
-	projectile_scene.shooter_name     = _parent_player.name
-	projectile_scene.set_damage(weapon.damage)
-	projectile_scene.is_real = true
-	var forward_dir: Vector3 = weapon_model_parent.global_transform.basis.z
-	projectile_scene.velocity = -forward_dir * 100.0
-	projectile_spawn_parent.add_child(projectile_scene, true)
-	
-	# Spawn FAKE projectile.
-	var fake_projectile_scene = weapon.projectile_scene.instantiate() as Node3D
-	if current_weapon_model.get_node("Muzzle"):
-		fake_projectile_scene.global_transform = current_weapon_model.get_node("Muzzle").global_transform
-	else:
-		fake_projectile_scene.global_transform = weapon_model_parent.global_transform
-	fake_projectile_scene.shooter_name     = _parent_player.name
-	fake_projectile_scene.set_damage(0.0)
-	fake_projectile_scene.is_real = false
-	#var forward_dir: Vector3 = weapon_model_parent.global_transform.basis.z
-	fake_projectile_scene.velocity = -forward_dir * 100.0
-	projectile_spawn_parent.add_child(fake_projectile_scene, true)
-	
-	
-	
-	
-	
+	if weapon.bullet_type == Weapon.BulletType.HITSCAN:
+		for shot_dir in weapon.multishot_data:
+			# Transform the local shot direction into world space.
+			var world_dir: Vector3 = weapon_model_parent.global_transform.basis * shot_dir.normalized()
+			
+			var space_state = _parent_player.get_world_3d().direct_space_state
+			var origin: Vector3 = weapon_model_parent.global_position
+			var query = PhysicsRayQueryParameters3D.create(
+				origin,
+				origin + world_dir * weapon.hitscan_range
+			)
+			query.exclude = [_parent_player]
+			
+			var result = space_state.intersect_ray(query)
+			if result:
+				# Tell all peers to show the hit effect at this position.
+				_on_hitscan_hit.rpc(result.position, result.normal)
+				
+				# Apply damage only on the server.
+				if result.collider.has_method("change_health"):
+					result.collider.change_health(-weapon.hitscan_damage)
+
+	elif weapon.bullet_type == Weapon.BulletType.PROJECTILE:
+		for shot_dir in weapon.multishot_data:
+			var world_dir: Vector3 = weapon_model_parent.global_transform.basis * shot_dir.normalized()
+			
+			var projectile_scene = weapon.projectile_scene.instantiate() as Node3D
+			projectile_scene.global_transform = weapon_model_parent.global_transform
+			projectile_scene.shooter_name = _parent_player.name
+			
+			var speed = projectile_scene.linear_velocity.length()
+			projectile_scene.linear_velocity = world_dir * speed
+			
+			projectile_spawn_parent.add_child(projectile_scene, true)
+			
+			
 	# Roll recoil once on the server — single source of truth, no randf divergence.
 	var r: Vector3 = recoil.recoil
 	var rolled := Vector3(
@@ -235,12 +249,25 @@ func _request_fire() -> void:
 		randf_range(-r.y, r.y),
 		randf_range(-r.z, r.z)
 	)
-
 	# Broadcast exact values to all peers so everyone applies identical recoil.
 	_apply_recoil_rpc.rpc(rolled)
-
 	# Play shoot sound on all peers.
 	_play_shoot_sound.rpc()
+	
+
+@rpc("call_local")
+func _on_hitscan_hit(hit_position: Vector3, hit_normal: Vector3) -> void:
+	var mesh_instance := MeshInstance3D.new()
+	var sphere_mesh := SphereMesh.new()
+	sphere_mesh.radius = 0.05
+	sphere_mesh.height = 0.1
+	mesh_instance.mesh = sphere_mesh
+	mesh_instance.global_position = hit_position
+	projectile_spawn_parent.add_child(mesh_instance)
+	
+	# Auto-remove after 3 seconds.
+	await get_tree().create_timer(3.0).timeout
+	mesh_instance.queue_free()
 
 
 # Server → all peers. Exact values so randf never diverges between peers.

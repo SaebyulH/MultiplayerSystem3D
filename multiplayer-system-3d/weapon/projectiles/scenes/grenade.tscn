@@ -1,0 +1,116 @@
+[gd_scene format=3 uid="uid://v27fq461i5vr"]
+
+[ext_resource type="Script" uid="uid://dvjbk5m0gpfc6" path="res://weapon/projectiles/simple_projectile.gd" id="1_vafdq"]
+[ext_resource type="Script" uid="uid://y07sya4qpxdb" path="res://components/hitbox_component.gd" id="2_xug51"]
+[ext_resource type="Script" uid="uid://c3053ldj8qbgo" path="res://weapon/projectiles/explosion_component.gd" id="3_ss17q"]
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_vafdq"]
+friction = 0.37
+bounce = 0.5
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_vafdq"]
+radius = 0.6357422
+height = 2.9394531
+
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_a85iw"]
+properties/0/path = NodePath(".:global_transform")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+properties/1/path = NodePath(".:shooter_name")
+properties/1/spawn = true
+properties/1/replication_mode = 2
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_vafdq"]
+height = 2.429
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vafdq"]
+albedo_color = Color(0.88881123, 0, 0.13460961, 1)
+metallic = 0.35
+roughness = 0.8
+emission = Color(0.85268945, 0.71366084, 0.3015667, 1)
+emission_energy_multiplier = 21.81
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_xug51"]
+height = 1.078
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ss17q"]
+albedo_color = Color(0, 0, 0, 1)
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_4mfb8"]
+height = 1.2714844
+radius = 0.31152344
+
+[sub_resource type="SphereMesh" id="SphereMesh_vwtsb"]
+radius = 1.0
+height = 2.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_8gdsr"]
+transparency = 1
+cull_mode = 2
+albedo_color = Color(1, 0.48235294, 0.14901961, 0.5529412)
+emission_enabled = true
+emission = Color(0.6862745, 0.6862745, 0.30588236, 1)
+emission_energy_multiplier = 2.31
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_ntmfp"]
+height = 0.6142578
+radius = 0.13964844
+
+[node name="SimpleProjectile" type="RigidBody3D" unique_id=1706686187 node_paths=PackedStringArray("_hitbox_component", "_explosion_component", "_world_hit")]
+collision_layer = 0
+physics_material_override = SubResource("PhysicsMaterial_vafdq")
+continuous_cd = true
+linear_velocity = Vector3(0, 0, -25)
+script = ExtResource("1_vafdq")
+_hitbox_component = NodePath("HitboxComponent")
+_explosion_component = NodePath("ExplosionComponent")
+explode_on_direct = true
+_world_hit = NodePath("WorldHit")
+world_hit_mode = 1
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1810742212]
+transform = Transform3D(-0.17557995, 1.5349688e-08, 6.709562e-16, -2.726652e-23, -7.674845e-09, 0.17557995, 1.5349688e-08, 0.17557995, 7.674845e-09, 0, 0, 0)
+shape = SubResource("CapsuleShape3D_vafdq")
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=879365148]
+replication_config = SubResource("SceneReplicationConfig_a85iw")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1005610509]
+transform = Transform3D(-0.20566359, 1.7979684e-08, 7.8591687e-16, -7.548928e-23, -8.989842e-09, 0.20566359, 1.7979684e-08, 0.20566359, 8.989842e-09, 0, 0, 0)
+mesh = SubResource("CapsuleMesh_vafdq")
+surface_material_override/0 = SubResource("StandardMaterial3D_vafdq")
+
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="." unique_id=710307630]
+transform = Transform3D(-0.22831589, 1.9960009e-08, 8.724798e-16, -3.5456095e-23, -9.980005e-09, 0.22831589, 1.9960009e-08, 0.22831589, 9.980005e-09, 0, 0, 0)
+mesh = SubResource("CylinderMesh_xug51")
+surface_material_override/0 = SubResource("StandardMaterial3D_ss17q")
+
+[node name="HitboxComponent" type="Area3D" parent="." unique_id=1963592485]
+transform = Transform3D(1.3817533, 0, 0, 0, 1.3817533, 0, 0, 0, 1.3817533, 0, 0, 0)
+collision_layer = 8
+collision_mask = 4
+script = ExtResource("2_xug51")
+damage = 1.0
+metadata/_custom_type_script = "uid://y07sya4qpxdb"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="HitboxComponent" unique_id=1314331169]
+transform = Transform3D(-0.26722383, 2.3361451e-08, 1.0211614e-15, -6.006611e-23, -1.1680725e-08, 0.26722383, 2.3361451e-08, 0.26722383, 1.1680725e-08, 0, 0, 0)
+shape = SubResource("CylinderShape3D_4mfb8")
+
+[node name="ExplosionComponent" type="Node3D" parent="." unique_id=473826993]
+script = ExtResource("3_ss17q")
+splash_radius = 3.0
+
+[node name="Radius" type="MeshInstance3D" parent="ExplosionComponent" unique_id=843273335]
+visible = false
+mesh = SubResource("SphereMesh_vwtsb")
+surface_material_override/0 = SubResource("StandardMaterial3D_8gdsr")
+
+[node name="WorldHit" type="Area3D" parent="." unique_id=1393887937]
+collision_layer = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="WorldHit" unique_id=456719943]
+transform = Transform3D(-0.7273189, 6.358424e-08, 2.7793552e-15, -1.5401576e-22, -3.179212e-08, 0.7273189, 6.358424e-08, 0.7273189, 3.179212e-08, 0, 0, 0)
+shape = SubResource("CylinderShape3D_ntmfp")
+
+[connection signal="body_entered" from="WorldHit" to="." method="_on_world_hit_body_entered"]

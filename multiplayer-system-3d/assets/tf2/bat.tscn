@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://0ao8biac1wwu"]
+
+[ext_resource type="PackedScene" uid="uid://dq5hjlj4ymwei" path="res://assets/models/ImageToStl.com_c_bat/c_bat.glb" id="1_dary7"]
+
+[node name="Scattergun" type="Node3D" unique_id=664585380]
+
+[node name="Muzzle" type="Node3D" parent="." unique_id=2026291909]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.14319359, -0.7742161)
+
+[node name="c_bat" parent="." unique_id=178847749 instance=ExtResource("1_dary7")]
+transform = Transform3D(0.033, 0, 0, 0, -1.4424758e-09, -0.033, 0, 0.033, -1.4424758e-09, 0, 0, 0)

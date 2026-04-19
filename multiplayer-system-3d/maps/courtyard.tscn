@@ -45,7 +45,6 @@ shadow_enabled = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -6, 0)
 material_override = SubResource("StandardMaterial3D_e2o6t")
 use_collision = true
-collision_layer = 3
 
 [node name="CSGBox3D5" type="CSGBox3D" parent="CSGCombiner3D" unique_id=293349320]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.3028345, 12.475954, -21.679174)

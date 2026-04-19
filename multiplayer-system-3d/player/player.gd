@@ -2,7 +2,7 @@ extends CharacterBody3D
 class_name Player
 
 
-const SPEED = 5.0
+var speed = 5.0
 const JUMP_VELOCITY = 5.0
 
 
@@ -14,6 +14,7 @@ const JUMP_VELOCITY = 5.0
 @export var body :Node3D
 
 
+@export var weapon_controller: WeaponController
 @onready var collider: CollisionShape3D = $CollisionShape3D
 @onready var mesh: MeshInstance3D = $MeshInstance3D
 
@@ -40,6 +41,8 @@ func _enter_tree() -> void:
 	%Name.text = ("Host" if (name.to_int() == 1) else "Client") + ", NetID: " + str(name)
 
 func _ready() -> void:
+	add_to_group("players")
+
 	input_synchronizer.set_visibility_for(1, true)
 	attribute_component.health_changed.connect(_health_changed)
 
@@ -96,20 +99,29 @@ func _physics_process(delta: float) -> void:
 		var right   := Vector3(cam_basis.x.x, 0, cam_basis.x.z).normalized()
 		var direction := (forward * input_dir.y + right * input_dir.x).normalized()
 
-		var speed := SPEED
+		var calc_speed : float = speed * weapon_controller.weapons[weapon_controller.current_weapon_index].speed_multiplier
 		if is_crouching:
-			speed *= crouch_speed_multiplier
+			calc_speed *= crouch_speed_multiplier
 
 		if direction:
-			velocity.x = direction.x * speed
-			velocity.z = direction.z * speed
+			velocity.x = direction.x * calc_speed
+			velocity.z = direction.z * calc_speed
 		else:
-			velocity.x = move_toward(velocity.x, 0, speed)
-			velocity.z = move_toward(velocity.z, 0, speed)
+			velocity.x = move_toward(velocity.x, 0, calc_speed)
+			velocity.z = move_toward(velocity.z, 0, calc_speed)
 
 		move_and_slide()
 
+func apply_knockback(force: Vector3) -> void:
+	# Optional: ignore tiny forces
+	if force.length() < 0.01:
+		return
+	
+	# Apply knockback
+	velocity += force
 
+func change_health(health: float):
+	attribute_component.health += health
 
 #@rpc("any_peer", "call_remote")
 #func sync_rotation(head_x_rotation: float, body_y_rotation: float, player_name: String):

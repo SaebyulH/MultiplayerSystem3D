@@ -1,0 +1,48 @@
+[gd_scene format=3 uid="uid://dy7hw0uphca40"]
+
+[ext_resource type="PackedScene" uid="uid://6mr0d18yn8po" path="res://weapon/projectiles/scenes/simple_projectile.tscn" id="1_3xfof"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_3xfof"]
+
+[sub_resource type="PrismMesh" id="PrismMesh_3xfof"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bmawj"]
+transparency = 1
+albedo_color = Color(0.83137256, 0.5019608, 0.015686275, 0.12941177)
+roughness = 0.0
+emission_enabled = true
+emission = Color(0.85268945, 0.71366084, 0.3015667, 1)
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_bmawj"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_3g12b"]
+
+[node name="SimpleProjectile" unique_id=1706686187 instance=ExtResource("1_3xfof")]
+mass = 0.1
+gravity_scale = -0.5
+linear_velocity = Vector3(0, 0, -50)
+linear_damp = 3.0
+angular_velocity = Vector3(0.017453292, 0.017453292, 0.017453292)
+lifetime = 1.5
+hurtbox_hit_mode = 1
+explode_on_direct = false
+
+[node name="CollisionShape3D" parent="." index="0" unique_id=1810742212]
+transform = Transform3D(-1.9915623e-08, -0.45561633, -1.9915623e-08, 0, -1.9915623e-08, 0.45561633, -0.45561633, 1.9915623e-08, 8.705396e-16, 0, 0, 0)
+shape = SubResource("SphereShape3D_3xfof")
+
+[node name="MeshInstance3D" parent="." index="2" unique_id=1005610509]
+transform = Transform3D(-7.161601e-08, -1.6383833, -7.161601e-08, 0, -7.161601e-08, 1.6383833, -1.6383833, 7.161601e-08, 3.1304356e-15, 0, 0, 0)
+mesh = SubResource("PrismMesh_3xfof")
+surface_material_override/0 = SubResource("StandardMaterial3D_bmawj")
+
+[node name="HitboxComponent" parent="." index="3" unique_id=1963592485]
+damage = 0.4
+
+[node name="CollisionShape3D" parent="HitboxComponent" index="0" unique_id=1314331169]
+transform = Transform3D(-8.9304926e-08, -2.0430586, -8.930491e-08, 0, -8.930491e-08, 2.0430586, -2.0430586, 8.9304926e-08, 3.9036424e-15, 0, 0, 0)
+shape = SubResource("SphereShape3D_bmawj")
+
+[node name="CollisionShape3D" parent="WorldHit" parent_id_path=PackedInt32Array(1393887937) index="0" unique_id=456719943]
+transform = Transform3D(-5.6137345e-08, -1.2842728, -5.6137345e-08, 0, -5.6137345e-08, 1.2842728, -1.2842728, 5.6137345e-08, 2.4538413e-15, 0, 0, 0)
+shape = SubResource("SphereShape3D_3g12b")

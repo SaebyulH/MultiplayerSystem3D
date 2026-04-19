@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://cdlmcusd2xxl1"]
+
+[ext_resource type="PackedScene" uid="uid://3secllrhbi2k" path="res://assets/models/ImageToStl.com_c_rocketlauncher/c_rocketlauncher.glb" id="1_t5ps5"]
+
+[node name="Pistol" type="Node3D" unique_id=664585380]
+
+[node name="Muzzle" type="Node3D" parent="." unique_id=2026291909]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15725884, -0.6610348)
+
+[node name="c_rocketlauncher2" parent="." unique_id=1657078940 instance=ExtResource("1_t5ps5")]
+transform = Transform3D(-0.033, 1.4424759e-09, 1.4424758e-09, -1.4424757e-09, 1.442476e-09, -0.033, -1.442476e-09, -0.033, -1.4424759e-09, 0, 0, 0)

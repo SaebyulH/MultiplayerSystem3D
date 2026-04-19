@@ -9,7 +9,7 @@ func _ready() -> void:
 	if is_multiplayer_authority():
 		$Recoil/Head/Skin2.hide()
 		$Recoil/Head/Skin3.hide()
-
+		$Skin2.hide()
 func _input(event: InputEvent) -> void:
 	if not is_multiplayer_authority():
 		return

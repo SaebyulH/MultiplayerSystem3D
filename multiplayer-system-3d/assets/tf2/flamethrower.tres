@@ -1,0 +1,34 @@
+[gd_resource type="Resource" script_class="Weapon" format=3 uid="uid://dwwh1fream1b5"]
+
+[ext_resource type="AudioStream" uid="uid://bwfdsxbmx4ko8" path="res://assets/sounds/empty_gun.mp3" id="1_873px"]
+[ext_resource type="PackedScene" uid="uid://dy7hw0uphca40" path="res://weapon/projectiles/scenes/flame.tscn" id="2_873px"]
+[ext_resource type="Script" uid="uid://yvevtn4dsddy" path="res://weapon/recoil/recoil_data.gd" id="3_0488q"]
+[ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="5_l8xr4"]
+[ext_resource type="AudioStream" uid="uid://c8co0mlb235da" path="res://assets/sounds/fire.mp3" id="6_873px"]
+[ext_resource type="PackedScene" uid="uid://yh8k5dx8kf7b" path="res://assets/tf2/flamethrower.tscn" id="7_g3hn7"]
+
+[sub_resource type="Resource" id="Resource_evut6"]
+script = ExtResource("3_0488q")
+recoil = Vector3(0, 0, 0)
+metadata/_custom_type_script = "uid://yvevtn4dsddy"
+
+[resource]
+script = ExtResource("5_l8xr4")
+display_name = "Flamethrower"
+automatic = true
+post_shoot_delay = 0.01
+mag_size = 200
+mag_current = 200
+reload_individually = true
+reload_time = 0.01
+recoil_data = SubResource("Resource_evut6")
+bullet_type = 1
+hitscan_damage = 15.0
+hitscan_range = 1.0
+projectile_scene = ExtResource("2_873px")
+multishot_data = Array[Vector3]([Vector3(0, 0, -0.6), Vector3(0, 0.2, -0.6), Vector3(0, -0.2, -0.6), Vector3(0.2, 0, -0.6), Vector3(-0.2, 0, -0.6), Vector3(-0.14, -0.14, -0.6), Vector3(0.14, -0.14, -0.6), Vector3(-0.14, 0.14, -0.6), Vector3(0.14, 0.14, -0.6)])
+weapon_model = ExtResource("7_g3hn7")
+shoot_sound = ExtResource("6_873px")
+empty_sound = ExtResource("1_873px")
+reload_sound = ExtResource("1_873px")
+metadata/_custom_type_script = "uid://qjf4ciit3dqy"

@@ -1,0 +1,84 @@
+[gd_scene format=3 uid="uid://bo0edtxgakruc"]
+
+[ext_resource type="PackedScene" uid="uid://6mr0d18yn8po" path="res://weapon/projectiles/scenes/simple_projectile.tscn" id="1_junr8"]
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_21xcj"]
+height = 6.461
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_84p14"]
+albedo_color = Color(0.2571233, 0.2717678, 0.26822197, 1)
+metallic = 1.0
+roughness = 0.45
+emission = Color(0.85268945, 0.71366084, 0.3015667, 1)
+emission_energy_multiplier = 21.81
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_ht1kx"]
+bottom_radius = 0.949
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_wx0ko"]
+top_radius = 0.129
+bottom_radius = 0.949
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_84p14"]
+height = 1.181
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_21xcj"]
+albedo_color = Color(0.5590885, 0.5765921, 0.57073563, 1)
+metallic = 1.0
+roughness = 0.45
+emission = Color(0.85268945, 0.71366084, 0.3015667, 1)
+emission_energy_multiplier = 21.81
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_21xcj"]
+
+[node name="SimpleProjectile" unique_id=1706686187 instance=ExtResource("1_junr8")]
+gravity_scale = 0.0
+linear_velocity = Vector3(0, 0, -21)
+world_hit_mode = 0
+explode_on_world = true
+
+[node name="CollisionShape3D" parent="." index="0" unique_id=1810742212]
+transform = Transform3D(-0.3480795, 3.0430073e-08, 1.3301409e-15, 5.4054674e-23, -1.5215036e-08, 0.3480795, 3.0430073e-08, 0.3480795, 1.5215036e-08, 2.4375261e-08, -1.21876305e-08, 0.2788205)
+
+[node name="MeshInstance3D" parent="." index="2" unique_id=1005610509]
+transform = Transform3D(-0.38731977, 3.3860566e-08, 1.4800926e-15, 6.014845e-23, -1.6930283e-08, 0.38731977, 3.3860566e-08, 0.38731977, 1.6930283e-08, 0, 0, 0.8473025)
+mesh = SubResource("CylinderMesh_21xcj")
+surface_material_override/0 = SubResource("StandardMaterial3D_84p14")
+
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="." index="3" unique_id=2082981766]
+transform = Transform3D(-0.34751898, 3.0381074e-08, 1.327999e-15, 0, -1.5190537e-08, 0.34751898, 3.0381074e-08, 0.34751898, 1.5190537e-08, 0, 0, 0)
+mesh = SubResource("CylinderMesh_ht1kx")
+surface_material_override/0 = SubResource("StandardMaterial3D_84p14")
+
+[node name="MeshInstance3D3" type="MeshInstance3D" parent="MeshInstance3D2" index="0" unique_id=827842671]
+transform = Transform3D(1, -8.742278e-08, -8.4703295e-22, -8.742278e-08, -1, 8.742278e-08, -7.642742e-15, -8.742278e-08, -1, -8.33006e-08, -1.9056956, -8.33006e-08)
+mesh = SubResource("CylinderMesh_wx0ko")
+surface_material_override/0 = SubResource("StandardMaterial3D_84p14")
+
+[node name="MeshInstance3D5" type="MeshInstance3D" parent="MeshInstance3D2" index="1" unique_id=1418581875]
+transform = Transform3D(0.7059405, -6.171528e-08, -6.352747e-22, -6.171528e-08, -0.7059405, 6.171528e-08, -5.3953208e-15, -6.171528e-08, -0.7059405, 2.4164586e-07, 5.5282135, 2.4164586e-07)
+mesh = SubResource("CylinderMesh_ht1kx")
+surface_material_override/0 = SubResource("StandardMaterial3D_84p14")
+
+[node name="MeshInstance3D4" type="MeshInstance3D" parent="MeshInstance3D2" index="2" unique_id=944511380]
+transform = Transform3D(1.4835982, -7.1054274e-15, 2.1175824e-22, 7.1054274e-15, 1.4835982, 7.1054274e-15, 2.1175824e-22, -7.1054274e-15, 1.4835982, 8.9924185e-08, 2.0572257, 8.9924185e-08)
+mesh = SubResource("CylinderMesh_84p14")
+surface_material_override/0 = SubResource("StandardMaterial3D_21xcj")
+
+[node name="HitboxComponent" parent="." index="4" unique_id=1963592485]
+transform = Transform3D(1.0812142, 0, 0, 0, 1.0812142, 0, 0, 0, 1.0812142, 0, 0, 0)
+damage = 1.0
+
+[node name="CollisionShape3D" parent="HitboxComponent" index="0" unique_id=1314331169]
+transform = Transform3D(-0.6541334, 5.718616e-08, 2.499686e-15, -9.3952715e-23, -2.859308e-08, 0.6541334, 5.718616e-08, 0.6541334, 2.859308e-08, 0, 0, 0)
+shape = SubResource("CylinderShape3D_21xcj")
+
+[node name="ExplosionComponent" parent="." index="5" unique_id=473826993]
+splash_damage = 90
+splash_radius = 3.0
+
+[node name="WorldHit" parent="." index="6" unique_id=1393887937]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 0, 0, 0)
+
+[node name="CollisionShape3D" parent="WorldHit" index="0" unique_id=456719943]
+transform = Transform3D(-1.0323103e-07, -2.3616507, -1.0323103e-07, 0, -1.0323103e-07, 2.3616507, -2.3616507, 1.0323103e-07, 4.5123715e-15, -0.54313356, -2.3741121e-08, 2.3741121e-08)

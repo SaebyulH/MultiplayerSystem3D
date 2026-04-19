@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://c10owjifp8g7w" path="res://player/player.gd" id="1_4flbx"]
 [ext_resource type="Script" uid="uid://dqtlwc44t1kfa" path="res://player/player_input.gd" id="2_onrkg"]
+[ext_resource type="Script" uid="uid://ccrf5bdka2m35" path="res://player/auto_projectile_spawner.gd" id="3_32hag"]
 [ext_resource type="Script" uid="uid://bwfuexv1s2dga" path="res://player/name_2.gd" id="3_dw050"]
 [ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="3_i3pqv"]
 [ext_resource type="Script" uid="uid://2qddsgk3gw1y" path="res://player/ammo.gd" id="4_ebec5"]
@@ -14,7 +15,19 @@
 [ext_resource type="Resource" uid="uid://b7sksxja7iost" path="res://weapon/ak/ak.tres" id="11_2ieo8"]
 [ext_resource type="Resource" uid="uid://yx67ob4xh6nt" path="res://weapon/revolver/revolver.tres" id="11_yllr7"]
 [ext_resource type="Script" uid="uid://w4bkel2abkvv" path="res://player/body.gd" id="13_kb6p2"]
+[ext_resource type="Resource" uid="uid://coh34norv8mf3" path="res://assets/tf2/scattergun.tres" id="14_tqiix"]
 [ext_resource type="Script" uid="uid://bk7h6t34yea7r" path="res://weapon/recoil/recoil.gd" id="14_wodsf"]
+[ext_resource type="Resource" uid="uid://bcrlsyiwg0v84" path="res://assets/tf2/pistol.tres" id="15_e7oew"]
+[ext_resource type="Resource" uid="uid://kb8a36qmhbsa" path="res://assets/tf2/bat.tres" id="16_c35mf"]
+[ext_resource type="Resource" uid="uid://c1iei2xvith2m" path="res://assets/tf2/rocket_launcher.tres" id="17_65viv"]
+[ext_resource type="Resource" uid="uid://dwwh1fream1b5" path="res://assets/tf2/flamethrower.tres" id="18_x7c3f"]
+[ext_resource type="Resource" uid="uid://b4ydfvfklj5cl" path="res://assets/tf2/grenade_launcher.tres" id="19_bjvpn"]
+[ext_resource type="Resource" uid="uid://cqtnateujki8i" path="res://assets/tf2/minigun.tres" id="20_uw77l"]
+[ext_resource type="Resource" uid="uid://dxtql15w6yxg7" path="res://assets/tf2/syringe_gun.tres" id="21_rptt4"]
+[ext_resource type="Resource" uid="uid://cg4gfj2es24p4" path="res://assets/tf2/sniper_rifle.tres" id="22_r7pn3"]
+[ext_resource type="Resource" uid="uid://2k6bc50djxgg" path="res://assets/tf2/smg.tres" id="22_rptt4"]
+[ext_resource type="Resource" uid="uid://ebu6fuc2cymc" path="res://assets/tf2/knife.tres" id="23_b8hi5"]
+[ext_resource type="Resource" uid="uid://cy4bt3f2aadno" path="res://assets/tf2/spy_revolver.tres" id="24_2uvqg"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_kb6p2"]
 
@@ -81,12 +94,14 @@ albedo_color = Color(0.13077214, 0.13077214, 0.13077211, 1)
 [sub_resource type="BoxMesh" id="BoxMesh_kb6p2"]
 size = Vector3(1, 1.625, 0.54)
 
-[node name="Player" type="CharacterBody3D" unique_id=51620469 node_paths=PackedStringArray("player_input", "input_synchronizer", "attribute_component", "body")]
+[node name="Player" type="CharacterBody3D" unique_id=51620469 node_paths=PackedStringArray("player_input", "input_synchronizer", "attribute_component", "body", "weapon_controller")]
+collision_layer = 2
 script = ExtResource("1_4flbx")
 player_input = NodePath("PlayerInput")
 input_synchronizer = NodePath("PlayerInput/InputSynchronizer")
 attribute_component = NodePath("AttributeComponent")
 body = NodePath("Body")
+weapon_controller = NodePath("WeaponController")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=218472258]
 shape = SubResource("CapsuleShape3D_kb6p2")
@@ -108,7 +123,13 @@ public_visibility = false
 [node name="ProjectilesParent" type="Node3D" parent="." unique_id=1774207359]
 top_level = true
 
+[node name="ProjectileSpawner" type="MultiplayerSpawner" parent="ProjectilesParent" unique_id=290768895]
+spawn_path = NodePath("..")
+script = ExtResource("3_32hag")
+
 [node name="HurtboxComponent" type="Area3D" parent="." unique_id=481075083]
+collision_layer = 4
+collision_mask = 0
 script = ExtResource("5_2hs0m")
 metadata/_custom_type_script = "uid://c4uv27n00ycfc"
 
@@ -175,12 +196,9 @@ modulate = Color(0.16206557, 0.1620656, 0.16206557, 1)
 text = "Name"
 font_size = 200
 
-[node name="ProjectileSpawner" type="MultiplayerSpawner" parent="." unique_id=290768895]
-spawn_path = NodePath("../ProjectilesParent")
-
 [node name="WeaponController" type="Node" parent="." unique_id=1956241137 node_paths=PackedStringArray("weapon_model_parent", "projectile_spawn_parent", "player_input", "recoil", "_parent_player", "_raycast")]
 script = ExtResource("6_ebec5")
-weapons = Array[ExtResource("3_i3pqv")]([ExtResource("11_2ieo8"), ExtResource("7_yllr7"), ExtResource("11_yllr7")])
+weapons = Array[ExtResource("3_i3pqv")]([ExtResource("14_tqiix"), ExtResource("15_e7oew"), ExtResource("16_c35mf"), ExtResource("17_65viv"), ExtResource("18_x7c3f"), ExtResource("19_bjvpn"), ExtResource("20_uw77l"), ExtResource("21_rptt4"), ExtResource("22_r7pn3"), ExtResource("22_rptt4"), ExtResource("24_2uvqg"), ExtResource("23_b8hi5"), ExtResource("11_2ieo8"), ExtResource("7_yllr7"), ExtResource("11_yllr7")])
 weapon_model_parent = NodePath("../Body/Recoil/Head/WeaponParent")
 projectile_spawn_parent = NodePath("../ProjectilesParent")
 player_input = NodePath("../PlayerInput")
