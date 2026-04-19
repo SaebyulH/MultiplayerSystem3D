@@ -1,8 +1,8 @@
 [gd_scene format=3 uid="uid://7ccxfopdhtv8"]
 
 [ext_resource type="Script" uid="uid://b3gtcm614wpi8" path="res://maps/map.gd" id="1_p28ue"]
-[ext_resource type="CompressedTexture3D" uid="uid://gj7tu2wrtw4l" path="res://assets/True Cinematic.cube-s33.png" id="2_bjhbo"]
-[ext_resource type="Texture2D" uid="uid://c4ln0bpu3tmo3" path="res://assets/kloppenheim_06_puresky_4k.exr" id="2_elc4j"]
+[ext_resource type="CompressedTexture3D" uid="uid://gj7tu2wrtw4l" path="res://assets/environment/True Cinematic.cube-s33.png" id="2_bjhbo"]
+[ext_resource type="Texture2D" uid="uid://c4ln0bpu3tmo3" path="res://assets/environment/kloppenheim_06_puresky_4k.exr" id="2_elc4j"]
 [ext_resource type="VoxelGIData" uid="uid://d342skpy3bpcs" path="res://maps/voxel_GI/underground.VoxelGI_data.res" id="3_w84c5"]
 
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_w84c5"]

@@ -18,6 +18,7 @@ var _pre_fire_timer: float = 0.0
 @export var player_input: PlayerInput
 @export var recoil: Recoil
 @export var _parent_player: Player
+@export var _raycast :RayCast3D
 
 var current_weapon_model: Node3D
 var _fire_cooldown: float = 0.0
@@ -41,6 +42,7 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	_align_weapon_to_raycast()
 	if _fire_cooldown > 0.0:
 		_fire_cooldown -= delta
 
@@ -199,15 +201,33 @@ func _request_fire() -> void:
 
 	var weapon = weapons[current_weapon_index]
 
-	# Spawn projectile.
+	# Spawn REAL projectile.
 	var projectile_scene = weapon.projectile_scene.instantiate() as Node3D
 	projectile_scene.global_transform = weapon_model_parent.global_transform
 	projectile_scene.shooter_name     = _parent_player.name
 	projectile_scene.set_damage(weapon.damage)
+	projectile_scene.is_real = true
 	var forward_dir: Vector3 = weapon_model_parent.global_transform.basis.z
-	projectile_scene.velocity = -forward_dir * 100
+	projectile_scene.velocity = -forward_dir * 100.0
 	projectile_spawn_parent.add_child(projectile_scene, true)
-
+	
+	# Spawn FAKE projectile.
+	var fake_projectile_scene = weapon.projectile_scene.instantiate() as Node3D
+	if current_weapon_model.get_node("Muzzle"):
+		fake_projectile_scene.global_transform = current_weapon_model.get_node("Muzzle").global_transform
+	else:
+		fake_projectile_scene.global_transform = weapon_model_parent.global_transform
+	fake_projectile_scene.shooter_name     = _parent_player.name
+	fake_projectile_scene.set_damage(0.0)
+	fake_projectile_scene.is_real = false
+	#var forward_dir: Vector3 = weapon_model_parent.global_transform.basis.z
+	fake_projectile_scene.velocity = -forward_dir * 100.0
+	projectile_spawn_parent.add_child(fake_projectile_scene, true)
+	
+	
+	
+	
+	
 	# Roll recoil once on the server — single source of truth, no randf divergence.
 	var r: Vector3 = recoil.recoil
 	var rolled := Vector3(
@@ -232,3 +252,15 @@ func _apply_recoil_rpc(rolled: Vector3) -> void:
 @rpc("any_peer", "call_local")
 func _play_shoot_sound() -> void:
 	_play_sound(weapons[current_weapon_index].shoot_sound)
+
+func _align_weapon_to_raycast() -> void:
+	if not _raycast.is_colliding():
+		return
+
+	var from: Vector3 = current_weapon_model.global_transform.origin
+	var to: Vector3 = _raycast.get_collision_point()
+
+	var dir: Vector3 = (to - from).normalized()
+
+	var basis := Basis().looking_at(dir, Vector3.UP)
+	current_weapon_model.global_transform.basis = basis

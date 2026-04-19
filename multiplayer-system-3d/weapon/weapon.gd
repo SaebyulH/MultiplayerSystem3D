@@ -18,7 +18,7 @@ class_name Weapon
 
 @export_group("Visuals")
 @export var weapon_model: PackedScene
-@export var weapon_offset: Vector3 = Vector3(0.3, -0.4, -0.8)
+@export var weapon_offset: Vector3 = Vector3(0.2, -0.4, -0.55)
 @export_custom(PROPERTY_HINT_RANGE, "-360,360,0.1,radians") 
 var weapon_rotation: Vector3 = Vector3.ZERO
 @export var weapon_scale: Vector3 = Vector3(1.0, 1.0, 1.0)

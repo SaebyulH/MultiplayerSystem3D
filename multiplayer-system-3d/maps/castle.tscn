@@ -1,8 +1,8 @@
 [gd_scene format=3 uid="uid://bhsrnwae043e1"]
 
 [ext_resource type="Script" uid="uid://b3gtcm614wpi8" path="res://maps/map.gd" id="1_8rrov"]
-[ext_resource type="Texture2D" uid="uid://c4ln0bpu3tmo3" path="res://assets/kloppenheim_06_puresky_4k.exr" id="2_wnf2b"]
-[ext_resource type="CompressedTexture3D" uid="uid://gj7tu2wrtw4l" path="res://assets/True Cinematic.cube-s33.png" id="2_yhcpw"]
+[ext_resource type="Texture2D" uid="uid://c4ln0bpu3tmo3" path="res://assets/environment/kloppenheim_06_puresky_4k.exr" id="2_wnf2b"]
+[ext_resource type="CompressedTexture3D" uid="uid://gj7tu2wrtw4l" path="res://assets/environment/True Cinematic.cube-s33.png" id="2_yhcpw"]
 
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_wnf2b"]
 panorama = ExtResource("2_wnf2b")
