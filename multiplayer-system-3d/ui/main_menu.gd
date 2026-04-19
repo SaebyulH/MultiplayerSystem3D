@@ -35,7 +35,7 @@ func _on_join_game_pressed() -> void:
 	var address = address_input.text
 	if address == "":
 		#address = "100.92.64.109"
-		address = "100.104.145.26"
+		address = "100.92.64.109"
 		
 	NetworkManager.create_client(address)
 

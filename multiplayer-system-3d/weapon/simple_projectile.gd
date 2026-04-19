@@ -10,9 +10,8 @@ var shooter_name: String
 var _has_hit := false
 var _time_alive := 0.0
 
-#@export var _hitbox_component: HitboxComponent
-@onready var _mesh: MeshInstance3D = $MeshInstance3D
 @export var _hitbox_component: HitboxComponent
+@onready var _mesh: MeshInstance3D = $MeshInstance3D
 
 
 func _ready() -> void:
@@ -23,7 +22,7 @@ func _ready() -> void:
 			_mesh.set_surface_override_material(i, mat.duplicate())
 
 	_hitbox_component.hit_hurtbox.connect(_on_hit_hurtbox)
-	#body_entered.connect(_on_body_entered)
+	body_entered.connect(_on_body_entered)
 
 
 func _physics_process(delta: float) -> void:
@@ -37,7 +36,7 @@ func _physics_process(delta: float) -> void:
 		return
 
 	# Movement (fixed)
-	#velocity.y -= gravity * delta
+	velocity.y -= gravity * delta
 	global_position += velocity * delta
 
 
@@ -78,7 +77,6 @@ func rpc_hit_flash() -> void:
 
 	# purely visual, no authority check needed
 	await get_tree().create_timer(0.1).timeout
-
 
 
 func set_damage(damage: float):
