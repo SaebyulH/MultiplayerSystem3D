@@ -2,7 +2,7 @@ extends CharacterBody3D
 class_name Player
 
 
-var speed = 5.0
+var speed = 7.5
 const JUMP_VELOCITY = 5.0
 
 
