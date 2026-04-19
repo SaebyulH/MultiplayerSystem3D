@@ -262,10 +262,16 @@ func _on_hitscan_hit(hit_position: Vector3, hit_normal: Vector3) -> void:
 	sphere_mesh.radius = 0.05
 	sphere_mesh.height = 0.1
 	mesh_instance.mesh = sphere_mesh
+
+	# Create black material
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0, 0, 0)
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mesh_instance.material_override = mat
+
 	projectile_spawn_parent.add_child(mesh_instance)
 	mesh_instance.global_position = hit_position
 	
-	# Auto-remove after 7 seconds.
 	await get_tree().create_timer(7.0).timeout
 	mesh_instance.queue_free()
 

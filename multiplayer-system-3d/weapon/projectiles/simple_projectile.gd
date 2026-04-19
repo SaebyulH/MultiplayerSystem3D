@@ -7,7 +7,7 @@ var shooter_name: String
 #var _distance_traveled: float = 0.0
 var _time_alive := 0.0
 @export var lifetime: float = 100.5
-
+@export var explode_on_timeout: bool = false
 # DAMAGE COMPONENTS
 @export var _hitbox_component: HitboxComponent
 @export var _explosion_component: ExplosionComponent
@@ -36,6 +36,8 @@ func _physics_process(delta: float) -> void:
 
 	_time_alive += delta
 	if _time_alive >= lifetime:
+		if explode_on_timeout:
+			await _explosion_component.explode()
 		queue_free()
 		return
 
