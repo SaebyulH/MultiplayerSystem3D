@@ -23,7 +23,7 @@ gravity_scale = -0.5
 linear_velocity = Vector3(0, 0, -50)
 linear_damp = 3.0
 angular_velocity = Vector3(0.017453292, 0.017453292, 0.017453292)
-lifetime = 1.5
+lifetime = 1.0
 hurtbox_hit_mode = 1
 explode_on_direct = false
 
@@ -37,7 +37,7 @@ mesh = SubResource("PrismMesh_3xfof")
 surface_material_override/0 = SubResource("StandardMaterial3D_bmawj")
 
 [node name="HitboxComponent" parent="." index="3" unique_id=1963592485]
-damage = 0.4
+damage = 3.0
 
 [node name="CollisionShape3D" parent="HitboxComponent" index="0" unique_id=1314331169]
 transform = Transform3D(-8.9304926e-08, -2.0430586, -8.930491e-08, 0, -8.930491e-08, 2.0430586, -2.0430586, 8.9304926e-08, 3.9036424e-15, 0, 0, 0)

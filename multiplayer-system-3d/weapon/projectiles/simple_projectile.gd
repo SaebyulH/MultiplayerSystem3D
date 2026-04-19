@@ -38,6 +38,7 @@ func _physics_process(delta: float) -> void:
 	if _time_alive >= lifetime:
 		if explode_on_timeout:
 			await _explosion_component.explode()
+		
 		queue_free()
 		return
 
