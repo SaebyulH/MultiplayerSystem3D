@@ -15,13 +15,14 @@
 [ext_resource type="Resource" uid="uid://b7sksxja7iost" path="res://weapon/ak.tres" id="11_2ieo8"]
 [ext_resource type="Resource" uid="uid://yx67ob4xh6nt" path="res://weapon/revolver.tres" id="11_yllr7"]
 
-[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_kb6p2"]
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_sh265"]
+resource_local_to_scene = true
 
-[sub_resource type="CapsuleMesh" id="CapsuleMesh_wodsf"]
+[sub_resource type="BoxMesh" id="BoxMesh_kb6p2"]
+size = Vector3(1, 2, 1)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4flbx"]
-transparency = 1
-albedo_color = Color(0.003921569, 0.003921569, 0.60784316, 0.7254902)
+albedo_color = Color(0.0023445897, 0.00234459, 0.00234459, 1)
 
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_4flbx"]
 properties/0/path = NodePath(".:global_position")
@@ -30,6 +31,9 @@ properties/0/replication_mode = 1
 properties/1/path = NodePath("AttributeComponent:health")
 properties/1/spawn = true
 properties/1/replication_mode = 2
+properties/2/path = NodePath("Head/WeaponParent/Ammo:text")
+properties/2/spawn = true
+properties/2/replication_mode = 1
 
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_onrkg"]
 properties/0/path = NodePath(".:input_dir")
@@ -38,9 +42,15 @@ properties/0/replication_mode = 1
 properties/1/path = NodePath(".:jump_input")
 properties/1/spawn = true
 properties/1/replication_mode = 1
-properties/2/path = NodePath(".:crouch")
+properties/2/path = NodePath(".:body_rotation_y")
 properties/2/spawn = true
 properties/2/replication_mode = 1
+properties/3/path = NodePath(".:head_rotation_x")
+properties/3/spawn = true
+properties/3/replication_mode = 1
+properties/4/path = NodePath(".:crouch")
+properties/4/spawn = true
+properties/4/replication_mode = 1
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1jxqw"]
 radius = 0.6459961
@@ -58,20 +68,17 @@ properties/0/path = NodePath(".:current_weapon_index")
 properties/0/spawn = true
 properties/0/replication_mode = 1
 
-[sub_resource type="BoxMesh" id="BoxMesh_wodsf"]
-
-[node name="Player" type="CharacterBody3D" unique_id=51620469 node_paths=PackedStringArray("player_input", "input_synchronizer", "attribute_component", "head")]
+[node name="Player" type="CharacterBody3D" unique_id=51620469 node_paths=PackedStringArray("player_input", "input_synchronizer", "attribute_component")]
 script = ExtResource("1_4flbx")
 player_input = NodePath("PlayerInput")
 input_synchronizer = NodePath("PlayerInput/InputSynchronizer")
 attribute_component = NodePath("AttributeComponent")
-head = NodePath("Head")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=218472258]
-shape = SubResource("CapsuleShape3D_kb6p2")
+shape = SubResource("CapsuleShape3D_sh265")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1851645100]
-mesh = SubResource("CapsuleMesh_wodsf")
+mesh = SubResource("BoxMesh_kb6p2")
 surface_material_override/0 = SubResource("StandardMaterial3D_4flbx")
 
 [node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=500684838]
@@ -154,28 +161,27 @@ modulate = Color(0.16206557, 0.1620656, 0.16206557, 1)
 text = "Name"
 font_size = 200
 
-[node name="ProjectileSpawner" type="MultiplayerSpawner" parent="." unique_id=290768895]
-_spawnable_scenes = PackedStringArray("uid://cbvuyb8cafegs", "uid://6mr0d18yn8po")
-spawn_path = NodePath("../ProjectilesParent")
-
-[node name="WeaponController" type="Node" parent="." unique_id=1956241137 node_paths=PackedStringArray("weapon_model_parent", "projectile_spawn_parent", "player_input", "_parent_player")]
-script = ExtResource("6_ebec5")
-weapons = Array[ExtResource("3_i3pqv")]([ExtResource("11_2ieo8"), ExtResource("7_yllr7"), ExtResource("11_yllr7")])
-weapon_model_parent = NodePath("../Head/WeaponParent")
-projectile_spawn_parent = NodePath("../ProjectilesParent")
-player_input = NodePath("../PlayerInput")
-_parent_player = NodePath("..")
-metadata/_custom_type_script = "uid://d2kgugh2o23ba"
-
-[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="WeaponController" unique_id=829106885]
-replication_config = SubResource("SceneReplicationConfig_2ieo8")
-
-[node name="AudioStreamPlayer3D" type="AudioStreamPlayer3D" parent="WeaponController" unique_id=1913075685]
-
 [node name="Head" type="Node3D" parent="." unique_id=581817051]
 unique_name_in_owner = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.67056465, 0)
 script = ExtResource("8_kb6p2")
+
+[node name="WeaponController" type="Node" parent="Head" unique_id=1956241137 node_paths=PackedStringArray("weapon_model_parent", "projectile_spawn_parent", "player_input")]
+script = ExtResource("6_ebec5")
+weapons = Array[ExtResource("3_i3pqv")]([ExtResource("11_2ieo8"), ExtResource("7_yllr7"), ExtResource("11_yllr7")])
+weapon_model_parent = NodePath("../WeaponParent")
+projectile_spawn_parent = NodePath("../../ProjectilesParent")
+player_input = NodePath("../../PlayerInput")
+metadata/_custom_type_script = "uid://d2kgugh2o23ba"
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="Head/WeaponController" unique_id=829106885]
+replication_config = SubResource("SceneReplicationConfig_2ieo8")
+
+[node name="AudioStreamPlayer3D" type="AudioStreamPlayer3D" parent="Head/WeaponController" unique_id=1913075685]
+
+[node name="ProjectileSpawner" type="MultiplayerSpawner" parent="Head" unique_id=290768895]
+_spawnable_scenes = PackedStringArray("uid://cbvuyb8cafegs", "uid://6mr0d18yn8po")
+spawn_path = NodePath("../../ProjectilesParent")
 
 [node name="Camera3D" type="Camera3D" parent="Head" unique_id=1440942893]
 unique_name_in_owner = true
@@ -190,8 +196,4 @@ modulate = Color(1, 0.7809618, 0.4214451, 1)
 text = "Ammo"
 font_size = 200
 script = ExtResource("4_ebec5")
-weapon_controller = NodePath("../../../WeaponController")
-
-[node name="Skin" type="MeshInstance3D" parent="Head" unique_id=579986966]
-transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0, 0)
-mesh = SubResource("BoxMesh_wodsf")
+weapon_controller = NodePath("../../WeaponController")

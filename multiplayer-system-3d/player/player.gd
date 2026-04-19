@@ -10,7 +10,7 @@ const JUMP_VELOCITY = 5.0
 @export var input_synchronizer: MultiplayerSynchronizer
 @export var attribute_component: AttributeComponent
 @onready var camera := %Camera3D
-@onready var head := %Head
+@export var head :Node3D
 
 @onready var collider: CollisionShape3D = $CollisionShape3D
 @onready var mesh: MeshInstance3D = $MeshInstance3D
@@ -32,6 +32,7 @@ var pitch := 0.0
 func _enter_tree() -> void:
 	#The Player Input node is controlled by the LOCAL
 	player_input.set_multiplayer_authority(str(name).to_int())
+	head.set_multiplayer_authority(str(name).to_int())
 	%Name.text = ("Host" if (name.to_int() == 1) else "Client") + ", NetID: " + str(name)
 
 func _ready() -> void:
@@ -68,14 +69,16 @@ func _physics_process(delta: float) -> void:
 	if not get_tree().get_multiplayer().has_multiplayer_peer():
 		return
 
-	# Apply aim for all instances
-	rotation.y = player_input.body_rotation_y
-	head.rotation.x = player_input.head_rotation_x
-
+	## Apply aim for all instances
+	#rotation.y = player_input.body_rotation_y
+	#head.rotation.x = player_input.head_rotation_x
+	#sync_rotation.rpc(head.rotation.x, rotation.y)
+	
+	
 	if is_multiplayer_authority():
 		# --- UPDATE CROUCH STATE (FIX) ---
-		is_crouching = player_input.crouch
-		_apply_crouch()
+		#is_crouching = player_input.crouch
+		#_apply_crouch()
 
 		if not is_on_floor():
 			velocity += get_gravity() * delta
@@ -102,23 +105,45 @@ func _physics_process(delta: float) -> void:
 
 		move_and_slide()
 
-func _apply_crouch() -> void:
-	var shape := $CollisionShape3D.shape as CapsuleShape3D
-	if shape == null:
-		return
 
-	var target_height = crouch_height if is_crouching else stand_height
 
-	# capsule height is cylinder only
-	var target_cylinder = target_height - (shape.radius * 2.0)
+#@rpc("any_peer", "call_remote")
+#func sync_rotation(head_x_rotation: float, body_y_rotation: float, player_name: String):
+	#print("Recieved Head Rotation!")
+	#if name == player_name:
+		#print("Applying Head Rotation from " + player_name + "To other instances")
+		#
+		#rotation.y = body_y_rotation
+		#head.rotation.x = head_x_rotation
+#
 
-	shape.height = lerp(shape.height, target_cylinder, 10.0 * get_process_delta_time())
 
-	# IMPORTANT: do NOT scale collision shape
+#@rpc("any_peer", "call_remote")
+#func sync_crouch(head_x_rotation: float, body_y_rotation: float, player_name: String):
+	#print("Recieved Head Rotation from " + player_name)
+	#if name == player_name:
+		#
+		#rotation.y = body_y_rotation
+		#head.rotation.x = head_x_rotation
 
-	# Visuals only (safe)
-	var scale_factor := crouch_height / stand_height if is_crouching else 1.0
-	$MeshInstance3D.scale = Vector3(1, scale_factor, 1)
 
-	# Camera / head should NOT be world-scaled either
-	head.position.y = (target_height * 0.9)
+#func _apply_crouch() -> void:
+	#var shape := $CollisionShape3D.shape as CapsuleShape3D
+	#if shape == null:
+		#return
+#
+	#var target_height = crouch_height if is_crouching else stand_height
+#
+	## capsule height is cylinder only
+	#var target_cylinder = target_height - (shape.radius * 2.0)
+#
+	#shape.height = lerp(shape.height, target_cylinder, 10.0 * get_process_delta_time())
+#
+	## IMPORTANT: do NOT scale collision shape
+#
+	## Visuals only (safe)
+	#var scale_factor := crouch_height / stand_height if is_crouching else 1.0
+	#$MeshInstance3D.scale = Vector3(1, scale_factor, 1)
+#
+	## Camera / head should NOT be world-scaled either
+	#head.position.y = (target_height * 0.9)

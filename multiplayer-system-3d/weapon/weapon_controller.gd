@@ -7,7 +7,7 @@ var _reload_timer: float = 0.0
 var _pending_fire: bool = false
 var _pre_fire_timer: float = 0.0
 
-
+#@export var recoil: Recoil
 @export var weapons: Array[Weapon] 
 @export var current_weapon_index: int = 0:
 	set(value):
@@ -22,7 +22,7 @@ var _pre_fire_timer: float = 0.0
 
 #@onready var recoil = %CameraRecoil
 @onready var camera = %Camera3D
-@onready var _parent_player: Player = $"../.."
+@export var _parent_player: Player
 #@onready var audio_player: AudioStreamPlayer3D = $AudioStreamPlayer3D
 
 
@@ -39,10 +39,10 @@ func _ready() -> void:
 	player_input.next_weapon.connect(next_weapon)
 	player_input.reload.connect(start_reload)
 	
-	#recoil.recoil = current_weapon.recoil_data.recoil
-	#recoil.aim_recoil = current_weapon.recoil_data.aim_recoil
-	#recoil.snappiness = current_weapon.recoil_data.snappiness
-	#recoil.return_speed = current_weapon.recoil_data.return_speed
+	#recoil.recoil = weapons[current_weapon_index].recoil_data.recoil
+	#recoil.aim_recoil = weapons[current_weapon_index].recoil_data.aim_recoil
+	#recoil.snappiness = weapons[current_weapon_index].recoil_data.snappiness
+	#recoil.return_speed = weapons[current_weapon_index].recoil_data.return_speed
 func _play_sound(stream: AudioStream) -> void:
 	if stream == null:
 		return
@@ -196,6 +196,8 @@ func _spawn_projectile() -> void:
 
 	# --- Play sound on ALL clients ---
 	_play_sound(weapon.shoot_sound)
+	
+	#recoil.recoilFire()
 
 func next_weapon():
 	next_weapon_server.rpc_id(1)

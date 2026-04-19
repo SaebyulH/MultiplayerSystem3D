@@ -1,8 +1,8 @@
 extends Node
 class_name PlayerInput
 var input_dir: Vector2
-var body_rotation_y: float = 0.0
-var head_rotation_x: float = 0.0
+#var body_rotation_y: float = 0.0
+#var head_rotation_x: float = 0.0
 var recoil_rotation: Vector3 = Vector3.ZERO
 
 
@@ -16,8 +16,6 @@ signal reload
 signal previous_weapon
 signal next_weapon
 
-const MOUSE_SENS_X: float = 0.002
-const MOUSE_SENS_Y: float = 0.002
 signal primary_fire_released
 
 
@@ -59,7 +57,7 @@ func _input(event):
 		return
 	if Input.get_mouse_mode() != Input.MOUSE_MODE_CAPTURED:
 		return
-	if event is InputEventMouseMotion:
-		body_rotation_y -= event.relative.x * MOUSE_SENS_X
-		head_rotation_x -= event.relative.y * MOUSE_SENS_Y
-		head_rotation_x = clamp(head_rotation_x, -PI / 2, PI / 2)
+	#if event is InputEventMouseMotion:
+		#body_rotation_y -= event.relative.x * MOUSE_SENS_X
+		#head_rotation_x -= event.relative.y * MOUSE_SENS_Y
+		#head_rotation_x = clamp(head_rotation_x, -PI / 2, PI / 2)

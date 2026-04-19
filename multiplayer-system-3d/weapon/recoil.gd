@@ -1,4 +1,5 @@
 extends Node3D
+class_name Recoil
 
 var current_rotation : Vector3
 var target_rotation : Vector3
