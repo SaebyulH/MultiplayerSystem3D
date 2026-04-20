@@ -37,8 +37,10 @@ var pitch := 0.0
 
 func _enter_tree() -> void:
 	#The Player Input node is controlled by the LOCAL
-	player_input.set_multiplayer_authority(str(name).to_int())
-	body.set_multiplayer_authority(str(name).to_int())
+	#player_input.set_multiplayer_authority(str(name).to_int())
+	#body.set_multiplayer_authority(str(name).to_int())
+	set_multiplayer_authority(str(name).to_int())
+	
 	
 	
 	%Name.text = ("Host" if (name.to_int() == 1) else "Client") + ", NetID: " + str(name)
