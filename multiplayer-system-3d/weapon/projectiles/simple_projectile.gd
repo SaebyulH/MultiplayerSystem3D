@@ -50,7 +50,8 @@ func _on_hit_hurtbox(hurtbox: HurtboxComponent) -> void:
 		
 	if explode_on_direct:
 		freeze = true
-		await _explosion_component.explode()
+		if _explosion_component:
+			await _explosion_component.explode()
 		
 	if hurtbox_hit_mode == HurtboxHitMode.DISSAPEAR:
 		queue_free()
@@ -67,7 +68,8 @@ func _on_body_entered(body: Node3D) -> void:
 	
 	if explode_on_world:
 		freeze = true
-		await _explosion_component.explode()
+		if _explosion_component:
+			await _explosion_component.explode()
 	
 	if world_hit_mode == WorldHitMode.DISSAPEAR:
 		queue_free()
