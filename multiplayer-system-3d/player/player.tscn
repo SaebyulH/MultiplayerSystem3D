@@ -79,6 +79,11 @@ albedo_color = Color(0.13077214, 0.13077214, 0.13077211, 1)
 [sub_resource type="BoxMesh" id="BoxMesh_kb6p2"]
 size = Vector3(1, 1.625, 0.54)
 
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_1s1yo"]
+properties/0/path = NodePath("AttributeComponent:health")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+
 [node name="Player" type="CharacterBody3D" unique_id=51620469 node_paths=PackedStringArray("player_input", "rollback_sync", "attribute_component", "body", "weapon_controller")]
 collision_layer = 2
 script = ExtResource("1_4flbx")
@@ -103,7 +108,7 @@ surface_material_override/0 = SubResource("ShaderMaterial_nvl01")
 [node name="RollbackSynchronizer" type="Node" parent="." unique_id=744606291 node_paths=PackedStringArray("root")]
 script = ExtResource("3_2uvqg")
 root = NodePath("..")
-state_properties = Array[String]([":global_transform", ":velocity", "AttributeComponent:health"])
+state_properties = Array[String]([":global_transform", ":velocity"])
 input_properties = Array[String](["PlayerInput:input_dir", "PlayerInput:jump_input", "PlayerInput:crouch"])
 metadata/_custom_type_script = "uid://d350u8evihs1u"
 
@@ -288,5 +293,8 @@ base_sound = ExtResource("9_b8hi5")
 layout_mode = 0
 offset_right = 40.0
 offset_bottom = 23.0
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=1858913668]
+replication_config = SubResource("SceneReplicationConfig_1s1yo")
 
 [connection signal="health_changed" from="AttributeComponent" to="Body/Recoil/Head/Health" method="_on_attribute_component_health_changed"]

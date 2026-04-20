@@ -5,6 +5,9 @@ class_name Player
 var speed = 5.0
 const JUMP_VELOCITY = 5.0
 
+var queue_velocity := Vector3(0.0, 0.0, 0.0)
+#var queue_global_position := Vector3(0.0, 0.0, 0.0)
+#var queue_global_position_applied := true
 
 @export var player_input: PlayerInput
 @export var rollback_sync: RollbackSynchronizer
@@ -37,9 +40,9 @@ var pitch := 0.0
 
 func _enter_tree() -> void:
 	#The Player Input node is controlled by the LOCAL
-	#player_input.set_multiplayer_authority(str(name).to_int())
-	#body.set_multiplayer_authority(str(name).to_int())
-	set_multiplayer_authority(str(name).to_int())
+	player_input.set_multiplayer_authority(str(name).to_int())
+	body.set_multiplayer_authority(str(name).to_int())
+	#set_multiplayer_authority(str(name).to_int())
 	
 	
 	
@@ -105,55 +108,66 @@ func _force_update_is_on_floor():
 	move_and_slide()
 	velocity = old_velocity
 
-
-func _apply_movement_from_input(delta):
-			# --- UPDATE CROUCH STATE (FIX) ---
-		#is_crouching = player_input.crouch
-		#_apply_crouch()
-		
-		_force_update_is_on_floor()
-		
-		if not is_on_floor():
-			velocity += get_gravity() * delta
-		elif player_input.jump_input and is_on_floor():
-			velocity.y = JUMP_VELOCITY
-
-		var input_dir := player_input.input_dir
-		var cam_basis: Basis = camera.global_transform.basis
-		var forward := Vector3(cam_basis.z.x, 0, cam_basis.z.z).normalized()
-		var right   := Vector3(cam_basis.x.x, 0, cam_basis.x.z).normalized()
-		var direction := (forward * input_dir.y + right * input_dir.x).normalized()
-
-		var calc_speed : float = speed * weapon_controller.weapons[weapon_controller.current_weapon_index].player_speed_multiplier
-		if is_crouching:
-			calc_speed *= crouch_speed_multiplier
-
-		if direction:
-			velocity.x = direction.x * calc_speed
-			velocity.z = direction.z * calc_speed
-		else:
-			velocity.x = move_toward(velocity.x, 0, calc_speed)
-			velocity.z = move_toward(velocity.z, 0, calc_speed)
-		
-		velocity *= NetworkTime.physics_factor
-		move_and_slide()
-		velocity /= NetworkTime.physics_factor
-	
-
-
-
-
-
-
-
+# In Player.gd
+var knockback_velocity := Vector3.ZERO
+@export var knockback_decay: float = 10.0  # how fast it fades per second
 
 func apply_knockback(force: Vector3) -> void:
-	# Optional: ignore tiny forces
 	if force.length() < 0.01:
 		return
-	
-	# Apply knockback
-	velocity += force
+	knockback_velocity += force
+
+func _apply_movement_from_input(delta):
+	_force_update_is_on_floor()
+
+	if not is_on_floor():
+		velocity += get_gravity() * delta
+	elif player_input.jump_input and is_on_floor():
+		velocity.y = JUMP_VELOCITY
+
+	var input_dir := player_input.input_dir
+	var cam_basis: Basis = camera.global_transform.basis
+	var forward := Vector3(cam_basis.z.x, 0, cam_basis.z.z).normalized()
+	var right   := Vector3(cam_basis.x.x, 0, cam_basis.x.z).normalized()
+	var direction := (forward * input_dir.y + right * input_dir.x).normalized()
+
+	var calc_speed : float = speed * weapon_controller.weapons[weapon_controller.current_weapon_index].player_speed_multiplier
+	if is_crouching:
+		calc_speed *= crouch_speed_multiplier
+
+	if direction:
+		velocity.x = direction.x * calc_speed
+		velocity.z = direction.z * calc_speed
+	else:
+		velocity.x = move_toward(velocity.x, 0, calc_speed)
+		velocity.z = move_toward(velocity.z, 0, calc_speed)
+
+	# Decay and apply knockback separately
+	velocity *= NetworkTime.physics_factor
+	velocity += knockback_velocity  # moved to here, not scaled
+	move_and_slide()
+	velocity /= NetworkTime.physics_factor
+	# decay after move
+	knockback_velocity = knockback_velocity.move_toward(Vector3.ZERO, knockback_decay * delta)
+
+
+
+
+#func set_player_position(vector: Vector3):
+	#queue_global_position = vector
+	#queue_global_position_applied = false
+
+
+
+#func apply_knockback(force: Vector3) -> void:
+	## Optional: ignore tiny forces
+	#if force.length() < 0.01:
+		#return
+	#
+	## Apply knockback
+	#queue_velocity += force
+	#
+	#print("APPLIED KNOCKBACK" + str(force.length()))
 
 func change_health(health: float, changer: String):
 	attribute_component.apply_health_delta(health, changer, self.name)

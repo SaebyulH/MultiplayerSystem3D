@@ -34,25 +34,7 @@ func _gather():
 		jump_input = false
 		
 		
-	crouch = Input.is_action_pressed("crouch")
-		
-		
-	if Input.is_action_just_pressed("primary_fire"):
-		if Input.get_mouse_mode() != Input.MOUSE_MODE_CAPTURED:
-			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
-		primary_fire_just_pressed.emit()
-	if Input.is_action_pressed("primary_fire"):
-		if Input.get_mouse_mode() != Input.MOUSE_MODE_CAPTURED:
-			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
-		primary_fire.emit()
-	if Input.is_action_just_released("primary_fire"):
-		primary_fire_released.emit()
-	if Input.is_action_just_pressed("previous_weapon"):
-		previous_weapon.emit()
-	if Input.is_action_just_pressed("next_weapon"):
-		next_weapon.emit()
-	if Input.is_action_just_pressed("reload"):
-		reload.emit()
+	
 
 
 #func _physics_process(delta: float) -> void:
@@ -86,12 +68,34 @@ func _gather():
 			#reload.emit()
 
 func _input(event):
+	if not is_multiplayer_authority():
+		return
+
+	if Input.is_action_just_pressed("primary_fire"):
+		print("FJL:ASDFKAJSDFKASJLFALS")
+		if Input.get_mouse_mode() != Input.MOUSE_MODE_CAPTURED:
+			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+		else:
+			primary_fire_just_pressed.emit()
+	if Input.is_action_pressed("primary_fire"):
+		if Input.get_mouse_mode() != Input.MOUSE_MODE_CAPTURED:
+			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+		primary_fire.emit()
+	if Input.is_action_just_released("primary_fire"):
+		primary_fire_released.emit()
+	if Input.is_action_just_pressed("previous_weapon"):
+		previous_weapon.emit()
+	if Input.is_action_just_pressed("next_weapon"):
+		next_weapon.emit()
+	if Input.is_action_just_pressed("reload"):
+		reload.emit()
 	if event.is_action_pressed("ui_cancel"):
 		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	if not is_multiplayer_authority():
 		return
 	if Input.get_mouse_mode() != Input.MOUSE_MODE_CAPTURED:
 		return
+	crouch = Input.is_action_pressed("crouch")
 	#if event is InputEventMouseMotion:
 		#body_rotation_y -= event.relative.x * MOUSE_SENS_X
 		#head_rotation_x -= event.relative.y * MOUSE_SENS_Y
