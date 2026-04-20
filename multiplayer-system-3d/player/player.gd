@@ -7,7 +7,7 @@ const JUMP_VELOCITY = 5.0
 
 
 @export var player_input: PlayerInput
-@export var input_synchronizer: MultiplayerSynchronizer
+@export var rollback_sync: RollbackSynchronizer
 @export var attribute_component: AttributeComponent
 @onready var camera := %Camera3D
 #@export var head :Node3D
@@ -48,7 +48,7 @@ func _enter_tree() -> void:
 func _ready() -> void:
 	add_to_group("players")
 
-	input_synchronizer.set_visibility_for(1, true)
+	#input_synchronizer.set_visibility_for(1, true)
 	attribute_component.health_changed.connect(_health_changed)
 
 	# Only the peer who OWNS this player activates their camera
@@ -65,6 +65,8 @@ func _ready() -> void:
 	if is_multiplayer_authority():
 		attribute_component.no_health.connect(_no_health)
 		
+	rollback_sync.process_settings()
+		
 func _health_changed():
 	print(str(name) + ": Health Changed!")
 
@@ -79,25 +81,41 @@ func _no_health():
 	#Leaderboard.request_add_kill(attribute_component.last_attacker)
 	spawn_manager.respawn_player(name)
 
+func _rollback_tick(delta, tick, is_fresh):
+	_apply_movement_from_input(delta)
+
+
 func _physics_process(delta: float) -> void:
 	if not get_tree().get_multiplayer().has_multiplayer_peer():
 		return
-
+	
+	_apply_movement_from_input(delta)
 	## Apply aim for all instances
 	#rotation.y = player_input.body_rotation_y
 	#head.rotation.x = player_input.head_rotation_x
 	#sync_rotation.rpc(head.rotation.x, rotation.y)
 	
-	
-	if is_multiplayer_authority():
-		# --- UPDATE CROUCH STATE (FIX) ---
+	#
+	#if is_multiplayer_authority():
+#
+		#move_and_slide()
+func _force_update_is_on_floor():
+	var old_velocity = velocity
+	velocity = Vector3.ZERO
+	move_and_slide()
+	velocity = old_velocity
+
+
+func _apply_movement_from_input(delta):
+			# --- UPDATE CROUCH STATE (FIX) ---
 		#is_crouching = player_input.crouch
 		#_apply_crouch()
-
+		
+		_force_update_is_on_floor()
+		
 		if not is_on_floor():
 			velocity += get_gravity() * delta
-
-		if player_input.jump_input and is_on_floor():
+		elif player_input.jump_input and is_on_floor():
 			velocity.y = JUMP_VELOCITY
 
 		var input_dir := player_input.input_dir
@@ -116,8 +134,18 @@ func _physics_process(delta: float) -> void:
 		else:
 			velocity.x = move_toward(velocity.x, 0, calc_speed)
 			velocity.z = move_toward(velocity.z, 0, calc_speed)
-
+		
+		velocity *= NetworkTime.physics_factor
 		move_and_slide()
+		velocity /= NetworkTime.physics_factor
+	
+
+
+
+
+
+
+
 
 func apply_knockback(force: Vector3) -> void:
 	# Optional: ignore tiny forces
