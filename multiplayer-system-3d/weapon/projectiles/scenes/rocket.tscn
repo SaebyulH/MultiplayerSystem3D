@@ -83,5 +83,6 @@ mesh = SubResource("CylinderMesh_84p14")
 surface_material_override/0 = SubResource("StandardMaterial3D_21xcj")
 
 [node name="ExplosionComponent" parent="." index="4" unique_id=473826993]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -1.0117035)
 splash_damage = 90
 splash_radius = 3.0

@@ -37,6 +37,13 @@
 transparency = 1
 albedo_color = Color(0.003921569, 0.003921569, 0.60784316, 0.7254902)
 
+[sub_resource type="CylinderMesh" id="CylinderMesh_b26j0"]
+bottom_radius = 0.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_nvl01"]
+render_priority = 0
+shader = ExtResource("10_n7ghd")
+
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_4flbx"]
 properties/0/path = NodePath(".:global_position")
 properties/0/spawn = true
@@ -59,13 +66,6 @@ properties/2/replication_mode = 1
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1jxqw"]
 radius = 0.6459961
 height = 2.194336
-
-[sub_resource type="CylinderMesh" id="CylinderMesh_b26j0"]
-bottom_radius = 0.0
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_nvl01"]
-render_priority = 0
-shader = ExtResource("10_n7ghd")
 
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_2ieo8"]
 properties/0/path = NodePath(".:current_weapon_index")
@@ -109,6 +109,11 @@ shape = SubResource("CapsuleShape3D_kb6p2")
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1851645100]
 mesh = SubResource("CapsuleMesh_wodsf")
 surface_material_override/0 = SubResource("StandardMaterial3D_4flbx")
+
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="." unique_id=2008329147]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.694179, 0)
+mesh = SubResource("CylinderMesh_b26j0")
+surface_material_override/0 = SubResource("ShaderMaterial_nvl01")
 
 [node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=500684838]
 replication_config = SubResource("SceneReplicationConfig_4flbx")
@@ -174,11 +179,6 @@ offset_right = 4.0
 offset_bottom = 4.0
 grow_horizontal = 2
 grow_vertical = 2
-
-[node name="MeshInstance3D2" type="MeshInstance3D" parent="." unique_id=2008329147]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.694179, 0)
-mesh = SubResource("CylinderMesh_b26j0")
-surface_material_override/0 = SubResource("ShaderMaterial_nvl01")
 
 [node name="Health" type="Label3D" parent="." unique_id=889122120 node_paths=PackedStringArray("attribute_component")]
 transform = Transform3D(0.24299446, 0, 0, 0, 0.24299446, 0, 0, 0, 0.24299446, 0, 1.5538131, -1.1377158)
@@ -288,3 +288,5 @@ mesh = SubResource("BoxMesh_32hag")
 [node name="Skin6" type="MeshInstance3D" parent="Body" unique_id=1170353479]
 transform = Transform3D(0.19128741, 0, 0, 0, 0.19128741, 0, 0, 0, 0.19128741, 0.10657835, -0.5957482, 0.00477314)
 mesh = SubResource("BoxMesh_32hag")
+
+[connection signal="health_changed" from="AttributeComponent" to="Health" method="_on_attribute_component_health_changed"]
