@@ -33,6 +33,7 @@ top_radius = 0.22
 bottom_radius = 0.201
 
 [node name="SimpleProjectile" unique_id=1706686187 instance=ExtResource("1_7rxcs")]
+explode_on_direct = false
 
 [node name="CollisionShape3D" parent="." index="0" unique_id=1810742212]
 shape = SubResource("CapsuleShape3D_7rxcs")

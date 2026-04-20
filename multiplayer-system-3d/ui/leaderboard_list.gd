@@ -25,7 +25,7 @@ func _process(delta: float) -> void:
 
 		var row := (
 			"%-12s  K:%-3d  D:%-3d  Streak:%-3d  DMG:%-5d  Self DMG:%-5d  Heal Others:%-4d Self Heal:%-4d"
-			% [player, kills, deaths, streak, damage, self_dam, heal_others, self_heal,]
+			% [player, kills, deaths, streak, int(damage), int(self_dam), int(heal_others), int(self_heal),]
 		)
 
 		add_item(row)

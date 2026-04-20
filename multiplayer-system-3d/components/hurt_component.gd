@@ -13,15 +13,15 @@ func _on_hurt_or_heal(hitbox_component: HitboxComponent) -> void:
 	if not is_multiplayer_authority():
 		return
 
-	var damage := hitbox_component.damage
+	var health_delta := hitbox_component.health_delta
 	var changer := _resolve_changer_name(hitbox_component)
 
 	var original_health := attribute_component.health
 
-	# Centralized damage handling (leaderboard + death logic included)
-	#attribute_component.apply_health_delta(damage, changer, str(get_parent().name))
+	# Centralized health_delta handling (leaderboard + death logic included)
+	#attribute_component.apply_health_delta(health_delta, changer, str(get_parent().name))
 	
-	attribute_component.health -=damage
+	attribute_component.apply_health_delta(health_delta, _resolve_changer_name(hitbox_component), get_parent().name)
 	print(
 		"Health of entity " + str(get_parent().name) +
 		": " + str(original_health) +
@@ -33,8 +33,8 @@ func _on_hurt_or_heal(hitbox_component: HitboxComponent) -> void:
 func _resolve_changer_name(hitbox_component: HitboxComponent) -> String:
 	var parent = hitbox_component.get_parent()
 
-	if parent != null and parent.has_method("get_player_name"):
-		return parent.get_player_name()
+	if parent != null and "shooter_name" in parent:
+		return parent.shooter_name
 
 	# fallback (works for NPCs or projectiles)
 	if parent != null:

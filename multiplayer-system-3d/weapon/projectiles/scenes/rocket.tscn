@@ -46,7 +46,6 @@ shape = SubResource("CapsuleShape3D_21xcj")
 
 [node name="HitboxComponent" parent="." index="2" unique_id=1963592485]
 transform = Transform3D(1.0812142, 0, 0, 0, 1.0812142, 0, 0, 0, 1.0812142, 0, 0, 0)
-damage = 1.0
 
 [node name="CollisionShape3D" parent="HitboxComponent" index="0" unique_id=1314331169]
 transform = Transform3D(-0.65413296, 5.718616e-08, 2.4996578e-15, -9.3951775e-23, -2.859308e-08, 0.65413296, 5.718616e-08, 0.65413296, 2.859308e-08, 4.7608577e-08, -2.3804288e-08, 0.54457814)
@@ -84,5 +83,4 @@ surface_material_override/0 = SubResource("StandardMaterial3D_21xcj")
 
 [node name="ExplosionComponent" parent="." index="4" unique_id=473826993]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -1.0117035)
-splash_damage = 90
 splash_radius = 3.0

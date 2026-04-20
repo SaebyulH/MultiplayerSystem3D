@@ -11,6 +11,8 @@
 [ext_resource type="Script" uid="uid://d2kgugh2o23ba" path="res://weapon/weapon_controller.gd" id="6_ebec5"]
 [ext_resource type="Script" uid="uid://cxit1cumphn3q" path="res://components/attribute_component.gd" id="7_1jxqw"]
 [ext_resource type="Resource" uid="uid://sbp4tib25r0k" path="res://weapon/uzi/uzi.tres" id="7_yllr7"]
+[ext_resource type="Script" uid="uid://baeb5xhwct2k6" path="res://player/control.gd" id="8_r7pn3"]
+[ext_resource type="AudioStream" uid="uid://exvh8mdgxfb8" path="res://assets/multikill-1.mp3" id="9_b8hi5"]
 [ext_resource type="Shader" uid="uid://7yui67a2adxs" path="res://assets/environment/new_shader.gdshader" id="10_n7ghd"]
 [ext_resource type="Resource" uid="uid://b7sksxja7iost" path="res://weapon/ak/ak.tres" id="11_2ieo8"]
 [ext_resource type="Resource" uid="uid://yx67ob4xh6nt" path="res://weapon/revolver/revolver.tres" id="11_yllr7"]
@@ -152,51 +154,6 @@ metadata/_custom_type_script = "uid://cg1glglog46jg"
 script = ExtResource("7_1jxqw")
 metadata/_custom_type_script = "uid://cxit1cumphn3q"
 
-[node name="Control" type="Control" parent="." unique_id=253939295]
-layout_mode = 3
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -20.0
-offset_top = -20.0
-offset_right = 20.0
-offset_bottom = 20.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="ColorRect" type="ColorRect" parent="Control" unique_id=1196059460]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -4.0
-offset_top = -4.0
-offset_right = 4.0
-offset_bottom = 4.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="Health" type="Label3D" parent="." unique_id=889122120 node_paths=PackedStringArray("attribute_component")]
-transform = Transform3D(0.24299446, 0, 0, 0, 0.24299446, 0, 0, 0, 0.24299446, 0, 1.5538131, -1.1377158)
-billboard = 1
-modulate = Color(0, 0.99215686, 0.14901961, 1)
-text = "Health"
-font_size = 200
-script = ExtResource("3_dw050")
-attribute_component = NodePath("../AttributeComponent")
-
-[node name="Name" type="Label3D" parent="." unique_id=1590526754]
-unique_name_in_owner = true
-transform = Transform3D(0.2331078, 0, 0, 0, 0.2331078, 0, 0, 0, 0.2331078, 0, 1.3307463, -1.1581887)
-billboard = 1
-modulate = Color(0.16206557, 0.1620656, 0.16206557, 1)
-text = "Name"
-font_size = 200
-
 [node name="WeaponController" type="Node" parent="." unique_id=1956241137 node_paths=PackedStringArray("weapon_model_parent", "projectile_spawn_parent", "player_input", "recoil", "_parent_player", "_raycast")]
 script = ExtResource("6_ebec5")
 weapons = Array[ExtResource("3_i3pqv")]([ExtResource("14_tqiix"), ExtResource("15_e7oew"), ExtResource("16_c35mf"), ExtResource("17_65viv"), ExtResource("18_x7c3f"), ExtResource("19_bjvpn"), ExtResource("20_uw77l"), ExtResource("21_rptt4"), ExtResource("22_r7pn3"), ExtResource("22_rptt4"), ExtResource("24_2uvqg"), ExtResource("23_b8hi5"), ExtResource("11_2ieo8"), ExtResource("7_yllr7"), ExtResource("11_yllr7")])
@@ -212,15 +169,6 @@ metadata/_custom_type_script = "uid://d2kgugh2o23ba"
 replication_config = SubResource("SceneReplicationConfig_2ieo8")
 
 [node name="AudioStreamPlayer3D" type="AudioStreamPlayer3D" parent="WeaponController" unique_id=1913075685]
-
-[node name="Ammo" type="Label3D" parent="." unique_id=1596545662 node_paths=PackedStringArray("weapon_controller")]
-transform = Transform3D(0.17002402, 0, 0, 0, 0.17002402, 0, 0, 0, 0.17002402, 0, 0.43927395, -1.9124358)
-billboard = 1
-modulate = Color(1, 0.7809618, 0.4214451, 1)
-text = "Ammo"
-font_size = 200
-script = ExtResource("4_ebec5")
-weapon_controller = NodePath("../WeaponController")
 
 [node name="Body" type="Node3D" parent="." unique_id=598024395 node_paths=PackedStringArray("head")]
 script = ExtResource("13_kb6p2")
@@ -277,6 +225,32 @@ transform = Transform3D(0.07898294, 0, 0, 0, 0.07898294, 0, 0, 0, 0.07898294, -0
 mesh = SubResource("BoxMesh_wodsf")
 surface_material_override/0 = SubResource("StandardMaterial3D_kb6p2")
 
+[node name="Ammo" type="Label3D" parent="Body/Recoil/Head" unique_id=1596545662 node_paths=PackedStringArray("weapon_controller")]
+transform = Transform3D(0.17002402, 0, 0, 0, 0.17002402, 0, 0, 0, 0.17002402, 0, -0.22578335, -1.9124358)
+billboard = 1
+modulate = Color(1, 0.7809618, 0.4214451, 1)
+text = "Ammo"
+font_size = 200
+script = ExtResource("4_ebec5")
+weapon_controller = NodePath("../../../../WeaponController")
+
+[node name="Health" type="Label3D" parent="Body/Recoil/Head" unique_id=889122120 node_paths=PackedStringArray("attribute_component")]
+transform = Transform3D(0.24299446, 0, 0, 0, 0.24299446, 0, 0, 0, 0.24299446, 0, 0.8887558, -1.1377158)
+billboard = 1
+modulate = Color(0, 0.99215686, 0.14901961, 1)
+text = "Health"
+font_size = 200
+script = ExtResource("3_dw050")
+attribute_component = NodePath("../../../../AttributeComponent")
+
+[node name="Name" type="Label3D" parent="Body/Recoil/Head" unique_id=1590526754]
+unique_name_in_owner = true
+transform = Transform3D(0.2331078, 0, 0, 0, 0.2331078, 0, 0, 0, 0.2331078, 0, 0.665689, -1.1581887)
+billboard = 1
+modulate = Color(0.16206557, 0.1620656, 0.16206557, 1)
+text = "Name"
+font_size = 200
+
 [node name="Skin2" type="MeshInstance3D" parent="Body" unique_id=583927625]
 transform = Transform3D(0.42766076, 0, 0, 0, 0.42766076, 0, 0, 0, 0.42766076, 0, 0.15616643, 0.020640612)
 mesh = SubResource("BoxMesh_kb6p2")
@@ -289,4 +263,41 @@ mesh = SubResource("BoxMesh_32hag")
 transform = Transform3D(0.19128741, 0, 0, 0, 0.19128741, 0, 0, 0, 0.19128741, 0.10657835, -0.5957482, 0.00477314)
 mesh = SubResource("BoxMesh_32hag")
 
-[connection signal="health_changed" from="AttributeComponent" to="Health" method="_on_attribute_component_health_changed"]
+[node name="Control" type="Control" parent="Body" unique_id=253939295]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ColorRect" type="ColorRect" parent="Body/Control" unique_id=1196059460]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -4.0
+offset_top = -4.0
+offset_right = 4.0
+offset_bottom = 4.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Control" type="Control" parent="." unique_id=1999980197]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("8_r7pn3")
+base_sound = ExtResource("9_b8hi5")
+
+[node name="Label" type="Label" parent="Control" unique_id=955451218]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 23.0
+
+[connection signal="health_changed" from="AttributeComponent" to="Body/Recoil/Head/Health" method="_on_attribute_component_health_changed"]

@@ -251,11 +251,11 @@ func _request_fire() -> void:
 			var result = space_state.intersect_ray(query)
 			if result:
 				# Tell all peers to show the hit effect at this position.
-				_on_hitscan_hit.rpc(result.position, result.normal)
+				_on_hitscan_hit.rpc(result.position, result.normal, current_weapon_model.get_node("Muzzle").global_position)
 				
 				# Apply damage only on the server.
 				if result.collider.has_method("change_health"):
-					result.collider.change_health(-weapon.hitscan_damage)
+					result.collider.change_health(-weapon.hitscan_damage, _parent_player.name)
 
 	elif weapon.bullet_type == Weapon.BulletType.PROJECTILE:
 		for shot_dir in weapon.multishot_data:

@@ -10,6 +10,8 @@ var _self_damage: Dictionary = {}
 var _self_heal: Dictionary = {}
 var _heal_others: Dictionary = {}
 
+signal killstreak_changed(killer_name: String)
+
 # -------------------------
 # PLAYER MANAGEMENT
 # -------------------------
@@ -46,9 +48,9 @@ func _add_kill(killer_name: String):
 
 	_player_kills[killer_name] = _player_kills.get(killer_name, 0) + 1
 	_killstreak[killer_name] = _killstreak.get(killer_name, 0) + 1
-
-	print("Kill:", killer_name)
 	_sync_scores()
+	killstreak_changed.emit(killer_name)
+	print("Kill:", killer_name)
 
 
 @rpc("any_peer", "call_local")
@@ -64,7 +66,7 @@ func _add_death(dead_player_name: String):
 
 
 @rpc("any_peer", "call_local")
-func _add_damage(player_name: String, amount: int):
+func _add_damage(player_name: String, amount: float):
 	if not multiplayer.is_server():
 		return
 
@@ -77,7 +79,7 @@ func _add_damage(player_name: String, amount: int):
 # -------------------------
 
 @rpc("any_peer", "call_local")
-func _add_self_damage(player_name: String, amount: int):
+func _add_self_damage(player_name: String, amount: float):
 	if not multiplayer.is_server():
 		return
 
@@ -86,7 +88,7 @@ func _add_self_damage(player_name: String, amount: int):
 
 
 @rpc("any_peer", "call_local")
-func _add_self_heal(player_name: String, amount: int):
+func _add_self_heal(player_name: String, amount: float):
 	if not multiplayer.is_server():
 		return
 
@@ -95,7 +97,7 @@ func _add_self_heal(player_name: String, amount: int):
 
 
 @rpc("any_peer", "call_local")
-func _add_heal_other(healer_name: String, amount: int):
+func _add_heal_other(healer_name: String, amount: float):
 	if not multiplayer.is_server():
 		return
 
@@ -120,6 +122,7 @@ func _sync_scores():
 
 @rpc("any_peer", "reliable")
 func _receive_scores(kills: Dictionary,
+
 	deaths: Dictionary,
 	killstreak: Dictionary,
 	damage: Dictionary,
@@ -134,6 +137,7 @@ func _receive_scores(kills: Dictionary,
 	_self_damage = self_damage.duplicate()
 	_self_heal = self_heal.duplicate()
 	_heal_others = heal_others.duplicate()
+	
 
 # -------------------------
 # REQUEST API
@@ -148,16 +152,16 @@ func request_add_kill(killer_name: String):
 func request_add_death(dead_name: String):
 	_add_death.rpc_id(1, dead_name)
 
-func request_add_damage(player_name: String, amount: int):
+func request_add_damage(player_name: String, amount: float):
 	_add_damage.rpc_id(1, player_name, amount)
 
-func request_add_self_damage(player_name: String, amount: int):
+func request_add_self_damage(player_name: String, amount: float):
 	_add_self_damage.rpc_id(1, player_name, amount)
 
-func request_add_self_heal(player_name: String, amount: int):
+func request_add_self_heal(player_name: String, amount: float):
 	_add_self_heal.rpc_id(1, player_name, amount)
 
-func request_add_heal_other(healer_name: String, amount: int):
+func request_add_heal_other(healer_name: String, amount: float):
 	_add_heal_other.rpc_id(1, healer_name, amount)
 
 # -------------------------
@@ -192,14 +196,14 @@ func get_deaths(player_name: String) -> int:
 func get_killstreak(player_name: String) -> int:
 	return _killstreak.get(player_name, 0)
 
-func get_damage(player_name: String) -> int:
+func get_damage(player_name: String) -> float:
 	return _damage_dealt.get(player_name, 0)
 
-func get_self_damage(player_name: String) -> int:
+func get_self_damage(player_name: String) -> float:
 	return _self_damage.get(player_name, 0)
 
-func get_self_heal(player_name: String) -> int:
+func get_self_heal(player_name: String) -> float:
 	return _self_heal.get(player_name, 0)
 
-func get_heal_others(player_name: String) -> int:
+func get_heal_others(player_name: String) -> float:
 	return _heal_others.get(player_name, 0)

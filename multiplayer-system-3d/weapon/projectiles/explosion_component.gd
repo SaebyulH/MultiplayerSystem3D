@@ -3,7 +3,7 @@ class_name ExplosionComponent
 
 var exploded := false
 
-@export var splash_damage := 100
+@export var splash_health_delta := -100
 @export var splash_radius := 5.0
 @export var self_damage_percent := 0.25
 @export var knockback_force := 20.0
@@ -49,18 +49,18 @@ func explode():
 
 		var falloff :float = 1.0 - clamp(dist / splash_radius, 0.0, 1.0)
 
-		var dmg :float= splash_damage * falloff
+		var del :float= splash_health_delta * falloff
 
 		# self damage handling
 		if player.name == shooter_name:
-			dmg = dmg * self_damage_percent
+			del = del * self_damage_percent
 
 		# -------------------------
 		# APPLY DAMAGE (NEW SYSTEM)
 		# -------------------------
-		attr.apply_health_delta(dmg, shooter_name, player.name)
+		attr.apply_health_delta(del, shooter_name, player.name)
 
-		print("Explosion damaged ", player.name, " for ", dmg)
+		print("Explosion damaged ", player.name, " for ", del)
 
 		# KNOCKBACK
 		var dir := to_player.normalized()

@@ -30,7 +30,7 @@ var spawn_manager: SpawnManager
 
 var pitch := 0.0
 
-@onready var leaderboard = get_node("/root/Main/World1/LeaderboardComponent")
+#@onready var leaderboard: LeaderboardComponent = get_node("/root/Main/World1/LeaderboardComponent")
 
 
 
@@ -73,8 +73,8 @@ func reset():
 #executed only by authority anyway
 func _no_health():
 	print(name + " KILLED BY " + attribute_component.last_attacker)
-	leaderboard.request_add_death(name)
-	leaderboard.request_add_kill(attribute_component.last_attacker)
+	#Leaderboard.request_add_death(name)
+	#Leaderboard.request_add_kill(attribute_component.last_attacker)
 	spawn_manager.respawn_player(name)
 
 func _physics_process(delta: float) -> void:
@@ -125,5 +125,6 @@ func apply_knockback(force: Vector3) -> void:
 	# Apply knockback
 	velocity += force
 
-func change_health(health: float):
-	attribute_component.health += health
+func change_health(health: float, changer: String):
+	attribute_component.apply_health_delta(health, changer, self.name)
+	#Leaderboard.request_add_death(changer)

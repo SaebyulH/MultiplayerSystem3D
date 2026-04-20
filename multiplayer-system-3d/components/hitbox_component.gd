@@ -2,7 +2,7 @@ extends Area3D
 class_name HitboxComponent
 
 signal hit_hurtbox(hurtbox)
-@export var damage: float = 10.0
+@export var health_delta: float = -10.0
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
@@ -18,5 +18,9 @@ func _on_hurtbox_entered(hurtbox: Area3D):
 	#print("Hitbox named " + name + " has hit Hurtbox named" + hurtbox.name)
 	hurtbox.hurt_or_heal.emit(self)
 	#print("Hurtbox named " + hurtbox.name + " has been hit by Hurtbox named" + name)
-
-	
+#
+#func get_shooter() -> String:
+	#if "shooter_id" in get_parent():
+		#return get_parent().shooter_id
+	#else:
+		#return "UNKNOWN"
