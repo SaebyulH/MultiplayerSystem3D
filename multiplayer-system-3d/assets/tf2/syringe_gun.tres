@@ -7,7 +7,7 @@
 [ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="5_28hkp"]
 [ext_resource type="PackedScene" uid="uid://b10rhr5f0qk1u" path="res://assets/tf2/syringe_gun.tscn" id="6_ubd5f"]
 
-[sub_resource type="Resource" id="Resource_evut6"]
+[sub_resource type="Resource" id="Resource_ubd5f"]
 script = ExtResource("3_q3l56")
 metadata/_custom_type_script = "uid://yvevtn4dsddy"
 
@@ -19,8 +19,7 @@ post_shoot_delay = 0.105
 mag_size = 40
 mag_current = 40
 reload_time = 1.305
-recoil_data = SubResource("Resource_evut6")
-speed_multiplier = 1.1
+recoil_data = SubResource("Resource_ubd5f")
 bullet_type = 1
 projectile_scene = ExtResource("2_ubd5f")
 weapon_model = ExtResource("6_ubd5f")

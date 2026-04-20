@@ -5,6 +5,8 @@ signal health_changed
 signal no_health
 var last_attacker = "NONE"
 
+var killstreak := 0
+
 @export var starting_health = 100.0
 
 @export var health: float = 100.0:
@@ -16,3 +18,7 @@ var last_attacker = "NONE"
 
 func reset_health():
 	health = starting_health
+
+func reset():
+	reset_health()
+	last_attacker = "NONE"

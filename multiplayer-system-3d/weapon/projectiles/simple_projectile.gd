@@ -16,7 +16,7 @@ enum HurtboxHitMode {DISSAPEAR, PASSTHROUGH}
 @export var hurtbox_hit_mode: HurtboxHitMode
 @export var explode_on_direct := false
 
-@export var _world_hit: Area3D
+#@export var _world_hit: Area3D
 enum WorldHitMode {DISSAPEAR, NOTHING}
 @export var world_hit_mode: WorldHitMode
 @export var explode_on_world := false
@@ -57,7 +57,7 @@ func _on_hit_hurtbox(hurtbox: HurtboxComponent) -> void:
 	elif hurtbox_hit_mode == HurtboxHitMode.PASSTHROUGH:
 		pass
 
-func _on_world_hit_body_entered(body: Node3D) -> void:
+func _on_body_entered(body: Node3D) -> void:
 	if not is_multiplayer_authority():
 		return
 	# Optional: ignore shooter

@@ -8,7 +8,7 @@
 [ext_resource type="AudioStream" uid="uid://u24dsvsfmlr2" path="res://assets/sounds/gun_sound.mp3" id="6_o2w50"]
 [ext_resource type="PackedScene" uid="uid://c1q8vj6e4wyxx" path="res://assets/tf2/grenade_launcher.tscn" id="7_eafuw"]
 
-[sub_resource type="Resource" id="Resource_evut6"]
+[sub_resource type="Resource" id="Resource_eafuw"]
 script = ExtResource("3_cg6fv")
 metadata/_custom_type_script = "uid://yvevtn4dsddy"
 
@@ -21,8 +21,7 @@ mag_size = 4
 mag_current = 4
 reload_individually = true
 reload_time = 0.9
-recoil_data = SubResource("Resource_evut6")
-speed_multiplier = 0.7
+recoil_data = SubResource("Resource_eafuw")
 bullet_type = 1
 projectile_scene = ExtResource("2_eafuw")
 weapon_model = ExtResource("7_eafuw")

@@ -1,132 +1,80 @@
 [gd_scene format=3 uid="uid://daan6liu8ej2"]
 
-[ext_resource type="Script" uid="uid://dvjbk5m0gpfc6" path="res://weapon/projectiles/simple_projectile.gd" id="1_q8s5m"]
-[ext_resource type="Script" uid="uid://y07sya4qpxdb" path="res://components/hitbox_component.gd" id="2_nnrg0"]
-[ext_resource type="Script" uid="uid://c3053ldj8qbgo" path="res://weapon/projectiles/explosion_component.gd" id="3_w2u7x"]
+[ext_resource type="PackedScene" uid="uid://6mr0d18yn8po" path="res://weapon/projectiles/scenes/simple_projectile.tscn" id="1_7rxcs"]
 
-[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_vafdq"]
-radius = 0.6357422
-height = 2.9394531
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_7rxcs"]
+radius = 0.14404297
+height = 2.21875
 
-[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_a85iw"]
-properties/0/path = NodePath(".:global_transform")
-properties/0/spawn = true
-properties/0/replication_mode = 1
-properties/1/path = NodePath(".:shooter_name")
-properties/1/spawn = true
-properties/1/replication_mode = 2
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_eq6sh"]
+radius = 0.21582031
+height = 1.6748047
 
-[sub_resource type="CylinderMesh" id="CylinderMesh_q8s5m"]
-height = 2.955
+[sub_resource type="CylinderMesh" id="CylinderMesh_7rxcs"]
+top_radius = 0.338
+bottom_radius = 0.338
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vafdq"]
-transparency = 1
-albedo_color = Color(1, 1, 1, 0.13333334)
-metallic = 0.35
-roughness = 0.8
-emission = Color(0.85268945, 0.71366084, 0.3015667, 1)
-emission_energy_multiplier = 21.81
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_7rxcs"]
+albedo_color = Color(0.82321197, 0.82321197, 0.82321185, 0.84705883)
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_nnrg0"]
-top_radius = 0.13
+bottom_radius = 0.329
+height = 0.439
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_q8s5m"]
+albedo_color = Color(1, 0.34509805, 0.29803923, 1)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_eq6sh"]
+top_radius = 0.122
 bottom_radius = 0.0
-height = 2.955
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_w2u7x"]
-albedo_color = Color(0.2751906, 0.23600492, 0.2285972, 1)
-metallic = 0.35
-roughness = 0.8
-emission = Color(0.85268945, 0.71366084, 0.3015667, 1)
-emission_energy_multiplier = 21.81
+[sub_resource type="CylinderMesh" id="CylinderMesh_q8s5m"]
+top_radius = 0.22
+bottom_radius = 0.201
 
-[sub_resource type="CylinderMesh" id="CylinderMesh_xug51"]
-height = 1.078
+[node name="SimpleProjectile" unique_id=1706686187 instance=ExtResource("1_7rxcs")]
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ss17q"]
-albedo_color = Color(0, 0, 0, 1)
+[node name="CollisionShape3D" parent="." index="0" unique_id=1810742212]
+shape = SubResource("CapsuleShape3D_7rxcs")
 
-[sub_resource type="CylinderShape3D" id="CylinderShape3D_4mfb8"]
-height = 1.2714844
-radius = 0.31152344
+[node name="CollisionShape3D" parent="HitboxComponent" parent_id_path=PackedInt32Array(1963592485) index="0" unique_id=1314331169]
+shape = SubResource("CapsuleShape3D_eq6sh")
 
-[sub_resource type="SphereMesh" id="SphereMesh_vwtsb"]
-radius = 1.0
-height = 2.0
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." index="4" unique_id=1974507183]
+transform = Transform3D(3.0130277e-16, -6.4932415e-09, -0.05514933, -0.055149324, -6.4932415e-09, 0, -2.4106535e-09, 0.14854805, -2.4106537e-09, 0, 0, 0.04156494)
+mesh = SubResource("CylinderMesh_7rxcs")
+surface_material_override/0 = SubResource("StandardMaterial3D_7rxcs")
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_8gdsr"]
-transparency = 1
-cull_mode = 2
-albedo_color = Color(1, 0.48235294, 0.14901961, 0.5529412)
-emission_enabled = true
-emission = Color(0.6862745, 0.6862745, 0.30588236, 1)
-emission_energy_multiplier = 2.31
-
-[sub_resource type="CylinderShape3D" id="CylinderShape3D_ntmfp"]
-height = 0.6142578
-radius = 0.13964844
-
-[node name="SimpleProjectile" type="RigidBody3D" unique_id=1706686187 node_paths=PackedStringArray("_hitbox_component", "_explosion_component", "_world_hit")]
-collision_layer = 0
-mass = 0.005
-continuous_cd = true
-linear_velocity = Vector3(0, 0, -20)
-script = ExtResource("1_q8s5m")
-_hitbox_component = NodePath("HitboxComponent")
-_explosion_component = NodePath("ExplosionComponent")
-_world_hit = NodePath("WorldHit")
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1810742212]
-transform = Transform3D(-0.17557995, 1.5349688e-08, 6.709562e-16, -2.726652e-23, -7.674845e-09, 0.17557995, 1.5349688e-08, 0.17557995, 7.674845e-09, 0, 0, 0)
-shape = SubResource("CapsuleShape3D_vafdq")
-
-[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=879365148]
-replication_config = SubResource("SceneReplicationConfig_a85iw")
-
-[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1005610509]
-transform = Transform3D(-0.0793208, 6.934445e-09, 3.031142e-16, -2.9114878e-23, -3.4672225e-09, 0.0793208, 6.934445e-09, 0.0793208, 3.4672225e-09, 0, 0, 0.023368523)
-mesh = SubResource("CylinderMesh_q8s5m")
-surface_material_override/0 = SubResource("StandardMaterial3D_vafdq")
-
-[node name="MeshInstance3D3" type="MeshInstance3D" parent="." unique_id=1400244391]
-transform = Transform3D(-0.0793208, 6.934445e-09, 3.031142e-16, -2.9114878e-23, -3.4672225e-09, 0.0793208, 6.934445e-09, 0.0793208, 3.4672225e-09, 0, 0, -0.19325274)
+[node name="MeshInstance3D7" type="MeshInstance3D" parent="." index="5" unique_id=118766335]
+transform = Transform3D(2.606297e-16, -3.9504084e-09, -0.04770468, -0.04770468, -3.9504084e-09, 0, -2.0852375e-09, 0.09037481, -2.085238e-09, 0, 0, -0.12259674)
 mesh = SubResource("CylinderMesh_nnrg0")
-surface_material_override/0 = SubResource("StandardMaterial3D_w2u7x")
+surface_material_override/0 = SubResource("StandardMaterial3D_q8s5m")
 
-[node name="MeshInstance3D2" type="MeshInstance3D" parent="." unique_id=710307630]
-transform = Transform3D(-0.03040064, 1.116246e-08, 1.1617212e-16, -4.7210383e-24, -5.58123e-09, 0.030400636, 2.6577083e-09, 0.12768367, 1.3288541e-09, 0, 0, 0.19144809)
-mesh = SubResource("CylinderMesh_xug51")
-surface_material_override/0 = SubResource("StandardMaterial3D_ss17q")
+[node name="MeshInstance3D9" type="MeshInstance3D" parent="." index="6" unique_id=1197277141]
+transform = Transform3D(3.717372e-16, -5.6344835e-09, -0.06804138, -0.06804138, -5.6344835e-09, 0, -2.9741827e-09, 0.12890196, -2.9741831e-09, 0, 0, 0.17990875)
+mesh = SubResource("CylinderMesh_nnrg0")
+surface_material_override/0 = SubResource("StandardMaterial3D_q8s5m")
 
-[node name="MeshInstance3D4" type="MeshInstance3D" parent="." unique_id=1541448739]
-transform = Transform3D(-0.062217105, 9.474559e-10, 2.3775466e-16, -9.661946e-24, -4.7372795e-10, 0.062217094, 5.439192e-09, 0.010837632, 2.719596e-09, 0, 0, 0.25594774)
-mesh = SubResource("CylinderMesh_xug51")
-surface_material_override/0 = SubResource("StandardMaterial3D_ss17q")
+[node name="MeshInstance3D5" type="MeshInstance3D" parent="." index="7" unique_id=1990260210]
+transform = Transform3D(5.810134e-16, -3.9300088e-10, -0.10634651, -0.10634651, -3.9300088e-10, 0, -4.648553e-09, 0.008990811, -4.6485535e-09, 0, 0, -0.09880066)
+material_override = SubResource("StandardMaterial3D_q8s5m")
+mesh = SubResource("CylinderMesh_7rxcs")
 
-[node name="HitboxComponent" type="Area3D" parent="." unique_id=1963592485]
-transform = Transform3D(1.3817533, 0, 0, 0, 1.3817533, 0, 0, 0, 1.3817533, 0, 0, 0)
-collision_layer = 8
-collision_mask = 4
-script = ExtResource("2_nnrg0")
-metadata/_custom_type_script = "uid://y07sya4qpxdb"
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="." index="8" unique_id=307544453]
+transform = Transform3D(3.5315342e-16, -5.3528058e-09, -0.064639874, -0.06463987, -5.3528058e-09, 0, -2.8254983e-09, 0.12245792, -2.8254985e-09, 0, 0, -0.24272156)
+mesh = SubResource("CylinderMesh_eq6sh")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="HitboxComponent" unique_id=1314331169]
-transform = Transform3D(-0.26722383, 2.3361451e-08, 1.0211614e-15, -6.006611e-23, -1.1680725e-08, 0.26722383, 2.3361451e-08, 0.26722383, 1.1680725e-08, 0, 0, 0)
-shape = SubResource("CylinderShape3D_4mfb8")
+[node name="MeshInstance3D3" type="MeshInstance3D" parent="." index="9" unique_id=1784661598]
+transform = Transform3D(1.806682e-16, -2.7384182e-09, -0.03306883, -0.033068825, -2.7384182e-09, 0, -1.4454842e-09, 0.06264771, -1.4454843e-09, 0, 0, 0.25723267)
+mesh = SubResource("CylinderMesh_q8s5m")
+surface_material_override/0 = SubResource("StandardMaterial3D_7rxcs")
 
-[node name="ExplosionComponent" type="Node3D" parent="." unique_id=473826993]
-script = ExtResource("3_w2u7x")
-splash_radius = 3.0
+[node name="MeshInstance3D4" type="MeshInstance3D" parent="." index="10" unique_id=63284064]
+transform = Transform3D(5.6863175e-16, -2.893937e-10, -0.104080215, -0.10408021, -2.893937e-10, 0, -4.54949e-09, 0.006620556, -4.549491e-09, 0, 0, 0.32833862)
+mesh = SubResource("CylinderMesh_q8s5m")
+surface_material_override/0 = SubResource("StandardMaterial3D_q8s5m")
 
-[node name="Radius" type="MeshInstance3D" parent="ExplosionComponent" unique_id=843273335]
-visible = false
-mesh = SubResource("SphereMesh_vwtsb")
-surface_material_override/0 = SubResource("StandardMaterial3D_8gdsr")
-
-[node name="WorldHit" type="Area3D" parent="." unique_id=1393887937]
-collision_layer = 0
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="WorldHit" unique_id=456719943]
-transform = Transform3D(-0.7273189, 6.358424e-08, 2.7793552e-15, -1.5401576e-22, -3.179212e-08, 0.7273189, 6.358424e-08, 0.7273189, 3.179212e-08, 0, 0, 0)
-shape = SubResource("CylinderShape3D_ntmfp")
-
-[connection signal="body_entered" from="WorldHit" to="." method="_on_world_hit_body_entered"]
+[node name="MeshInstance3D8" type="MeshInstance3D" parent="." index="11" unique_id=1187941152]
+transform = Transform3D(1.1053421e-15, -5.625417e-10, -0.20231767, -0.20231766, -5.625417e-10, 0, -8.8435845e-09, 0.012869453, -8.843586e-09, 0, 0, 0.16168213)
+mesh = SubResource("CylinderMesh_q8s5m")
+surface_material_override/0 = SubResource("StandardMaterial3D_q8s5m")

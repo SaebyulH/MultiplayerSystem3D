@@ -51,3 +51,4 @@ func respawn_player(player_name):
 	
 	var player = spawn_parent.get_node(path)
 	player.global_position = get_random_spawn_location()
+	player.reset()

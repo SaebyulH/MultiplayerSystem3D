@@ -5,13 +5,19 @@ var _reload_timer: float = 0.0
 var _pending_fire: bool = false
 var _pre_fire_timer: float = 0.0
 
+signal mag_changed(current: int, max: int)
+signal weapon_changed(index: int, weapon: Weapon)
+
 @export var weapons: Array[Weapon]
+
+
 @export var current_weapon_index: int = 0:
 	set(value):
 		if value == current_weapon_index:
 			return
 		current_weapon_index = clamp(value, 0, weapons.size() - 1)
 		_on_weapon_index_changed()
+		_emit_weapon_changed()
 
 @export var weapon_model_parent: Node3D
 @export var projectile_spawn_parent: Node3D
@@ -23,12 +29,29 @@ var _pre_fire_timer: float = 0.0
 var current_weapon_model: Node3D
 var _fire_cooldown: float = 0.0
 var _fired_this_press: bool = false
+var reset_weapons: Array[Weapon]
+func reset():
+	current_weapon_index = 0
+	weapons = reset_weapons
+
+func _set_mag(value: int) -> void:
+	var weapon = weapons[current_weapon_index]
+	weapon.mag_current = clamp(value, 0, weapon.mag_size)
+	mag_changed.emit(weapon.mag_current, weapon.mag_size)
+	
+	
+func _emit_weapon_changed() -> void:
+	var weapon = weapons[current_weapon_index]
+	weapon_changed.emit(current_weapon_index, weapon)
+	mag_changed.emit(weapon.mag_current, weapon.mag_size)
 
 # ---------------------------------------------------------------------------
 # Lifecycle
 # ---------------------------------------------------------------------------
 
 func _ready() -> void:
+	reset_weapons = weapons
+	
 	if not weapons.is_empty() and weapons[current_weapon_index]:
 		spawn_weapon_model()
 
@@ -126,24 +149,28 @@ func previous_weapon_server() -> void:
 func start_reload() -> void:
 	if _is_reloading or weapons[current_weapon_index].has_infinite_ammo:
 		return
-	_pending_fire = false
+
 	var weapon = weapons[current_weapon_index]
 	if weapon.mag_current == weapon.mag_size:
 		return
+
 	_is_reloading = true
 	_reload_timer = weapon.reload_time
 	_play_sound(weapon.reload_sound)
+
+	# Optional:
+	mag_changed.emit(weapon.mag_current, weapon.mag_size)
 
 
 func _finish_reload() -> void:
 	var weapon = weapons[current_weapon_index]
 	if weapon.reload_individually:
-		weapon.mag_current += 1
-		_is_reloading      = false
-		start_reload() #if we want auto
+		_set_mag(weapon.mag_current + 1)
+		_is_reloading = false
+		start_reload()
 	else:
-		weapon.mag_current = weapon.mag_size
-		_is_reloading      = false
+		_set_mag(weapon.mag_size)
+		_is_reloading = false
 
 # ---------------------------------------------------------------------------
 # Firing — input side (owning client only, driven by PlayerInput RPC)
@@ -181,6 +208,7 @@ func _do_fire() -> void:
 	_pending_fire = false
 	if not weapons[current_weapon_index].has_infinite_ammo:
 		weapons[current_weapon_index].mag_current -= 1
+		mag_changed.emit(weapons[current_weapon_index].mag_current, weapons[current_weapon_index].mag_size)
 	_fire_cooldown = weapons[current_weapon_index].post_shoot_delay
 
 	# rpc_id(1) is silently dropped when you ARE peer 1 (host-as-player).

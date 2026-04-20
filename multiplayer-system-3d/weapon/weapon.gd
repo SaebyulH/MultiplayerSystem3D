@@ -13,7 +13,7 @@ class_name Weapon
 @export var reload_individually: bool = false
 @export var reload_time: float = 1.0
 @export var recoil_data: RecoilData = RecoilData.new()
-@export var speed_multiplier: float = 1.0
+@export var player_speed_multiplier: float = 1.0
 
 @export_group("Bullet")
 enum BulletType {HITSCAN, PROJECTILE}

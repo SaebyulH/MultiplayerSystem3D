@@ -2,7 +2,7 @@ extends CharacterBody3D
 class_name Player
 
 
-var speed = 7.5
+var speed = 5.0
 const JUMP_VELOCITY = 5.0
 
 
@@ -31,6 +31,9 @@ var spawn_manager: SpawnManager
 var pitch := 0.0
 
 @onready var leaderboard = get_node("/root/Main/World1/LeaderboardComponent")
+
+
+
 
 func _enter_tree() -> void:
 	#The Player Input node is controlled by the LOCAL
@@ -63,10 +66,12 @@ func _ready() -> void:
 func _health_changed():
 	print(str(name) + ": Health Changed!")
 
+func reset():
+	attribute_component.reset()
+	weapon_controller.reset()
+
 #executed only by authority anyway
 func _no_health():
-	
-	attribute_component.reset_health()
 	print(name + " KILLED BY " + attribute_component.last_attacker)
 	leaderboard.request_add_death(name)
 	leaderboard.request_add_kill(attribute_component.last_attacker)
@@ -99,7 +104,7 @@ func _physics_process(delta: float) -> void:
 		var right   := Vector3(cam_basis.x.x, 0, cam_basis.x.z).normalized()
 		var direction := (forward * input_dir.y + right * input_dir.x).normalized()
 
-		var calc_speed : float = speed * weapon_controller.weapons[weapon_controller.current_weapon_index].speed_multiplier
+		var calc_speed : float = speed * weapon_controller.weapons[weapon_controller.current_weapon_index].player_speed_multiplier
 		if is_crouching:
 			calc_speed *= crouch_speed_multiplier
 
@@ -122,44 +127,3 @@ func apply_knockback(force: Vector3) -> void:
 
 func change_health(health: float):
 	attribute_component.health += health
-
-#@rpc("any_peer", "call_remote")
-#func sync_rotation(head_x_rotation: float, body_y_rotation: float, player_name: String):
-	#print("Recieved Head Rotation!")
-	#if name == player_name:
-		#print("Applying Head Rotation from " + player_name + "To other instances")
-		#
-		#rotation.y = body_y_rotation
-		#head.rotation.x = head_x_rotation
-#
-
-
-#@rpc("any_peer", "call_remote")
-#func sync_crouch(head_x_rotation: float, body_y_rotation: float, player_name: String):
-	#print("Recieved Head Rotation from " + player_name)
-	#if name == player_name:
-		#
-		#rotation.y = body_y_rotation
-		#head.rotation.x = head_x_rotation
-
-
-#func _apply_crouch() -> void:
-	#var shape := $CollisionShape3D.shape as CapsuleShape3D
-	#if shape == null:
-		#return
-#
-	#var target_height = crouch_height if is_crouching else stand_height
-#
-	## capsule height is cylinder only
-	#var target_cylinder = target_height - (shape.radius * 2.0)
-#
-	#shape.height = lerp(shape.height, target_cylinder, 10.0 * get_process_delta_time())
-#
-	## IMPORTANT: do NOT scale collision shape
-#
-	## Visuals only (safe)
-	#var scale_factor := crouch_height / stand_height if is_crouching else 1.0
-	#$MeshInstance3D.scale = Vector3(1, scale_factor, 1)
-#
-	## Camera / head should NOT be world-scaled either
-	#head.position.y = (target_height * 0.9)
