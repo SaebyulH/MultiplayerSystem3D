@@ -235,6 +235,7 @@ func _request_fire() -> void:
 	var weapon = weapons[current_weapon_index]
 
 	if weapon.bullet_type == Weapon.BulletType.HITSCAN:
+		_flash_muzzle_flash.rpc(current_weapon_model.get_node("Muzzle").global_position)
 		for shot_dir in weapon.multishot_data:
 			# Transform the local shot direction into world space.
 			var world_dir: Vector3 = weapon_model_parent.global_transform.basis * shot_dir.normalized()
@@ -281,27 +282,89 @@ func _request_fire() -> void:
 	_apply_recoil_rpc.rpc(rolled)
 	# Play shoot sound on all peers.
 	_play_shoot_sound.rpc()
-	
 
 @rpc("call_local")
-func _on_hitscan_hit(hit_position: Vector3, hit_normal: Vector3) -> void:
-	var mesh_instance := MeshInstance3D.new()
-	var sphere_mesh := SphereMesh.new()
-	sphere_mesh.radius = 0.05
-	sphere_mesh.height = 0.1
-	mesh_instance.mesh = sphere_mesh
-
-	# Create black material
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(0, 0, 0)
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mesh_instance.material_override = mat
-
-	projectile_spawn_parent.add_child(mesh_instance)
-	mesh_instance.global_position = hit_position
+func _flash_muzzle_flash(start_position: Vector3):
+	# --- Muzzle flash ---
+	var muzzle_flash_scene = load("res://weapon/muzzle_flash.tscn")
+	var muzzle_flash = muzzle_flash_scene.instantiate()
+	projectile_spawn_parent.add_child(muzzle_flash)
 	
+	muzzle_flash.global_rotation = current_weapon_model.global_rotation
+	muzzle_flash.global_position = start_position
+
+
+	# Optional: adjust if your flash points along a different axis
+	# muzzle_flash.rotate_x(deg_to_rad(90))  # example correction
+	
+	muzzle_flash.fire()
+	# Free it later WITHOUT blocking
+	var duration := 0.1
+	if muzzle_flash.has_node("Sparks"):
+		var mp = muzzle_flash.get_node("Sparks")
+		duration = mp.lifetime
+
+	get_tree().create_timer(duration).timeout.connect(func():
+		if is_instance_valid(muzzle_flash):
+			muzzle_flash.queue_free()
+	)
+	
+@rpc("call_local")
+func _on_hitscan_hit(hit_position: Vector3, hit_normal: Vector3, start_position: Vector3) -> void:
+	
+	
+	
+	
+	# --- Bullet hole ---
+	var bullet_hole_scene = load("res://weapon/bullet_hole.tscn")
+	var bullet_hole = bullet_hole_scene.instantiate()
+	projectile_spawn_parent.add_child(bullet_hole)
+	bullet_hole.global_position = hit_position
+	bullet_hole.global_transform.basis = Basis(Quaternion(Vector3.UP, hit_normal))
+
+	# --- Tracer ---
+	var tracer_mat := StandardMaterial3D.new()
+	tracer_mat.albedo_color = Color(1.0, 0.588, 0.294, 1.0)
+	tracer_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	tracer_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+
+	var tracer_instance := MeshInstance3D.new()
+	var cylinder := CylinderMesh.new()
+	cylinder.top_radius = 0.01
+	cylinder.bottom_radius = 0.01
+	cylinder.radial_segments = 3
+	cylinder.rings = 1
+	cylinder.material = tracer_mat
+	tracer_instance.mesh = cylinder
+	tracer_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	projectile_spawn_parent.add_child(tracer_instance)
+
+	var distance = start_position.distance_to(hit_position)
+	#var duration = clamp(distance * 0.05, 0.05, 0.3)
+
+	var tween = get_tree().create_tween()
+	tween.tween_method(
+		func(t: float):
+			var current_start = start_position.lerp(hit_position, t)
+			var mid = current_start.lerp(hit_position, 0.5)
+			var dir = (hit_position - current_start)
+			var len = dir.length()
+			tracer_instance.global_position = mid
+			cylinder.height = len
+			if len > 0.001:
+				tracer_instance.global_transform.basis = Basis(
+					Quaternion(Vector3.UP, dir.normalized())
+				),
+		0.0, 1.0, distance * 0.05
+	)
+	tween.tween_callback(func(): tracer_instance.queue_free())
+
 	await get_tree().create_timer(7.0).timeout
-	mesh_instance.queue_free()
+	bullet_hole.queue_free()
+	
+	
+	
+	
 
 
 # Server → all peers. Exact values so randf never diverges between peers.

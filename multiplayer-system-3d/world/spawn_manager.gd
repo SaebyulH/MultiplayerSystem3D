@@ -33,7 +33,7 @@ func _add_player_to_game(network_id: int):
 	player_to_add.global_position = get_random_spawn_location()
 	
 
-	get_parent().leaderboard_component.request_add_player(str(network_id))
+	Leaderboard.request_add_player(str(network_id))
 	
 func get_random_spawn_location() -> Vector3:
 

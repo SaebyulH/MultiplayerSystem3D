@@ -2,7 +2,7 @@ extends Node3D
 
 @export var player_scene: PackedScene
 @export var leaderboard: ItemList
-@export var leaderboard_component: LeaderboardComponent
+#@export var leaderboard_component: LeaderboardComponent
 @export var spawn_parent: Node3D
 var map_path
 

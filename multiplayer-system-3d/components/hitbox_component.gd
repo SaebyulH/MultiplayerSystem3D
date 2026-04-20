@@ -16,7 +16,7 @@ func _on_hurtbox_entered(hurtbox: Area3D):
 	
 	hit_hurtbox.emit(hurtbox)
 	#print("Hitbox named " + name + " has hit Hurtbox named" + hurtbox.name)
-	hurtbox.hurt.emit(self)
+	hurtbox.hurt_or_heal.emit(self)
 	#print("Hurtbox named " + hurtbox.name + " has been hit by Hurtbox named" + name)
 
 	
