@@ -20,6 +20,11 @@ config/icon="res://assets/icon.svg"
 NetworkManager="*uid://c0kxtgivn4uom"
 Console="*uid://ouiu5xh1cs8n"
 Leaderboard="*uid://cawn7r8wbbqbx"
+NetworkTime="*uid://cnqdxyjptkfvp"
+NetworkTimeSynchronizer="*uid://5rmn2ik3kjo8"
+NetworkRollback="*uid://gas743comroj"
+NetworkEvents="*uid://bdmobxxptryj0"
+NetworkPerformance="*uid://cqgf7aqmjfoa3"
 
 [display]
 
@@ -28,7 +33,7 @@ window/size/viewport_height=540
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/console/plugin.cfg")
+enabled=PackedStringArray("res://addons/console/plugin.cfg", "res://addons/netfox.internals/plugin.cfg", "res://addons/netfox/plugin.cfg")
 
 [global_group]
 
