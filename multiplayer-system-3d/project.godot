@@ -19,7 +19,7 @@ config/icon="res://assets/icon.svg"
 
 NetworkManager="*uid://c0kxtgivn4uom"
 Console="*uid://ouiu5xh1cs8n"
-LeaderboardSingleton="*uid://cawn7r8wbbqbx"
+Leaderboard="*uid://cawn7r8wbbqbx"
 
 [display]
 
