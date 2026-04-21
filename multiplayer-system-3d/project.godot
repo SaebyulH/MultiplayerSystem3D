@@ -123,6 +123,13 @@ crouch={
 3d_physics/layer_3="HURTBOX"
 3d_physics/layer_4="HITBOX"
 
+[netfox]
+
+time/tickrate=60
+time/sync_sample_interval=0.01
+time/sync_to_physics=true
+rollback/input_redundancy=13
+
 [physics]
 
 3d/physics_engine="Jolt Physics"

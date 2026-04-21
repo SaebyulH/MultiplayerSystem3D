@@ -3,11 +3,9 @@
 [ext_resource type="PackedScene" uid="uid://6mr0d18yn8po" path="res://weapon/projectiles/scenes/simple_projectile.tscn" id="1_3xfof"]
 [ext_resource type="Texture2D" uid="uid://dwiaf1wkakpuu" path="res://assets/pngimg.com - flame_PNG13246.png" id="2_bmawj"]
 
-[sub_resource type="SphereShape3D" id="SphereShape3D_3xfof"]
+[sub_resource type="SphereShape3D" id="SphereShape3D_3g12b"]
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_bmawj"]
-
-[sub_resource type="SphereShape3D" id="SphereShape3D_3g12b"]
 
 [node name="SimpleProjectile" unique_id=1706686187 instance=ExtResource("1_3xfof")]
 mass = 0.1
@@ -19,22 +17,15 @@ lifetime = 1.0
 hurtbox_hit_mode = 1
 explode_on_direct = false
 
-[node name="CollisionShape3D" parent="." index="0" unique_id=1810742212]
-transform = Transform3D(-1.9915623e-08, -0.45561633, -1.9915623e-08, 0, -1.9915623e-08, 0.45561633, -0.45561633, 1.9915623e-08, 8.705396e-16, 0, 0, 0)
-shape = SubResource("SphereShape3D_3xfof")
-
-[node name="HitboxComponent" parent="." index="2" unique_id=1963592485]
-damage = 3.0
-
-[node name="CollisionShape3D" parent="HitboxComponent" index="0" unique_id=1314331169]
-transform = Transform3D(-8.9304926e-08, -2.0430586, -8.930491e-08, 0, -8.930491e-08, 2.0430586, -2.0430586, 8.9304926e-08, 3.9036424e-15, 0, 0, 0)
-shape = SubResource("SphereShape3D_bmawj")
-
-[node name="CollisionShape3D" parent="WorldHit" parent_id_path=PackedInt32Array(1393887937) index="0" unique_id=456719943]
+[node name="WorldHit#CollisionShape3D" type="CollisionShape3D" parent="." index="0" unique_id=1810742212]
 transform = Transform3D(-5.6137345e-08, -1.2842728, -5.6137345e-08, 0, -5.6137345e-08, 1.2842728, -1.2842728, 5.6137345e-08, 2.4538413e-15, 0, 0, 0)
 shape = SubResource("SphereShape3D_3g12b")
 
-[node name="Sprite3D" type="Sprite3D" parent="." index="5" unique_id=1209424551]
+[node name="CollisionShape3D" parent="HitboxComponent" parent_id_path=PackedInt32Array(1963592485) index="0" unique_id=1314331169]
+transform = Transform3D(-8.9304926e-08, -2.0430586, -8.930491e-08, 0, -8.930491e-08, 2.0430586, -2.0430586, 8.9304926e-08, 3.9036424e-15, 0, 0, 0)
+shape = SubResource("SphereShape3D_bmawj")
+
+[node name="Sprite3D" type="Sprite3D" parent="." index="4" unique_id=1209424551]
 transform = Transform3D(0.27148384, 0, 0, 0, 0.16319643, 0, 0, 0, 0.27148384, 0, 0, 0)
 modulate = Color(1, 1, 1, 0.21960784)
 billboard = 1
