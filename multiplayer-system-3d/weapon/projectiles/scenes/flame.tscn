@@ -21,7 +21,10 @@ explode_on_direct = false
 transform = Transform3D(-5.6137345e-08, -1.2842728, -5.6137345e-08, 0, -5.6137345e-08, 1.2842728, -1.2842728, 5.6137345e-08, 2.4538413e-15, 0, 0, 0)
 shape = SubResource("SphereShape3D_3g12b")
 
-[node name="CollisionShape3D" parent="HitboxComponent" parent_id_path=PackedInt32Array(1963592485) index="0" unique_id=1314331169]
+[node name="HitboxComponent" parent="." index="3" unique_id=1963592485]
+health_delta = -4.0
+
+[node name="CollisionShape3D" parent="HitboxComponent" index="0" unique_id=1314331169]
 transform = Transform3D(-8.9304926e-08, -2.0430586, -8.930491e-08, 0, -8.930491e-08, 2.0430586, -2.0430586, 8.9304926e-08, 3.9036424e-15, 0, 0, 0)
 shape = SubResource("SphereShape3D_bmawj")
 

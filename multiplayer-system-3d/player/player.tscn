@@ -32,6 +32,7 @@
 [ext_resource type="Resource" uid="uid://2k6bc50djxgg" path="res://assets/tf2/smg.tres" id="22_rptt4"]
 [ext_resource type="Resource" uid="uid://ebu6fuc2cymc" path="res://assets/tf2/knife.tres" id="23_b8hi5"]
 [ext_resource type="Resource" uid="uid://cy4bt3f2aadno" path="res://assets/tf2/spy_revolver.tres" id="24_2uvqg"]
+[ext_resource type="PackedScene" uid="uid://em68gvqy1f84" path="res://weapon/muzzle_flash.tscn" id="27_5ejfk"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_kb6p2"]
 
@@ -86,6 +87,7 @@ properties/0/replication_mode = 1
 
 [node name="Player" type="CharacterBody3D" unique_id=51620469 node_paths=PackedStringArray("player_input", "rollback_sync", "attribute_component", "body", "weapon_controller")]
 collision_layer = 2
+collision_mask = 3
 script = ExtResource("1_4flbx")
 player_input = NodePath("PlayerInput")
 rollback_sync = NodePath("RollbackSynchronizer")
@@ -163,6 +165,8 @@ metadata/_custom_type_script = "uid://d2kgugh2o23ba"
 replication_config = SubResource("SceneReplicationConfig_2ieo8")
 
 [node name="AudioStreamPlayer3D" type="AudioStreamPlayer3D" parent="WeaponController" unique_id=1913075685]
+
+[node name="MuzzleFlash" parent="WeaponController" unique_id=419486684 instance=ExtResource("27_5ejfk")]
 
 [node name="Body" type="Node3D" parent="." unique_id=598024395 node_paths=PackedStringArray("head")]
 script = ExtResource("13_kb6p2")

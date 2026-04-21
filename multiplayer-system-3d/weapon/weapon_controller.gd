@@ -79,11 +79,17 @@ func _ready() -> void:
 	# its own mutable state. Without this, both the client-side and server-side
 	# WeaponController nodes share the same Weapon objects in memory, causing
 	# mag_current mutations from one peer to silently affect the other.
+	# Each WeaponController gets its own deep copy so client/server mutations
+	# never share the same Resource object.
 	var deep_weapons: Array[Weapon] = []
+	var orig_weapons: Array[Weapon] = []
 	for w: Weapon in weapons:
-		deep_weapons.append(w.duplicate(true) as Weapon)
+		var copy: Weapon = w.duplicate(true) as Weapon
+		deep_weapons.append(copy)
+		# Keep a second independent copy as the reset baseline BEFORE any mutation
+		orig_weapons.append(w.duplicate(true) as Weapon)
 	weapons        = deep_weapons
-	_reset_weapons = deep_weapons.duplicate()
+	_reset_weapons = orig_weapons
 
 	if not weapons.is_empty() and weapons[current_weapon_index] != null:
 		spawn_weapon_model()
@@ -107,6 +113,7 @@ func _physics_process(delta: float) -> void:
 
 	# Consume the one-frame release flag
 	if player_input.fire_just_released:
+		
 		_fired_this_press          = false
 		player_input.fire_just_released = false
 
@@ -122,7 +129,12 @@ func _tick_timers(delta: float) -> void:
 			_finish_reload()
 
 	if _pending_fire:
-		_pre_fire_timer -= delta
+		if player_input.fire_held:
+			_pre_fire_timer -= delta
+		else:
+			# optional: cancel if they released early
+			_pending_fire = false
+
 		if _pre_fire_timer <= 0.0:
 			_pending_fire = false
 			if multiplayer.is_server():
@@ -278,8 +290,13 @@ func _finish_reload() -> void:
 		_set_mag(weapon.mag_current + 1)
 		_is_reloading = false
 		if weapon.mag_current < weapon.mag_size:
-			# Continue reloading one more round
-			_begin_reload_server()
+			if player_input.fire_held:
+				# interrupt reload cleanly
+				_is_reloading = false
+				return
+			else:
+				_begin_reload_server()
+			
 		else:
 			_confirm_reload_done.rpc(weapon.mag_current)
 	else:
@@ -337,20 +354,13 @@ func _try_fire() -> void:
 
 
 func _do_fire_client() -> void:
-	# Pure client only. Optimistic UI update + send RPC to server.
-	# Does NOT set _fire_cooldown — that would block fire_intent's server
-	# validation gate if RTT is short enough for the RPC to arrive before
-	# the next frame clears it.
-	var weapon: Weapon = weapons[current_weapon_index]
-
-	# Optimistic display deduction — clamped so UI never goes negative
-	if not weapon.has_infinite_ammo:
-		weapon.mag_current = max(weapon.mag_current - 1, 0)
-		mag_changed.emit(weapon.mag_current, weapon.mag_size)
-
-	# Set local cooldown so the client doesn't spam RPCs while waiting
-	_fire_cooldown = weapon.post_shoot_delay
-
+	# Pure client only. Send the intent RPC and set local cooldown to prevent
+	# spamming. Do NOT touch mag_current here — the server is the only source
+	# of truth for ammo. It calls _set_mag after every accepted shot, which
+	# emits mag_changed and updates this client's display via the RPC path.
+	# Optimistic deduction causes drift because the server may silently reject
+	# shots (cooldown, reload state) and there is no rollback of the deduction.
+	_fire_cooldown = weapons[current_weapon_index].post_shoot_delay
 	fire_intent.rpc_id(1, current_weapon_index)
 
 # ---------------------------------------------------------------------------
@@ -394,6 +404,11 @@ func fire_intent(weapon_index: int) -> void:
 		_set_mag(weapon.mag_current - 1)
 	_fire_cooldown = weapon.post_shoot_delay
 
+	# Push authoritative mag to all peers so client display stays in sync.
+	# Without this, a rejected shot (due to server-side cooldown or reload
+	# state mismatch) leaves the client's display one count too low forever.
+	_sync_mag.rpc(weapons[current_weapon_index].mag_current)
+
 	_execute_fire(weapon)
 
 	# Roll recoil once on server so all peers get identical values
@@ -405,6 +420,16 @@ func fire_intent(weapon_index: int) -> void:
 	)
 	_apply_recoil_rpc.rpc(rolled)
 	_play_shoot_sound.rpc()
+
+
+@rpc("call_local")
+func _sync_mag(authoritative_mag: int) -> void:
+	# Server → all peers. Overwrites the local mag display with the server's
+	# count after every accepted shot. This is the reconciliation step that
+	# prevents client display drift from silent server rejections.
+	var weapon: Weapon = weapons[current_weapon_index]
+	weapon.mag_current = clamp(authoritative_mag, 0, weapon.mag_size)
+	mag_changed.emit(weapon.mag_current, weapon.mag_size)
 
 
 func _execute_fire(weapon: Weapon) -> void:
@@ -452,23 +477,26 @@ func _execute_fire(weapon: Weapon) -> void:
 
 @rpc("call_local")
 func _flash_muzzle_flash(start_position: Vector3) -> void:
-	var muzzle_flash_scene: PackedScene = load("res://weapon/muzzle_flash.tscn") as PackedScene
-	var muzzle_flash: Node              = muzzle_flash_scene.instantiate()
-	projectile_spawn_parent.add_child(muzzle_flash)
-
+	#var muzzle_flash_scene: PackedScene = load("res://weapon/muzzle_flash.tscn") as PackedScene
+	#var muzzle_flash: Node              = muzzle_flash_scene.instantiate()
+	
+	
+	
+	#projectile_spawn_parent.add_child(muzzle_flash)
+	var muzzle_flash = $MuzzleFlash
 	muzzle_flash.global_rotation = current_weapon_model.global_rotation
 	muzzle_flash.global_position = start_position
 	muzzle_flash.fire()
 
-	var duration: float = 0.1
-	if muzzle_flash.has_node("Sparks"):
-		var sparks: GPUParticles3D = muzzle_flash.get_node("Sparks") as GPUParticles3D
-		duration = sparks.lifetime
+	#var duration: float = 0.1
+	#if muzzle_flash.has_node("Sparks"):
+		#var sparks: GPUParticles3D = muzzle_flash.get_node("Sparks") as GPUParticles3D
+		#duration = sparks.lifetime
 
-	get_tree().create_timer(duration).timeout.connect(func() -> void:
-		if is_instance_valid(muzzle_flash):
-			muzzle_flash.queue_free()
-	)
+	#get_tree().create_timer(duration).timeout.connect(func() -> void:
+		#if is_instance_valid(muzzle_flash):
+			#muzzle_flash.hide()
+	#)
 
 
 @rpc("call_local")
