@@ -6,9 +6,64 @@
 [ext_resource type="Texture2D" uid="uid://b0fhvpsbv0bnp" path="res://effects/debris.png" id="2_jh1to"]
 [ext_resource type="Texture2D" uid="uid://7liph1bkabn2" path="res://effects/smoke2.png" id="3_cu3rm"]
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_82o5v"]
-shading_mode = 0
-albedo_color = Color(0.3325305, 0.21458477, 0.1454317, 1)
+[sub_resource type="Shader" id="Shader_yc3gs"]
+code = "// NOTE: Shader automatically converted from Godot Engine 4.6.2.stable's StandardMaterial3D.
+
+shader_type spatial;
+render_mode blend_mix, depth_draw_opaque, cull_back, diffuse_burley, specular_schlick_ggx, unshaded;
+
+uniform vec4 albedo : source_color;
+uniform sampler2D texture_albedo : source_color, filter_linear_mipmap, repeat_enable;
+uniform ivec2 albedo_texture_size;
+uniform float point_size : hint_range(0.1, 128.0, 0.1);
+
+uniform float roughness : hint_range(0.0, 1.0);
+uniform sampler2D texture_metallic : hint_default_white, filter_linear_mipmap, repeat_enable;
+uniform vec4 metallic_texture_channel;
+uniform sampler2D texture_roughness : hint_roughness_r, filter_linear_mipmap, repeat_enable;
+
+uniform float specular : hint_range(0.0, 1.0, 0.01);
+uniform float metallic : hint_range(0.0, 1.0, 0.01);
+
+uniform vec3 uv1_scale;
+uniform vec3 uv1_offset;
+uniform vec3 uv2_scale;
+uniform vec3 uv2_offset;
+
+void vertex() {
+	UV = UV * uv1_scale.xy + uv1_offset.xy;
+}
+
+void fragment() {
+	vec2 base_uv = UV;
+
+	vec4 albedo_tex = texture(texture_albedo, base_uv);
+	ALBEDO = albedo.rgb * albedo_tex.rgb;
+
+	float metallic_tex = dot(texture(texture_metallic, base_uv), metallic_texture_channel);
+	METALLIC = metallic_tex * metallic;
+	SPECULAR = specular;
+
+	vec4 roughness_texture_channel = vec4(1.0, 0.0, 0.0, 0.0);
+	float roughness_tex = dot(texture(texture_roughness, base_uv), roughness_texture_channel);
+	ROUGHNESS = roughness_tex * roughness;
+}
+"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_i4ulv"]
+render_priority = 0
+shader = SubResource("Shader_yc3gs")
+shader_parameter/albedo = Color(0.3325305, 0.21458477, 0.1454317, 1)
+shader_parameter/albedo_texture_size = Vector2i(0, 0)
+shader_parameter/point_size = 1.0
+shader_parameter/roughness = 1.0
+shader_parameter/metallic_texture_channel = Vector4(1, 0, 0, 0)
+shader_parameter/specular = 0.5
+shader_parameter/metallic = 0.0
+shader_parameter/uv1_scale = Vector3(1, 1, 1)
+shader_parameter/uv1_offset = Vector3(0, 0, 0)
+shader_parameter/uv2_scale = Vector3(1, 1, 1)
+shader_parameter/uv2_offset = Vector3(0, 0, 0)
 
 [sub_resource type="Curve" id="Curve_m0j43"]
 _data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
@@ -32,13 +87,66 @@ top_radius = 0.015
 bottom_radius = 0.0
 radial_segments = 4
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_16q0m"]
-transparency = 1
-cull_mode = 2
-shading_mode = 0
-albedo_color = Color(1.6411257, 1.2177738, 0, 1)
-albedo_texture = ExtResource("2_jh1to")
-billboard_keep_scale = true
+[sub_resource type="Shader" id="Shader_ol7ih"]
+code = "// NOTE: Shader automatically converted from Godot Engine 4.6.2.stable's StandardMaterial3D.
+
+shader_type spatial;
+render_mode blend_mix, depth_draw_opaque, cull_disabled, diffuse_burley, specular_schlick_ggx, unshaded;
+
+uniform vec4 albedo : source_color;
+uniform sampler2D texture_albedo : source_color, filter_linear_mipmap, repeat_enable;
+uniform ivec2 albedo_texture_size;
+uniform float point_size : hint_range(0.1, 128.0, 0.1);
+
+uniform float roughness : hint_range(0.0, 1.0);
+uniform sampler2D texture_metallic : hint_default_white, filter_linear_mipmap, repeat_enable;
+uniform vec4 metallic_texture_channel;
+uniform sampler2D texture_roughness : hint_roughness_r, filter_linear_mipmap, repeat_enable;
+
+uniform float specular : hint_range(0.0, 1.0, 0.01);
+uniform float metallic : hint_range(0.0, 1.0, 0.01);
+
+uniform vec3 uv1_scale;
+uniform vec3 uv1_offset;
+uniform vec3 uv2_scale;
+uniform vec3 uv2_offset;
+
+void vertex() {
+	UV = UV * uv1_scale.xy + uv1_offset.xy;
+}
+
+void fragment() {
+	vec2 base_uv = UV;
+
+	vec4 albedo_tex = texture(texture_albedo, base_uv);
+	ALBEDO = albedo.rgb * albedo_tex.rgb;
+
+	float metallic_tex = dot(texture(texture_metallic, base_uv), metallic_texture_channel);
+	METALLIC = metallic_tex * metallic;
+	SPECULAR = specular;
+
+	vec4 roughness_texture_channel = vec4(1.0, 0.0, 0.0, 0.0);
+	float roughness_tex = dot(texture(texture_roughness, base_uv), roughness_texture_channel);
+	ROUGHNESS = roughness_tex * roughness;
+	ALPHA *= albedo.a * albedo_tex.a;
+}
+"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_qqpr7"]
+render_priority = 0
+shader = SubResource("Shader_ol7ih")
+shader_parameter/albedo = Color(1.6411257, 1.2177738, 0, 1)
+shader_parameter/texture_albedo = ExtResource("2_jh1to")
+shader_parameter/albedo_texture_size = Vector2i(1024, 1024)
+shader_parameter/point_size = 1.0
+shader_parameter/roughness = 1.0
+shader_parameter/metallic_texture_channel = Vector4(1, 0, 0, 0)
+shader_parameter/specular = 0.5
+shader_parameter/metallic = 0.0
+shader_parameter/uv1_scale = Vector3(1, 1, 1)
+shader_parameter/uv1_offset = Vector3(0, 0, 0)
+shader_parameter/uv2_scale = Vector3(1, 1, 1)
+shader_parameter/uv2_offset = Vector3(0, 0, 0)
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_e0qm4"]
 particle_flag_align_y = true
@@ -52,20 +160,122 @@ scale_curve = SubResource("CurveTexture_cu3rm")
 
 [sub_resource type="QuadMesh" id="QuadMesh_jh1to"]
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_3tyj0"]
-transparency = 1
-cull_mode = 2
-diffuse_mode = 3
-vertex_color_use_as_albedo = true
-albedo_color = Color(1.6411257, 0.6185747, 0, 1)
-albedo_texture = ExtResource("1_jhnc4")
-emission_enabled = true
-emission = Color(0.92947316, 0.4565437, 0.25278953, 1)
-billboard_mode = 3
-billboard_keep_scale = true
-particles_anim_h_frames = 1
-particles_anim_v_frames = 1
-particles_anim_loop = false
+[sub_resource type="Shader" id="Shader_f0vdp"]
+code = "// NOTE: Shader automatically converted from Godot Engine 4.6.2.stable's StandardMaterial3D.
+
+shader_type spatial;
+render_mode blend_mix, depth_draw_opaque, cull_disabled, diffuse_toon, specular_schlick_ggx;
+
+uniform vec4 albedo : source_color;
+uniform sampler2D texture_albedo : source_color, filter_linear_mipmap, repeat_enable;
+uniform ivec2 albedo_texture_size;
+uniform float point_size : hint_range(0.1, 128.0, 0.1);
+
+uniform float roughness : hint_range(0.0, 1.0);
+uniform sampler2D texture_metallic : hint_default_white, filter_linear_mipmap, repeat_enable;
+uniform vec4 metallic_texture_channel;
+uniform sampler2D texture_roughness : hint_roughness_r, filter_linear_mipmap, repeat_enable;
+
+uniform float specular : hint_range(0.0, 1.0, 0.01);
+uniform float metallic : hint_range(0.0, 1.0, 0.01);
+
+uniform int particles_anim_h_frames : hint_range(1, 128);
+uniform int particles_anim_v_frames : hint_range(1, 128);
+uniform bool particles_anim_loop;
+
+uniform sampler2D texture_emission : source_color, hint_default_black, filter_linear_mipmap, repeat_enable;
+uniform vec4 emission : source_color;
+uniform float emission_energy : hint_range(0.0, 100.0, 0.01);
+
+uniform vec3 uv1_scale;
+uniform vec3 uv1_offset;
+uniform vec3 uv2_scale;
+uniform vec3 uv2_offset;
+
+void vertex() {
+	UV = UV * uv1_scale.xy + uv1_offset.xy;
+
+	// Billboard Mode: Particles
+	mat4 mat_world = mat4(
+			normalize(INV_VIEW_MATRIX[0]),
+			normalize(INV_VIEW_MATRIX[1]),
+			normalize(INV_VIEW_MATRIX[2]),
+			MODEL_MATRIX[3]);
+	mat_world = mat_world * mat4(
+			vec4(cos(INSTANCE_CUSTOM.x), -sin(INSTANCE_CUSTOM.x), 0.0, 0.0),
+			vec4(sin(INSTANCE_CUSTOM.x), cos(INSTANCE_CUSTOM.x), 0.0, 0.0),
+			vec4(0.0, 0.0, 1.0, 0.0),
+			vec4(0.0, 0.0, 0.0, 1.0));
+	MODELVIEW_MATRIX = VIEW_MATRIX * mat_world;
+
+	// Billboard Keep Scale: Enabled
+	MODELVIEW_MATRIX = MODELVIEW_MATRIX * mat4(
+			vec4(length(MODEL_MATRIX[0].xyz), 0.0, 0.0, 0.0),
+			vec4(0.0, length(MODEL_MATRIX[1].xyz), 0.0, 0.0),
+			vec4(0.0, 0.0, length(MODEL_MATRIX[2].xyz), 0.0),
+			vec4(0.0, 0.0, 0.0, 1.0));
+
+	MODELVIEW_NORMAL_MATRIX = mat3(MODELVIEW_MATRIX);
+
+	float h_frames = float(particles_anim_h_frames);
+	float v_frames = float(particles_anim_v_frames);
+	float particle_total_frames = float(particles_anim_h_frames * particles_anim_v_frames);
+	float particle_frame = floor(INSTANCE_CUSTOM.z * float(particle_total_frames));
+	if (!particles_anim_loop) {
+		particle_frame = clamp(particle_frame, 0.0, particle_total_frames - 1.0);
+	} else {
+		particle_frame = mod(particle_frame, particle_total_frames);
+	}
+	UV /= vec2(h_frames, v_frames);
+	UV += vec2(mod(particle_frame, h_frames) / h_frames, floor((particle_frame + 0.5) / h_frames) / v_frames);
+}
+
+void fragment() {
+	vec2 base_uv = UV;
+
+	vec4 albedo_tex = texture(texture_albedo, base_uv);
+
+	// Vertex Color Use as Albedo: Enabled
+	albedo_tex *= COLOR;
+
+	ALBEDO = albedo.rgb * albedo_tex.rgb;
+
+	float metallic_tex = dot(texture(texture_metallic, base_uv), metallic_texture_channel);
+	METALLIC = metallic_tex * metallic;
+	SPECULAR = specular;
+
+	vec4 roughness_texture_channel = vec4(1.0, 0.0, 0.0, 0.0);
+	float roughness_tex = dot(texture(texture_roughness, base_uv), roughness_texture_channel);
+	ROUGHNESS = roughness_tex * roughness;
+
+	// Emission: Enabled
+	vec3 emission_tex = texture(texture_emission, base_uv).rgb;
+	// Emission Operator: Add
+	EMISSION = (emission.rgb + emission_tex) * emission_energy;
+	ALPHA *= albedo.a * albedo_tex.a;
+}
+"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_5lase"]
+render_priority = 0
+shader = SubResource("Shader_f0vdp")
+shader_parameter/albedo = Color(1.6411257, 0.6185747, 0, 1)
+shader_parameter/texture_albedo = ExtResource("1_jhnc4")
+shader_parameter/albedo_texture_size = Vector2i(1024, 1024)
+shader_parameter/point_size = 1.0
+shader_parameter/roughness = 1.0
+shader_parameter/metallic_texture_channel = Vector4(1, 0, 0, 0)
+shader_parameter/specular = 0.5
+shader_parameter/metallic = 0.0
+shader_parameter/particles_anim_h_frames = 1
+shader_parameter/particles_anim_v_frames = 1
+shader_parameter/particles_anim_loop = false
+shader_parameter/emission = Color(0.92947316, 0.4565437, 0.25278953, 1)
+shader_parameter/emission_energy = 1.0
+shader_parameter/uv1_scale = Vector3(1, 1, 1)
+shader_parameter/uv1_offset = Vector3(0, 0, 0)
+shader_parameter/uv2_scale = Vector3(1, 1, 1)
+shader_parameter/uv2_offset = Vector3(0, 0, 0)
 
 [sub_resource type="Curve" id="Curve_jh1to"]
 _data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(0.26996195, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
@@ -99,17 +309,111 @@ alpha_curve = SubResource("CurveTexture_16q0m")
 
 [sub_resource type="QuadMesh" id="QuadMesh_jhnc4"]
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cu3rm"]
-transparency = 1
-cull_mode = 2
-shading_mode = 0
-vertex_color_use_as_albedo = true
-albedo_texture = ExtResource("3_cu3rm")
-billboard_mode = 3
-billboard_keep_scale = true
-particles_anim_h_frames = 1
-particles_anim_v_frames = 1
-particles_anim_loop = false
+[sub_resource type="Shader" id="Shader_8t8nq"]
+code = "// NOTE: Shader automatically converted from Godot Engine 4.6.2.stable's StandardMaterial3D.
+
+shader_type spatial;
+render_mode blend_mix, depth_draw_opaque, cull_disabled, diffuse_burley, specular_schlick_ggx, unshaded;
+
+uniform vec4 albedo : source_color;
+uniform sampler2D texture_albedo : source_color, filter_linear_mipmap, repeat_enable;
+uniform ivec2 albedo_texture_size;
+uniform float point_size : hint_range(0.1, 128.0, 0.1);
+
+uniform float roughness : hint_range(0.0, 1.0);
+uniform sampler2D texture_metallic : hint_default_white, filter_linear_mipmap, repeat_enable;
+uniform vec4 metallic_texture_channel;
+uniform sampler2D texture_roughness : hint_roughness_r, filter_linear_mipmap, repeat_enable;
+
+uniform float specular : hint_range(0.0, 1.0, 0.01);
+uniform float metallic : hint_range(0.0, 1.0, 0.01);
+
+uniform int particles_anim_h_frames : hint_range(1, 128);
+uniform int particles_anim_v_frames : hint_range(1, 128);
+uniform bool particles_anim_loop;
+
+uniform vec3 uv1_scale;
+uniform vec3 uv1_offset;
+uniform vec3 uv2_scale;
+uniform vec3 uv2_offset;
+
+void vertex() {
+	UV = UV * uv1_scale.xy + uv1_offset.xy;
+
+	// Billboard Mode: Particles
+	mat4 mat_world = mat4(
+			normalize(INV_VIEW_MATRIX[0]),
+			normalize(INV_VIEW_MATRIX[1]),
+			normalize(INV_VIEW_MATRIX[2]),
+			MODEL_MATRIX[3]);
+	mat_world = mat_world * mat4(
+			vec4(cos(INSTANCE_CUSTOM.x), -sin(INSTANCE_CUSTOM.x), 0.0, 0.0),
+			vec4(sin(INSTANCE_CUSTOM.x), cos(INSTANCE_CUSTOM.x), 0.0, 0.0),
+			vec4(0.0, 0.0, 1.0, 0.0),
+			vec4(0.0, 0.0, 0.0, 1.0));
+	MODELVIEW_MATRIX = VIEW_MATRIX * mat_world;
+
+	// Billboard Keep Scale: Enabled
+	MODELVIEW_MATRIX = MODELVIEW_MATRIX * mat4(
+			vec4(length(MODEL_MATRIX[0].xyz), 0.0, 0.0, 0.0),
+			vec4(0.0, length(MODEL_MATRIX[1].xyz), 0.0, 0.0),
+			vec4(0.0, 0.0, length(MODEL_MATRIX[2].xyz), 0.0),
+			vec4(0.0, 0.0, 0.0, 1.0));
+
+	MODELVIEW_NORMAL_MATRIX = mat3(MODELVIEW_MATRIX);
+
+	float h_frames = float(particles_anim_h_frames);
+	float v_frames = float(particles_anim_v_frames);
+	float particle_total_frames = float(particles_anim_h_frames * particles_anim_v_frames);
+	float particle_frame = floor(INSTANCE_CUSTOM.z * float(particle_total_frames));
+	if (!particles_anim_loop) {
+		particle_frame = clamp(particle_frame, 0.0, particle_total_frames - 1.0);
+	} else {
+		particle_frame = mod(particle_frame, particle_total_frames);
+	}
+	UV /= vec2(h_frames, v_frames);
+	UV += vec2(mod(particle_frame, h_frames) / h_frames, floor((particle_frame + 0.5) / h_frames) / v_frames);
+}
+
+void fragment() {
+	vec2 base_uv = UV;
+
+	vec4 albedo_tex = texture(texture_albedo, base_uv);
+
+	// Vertex Color Use as Albedo: Enabled
+	albedo_tex *= COLOR;
+
+	ALBEDO = albedo.rgb * albedo_tex.rgb;
+
+	float metallic_tex = dot(texture(texture_metallic, base_uv), metallic_texture_channel);
+	METALLIC = metallic_tex * metallic;
+	SPECULAR = specular;
+
+	vec4 roughness_texture_channel = vec4(1.0, 0.0, 0.0, 0.0);
+	float roughness_tex = dot(texture(texture_roughness, base_uv), roughness_texture_channel);
+	ROUGHNESS = roughness_tex * roughness;
+	ALPHA *= albedo.a * albedo_tex.a;
+}
+"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_uk6yn"]
+render_priority = 0
+shader = SubResource("Shader_8t8nq")
+shader_parameter/albedo = Color(1, 1, 1, 1)
+shader_parameter/texture_albedo = ExtResource("3_cu3rm")
+shader_parameter/albedo_texture_size = Vector2i(1024, 1024)
+shader_parameter/point_size = 1.0
+shader_parameter/roughness = 1.0
+shader_parameter/metallic_texture_channel = Vector4(1, 0, 0, 0)
+shader_parameter/specular = 0.5
+shader_parameter/metallic = 0.0
+shader_parameter/particles_anim_h_frames = 1
+shader_parameter/particles_anim_v_frames = 1
+shader_parameter/particles_anim_loop = false
+shader_parameter/uv1_scale = Vector3(1, 1, 1)
+shader_parameter/uv1_offset = Vector3(0, 0, 0)
+shader_parameter/uv2_scale = Vector3(1, 1, 1)
+shader_parameter/uv2_offset = Vector3(0, 0, 0)
 
 [sub_resource type="Curve" id="Curve_va4mh"]
 _data = [Vector2(0, 0.25347322), 0.0, 0.0, 0, 0, Vector2(1, 0.034499288), 0.0, 0.0, 0, 0]
@@ -140,16 +444,85 @@ scale_max = 1.5999999
 scale_curve = SubResource("CurveTexture_xbh8s")
 alpha_curve = SubResource("CurveTexture_arak1")
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_m0j43"]
-transparency = 1
-blend_mode = 1
-cull_mode = 2
-shading_mode = 0
-vertex_color_use_as_albedo = true
-albedo_color = Color(1.6411257, 0.6185747, 0, 1)
-albedo_texture = ExtResource("2_82o5v")
-billboard_mode = 1
-billboard_keep_scale = true
+[sub_resource type="Shader" id="Shader_rixjc"]
+code = "// NOTE: Shader automatically converted from Godot Engine 4.6.2.stable's StandardMaterial3D.
+
+shader_type spatial;
+render_mode blend_add, depth_draw_opaque, cull_disabled, diffuse_burley, specular_schlick_ggx, unshaded;
+
+uniform vec4 albedo : source_color;
+uniform sampler2D texture_albedo : source_color, filter_linear_mipmap, repeat_enable;
+uniform ivec2 albedo_texture_size;
+uniform float point_size : hint_range(0.1, 128.0, 0.1);
+
+uniform float roughness : hint_range(0.0, 1.0);
+uniform sampler2D texture_metallic : hint_default_white, filter_linear_mipmap, repeat_enable;
+uniform vec4 metallic_texture_channel;
+uniform sampler2D texture_roughness : hint_roughness_r, filter_linear_mipmap, repeat_enable;
+
+uniform float specular : hint_range(0.0, 1.0, 0.01);
+uniform float metallic : hint_range(0.0, 1.0, 0.01);
+
+uniform vec3 uv1_scale;
+uniform vec3 uv1_offset;
+uniform vec3 uv2_scale;
+uniform vec3 uv2_offset;
+
+void vertex() {
+	UV = UV * uv1_scale.xy + uv1_offset.xy;
+
+	// Billboard Mode: Enabled
+	MODELVIEW_MATRIX = VIEW_MATRIX * mat4(
+			MAIN_CAM_INV_VIEW_MATRIX[0],
+			MAIN_CAM_INV_VIEW_MATRIX[1],
+			MAIN_CAM_INV_VIEW_MATRIX[2],
+			MODEL_MATRIX[3]);
+
+	// Billboard Keep Scale: Enabled
+	MODELVIEW_MATRIX = MODELVIEW_MATRIX * mat4(
+			vec4(length(MODEL_MATRIX[0].xyz), 0.0, 0.0, 0.0),
+			vec4(0.0, length(MODEL_MATRIX[1].xyz), 0.0, 0.0),
+			vec4(0.0, 0.0, length(MODEL_MATRIX[2].xyz), 0.0),
+			vec4(0.0, 0.0, 0.0, 1.0));
+	MODELVIEW_NORMAL_MATRIX = mat3(MODELVIEW_MATRIX);
+}
+
+void fragment() {
+	vec2 base_uv = UV;
+
+	vec4 albedo_tex = texture(texture_albedo, base_uv);
+
+	// Vertex Color Use as Albedo: Enabled
+	albedo_tex *= COLOR;
+
+	ALBEDO = albedo.rgb * albedo_tex.rgb;
+
+	float metallic_tex = dot(texture(texture_metallic, base_uv), metallic_texture_channel);
+	METALLIC = metallic_tex * metallic;
+	SPECULAR = specular;
+
+	vec4 roughness_texture_channel = vec4(1.0, 0.0, 0.0, 0.0);
+	float roughness_tex = dot(texture(texture_roughness, base_uv), roughness_texture_channel);
+	ROUGHNESS = roughness_tex * roughness;
+	ALPHA *= albedo.a * albedo_tex.a;
+}
+"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_u3uhv"]
+render_priority = 0
+shader = SubResource("Shader_rixjc")
+shader_parameter/albedo = Color(1.6411257, 0.6185747, 0, 1)
+shader_parameter/texture_albedo = ExtResource("2_82o5v")
+shader_parameter/albedo_texture_size = Vector2i(1024, 1024)
+shader_parameter/point_size = 1.0
+shader_parameter/roughness = 1.0
+shader_parameter/metallic_texture_channel = Vector4(1, 0, 0, 0)
+shader_parameter/specular = 0.5
+shader_parameter/metallic = 0.0
+shader_parameter/uv1_scale = Vector3(1, 1, 1)
+shader_parameter/uv1_offset = Vector3(0, 0, 0)
+shader_parameter/uv2_scale = Vector3(1, 1, 1)
+shader_parameter/uv2_offset = Vector3(0, 0, 0)
 
 [sub_resource type="Curve" id="Curve_cu3rm"]
 _data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(0.62357414, 0.8255869), -0.75085855, -0.75085855, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
@@ -174,16 +547,73 @@ scale_min = 0.39999998
 scale_curve = SubResource("CurveTexture_82o5v")
 alpha_curve = SubResource("CurveTexture_jh1to")
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jh1to"]
-transparency = 1
-cull_mode = 2
-shading_mode = 0
-vertex_color_use_as_albedo = true
-albedo_color = Color(1.6411257, 0.6185747, 0, 1)
-albedo_texture = ExtResource("2_82o5v")
+[sub_resource type="Shader" id="Shader_bqgkx"]
+code = "// NOTE: Shader automatically converted from Godot Engine 4.6.2.stable's StandardMaterial3D.
+
+shader_type spatial;
+render_mode blend_mix, depth_draw_opaque, cull_disabled, diffuse_burley, specular_schlick_ggx, unshaded;
+
+uniform vec4 albedo : source_color;
+uniform sampler2D texture_albedo : source_color, filter_linear_mipmap, repeat_enable;
+uniform ivec2 albedo_texture_size;
+uniform float point_size : hint_range(0.1, 128.0, 0.1);
+
+uniform float roughness : hint_range(0.0, 1.0);
+uniform sampler2D texture_metallic : hint_default_white, filter_linear_mipmap, repeat_enable;
+uniform vec4 metallic_texture_channel;
+uniform sampler2D texture_roughness : hint_roughness_r, filter_linear_mipmap, repeat_enable;
+
+uniform float specular : hint_range(0.0, 1.0, 0.01);
+uniform float metallic : hint_range(0.0, 1.0, 0.01);
+
+uniform vec3 uv1_scale;
+uniform vec3 uv1_offset;
+uniform vec3 uv2_scale;
+uniform vec3 uv2_offset;
+
+void vertex() {
+	UV = UV * uv1_scale.xy + uv1_offset.xy;
+}
+
+void fragment() {
+	vec2 base_uv = UV;
+
+	vec4 albedo_tex = texture(texture_albedo, base_uv);
+
+	// Vertex Color Use as Albedo: Enabled
+	albedo_tex *= COLOR;
+
+	ALBEDO = albedo.rgb * albedo_tex.rgb;
+
+	float metallic_tex = dot(texture(texture_metallic, base_uv), metallic_texture_channel);
+	METALLIC = metallic_tex * metallic;
+	SPECULAR = specular;
+
+	vec4 roughness_texture_channel = vec4(1.0, 0.0, 0.0, 0.0);
+	float roughness_tex = dot(texture(texture_roughness, base_uv), roughness_texture_channel);
+	ROUGHNESS = roughness_tex * roughness;
+	ALPHA *= albedo.a * albedo_tex.a;
+}
+"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_pdkcr"]
+render_priority = 0
+shader = SubResource("Shader_bqgkx")
+shader_parameter/albedo = Color(1.6411257, 0.6185747, 0, 1)
+shader_parameter/texture_albedo = ExtResource("2_82o5v")
+shader_parameter/albedo_texture_size = Vector2i(1024, 1024)
+shader_parameter/point_size = 1.0
+shader_parameter/roughness = 1.0
+shader_parameter/metallic_texture_channel = Vector4(1, 0, 0, 0)
+shader_parameter/specular = 0.5
+shader_parameter/metallic = 0.0
+shader_parameter/uv1_scale = Vector3(1, 1, 1)
+shader_parameter/uv1_offset = Vector3(0, 0, 0)
+shader_parameter/uv2_scale = Vector3(1, 1, 1)
+shader_parameter/uv2_offset = Vector3(0, 0, 0)
 
 [sub_resource type="Curve" id="Curve_16q0m"]
-_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+_data = [Vector2(0.4157044, 1), 0.0, -0.020080753, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
 point_count = 2
 
 [sub_resource type="CurveTexture" id="CurveTexture_3tyj0"]
@@ -207,13 +637,70 @@ alpha_curve = SubResource("CurveTexture_3tyj0")
 [sub_resource type="TorusMesh" id="TorusMesh_e0qm4"]
 outer_radius = 0.455
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_e0qm4"]
-transparency = 1
-cull_mode = 2
-shading_mode = 0
-vertex_color_use_as_albedo = true
-albedo_color = Color(0.3739505, 0.3225144, 0.2240712, 0.20392157)
-albedo_texture = ExtResource("2_82o5v")
+[sub_resource type="Shader" id="Shader_5gi8n"]
+code = "// NOTE: Shader automatically converted from Godot Engine 4.6.2.stable's StandardMaterial3D.
+
+shader_type spatial;
+render_mode blend_mix, depth_draw_opaque, cull_disabled, diffuse_burley, specular_schlick_ggx, unshaded;
+
+uniform vec4 albedo : source_color;
+uniform sampler2D texture_albedo : source_color, filter_linear_mipmap, repeat_enable;
+uniform ivec2 albedo_texture_size;
+uniform float point_size : hint_range(0.1, 128.0, 0.1);
+
+uniform float roughness : hint_range(0.0, 1.0);
+uniform sampler2D texture_metallic : hint_default_white, filter_linear_mipmap, repeat_enable;
+uniform vec4 metallic_texture_channel;
+uniform sampler2D texture_roughness : hint_roughness_r, filter_linear_mipmap, repeat_enable;
+
+uniform float specular : hint_range(0.0, 1.0, 0.01);
+uniform float metallic : hint_range(0.0, 1.0, 0.01);
+
+uniform vec3 uv1_scale;
+uniform vec3 uv1_offset;
+uniform vec3 uv2_scale;
+uniform vec3 uv2_offset;
+
+void vertex() {
+	UV = UV * uv1_scale.xy + uv1_offset.xy;
+}
+
+void fragment() {
+	vec2 base_uv = UV;
+
+	vec4 albedo_tex = texture(texture_albedo, base_uv);
+
+	// Vertex Color Use as Albedo: Enabled
+	albedo_tex *= COLOR;
+
+	ALBEDO = albedo.rgb * albedo_tex.rgb;
+
+	float metallic_tex = dot(texture(texture_metallic, base_uv), metallic_texture_channel);
+	METALLIC = metallic_tex * metallic;
+	SPECULAR = specular;
+
+	vec4 roughness_texture_channel = vec4(1.0, 0.0, 0.0, 0.0);
+	float roughness_tex = dot(texture(texture_roughness, base_uv), roughness_texture_channel);
+	ROUGHNESS = roughness_tex * roughness;
+	ALPHA *= albedo.a * albedo_tex.a;
+}
+"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_j87x5"]
+render_priority = 0
+shader = SubResource("Shader_5gi8n")
+shader_parameter/albedo = Color(0.3739505, 0.3225144, 0.2240712, 0.20392157)
+shader_parameter/texture_albedo = ExtResource("2_82o5v")
+shader_parameter/albedo_texture_size = Vector2i(1024, 1024)
+shader_parameter/point_size = 1.0
+shader_parameter/roughness = 1.0
+shader_parameter/metallic_texture_channel = Vector4(1, 0, 0, 0)
+shader_parameter/specular = 0.5
+shader_parameter/metallic = 0.0
+shader_parameter/uv1_scale = Vector3(1, 1, 1)
+shader_parameter/uv1_offset = Vector3(0, 0, 0)
+shader_parameter/uv2_scale = Vector3(1, 1, 1)
+shader_parameter/uv2_offset = Vector3(0, 0, 0)
 
 [sub_resource type="Curve" id="Curve_arak1"]
 _data = [Vector2(0, 0), 0.0, 3.7160716, 0, 0, Vector2(0.48593354, 1), 0.0, 0.0, 0, 0, Vector2(1, 0.1330657), 0.35495135, 0.0, 0, 0]
@@ -237,9 +724,9 @@ alpha_curve = SubResource("CurveTexture_3tyj0")
 script = ExtResource("1_m0j43")
 
 [node name="Debris" type="GPUParticles3D" parent="." unique_id=14220078]
-material_override = SubResource("StandardMaterial3D_82o5v")
+material_override = SubResource("ShaderMaterial_i4ulv")
 emitting = false
-amount = 20
+amount = 15
 lifetime = 2.0
 one_shot = true
 explosiveness = 1.0
@@ -249,9 +736,9 @@ process_material = SubResource("ParticleProcessMaterial_jh1to")
 draw_pass_1 = SubResource("CylinderMesh_16q0m")
 
 [node name="GlowingDebris" type="GPUParticles3D" parent="." unique_id=1997808719]
-material_override = SubResource("StandardMaterial3D_16q0m")
+material_override = SubResource("ShaderMaterial_qqpr7")
 emitting = false
-amount = 20
+amount = 15
 lifetime = 2.0
 one_shot = true
 explosiveness = 1.0
@@ -261,9 +748,9 @@ process_material = SubResource("ParticleProcessMaterial_e0qm4")
 draw_pass_1 = SubResource("QuadMesh_jh1to")
 
 [node name="Cloud" type="GPUParticles3D" parent="." unique_id=1082139972]
-material_override = SubResource("StandardMaterial3D_3tyj0")
+material_override = SubResource("ShaderMaterial_5lase")
 emitting = false
-amount = 30
+amount = 6
 lifetime = 2.0
 one_shot = true
 explosiveness = 1.0
@@ -273,9 +760,9 @@ process_material = SubResource("ParticleProcessMaterial_m0j43")
 draw_pass_1 = SubResource("QuadMesh_jhnc4")
 
 [node name="Smoke" type="GPUParticles3D" parent="." unique_id=968186526]
-material_override = SubResource("StandardMaterial3D_cu3rm")
+material_override = SubResource("ShaderMaterial_uk6yn")
 emitting = false
-amount = 20
+amount = 10
 lifetime = 3.0
 one_shot = true
 explosiveness = 0.7
@@ -285,7 +772,7 @@ process_material = SubResource("ParticleProcessMaterial_16q0m")
 draw_pass_1 = SubResource("QuadMesh_jhnc4")
 
 [node name="Boom" type="GPUParticles3D" parent="." unique_id=1685257908]
-material_override = SubResource("StandardMaterial3D_m0j43")
+material_override = SubResource("ShaderMaterial_u3uhv")
 emitting = false
 amount = 1
 lifetime = 2.0
@@ -297,7 +784,7 @@ process_material = SubResource("ParticleProcessMaterial_cu3rm")
 draw_pass_1 = SubResource("QuadMesh_jhnc4")
 
 [node name="Ring" type="GPUParticles3D" parent="." unique_id=1144808914]
-material_override = SubResource("StandardMaterial3D_jh1to")
+material_override = SubResource("ShaderMaterial_pdkcr")
 emitting = false
 amount = 3
 lifetime = 2.0
@@ -309,12 +796,12 @@ process_material = SubResource("ParticleProcessMaterial_3tyj0")
 draw_pass_1 = SubResource("TorusMesh_e0qm4")
 
 [node name="SmokeRings" type="GPUParticles3D" parent="." unique_id=688180358]
-material_override = SubResource("StandardMaterial3D_e0qm4")
+material_override = SubResource("ShaderMaterial_j87x5")
 emitting = false
 amount = 3
 lifetime = 2.0
 one_shot = true
-explosiveness = 0.34
+explosiveness = 1.0
 randomness = 1.0
 fixed_fps = 60
 process_material = SubResource("ParticleProcessMaterial_va4mh")
