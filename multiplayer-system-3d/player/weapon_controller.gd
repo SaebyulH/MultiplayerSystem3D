@@ -505,7 +505,7 @@ func _on_hitscan_hit(
 	hit_normal: Vector3,
 	start_position: Vector3
 ) -> void:
-	var bullet_hole_scene: PackedScene = load("res://weapon/bullet_hole.tscn") as PackedScene
+	var bullet_hole_scene: PackedScene = load("res://effects/bullet_hole.tscn") as PackedScene
 	var bullet_hole: Node3D            = bullet_hole_scene.instantiate() as Node3D
 	projectile_spawn_parent.add_child(bullet_hole)
 	bullet_hole.global_position        = hit_position
