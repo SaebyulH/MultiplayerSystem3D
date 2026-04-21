@@ -31,6 +31,7 @@ linear_velocity = Vector3(0, 0, -23)
 lifetime = 2.3
 explode_on_timeout = true
 hurtbox_hit_mode = 2
+world_hit_mode = 1
 
 [node name="CollisionShape3D" parent="." index="0" unique_id=1810742212]
 shape = SubResource("CapsuleShape3D_xcdij")

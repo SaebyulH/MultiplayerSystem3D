@@ -74,7 +74,8 @@ func _ready() -> void:
 	rollback_sync.process_settings()
 		
 func _health_changed():
-	print(str(name) + ": Health Changed!")
+	pass
+	#print(str(name) + ": Health Changed!")
 
 func reset():
 	attribute_component.reset()

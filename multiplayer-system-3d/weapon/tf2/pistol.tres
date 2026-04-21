@@ -1,6 +1,7 @@
 [gd_resource type="Resource" script_class="Weapon" format=3 uid="uid://bcrlsyiwg0v84"]
 
 [ext_resource type="AudioStream" uid="uid://bwfdsxbmx4ko8" path="res://assets/sounds/empty_gun.mp3" id="1_la0ju"]
+[ext_resource type="Texture2D" uid="uid://b6gktr1vfryte" path="res://defaults/default_damage_falloff_curve.tres" id="2_dxxqn"]
 [ext_resource type="PackedScene" uid="uid://6mr0d18yn8po" path="res://weapon/projectiles/scenes/simple_projectile.tscn" id="2_thl8w"]
 [ext_resource type="Script" uid="uid://yvevtn4dsddy" path="res://player/recoil/recoil_data.gd" id="3_r57kw"]
 [ext_resource type="AudioStream" uid="uid://cqbknmbhlwhu" path="res://assets/sounds/reload.mp3" id="4_t54mp"]
@@ -21,6 +22,7 @@ mag_size = 12
 mag_current = 12
 recoil_data = SubResource("Resource_la0ju")
 hitscan_damage = 15.0
+has_damage_falloff = true
 projectile_scene = ExtResource("2_thl8w")
 weapon_model = ExtResource("7_la0ju")
 shoot_sound = ExtResource("6_banbv")

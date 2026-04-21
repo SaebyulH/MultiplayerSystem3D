@@ -3,6 +3,8 @@
 [ext_resource type="Script" uid="uid://b3gtcm614wpi8" path="res://maps/map.gd" id="1_8rrov"]
 [ext_resource type="Texture2D" uid="uid://c4ln0bpu3tmo3" path="res://assets/environment/kloppenheim_06_puresky_4k.exr" id="2_wnf2b"]
 [ext_resource type="CompressedTexture3D" uid="uid://gj7tu2wrtw4l" path="res://assets/environment/True Cinematic.cube-s33.png" id="2_yhcpw"]
+[ext_resource type="Script" uid="uid://ccrf5bdka2m35" path="res://player/auto_projectile_spawner.gd" id="4_duvhj"]
+[ext_resource type="PackedScene" uid="uid://dfyafkr18mtuq" path="res://weapon/projectiles/scenes/healthpack.tscn" id="5_uwnr7"]
 
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_wnf2b"]
 panorama = ExtResource("2_wnf2b")
@@ -304,3 +306,14 @@ size = Vector3(2, 7, 15)
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=517602722]
 transform = Transform3D(0.72554255, -0.33358252, -0.60192263, 0.68817735, 0.35169467, 0.6346045, 0, -0.87466204, 0.48473334, 0, 9.392839, 0)
 shadow_enabled = true
+
+[node name="HealthPack" parent="." unique_id=1706686187 instance=ExtResource("5_uwnr7")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.74333215, -0.30214444, 7.4821215)
+
+[node name="ProjectilesParent" type="Node3D" parent="." unique_id=1338997683]
+top_level = true
+
+[node name="ProjectileSpawner" type="MultiplayerSpawner" parent="ProjectilesParent" unique_id=1469450871]
+_spawnable_scenes = PackedStringArray("uid://dy7hw0uphca40", "uid://v27fq461i5vr", "uid://bo0edtxgakruc", "uid://6mr0d18yn8po", "uid://daan6liu8ej2", "uid://cccu8xmm1tqq7", "uid://dy7hw0uphca40", "uid://v27fq461i5vr", "uid://dfyafkr18mtuq", "uid://bo0edtxgakruc", "uid://6mr0d18yn8po", "uid://daan6liu8ej2")
+spawn_path = NodePath("..")
+script = ExtResource("4_duvhj")

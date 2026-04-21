@@ -455,9 +455,15 @@ func _execute_fire(weapon: Weapon) -> void:
 			var result: Dictionary = space_state.intersect_ray(query)
 			if not result.is_empty():
 				_on_hitscan_hit.rpc(result.position, result.normal, muzzle_pos)
+				
 				var collider: Object = result.collider
+				
 				if collider.has_method("change_health"):
-					collider.change_health(-weapon.hitscan_damage, _parent_player.name)
+					var distance := origin.distance_to(result.position)
+					var mult := _compute_falloff_multiplier(weapon, distance)
+					var damage := weapon.hitscan_damage * mult
+					
+					collider.change_health(-damage, _parent_player.name)
 
 	elif weapon.bullet_type == Weapon.BulletType.PROJECTILE:
 		for shot_dir in weapon.multishot_data:
@@ -473,6 +479,26 @@ func _execute_fire(weapon: Weapon) -> void:
 			projectile_scene.linear_velocity = world_dir * speed
 
 			projectile_spawn_parent.add_child(projectile_scene, true)
+
+
+func _compute_falloff_multiplier(weapon: Weapon, distance: float) -> float:
+	if not weapon.has_damage_falloff or weapon.falloff_curve == null:
+		return 1.0
+	
+	var t: float
+	
+	if weapon.falloff_end == weapon.falloff_start:
+		t = 0.0
+	else:
+		t = (distance - weapon.falloff_start) / (weapon.falloff_end - weapon.falloff_start)
+	
+	t = clamp(t, 0.0, 1.0)
+	
+	var curve: Curve = weapon.falloff_curve.curve
+	if curve == null:
+		return 1.0
+	
+	return curve.sample(t)
 
 
 @rpc("call_local")

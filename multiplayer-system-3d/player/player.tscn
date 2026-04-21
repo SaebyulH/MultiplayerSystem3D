@@ -34,6 +34,7 @@
 [ext_resource type="Resource" uid="uid://cy4bt3f2aadno" path="res://weapon/tf2/spy_revolver.tres" id="24_2uvqg"]
 [ext_resource type="PackedScene" uid="uid://em68gvqy1f84" path="res://effects/muzzle_flash.tscn" id="27_5ejfk"]
 [ext_resource type="Resource" uid="uid://bdeqh6cpwg1vo" path="res://weapon/other/ball_gun.tres" id="27_jd2rm"]
+[ext_resource type="Script" uid="uid://cacmqqlg2q36j" path="res://player/health_loss.gd" id="33_q28gw"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_kb6p2"]
 
@@ -53,6 +54,11 @@ shader = ExtResource("10_n7ghd")
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1jxqw"]
 radius = 0.6459961
 height = 2.194336
+
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_1s1yo"]
+properties/0/path = NodePath("AttributeComponent:health")
+properties/0/spawn = true
+properties/0/replication_mode = 1
 
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_2ieo8"]
 properties/0/path = NodePath(".:current_weapon_index")
@@ -80,11 +86,6 @@ albedo_color = Color(0.13077214, 0.13077214, 0.13077211, 1)
 
 [sub_resource type="BoxMesh" id="BoxMesh_kb6p2"]
 size = Vector3(1, 1.625, 0.54)
-
-[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_1s1yo"]
-properties/0/path = NodePath("AttributeComponent:health")
-properties/0/spawn = true
-properties/0/replication_mode = 1
 
 [node name="Player" type="CharacterBody3D" unique_id=51620469 node_paths=PackedStringArray("player_input", "rollback_sync", "attribute_component", "body", "weapon_controller")]
 collision_layer = 2
@@ -150,6 +151,9 @@ metadata/_custom_type_script = "uid://cg1glglog46jg"
 [node name="AttributeComponent" type="Node" parent="." unique_id=831078121]
 script = ExtResource("7_1jxqw")
 metadata/_custom_type_script = "uid://cxit1cumphn3q"
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=1858913668]
+replication_config = SubResource("SceneReplicationConfig_1s1yo")
 
 [node name="WeaponController" type="Node" parent="." unique_id=1956241137 node_paths=PackedStringArray("weapon_model_parent", "projectile_spawn_parent", "player_input", "recoil", "_parent_player", "_raycast")]
 script = ExtResource("6_ebec5")
@@ -234,7 +238,7 @@ script = ExtResource("4_ebec5")
 weapon_controller = NodePath("../../../../WeaponController")
 
 [node name="Health" type="Label3D" parent="Body/Recoil/Head" unique_id=889122120 node_paths=PackedStringArray("attribute_component")]
-transform = Transform3D(0.24299446, 0, 0, 0, 0.24299446, 0, 0, 0, 0.24299446, 0, 0.8887558, -1.1377158)
+transform = Transform3D(0.29378334, 0, 0, 0, 0.29378334, 0, 0, 0, 0.29378334, 0, 0.98165905, -1.6319616)
 billboard = 1
 modulate = Color(0, 0.99215686, 0.14901961, 1)
 text = "Health"
@@ -242,9 +246,18 @@ font_size = 200
 script = ExtResource("3_dw050")
 attribute_component = NodePath("../../../../AttributeComponent")
 
+[node name="HealthLoss" type="Label3D" parent="Body/Recoil/Head" unique_id=650819067 node_paths=PackedStringArray("attribute_component")]
+transform = Transform3D(0.30022442, 0, 0, 0, 0.30022442, 0, 0, 0, 0.30022442, 0, 1.3097243, -1.6163812)
+billboard = 1
+modulate = Color(0.9850748, 0, 0.18224221, 1)
+text = "Health"
+font_size = 200
+script = ExtResource("33_q28gw")
+attribute_component = NodePath("../../../../AttributeComponent")
+
 [node name="Name" type="Label3D" parent="Body/Recoil/Head" unique_id=1590526754]
 unique_name_in_owner = true
-transform = Transform3D(0.2331078, 0, 0, 0, 0.2331078, 0, 0, 0, 0.2331078, 0, 0.665689, -1.1581887)
+transform = Transform3D(0.1271335, 0, 0, 0, 0.1271335, 0, 0, 0, 0.1271335, 0, 0.72886324, -1.5855435)
 billboard = 1
 modulate = Color(0.16206557, 0.1620656, 0.16206557, 1)
 text = "Name"
@@ -298,8 +311,5 @@ base_sound = ExtResource("9_b8hi5")
 layout_mode = 0
 offset_right = 40.0
 offset_bottom = 23.0
-
-[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=1858913668]
-replication_config = SubResource("SceneReplicationConfig_1s1yo")
 
 [connection signal="health_changed" from="AttributeComponent" to="Body/Recoil/Head/Health" method="_on_attribute_component_health_changed"]

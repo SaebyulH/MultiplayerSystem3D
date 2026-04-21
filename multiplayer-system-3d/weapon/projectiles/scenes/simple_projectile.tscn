@@ -19,18 +19,6 @@ properties/1/replication_mode = 2
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_cxcuy"]
 height = 1.0380859
 
-[sub_resource type="SphereMesh" id="SphereMesh_vwtsb"]
-radius = 1.0
-height = 2.0
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_8gdsr"]
-transparency = 1
-cull_mode = 2
-albedo_color = Color(1, 0.48235294, 0.14901961, 0.5529412)
-emission_enabled = true
-emission = Color(0.6862745, 0.6862745, 0.30588236, 1)
-emission_energy_multiplier = 2.31
-
 [node name="SimpleProjectile" type="RigidBody3D" unique_id=1706686187 node_paths=PackedStringArray("_hitbox_component", "_explosion_component")]
 collision_layer = 0
 continuous_cd = true
@@ -62,11 +50,6 @@ shape = SubResource("CapsuleShape3D_cxcuy")
 [node name="ExplosionComponent" type="Node3D" parent="." unique_id=473826993]
 script = ExtResource("3_vwtsb")
 knockback_force = 10.0
-
-[node name="Radius" type="MeshInstance3D" parent="ExplosionComponent" unique_id=843273335]
-visible = false
-mesh = SubResource("SphereMesh_vwtsb")
-surface_material_override/0 = SubResource("StandardMaterial3D_8gdsr")
 
 [node name="Explosion" parent="ExplosionComponent" unique_id=1946821248 instance=ExtResource("4_cxcuy")]
 

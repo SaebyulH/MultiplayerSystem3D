@@ -3,6 +3,7 @@ class_name HitboxComponent
 
 signal hit_hurtbox(hurtbox)
 @export var health_delta: float = -10.0
+@export var can_hit_shooter: bool = false
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
@@ -10,7 +11,8 @@ func _ready() -> void:
 	
 
 func _on_hurtbox_entered(hurtbox: Area3D):
-	if get_parent().shooter_name == hurtbox.get_parent().name: return
+	if not can_hit_shooter:
+		if get_parent().shooter_name == hurtbox.get_parent().name: return
 	if not hurtbox is HurtboxComponent: return
 	
 	
