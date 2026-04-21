@@ -71,7 +71,6 @@ func _on_body_entered(body: Node3D) -> void:
 		freeze = true
 		if _explosion_component:
 			await _explosion_component.explode()
-			
 	
 	if world_hit_mode == WorldHitMode.DISSAPEAR:
 		queue_free()

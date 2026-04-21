@@ -5,7 +5,6 @@ class_name Weapon
 
 @export_group("Universal Combat")
 @export var automatic: bool = false
-
 @export var pre_shoot_delay: float = 0.0
 @export var post_shoot_delay: float = 0.5
 @export var has_infinite_ammo: bool = false
