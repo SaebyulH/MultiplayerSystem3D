@@ -228,7 +228,7 @@ func _do_fire() -> void:
 		#_request_fire()
 	#else:
 	if 1 == multiplayer.get_unique_id():
-		_request_fire.rpc_id(1)
+		_request_fire.rpc()
 	else:
 		_request_fire.rpc_id(1)
 
@@ -239,6 +239,13 @@ func _do_fire() -> void:
 @rpc("any_peer", "call_local")
 func _play_empty() -> void:
 	_play_sound(weapons[current_weapon_index].empty_sound)
+
+
+
+
+
+
+
 
 
 # Client → server. No call_local — server handles everything inside.
