@@ -9,7 +9,11 @@ var _last_time := 0.0
 const HIDE_TIME := 2.0
 
 
-func _ready() -> void:
+func _ready() -> void: 
+	if get_multiplayer_authority() != multiplayer.get_unique_id(): 
+		position.z = 0.0 
+		position.x = 0.0
+		
 	if attribute_component == null:
 		return
 

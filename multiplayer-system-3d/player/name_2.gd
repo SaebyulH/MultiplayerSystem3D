@@ -10,6 +10,12 @@ extends Label3D
 #
 #func _on_attribute_component_health_changed(delta: float) -> void:
 	#text = str(attribute_component.health)
+func _ready() -> void: 
+	if get_multiplayer_authority() != multiplayer.get_unique_id(): 
+		position.z = 0.0 
+		position.x = 0.0
+
+
 
 func _process(delta: float) -> void:
 	text = str(attribute_component.health)

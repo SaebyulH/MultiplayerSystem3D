@@ -240,7 +240,6 @@ weapon_controller = NodePath("../../../../WeaponController")
 [node name="Health" type="Label3D" parent="Body/Recoil/Head" unique_id=889122120 node_paths=PackedStringArray("attribute_component")]
 transform = Transform3D(0.29378334, 0, 0, 0, 0.29378334, 0, 0, 0, 0.29378334, 0, 0.98165905, -1.6319616)
 billboard = 1
-modulate = Color(0, 0.99215686, 0.14901961, 1)
 text = "Health"
 font_size = 200
 script = ExtResource("3_dw050")
