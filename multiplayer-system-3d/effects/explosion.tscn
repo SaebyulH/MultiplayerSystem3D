@@ -731,7 +731,7 @@ lifetime = 2.0
 one_shot = true
 explosiveness = 1.0
 randomness = 0.55
-fixed_fps = 60
+fixed_fps = 12
 process_material = SubResource("ParticleProcessMaterial_jh1to")
 draw_pass_1 = SubResource("CylinderMesh_16q0m")
 
@@ -743,7 +743,7 @@ lifetime = 2.0
 one_shot = true
 explosiveness = 1.0
 randomness = 0.81
-fixed_fps = 60
+fixed_fps = 12
 process_material = SubResource("ParticleProcessMaterial_e0qm4")
 draw_pass_1 = SubResource("QuadMesh_jh1to")
 
@@ -755,7 +755,7 @@ lifetime = 2.0
 one_shot = true
 explosiveness = 1.0
 randomness = 0.53
-fixed_fps = 60
+fixed_fps = 12
 process_material = SubResource("ParticleProcessMaterial_m0j43")
 draw_pass_1 = SubResource("QuadMesh_jhnc4")
 
@@ -767,7 +767,7 @@ lifetime = 3.0
 one_shot = true
 explosiveness = 0.7
 randomness = 0.59
-fixed_fps = 60
+fixed_fps = 12
 process_material = SubResource("ParticleProcessMaterial_16q0m")
 draw_pass_1 = SubResource("QuadMesh_jhnc4")
 
@@ -779,7 +779,7 @@ lifetime = 2.0
 one_shot = true
 explosiveness = 1.0
 randomness = 0.66
-fixed_fps = 60
+fixed_fps = 12
 process_material = SubResource("ParticleProcessMaterial_cu3rm")
 draw_pass_1 = SubResource("QuadMesh_jhnc4")
 
@@ -791,7 +791,7 @@ lifetime = 2.0
 one_shot = true
 explosiveness = 1.0
 randomness = 0.26
-fixed_fps = 60
+fixed_fps = 12
 process_material = SubResource("ParticleProcessMaterial_3tyj0")
 draw_pass_1 = SubResource("TorusMesh_e0qm4")
 
@@ -803,6 +803,6 @@ lifetime = 2.0
 one_shot = true
 explosiveness = 1.0
 randomness = 1.0
-fixed_fps = 60
+fixed_fps = 12
 process_material = SubResource("ParticleProcessMaterial_va4mh")
 draw_pass_1 = SubResource("TorusMesh_e0qm4")
