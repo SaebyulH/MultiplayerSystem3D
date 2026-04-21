@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="Weapon" format=3 uid="uid://bdeqh6cpwg1vo"]
+
+[ext_resource type="AudioStream" uid="uid://bwfdsxbmx4ko8" path="res://assets/sounds/empty_gun.mp3" id="1_efpat"]
+[ext_resource type="PackedScene" uid="uid://cccu8xmm1tqq7" path="res://weapon/projectiles/scenes/ball.tscn" id="2_y6wj1"]
+[ext_resource type="Script" uid="uid://yvevtn4dsddy" path="res://player/recoil/recoil_data.gd" id="3_s1qy5"]
+[ext_resource type="AudioStream" uid="uid://cqbknmbhlwhu" path="res://assets/sounds/reload.mp3" id="4_pdksp"]
+[ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="5_v4dct"]
+[ext_resource type="AudioStream" uid="uid://xlgkuo2h1gix" path="res://assets/sounds/laser_gun.mp3" id="6_sc3wl"]
+[ext_resource type="PackedScene" uid="uid://bqasbas7al3kg" path="res://weapon/other/ball_gun.tscn" id="7_mb2oj"]
+
+[sub_resource type="Resource" id="Resource_y6wj1"]
+script = ExtResource("3_s1qy5")
+metadata/_custom_type_script = "uid://yvevtn4dsddy"
+
+[resource]
+script = ExtResource("5_v4dct")
+display_name = "Ball Gun"
+automatic = true
+post_shoot_delay = 0.08
+has_infinite_ammo = true
+reload_time = 0.9
+recoil_data = SubResource("Resource_y6wj1")
+bullet_type = 1
+projectile_scene = ExtResource("2_y6wj1")
+weapon_model = ExtResource("7_mb2oj")
+shoot_sound = ExtResource("6_sc3wl")
+empty_sound = ExtResource("1_efpat")
+reload_sound = ExtResource("4_pdksp")
+metadata/_custom_type_script = "uid://qjf4ciit3dqy"

@@ -1,0 +1,31 @@
+[gd_scene format=3 uid="uid://cccu8xmm1tqq7"]
+
+[ext_resource type="PackedScene" uid="uid://6mr0d18yn8po" path="res://weapon/projectiles/scenes/simple_projectile.tscn" id="1_ja76d"]
+[ext_resource type="Texture2D" uid="uid://00y158dnpv02" path="res://assets/soccer-and-football-seamless-pattern-sport-ball-texture-football-background-black-and-white-pattern-with-soccer-geometric-hexagons-illustration-on-white-background-vector.jpg" id="2_6oebn"]
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_6oebn"]
+bounce = 1.0
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_ja76d"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ujy4t"]
+albedo_texture = ExtResource("2_6oebn")
+uv1_scale = Vector3(0.416, 0.416, 0.416)
+uv1_offset = Vector3(0.063, -0.026, 0.194)
+
+[sub_resource type="SphereMesh" id="SphereMesh_6oebn"]
+
+[node name="Ball" unique_id=1706686187 instance=ExtResource("1_ja76d")]
+physics_material_override = SubResource("PhysicsMaterial_6oebn")
+linear_velocity = Vector3(0, 0, -30)
+hurtbox_hit_mode = 3
+world_hit_mode = 1
+
+[node name="CollisionShape3D" parent="." index="0" unique_id=1810742212]
+transform = Transform3D(-0.44716287, 3.9092214e-08, 1.7087752e-15, 6.944173e-23, -1.9546107e-08, 0.44716287, 3.9092214e-08, 0.44716287, 1.9546107e-08, 0, 0, 0)
+shape = SubResource("SphereShape3D_ja76d")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." index="4" unique_id=64718350]
+transform = Transform3D(0.44701296, 0, 0, 0, 0.44701296, 0, 0, 0, 0.44701296, 0, 0, 0)
+material_override = SubResource("StandardMaterial3D_ujy4t")
+mesh = SubResource("SphereMesh_6oebn")

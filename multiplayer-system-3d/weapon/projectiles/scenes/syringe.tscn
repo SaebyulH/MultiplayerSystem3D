@@ -4,11 +4,11 @@
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_7rxcs"]
 radius = 0.14404297
-height = 2.21875
+height = 1.4951172
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_eq6sh"]
 radius = 0.21582031
-height = 1.6748047
+height = 0.48779297
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_7rxcs"]
 top_radius = 0.338
@@ -33,12 +33,15 @@ top_radius = 0.22
 bottom_radius = 0.201
 
 [node name="SimpleProjectile" unique_id=1706686187 instance=ExtResource("1_7rxcs")]
-explode_on_direct = false
+linear_velocity = Vector3(0, 0, -20)
+lifetime = 20.0
+world_hit_mode = 3
 
 [node name="CollisionShape3D" parent="." index="0" unique_id=1810742212]
 shape = SubResource("CapsuleShape3D_7rxcs")
 
 [node name="CollisionShape3D" parent="HitboxComponent" parent_id_path=PackedInt32Array(1963592485) index="0" unique_id=1314331169]
+transform = Transform3D(-0.5297596, 4.6313055e-08, 2.024408e-15, -8.2268505e-23, -2.3156527e-08, 0.5297596, 4.6313055e-08, 0.5297596, 2.3156527e-08, -1.7876205e-08, 8.938103e-09, -0.20447996)
 shape = SubResource("CapsuleShape3D_eq6sh")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." index="4" unique_id=1974507183]

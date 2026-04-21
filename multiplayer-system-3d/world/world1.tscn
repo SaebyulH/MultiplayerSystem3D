@@ -10,6 +10,10 @@ player_scene = ExtResource("2_7dtx0")
 leaderboard = NodePath("GameMenu/VBoxContainer/Leaderboard")
 spawn_parent = NodePath("SpawnParent")
 
+[node name="SpawnParent" type="Node3D" parent="." unique_id=1706707506]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
+
 [node name="GameMenu" type="Control" parent="." unique_id=897483677]
 layout_mode = 3
 anchors_preset = 15
@@ -49,10 +53,6 @@ layout_mode = 2
 size_flags_vertical = 3
 theme_override_font_sizes/font_size = 60
 script = ExtResource("3_cxftf")
-
-[node name="SpawnParent" type="Node3D" parent="." unique_id=1706707506]
-unique_name_in_owner = true
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
 
 [node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="." unique_id=267556738]
 _spawnable_scenes = PackedStringArray("uid://cmix6q8a6hgcu", "uid://bhsrnwae043e1", "uid://7ccxfopdhtv8", "uid://x64r4as832eo", "uid://72ju85r15v1e")

@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://dvjbk5m0gpfc6" path="res://weapon/projectiles/simple_projectile.gd" id="1_6o6y1"]
 [ext_resource type="Script" uid="uid://y07sya4qpxdb" path="res://components/hitbox_component.gd" id="2_hlc54"]
 [ext_resource type="Script" uid="uid://c3053ldj8qbgo" path="res://weapon/projectiles/explosion_component.gd" id="3_vwtsb"]
+[ext_resource type="PackedScene" uid="uid://bu0bci3kls47y" path="res://effects/explosion.tscn" id="4_cxcuy"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1pkh4"]
 height = 1.8164063
@@ -37,10 +38,9 @@ contact_monitor = true
 max_contacts_reported = 1
 linear_velocity = Vector3(0, 0, -10)
 script = ExtResource("1_6o6y1")
+lifetime = 20.0
 _hitbox_component = NodePath("HitboxComponent")
 _explosion_component = NodePath("ExplosionComponent")
-explode_on_direct = true
-world_hit_mode = 1
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1810742212]
 transform = Transform3D(-0.3480795, 3.0430073e-08, 1.3301409e-15, 5.4054674e-23, -1.5215036e-08, 0.3480795, 3.0430073e-08, 0.3480795, 1.5215036e-08, 0, 0, 0)
@@ -67,5 +67,7 @@ knockback_force = 10.0
 visible = false
 mesh = SubResource("SphereMesh_vwtsb")
 surface_material_override/0 = SubResource("StandardMaterial3D_8gdsr")
+
+[node name="Explosion" parent="ExplosionComponent" unique_id=1946821248 instance=ExtResource("4_cxcuy")]
 
 [connection signal="body_entered" from="." to="." method="_on_body_entered"]

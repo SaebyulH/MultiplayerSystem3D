@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="Weapon" format=3 uid="uid://b7sksxja7iost"]
+
+[ext_resource type="AudioStream" uid="uid://bwfdsxbmx4ko8" path="res://assets/sounds/empty_gun.mp3" id="1_xuhsr"]
+[ext_resource type="PackedScene" uid="uid://6mr0d18yn8po" path="res://weapon/projectiles/scenes/simple_projectile.tscn" id="2_xuhsr"]
+[ext_resource type="Script" uid="uid://yvevtn4dsddy" path="res://player/recoil/recoil_data.gd" id="3_ggl8s"]
+[ext_resource type="AudioStream" uid="uid://cqbknmbhlwhu" path="res://assets/sounds/reload.mp3" id="4_1xdv8"]
+[ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="5_08nox"]
+[ext_resource type="AudioStream" uid="uid://b1tqmb3x8y6b6" path="res://assets/sounds/smg.mp3" id="6_pm131"]
+[ext_resource type="PackedScene" uid="uid://de2x1mcwubja7" path="res://weapon/real/ak.tscn" id="7_avw46"]
+
+[sub_resource type="Resource" id="Resource_xuhsr"]
+script = ExtResource("3_ggl8s")
+metadata/_custom_type_script = "uid://yvevtn4dsddy"
+
+[resource]
+script = ExtResource("5_08nox")
+display_name = "AK"
+automatic = true
+post_shoot_delay = 0.1
+mag_size = 30
+mag_current = 30
+recoil_data = SubResource("Resource_xuhsr")
+projectile_scene = ExtResource("2_xuhsr")
+weapon_model = ExtResource("7_avw46")
+shoot_sound = ExtResource("6_pm131")
+empty_sound = ExtResource("1_xuhsr")
+reload_sound = ExtResource("4_1xdv8")
+metadata/_custom_type_script = "uid://qjf4ciit3dqy"

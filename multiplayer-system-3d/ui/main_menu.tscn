@@ -18,42 +18,38 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -20.0
-offset_top = -20.0
-offset_right = 20.0
-offset_bottom = 20.0
+offset_left = -310.0
+offset_top = -215.0
+offset_right = 310.0
+offset_bottom = 215.0
 grow_horizontal = 2
 grow_vertical = 2
 
 [node name="Label" type="Label" parent="VBoxContainer" unique_id=1832888493]
 layout_mode = 2
+theme_override_font_sizes/font_size = 60
 text = "Multiplayer System"
+horizontal_alignment = 1
+
+[node name="Label4" type="Label" parent="VBoxContainer" unique_id=241166218]
+layout_mode = 2
+
+[node name="Label3" type="Label" parent="VBoxContainer" unique_id=122746595]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Map Select"
+horizontal_alignment = 1
 
 [node name="IPLabel" type="Label" parent="VBoxContainer" unique_id=1415127053]
+visible = false
 layout_mode = 2
+theme_override_font_sizes/font_size = 32
 text = "IP HERE"
-
-[node name="HostGame" type="Button" parent="VBoxContainer" unique_id=557223411]
-layout_mode = 2
-text = "Host Game"
-
-[node name="JoinGame" type="Button" parent="VBoxContainer" unique_id=1057923406]
-layout_mode = 2
-text = "Join Game"
-
-[node name="JoinLocal" type="Button" parent="VBoxContainer" unique_id=986033482]
-layout_mode = 2
-text = "Join Local (This Computer)"
-
-[node name="SendTestMessage" type="Button" parent="VBoxContainer" unique_id=789396056]
-layout_mode = 2
-text = "Send Test Message"
-
-[node name="AddressInput" type="LineEdit" parent="VBoxContainer" unique_id=1603602727]
-layout_mode = 2
+horizontal_alignment = 1
 
 [node name="OptionButton" type="OptionButton" parent="VBoxContainer" unique_id=744683259]
 layout_mode = 2
+theme_override_font_sizes/font_size = 64
 item_count = 4
 popup/item_0/text = "res://maps/castle.tscn"
 popup/item_0/id = 0
@@ -63,6 +59,34 @@ popup/item_2/text = "res://maps/courtyard.tscn"
 popup/item_2/id = 2
 popup/item_3/text = "res://maps/dust2scn.scn"
 popup/item_3/id = 3
+
+[node name="HostGame" type="Button" parent="VBoxContainer" unique_id=557223411]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Host Game"
+
+[node name="Label2" type="Label" parent="VBoxContainer" unique_id=1603314391]
+layout_mode = 2
+
+[node name="AddressInput" type="LineEdit" parent="VBoxContainer" unique_id=1603602727]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+
+[node name="JoinGame" type="Button" parent="VBoxContainer" unique_id=1057923406]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Join Game"
+
+[node name="JoinLocal" type="Button" parent="VBoxContainer" unique_id=986033482]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Join Local (This Computer)"
+
+[node name="SendTestMessage" type="Button" parent="VBoxContainer" unique_id=789396056]
+visible = false
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Send Test Message"
 
 [connection signal="pressed" from="VBoxContainer/HostGame" to="." method="_on_host_game_pressed"]
 [connection signal="pressed" from="VBoxContainer/JoinGame" to="." method="_on_join_game_pressed"]

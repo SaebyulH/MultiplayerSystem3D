@@ -1,6 +1,9 @@
 extends CharacterBody3D
 class_name Player
 
+# In Player.gd
+var knockback_velocity := Vector3.ZERO
+@export var knockback_decay: float = 50.0  # how fast it fades per second
 
 var speed = 5.0
 const JUMP_VELOCITY = 5.0
@@ -108,9 +111,6 @@ func _force_update_is_on_floor():
 	move_and_slide()
 	velocity = old_velocity
 
-# In Player.gd
-var knockback_velocity := Vector3.ZERO
-@export var knockback_decay: float = 10.0  # how fast it fades per second
 
 func apply_knockback(force: Vector3) -> void:
 	if force.length() < 0.01:
