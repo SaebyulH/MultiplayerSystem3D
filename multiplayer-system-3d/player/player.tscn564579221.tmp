@@ -1,0 +1,300 @@
+[gd_scene format=3 uid="uid://cmix6q8a6hgcu"]
+
+[ext_resource type="Script" uid="uid://c10owjifp8g7w" path="res://player/player.gd" id="1_4flbx"]
+[ext_resource type="Script" uid="uid://dqtlwc44t1kfa" path="res://player/player_input.gd" id="2_onrkg"]
+[ext_resource type="Script" uid="uid://d350u8evihs1u" path="res://addons/netfox/rollback/rollback-synchronizer.gd" id="3_2uvqg"]
+[ext_resource type="Script" uid="uid://ccrf5bdka2m35" path="res://player/auto_projectile_spawner.gd" id="3_32hag"]
+[ext_resource type="Script" uid="uid://bwfuexv1s2dga" path="res://player/name_2.gd" id="3_dw050"]
+[ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="3_i3pqv"]
+[ext_resource type="Script" uid="uid://dour8fehaaugp" path="res://addons/netfox/tick-interpolator.gd" id="4_1s1yo"]
+[ext_resource type="Script" uid="uid://2qddsgk3gw1y" path="res://player/ammo.gd" id="4_ebec5"]
+[ext_resource type="Script" uid="uid://c4uv27n00ycfc" path="res://components/hurtbox_component.gd" id="5_2hs0m"]
+[ext_resource type="Script" uid="uid://cg1glglog46jg" path="res://components/hurt_component.gd" id="6_1jxqw"]
+[ext_resource type="Script" uid="uid://d2kgugh2o23ba" path="res://weapon/weapon_controller.gd" id="6_ebec5"]
+[ext_resource type="Script" uid="uid://cxit1cumphn3q" path="res://components/attribute_component.gd" id="7_1jxqw"]
+[ext_resource type="Resource" uid="uid://sbp4tib25r0k" path="res://weapon/uzi/uzi.tres" id="7_yllr7"]
+[ext_resource type="Script" uid="uid://baeb5xhwct2k6" path="res://player/control.gd" id="8_r7pn3"]
+[ext_resource type="AudioStream" uid="uid://exvh8mdgxfb8" path="res://assets/multikill-1.mp3" id="9_b8hi5"]
+[ext_resource type="Shader" uid="uid://7yui67a2adxs" path="res://assets/environment/new_shader.gdshader" id="10_n7ghd"]
+[ext_resource type="Resource" uid="uid://b7sksxja7iost" path="res://weapon/ak/ak.tres" id="11_2ieo8"]
+[ext_resource type="Resource" uid="uid://yx67ob4xh6nt" path="res://weapon/revolver/revolver.tres" id="11_yllr7"]
+[ext_resource type="Script" uid="uid://w4bkel2abkvv" path="res://player/body.gd" id="13_kb6p2"]
+[ext_resource type="Resource" uid="uid://coh34norv8mf3" path="res://assets/tf2/scattergun.tres" id="14_tqiix"]
+[ext_resource type="Script" uid="uid://bk7h6t34yea7r" path="res://weapon/recoil/recoil.gd" id="14_wodsf"]
+[ext_resource type="Resource" uid="uid://bcrlsyiwg0v84" path="res://assets/tf2/pistol.tres" id="15_e7oew"]
+[ext_resource type="Resource" uid="uid://kb8a36qmhbsa" path="res://assets/tf2/bat.tres" id="16_c35mf"]
+[ext_resource type="Resource" uid="uid://c1iei2xvith2m" path="res://assets/tf2/rocket_launcher.tres" id="17_65viv"]
+[ext_resource type="Resource" uid="uid://dwwh1fream1b5" path="res://assets/tf2/flamethrower.tres" id="18_x7c3f"]
+[ext_resource type="Resource" uid="uid://b4ydfvfklj5cl" path="res://assets/tf2/grenade_launcher.tres" id="19_bjvpn"]
+[ext_resource type="Resource" uid="uid://cqtnateujki8i" path="res://assets/tf2/minigun.tres" id="20_uw77l"]
+[ext_resource type="Resource" uid="uid://dxtql15w6yxg7" path="res://assets/tf2/syringe_gun.tres" id="21_rptt4"]
+[ext_resource type="Resource" uid="uid://cg4gfj2es24p4" path="res://assets/tf2/sniper_rifle.tres" id="22_r7pn3"]
+[ext_resource type="Resource" uid="uid://2k6bc50djxgg" path="res://assets/tf2/smg.tres" id="22_rptt4"]
+[ext_resource type="Resource" uid="uid://ebu6fuc2cymc" path="res://assets/tf2/knife.tres" id="23_b8hi5"]
+[ext_resource type="Resource" uid="uid://cy4bt3f2aadno" path="res://assets/tf2/spy_revolver.tres" id="24_2uvqg"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_kb6p2"]
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_wodsf"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4flbx"]
+transparency = 1
+albedo_color = Color(0.003921569, 0.003921569, 0.60784316, 0.7254902)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_b26j0"]
+bottom_radius = 0.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_nvl01"]
+render_priority = 0
+shader = ExtResource("10_n7ghd")
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1jxqw"]
+radius = 0.6459961
+height = 2.194336
+
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_2ieo8"]
+properties/0/path = NodePath(".:current_weapon_index")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_kb6p2"]
+properties/0/path = NodePath(".:rotation")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+properties/1/path = NodePath("..:rotation")
+properties/1/spawn = true
+properties/1/replication_mode = 1
+properties/2/path = NodePath("../..:rotation")
+properties/2/spawn = true
+properties/2/replication_mode = 1
+
+[sub_resource type="BoxMesh" id="BoxMesh_32hag"]
+size = Vector3(1, 4.005, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_wodsf"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kb6p2"]
+albedo_color = Color(0.13077214, 0.13077214, 0.13077211, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_kb6p2"]
+size = Vector3(1, 1.625, 0.54)
+
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_1s1yo"]
+properties/0/path = NodePath("AttributeComponent:health")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+
+[node name="Player" type="CharacterBody3D" unique_id=51620469 node_paths=PackedStringArray("player_input", "rollback_sync", "attribute_component", "body", "weapon_controller")]
+collision_layer = 2
+script = ExtResource("1_4flbx")
+player_input = NodePath("PlayerInput")
+rollback_sync = NodePath("RollbackSynchronizer")
+attribute_component = NodePath("AttributeComponent")
+body = NodePath("Body")
+weapon_controller = NodePath("WeaponController")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=218472258]
+shape = SubResource("CapsuleShape3D_kb6p2")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1851645100]
+mesh = SubResource("CapsuleMesh_wodsf")
+surface_material_override/0 = SubResource("StandardMaterial3D_4flbx")
+
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="." unique_id=2008329147]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.694179, 0)
+mesh = SubResource("CylinderMesh_b26j0")
+surface_material_override/0 = SubResource("ShaderMaterial_nvl01")
+
+[node name="RollbackSynchronizer" type="Node" parent="." unique_id=744606291 node_paths=PackedStringArray("root")]
+script = ExtResource("3_2uvqg")
+root = NodePath("..")
+state_properties = Array[String]([":global_transform", ":velocity"])
+input_properties = Array[String](["PlayerInput:input_dir", "PlayerInput:jump_input", "PlayerInput:crouch", "PlayerInput:fire_held", "PlayerInput:fire_just_released"])
+metadata/_custom_type_script = "uid://d350u8evihs1u"
+
+[node name="TickInterpolator" type="Node" parent="." unique_id=1904018816 node_paths=PackedStringArray("root")]
+script = ExtResource("4_1s1yo")
+root = NodePath("..")
+properties = Array[String]([":global_transform", ":velocity"])
+metadata/_custom_type_script = "uid://dour8fehaaugp"
+
+[node name="PlayerInput" type="Node" parent="." unique_id=1318037509]
+script = ExtResource("2_onrkg")
+
+[node name="ProjectilesParent" type="Node3D" parent="." unique_id=1774207359]
+top_level = true
+
+[node name="ProjectileSpawner" type="MultiplayerSpawner" parent="ProjectilesParent" unique_id=290768895]
+_spawnable_scenes = PackedStringArray("uid://dy7hw0uphca40", "uid://v27fq461i5vr", "uid://bo0edtxgakruc", "uid://6mr0d18yn8po", "uid://daan6liu8ej2")
+spawn_path = NodePath("..")
+script = ExtResource("3_32hag")
+
+[node name="HurtboxComponent" type="Area3D" parent="." unique_id=481075083]
+collision_layer = 4
+collision_mask = 0
+script = ExtResource("5_2hs0m")
+metadata/_custom_type_script = "uid://c4uv27n00ycfc"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="HurtboxComponent" unique_id=1595505387]
+shape = SubResource("CapsuleShape3D_1jxqw")
+
+[node name="HurtComponent" type="Node" parent="." unique_id=708236351 node_paths=PackedStringArray("hurtbox_component", "attribute_component")]
+script = ExtResource("6_1jxqw")
+hurtbox_component = NodePath("../HurtboxComponent")
+attribute_component = NodePath("../AttributeComponent")
+metadata/_custom_type_script = "uid://cg1glglog46jg"
+
+[node name="AttributeComponent" type="Node" parent="." unique_id=831078121]
+script = ExtResource("7_1jxqw")
+metadata/_custom_type_script = "uid://cxit1cumphn3q"
+
+[node name="WeaponController" type="Node" parent="." unique_id=1956241137 node_paths=PackedStringArray("weapon_model_parent", "projectile_spawn_parent", "player_input", "recoil", "_parent_player", "_raycast")]
+script = ExtResource("6_ebec5")
+weapons = Array[ExtResource("3_i3pqv")]([ExtResource("14_tqiix"), ExtResource("15_e7oew"), ExtResource("16_c35mf"), ExtResource("17_65viv"), ExtResource("18_x7c3f"), ExtResource("19_bjvpn"), ExtResource("20_uw77l"), ExtResource("21_rptt4"), ExtResource("22_r7pn3"), ExtResource("22_rptt4"), ExtResource("24_2uvqg"), ExtResource("23_b8hi5"), ExtResource("11_2ieo8"), ExtResource("7_yllr7"), ExtResource("11_yllr7")])
+weapon_model_parent = NodePath("../Body/Recoil/Head/WeaponParent")
+projectile_spawn_parent = NodePath("../ProjectilesParent")
+player_input = NodePath("../PlayerInput")
+recoil = NodePath("../Body/Recoil")
+_parent_player = NodePath("..")
+_raycast = NodePath("../Body/Recoil/Head/Camera3D/Raycast")
+metadata/_custom_type_script = "uid://d2kgugh2o23ba"
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="WeaponController" unique_id=829106885]
+replication_config = SubResource("SceneReplicationConfig_2ieo8")
+
+[node name="AudioStreamPlayer3D" type="AudioStreamPlayer3D" parent="WeaponController" unique_id=1913075685]
+
+[node name="Body" type="Node3D" parent="." unique_id=598024395 node_paths=PackedStringArray("head")]
+script = ExtResource("13_kb6p2")
+head = NodePath("Recoil/Head")
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="Body" unique_id=187997880]
+root_path = NodePath("../Recoil/Head")
+replication_config = SubResource("SceneReplicationConfig_kb6p2")
+
+[node name="Recoil" type="Node3D" parent="Body" unique_id=274010588]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6650573, 0)
+script = ExtResource("14_wodsf")
+
+[node name="Head" type="Node3D" parent="Body/Recoil" unique_id=581817051]
+unique_name_in_owner = true
+
+[node name="Camera3D" type="Camera3D" parent="Body/Recoil/Head" unique_id=1440942893]
+unique_name_in_owner = true
+fov = 90.0
+
+[node name="Raycast" type="RayCast3D" parent="Body/Recoil/Head/Camera3D" unique_id=330718818]
+target_position = Vector3(0, 0, -100000)
+
+[node name="WeaponParent" type="Node3D" parent="Body/Recoil/Head" unique_id=1022201944]
+
+[node name="Skin3" type="MeshInstance3D" parent="Body/Recoil/Head/WeaponParent" unique_id=1367727221]
+transform = Transform3D(0.10290378, -0.03368738, -0.040336303, 0.01487895, 0.10373236, -0.04867501, 0.050403092, 0.038154975, 0.096720055, 0.21079843, -0.39905983, -0.05466762)
+mesh = SubResource("BoxMesh_32hag")
+
+[node name="Skin4" type="MeshInstance3D" parent="Body/Recoil/Head/WeaponParent" unique_id=31490221]
+transform = Transform3D(0.11430204, 0.011746423, -0.012170299, -0.009746699, -0.022206599, -0.11297308, -0.013823748, 0.11278269, -0.020976517, 0.21930444, -0.49350226, -0.27968284)
+mesh = SubResource("BoxMesh_32hag")
+
+[node name="Skin5" type="MeshInstance3D" parent="Body/Recoil/Head/WeaponParent" unique_id=1224638582]
+transform = Transform3D(-0.072061, 0.0854119, 0.029378042, -0.028286997, 0.014350918, -0.1111078, -0.08577939, -0.076484725, 0.011959696, 0.09560159, -0.48071414, -0.5163804)
+mesh = SubResource("BoxMesh_32hag")
+
+[node name="Skin6" type="MeshInstance3D" parent="Body/Recoil/Head/WeaponParent" unique_id=951024443]
+transform = Transform3D(-0.09425567, 0.060751524, -0.02785976, -0.013134585, -0.06406306, -0.09525994, -0.06553164, -0.074540086, 0.059164397, -0.19685566, -0.37884992, -0.21519944)
+mesh = SubResource("BoxMesh_32hag")
+
+[node name="Skin" type="MeshInstance3D" parent="Body/Recoil/Head" unique_id=579986966]
+transform = Transform3D(0.326937, 0, 0, 0, 0.326937, 0, 0, 0, 0.326937, 0, 0.046078205, 0)
+mesh = SubResource("BoxMesh_wodsf")
+
+[node name="Skin2" type="MeshInstance3D" parent="Body/Recoil/Head" unique_id=1301557840]
+transform = Transform3D(0.07898294, 0, 0, 0, 0.07898294, 0, 0, 0, 0.07898294, 0.08205414, 0.04202491, -0.15975216)
+mesh = SubResource("BoxMesh_wodsf")
+surface_material_override/0 = SubResource("StandardMaterial3D_kb6p2")
+
+[node name="Skin3" type="MeshInstance3D" parent="Body/Recoil/Head" unique_id=1615018128]
+transform = Transform3D(0.07898294, 0, 0, 0, 0.07898294, 0, 0, 0, 0.07898294, -0.0892587, 0.04202491, -0.15975216)
+mesh = SubResource("BoxMesh_wodsf")
+surface_material_override/0 = SubResource("StandardMaterial3D_kb6p2")
+
+[node name="Ammo" type="Label3D" parent="Body/Recoil/Head" unique_id=1596545662 node_paths=PackedStringArray("weapon_controller")]
+transform = Transform3D(0.17002402, 0, 0, 0, 0.17002402, 0, 0, 0, 0.17002402, 0, -0.22578335, -1.9124358)
+billboard = 1
+modulate = Color(1, 0.7809618, 0.4214451, 1)
+text = "Ammo"
+font_size = 200
+script = ExtResource("4_ebec5")
+weapon_controller = NodePath("../../../../WeaponController")
+
+[node name="Health" type="Label3D" parent="Body/Recoil/Head" unique_id=889122120 node_paths=PackedStringArray("attribute_component")]
+transform = Transform3D(0.24299446, 0, 0, 0, 0.24299446, 0, 0, 0, 0.24299446, 0, 0.8887558, -1.1377158)
+billboard = 1
+modulate = Color(0, 0.99215686, 0.14901961, 1)
+text = "Health"
+font_size = 200
+script = ExtResource("3_dw050")
+attribute_component = NodePath("../../../../AttributeComponent")
+
+[node name="Name" type="Label3D" parent="Body/Recoil/Head" unique_id=1590526754]
+unique_name_in_owner = true
+transform = Transform3D(0.2331078, 0, 0, 0, 0.2331078, 0, 0, 0, 0.2331078, 0, 0.665689, -1.1581887)
+billboard = 1
+modulate = Color(0.16206557, 0.1620656, 0.16206557, 1)
+text = "Name"
+font_size = 200
+
+[node name="Skin2" type="MeshInstance3D" parent="Body" unique_id=583927625]
+transform = Transform3D(0.42766076, 0, 0, 0, 0.42766076, 0, 0, 0, 0.42766076, 0, 0.15616643, 0.020640612)
+mesh = SubResource("BoxMesh_kb6p2")
+
+[node name="Skin5" type="MeshInstance3D" parent="Body" unique_id=172419924]
+transform = Transform3D(0.19128741, 0, 0, 0, 0.19128741, 0, 0, 0, 0.19128741, -0.10764241, -0.593606, 0.00477314)
+mesh = SubResource("BoxMesh_32hag")
+
+[node name="Skin6" type="MeshInstance3D" parent="Body" unique_id=1170353479]
+transform = Transform3D(0.19128741, 0, 0, 0, 0.19128741, 0, 0, 0, 0.19128741, 0.10657835, -0.5957482, 0.00477314)
+mesh = SubResource("BoxMesh_32hag")
+
+[node name="Control" type="Control" parent="Body" unique_id=253939295]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ColorRect" type="ColorRect" parent="Body/Control" unique_id=1196059460]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -4.0
+offset_top = -4.0
+offset_right = 4.0
+offset_bottom = 4.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Control" type="Control" parent="." unique_id=1999980197]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("8_r7pn3")
+base_sound = ExtResource("9_b8hi5")
+
+[node name="Label" type="Label" parent="Control" unique_id=955451218]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 23.0
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=1858913668]
+replication_config = SubResource("SceneReplicationConfig_1s1yo")
+
+[connection signal="health_changed" from="AttributeComponent" to="Body/Recoil/Head/Health" method="_on_attribute_component_health_changed"]
