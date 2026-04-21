@@ -61,7 +61,6 @@ shape = SubResource("CapsuleShape3D_cxcuy")
 
 [node name="ExplosionComponent" type="Node3D" parent="." unique_id=473826993]
 script = ExtResource("3_vwtsb")
-knockback_force = 10.0
 
 [node name="Radius" type="MeshInstance3D" parent="ExplosionComponent" unique_id=843273335]
 visible = false

@@ -10,7 +10,7 @@ var input_dir: Vector2
 var jump_input: bool
 var crouch: bool
 
-signal primary_fire  # fires every frame the button is held
+var primary_fire :bool  # fires every frame the button is held
 signal primary_fire_just_pressed  # fires only on initial press
 signal reload
 signal previous_weapon
@@ -80,7 +80,10 @@ func _input(event):
 	if Input.is_action_pressed("primary_fire"):
 		if Input.get_mouse_mode() != Input.MOUSE_MODE_CAPTURED:
 			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
-		primary_fire.emit()
+		primary_fire = true
+	else:
+		primary_fire = false
+		
 	if Input.is_action_just_released("primary_fire"):
 		primary_fire_released.emit()
 	if Input.is_action_just_pressed("previous_weapon"):

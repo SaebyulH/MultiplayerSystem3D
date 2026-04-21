@@ -108,14 +108,10 @@ func _force_update_is_on_floor():
 	move_and_slide()
 	velocity = old_velocity
 
-# In Player.gd
-var knockback_velocity := Vector3.ZERO
-@export var knockback_decay: float = 10.0  # how fast it fades per second
-
 func apply_knockback(force: Vector3) -> void:
 	if force.length() < 0.01:
 		return
-	knockback_velocity += force
+	queue_velocity += force
 
 func _apply_movement_from_input(delta):
 	_force_update_is_on_floor()
@@ -144,12 +140,14 @@ func _apply_movement_from_input(delta):
 
 	# Decay and apply knockback separately
 	velocity *= NetworkTime.physics_factor
-	velocity += knockback_velocity  # moved to here, not scaled
+	velocity.x += queue_velocity.x
+	velocity.y += queue_velocity.y  
+	velocity.z += queue_velocity.z
 	move_and_slide()
 	velocity /= NetworkTime.physics_factor
-	# decay after move
-	knockback_velocity = knockback_velocity.move_toward(Vector3.ZERO, knockback_decay * delta)
 
+	# Decay after move
+	queue_velocity = Vector3.ZERO
 
 
 

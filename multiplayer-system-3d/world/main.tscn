@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://d4g0vp4qr76ro" path="res://world/main.gd" id="1_hyim0"]
 [ext_resource type="PackedScene" uid="uid://dmsrhguradefj" path="res://ui/main_menu.tscn" id="2_4f7fj"]
+[ext_resource type="Script" uid="uid://boc0hp0roa8ye" path="res://player/killstreak.gd" id="3_4f7fj"]
 
 [node name="Main" type="Control" unique_id=176868085]
 layout_mode = 3
@@ -14,3 +15,15 @@ script = ExtResource("1_hyim0")
 
 [node name="MainMenu" parent="." unique_id=1617106146 instance=ExtResource("2_4f7fj")]
 layout_mode = 1
+
+[node name="Killstreak" type="Label" parent="." unique_id=1870417085]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_top = -11.5
+offset_right = 91.0
+offset_bottom = 11.5
+grow_vertical = 2
+text = "KILLSTREAK"
+script = ExtResource("3_4f7fj")

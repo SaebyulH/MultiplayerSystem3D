@@ -14,7 +14,6 @@
 [ext_resource type="Script" uid="uid://cxit1cumphn3q" path="res://components/attribute_component.gd" id="7_1jxqw"]
 [ext_resource type="Resource" uid="uid://sbp4tib25r0k" path="res://weapon/uzi/uzi.tres" id="7_yllr7"]
 [ext_resource type="Script" uid="uid://baeb5xhwct2k6" path="res://player/control.gd" id="8_r7pn3"]
-[ext_resource type="AudioStream" uid="uid://exvh8mdgxfb8" path="res://assets/multikill-1.mp3" id="9_b8hi5"]
 [ext_resource type="Shader" uid="uid://7yui67a2adxs" path="res://assets/environment/new_shader.gdshader" id="10_n7ghd"]
 [ext_resource type="Resource" uid="uid://b7sksxja7iost" path="res://weapon/ak/ak.tres" id="11_2ieo8"]
 [ext_resource type="Resource" uid="uid://yx67ob4xh6nt" path="res://weapon/revolver/revolver.tres" id="11_yllr7"]
@@ -109,7 +108,7 @@ surface_material_override/0 = SubResource("ShaderMaterial_nvl01")
 script = ExtResource("3_2uvqg")
 root = NodePath("..")
 state_properties = Array[String]([":global_transform", ":velocity"])
-input_properties = Array[String](["PlayerInput:input_dir", "PlayerInput:jump_input", "PlayerInput:crouch"])
+input_properties = Array[String](["PlayerInput:input_dir", "PlayerInput:jump_input", "PlayerInput:crouch", "PlayerInput:primary_fire"])
 metadata/_custom_type_script = "uid://d350u8evihs1u"
 
 [node name="TickInterpolator" type="Node" parent="." unique_id=1904018816 node_paths=PackedStringArray("root")]
@@ -279,7 +278,7 @@ offset_bottom = 4.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Control" type="Control" parent="." unique_id=1999980197]
+[node name="Control2" type="Control" parent="Body" unique_id=1999980197]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -287,9 +286,8 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("8_r7pn3")
-base_sound = ExtResource("9_b8hi5")
 
-[node name="Label" type="Label" parent="Control" unique_id=955451218]
+[node name="Label" type="Label" parent="Body/Control2" unique_id=955451218]
 layout_mode = 0
 offset_right = 40.0
 offset_bottom = 23.0

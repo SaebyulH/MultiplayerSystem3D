@@ -27,7 +27,9 @@ emission = Color(0.85268945, 0.71366084, 0.3015667, 1)
 emission_energy_multiplier = 21.81
 
 [node name="SimpleProjectile" unique_id=1706686187 instance=ExtResource("1_junr8")]
+gravity_scale = 0.0
 explode_on_timeout = true
+world_hit_mode = 0
 explode_on_world = true
 
 [node name="MeshInstance3D2" type="MeshInstance3D" parent="." index="4" unique_id=251685809]

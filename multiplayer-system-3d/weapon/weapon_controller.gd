@@ -55,7 +55,7 @@ func _ready() -> void:
 	if not weapons.is_empty() and weapons[current_weapon_index]:
 		spawn_weapon_model()
 
-	player_input.primary_fire.connect(_on_primary_fire_held)
+	#player_input.primary_fire.connect(_on_primary_fire_held)
 	player_input.primary_fire_released.connect(_on_primary_fire_released)
 	player_input.previous_weapon.connect(previous_weapon)
 	player_input.next_weapon.connect(next_weapon)
@@ -65,6 +65,11 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	
+	
+	if player_input.primary_fire:
+		_on_primary_fire_held()
+	
 	_align_weapon_to_raycast()
 	if _fire_cooldown > 0.0:
 		_fire_cooldown -= delta
@@ -75,9 +80,13 @@ func _physics_process(delta: float) -> void:
 			_finish_reload()
 
 	if _pending_fire:
-		_pre_fire_timer -= delta
-		if _pre_fire_timer <= 0.0:
-			_do_fire()
+		if player_input.primary_fire:
+			_pre_fire_timer -= delta
+			if _pre_fire_timer <= 0.0:
+				_do_fire()
+		else:
+			# stop progress if not holding
+			_pending_fire = false
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -195,6 +204,7 @@ func _on_primary_fire_held() -> void:
 
 func _on_primary_fire_released() -> void:
 	_fired_this_press = false
+	_pending_fire = false  # cancel queued shot
 
 
 func _try_fire() -> void:
@@ -205,6 +215,7 @@ func _try_fire() -> void:
 
 
 func _do_fire() -> void:
+	
 	_pending_fire = false
 	if not weapons[current_weapon_index].has_infinite_ammo:
 		weapons[current_weapon_index].mag_current -= 1
@@ -213,8 +224,11 @@ func _do_fire() -> void:
 
 	# rpc_id(1) is silently dropped when you ARE peer 1 (host-as-player).
 	# Call directly if we're the server, otherwise send the RPC.
-	if multiplayer.is_server():
-		_request_fire()
+	#if multiplayer.is_server():
+		#_request_fire()
+	#else:
+	if 1 == multiplayer.get_unique_id():
+		_request_fire.rpc()
 	else:
 		_request_fire.rpc_id(1)
 
@@ -225,6 +239,13 @@ func _do_fire() -> void:
 @rpc("any_peer", "call_local")
 func _play_empty() -> void:
 	_play_sound(weapons[current_weapon_index].empty_sound)
+
+
+
+
+
+
+
 
 
 # Client → server. No call_local — server handles everything inside.
@@ -258,17 +279,19 @@ func _request_fire() -> void:
 					result.collider.change_health(-weapon.hitscan_damage, _parent_player.name)
 
 	elif weapon.bullet_type == Weapon.BulletType.PROJECTILE:
-		for shot_dir in weapon.multishot_data:
-			var world_dir: Vector3 = weapon_model_parent.global_transform.basis * shot_dir.normalized()
-			
-			var projectile_scene = weapon.projectile_scene.instantiate() as Node3D
-			projectile_scene.global_transform = weapon_model_parent.global_transform
-			projectile_scene.shooter_name = _parent_player.name
-			
-			var speed = projectile_scene.linear_velocity.length()
-			projectile_scene.linear_velocity = world_dir * speed
-			
-			projectile_spawn_parent.add_child(projectile_scene, true)
+		if is_multiplayer_authority():
+			print("JELLP")
+			for shot_dir in weapon.multishot_data:
+				var world_dir: Vector3 = weapon_model_parent.global_transform.basis * shot_dir.normalized()
+				
+				var projectile_scene = weapon.projectile_scene.instantiate() as Node3D
+				projectile_scene.global_transform = weapon_model_parent.global_transform
+				projectile_scene.shooter_name = _parent_player.name
+				
+				var speed = projectile_scene.linear_velocity.length()
+				projectile_scene.linear_velocity = world_dir * speed
+				
+				projectile_spawn_parent.add_child(projectile_scene, true)
 			
 			
 	# Roll recoil once on the server — single source of truth, no randf divergence.
@@ -311,9 +334,6 @@ func _flash_muzzle_flash(start_position: Vector3):
 	
 @rpc("call_local")
 func _on_hitscan_hit(hit_position: Vector3, hit_normal: Vector3, start_position: Vector3) -> void:
-	
-	
-	
 	
 	# --- Bullet hole ---
 	var bullet_hole_scene = load("res://weapon/bullet_hole.tscn")
