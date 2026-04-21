@@ -7,6 +7,8 @@ var duration: float = 10.0
 	$GlowingDebris,
 	$Cloud,
 	$Smoke,
+	#$SmokeDark,
+	
 	$Boom,
 	$Ring,
 	$SmokeRings

@@ -253,6 +253,7 @@ void fragment() {
 	// Emission Operator: Add
 	EMISSION = (emission.rgb + emission_tex) * emission_energy;
 	ALPHA *= albedo.a * albedo_tex.a;
+	ALPHA_SCISSOR_THRESHOLD = 0.1;
 }
 "
 
@@ -309,7 +310,7 @@ alpha_curve = SubResource("CurveTexture_16q0m")
 
 [sub_resource type="QuadMesh" id="QuadMesh_jhnc4"]
 
-[sub_resource type="Shader" id="Shader_8t8nq"]
+[sub_resource type="Shader" id="Shader_i4ulv"]
 code = "// NOTE: Shader automatically converted from Godot Engine 4.6.2.stable's StandardMaterial3D.
 
 shader_type spatial;
@@ -383,7 +384,9 @@ void fragment() {
 	// Vertex Color Use as Albedo: Enabled
 	albedo_tex *= COLOR;
 
-	ALBEDO = albedo.rgb * albedo_tex.rgb;
+	ALBEDO = albedo.rgb * albedo_tex.rgb * albedo_tex.a * 2.0;
+	//ALBEDO = albedo.rgb * albedo_tex.rgb;
+	
 
 	float metallic_tex = dot(texture(texture_metallic, base_uv), metallic_texture_channel);
 	METALLIC = metallic_tex * metallic;
@@ -393,12 +396,13 @@ void fragment() {
 	float roughness_tex = dot(texture(texture_roughness, base_uv), roughness_texture_channel);
 	ROUGHNESS = roughness_tex * roughness;
 	ALPHA *= albedo.a * albedo_tex.a;
+	ALPHA_SCISSOR_THRESHOLD = 0.1;
 }
 "
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_uk6yn"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ol7ih"]
 render_priority = 0
-shader = SubResource("Shader_8t8nq")
+shader = SubResource("Shader_i4ulv")
 shader_parameter/albedo = Color(1, 1, 1, 1)
 shader_parameter/texture_albedo = ExtResource("3_cu3rm")
 shader_parameter/albedo_texture_size = Vector2i(1024, 1024)
@@ -551,7 +555,7 @@ alpha_curve = SubResource("CurveTexture_jh1to")
 code = "// NOTE: Shader automatically converted from Godot Engine 4.6.2.stable's StandardMaterial3D.
 
 shader_type spatial;
-render_mode blend_mix, depth_draw_opaque, cull_disabled, diffuse_burley, specular_schlick_ggx, unshaded;
+render_mode blend_add, depth_draw_opaque, cull_disabled, diffuse_burley, specular_schlick_ggx, unshaded;
 
 uniform vec4 albedo : source_color;
 uniform sampler2D texture_albedo : source_color, filter_linear_mipmap, repeat_enable;
@@ -593,6 +597,7 @@ void fragment() {
 	float roughness_tex = dot(texture(texture_roughness, base_uv), roughness_texture_channel);
 	ROUGHNESS = roughness_tex * roughness;
 	ALPHA *= albedo.a * albedo_tex.a;
+	ALPHA_SCISSOR_THRESHOLD = 0.1;
 }
 "
 
@@ -683,6 +688,7 @@ void fragment() {
 	float roughness_tex = dot(texture(texture_roughness, base_uv), roughness_texture_channel);
 	ROUGHNESS = roughness_tex * roughness;
 	ALPHA *= albedo.a * albedo_tex.a;
+	ALPHA_SCISSOR_THRESHOLD = 0.1;
 }
 "
 
@@ -760,14 +766,14 @@ process_material = SubResource("ParticleProcessMaterial_m0j43")
 draw_pass_1 = SubResource("QuadMesh_jhnc4")
 
 [node name="Smoke" type="GPUParticles3D" parent="." unique_id=968186526]
-material_override = SubResource("ShaderMaterial_uk6yn")
+material_override = SubResource("ShaderMaterial_ol7ih")
 emitting = false
-amount = 10
+amount = 25
 lifetime = 3.0
 one_shot = true
-explosiveness = 0.7
+explosiveness = 0.57
 randomness = 0.59
-fixed_fps = 12
+fixed_fps = 24
 process_material = SubResource("ParticleProcessMaterial_16q0m")
 draw_pass_1 = SubResource("QuadMesh_jhnc4")
 
@@ -803,6 +809,6 @@ lifetime = 2.0
 one_shot = true
 explosiveness = 1.0
 randomness = 1.0
-fixed_fps = 12
+fixed_fps = 24
 process_material = SubResource("ParticleProcessMaterial_va4mh")
 draw_pass_1 = SubResource("TorusMesh_e0qm4")
