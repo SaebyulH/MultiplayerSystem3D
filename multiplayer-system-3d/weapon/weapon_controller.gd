@@ -143,15 +143,13 @@ func previous_weapon() -> void:
 
 @rpc("any_peer", "call_local")
 func next_weapon_server() -> void:
-	pass
-	#if is_multiplayer_authority():
-		#current_weapon_index += 1
+	if is_multiplayer_authority():
+		current_weapon_index += 1
 
 @rpc("any_peer", "call_local")
 func previous_weapon_server() -> void:
-	pass
-	#if is_multiplayer_authority():
-		#current_weapon_index -= 1
+	if is_multiplayer_authority():
+		current_weapon_index -= 1
 
 # ---------------------------------------------------------------------------
 # Reload
@@ -188,9 +186,6 @@ func _finish_reload() -> void:
 # ---------------------------------------------------------------------------
 
 func _on_primary_fire_held() -> void:
-	current_weapon_index = Leaderboard.get_kills(get_parent().name)
-	
-	
 	if _is_reloading:
 		return
 	var weapon = weapons[current_weapon_index]
@@ -232,10 +227,10 @@ func _do_fire() -> void:
 	#if multiplayer.is_server():
 		#_request_fire()
 	#else:
-	#if 1 == multiplayer.get_unique_id():
-		#_request_fire.rpc_id(1)
-	#else:
-	_request_fire.rpc_id(1)
+	if 1 == multiplayer.get_unique_id():
+		_request_fire.rpc_id(1)
+	else:
+		_request_fire.rpc_id(1)
 
 # ---------------------------------------------------------------------------
 # RPCs

@@ -149,7 +149,7 @@ metadata/_custom_type_script = "uid://cxit1cumphn3q"
 
 [node name="WeaponController" type="Node" parent="." unique_id=1956241137 node_paths=PackedStringArray("weapon_model_parent", "projectile_spawn_parent", "player_input", "recoil", "_parent_player", "_raycast")]
 script = ExtResource("6_ebec5")
-weapons = Array[ExtResource("3_i3pqv")]([ExtResource("18_x7c3f"), ExtResource("17_65viv"), ExtResource("11_2ieo8"), ExtResource("14_tqiix"), ExtResource("19_bjvpn"), ExtResource("20_uw77l"), ExtResource("22_rptt4"), ExtResource("24_2uvqg"), ExtResource("7_yllr7"), ExtResource("11_yllr7"), ExtResource("22_r7pn3"), ExtResource("15_e7oew"), ExtResource("21_rptt4"), ExtResource("16_c35mf"), ExtResource("23_b8hi5")])
+weapons = Array[ExtResource("3_i3pqv")]([ExtResource("14_tqiix"), ExtResource("15_e7oew"), ExtResource("16_c35mf"), ExtResource("17_65viv"), ExtResource("18_x7c3f"), ExtResource("19_bjvpn"), ExtResource("20_uw77l"), ExtResource("21_rptt4"), ExtResource("22_r7pn3"), ExtResource("22_rptt4"), ExtResource("24_2uvqg"), ExtResource("23_b8hi5"), ExtResource("11_2ieo8"), ExtResource("7_yllr7"), ExtResource("11_yllr7")])
 weapon_model_parent = NodePath("../Body/Recoil/Head/WeaponParent")
 projectile_spawn_parent = NodePath("../ProjectilesParent")
 player_input = NodePath("../PlayerInput")
