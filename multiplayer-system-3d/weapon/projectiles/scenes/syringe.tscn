@@ -34,7 +34,7 @@ bottom_radius = 0.201
 
 [node name="SimpleProjectile" unique_id=1706686187 instance=ExtResource("1_7rxcs")]
 linear_velocity = Vector3(0, 0, -20)
-lifetime = 20.0
+hurtbox_hit_mode = 3
 world_hit_mode = 3
 
 [node name="CollisionShape3D" parent="." index="0" unique_id=1810742212]
