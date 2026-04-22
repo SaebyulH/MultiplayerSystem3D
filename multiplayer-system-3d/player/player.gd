@@ -146,8 +146,10 @@ func _apply_movement_from_input(delta):
 	var forward := Vector3(cam_basis.z.x, 0, cam_basis.z.z).normalized()
 	var right   := Vector3(cam_basis.x.x, 0, cam_basis.x.z).normalized()
 	var direction := (forward * input_dir.y + right * input_dir.x).normalized()
-
-	var calc_speed : float = speed * weapon_controller.weapons[weapon_controller.current_weapon_index].player_speed_multiplier
+	
+	var calc_speed : float = 1.0
+	if weapon_controller.weapons.size() > 0:
+		calc_speed = speed * weapon_controller.weapons[weapon_controller.current_weapon_index].player_speed_multiplier
 	if is_crouching:
 		calc_speed *= crouch_speed_multiplier
 

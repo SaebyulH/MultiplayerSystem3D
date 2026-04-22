@@ -84,7 +84,6 @@ size_flags_vertical = 3
 theme_override_font_sizes/font_size = 24
 
 [node name="Panel" type="Panel" parent="GameMenu/VBoxContainer" unique_id=316868278]
-visible = false
 layout_mode = 2
 size_flags_vertical = 3
 
@@ -108,11 +107,13 @@ text = "Class Select"
 [node name="ClassOption" type="OptionButton" parent="GameMenu/VBoxContainer/Panel/ClassSelect/VBoxContainer" unique_id=2131896059]
 layout_mode = 2
 theme_override_font_sizes/font_size = 60
-item_count = 2
+item_count = 3
 popup/item_0/text = "res://player/player_classes/assasin.tres"
 popup/item_0/id = 0
 popup/item_1/text = "res://player/player_classes/assault.tres"
 popup/item_1/id = 1
+popup/item_2/text = "res://player/player_classes/assistive.tres"
+popup/item_2/id = 2
 
 [node name="VBoxContainer2" type="VBoxContainer" parent="GameMenu/VBoxContainer/Panel/ClassSelect" unique_id=813982347]
 layout_mode = 2

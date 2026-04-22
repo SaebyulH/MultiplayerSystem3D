@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="Class" format=3 uid="uid://g66j8pw5b8dm"]
+
+[ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="1_v53vo"]
+[ext_resource type="Resource" uid="uid://dxtql15w6yxg7" path="res://weapon/tf2/syringe_gun.tres" id="2_v53vo"]
+[ext_resource type="Script" uid="uid://cbg4mqtqfaara" path="res://player/class.gd" id="4_gt25b"]
+[ext_resource type="Resource" uid="uid://fpldl81xiwwg" path="res://weapon/tf2/medpack_gun.tres" id="5_3bcps"]
+[ext_resource type="Resource" uid="uid://bcrlsyiwg0v84" path="res://weapon/tf2/pistol.tres" id="6_a76gm"]
+[ext_resource type="Resource" uid="uid://c8ii5ip83rppt" path="res://weapon/tf2/shotgun.tres" id="6_s1cw0"]
+[ext_resource type="Resource" uid="uid://yx67ob4xh6nt" path="res://weapon/real/revolver.tres" id="7_3bcps"]
+
+[resource]
+script = ExtResource("4_gt25b")
+class_display_name = "Assistive"
+primary_weapons = Array[ExtResource("1_v53vo")]([ExtResource("2_v53vo"), ExtResource("6_a76gm"), ExtResource("7_3bcps")])
+secondary_weapons = Array[ExtResource("1_v53vo")]([ExtResource("5_3bcps"), ExtResource("6_s1cw0")])
+metadata/_custom_type_script = "uid://cbg4mqtqfaara"

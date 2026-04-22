@@ -10,6 +10,8 @@ var player_id: String
 var available_classes: Array[Class] = []
 var selected_class: Class = null
 
+@onready var world := $"../../../.."
+
 func _ready() -> void:
 	player_id = str(multiplayer.get_unique_id())
 	
@@ -50,6 +52,8 @@ func _on_class_selected(index: int) -> void:
 
 
 func _on_confirm_pressed() -> void:
+	world.class_selected = true
+	
 	if selected_class == null:
 		return
 	

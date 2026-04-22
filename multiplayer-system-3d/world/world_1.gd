@@ -5,12 +5,15 @@ extends Node3D
 @export var class_select: Panel
 
 #@export var player_ui: Control
-
+var class_selected := false
 #@export var leaderboard_component: LeaderboardComponent
 @export var spawn_parent: Node3D
 var map_path
 
 func _ready() -> void:
+	PlayerInput.ui_open = true
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	
 	if NetworkManager.is_hosting_game:
 
 		
@@ -36,6 +39,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		leaderboard.hide()
 		
 	if Input.is_action_just_pressed("class_select"):
+		if class_selected == false:
+			return
 		class_select.visible = not class_select.visible
 		PlayerInput.ui_open = class_select.visible
 		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE if class_select.visible else Input.MOUSE_MODE_CAPTURED)

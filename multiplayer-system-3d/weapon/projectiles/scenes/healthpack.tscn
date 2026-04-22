@@ -17,25 +17,27 @@ linear_velocity = Vector3(0, 0, -5)
 world_hit_mode = 1
 
 [node name="CollisionShape3D" parent="." index="0" unique_id=1810742212]
-transform = Transform3D(-0.44716287, 3.9092214e-08, 1.7087752e-15, 6.944173e-23, -1.9546107e-08, 0.44716287, 3.9092214e-08, 0.44716287, 1.9546107e-08, 0, 0, 0)
+transform = Transform3D(-0.44716287, 3.9092214e-08, 1.7087752e-15, 6.944173e-23, -1.9546107e-08, 0.44716287, 3.9092214e-08, 0.44716287, 1.9546107e-08, 0, 0, -1)
 shape = SubResource("BoxShape3D_vqu1i")
 
 [node name="HitboxComponent" parent="." index="2" unique_id=1963592485]
-health_delta = 100.0
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -1)
+health_delta = 25.0
+can_hit_shooter = true
 
 [node name="CollisionShape3D" parent="HitboxComponent" index="0" unique_id=1314331169]
 shape = SubResource("BoxShape3D_3kjll")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." index="4" unique_id=1010241553]
-transform = Transform3D(0.43288854, 0, 0, 0, 0.1752738, 0, 0, 0, 0.4328885, 0, 3.7252903e-09, 1.2417635e-09)
+transform = Transform3D(0.43288854, 0, 0, 0, 0.1752738, 0, 0, 0, 0.4328885, 0, 3.7252903e-09, -1)
 mesh = SubResource("BoxMesh_jp5o2")
 
 [node name="MeshInstance3D2" type="MeshInstance3D" parent="." index="5" unique_id=18085705]
-transform = Transform3D(0.10882468, 0, 0, 0, 0.04406242, -2.9802322e-08, 0, 0, 0.29480556, 0, 0.0879059, -1.5522043e-09)
+transform = Transform3D(0.10882468, 0, 0, 0, 0.04406242, -2.9802322e-08, 0, 0, 0.29480556, 0, 0.0879059, -1)
 mesh = SubResource("BoxMesh_jp5o2")
 surface_material_override/0 = SubResource("StandardMaterial3D_vqu1i")
 
 [node name="MeshInstance3D3" type="MeshInstance3D" parent="." index="6" unique_id=1881940421]
-transform = Transform3D(-4.7568776e-09, 0, 0.29480556, 0, 0.04406242, 0, -0.10882468, 0, -1.288636e-08, 0, 0.0879059, -1.5522043e-09)
+transform = Transform3D(-4.7568776e-09, 0, 0.29480556, 0, 0.04406242, 0, -0.10882468, 0, -1.288636e-08, 0, 0.0879059, -1)
 mesh = SubResource("BoxMesh_jp5o2")
 surface_material_override/0 = SubResource("StandardMaterial3D_vqu1i")

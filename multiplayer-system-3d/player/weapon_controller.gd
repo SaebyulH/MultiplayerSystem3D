@@ -147,11 +147,12 @@ func _tick_timers(delta: float) -> void:
 # ---------------------------------------------------------------------------
 
 func _apply_recoil_data() -> void:
-	var data: RecoilData = weapons[current_weapon_index].recoil_data
-	recoil.recoil       = data.recoil
-	recoil.aim_recoil   = data.aim_recoil
-	recoil.snappiness   = data.snappiness
-	recoil.return_speed = data.return_speed
+	if weapons.size() > 0:
+		var data: RecoilData = weapons[current_weapon_index].recoil_data
+		recoil.recoil       = data.recoil
+		recoil.aim_recoil   = data.aim_recoil
+		recoil.snappiness   = data.snappiness
+		recoil.return_speed = data.return_speed
 
 
 func _play_sound(stream: AudioStream) -> void:
@@ -318,6 +319,8 @@ func _confirm_reload_done(new_mag: int) -> void:
 # ---------------------------------------------------------------------------
 
 func _process_fire() -> void:
+	if weapons.size() <= 0:
+		return
 	var weapon: Weapon = weapons[current_weapon_index]
 
 	# Empty mag click — feedback only, no RPC needed
