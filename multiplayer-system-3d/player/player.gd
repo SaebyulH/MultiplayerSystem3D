@@ -1,6 +1,9 @@
 extends CharacterBody3D
 class_name Player
 
+var needs_respawn := false
+var respawn_position := Vector3.ZERO
+
 # In Player.gd
 var knockback_velocity := Vector3.ZERO
 @export var knockback_decay: float = 50.0  # how fast it fades per second
@@ -68,27 +71,39 @@ func _ready() -> void:
 		camera.current = false
 		camera.visible = false
 
-	if is_multiplayer_authority():
-		attribute_component.no_health.connect(_no_health)
+	attribute_component.no_health.connect(_no_health)
 		
 	rollback_sync.process_settings()
 		
 func _health_changed():
 	pass
-	#print(str(name) + ": Health Changed!")
 
 func reset():
 	attribute_component.reset()
+	var last_weapon = weapon_controller.current_weapon_index
 	weapon_controller.reset()
+	weapon_controller.current_weapon_index = last_weapon
 
+	needs_respawn = true
+	for sibling in get_parent().get_children():
+		if sibling is Map:
+			respawn_position = sibling.get_random_spawn_location()
+			break
+	print("KFAJKFLLAJDLFKJADKL")
+	
 #executed only by authority anyway
 func _no_health():
 	print(name + " KILLED BY " + attribute_component.last_attacker)
 	#Leaderboard.request_add_death(name)
 	#Leaderboard.request_add_kill(attribute_component.last_attacker)
-	spawn_manager.respawn_player(name)
+	#spawn_manager.respawn_player(name)
+	reset()
 
 func _rollback_tick(delta, tick, is_fresh):
+	if needs_respawn:
+		global_position = respawn_position
+		velocity = Vector3.ZERO
+		needs_respawn = false
 	_apply_movement_from_input(delta)
 
 
