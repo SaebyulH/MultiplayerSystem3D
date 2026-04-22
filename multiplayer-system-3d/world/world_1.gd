@@ -2,7 +2,9 @@ extends Node3D
 
 @export var player_scene: PackedScene
 @export var leaderboard: ItemList
-@export var player_ui: Control
+@export var class_select: Panel
+
+#@export var player_ui: Control
 
 #@export var leaderboard_component: LeaderboardComponent
 @export var spawn_parent: Node3D
@@ -32,3 +34,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		
 	else:
 		leaderboard.hide()
+		
+	if Input.is_action_just_pressed("class_select"):
+		class_select.visible = not class_select.visible
+		PlayerInput.ui_open = class_select.visible
+		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE if class_select.visible else Input.MOUSE_MODE_CAPTURED)

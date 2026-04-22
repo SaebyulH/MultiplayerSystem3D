@@ -3,12 +3,13 @@
 [ext_resource type="Script" uid="uid://bd6lublcioe52" path="res://world/world_1.gd" id="1_rf4cw"]
 [ext_resource type="PackedScene" uid="uid://cmix6q8a6hgcu" path="res://player/player.tscn" id="2_7dtx0"]
 [ext_resource type="Script" uid="uid://bi46jlfs4i3pp" path="res://world/game_menu.gd" id="3_ur4i3"]
+[ext_resource type="Script" uid="uid://c2ud4axp2a0nj" path="res://world/class_select.gd" id="4_y31kp"]
 
-[node name="World1" type="Node3D" unique_id=1030413131 node_paths=PackedStringArray("leaderboard", "player_ui", "spawn_parent")]
+[node name="World1" type="Node3D" unique_id=1030413131 node_paths=PackedStringArray("leaderboard", "class_select", "spawn_parent")]
 script = ExtResource("1_rf4cw")
 player_scene = ExtResource("2_7dtx0")
 leaderboard = NodePath("GameMenu/VBoxContainer/Leaderboard")
-player_ui = NodePath("")
+class_select = NodePath("GameMenu/VBoxContainer/Panel")
 spawn_parent = NodePath("SpawnParent")
 
 [node name="SpawnParent" type="Node3D" parent="." unique_id=1706707506]
@@ -54,10 +55,8 @@ grow_vertical = 2
 
 [node name="ID" type="Label" parent="GameMenu" unique_id=1439683636]
 layout_mode = 1
-offset_left = 50.0
-offset_top = 58.0
-offset_right = 158.0
-offset_bottom = 173.0
+offset_right = 108.0
+offset_bottom = 115.0
 theme_override_font_sizes/font_size = 60
 text = "ID"
 
@@ -79,9 +78,85 @@ theme_override_font_sizes/font_size = 60
 text = "Main Menu"
 
 [node name="Leaderboard" type="ItemList" parent="GameMenu/VBoxContainer" unique_id=584755671]
+visible = false
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_font_sizes/font_size = 24
+
+[node name="Panel" type="Panel" parent="GameMenu/VBoxContainer" unique_id=316868278]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ClassSelect" type="VBoxContainer" parent="GameMenu/VBoxContainer/Panel" unique_id=1190301768]
+layout_mode = 0
+offset_right = 1920.0
+offset_bottom = 985.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_vertical = 3
+script = ExtResource("4_y31kp")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="GameMenu/VBoxContainer/Panel/ClassSelect" unique_id=552958007]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="GameMenu/VBoxContainer/Panel/ClassSelect/VBoxContainer" unique_id=339212374]
+layout_mode = 2
+theme_override_font_sizes/font_size = 60
+text = "Class Select"
+
+[node name="ClassOption" type="OptionButton" parent="GameMenu/VBoxContainer/Panel/ClassSelect/VBoxContainer" unique_id=2131896059]
+layout_mode = 2
+theme_override_font_sizes/font_size = 60
+item_count = 2
+popup/item_0/text = "res://player/player_classes/assasin.tres"
+popup/item_0/id = 0
+popup/item_1/text = "res://player/player_classes/assault.tres"
+popup/item_1/id = 1
+
+[node name="VBoxContainer2" type="VBoxContainer" parent="GameMenu/VBoxContainer/Panel/ClassSelect" unique_id=813982347]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="GameMenu/VBoxContainer/Panel/ClassSelect/VBoxContainer2" unique_id=1998715346]
+layout_mode = 2
+theme_override_font_sizes/font_size = 60
+text = "Primary"
+
+[node name="PrimaryWeaponOption" type="OptionButton" parent="GameMenu/VBoxContainer/Panel/ClassSelect/VBoxContainer2" unique_id=1629862108]
+layout_mode = 2
+theme_override_font_sizes/font_size = 60
+item_count = 3
+popup/item_0/text = "ASSASIN"
+popup/item_0/id = 0
+popup/item_1/text = "ASSAULT"
+popup/item_1/id = 1
+popup/item_2/text = "ASSISTIVE"
+popup/item_2/id = 2
+
+[node name="VBoxContainer3" type="VBoxContainer" parent="GameMenu/VBoxContainer/Panel/ClassSelect" unique_id=659284524]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="GameMenu/VBoxContainer/Panel/ClassSelect/VBoxContainer3" unique_id=166602554]
+layout_mode = 2
+theme_override_font_sizes/font_size = 60
+text = "Secondary
+"
+
+[node name="SecondaryWeaponOption" type="OptionButton" parent="GameMenu/VBoxContainer/Panel/ClassSelect/VBoxContainer3" unique_id=1467890301]
+layout_mode = 2
+theme_override_font_sizes/font_size = 60
+item_count = 3
+popup/item_0/text = "ASSASIN"
+popup/item_0/id = 0
+popup/item_1/text = "ASSAULT"
+popup/item_1/id = 1
+popup/item_2/text = "ASSISTIVE"
+popup/item_2/id = 2
+
+[node name="ConfirmBuild" type="Button" parent="GameMenu/VBoxContainer/Panel/ClassSelect" unique_id=1085279259]
+layout_mode = 2
+theme_override_font_sizes/font_size = 60
+text = "Confirm Class"
 
 [node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="." unique_id=267556738]
 _spawnable_scenes = PackedStringArray("uid://cmix6q8a6hgcu", "uid://bhsrnwae043e1", "uid://7ccxfopdhtv8", "uid://x64r4as832eo", "uid://72ju85r15v1e")

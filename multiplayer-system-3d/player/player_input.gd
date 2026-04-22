@@ -28,7 +28,7 @@ var fire_just_released: bool = false
 signal previous_weapon
 signal next_weapon
 signal reload
-
+static var ui_open: bool = false
 
 func _ready() -> void:
 	NetworkTime.before_tick_loop.connect(_gather)
@@ -49,7 +49,8 @@ func _input(event: InputEvent) -> void:
 	# Capture mouse on first click without firing through the click
 	if Input.is_action_just_pressed("primary_fire"):
 		if Input.get_mouse_mode() != Input.MOUSE_MODE_CAPTURED:
-			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+			if not ui_open:
+				Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 			fire_held = false
 			return
 

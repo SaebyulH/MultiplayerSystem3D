@@ -14,7 +14,7 @@ metadata/_custom_type_script = "uid://yvevtn4dsddy"
 
 [resource]
 script = ExtResource("5_1h1n0")
-display_name = "Grenade Launcher"
+display_name = "Medpack Launcher"
 automatic = true
 post_shoot_delay = 0.2
 mag_size = 40

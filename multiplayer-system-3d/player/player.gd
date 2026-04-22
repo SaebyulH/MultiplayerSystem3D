@@ -71,7 +71,7 @@ func _ready() -> void:
 		camera.current = false
 		camera.visible = false
 
-	attribute_component.no_health.connect(_no_health)
+	attribute_component.no_health.connect(no_health)
 		
 	rollback_sync.process_settings()
 		
@@ -81,7 +81,7 @@ func _health_changed():
 func reset():
 	attribute_component.reset()
 	var last_weapon = weapon_controller.current_weapon_index
-	weapon_controller.reset()
+	#weapon_controller.reset()
 	weapon_controller.current_weapon_index = last_weapon
 
 	needs_respawn = true
@@ -92,7 +92,7 @@ func reset():
 	print("KFAJKFLLAJDLFKJADKL")
 	
 #executed only by authority anyway
-func _no_health():
+func no_health():
 	print(name + " KILLED BY " + attribute_component.last_attacker)
 	#Leaderboard.request_add_death(name)
 	#Leaderboard.request_add_kill(attribute_component.last_attacker)

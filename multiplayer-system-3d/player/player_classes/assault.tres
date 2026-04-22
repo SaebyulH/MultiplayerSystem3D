@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="Class" format=3 uid="uid://di6fqvkmt05o6"]
+
+[ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="1_qjte0"]
+[ext_resource type="Script" uid="uid://cbg4mqtqfaara" path="res://player/class.gd" id="2_l1baf"]
+[ext_resource type="Resource" uid="uid://c1iei2xvith2m" path="res://weapon/tf2/rocket_launcher.tres" id="2_mm37i"]
+[ext_resource type="Resource" uid="uid://b4ydfvfklj5cl" path="res://weapon/tf2/grenade_launcher.tres" id="3_84ovb"]
+[ext_resource type="Resource" uid="uid://2k6bc50djxgg" path="res://weapon/tf2/smg.tres" id="5_5au0l"]
+[ext_resource type="Resource" uid="uid://bcrlsyiwg0v84" path="res://weapon/tf2/pistol.tres" id="6_4smbg"]
+
+[resource]
+script = ExtResource("2_l1baf")
+class_display_name = "Assault"
+primary_weapons = Array[ExtResource("1_qjte0")]([ExtResource("2_mm37i"), ExtResource("3_84ovb")])
+secondary_weapons = Array[ExtResource("1_qjte0")]([ExtResource("5_5au0l"), ExtResource("6_4smbg")])
+metadata/_custom_type_script = "uid://cbg4mqtqfaara"

@@ -2,6 +2,7 @@
 
 [ext_resource type="AudioStream" uid="uid://bwfdsxbmx4ko8" path="res://assets/sounds/empty_gun.mp3" id="1_usffl"]
 [ext_resource type="PackedScene" uid="uid://6mr0d18yn8po" path="res://weapon/projectiles/scenes/simple_projectile.tscn" id="2_fdlab"]
+[ext_resource type="Texture2D" uid="uid://b6gktr1vfryte" path="res://defaults/default_damage_falloff_curve.tres" id="2_tld7o"]
 [ext_resource type="Script" uid="uid://yvevtn4dsddy" path="res://player/recoil/recoil_data.gd" id="3_0yaxy"]
 [ext_resource type="AudioStream" uid="uid://cqbknmbhlwhu" path="res://assets/sounds/reload.mp3" id="4_2myur"]
 [ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="5_r200w"]
@@ -14,7 +15,7 @@ metadata/_custom_type_script = "uid://yvevtn4dsddy"
 
 [resource]
 script = ExtResource("5_r200w")
-display_name = "Bat"
+display_name = "Knife"
 automatic = true
 post_shoot_delay = 0.8
 has_infinite_ammo = true

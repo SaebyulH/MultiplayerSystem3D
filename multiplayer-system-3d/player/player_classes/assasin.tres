@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="Class" format=3 uid="uid://dooxsri7qsjw1"]
+
+[ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="1_lj83e"]
+[ext_resource type="Resource" uid="uid://cg4gfj2es24p4" path="res://weapon/tf2/sniper_rifle.tres" id="2_lj83e"]
+[ext_resource type="Resource" uid="uid://cy4bt3f2aadno" path="res://weapon/tf2/spy_revolver.tres" id="3_d4w8m"]
+[ext_resource type="Script" uid="uid://cbg4mqtqfaara" path="res://player/class.gd" id="4_oiapg"]
+[ext_resource type="Resource" uid="uid://yx67ob4xh6nt" path="res://weapon/real/revolver.tres" id="5_3tebw"]
+[ext_resource type="Resource" uid="uid://ebu6fuc2cymc" path="res://weapon/tf2/knife.tres" id="6_oiapg"]
+
+[resource]
+script = ExtResource("4_oiapg")
+class_display_name = "Assasin"
+primary_weapons = Array[ExtResource("1_lj83e")]([ExtResource("2_lj83e"), ExtResource("3_d4w8m")])
+secondary_weapons = Array[ExtResource("1_lj83e")]([ExtResource("5_3tebw"), ExtResource("6_oiapg")])
+metadata/_custom_type_script = "uid://cbg4mqtqfaara"
