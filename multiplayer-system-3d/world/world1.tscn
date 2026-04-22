@@ -79,10 +79,9 @@ theme_override_font_sizes/font_size = 60
 text = "Main Menu"
 
 [node name="Leaderboard" type="ItemList" parent="GameMenu/VBoxContainer" unique_id=584755671]
-visible = false
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_font_sizes/font_size = 60
+theme_override_font_sizes/font_size = 24
 
 [node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="." unique_id=267556738]
 _spawnable_scenes = PackedStringArray("uid://cmix6q8a6hgcu", "uid://bhsrnwae043e1", "uid://7ccxfopdhtv8", "uid://x64r4as832eo", "uid://72ju85r15v1e")
