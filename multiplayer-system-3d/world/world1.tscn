@@ -2,12 +2,13 @@
 
 [ext_resource type="Script" uid="uid://bd6lublcioe52" path="res://world/world_1.gd" id="1_rf4cw"]
 [ext_resource type="PackedScene" uid="uid://cmix6q8a6hgcu" path="res://player/player.tscn" id="2_7dtx0"]
-[ext_resource type="Script" uid="uid://dxj6xs40vgdyb" path="res://ui/leaderboard_list.gd" id="3_cxftf"]
+[ext_resource type="Script" uid="uid://bi46jlfs4i3pp" path="res://world/game_menu.gd" id="3_ur4i3"]
 
-[node name="World1" type="Node3D" unique_id=1030413131 node_paths=PackedStringArray("leaderboard", "spawn_parent")]
+[node name="World1" type="Node3D" unique_id=1030413131 node_paths=PackedStringArray("leaderboard", "player_ui", "spawn_parent")]
 script = ExtResource("1_rf4cw")
 player_scene = ExtResource("2_7dtx0")
 leaderboard = NodePath("GameMenu/VBoxContainer/Leaderboard")
+player_ui = NodePath("")
 spawn_parent = NodePath("SpawnParent")
 
 [node name="SpawnParent" type="Node3D" parent="." unique_id=1706707506]
@@ -21,6 +22,26 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("3_ur4i3")
+
+[node name="Killstreak" type="Label" parent="GameMenu" unique_id=1114400658]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -480.0
+offset_top = -169.0
+offset_right = 480.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 18
+theme_override_font_sizes/font_size = 60
+text = "☠︎︎:
+"
+horizontal_alignment = 1
 
 [node name="Panel" type="Panel" parent="GameMenu" unique_id=1568453324]
 visible = false
@@ -30,6 +51,15 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+
+[node name="ID" type="Label" parent="GameMenu" unique_id=1439683636]
+layout_mode = 1
+offset_left = 50.0
+offset_top = 58.0
+offset_right = 158.0
+offset_bottom = 173.0
+theme_override_font_sizes/font_size = 60
+text = "ID"
 
 [node name="VBoxContainer" type="VBoxContainer" parent="GameMenu" unique_id=1846671306]
 layout_mode = 1
@@ -45,6 +75,7 @@ alignment = 1
 
 [node name="MainMenu" type="Button" parent="GameMenu/VBoxContainer/HBoxContainer" unique_id=1729705955]
 layout_mode = 2
+theme_override_font_sizes/font_size = 60
 text = "Main Menu"
 
 [node name="Leaderboard" type="ItemList" parent="GameMenu/VBoxContainer" unique_id=584755671]
@@ -52,7 +83,6 @@ visible = false
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_font_sizes/font_size = 60
-script = ExtResource("3_cxftf")
 
 [node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="." unique_id=267556738]
 _spawnable_scenes = PackedStringArray("uid://cmix6q8a6hgcu", "uid://bhsrnwae043e1", "uid://7ccxfopdhtv8", "uid://x64r4as832eo", "uid://72ju85r15v1e")

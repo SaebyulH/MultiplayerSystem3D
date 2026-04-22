@@ -18,4 +18,7 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	text = str(attribute_component.health)
+	var tx = str(attribute_component.health) + "\n"
+	for i in range(attribute_component.health/10):
+		tx += "█"
+	text = tx

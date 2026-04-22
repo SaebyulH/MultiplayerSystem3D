@@ -10,7 +10,7 @@ var _self_damage: Dictionary = {}
 var _self_heal: Dictionary = {}
 var _heal_others: Dictionary = {}
 
-signal killstreak_changed(killer_name: String)
+signal killstreak_changed(player_name: String, killstreak: int)
 
 # -------------------------
 # PLAYER MANAGEMENT
@@ -49,7 +49,7 @@ func _add_kill(killer_name: String):
 	_player_kills[killer_name] = _player_kills.get(killer_name, 0) + 1
 	_killstreak[killer_name] = _killstreak.get(killer_name, 0) + 1
 	_sync_scores()
-	killstreak_changed.emit(killer_name)
+	killstreak_changed.emit(killer_name, _killstreak[killer_name])
 	print("Kill:", killer_name)
 
 
@@ -122,7 +122,6 @@ func _sync_scores():
 
 @rpc("any_peer", "reliable")
 func _receive_scores(kills: Dictionary,
-
 	deaths: Dictionary,
 	killstreak: Dictionary,
 	damage: Dictionary,
@@ -132,12 +131,17 @@ func _receive_scores(kills: Dictionary,
 
 	_player_kills = kills.duplicate()
 	_player_deaths = deaths.duplicate()
-	_killstreak = killstreak.duplicate()
 	_damage_dealt = damage.duplicate()
 	_self_damage = self_damage.duplicate()
 	_self_heal = self_heal.duplicate()
 	_heal_others = heal_others.duplicate()
+
+	for player_name in killstreak.keys():
+		var new_streak: int = killstreak[player_name]
+		if _killstreak.get(player_name, 0) != new_streak:
+			killstreak_changed.emit(player_name, new_streak)
 	
+	_killstreak = killstreak.duplicate()
 
 # -------------------------
 # REQUEST API

@@ -59,8 +59,9 @@ func apply_health_delta(delta: float, changer: String, changee: String):
 	if old_health > 0.0 and new_health <= 0.0:
 		Leaderboard.request_add_kill(changer)
 		Leaderboard.request_add_death(changee)
-
-	health = new_health
+	
+	if abs(applied_delta) > 0.0001:
+		health = new_health
 
 
 func _process(delta: float) -> void:

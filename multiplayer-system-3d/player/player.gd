@@ -48,8 +48,8 @@ func _enter_tree() -> void:
 	#set_multiplayer_authority(str(name).to_int())
 	
 	
-	
-	%Name.text = ("Host" if (name.to_int() == 1) else "Client") + ", NetID: " + str(name)
+	#
+	#%Name
 
 func _ready() -> void:
 	add_to_group("players")

@@ -2,7 +2,6 @@
 
 [ext_resource type="Script" uid="uid://b3gtcm614wpi8" path="res://maps/map.gd" id="1_8rrov"]
 [ext_resource type="Texture2D" uid="uid://c4ln0bpu3tmo3" path="res://assets/environment/kloppenheim_06_puresky_4k.exr" id="2_wnf2b"]
-[ext_resource type="CompressedTexture3D" uid="uid://gj7tu2wrtw4l" path="res://assets/environment/True Cinematic.cube-s33.png" id="2_yhcpw"]
 [ext_resource type="Script" uid="uid://ccrf5bdka2m35" path="res://player/auto_projectile_spawner.gd" id="4_duvhj"]
 [ext_resource type="PackedScene" uid="uid://dfyafkr18mtuq" path="res://weapon/projectiles/scenes/healthpack.tscn" id="5_uwnr7"]
 
@@ -26,7 +25,6 @@ glow_enabled = true
 volumetric_fog_enabled = true
 volumetric_fog_density = 0.0042
 adjustment_enabled = true
-adjustment_color_correction = ExtResource("2_yhcpw")
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_e2o6t"]
 albedo_color = Color(0.31925523, 0.31925526, 0.31925526, 1)

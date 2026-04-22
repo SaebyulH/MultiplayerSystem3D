@@ -1,7 +1,7 @@
 [gd_resource type="CurveTexture" format=3 uid="uid://b6gktr1vfryte"]
 
 [sub_resource type="Curve" id="Curve_j35qg"]
-_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0.10135579), 0.0, 0.0, 0, 0]
 point_count = 2
 
 [resource]
