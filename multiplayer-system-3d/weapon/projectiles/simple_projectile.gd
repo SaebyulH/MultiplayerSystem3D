@@ -72,6 +72,7 @@ func _on_hit_hurtbox(hurtbox: HurtboxComponent) -> void:
 	elif hurtbox_hit_mode == HurtboxHitMode.EXPLODE:
 		start_explode()
 	elif world_hit_mode == WorldHitMode.STICK:
+		_hitbox_component.health_delta = 0.0
 		_attach_to(hurtbox)
 		
 		
@@ -94,6 +95,7 @@ func _on_body_entered(body: Node3D) -> void:
 	elif world_hit_mode == WorldHitMode.EXPLODE:
 		await start_explode()
 	elif world_hit_mode == WorldHitMode.STICK:
+		_hitbox_component.health_delta = 0.0
 		_attach_to(body)
 
 func start_explode():
@@ -104,6 +106,8 @@ func start_explode():
 
 func _attach_to(body: Node3D) -> void:
 	freeze = true
+	#	Make it not have dmg
+	#
 	_stuck_to = body
 	
 	# store relative transform

@@ -89,7 +89,7 @@ func reset():
 		if sibling is Map:
 			respawn_position = sibling.get_random_spawn_location()
 			break
-	print("KFAJKFLLAJDLFKJADKL")
+	print("PLAYER RESET!!!!")
 	
 #executed only by authority anyway
 func no_health():

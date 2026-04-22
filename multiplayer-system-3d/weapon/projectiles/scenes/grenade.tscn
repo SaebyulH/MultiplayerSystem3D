@@ -44,7 +44,6 @@ shape = SubResource("CapsuleShape3D_fvy8b")
 
 [node name="ExplosionComponent" parent="." index="3" unique_id=473826993]
 splash_health_delta = -200
-splash_radius = 3.0
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." index="4" unique_id=650562878]
 transform = Transform3D(-0.20566359, 1.7979684e-08, 7.8591687e-16, -7.548928e-23, -8.989842e-09, 0.20566359, 1.7979684e-08, 0.20566359, 8.989842e-09, 0, 0, 0)

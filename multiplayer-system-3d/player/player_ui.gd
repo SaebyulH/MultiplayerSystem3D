@@ -15,7 +15,7 @@ class_name KillstreakUI
 @onready var health_delta_bar_public := $"../HealthDeltaBarPublic"
 @onready var name_public := %NamePublic
 
-
+@onready var WeaponList := $WeaponList
 var _last_health := 0.0
 var _last_change := 0.0
 var _last_time := 0.0
@@ -23,7 +23,15 @@ var _last_time := 0.0
 const HIDE_TIME := 2.0
 
 
+
 func _ready() -> void:
+	
+	weapon_controller.mag_changed.connect(func(_a=null,_b=null): _update_weapon_list())
+	
+	weapon_controller.weapon_changed.connect(func(_a=null,_b=null): _update_weapon_list())
+	#weapon_controller.update.connect(_update_weapon_list)
+	
+	_update_weapon_list()
 	#if it is OURS
 	#if str(multiplayer.get_unique_id()) == get_parent().name:
 		#
@@ -59,6 +67,25 @@ func _ready() -> void:
 
 	_last_health = attribute_component.health
 
+
+func _update_weapon_list() -> void:
+	if weapon_controller == null:
+		return
+	
+	for child in WeaponList.get_children():
+		child.queue_free()
+	
+	var weapons := weapon_controller.weapons
+	var current_index := weapon_controller.current_weapon_index
+	
+	for i in weapons.size():
+		var label := Label.new()
+		label.text = weapons[i].display_name
+		if i == current_index:
+			label.modulate = Color(1.0, 1.0, 0.0)
+		else:
+			label.modulate = Color(1.0, 1.0, 1.0)
+		WeaponList.add_child(label)
 
 func _on_mag_or_weapon_updated(_current = null, _max = null) -> void:
 	if weapon_controller == null:
