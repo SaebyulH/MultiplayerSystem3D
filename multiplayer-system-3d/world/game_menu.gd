@@ -67,23 +67,22 @@ func _on_killstreak_changed(player_name: String, killstreak: int) -> void:
 	var seq := _get_pitch_sequence(killstreak)
 	_play_sequence_async(seq, token)
 
-
 func _play_sequence_async(seq: Array[float], token: int) -> void:
 	for pitch in seq:
 		if token != play_token:
 			return
-
+		if not is_inside_tree():
+			return
 		var p := AudioStreamPlayer.new()
 		p.stream = base_sound
 		p.pitch_scale = pitch
 		add_child(p)
-
 		p.play()
 		p.finished.connect(func(): p.queue_free())
-
 		await get_tree().create_timer(0.08).timeout
-
 	if token == play_token:
+		if not is_inside_tree():
+			return
 		await get_tree().create_timer(0.3).timeout
 
 
