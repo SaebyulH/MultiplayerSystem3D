@@ -36,7 +36,7 @@ world_hit_mode = 2
 health_delta = 0.0
 
 [node name="ExplosionComponent" parent="." index="3" unique_id=473826993]
-splash_health_delta = -70
+splash_health_delta = -180
 splash_radius = 3.0
 
 [node name="MeshInstance3D2" type="MeshInstance3D" parent="." index="4" unique_id=251685809]
