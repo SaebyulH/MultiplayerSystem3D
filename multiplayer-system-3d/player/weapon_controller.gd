@@ -403,7 +403,9 @@ func _do_fire_client() -> void:
 	
 	
 	_fire_cooldown = weapons[current_weapon_index].post_shoot_delay
-	fire_intent.rpc_id(1, current_weapon_index)
+	fire_intent(current_weapon_index)
+	
+	#fire_intent.rpc_id(1, current_weapon_index)
 
 # ---------------------------------------------------------------------------
 # RPCs
@@ -419,8 +421,8 @@ func _play_empty() -> void:
 # prediction / UI only.
 @rpc("any_peer")
 func fire_intent(weapon_index: int) -> void:
-	if not is_multiplayer_authority():
-		return
+	#if not is_multiplayer_authority():
+		#return
 
 	# Validate the sender is actually the player who owns this controller.
 	# get_remote_sender_id() returns 0 on a direct call (host-as-player) — allow it.
