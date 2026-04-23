@@ -516,9 +516,10 @@ func _execute_fire(weapon: Weapon) -> void:
 
 			projectile_spawn_parent.add_child(projectile_scene, true)
 
-@rpc("any_peer", "call_remote", "reliable")
+@rpc("any_peer", "call_local", "reliable")
 func _change_health_on_server(collider: Object, result: Dictionary, origin: Vector3, weapon: Weapon):
-	
+	if not is_multiplayer_authority():
+		return
 	if collider.has_method("change_health"):
 		var distance := origin.distance_to(result.position)
 		var mult := _compute_falloff_multiplier(weapon, distance)
