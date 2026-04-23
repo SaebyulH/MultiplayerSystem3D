@@ -367,15 +367,6 @@ func _try_fire() -> void:
 	_apply_recoil_rpc.rpc(rolled)
 	
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
 	if pre_delay > 0.0:
 		_pending_fire   = true
 		_pre_fire_timer = pre_delay
@@ -418,7 +409,7 @@ func _play_empty() -> void:
 # Owning client → server (or direct call for host-as-player).
 # This is the single authoritative fire point. Everything before here is
 # prediction / UI only.
-@rpc("any_peer")
+#@rpc("any_peer")
 func fire_intent(weapon_index: int) -> void:
 	#if not is_multiplayer_authority():
 		#return
@@ -431,16 +422,16 @@ func fire_intent(weapon_index: int) -> void:
 		#return
 
 	# Server-side gate — all must pass
-	if _is_reloading:
-		return
-	if _fire_cooldown > 0.0:
-		return
-	if weapon_index != current_weapon_index:
-		return
-
+	#if _is_reloading:
+		#return
+	#if _fire_cooldown > 0.0:
+		#return
+	#if weapon_index != current_weapon_index:
+		#return
+#
 	var weapon: Weapon = weapons[current_weapon_index]
-	if weapon.mag_current <= 0 and not weapon.has_infinite_ammo:
-		return
+	#if weapon.mag_current <= 0 and not weapon.has_infinite_ammo:
+		#return
 
 	# Authoritative deduction and cooldown — only happens here
 	if not weapon.has_infinite_ammo:
@@ -544,7 +535,7 @@ func _compute_falloff_multiplier(weapon: Weapon, distance: float) -> float:
 	return curve.sample(t)
 
 
-@rpc("call_local")
+@rpc("any_peer", "call_local")
 func _flash_muzzle_flash(start_position: Vector3) -> void:
 	#var muzzle_flash_scene: PackedScene = load("res://weapon/muzzle_flash.tscn") as PackedScene
 	#var muzzle_flash: Node              = muzzle_flash_scene.instantiate()
@@ -568,7 +559,7 @@ func _flash_muzzle_flash(start_position: Vector3) -> void:
 	#)
 
 
-@rpc("call_local")
+@rpc("any_peer", "call_local")
 func _on_hitscan_hit(
 	hit_position: Vector3,
 	hit_normal: Vector3,
