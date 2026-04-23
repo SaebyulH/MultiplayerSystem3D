@@ -1,15 +1,29 @@
 [gd_scene format=3 uid="uid://dmsrhguradefj"]
 
 [ext_resource type="Script" uid="uid://bx1i286d50fsm" path="res://ui/main_menu.gd" id="1_06t4h"]
+[ext_resource type="Texture2D" uid="uid://cxrr0eq7x77qo" path="res://assets/Screenshot 2026-04-23 191708.png" id="2_0dkrt"]
 
 [node name="MainMenu" type="Control" unique_id=1617106146]
 layout_mode = 3
+anchor_right = 0.5385417
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_06t4h")
+metadata/_edit_use_anchors_ = true
+
+[node name="Screenshot20260423191708" type="Sprite2D" parent="." unique_id=1177980423]
+position = Vector2(960.0001, 540)
+scale = Vector2(1.1442251, 1.2887827)
+texture = ExtResource("2_0dkrt")
+
+[node name="Panel" type="Panel" parent="." unique_id=1236353337]
+layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_06t4h")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1849103427]
 layout_mode = 1

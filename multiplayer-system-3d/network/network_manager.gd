@@ -28,6 +28,7 @@ func _setup_client_connection_signals():
 
 func _server_disconnected():
 	print("Server has disconnected!")
+	NetworkTimeSynchronizer.stop()  # stop before terminate tears down the peer
 	terminate_connection_load_main_menu()
 
 func enter_existing_game_scene():
@@ -54,25 +55,57 @@ func load_game_scene(map_path: String):
 		#current.queue_free()
 	#root.add_child(new_scene)
 	#get_tree().current_scene = new_scene
-
 func terminate_connection_load_main_menu():
 	print("Terminate connection, load main menu...")
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
-	_load_main_menu()
-	_terminate_connection()
+	_terminate_connection()              # disconnect peer FIRST
 	_disconnect_client_connection_signals()
-
+	_load_main_menu()                    # THEN clean up the scene
 
 func _load_main_menu():
+	if game_scene == null:
+		push_warning("terminate called but game_scene is null")
+		get_tree().current_scene.show_main_menu()
+		return
+
 	get_tree().current_scene.remove_child(game_scene)
-	
+	game_scene.queue_free()             # actually free it
+	game_scene = null                   # clear the reference
 	get_tree().current_scene.show_main_menu()
-	#get_tree().call_deferred(&"change_scene_to_packed", preload(MAIN_MENU_SCENE))
-		
+
 func _terminate_connection():
 	print("terminate connection")
-	get_tree().get_multiplayer().multiplayer_peer = null
+	var mp = get_tree().get_multiplayer()
+	if mp.multiplayer_peer != null:
+		NetworkTimeSynchronizer.stop()  # stop sync loop before peer is nulled
+		mp.multiplayer_peer.close()
+		mp.multiplayer_peer = null
 
 func _disconnect_client_connection_signals():
-	if get_tree().get_multiplayer().server_disconnected.has_connections():
-		get_tree().get_multiplayer().server_disconnected.disconnect(_server_disconnected)
+	var mp = get_tree().get_multiplayer()
+	if mp.server_disconnected.is_connected(_server_disconnected):  # correct check
+		mp.server_disconnected.disconnect(_server_disconnected)
+		
+		
+		
+#func terminate_connection_load_main_menu():
+	#print("Terminate connection, load main menu...")
+	#Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	#_load_main_menu()
+	#_terminate_connection()
+	#_disconnect_client_connection_signals()
+
+
+#func _load_main_menu():
+	#get_tree().current_scene.remove_child(game_scene)
+	#
+	#get_tree().current_scene.show_main_menu()
+	##get_tree().call_deferred(&"change_scene_to_packed", preload(MAIN_MENU_SCENE))
+		#
+#func _terminate_connection():
+	#print("terminate connection")
+	#get_tree().get_multiplayer().multiplayer_peer = null
+#
+#func _disconnect_client_connection_signals():
+	#if get_tree().get_multiplayer().server_disconnected.has_connections():
+		#get_tree().get_multiplayer().server_disconnected.disconnect(_server_disconnected)

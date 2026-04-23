@@ -11,6 +11,7 @@ var _self_heal: Dictionary = {}
 var _heal_others: Dictionary = {}
 
 signal killstreak_changed(player_name: String, killstreak: int)
+signal player_removed(player_name: String)
 
 # -------------------------
 # PLAYER MANAGEMENT
@@ -18,7 +19,7 @@ signal killstreak_changed(player_name: String, killstreak: int)
 
 func _ready() -> void:
 	if multiplayer.is_server():
-		set_multiplayer_authority(1) # server peer id
+		set_multiplayer_authority(1)
 
 @rpc("any_peer", "call_local")
 func _add_player(player_name: String):
@@ -36,6 +37,23 @@ func _add_player(player_name: String):
 
 	print("Player %s added" % player_name)
 	_sync_scores()
+
+@rpc("any_peer", "call_local")
+func _remove_player(player_name: String):
+	if not multiplayer.is_server():
+		return
+
+	_player_kills.erase(player_name)
+	_player_deaths.erase(player_name)
+	_killstreak.erase(player_name)
+	_damage_dealt.erase(player_name)
+	_self_damage.erase(player_name)
+	_self_heal.erase(player_name)
+	_heal_others.erase(player_name)
+
+	print("Player %s removed" % player_name)
+	_sync_scores()
+	rpc("_receive_player_removed", player_name)
 
 # -------------------------
 # COMBAT EVENTS
@@ -75,7 +93,7 @@ func _add_damage(player_name: String, amount: float):
 
 
 # -------------------------
-# NEW: SELF DAMAGE
+# SELF DAMAGE
 # -------------------------
 
 @rpc("any_peer", "call_local")
@@ -140,8 +158,13 @@ func _receive_scores(kills: Dictionary,
 		var new_streak: int = killstreak[player_name]
 		if _killstreak.get(player_name, 0) != new_streak:
 			killstreak_changed.emit(player_name, new_streak)
-	
+
 	_killstreak = killstreak.duplicate()
+
+
+@rpc("any_peer", "reliable")
+func _receive_player_removed(player_name: String):
+	player_removed.emit(player_name)
 
 # -------------------------
 # REQUEST API
@@ -149,6 +172,9 @@ func _receive_scores(kills: Dictionary,
 
 func request_add_player(player_name: String):
 	_add_player.rpc_id(1, player_name)
+
+func request_remove_player(player_name: String):
+	_remove_player.rpc_id(1, player_name)
 
 func request_add_kill(killer_name: String):
 	_add_kill.rpc_id(1, killer_name)
@@ -211,3 +237,6 @@ func get_self_heal(player_name: String) -> float:
 
 func get_heal_others(player_name: String) -> float:
 	return _heal_others.get(player_name, 0)
+
+func has_player(player_name: String) -> bool:
+	return _player_kills.has(player_name)
