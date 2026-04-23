@@ -344,7 +344,32 @@ func _try_fire() -> void:
 		return
 
 	var pre_delay: float = weapons[current_weapon_index].pre_shoot_delay
+	
+	# CLient side gate! — all must pass. nothing CHANGING, but we check!
+	if _is_reloading:
+		return
+	if _fire_cooldown > 0.0:
+		return
+	if current_weapon_index != current_weapon_index:
+		return
 
+	var weapon: Weapon = weapons[current_weapon_index]
+	if weapon.mag_current <= 0 and not weapon.has_infinite_ammo:
+		return
+
+	# Roll recoil once on server so all peers get identical values
+	var r: Vector3     = recoil.recoil
+	var rolled: Vector3 = Vector3(
+		r.x,
+		randf_range(-r.y, r.y),
+		randf_range(-r.z, r.z)
+	)
+	_apply_recoil_rpc.rpc(rolled)
+	
+	
+	
+	
+	
 	if pre_delay > 0.0:
 		_pending_fire   = true
 		_pre_fire_timer = pre_delay
@@ -363,6 +388,11 @@ func _do_fire_client() -> void:
 	# emits mag_changed and updates this client's display via the RPC path.
 	# Optimistic deduction causes drift because the server may silently reject
 	# shots (cooldown, reload state) and there is no rollback of the deduction.
+	
+
+	
+	
+	
 	_fire_cooldown = weapons[current_weapon_index].post_shoot_delay
 	fire_intent.rpc_id(1, current_weapon_index)
 
@@ -414,14 +444,14 @@ func fire_intent(weapon_index: int) -> void:
 
 	_execute_fire(weapon)
 
-	# Roll recoil once on server so all peers get identical values
-	var r: Vector3     = recoil.recoil
-	var rolled: Vector3 = Vector3(
-		r.x,
-		randf_range(-r.y, r.y),
-		randf_range(-r.z, r.z)
-	)
-	_apply_recoil_rpc.rpc(rolled)
+	## Roll recoil once on server so all peers get identical values
+	#var r: Vector3     = recoil.recoil
+	#var rolled: Vector3 = Vector3(
+		#r.x,
+		#randf_range(-r.y, r.y),
+		#randf_range(-r.z, r.z)
+	#)
+	#_apply_recoil_rpc.rpc(rolled)
 	_play_shoot_sound.rpc()
 
 
