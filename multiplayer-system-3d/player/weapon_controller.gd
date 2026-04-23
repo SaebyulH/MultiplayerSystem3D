@@ -384,6 +384,7 @@ func _try_fire() -> void:
 		if multiplayer.is_server():
 			fire_intent(current_weapon_index)
 		else:
+			fire_intent(current_weapon_index)
 			
 			#fire_intent(current_weapon_index)
 			
@@ -403,9 +404,7 @@ func _do_fire_client() -> void:
 	
 	
 	_fire_cooldown = weapons[current_weapon_index].post_shoot_delay
-	fire_intent(current_weapon_index)
-	
-	#fire_intent.rpc_id(1, current_weapon_index)
+	fire_intent.rpc_id(1, current_weapon_index)
 
 # ---------------------------------------------------------------------------
 # RPCs
@@ -423,13 +422,13 @@ func _play_empty() -> void:
 func fire_intent(weapon_index: int) -> void:
 	#if not is_multiplayer_authority():
 		#return
-
-	# Validate the sender is actually the player who owns this controller.
-	# get_remote_sender_id() returns 0 on a direct call (host-as-player) — allow it.
-	var sender_id: int = multiplayer.get_remote_sender_id()
-	var owner_id: int  = _parent_player.name.to_int()
-	if sender_id != 0 and sender_id != owner_id:
-		return
+#
+	## Validate the sender is actually the player who owns this controller.
+	## get_remote_sender_id() returns 0 on a direct call (host-as-player) — allow it.
+	#var sender_id: int = multiplayer.get_remote_sender_id()
+	#var owner_id: int  = _parent_player.name.to_int()
+	#if sender_id != 0 and sender_id != owner_id:
+		#return
 
 	# Server-side gate — all must pass
 	if _is_reloading:
