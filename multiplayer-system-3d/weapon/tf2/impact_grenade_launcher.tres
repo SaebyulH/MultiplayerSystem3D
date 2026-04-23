@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="Weapon" format=3 uid="uid://c5nvfdamrb51f"]
+
+[ext_resource type="AudioStream" uid="uid://bwfdsxbmx4ko8" path="res://assets/sounds/empty_gun.mp3" id="1_hpkqo"]
+[ext_resource type="Texture2D" uid="uid://b6gktr1vfryte" path="res://defaults/default_damage_falloff_curve.tres" id="2_k0mbf"]
+[ext_resource type="PackedScene" uid="uid://v27fq461i5vr" path="res://weapon/projectiles/scenes/grenade.tscn" id="3_ggyi2"]
+[ext_resource type="Script" uid="uid://yvevtn4dsddy" path="res://player/recoil/recoil_data.gd" id="4_1xu7o"]
+[ext_resource type="AudioStream" uid="uid://cqbknmbhlwhu" path="res://assets/sounds/reload.mp3" id="5_j5ej3"]
+[ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="6_eoc3h"]
+[ext_resource type="AudioStream" uid="uid://u24dsvsfmlr2" path="res://assets/sounds/gun_sound.mp3" id="7_pgm2h"]
+[ext_resource type="PackedScene" uid="uid://cfi4uxqyf4q5p" path="res://weapon/tf2/impact_grenade_launcher.tscn" id="8_hpkqo"]
+
+[sub_resource type="Resource" id="Resource_eafuw"]
+script = ExtResource("4_1xu7o")
+metadata/_custom_type_script = "uid://yvevtn4dsddy"
+
+[resource]
+script = ExtResource("6_eoc3h")
+display_name = "IGL"
+automatic = true
+post_shoot_delay = 0.6
+mag_size = 2
+mag_current = 2
+reload_individually = true
+reload_time = 0.7
+recoil_data = SubResource("Resource_eafuw")
+bullet_type = 1
+projectile_scene = ExtResource("3_ggyi2")
+weapon_model = ExtResource("8_hpkqo")
+shoot_sound = ExtResource("7_pgm2h")
+empty_sound = ExtResource("1_hpkqo")
+reload_sound = ExtResource("5_j5ej3")
+metadata/_custom_type_script = "uid://qjf4ciit3dqy"
