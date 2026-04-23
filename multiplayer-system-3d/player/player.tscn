@@ -40,12 +40,15 @@ properties/0/spawn = true
 properties/0/replication_mode = 1
 
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_kb6p2"]
-properties/0/path = NodePath(".:rotation")
+properties/0/path = NodePath(".:global_rotation")
 properties/0/spawn = true
 properties/0/replication_mode = 1
-properties/1/path = NodePath("../..:rotation")
+properties/1/path = NodePath(".:Recoil:global_rotation")
 properties/1/spawn = true
 properties/1/replication_mode = 1
+properties/2/path = NodePath(".:Recoil:Head:global_rotation")
+properties/2/spawn = true
+properties/2/replication_mode = 1
 
 [sub_resource type="BoxMesh" id="BoxMesh_32hag"]
 size = Vector3(1, 4.005, 1)
@@ -151,7 +154,6 @@ script = ExtResource("13_kb6p2")
 head = NodePath("Recoil/Head")
 
 [node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="Body" unique_id=187997880]
-root_path = NodePath("../Recoil/Head")
 replication_config = SubResource("SceneReplicationConfig_kb6p2")
 
 [node name="Recoil" type="Node3D" parent="Body" unique_id=274010588]
