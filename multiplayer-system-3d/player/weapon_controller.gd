@@ -357,7 +357,7 @@ func _try_fire() -> void:
 	if weapon.mag_current <= 0 and not weapon.has_infinite_ammo:
 		return
 
-	# Roll recoil once on server so all peers get identical values
+	# Apply Recoil Client side
 	var r: Vector3     = recoil.recoil
 	var rolled: Vector3 = Vector3(
 		r.x,
@@ -384,6 +384,7 @@ func _try_fire() -> void:
 		if multiplayer.is_server():
 			fire_intent(current_weapon_index)
 		else:
+			_fire_cooldown = weapons[current_weapon_index].post_shoot_delay #TEMP
 			fire_intent(current_weapon_index)
 			
 			#_do_fire_client()
