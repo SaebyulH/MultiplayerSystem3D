@@ -1,11 +1,11 @@
 extends Node
 
 const SERVER_PORT: int = 8080
-const GAME_SCENE = "res://world/world1.tscn"
-const MAIN_MENU_SCENE = "res://ui/main_menu.tscn"
+#const GAME_SCENE = "res://world/world1.tscn"
+#const MAIN_MENU_SCENE = "res://ui/main_menu.tscn"
 
 var is_hosting_game = false
-var game_scene
+#var game_scene
 
 func create_server():
 	is_hosting_game = true
@@ -30,21 +30,21 @@ func _server_disconnected():
 	print("Server has disconnected!")
 	terminate_connection_load_main_menu()
 
-func enter_existing_game_scene():
-	print("Entering game scene")
-	game_scene = preload(GAME_SCENE).instantiate()
-	# Add as child of current scene instead of replacing it
-	get_tree().current_scene.add_child(game_scene)
-	get_tree().current_scene.hide_main_menu()
+#func enter_existing_game_scene():
+	#print("Entering game scene")
+	#game_scene = preload(GAME_SCENE).instantiate()
+	## Add as child of current scene instead of replacing it
+	#get_tree().current_scene.add_child(game_scene)
+	#get_tree().current_scene.hide_main_menu()
 
-func load_game_scene(map_path: String):
-	print("Loading game scene")
-	game_scene = preload(GAME_SCENE).instantiate()
-	game_scene.map_path = map_path
-
-	# Add as child of current scene instead of replacing it
-	get_tree().current_scene.add_child(game_scene)
-	get_tree().current_scene.hide_main_menu()
+#func load_game_scene(map_path: String):
+	#print("Loading game scene")
+	#game_scene = preload(GAME_SCENE).instantiate()
+	#game_scene.map_path = map_path
+#
+	## Add as child of current scene instead of replacing it
+	#get_tree().current_scene.add_child(game_scene)
+	#get_tree().current_scene.hide_main_menu()
 
 #func _swap_scene(new_scene: Node):
 	#var root = get_tree().root
@@ -64,7 +64,7 @@ func terminate_connection_load_main_menu():
 
 
 func _load_main_menu():
-	get_tree().current_scene.remove_child(game_scene)
+	#get_tree().current_scene.remove_child(game_scene)
 	
 	get_tree().current_scene.show_main_menu()
 	#get_tree().call_deferred(&"change_scene_to_packed", preload(MAIN_MENU_SCENE))

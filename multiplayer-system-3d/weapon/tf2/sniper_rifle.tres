@@ -9,7 +9,7 @@
 [ext_resource type="PackedScene" uid="uid://ccapjs1b2aucy" path="res://weapon/tf2/sniper_rifle.tscn" id="7_gdsaj"]
 
 [sub_resource type="Curve" id="Curve_mksn7"]
-_data = [Vector2(0, 0.13632995), 0.0, 0.0, 0, 0, Vector2(0.38253638, 1), 0.0, 0.0, 0, 0, Vector2(0.62162167, 1), 0.0, 0.0, 0, 0, Vector2(1, 0.10135579), 0.0, 0.0, 0, 0]
+_data = [Vector2(0, 0.13632995), 0.0, 0.0, 0, 0, Vector2(0.48749998, 1), 0.0, 0.0, 0, 0, Vector2(0.5145833, 1), 0.0, 0.0, 0, 0, Vector2(1, 0.10135579), 0.0, 0.0, 0, 0]
 point_count = 4
 
 [sub_resource type="CurveTexture" id="CurveTexture_btwad"]
@@ -27,7 +27,7 @@ mag_size = 1
 mag_current = 1
 reload_time = 1.5
 recoil_data = SubResource("Resource_gdsaj")
-hitscan_damage = 50.0
+hitscan_damage = 100.0
 has_damage_falloff = true
 falloff_start = 0.0
 falloff_end = 120.0
