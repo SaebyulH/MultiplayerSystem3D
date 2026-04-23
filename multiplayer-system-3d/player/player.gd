@@ -1,6 +1,8 @@
 extends CharacterBody3D
 class_name Player
 
+var despawned := true
+
 var needs_respawn := false
 var respawn_position := Vector3.ZERO
 
@@ -68,7 +70,7 @@ func _ready() -> void:
 
 	if my_id == player_id:
 		camera.make_current()
-		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+		#Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 	else:
 		camera.current = false
 		camera.visible = false
@@ -83,7 +85,7 @@ func _health_changed():
 func reset():
 	attribute_component.reset()
 	var last_weapon = weapon_controller.current_weapon_index
-	#weapon_controller.reset()
+	weapon_controller.reset()
 	weapon_controller.current_weapon_index = last_weapon
 
 	needs_respawn = true
@@ -102,6 +104,13 @@ func no_health():
 	reset()
 
 func _rollback_tick(delta, tick, is_fresh):
+	
+	if despawned:
+		
+		return
+	
+	
+	
 	if needs_respawn:
 		global_position = respawn_position
 		velocity = Vector3.ZERO
@@ -110,6 +119,8 @@ func _rollback_tick(delta, tick, is_fresh):
 
 
 func _physics_process(delta: float) -> void:
+	
+	
 	if not get_tree().get_multiplayer().has_multiplayer_peer():
 		return
 	
@@ -170,8 +181,10 @@ func _apply_movement_from_input(delta):
 	# decay after move
 	knockback_velocity = knockback_velocity.move_toward(Vector3.ZERO, knockback_decay * delta)
 
-
-
+	if player_input.crouch:
+		floor_max_angle = 0.0
+	else:
+		floor_max_angle = deg_to_rad(45.0)
 
 #func set_player_position(vector: Vector3):
 	#queue_global_position = vector

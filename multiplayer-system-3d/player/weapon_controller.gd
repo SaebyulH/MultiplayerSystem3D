@@ -50,13 +50,21 @@ var current_weapon_model: Node3D = null
 var _reset_weapons: Array[Weapon]
 
 
+
+func set_weapons(new_weapons: Array[Weapon]):
+	weapons = new_weapons
+	current_weapon_index = 0
+
 func reset() -> void:
 	current_weapon_index = 0
+	
+	for weapon in weapons:
+		weapon.reset_mag()
 	# Re-deep-copy from the originals so mag counts return to full
-	var fresh: Array[Weapon] = []
-	for w: Weapon in _reset_weapons:
-		fresh.append(w.duplicate(true) as Weapon)
-	weapons = fresh
+	#var fresh: Array[Weapon] = []
+	#for w: Weapon in _reset_weapons:
+		#fresh.append(w.duplicate(true) as Weapon)
+	#weapons = fresh
 
 
 func _set_mag(value: int) -> void:
@@ -545,6 +553,8 @@ func _spawn_projectile_on_server(shot_dir, basis, parent_player_name):
 @rpc("any_peer", "call_local", "reliable")
 func _change_health_on_server(collider_name: String, delta, parent_player_name):
 	if is_multiplayer_authority():
+		
+		
 		var children = get_parent().get_parent().get_children()
 		
 		for child in children:
@@ -595,7 +605,6 @@ func _flash_muzzle_flash(start_position: Vector3) -> void:
 		#if is_instance_valid(muzzle_flash):
 			#muzzle_flash.hide()
 	#)
-
 
 @rpc("any_peer", "call_local")
 func _on_hitscan_hit(

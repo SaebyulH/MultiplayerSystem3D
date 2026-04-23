@@ -30,9 +30,10 @@ volumetric_fog_enabled = true
 volumetric_fog_density = 0.0042
 adjustment_enabled = true
 
-[node name="Game" type="Node3D" unique_id=159294576 node_paths=PackedStringArray("spawn_locations")]
+[node name="Game" type="Node3D" unique_id=159294576 node_paths=PackedStringArray("spawn_locations", "despawn_point")]
 script = ExtResource("1_4t2r1")
 spawn_locations = [NodePath("Spawn Location 1"), NodePath("Spawn Location 2")]
+despawn_point = NodePath("DespawnPoint")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1758273969]
 transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 0, 76, 0)
@@ -804,6 +805,9 @@ transform = Transform3D(0.9995133, 0.0018103595, -0.031141646, 0.006345436, 0.96
 
 [node name="container" parent="Node3D2/CSGCombiner3D" parent_id_path=PackedInt32Array(2051671098, 339901365) index="1" unique_id=1879061770]
 transform = Transform3D(0.99165696, -0.11322553, 0.06161529, 0.1286234, 0.83756644, -0.53097934, 0.008513505, 0.53447425, 0.8451425, -0.2699393, 2.8374848, 0.0023555756)
+
+[node name="DespawnPoint" type="Marker3D" parent="." unique_id=659079934]
+transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, -2.5969925, -68.82196, 11.334593)
 
 [editable path="Node3D3"]
 [editable path="Node3D2"]

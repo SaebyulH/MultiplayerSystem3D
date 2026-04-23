@@ -7,7 +7,7 @@ class_name KillstreakUI
 @onready var health_bar: Label = $HealthBar
 @onready var ammo_bar: Label = $AmmoBar
 @onready var health_delta_bar: Label = $HealthDeltaBar
-
+@onready var weapon_list:= $WeaponList
 
 
 @onready var ammo_bar_public := $"../AmmoBarPublic"
@@ -45,6 +45,7 @@ func _ready() -> void:
 	health_bar.visible = is_owner
 	health_delta_bar.visible = is_owner
 	ammo_bar.visible = is_owner
+	weapon_list.visible = is_owner
 	
 	ammo_bar_public.visible = not is_owner
 	health_bar_public.visible = not is_owner
