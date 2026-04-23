@@ -120,7 +120,7 @@ script = ExtResource("2_onrkg")
 top_level = true
 
 [node name="ProjectileSpawner" type="MultiplayerSpawner" parent="ProjectilesParent" unique_id=290768895]
-_spawnable_scenes = PackedStringArray("uid://cccu8xmm1tqq7", "uid://dy7hw0uphca40", "uid://v27fq461i5vr", "uid://dfyafkr18mtuq", "uid://bo0edtxgakruc", "uid://6mr0d18yn8po", "uid://daan6liu8ej2")
+_spawnable_scenes = PackedStringArray("uid://cccu8xmm1tqq7", "uid://dy7hw0uphca40", "uid://v27fq461i5vr", "uid://dfyafkr18mtuq", "uid://bo0edtxgakruc", "uid://6mr0d18yn8po", "uid://daan6liu8ej2", "uid://cccu8xmm1tqq7", "uid://dy7hw0uphca40", "uid://v27fq461i5vr", "uid://dfyafkr18mtuq", "uid://bo0edtxgakruc", "uid://6mr0d18yn8po", "uid://daan6liu8ej2")
 spawn_path = NodePath("..")
 script = ExtResource("3_32hag")
 

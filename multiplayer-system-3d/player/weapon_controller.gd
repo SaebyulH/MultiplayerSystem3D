@@ -492,13 +492,15 @@ func _execute_fire(weapon: Weapon) -> void:
 				
 				var collider: Object = result.collider
 				
-				if collider.has_method("change_health"):
-					var distance := origin.distance_to(result.position)
-					var mult := _compute_falloff_multiplier(weapon, distance)
-					var damage := weapon.hitscan_damage * mult
-					
-					collider.change_health(-damage, _parent_player.name)
-
+				_change_health_on_server.rpc_id(1, collider, result, origin, weapon)
+				
+				#if collider.has_method("change_health"):
+					#var distance := origin.distance_to(result.position)
+					#var mult := _compute_falloff_multiplier(weapon, distance)
+					#var damage := weapon.hitscan_damage * mult
+					#
+					#collider.change_health(-damage, _parent_player.name)
+	
 	elif weapon.bullet_type == Weapon.BulletType.PROJECTILE:
 		for shot_dir in weapon.multishot_data:
 			var shot_dir_v3: Vector3 = shot_dir as Vector3
@@ -513,6 +515,18 @@ func _execute_fire(weapon: Weapon) -> void:
 			projectile_scene.linear_velocity = world_dir * speed
 
 			projectile_spawn_parent.add_child(projectile_scene, true)
+
+@rpc("any_peer", "call_remote", "reliable")
+func _change_health_on_server(collider: Object, result: Dictionary, origin: Vector3, weapon: Weapon):
+	
+	if collider.has_method("change_health"):
+		var distance := origin.distance_to(result.position)
+		var mult := _compute_falloff_multiplier(weapon, distance)
+		var damage := weapon.hitscan_damage * mult
+		
+		collider.change_health(-damage, _parent_player.name)
+
+
 
 
 func _compute_falloff_multiplier(weapon: Weapon, distance: float) -> float:
