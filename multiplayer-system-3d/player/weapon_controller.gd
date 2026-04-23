@@ -519,7 +519,7 @@ func _execute_fire(weapon: Weapon) -> void:
 			#projectile_spawn_parent.add_child(projectile_scene, true)
 
 
-@rpc("any_peer", "call_remote", "reliable")
+@rpc("any_peer", "call_local", "reliable")
 func _spawn_projectile_on_server(shot_dir, basis, parent_player_name):
 	var weapon = weapons[current_weapon_index]
 	var shot_dir_v3: Vector3 = shot_dir as Vector3
@@ -542,7 +542,7 @@ func _spawn_projectile_on_server(shot_dir, basis, parent_player_name):
 
 
 
-@rpc("any_peer", "call_remote", "reliable")
+@rpc("any_peer", "call_local", "reliable")
 func _change_health_on_server(collider_name: String, delta, parent_player_name):
 	if is_multiplayer_authority():
 		var children = get_parent().get_parent().get_children()
