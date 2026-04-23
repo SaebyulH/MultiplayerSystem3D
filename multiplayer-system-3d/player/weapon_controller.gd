@@ -545,6 +545,8 @@ func _spawn_projectile_on_server(shot_dir, basis, parent_player_name):
 @rpc("any_peer", "call_local", "reliable")
 func _change_health_on_server(collider_name: String, delta, parent_player_name):
 	if is_multiplayer_authority():
+		
+		
 		var children = get_parent().get_parent().get_children()
 		
 		for child in children:
@@ -595,7 +597,6 @@ func _flash_muzzle_flash(start_position: Vector3) -> void:
 		#if is_instance_valid(muzzle_flash):
 			#muzzle_flash.hide()
 	#)
-
 
 @rpc("any_peer", "call_local")
 func _on_hitscan_hit(
