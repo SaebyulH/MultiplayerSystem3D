@@ -370,6 +370,12 @@ func _try_fire() -> void:
 	
 	
 	
+	
+	
+	
+	
+	
+	
 	if pre_delay > 0.0:
 		_pending_fire   = true
 		_pre_fire_timer = pre_delay
@@ -378,7 +384,9 @@ func _try_fire() -> void:
 		if multiplayer.is_server():
 			fire_intent(current_weapon_index)
 		else:
-			_do_fire_client()
+			fire_intent(current_weapon_index)
+			
+			#_do_fire_client()
 
 
 func _do_fire_client() -> void:

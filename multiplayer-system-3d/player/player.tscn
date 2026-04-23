@@ -43,12 +43,9 @@ properties/0/replication_mode = 1
 properties/0/path = NodePath(".:rotation")
 properties/0/spawn = true
 properties/0/replication_mode = 1
-properties/1/path = NodePath("Recoil:rotation")
+properties/1/path = NodePath("Recoil/Head:rotation")
 properties/1/spawn = true
 properties/1/replication_mode = 1
-properties/2/path = NodePath("Recoil/Head:rotation")
-properties/2/spawn = true
-properties/2/replication_mode = 1
 
 [sub_resource type="BoxMesh" id="BoxMesh_32hag"]
 size = Vector3(1, 4.005, 1)
