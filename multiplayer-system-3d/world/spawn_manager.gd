@@ -4,7 +4,6 @@ class_name SpawnManager
 @onready var spawn_parent: Node3D = get_parent().get_node("%SpawnParent")
 
 @export var spawn_locations: Array[Marker3D]
-@export var despawn_point: Marker3D
 
 var player_scene: PackedScene
 
@@ -31,9 +30,7 @@ func _add_player_to_game(network_id: int):
 	player_to_add.spawn_manager = self
 	spawn_parent.add_child(player_to_add)
 	player_to_add.global_position = Vector3(0, 100, 0)
-	#player_to_add.global_position = get_random_spawn_location()
-	player_to_add.global_position = despawn_point.global_position
-	
+	player_to_add.global_position = get_random_spawn_location()
 	
 
 	Leaderboard.request_add_player(str(network_id))

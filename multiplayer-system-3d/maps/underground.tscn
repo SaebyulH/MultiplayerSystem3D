@@ -34,10 +34,9 @@ adjustment_color_correction = ExtResource("2_bjhbo")
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rgr3h"]
 albedo_color = Color(0.31925523, 0.31925526, 0.31925526, 1)
 
-[node name="Node3D" type="Node3D" unique_id=1248617452 node_paths=PackedStringArray("spawn_locations", "despawn_point")]
+[node name="Node3D" type="Node3D" unique_id=1248617452 node_paths=PackedStringArray("spawn_locations")]
 script = ExtResource("1_p28ue")
 spawn_locations = [NodePath("Spawn Location 1"), NodePath("Spawn Location 2")]
-despawn_point = NodePath("DespawnPoint")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=2069420995]
 transform = Transform3D(-0.8908388, -0.44324797, 0.09968805, 0.09477368, 0.033290077, 0.9949423, -0.4443247, 0.8957808, 0.012352136, 0, 0, 0)
@@ -1558,6 +1557,3 @@ light_indirect_energy = 0.0
 light_volumetric_fog_energy = 0.0
 light_specular = 0.0
 omni_range = 14.0
-
-[node name="DespawnPoint" type="Marker3D" parent="." unique_id=2023944730]
-transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, -2.5969925, -49.122646, 11.334593)

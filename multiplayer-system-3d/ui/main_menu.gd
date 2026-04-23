@@ -2,9 +2,6 @@ extends Control
 @onready var address_input = $VBoxContainer/AddressInput
 @onready var ip_label = $VBoxContainer/IPLabel
 @onready var option_button = $VBoxContainer/OptionButton
-
-@export var world: Node3D
-@export var class_select_menu: Control
 func _ready():
 	var local_ip = IP.get_local_addresses()
 	for addr in local_ip:
@@ -32,29 +29,19 @@ func _on_host_game_pressed() -> void:
 		print("select map first!")
 		return
 	NetworkManager.create_server()
-	hide()
-	#NetworkManager.load_game_scene(_get_selected_map())
-	
-	world.load_map(_get_selected_map())
-	$"../GameMenu".on_server_ready()
-	class_select_menu.show()
+	NetworkManager.load_game_scene(_get_selected_map())
 
 func _on_join_game_pressed() -> void:
 	var address = address_input.text
 	if address == "":
 		#address = "100.92.64.109"
-		address = "100.104.145.26"
-	
+		address = "100.92.64.109"
+		
 	NetworkManager.create_client(address)
 
 func _on_connected_to_server():
 	print("Connected! My ID: ", multiplayer.get_unique_id())
-	#NetworkManager.enter_existing_game_scene()
-	hide()
-	$"../GameMenu".on_server_ready()
-	class_select_menu.show()
-	
-	
+	NetworkManager.enter_existing_game_scene()
 
 func _on_connection_failed():
 	print("Connection failed!")

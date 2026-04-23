@@ -2,7 +2,6 @@ extends Node
 class_name Map
 
 @export var spawn_locations: Array[Marker3D] = []
-@export var despawn_point: Marker3D
 
 func _ready() -> void:
 	spawn_locations.clear()
@@ -18,7 +17,3 @@ func get_random_spawn_location() -> Vector3:
 		return spawn_locations[index].global_position
 
 	return Vector3(0, 12, 0)
-
-
-func get_despawned_position() -> Vector3:
-	return despawn_point.global_position

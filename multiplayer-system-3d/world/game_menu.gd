@@ -15,18 +15,13 @@ const PITCH_G  := pow(2.0, 3.0 / 12.0)
 const PITCH_A  := pow(2.0, 5.0 / 12.0)
 
 
-
-
-
-
-func on_server_ready() -> void:
-	
-	#set_multiplayer_authority(1)
+func _ready() -> void:
 	player_id = str(multiplayer.get_unique_id())
 	$ID.text = "ID: " + player_id
+
 	killstreak_label.text = ""
+
 	Leaderboard.killstreak_changed.connect(_on_killstreak_changed)
-	#$VBoxContainer/ClassSelectMenu.on_server_connect()
 
 
 func _process(delta: float) -> void:
@@ -89,10 +84,7 @@ func _play_sequence_async(seq: Array[float], token: int) -> void:
 		if not is_inside_tree():
 			return
 		await get_tree().create_timer(0.3).timeout
-		
-func _on_main_menu_pressed() -> void:
-	$VBoxContainer/ClassSelectMenu.hide()
-	NetworkManager.terminate_connection_load_main_menu()
+
 
 # =========================
 # PITCH MAPPING

@@ -24,13 +24,6 @@ class_name Weapon
 @export var mag_current: int = 6
 ## If true, reloads one round at a time instead of the whole magazine at once.
 @export var reload_individually: bool = false
-
-
-
-func reset_mag():
-	mag_current == mag_size
-
-
 ## Time in seconds to complete a full reload (or one round if reload_individually is true).
 @export var reload_time: float = 1.0
 ## Recoil behaviour data for this weapon.
