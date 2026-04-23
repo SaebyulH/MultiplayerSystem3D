@@ -6,12 +6,11 @@
 [ext_resource type="AudioStream" uid="uid://exvh8mdgxfb8" path="res://assets/sounds/multikill-1.mp3" id="4_p2lt3"]
 [ext_resource type="Script" uid="uid://c2ud4axp2a0nj" path="res://world/class_select.gd" id="4_y31kp"]
 
-[node name="World1" type="Node3D" unique_id=1030413131 node_paths=PackedStringArray("leaderboard", "class_select", "spawn_parent")]
+[node name="World1" type="Node3D" unique_id=1030413131 node_paths=PackedStringArray("leaderboard", "class_select")]
 script = ExtResource("1_rf4cw")
 player_scene = ExtResource("2_7dtx0")
 leaderboard = NodePath("GameMenu/VBoxContainer/Leaderboard")
 class_select = NodePath("GameMenu/VBoxContainer/Panel")
-spawn_parent = NodePath("SpawnParent")
 
 [node name="SpawnParent" type="Node3D" parent="." unique_id=1706707506]
 unique_name_in_owner = true

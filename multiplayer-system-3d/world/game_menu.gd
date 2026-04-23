@@ -13,6 +13,7 @@ const PITCH_E  := pow(2.0, 0.0 / 12.0)
 const PITCH_FS := pow(2.0, 2.0 / 12.0)
 const PITCH_G  := pow(2.0, 3.0 / 12.0)
 const PITCH_A  := pow(2.0, 5.0 / 12.0)
+const PITCH_B  := pow(2.0, 7.0 / 12.0)
 
 
 func _ready() -> void:
@@ -79,7 +80,7 @@ func _play_sequence_async(seq: Array[float], token: int) -> void:
 		add_child(p)
 		p.play()
 		p.finished.connect(func(): p.queue_free())
-		await get_tree().create_timer(0.08).timeout
+		await get_tree().create_timer(0.15).timeout
 	if token == play_token:
 		if not is_inside_tree():
 			return
@@ -91,15 +92,71 @@ func _play_sequence_async(seq: Array[float], token: int) -> void:
 # =========================
 func _get_pitch_sequence(ks: int) -> Array[float]:
 	match ks:
+		# === KILL 1-5: Sparse, ominous opening ===
 		1:
 			return [PITCH_E]
 		2:
-			return [PITCH_FS]
-		3:
 			return [PITCH_G]
-		4:
+		3:
 			return [PITCH_A]
+		4:
+			return [PITCH_B]
 		5:
-			return [PITCH_E, PITCH_E, PITCH_E, PITCH_G]
+			return [PITCH_E, PITCH_E, PITCH_G, PITCH_A, PITCH_B]
+		# === KILL 6-10: Picking up, minor tension ===
+		6:
+			return [PITCH_E, PITCH_G]
+		7:
+			return [PITCH_G, PITCH_A]
+		8:
+			return [PITCH_A, PITCH_B]
+		9:
+			return [PITCH_B, PITCH_E]
+		10:
+			return [PITCH_E, PITCH_G, PITCH_A, PITCH_B, PITCH_E, PITCH_G]
+		# === KILL 11-15: Ascending urgency ===
+		11:
+			return [PITCH_E, PITCH_FS, PITCH_G]
+		12:
+			return [PITCH_G, PITCH_A, PITCH_B]
+		13:
+			return [PITCH_A, PITCH_B, PITCH_E]
+		14:
+			return [PITCH_FS, PITCH_A, PITCH_B]
+		15:
+			return [PITCH_E, PITCH_FS, PITCH_G, PITCH_A, PITCH_B, PITCH_A, PITCH_G]
+		# === KILL 16-20: Driving rhythm, more density ===
+		16:
+			return [PITCH_E, PITCH_G, PITCH_E, PITCH_B]
+		17:
+			return [PITCH_G, PITCH_A, PITCH_G, PITCH_E]
+		18:
+			return [PITCH_A, PITCH_B, PITCH_A, PITCH_G]
+		19:
+			return [PITCH_B, PITCH_A, PITCH_FS, PITCH_E]
+		20:
+			return [PITCH_E, PITCH_FS, PITCH_G, PITCH_A, PITCH_B, PITCH_A, PITCH_G, PITCH_FS]
+		# === KILL 21-25: Epic swell, heroic feel ===
+		21:
+			return [PITCH_E, PITCH_G, PITCH_B, PITCH_G, PITCH_E]
+		22:
+			return [PITCH_FS, PITCH_A, PITCH_B, PITCH_A, PITCH_FS]
+		23:
+			return [PITCH_G, PITCH_B, PITCH_E, PITCH_B, PITCH_G]
+		24:
+			return [PITCH_A, PITCH_B, PITCH_E, PITCH_B, PITCH_A]
+		25:
+			return [PITCH_E, PITCH_G, PITCH_A, PITCH_B, PITCH_E, PITCH_B, PITCH_A, PITCH_G, PITCH_FS]
+		# === KILL 26-30: Full climax, relentless and soaring ===
+		26:
+			return [PITCH_E, PITCH_FS, PITCH_G, PITCH_A, PITCH_B, PITCH_E]
+		27:
+			return [PITCH_B, PITCH_A, PITCH_G, PITCH_FS, PITCH_E, PITCH_FS]
+		28:
+			return [PITCH_E, PITCH_G, PITCH_B, PITCH_E, PITCH_B, PITCH_G, PITCH_E]
+		29:
+			return [PITCH_FS, PITCH_G, PITCH_A, PITCH_B, PITCH_E, PITCH_B, PITCH_A, PITCH_G]
+		30:
+			return [PITCH_E, PITCH_FS, PITCH_G, PITCH_A, PITCH_B, PITCH_E, PITCH_B, PITCH_A, PITCH_G, PITCH_FS]
 		_:
-			return [PITCH_E, PITCH_E, PITCH_E, PITCH_G]
+			return [PITCH_E, PITCH_FS, PITCH_G, PITCH_A, PITCH_B, PITCH_E, PITCH_B, PITCH_A, PITCH_G, PITCH_FS]

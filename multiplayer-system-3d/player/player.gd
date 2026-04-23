@@ -1,6 +1,10 @@
 extends CharacterBody3D
 class_name Player
 
+
+var despawned := true
+
+
 var needs_respawn := false
 var respawn_position := Vector3.ZERO
 
@@ -87,9 +91,9 @@ func reset():
 	weapon_controller.current_weapon_index = last_weapon
 
 	needs_respawn = true
-	for sibling in get_parent().get_children():
-		if sibling is Map:
-			respawn_position = sibling.get_random_spawn_location()
+	for node in GameManager.spawn_parent.get_children():
+		if node is Map:
+			respawn_position = node.get_random_spawn_location()
 			break
 	print("PLAYER RESET!!!!")
 	
@@ -102,6 +106,13 @@ func no_health():
 	reset()
 
 func _rollback_tick(delta, tick, is_fresh):
+	
+	if despawned:
+		global_position = GameManager.get_despawn_position()
+		return
+	
+	
+	
 	if needs_respawn:
 		global_position = respawn_position
 		velocity = Vector3.ZERO

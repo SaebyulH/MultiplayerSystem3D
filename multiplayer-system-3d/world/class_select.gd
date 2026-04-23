@@ -68,7 +68,7 @@ func _on_confirm_pressed() -> void:
 	
 	_apply_loadout.rpc(player_id, primary.resource_path, secondary.resource_path)
 	
-	get_parent().visible = false
+	visible = false
 	PlayerInput.ui_open = false
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 
@@ -77,7 +77,7 @@ func _apply_loadout(target_player_id: String, primary_path: String, secondary_pa
 	var primary: Weapon = load(primary_path) as Weapon
 	var secondary: Weapon = load(secondary_path) as Weapon
 	
-	var player := _find_player(target_player_id)
+	var player := GameManager.find_player(target_player_id)
 	if player == null:
 		return
 	
@@ -93,14 +93,4 @@ func _apply_loadout(target_player_id: String, primary_path: String, secondary_pa
 	
 	player.no_health()
 	controller.spawn_weapon_model()
-
-func _find_player(id: String) -> Node:
-	var node := spawn_parent
-	while node != null:
-		for child in node.get_children():
-			if child.name == id:
-				return child
-		node = node.get_parent()
-		if node == get_tree().root:
-			break
-	return null
+	player.despawned = false

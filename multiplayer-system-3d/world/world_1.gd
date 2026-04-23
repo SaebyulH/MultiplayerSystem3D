@@ -7,10 +7,14 @@ extends Node3D
 #@export var player_ui: Control
 var class_selected := false
 #@export var leaderboard_component: LeaderboardComponent
-@export var spawn_parent: Node3D
+#@export var spawn_parent: Node3D
 var map_path
 
 func _ready() -> void:
+	GameManager.spawn_parent = %SpawnParent
+	
+	
+	
 	PlayerInput.ui_open = true
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	
@@ -19,7 +23,7 @@ func _ready() -> void:
 		
 		var map = load(map_path).instantiate()
 		map.name = "Map"
-		spawn_parent.add_child(map)
+		GameManager.spawn_parent.add_child(map)
 		print("MAP ADDED" + map_path)
 		
 		var spawn_manager_scene = load("res://world/spawn_manager.tscn")

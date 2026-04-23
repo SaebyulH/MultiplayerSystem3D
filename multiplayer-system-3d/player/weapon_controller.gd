@@ -29,7 +29,7 @@ var _fired_this_press: bool = false
 signal mag_changed(current: int, mag_max: int)
 signal weapon_changed(index: int, weapon: Weapon)
 
-@export var weapons: Array[Weapon]
+@export var weapons: Array[Weapon] 
 
 @export var current_weapon_index: int = 0:
 	set(value):
@@ -47,33 +47,11 @@ signal weapon_changed(index: int, weapon: Weapon)
 @export var _raycast: RayCast3D
 
 var current_weapon_model: Node3D = null
-var _reset_weapons: Array[Weapon]
+#var _reset_weapons: Array[Weapon]
 
 
-func reset() -> void:
-	current_weapon_index = 0
-	# Re-deep-copy from the originals so mag counts return to full
-	var fresh: Array[Weapon] = []
-	for w: Weapon in _reset_weapons:
-		fresh.append(w.duplicate(true) as Weapon)
-	weapons = fresh
 
-
-func _set_mag(value: int) -> void:
-	var weapon: Weapon = weapons[current_weapon_index]
-	weapon.mag_current = clamp(value, 0, weapon.mag_size)
-	mag_changed.emit(weapon.mag_current, weapon.mag_size)
-
-
-func _emit_weapon_changed() -> void:
-	var weapon: Weapon = weapons[current_weapon_index]
-	weapon_changed.emit(current_weapon_index, weapon)
-	mag_changed.emit(weapon.mag_current, weapon.mag_size)
-
-# ---------------------------------------------------------------------------
-# Lifecycle
-# ---------------------------------------------------------------------------
-
+#region Lifecycle
 func _ready() -> void:
 	# Deep-copy every Weapon resource so this WeaponController instance owns
 	# its own mutable state. Without this, both the client-side and server-side
@@ -82,14 +60,14 @@ func _ready() -> void:
 	# Each WeaponController gets its own deep copy so client/server mutations
 	# never share the same Resource object.
 	var deep_weapons: Array[Weapon] = []
-	var orig_weapons: Array[Weapon] = []
+	#var orig_weapons: Array[Weapon] = []
 	for w: Weapon in weapons:
 		var copy: Weapon = w.duplicate(true) as Weapon
 		deep_weapons.append(copy)
 		# Keep a second independent copy as the reset baseline BEFORE any mutation
-		orig_weapons.append(w.duplicate(true) as Weapon)
+		#orig_weapons.append(w.duplicate(true) as Weapon)
 	weapons        = deep_weapons
-	_reset_weapons = orig_weapons
+	#_reset_weapons = orig_weapons
 
 	if not weapons.is_empty() and weapons[current_weapon_index] != null:
 		spawn_weapon_model()
@@ -142,10 +120,33 @@ func _tick_timers(delta: float) -> void:
 			else:
 				_do_fire_client()
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
+func reset() -> void:
+	current_weapon_index = 0
+	# Re-deep-copy from the originals so mag counts return to full
+	for weapon in weapons:
+		weapon.reset()
+	
+	
+	
+	#var fresh: Array[Weapon] = []
+	#for w: Weapon in _reset_weapons:
+		#fresh.append(w.duplicate(true) as Weapon)
+	#weapons = fresh
 
+
+func _set_mag(value: int) -> void:
+	var weapon: Weapon = weapons[current_weapon_index]
+	weapon.mag_current = clamp(value, 0, weapon.mag_size)
+	mag_changed.emit(weapon.mag_current, weapon.mag_size)
+
+
+func _emit_weapon_changed() -> void:
+	var weapon: Weapon = weapons[current_weapon_index]
+	weapon_changed.emit(current_weapon_index, weapon)
+	mag_changed.emit(weapon.mag_current, weapon.mag_size)
+#endregion
+
+#region Helpers
 func _apply_recoil_data() -> void:
 	if weapons.size() > 0:
 		var data: RecoilData = weapons[current_weapon_index].recoil_data
@@ -178,11 +179,15 @@ func spawn_weapon_model() -> void:
 	current_weapon_model.rotation = weapon.weapon_rotation
 	current_weapon_model.scale    = weapon.weapon_scale
 	weapon_model_parent.add_child(current_weapon_model)
+#endregion
 
-# ---------------------------------------------------------------------------
-# Weapon switching
-# ---------------------------------------------------------------------------
+#region Loadout
+#func set_weapons
 
+
+#endregion
+
+#region Weapon switching
 func _on_weapon_index_changed() -> void:
 	_is_reloading  = false
 	_reload_timer  = 0.0
@@ -223,10 +228,9 @@ func _next_weapon_server() -> void:
 func _previous_weapon_server() -> void:
 	if is_multiplayer_authority():
 		current_weapon_index -= 1
+#endregion
 
-# ---------------------------------------------------------------------------
-# Reload
-# ---------------------------------------------------------------------------
+#region Reload
 # Reload is fully server-authoritative.
 # The client calls request_reload.rpc_id(1) — the server validates, runs the
 # timer, and when done calls _confirm_reload_done.rpc() on all peers.
@@ -313,10 +317,10 @@ func _confirm_reload_done(new_mag: int) -> void:
 	weapon.mag_current = clamp(new_mag, 0, weapon.mag_size)
 	_is_reloading      = false
 	mag_changed.emit(weapon.mag_current, weapon.mag_size)
+#endregion
 
-# ---------------------------------------------------------------------------
-# Firing — input processing (owning peer only)
-# ---------------------------------------------------------------------------
+
+#region Firing — input processing (owning peer only)
 
 func _process_fire() -> void:
 	if weapons.size() <= 0:
@@ -396,11 +400,9 @@ func _do_fire_client() -> void:
 	
 	_fire_cooldown = weapons[current_weapon_index].post_shoot_delay
 	fire_intent.rpc_id(1, current_weapon_index)
+#endregion
 
-# ---------------------------------------------------------------------------
-# RPCs
-# ---------------------------------------------------------------------------
-
+#region RPCs
 @rpc("any_peer", "call_local")
 func _play_empty() -> void:
 	_play_sound(weapons[current_weapon_index].empty_sound)
@@ -635,14 +637,14 @@ func _on_hitscan_hit(
 			var current_start: Vector3 = start_position.lerp(hit_position, t)
 			var mid: Vector3           = current_start.lerp(hit_position, 0.5)
 			var dir: Vector3           = hit_position - current_start
-			var len: float             = dir.length()
+			var tracer_len: float             = dir.length()
 			tracer_instance.global_position = mid
-			cylinder.height = len
-			if len > 0.001:
+			cylinder.height = tracer_len
+			if tracer_len > 0.001:
 				tracer_instance.global_transform.basis = Basis(
 					Quaternion(Vector3.UP, dir.normalized())
 				),
-		0.0, 1.0, distance * 0.05
+		0.0, 1.0, distance * 0.02
 	)
 	tween.tween_callback(func() -> void: tracer_instance.queue_free())
 
@@ -655,11 +657,9 @@ func _on_hitscan_hit(
 func _apply_recoil_rpc(rolled: Vector3) -> void:
 	recoil.target_rotation += rolled
 
-
 @rpc("any_peer", "call_local")
 func _play_shoot_sound() -> void:
 	_play_sound(weapons[current_weapon_index].shoot_sound)
-
 
 func _align_weapon_to_raycast() -> void:
 	if current_weapon_model == null or not _raycast.is_colliding():
@@ -668,4 +668,6 @@ func _align_weapon_to_raycast() -> void:
 	var to: Vector3   = _raycast.get_collision_point()
 	var dir: Vector3  = (to - from).normalized()
 	if dir.length_squared() > 0.0:
-		current_weapon_model.global_transform.basis = Basis().looking_at(dir, Vector3.UP)
+		current_weapon_model.global_transform.basis = Basis.looking_at(dir, Vector3.UP)
+		
+#endregion

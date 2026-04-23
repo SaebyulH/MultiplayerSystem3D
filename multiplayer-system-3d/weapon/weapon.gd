@@ -31,6 +31,12 @@ class_name Weapon
 ## Multiplier applied to the player's movement speed while this weapon is equipped.
 @export var player_speed_multiplier: float = 1.0
 
+func reset():
+	mag_current = mag_size
+
+
+
+
 @export_group("Bullet")
 enum BulletType {HITSCAN, PROJECTILE}
 ## Whether the weapon uses instant hitscan or a physical projectile scene.

@@ -30,9 +30,10 @@ volumetric_fog_enabled = true
 volumetric_fog_density = 0.0042
 adjustment_enabled = true
 
-[node name="Game" type="Node3D" unique_id=159294576 node_paths=PackedStringArray("spawn_locations")]
+[node name="Game" type="Node3D" unique_id=159294576 node_paths=PackedStringArray("spawn_locations", "despawn_location")]
 script = ExtResource("1_4t2r1")
 spawn_locations = [NodePath("Spawn Location 1"), NodePath("Spawn Location 2")]
+despawn_location = NodePath("Despawn")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1758273969]
 transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 0, 76, 0)
@@ -694,6 +695,9 @@ transform = Transform3D(-0.8660254, -0.4330128, 0.24999999, -0.4330127, 0.399519
 
 [node name="Spawn Location 2" type="Marker3D" parent="." unique_id=1492294772]
 transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 26.156445, -4.220581, 36.966476)
+
+[node name="Despawn" type="Marker3D" parent="." unique_id=1517920648]
+transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, -2.797104, -53.386234, 17.53489)
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=2084281230]
 environment = SubResource("Environment_odqa7")
