@@ -48,7 +48,7 @@ func _enter_tree() -> void:
 	#The Player Input node is controlled by the LOCAL
 	player_input.set_multiplayer_authority(str(name).to_int())
 	body.set_multiplayer_authority(str(name).to_int())
-	$ProjectilesParent.set_multiplayer_authority(str(name).to_int())
+	#$ProjectilesParent.set_multiplayer_authority(str(name).to_int())
 	
 	#set_multiplayer_authority(str(name).to_int())
 	

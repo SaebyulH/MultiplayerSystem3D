@@ -379,7 +379,7 @@ func _try_fire() -> void:
 			
 			#fire_intent(current_weapon_index)
 			
-			_do_fire_client()
+			#_do_fire_client()
 
 
 func _do_fire_client() -> void:
@@ -409,7 +409,7 @@ func _play_empty() -> void:
 # Owning client → server (or direct call for host-as-player).
 # This is the single authoritative fire point. Everything before here is
 # prediction / UI only.
-#@rpc("any_peer")
+@rpc("any_peer")
 func fire_intent(weapon_index: int) -> void:
 	#if not is_multiplayer_authority():
 		#return
@@ -456,7 +456,7 @@ func fire_intent(weapon_index: int) -> void:
 	_play_shoot_sound.rpc()
 
 
-@rpc("call_local")
+@rpc("any_peer", "call_local")
 func _sync_mag(authoritative_mag: int) -> void:
 	# Server → all peers. Overwrites the local mag display with the server's
 	# count after every accepted shot. This is the reconciliation step that
@@ -490,43 +490,66 @@ func _execute_fire(weapon: Weapon) -> void:
 			if not result.is_empty():
 				_on_hitscan_hit.rpc(result.position, result.normal, muzzle_pos)
 				
-				var collider: Object = result.collider
+				var collider: Node3D = result.collider
 				
-				_change_health_on_server.rpc_id(1, collider, result, origin, weapon)
+
 				
-				#if collider.has_method("change_health"):
-					#var distance := origin.distance_to(result.position)
-					#var mult := _compute_falloff_multiplier(weapon, distance)
-					#var damage := weapon.hitscan_damage * mult
-					#
+				if collider.has_method("change_health"):
+					var distance := origin.distance_to(result.position)
+					var mult := _compute_falloff_multiplier(weapon, distance)
+					var damage := weapon.hitscan_damage * mult
+					
+					var collider_name = collider.name
 					#collider.change_health(-damage, _parent_player.name)
-	
+					_change_health_on_server.rpc_id(1, collider_name, -damage, _parent_player.name)
 	elif weapon.bullet_type == Weapon.BulletType.PROJECTILE:
 		for shot_dir in weapon.multishot_data:
-			var shot_dir_v3: Vector3 = shot_dir as Vector3
-			var world_dir: Vector3 = \
-				weapon_model_parent.global_transform.basis * shot_dir_v3.normalized()
+			_spawn_projectile_on_server.rpc_id(1, shot_dir, weapon_model_parent.global_transform.basis, _parent_player.name)
+			#var shot_dir_v3: Vector3 = shot_dir as Vector3
+			#var world_dir: Vector3 = \
+				#weapon_model_parent.global_transform.basis * shot_dir_v3.normalized()
+#
+			#var projectile_scene: Node3D = weapon.projectile_scene.instantiate() as Node3D
+			#projectile_scene.global_transform = weapon_model_parent.global_transform
+			#projectile_scene.shooter_name     = _parent_player.name
+#
+			#var speed: float = projectile_scene.linear_velocity.length()
+			#projectile_scene.linear_velocity = world_dir * speed
+#
+			#projectile_spawn_parent.add_child(projectile_scene, true)
 
-			var projectile_scene: Node3D = weapon.projectile_scene.instantiate() as Node3D
-			projectile_scene.global_transform = weapon_model_parent.global_transform
-			projectile_scene.shooter_name     = _parent_player.name
 
-			var speed: float = projectile_scene.linear_velocity.length()
-			projectile_scene.linear_velocity = world_dir * speed
-
-			projectile_spawn_parent.add_child(projectile_scene, true)
-
-@rpc("any_peer", "call_local", "reliable")
-func _change_health_on_server(collider: Object, result: Dictionary, origin: Vector3, weapon: Weapon):
-	if not is_multiplayer_authority():
-		return
-	if collider.has_method("change_health"):
-		var distance := origin.distance_to(result.position)
-		var mult := _compute_falloff_multiplier(weapon, distance)
-		var damage := weapon.hitscan_damage * mult
+@rpc("any_peer", "call_remote", "reliable")
+func _spawn_projectile_on_server(shot_dir, basis, parent_player_name):
+	var weapon = weapons[current_weapon_index]
+	var shot_dir_v3: Vector3 = shot_dir as Vector3
+	var world_dir: Vector3 = \
+		#weapon_model_parent.global_transform.basis * shot_dir_v3.normalized()
+		basis * shot_dir_v3.normalized()
 		
-		collider.change_health(-damage, _parent_player.name)
 
+	var projectile_scene: Node3D = weapon.projectile_scene.instantiate() as Node3D
+	projectile_scene.global_transform = weapon_model_parent.global_transform
+	#projectile_scene.shooter_name     = _parent_player.name
+	projectile_scene.shooter_name     = parent_player_name
+	
+
+	var speed: float = projectile_scene.linear_velocity.length()
+	projectile_scene.linear_velocity = world_dir * speed
+
+	projectile_spawn_parent.add_child(projectile_scene, true)
+
+
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _change_health_on_server(collider_name: String, delta, parent_player_name):
+	if is_multiplayer_authority():
+		var children = get_parent().get_parent().get_children()
+		
+		for child in children:
+			if child.name == collider_name and child is Player:
+				child.change_health(delta, parent_player_name)
 
 
 
