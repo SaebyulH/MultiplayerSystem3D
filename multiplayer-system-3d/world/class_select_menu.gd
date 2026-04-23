@@ -66,13 +66,74 @@ func _on_confirm_pressed() -> void:
 	var primary: Weapon = selected_class.primary_weapons[primary_index]
 	var secondary: Weapon = selected_class.secondary_weapons[secondary_index]
 	
-	_apply_loadout.rpc(player_id, primary.resource_path, secondary.resource_path)
+	# Send to server — let the server apply and then spawn
+	request_loadout_on_server.rpc_id(
+		1,
+		str(multiplayer.get_unique_id()),
+		primary.resource_path,
+		secondary.resource_path
+	)
 	
 	get_parent().visible = false
 	PlayerInput.ui_open = false
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 
 @rpc("any_peer", "call_local", "reliable")
+func request_loadout_on_server(target_player_id: String, primary_path: String, secondary_path: String) -> void:
+	# Only the server should actually execute this
+	if not multiplayer.is_server():
+		return
+	
+	var player := _find_player(target_player_id)
+	if player == null:
+		return
+	
+	var controller: WeaponController = player.get_node("WeaponController")
+	if controller == null:
+		return
+	
+	var primary: Weapon = load(primary_path) as Weapon
+	var secondary: Weapon = load(secondary_path) as Weapon
+	
+	var new_weapons: Array[Weapon] = []
+	new_weapons.append(primary.duplicate(true) as Weapon)
+	new_weapons.append(secondary.duplicate(true) as Weapon)
+	controller.weapons = new_weapons
+	controller.current_weapon_index = 0
+	
+	# Now broadcast spawn to all peers
+	spawn_for_all.rpc(target_player_id, primary_path, secondary_path)
+
+@rpc("call_local", "reliable")
+func spawn_for_all(target_player_id: String, primary_path: String, secondary_path: String) -> void:
+	var player := _find_player(target_player_id)
+	if player == null:
+		return
+	
+	var controller: WeaponController = player.get_node("WeaponController")
+	if controller == null:
+		return
+	
+	# Each peer applies the weapons locally
+	var primary: Weapon = load(primary_path) as Weapon
+	var secondary: Weapon = load(secondary_path) as Weapon
+	var new_weapons: Array[Weapon] = []
+	new_weapons.append(primary.duplicate(true) as Weapon)
+	new_weapons.append(secondary.duplicate(true) as Weapon)
+	controller.weapons = new_weapons
+	controller.current_weapon_index = 0
+	
+	player.no_health()
+	player.despawned = false
+	controller.spawn_weapon_model()
+	
+	_apply_loadout(str(multiplayer.get_unique_id()), primary.resource_path, secondary.resource_path)
+	
+	get_parent().visible = false
+	PlayerInput.ui_open = false
+	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+
+#@rpc("any_peer", "call_local", "reliable")
 func _apply_loadout(target_player_id: String, primary_path: String, secondary_path: String) -> void:
 	var primary: Weapon = load(primary_path) as Weapon
 	var secondary: Weapon = load(secondary_path) as Weapon
@@ -91,9 +152,29 @@ func _apply_loadout(target_player_id: String, primary_path: String, secondary_pa
 	controller.weapons = new_weapons
 	controller.current_weapon_index = 0
 	
+	
+	spawn_on_server.rpc_id(1, target_player_id)
+	#player.no_health()
+	#player.despawned = false
+	#controller.spawn_weapon_model()
+
+@rpc("any_peer", "call_local")
+func spawn_on_server(target_player_id: String):
+	var player := _find_player(target_player_id)
+	if player == null:
+		return
+	
+	var controller: WeaponController = player.get_node("WeaponController")
+	if controller == null:
+		return
+		
 	player.no_health()
 	player.despawned = false
 	controller.spawn_weapon_model()
+
+
+
+
 
 func _find_player(id: String) -> Node:
 	var node := spawn_parent
