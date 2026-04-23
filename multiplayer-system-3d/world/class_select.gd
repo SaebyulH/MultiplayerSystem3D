@@ -1,16 +1,16 @@
-extends VBoxContainer
+extends Control
 
 @onready var spawn_parent := %SpawnParent
-@onready var class_option: OptionButton = $VBoxContainer/ClassOption
-@onready var primary_option: OptionButton = $VBoxContainer2/PrimaryWeaponOption
-@onready var secondary_option: OptionButton = $VBoxContainer3/SecondaryWeaponOption
-@onready var confirm_button: Button = $ConfirmBuild
+@onready var class_option: OptionButton = $ClassSelect/VBoxContainer/ClassOption
+@onready var primary_option: OptionButton = $ClassSelect/VBoxContainer2/PrimaryWeaponOption
+@onready var secondary_option: OptionButton = $ClassSelect/VBoxContainer3/SecondaryWeaponOption
+@onready var confirm_button: Button = $ClassSelect/ConfirmBuild
 
 var player_id: String
 var available_classes: Array[Class] = []
 var selected_class: Class = null
 
-@onready var world := $"../../../.."
+@onready var world := $"../../.."
 
 func _ready() -> void:
 	player_id = str(multiplayer.get_unique_id())

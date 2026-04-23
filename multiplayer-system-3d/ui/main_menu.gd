@@ -13,11 +13,6 @@ func _ready():
 	multiplayer.connected_to_server.connect(_on_connected_to_server)
 	multiplayer.connection_failed.connect(_on_connection_failed)
 	multiplayer.peer_connected.connect(_on_peer_connected)
-	
-
-	
-
-	
 
 func _get_selected_map():
 	if option_button.selected < 0:
