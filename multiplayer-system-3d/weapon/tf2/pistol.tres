@@ -11,8 +11,8 @@
 
 [sub_resource type="Resource" id="Resource_la0ju"]
 script = ExtResource("3_r57kw")
-recoil = Vector3(1, 1, 0)
-aim_recoil = Vector3(0.05, 1, 0)
+recoil = Vector3(0.05, 1, 0)
+aim_recoil = Vector3(0.05, 0.25, 0)
 snappiness = 5.0
 return_speed = 1.0
 metadata/_custom_type_script = "uid://yvevtn4dsddy"
