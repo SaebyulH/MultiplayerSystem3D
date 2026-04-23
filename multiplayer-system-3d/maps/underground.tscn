@@ -38,7 +38,6 @@ albedo_color = Color(0.31925523, 0.31925526, 0.31925526, 1)
 script = ExtResource("1_p28ue")
 spawn_locations = [NodePath("Spawn Location 1"), NodePath("Spawn Location 2")]
 despawn_point = NodePath("DespawnPoint")
-metadata/_edit_lock_ = true
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=2069420995]
 transform = Transform3D(-0.8908388, -0.44324797, 0.09968805, 0.09477368, 0.033290077, 0.9949423, -0.4443247, 0.8957808, 0.012352136, 0, 0, 0)

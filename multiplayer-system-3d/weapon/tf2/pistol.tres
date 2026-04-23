@@ -9,9 +9,9 @@
 [ext_resource type="AudioStream" uid="uid://u24dsvsfmlr2" path="res://assets/sounds/gun_sound.mp3" id="6_banbv"]
 [ext_resource type="PackedScene" uid="uid://ux8ogr6fmr5y" path="res://weapon/tf2/pistol.tscn" id="7_la0ju"]
 
-[sub_resource type="Resource" id="Resource_dxxqn"]
+[sub_resource type="Resource" id="Resource_la0ju"]
 script = ExtResource("3_r57kw")
-recoil = Vector3(1, 0.05, 0)
+recoil = Vector3(1, 1, 0)
 aim_recoil = Vector3(0.05, 1, 0)
 snappiness = 5.0
 return_speed = 1.0
@@ -23,7 +23,7 @@ display_name = "Pistol"
 post_shoot_delay = 0.05
 mag_size = 21
 mag_current = 21
-recoil_data = SubResource("Resource_dxxqn")
+recoil_data = SubResource("Resource_la0ju")
 hitscan_damage = 12.0
 has_damage_falloff = true
 projectile_scene = ExtResource("2_thl8w")
