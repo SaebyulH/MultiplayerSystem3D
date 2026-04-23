@@ -384,10 +384,10 @@ func _try_fire() -> void:
 		if multiplayer.is_server():
 			fire_intent(current_weapon_index)
 		else:
-			_fire_cooldown = weapons[current_weapon_index].post_shoot_delay #TEMP
-			fire_intent(current_weapon_index)
 			
-			#_do_fire_client()
+			#fire_intent(current_weapon_index)
+			
+			_do_fire_client()
 
 
 func _do_fire_client() -> void:
