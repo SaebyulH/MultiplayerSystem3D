@@ -618,12 +618,8 @@ func _compute_falloff_multiplier(weapon: Weapon, distance: float) -> float:
 
 @rpc("any_peer", "call_local")
 func _flash_muzzle_flash(start_position: Vector3) -> void:
-	#var muzzle_flash_scene: PackedScene = load("res://weapon/muzzle_flash.tscn") as PackedScene
-	#var muzzle_flash: Node              = muzzle_flash_scene.instantiate()
-	
-	
-	
-	#projectile_spawn_parent.add_child(muzzle_flash)
+	if current_weapon_model == null:
+		return
 	var muzzle_flash = $MuzzleFlash
 	muzzle_flash.global_rotation = current_weapon_model.global_rotation
 	muzzle_flash.global_position = start_position
