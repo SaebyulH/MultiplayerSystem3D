@@ -253,6 +253,7 @@ mesh = SubResource("BoxMesh_32hag")
 
 [node name="Marker" type="MeshInstance3D" parent="Body" unique_id=2008329147]
 transform = Transform3D(0.5487218, 0, 0, 0, 0.5487218, 0, 0, 0, 0.5487218, 0, 2.2682807, 0)
+visible = false
 mesh = SubResource("CylinderMesh_b26j0")
 surface_material_override/0 = SubResource("ShaderMaterial_nvl01")
 
