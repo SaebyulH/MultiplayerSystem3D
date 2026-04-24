@@ -99,8 +99,8 @@ func no_health():
 	#spawn_manager.respawn_player(name)
 	reset()
 
-func _rollback_tick(delta, tick, is_fresh):
-	
+
+func _physics_process(delta: float) -> void:
 	if despawned:
 		global_position = GameManager.get_despawn_position()
 		$Body/PlayerUI.hide()
@@ -116,6 +116,11 @@ func _rollback_tick(delta, tick, is_fresh):
 		else:
 			camera.current = false
 			camera.visible = false
+			
+			
+func _rollback_tick(delta, tick, is_fresh):
+	
+	
 		
 	
 
