@@ -15,7 +15,7 @@ metadata/_custom_type_script = "uid://yvevtn4dsddy"
 
 [resource]
 script = ExtResource("5_rn2e5")
-display_name = "Scattergun"
+display_name = "Shotgun"
 automatic = true
 post_shoot_delay = 0.625
 reload_time = 0.7

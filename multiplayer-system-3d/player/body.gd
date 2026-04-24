@@ -2,8 +2,8 @@ extends Node3D
 
 @export var head: Node3D
 
-const MOUSE_SENS_X: float = 0.002
-const MOUSE_SENS_Y: float = 0.002
+var mouse_sens_x: float = 0.002
+var mouse_sens_y: float = 0.002
 
 func _ready() -> void:
 	if is_multiplayer_authority():
@@ -16,9 +16,9 @@ func _input(event: InputEvent) -> void:
 	if Input.get_mouse_mode() != Input.MOUSE_MODE_CAPTURED:
 		return
 	if event is InputEventMouseMotion:
-		rotation.y -= event.relative.x * MOUSE_SENS_X
+		rotation.y -= event.relative.x * mouse_sens_x
 
-		head.rotation.x -= event.relative.y * MOUSE_SENS_Y
+		head.rotation.x -= event.relative.y * mouse_sens_y
 		head.rotation.x = clamp(head.rotation.x, -PI / 2, PI / 2)
 
 #@rpc("any_peer", "unreliable")

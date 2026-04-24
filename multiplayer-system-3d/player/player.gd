@@ -105,15 +105,20 @@ func _rollback_tick(delta, tick, is_fresh):
 		global_position = GameManager.get_despawn_position()
 		$Body/PlayerUI.hide()
 		return
-	
-	var my_id := multiplayer.get_unique_id()
-	var player_id := name.to_int()
-	if my_id == player_id and not despawned:
-		camera.make_current()
-		
 	else:
-		camera.current = false
-		camera.visible = false
+		$Body/PlayerUI.show()
+		var my_id := multiplayer.get_unique_id()
+		var player_id := name.to_int()
+		if my_id == player_id and not despawned:
+			camera.make_current()
+			
+		else:
+			camera.current = false
+			camera.visible = false
+		
+	
+
+
 	
 	
 	
@@ -185,7 +190,18 @@ func _apply_movement_from_input(delta):
 	# decay after move
 	knockback_velocity = knockback_velocity.move_toward(Vector3.ZERO, knockback_decay * delta)
 
-
+	if player_input.ads:
+		camera.fov = 20.0
+		body.mouse_sens_x = 0.001
+		body.mouse_sens_y = 0.001
+		speed = 2.5
+	else:
+		camera.fov = 90.0
+		body.mouse_sens_x = 0.002
+		body.mouse_sens_y = 0.002
+		speed = 5.0
+		
+		
 
 
 #func set_player_position(vector: Vector3):

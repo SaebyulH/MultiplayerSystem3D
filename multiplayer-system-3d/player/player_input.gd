@@ -19,6 +19,7 @@ class_name PlayerInput
 var input_dir: Vector2 = Vector2.ZERO
 var jump_input: bool   = false
 var crouch: bool       = false
+var ads: bool = false
 
 # NOT rolled back — consumed directly by WeaponController each physics frame.
 # WeaponController clears fire_just_released after reading it.
@@ -40,6 +41,8 @@ func _gather() -> void:
 	input_dir  = Input.get_vector("move_left", "move_right", "move_forward", "move_backward")
 	jump_input = Input.is_action_pressed("ui_accept")
 	crouch     = Input.is_action_pressed("crouch")
+	ads     = Input.is_action_pressed("ads")
+	
 
 
 func _input(event: InputEvent) -> void:

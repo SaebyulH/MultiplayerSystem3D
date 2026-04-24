@@ -48,7 +48,7 @@ enum BulletType {HITSCAN, PROJECTILE}
 ## Damage dealt per hitscan hit. Only used when bullet_type is HITSCAN.
 @export var hitscan_damage: float = 10.0
 ## Maximum range of the hitscan ray in units. Only used when bullet_type is HITSCAN.
-@export var hitscan_range: float = 1000000000.0
+@export var hitscan_range: float = 10000000000.0
 
 ## enables damage falloff from the start to end position
 @export var has_damage_falloff: bool = false:

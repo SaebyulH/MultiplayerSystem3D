@@ -518,6 +518,16 @@ func _execute_fire(weapon: Weapon) -> void:
 					var collider_name = collider.name
 					#collider.change_health(-damage, _parent_player.name)
 					_change_health_on_server.rpc_id(1, collider_name, -damage, _parent_player.name)
+			else:
+				#TODO: really messy but should basically fake a hit when shooting the air if
+				#it has reasonable range
+				if weapon.hitscan_range >= 10000000000.0/10:
+					var far_pos: Vector3 = origin + world_dir * 10000.0
+					var fake_normal: Vector3 = -world_dir # or Vector3.ZERO if you don’t care
+
+					_on_hitscan_hit.rpc(far_pos, fake_normal, muzzle_pos)
+	
+	
 	elif weapon.bullet_type == Weapon.BulletType.PROJECTILE:
 		for shot_dir in weapon.multishot_data:
 			_spawn_projectile_on_server.rpc_id(1, shot_dir, weapon_model_parent.global_transform.basis, _parent_player.name)
@@ -621,47 +631,71 @@ func _on_hitscan_hit(
 	start_position: Vector3
 ) -> void:
 	var bullet_hole_scene: PackedScene = load("res://effects/bullet_hole.tscn") as PackedScene
-	var bullet_hole: Node3D            = bullet_hole_scene.instantiate() as Node3D
+	var bullet_hole: Node3D = bullet_hole_scene.instantiate() as Node3D
 	projectile_spawn_parent.add_child(bullet_hole)
-	bullet_hole.global_position        = hit_position
+	bullet_hole.global_position = hit_position
 	bullet_hole.global_transform.basis = Basis(Quaternion(Vector3.UP, hit_normal))
 
-	var tracer_mat: StandardMaterial3D  = StandardMaterial3D.new()
-	tracer_mat.albedo_color             = Color(1.0, 0.588, 0.294, 1.0)
-	tracer_mat.shading_mode             = BaseMaterial3D.SHADING_MODE_UNSHADED
-	tracer_mat.cull_mode                = BaseMaterial3D.CULL_DISABLED
+	# --- Tracer setup ---
+	var tracer_mat: StandardMaterial3D = StandardMaterial3D.new()
+	tracer_mat.albedo_color = Color(1.0, 0.588, 0.294, 1.0)
+	tracer_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	tracer_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 
-	var cylinder: CylinderMesh          = CylinderMesh.new()
-	cylinder.top_radius                 = 0.01
-	cylinder.bottom_radius              = 0.01
-	cylinder.radial_segments            = 3
-	cylinder.rings                      = 1
-	cylinder.material                   = tracer_mat
+	var cylinder: CylinderMesh = CylinderMesh.new()
+	cylinder.top_radius = 0.01
+	cylinder.bottom_radius = 0.01
+	cylinder.radial_segments = 3
+	cylinder.rings = 1
+	cylinder.material = tracer_mat
 
 	var tracer_instance: MeshInstance3D = MeshInstance3D.new()
-	tracer_instance.mesh                = cylinder
-	tracer_instance.cast_shadow         = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	tracer_instance.mesh = cylinder
+	tracer_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	projectile_spawn_parent.add_child(tracer_instance)
 
 	var distance: float = start_position.distance_to(hit_position)
 
+	# --- Tween animation ---
 	var tween: Tween = get_tree().create_tween()
+
 	tween.tween_method(
 		func(t: float) -> void:
+			if not is_instance_valid(tracer_instance):
+				return
+
 			var current_start: Vector3 = start_position.lerp(hit_position, t)
-			var mid: Vector3           = current_start.lerp(hit_position, 0.5)
-			var dir: Vector3           = hit_position - current_start
-			var tracer_len: float             = dir.length()
+			var mid: Vector3 = current_start.lerp(hit_position, 0.5)
+			var dir: Vector3 = hit_position - current_start
+			var tracer_len: float = dir.length()
+
 			tracer_instance.global_position = mid
 			cylinder.height = tracer_len
+
 			if tracer_len > 0.001:
 				tracer_instance.global_transform.basis = Basis(
 					Quaternion(Vector3.UP, dir.normalized())
 				),
 		0.0, 1.0, distance * 0.02
 	)
-	tween.tween_callback(func() -> void: tracer_instance.queue_free())
 
+	# --- Lifetime control (race: tween vs 4s timer) ---
+	var alive := true
+
+	tween.tween_callback(func() -> void:
+		if alive and is_instance_valid(tracer_instance):
+			alive = false
+			tracer_instance.queue_free()
+	)
+
+	get_tree().create_timer(4.0).timeout.connect(func():
+		if alive and is_instance_valid(tracer_instance):
+			alive = false
+			tween.kill()
+			tracer_instance.queue_free()
+	)
+
+	# --- Bullet hole cleanup (unchanged) ---
 	await get_tree().create_timer(7.0).timeout
 	if is_instance_valid(bullet_hole):
 		bullet_hole.queue_free()
