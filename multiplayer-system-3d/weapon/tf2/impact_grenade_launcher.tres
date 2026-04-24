@@ -7,7 +7,7 @@
 [ext_resource type="AudioStream" uid="uid://cqbknmbhlwhu" path="res://assets/sounds/reload.mp3" id="5_j5ej3"]
 [ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="6_eoc3h"]
 [ext_resource type="AudioStream" uid="uid://u24dsvsfmlr2" path="res://assets/sounds/gun_sound.mp3" id="7_pgm2h"]
-[ext_resource type="PackedScene" path="res://weapon/tf2/impact_grenade_launcher.tscn" id="8_hpkqo"]
+[ext_resource type="PackedScene" uid="uid://cfi4uxqyf4q5p" path="res://weapon/tf2/impact_grenade_launcher.tscn" id="8_hpkqo"]
 
 [sub_resource type="Resource" id="Resource_eafuw"]
 script = ExtResource("4_1xu7o")
@@ -18,8 +18,8 @@ script = ExtResource("6_eoc3h")
 display_name = "IGL"
 automatic = true
 post_shoot_delay = 0.9
-mag_size = 3
-mag_current = 3
+mag_size = 2
+mag_current = 2
 reload_individually = true
 reload_time = 0.7
 recoil_data = SubResource("Resource_eafuw")

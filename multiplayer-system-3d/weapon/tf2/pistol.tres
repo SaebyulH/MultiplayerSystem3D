@@ -16,10 +16,9 @@ metadata/_custom_type_script = "uid://yvevtn4dsddy"
 [resource]
 script = ExtResource("5_cr0at")
 display_name = "Pistol"
-automatic = true
-post_shoot_delay = 0.15
-mag_size = 12
-mag_current = 12
+post_shoot_delay = 0.05
+mag_size = 21
+mag_current = 21
 recoil_data = SubResource("Resource_la0ju")
 hitscan_damage = 15.0
 has_damage_falloff = true
