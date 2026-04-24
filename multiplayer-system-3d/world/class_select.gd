@@ -20,7 +20,7 @@ func _ready() -> void:
 
 	for i in class_option.item_count:
 		var path := class_option.get_item_text(i)
-		var c := load(path) as Class
+		var c := load(path) #as Class
 		if c:
 			available_classes.append(c)
 			class_option.set_item_text(i, c.class_display_name)

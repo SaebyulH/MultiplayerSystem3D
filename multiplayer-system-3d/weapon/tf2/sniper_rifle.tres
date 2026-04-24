@@ -15,8 +15,10 @@ point_count = 2
 [sub_resource type="CurveTexture" id="CurveTexture_btwad"]
 curve = SubResource("Curve_mksn7")
 
-[sub_resource type="Resource" id="Resource_gdsaj"]
+[sub_resource type="Resource" id="Resource_mksn7"]
 script = ExtResource("3_yhfpo")
+recoil = Vector3(0, 0, 0)
+aim_recoil = Vector3(0, 0, 0)
 metadata/_custom_type_script = "uid://yvevtn4dsddy"
 
 [resource]
@@ -26,7 +28,7 @@ post_shoot_delay = 1.0
 mag_size = 15
 mag_current = 15
 reload_time = 5.0
-recoil_data = SubResource("Resource_gdsaj")
+recoil_data = SubResource("Resource_mksn7")
 hitscan_damage = 60.0
 hitscan_range = 10000000000.0
 headshot_multiplier = 5.0

@@ -102,7 +102,8 @@ func start_explode():
 	freeze = true
 	_explosion_component.explode()
 	await get_tree().create_timer(10.0).timeout
-	queue_free()
+	if is_instance_valid(self):
+		queue_free()
 
 func _attach_to(body: Node3D) -> void:
 	freeze = true

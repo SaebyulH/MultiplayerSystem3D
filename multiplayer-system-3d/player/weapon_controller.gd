@@ -460,6 +460,8 @@ func fire_intent(weapon_index: int) -> void:
 	# Push authoritative mag to all peers so client display stays in sync.
 	# Without this, a rejected shot (due to server-side cooldown or reload
 	# state mismatch) leaves the client's display one count too low forever.
+	if _weapons.size()<=0:
+		return
 	_sync_mag.rpc(_weapons[current_weapon_index].mag_current)
 
 	_execute_fire(weapon)
@@ -688,23 +690,19 @@ func _on_hitscan_hit(
 	# --- Lifetime control (race: tween vs 4s timer) ---
 	var alive := true
 
-	tween.tween_callback(func() -> void:
-		if alive and is_instance_valid(tracer_instance):
-			alive = false
-			tracer_instance.queue_free()
-	)
-
 	get_tree().create_timer(4.0).timeout.connect(func():
 		if alive and is_instance_valid(tracer_instance):
 			alive = false
-			tween.kill()
+			if is_instance_valid(tween):
+				tween.kill()
 			tracer_instance.queue_free()
 	)
 
 	# --- Bullet hole cleanup (unchanged) ---
-	await get_tree().create_timer(7.0).timeout
-	if is_instance_valid(bullet_hole):
-		bullet_hole.queue_free()
+	get_tree().create_timer(7.0).timeout.connect(func():
+		if is_instance_valid(bullet_hole):
+			bullet_hole.queue_free()
+	)
 
 
 @rpc("any_peer", "call_local")
