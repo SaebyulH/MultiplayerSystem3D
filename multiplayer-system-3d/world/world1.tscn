@@ -5,12 +5,12 @@
 [ext_resource type="Script" uid="uid://bi46jlfs4i3pp" path="res://world/game_menu.gd" id="3_ur4i3"]
 [ext_resource type="AudioStream" uid="uid://exvh8mdgxfb8" path="res://assets/sounds/multikill-1.mp3" id="4_p2lt3"]
 [ext_resource type="Script" uid="uid://c2ud4axp2a0nj" path="res://world/class_select.gd" id="4_y31kp"]
+[ext_resource type="PackedScene" uid="uid://dpvv8ex8hflrg" path="res://world/weapon_subviewport_preview.tscn" id="6_btayf"]
 
-[node name="World1" type="Node3D" unique_id=1030413131 node_paths=PackedStringArray("leaderboard", "class_select")]
+[node name="World1" type="Node3D" unique_id=1030413131 node_paths=PackedStringArray("leaderboard")]
 script = ExtResource("1_rf4cw")
 player_scene = ExtResource("2_7dtx0")
 leaderboard = NodePath("GameMenu/VBoxContainer/Leaderboard")
-class_select = NodePath("GameMenu/VBoxContainer/Panel")
 
 [node name="SpawnParent" type="Node3D" parent="." unique_id=1706707506]
 unique_name_in_owner = true
@@ -84,30 +84,48 @@ layout_mode = 2
 size_flags_vertical = 3
 theme_override_font_sizes/font_size = 24
 
-[node name="Panel" type="Panel" parent="GameMenu/VBoxContainer" unique_id=316868278]
+[node name="ClassSelect" type="Control" parent="GameMenu/VBoxContainer" unique_id=19748501]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 script = ExtResource("4_y31kp")
 
-[node name="ClassSelect" type="VBoxContainer" parent="GameMenu/VBoxContainer/Panel" unique_id=1190301768]
-layout_mode = 0
-offset_right = 1920.0
-offset_bottom = 985.0
+[node name="VBoxContainer" type="VBoxContainer" parent="GameMenu/VBoxContainer/ClassSelect" unique_id=1426070812]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 520.0
 grow_horizontal = 2
 grow_vertical = 2
+
+[node name="ConfirmBuild" type="Button" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer" unique_id=1085279259]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_font_sizes/font_size = 60
+text = "Confirm Class"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer" unique_id=842489698]
+layout_mode = 2
 size_flags_vertical = 3
 
-[node name="VBoxContainer" type="VBoxContainer" parent="GameMenu/VBoxContainer/Panel/ClassSelect" unique_id=552958007]
+[node name="ClassSection" type="VBoxContainer" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer" unique_id=552958007]
 layout_mode = 2
+size_flags_horizontal = 3
 
-[node name="Label" type="Label" parent="GameMenu/VBoxContainer/Panel/ClassSelect/VBoxContainer" unique_id=339212374]
+[node name="Label" type="Label" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer/ClassSection" unique_id=339212374]
 layout_mode = 2
 theme_override_font_sizes/font_size = 60
 text = "Class Select"
 
-[node name="ClassOption" type="OptionButton" parent="GameMenu/VBoxContainer/Panel/ClassSelect/VBoxContainer" unique_id=2131896059]
+[node name="ClassOption" type="OptionButton" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer/ClassSection" unique_id=2131896059]
+unique_name_in_owner = true
 layout_mode = 2
+size_flags_vertical = 3
 theme_override_font_sizes/font_size = 60
+fit_to_longest_item = false
 item_count = 3
 popup/item_0/text = "res://player/player_classes/assasin.tres"
 popup/item_0/id = 0
@@ -116,15 +134,20 @@ popup/item_1/id = 1
 popup/item_2/text = "res://player/player_classes/assistive.tres"
 popup/item_2/id = 2
 
-[node name="VBoxContainer2" type="VBoxContainer" parent="GameMenu/VBoxContainer/Panel/ClassSelect" unique_id=813982347]
+[node name="PrimarySection" type="VBoxContainer" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer" unique_id=648861188]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBoxContainer2" type="VBoxContainer" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer/PrimarySection" unique_id=813982347]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="GameMenu/VBoxContainer/Panel/ClassSelect/VBoxContainer2" unique_id=1998715346]
+[node name="Label" type="Label" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer/PrimarySection/VBoxContainer2" unique_id=1998715346]
 layout_mode = 2
 theme_override_font_sizes/font_size = 60
 text = "Primary"
 
-[node name="PrimaryWeaponOption" type="OptionButton" parent="GameMenu/VBoxContainer/Panel/ClassSelect/VBoxContainer2" unique_id=1629862108]
+[node name="PrimaryWeaponOption" type="OptionButton" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer/PrimarySection/VBoxContainer2" unique_id=1629862108]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 60
 item_count = 3
@@ -135,16 +158,36 @@ popup/item_1/id = 1
 popup/item_2/text = "ASSISTIVE"
 popup/item_2/id = 2
 
-[node name="VBoxContainer3" type="VBoxContainer" parent="GameMenu/VBoxContainer/Panel/ClassSelect" unique_id=659284524]
+[node name="SubViewportContainer" type="SubViewportContainer" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer/PrimarySection" unique_id=976288995]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+stretch = true
+
+[node name="PrimarySubViewport" type="SubViewport" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer/PrimarySection/SubViewportContainer" unique_id=1556160592]
+unique_name_in_owner = true
+own_world_3d = true
+handle_input_locally = false
+size = Vector2i(637, 188)
+size_2d_override_stretch = true
+render_target_update_mode = 4
+
+[node name="Node3D" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer/PrimarySection/SubViewportContainer/PrimarySubViewport" unique_id=27438632 instance=ExtResource("6_btayf")]
+
+[node name="SecondarySection" type="VBoxContainer" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer" unique_id=1534910386]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBoxContainer3" type="VBoxContainer" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer/SecondarySection" unique_id=659284524]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="GameMenu/VBoxContainer/Panel/ClassSelect/VBoxContainer3" unique_id=166602554]
+[node name="Label" type="Label" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer/SecondarySection/VBoxContainer3" unique_id=166602554]
 layout_mode = 2
 theme_override_font_sizes/font_size = 60
-text = "Secondary
-"
+text = "Secondary"
 
-[node name="SecondaryWeaponOption" type="OptionButton" parent="GameMenu/VBoxContainer/Panel/ClassSelect/VBoxContainer3" unique_id=1467890301]
+[node name="SecondaryWeaponOption" type="OptionButton" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer/SecondarySection/VBoxContainer3" unique_id=1467890301]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 60
 item_count = 3
@@ -155,13 +198,27 @@ popup/item_1/id = 1
 popup/item_2/text = "ASSISTIVE"
 popup/item_2/id = 2
 
-[node name="ConfirmBuild" type="Button" parent="GameMenu/VBoxContainer/Panel/ClassSelect" unique_id=1085279259]
+[node name="SubViewportContainer" type="SubViewportContainer" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer/SecondarySection" unique_id=2131047702]
 layout_mode = 2
-theme_override_font_sizes/font_size = 60
-text = "Confirm Class"
+size_flags_horizontal = 3
+size_flags_vertical = 3
+stretch = true
+
+[node name="SecondarySubViewport" type="SubViewport" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer/SecondarySection/SubViewportContainer" unique_id=672334693]
+unique_name_in_owner = true
+own_world_3d = true
+handle_input_locally = false
+size = Vector2i(638, 188)
+size_2d_override_stretch = true
+render_target_update_mode = 4
+
+[node name="Node3D" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer/SecondarySection/SubViewportContainer/SecondarySubViewport" unique_id=528727344 instance=ExtResource("6_btayf")]
 
 [node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="." unique_id=267556738]
 _spawnable_scenes = PackedStringArray("uid://cmix6q8a6hgcu", "uid://bhsrnwae043e1", "uid://7ccxfopdhtv8", "uid://x64r4as832eo", "uid://72ju85r15v1e")
 spawn_path = NodePath("../SpawnParent")
 
 [connection signal="pressed" from="GameMenu/VBoxContainer/HBoxContainer/MainMenu" to="." method="_on_main_menu_pressed"]
+
+[editable path="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer/PrimarySection/SubViewportContainer/PrimarySubViewport/Node3D"]
+[editable path="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer/SecondarySection/SubViewportContainer/SecondarySubViewport/Node3D"]

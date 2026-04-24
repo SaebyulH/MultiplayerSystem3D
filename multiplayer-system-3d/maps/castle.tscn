@@ -319,3 +319,6 @@ top_level = true
 _spawnable_scenes = PackedStringArray("uid://dy7hw0uphca40", "uid://v27fq461i5vr", "uid://bo0edtxgakruc", "uid://6mr0d18yn8po", "uid://daan6liu8ej2", "uid://cccu8xmm1tqq7", "uid://dy7hw0uphca40", "uid://v27fq461i5vr", "uid://dfyafkr18mtuq", "uid://bo0edtxgakruc", "uid://6mr0d18yn8po", "uid://daan6liu8ej2")
 spawn_path = NodePath("..")
 script = ExtResource("4_duvhj")
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=542390642]
+transform = Transform3D(-0.6691307, -0.37717453, 0.64031523, 0, 0.8616291, 0.5075384, -0.7431448, 0.3396095, -0.5765425, 30.735, 23.336, -12.33)

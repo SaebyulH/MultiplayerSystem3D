@@ -1,0 +1,21 @@
+[gd_scene format=3 uid="uid://dpvv8ex8hflrg"]
+
+[sub_resource type="QuadMesh" id="QuadMesh_23hc1"]
+
+[node name="Node3D" type="Node3D" unique_id=27438632]
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=375288943]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 0.771662, 0, 0)
+
+[node name="OmniLight3D" type="OmniLight3D" parent="." unique_id=1230982930]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.73169756, 0.61751, 0.48163563)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1785974577]
+transform = Transform3D(-3.0726267e-07, 0, 7.0293503, 0, 7.0293503, 0, -7.0293503, 0, -3.0726267e-07, -0.805231, 0, 0)
+mesh = SubResource("QuadMesh_23hc1")
+
+[node name="PreviewRoot" type="Node3D" parent="." unique_id=1206711765]
+
+[node name="Label3D" type="Label3D" parent="PreviewRoot" unique_id=1667166439]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 0, 0, 0)
+text = "No Class Selected"

@@ -67,15 +67,9 @@ func _ready() -> void:
 	attribute_component.health_changed.connect(_health_changed)
 
 	# Only the peer who OWNS this player activates their camera
-	var my_id := multiplayer.get_unique_id()
-	var player_id := name.to_int()
 
-	if my_id == player_id:
-		camera.make_current()
-		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
-	else:
-		camera.current = false
-		camera.visible = false
+
+
 
 	attribute_component.no_health.connect(no_health)
 		
@@ -109,7 +103,17 @@ func _rollback_tick(delta, tick, is_fresh):
 	
 	if despawned:
 		global_position = GameManager.get_despawn_position()
+		$Body/PlayerUI.hide()
 		return
+	
+	var my_id := multiplayer.get_unique_id()
+	var player_id := name.to_int()
+	if my_id == player_id and not despawned:
+		camera.make_current()
+		
+	else:
+		camera.current = false
+		camera.visible = false
 	
 	
 	
@@ -161,8 +165,8 @@ func _apply_movement_from_input(delta):
 	var direction := (forward * input_dir.y + right * input_dir.x).normalized()
 	
 	var calc_speed : float = 1.0
-	if weapon_controller.weapons.size() > 0:
-		calc_speed = speed * weapon_controller.weapons[weapon_controller.current_weapon_index].player_speed_multiplier
+	if weapon_controller.get_weapons().size() > 0:
+		calc_speed = speed * weapon_controller.get_weapons()[weapon_controller.current_weapon_index].player_speed_multiplier
 	if is_crouching:
 		calc_speed *= crouch_speed_multiplier
 

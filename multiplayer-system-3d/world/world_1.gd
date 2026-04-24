@@ -2,7 +2,8 @@ extends Node3D
 
 @export var player_scene: PackedScene
 @export var leaderboard: ItemList
-@export var class_select: Panel
+@onready var class_select: Control = %ClassSelect
+
 
 #@export var player_ui: Control
 var class_selected := false

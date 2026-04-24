@@ -3,14 +3,16 @@ class_name Map
 
 @export var spawn_locations: Array[Marker3D] = []
 @export var despawn_location: Marker3D
-
+var camera: Camera3D
 
 func _ready() -> void:
+	
 	spawn_locations.clear()
 	
 	for child in get_children():
 		if child is Marker3D and child.name.begins_with("Spawn Location"):
 			spawn_locations.append(child)
+		
 
 func get_random_spawn_location() -> Vector3:
 

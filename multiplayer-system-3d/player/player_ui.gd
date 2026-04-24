@@ -75,7 +75,7 @@ func _update_weapon_list() -> void:
 	for child in WeaponList.get_children():
 		child.queue_free()
 	
-	var weapons := weapon_controller.weapons
+	var weapons := weapon_controller.get_weapons()
 	var current_index := weapon_controller.current_weapon_index
 	
 	for i in weapons.size():
@@ -91,7 +91,7 @@ func _on_mag_or_weapon_updated(_current = null, _max = null) -> void:
 	if weapon_controller == null:
 		return
 	
-	var weapons = weapon_controller.weapons
+	var weapons = weapon_controller.get_weapons()
 	var index = weapon_controller.current_weapon_index
 	
 	if index < 0 or index >= weapons.size():
@@ -110,6 +110,10 @@ func _on_mag_or_weapon_updated(_current = null, _max = null) -> void:
 		
 		
 func _process(_delta: float) -> void:
+	
+	
+	
+	
 	if weapon_controller._is_reloading:
 		# show remaining reload time (1 decimal is usually enough)
 		ammo_bar.text = "Reloading: %.1f" % weapon_controller._reload_timer

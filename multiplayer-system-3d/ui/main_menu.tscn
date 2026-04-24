@@ -85,6 +85,7 @@ layout_mode = 2
 [node name="AddressInput" type="LineEdit" parent="VBoxContainer" unique_id=1603602727]
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
+placeholder_text = "IP Address"
 
 [node name="JoinGame" type="Button" parent="VBoxContainer" unique_id=1057923406]
 layout_mode = 2

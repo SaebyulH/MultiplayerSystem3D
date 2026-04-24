@@ -29,13 +29,26 @@ var _fired_this_press: bool = false
 signal mag_changed(current: int, mag_max: int)
 signal weapon_changed(index: int, weapon: Weapon)
 
-@export var weapons: Array[Weapon] 
+@export var _weapons: Array[Weapon] 
+
+func set_weapons(new_weapons: Array[Weapon]):
+	var deep_weapons: Array[Weapon] = []
+	for w: Weapon in new_weapons:
+		var copy: Weapon = w.duplicate(true) as Weapon
+		deep_weapons.append(copy)
+		# Keep a second independent copy as the reset baseline BEFORE any mutation
+		#orig_weapons.append(w.duplicate(true) as Weapon)
+	_weapons        = deep_weapons
+	_emit_weapon_changed()
+
+func get_weapons() -> Array[Weapon]:
+	return _weapons
 
 @export var current_weapon_index: int = 0:
 	set(value):
 		if value == current_weapon_index:
 			return
-		current_weapon_index = clamp(value, 0, weapons.size() - 1)
+		current_weapon_index = clamp(value, 0, _weapons.size() - 1)
 		_on_weapon_index_changed()
 		_emit_weapon_changed()
 
@@ -61,15 +74,15 @@ func _ready() -> void:
 	# never share the same Resource object.
 	var deep_weapons: Array[Weapon] = []
 	#var orig_weapons: Array[Weapon] = []
-	for w: Weapon in weapons:
+	for w: Weapon in _weapons:
 		var copy: Weapon = w.duplicate(true) as Weapon
 		deep_weapons.append(copy)
 		# Keep a second independent copy as the reset baseline BEFORE any mutation
 		#orig_weapons.append(w.duplicate(true) as Weapon)
-	weapons        = deep_weapons
+	_weapons        = deep_weapons
 	#_reset_weapons = orig_weapons
 
-	if not weapons.is_empty() and weapons[current_weapon_index] != null:
+	if not _weapons.is_empty() and _weapons[current_weapon_index] != null:
 		spawn_weapon_model()
 
 	player_input.previous_weapon.connect(previous_weapon)
@@ -123,8 +136,9 @@ func _tick_timers(delta: float) -> void:
 func reset() -> void:
 	current_weapon_index = 0
 	# Re-deep-copy from the originals so mag counts return to full
-	for weapon in weapons:
+	for weapon in _weapons:
 		weapon.reset()
+	_emit_weapon_changed()
 	
 	
 	
@@ -135,21 +149,21 @@ func reset() -> void:
 
 
 func _set_mag(value: int) -> void:
-	var weapon: Weapon = weapons[current_weapon_index]
+	var weapon: Weapon = _weapons[current_weapon_index]
 	weapon.mag_current = clamp(value, 0, weapon.mag_size)
 	mag_changed.emit(weapon.mag_current, weapon.mag_size)
 
 
 func _emit_weapon_changed() -> void:
-	var weapon: Weapon = weapons[current_weapon_index]
+	var weapon: Weapon = _weapons[current_weapon_index]
 	weapon_changed.emit(current_weapon_index, weapon)
 	mag_changed.emit(weapon.mag_current, weapon.mag_size)
 #endregion
 
 #region Helpers
 func _apply_recoil_data() -> void:
-	if weapons.size() > 0:
-		var data: RecoilData = weapons[current_weapon_index].recoil_data
+	if _weapons.size() > 0:
+		var data: RecoilData = _weapons[current_weapon_index].recoil_data
 		recoil.recoil       = data.recoil
 		recoil.aim_recoil   = data.aim_recoil
 		recoil.snappiness   = data.snappiness
@@ -171,7 +185,7 @@ func spawn_weapon_model() -> void:
 	if current_weapon_model != null:
 		current_weapon_model.queue_free()
 		current_weapon_model = null
-	var weapon: Weapon = weapons[current_weapon_index]
+	var weapon: Weapon = _weapons[current_weapon_index]
 	if weapon.weapon_model == null:
 		return
 	current_weapon_model          = weapon.weapon_model.instantiate() as Node3D
@@ -193,7 +207,7 @@ func _on_weapon_index_changed() -> void:
 	_reload_timer  = 0.0
 	_pending_fire  = false
 	_fire_cooldown = 0.0
-	if not weapons.is_empty():
+	if not _weapons.is_empty():
 		spawn_weapon_model()
 		_apply_recoil_data()
 	# If server switches weapon mid-reload, tell all clients reload is cancelled
@@ -240,7 +254,7 @@ func _previous_weapon_server() -> void:
 # gate and server gate are always in sync — no timer drift divergence.
 
 func start_reload() -> void:
-	var weapon: Weapon = weapons[current_weapon_index]
+	var weapon: Weapon = _weapons[current_weapon_index]
 	if _is_reloading or weapon.has_infinite_ammo:
 		return
 	if weapon.mag_current == weapon.mag_size:
@@ -267,7 +281,7 @@ func request_reload() -> void:
 
 
 func _begin_reload_server() -> void:
-	var weapon: Weapon = weapons[current_weapon_index]
+	var weapon: Weapon = _weapons[current_weapon_index]
 	if _is_reloading or weapon.has_infinite_ammo:
 		return
 	if weapon.mag_current == weapon.mag_size:
@@ -281,16 +295,16 @@ func _begin_reload_server() -> void:
 @rpc("call_local")
 func _notify_reload_started() -> void:
 	_is_reloading = true
-	_play_sound(weapons[current_weapon_index].reload_sound)
+	_play_sound(_weapons[current_weapon_index].reload_sound)
 	mag_changed.emit(
-		weapons[current_weapon_index].mag_current,
-		weapons[current_weapon_index].mag_size
+		_weapons[current_weapon_index].mag_current,
+		_weapons[current_weapon_index].mag_size
 	)
 
 
 func _finish_reload() -> void:
 	# Runs on server only — _tick_timers only runs the reload timer on authority
-	var weapon: Weapon = weapons[current_weapon_index]
+	var weapon: Weapon = _weapons[current_weapon_index]
 	if weapon.reload_individually:
 		_set_mag(weapon.mag_current + 1)
 		_is_reloading = false
@@ -313,7 +327,7 @@ func _finish_reload() -> void:
 @rpc("call_local")
 func _confirm_reload_done(new_mag: int) -> void:
 	# Authoritative mag value from server — overwrite whatever the client had
-	var weapon: Weapon = weapons[current_weapon_index]
+	var weapon: Weapon = _weapons[current_weapon_index]
 	weapon.mag_current = clamp(new_mag, 0, weapon.mag_size)
 	_is_reloading      = false
 	mag_changed.emit(weapon.mag_current, weapon.mag_size)
@@ -323,9 +337,9 @@ func _confirm_reload_done(new_mag: int) -> void:
 #region Firing — input processing (owning peer only)
 
 func _process_fire() -> void:
-	if weapons.size() <= 0:
+	if _weapons.size() <= 0:
 		return
-	var weapon: Weapon = weapons[current_weapon_index]
+	var weapon: Weapon = _weapons[current_weapon_index]
 
 	# Empty mag click — feedback only, no RPC needed
 	if player_input.fire_held and not _fired_this_press:
@@ -347,7 +361,7 @@ func _try_fire() -> void:
 	if _fire_cooldown > 0.0 or _is_reloading or _pending_fire:
 		return
 
-	var pre_delay: float = weapons[current_weapon_index].pre_shoot_delay
+	var pre_delay: float = _weapons[current_weapon_index].pre_shoot_delay
 	
 	# CLient side gate! — all must pass. nothing CHANGING, but we check!
 	if _is_reloading:
@@ -357,7 +371,7 @@ func _try_fire() -> void:
 	if current_weapon_index != current_weapon_index:
 		return
 
-	var weapon: Weapon = weapons[current_weapon_index]
+	var weapon: Weapon = _weapons[current_weapon_index]
 	if weapon.mag_current <= 0 and not weapon.has_infinite_ammo:
 		return
 
@@ -398,14 +412,14 @@ func _do_fire_client() -> void:
 	
 	
 	
-	_fire_cooldown = weapons[current_weapon_index].post_shoot_delay
+	_fire_cooldown = _weapons[current_weapon_index].post_shoot_delay
 	fire_intent.rpc_id(1, current_weapon_index)
 #endregion
 
 #region RPCs
 @rpc("any_peer", "call_local")
 func _play_empty() -> void:
-	_play_sound(weapons[current_weapon_index].empty_sound)
+	_play_sound(_weapons[current_weapon_index].empty_sound)
 
 
 # Owning client → server (or direct call for host-as-player).
@@ -431,7 +445,7 @@ func fire_intent(weapon_index: int) -> void:
 	#if weapon_index != current_weapon_index:
 		#return
 #
-	var weapon: Weapon = weapons[current_weapon_index]
+	var weapon: Weapon = _weapons[current_weapon_index]
 	#if weapon.mag_current <= 0 and not weapon.has_infinite_ammo:
 		#return
 
@@ -443,7 +457,7 @@ func fire_intent(weapon_index: int) -> void:
 	# Push authoritative mag to all peers so client display stays in sync.
 	# Without this, a rejected shot (due to server-side cooldown or reload
 	# state mismatch) leaves the client's display one count too low forever.
-	_sync_mag.rpc(weapons[current_weapon_index].mag_current)
+	_sync_mag.rpc(_weapons[current_weapon_index].mag_current)
 
 	_execute_fire(weapon)
 
@@ -463,7 +477,7 @@ func _sync_mag(authoritative_mag: int) -> void:
 	# Server → all peers. Overwrites the local mag display with the server's
 	# count after every accepted shot. This is the reconciliation step that
 	# prevents client display drift from silent server rejections.
-	var weapon: Weapon = weapons[current_weapon_index]
+	var weapon: Weapon = _weapons[current_weapon_index]
 	weapon.mag_current = clamp(authoritative_mag, 0, weapon.mag_size)
 	mag_changed.emit(weapon.mag_current, weapon.mag_size)
 
@@ -523,7 +537,7 @@ func _execute_fire(weapon: Weapon) -> void:
 
 @rpc("any_peer", "call_local", "reliable")
 func _spawn_projectile_on_server(shot_dir, basis, parent_player_name):
-	var weapon = weapons[current_weapon_index]
+	var weapon = _weapons[current_weapon_index]
 	var shot_dir_v3: Vector3 = shot_dir as Vector3
 	var world_dir: Vector3 = \
 		#weapon_model_parent.global_transform.basis * shot_dir_v3.normalized()
@@ -659,7 +673,7 @@ func _apply_recoil_rpc(rolled: Vector3) -> void:
 
 @rpc("any_peer", "call_local")
 func _play_shoot_sound() -> void:
-	_play_sound(weapons[current_weapon_index].shoot_sound)
+	_play_sound(_weapons[current_weapon_index].shoot_sound)
 
 func _align_weapon_to_raycast() -> void:
 	if current_weapon_model == null or not _raycast.is_colliding():
