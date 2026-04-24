@@ -9,7 +9,6 @@
 [ext_resource type="Script" uid="uid://cg1glglog46jg" path="res://components/hurt_component.gd" id="6_1jxqw"]
 [ext_resource type="Script" uid="uid://d2kgugh2o23ba" path="res://player/weapon_controller.gd" id="6_ebec5"]
 [ext_resource type="Script" uid="uid://cxit1cumphn3q" path="res://components/attribute_component.gd" id="7_1jxqw"]
-[ext_resource type="Shader" uid="uid://7yui67a2adxs" path="res://assets/environment/new_shader.gdshader" id="10_n7ghd"]
 [ext_resource type="Script" uid="uid://w4bkel2abkvv" path="res://player/body.gd" id="13_kb6p2"]
 [ext_resource type="Script" uid="uid://bk7h6t34yea7r" path="res://player/recoil/recoil.gd" id="14_wodsf"]
 [ext_resource type="PackedScene" uid="uid://em68gvqy1f84" path="res://effects/muzzle_flash.tscn" id="27_5ejfk"]
@@ -67,13 +66,6 @@ albedo_color = Color(0.13077214, 0.13077214, 0.13077211, 1)
 
 [sub_resource type="BoxMesh" id="BoxMesh_kb6p2"]
 size = Vector3(1, 1.625, 0.54)
-
-[sub_resource type="CylinderMesh" id="CylinderMesh_b26j0"]
-bottom_radius = 0.0
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_nvl01"]
-render_priority = 0
-shader = ExtResource("10_n7ghd")
 
 [node name="Player" type="CharacterBody3D" unique_id=51620469 node_paths=PackedStringArray("player_input", "rollback_sync", "attribute_component", "body", "weapon_controller")]
 collision_layer = 2
@@ -250,12 +242,6 @@ mesh = SubResource("BoxMesh_32hag")
 [node name="Skin6" type="MeshInstance3D" parent="Body" unique_id=1170353479]
 transform = Transform3D(0.19128741, 0, 0, 0, 0.19128741, 0, 0, 0, 0.19128741, 0.10657835, -0.5957482, 0.00477314)
 mesh = SubResource("BoxMesh_32hag")
-
-[node name="Marker" type="MeshInstance3D" parent="Body" unique_id=2008329147]
-transform = Transform3D(0.5487218, 0, 0, 0, 0.5487218, 0, 0, 0, 0.5487218, 0, 2.2682807, 0)
-visible = false
-mesh = SubResource("CylinderMesh_b26j0")
-surface_material_override/0 = SubResource("ShaderMaterial_nvl01")
 
 [node name="AmmoBarPublic" type="Label3D" parent="Body" unique_id=1596545662]
 transform = Transform3D(0.17002402, 0, 0, 0, 0.17002402, 0, 0, 0, 0.17002402, 0, 1.0468503, 0)

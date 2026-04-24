@@ -37,7 +37,7 @@ func _ready() -> void:
 	health_bar_public.visible = not is_owner
 	health_delta_bar_public.visible = not is_owner
 	name_public.visible = not is_owner
-	$"../Marker".visible = not is_owner
+	#$"../Marker".visible = not is_owner
 
 	name_public.text = ("Host" if (name.to_int() == 1) else "Client") + ", NetID: " + str(name)
 
