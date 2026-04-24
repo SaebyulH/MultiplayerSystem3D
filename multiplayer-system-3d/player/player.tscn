@@ -104,6 +104,7 @@ surface_material_override/0 = SubResource("StandardMaterial3D_4flbx")
 [node name="RollbackSynchronizer" type="Node" parent="." unique_id=744606291 node_paths=PackedStringArray("root")]
 script = ExtResource("3_2uvqg")
 root = NodePath("..")
+enable_prediction = true
 state_properties = Array[String]([":global_transform", ":velocity"])
 input_properties = Array[String](["PlayerInput:input_dir", "PlayerInput:jump_input", "PlayerInput:crouch", "PlayerInput:ads"])
 metadata/_custom_type_script = "uid://d350u8evihs1u"

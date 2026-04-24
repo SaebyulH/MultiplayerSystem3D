@@ -100,29 +100,28 @@ func no_health():
 	reset()
 
 
-func _physics_process(delta: float) -> void:
-	if despawned:
-		global_position = GameManager.get_despawn_position()
-		$Body/PlayerUI.hide()
-		return
-	else:
-		$Body/PlayerUI.show()
-		var my_id := multiplayer.get_unique_id()
-		var player_id := name.to_int()
-		if my_id == player_id and not despawned:
-			camera.make_current()
-			$BodyHurtbox/MeshInstance3D2.hide()
-			$BodyHurtbox/CollisionShape3D.hide()
-		else:
-			camera.current = false
-			camera.visible = false
+#func _physics_process(delta: float) -> void:
+		#if despawned:
+		#global_position = GameManager.get_despawn_position()
+		#$Body/PlayerUI.hide()
+		#return
+	#else:
+		#$Body/PlayerUI.show()
+		#var my_id := multiplayer.get_unique_id()
+		#var player_id := name.to_int()
+		#if my_id == player_id and not despawned:
+			#camera.make_current()
+			#$BodyHurtbox/MeshInstance3D2.hide()
+			#$BodyHurtbox/CollisionShape3D.hide()
+		#else:
+			#camera.current = false
+			#camera.visible = false	
 			
 			
 func _rollback_tick(delta, tick, is_fresh):
 	
 	
-		
-	
+
 
 
 	
