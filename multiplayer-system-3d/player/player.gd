@@ -10,7 +10,7 @@ var respawn_position := Vector3.ZERO
 
 # In Player.gd
 var knockback_velocity := Vector3.ZERO
-@export var knockback_decay: float = 50.0  # how fast it fades per second
+@export var knockback_decay: float = 100.0  # how fast it fades per second
 
 var speed = 5.0
 const JUMP_VELOCITY = 5.0
@@ -130,9 +130,9 @@ func _rollback_tick(delta, tick, is_fresh):
 	_apply_movement_from_input(delta)
 
 
-func _physics_process(delta: float) -> void:
-	if not get_tree().get_multiplayer().has_multiplayer_peer():
-		return
+#func _physics_process(delta: float) -> void:
+	#if not get_tree().get_multiplayer().has_multiplayer_peer():
+		#return
 	
 	#_apply_movement_from_input(delta)
 	## Apply aim for all instances
@@ -162,6 +162,7 @@ func _apply_movement_from_input(delta):
 	if not is_on_floor():
 		velocity += get_gravity() * delta
 	elif player_input.jump_input and is_on_floor():
+		knockback_velocity = Vector3.ZERO
 		velocity.y = JUMP_VELOCITY
 
 	var input_dir := player_input.input_dir
@@ -186,8 +187,12 @@ func _apply_movement_from_input(delta):
 
 	# Decay and apply knockback separately
 	velocity *= NetworkTime.physics_factor
-	velocity += knockback_velocity  # moved to here, not scaled
+	
+	velocity += knockback_velocity # moved to here, not scaled
+	
 	move_and_slide()
+	
+	#velocity -= knockback_velocity
 	velocity /= NetworkTime.physics_factor
 	# decay after move
 	knockback_velocity = knockback_velocity.move_toward(Vector3.ZERO, knockback_decay * delta)
@@ -202,7 +207,8 @@ func _apply_movement_from_input(delta):
 		body.mouse_sens_x = 0.002
 		body.mouse_sens_y = 0.002
 		speed = 5.0
-		
+	
+	print(knockback_velocity.length())
 		
 
 
