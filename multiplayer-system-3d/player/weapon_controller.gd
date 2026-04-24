@@ -39,6 +39,7 @@ func set_weapons(new_weapons: Array[Weapon]):
 		# Keep a second independent copy as the reset baseline BEFORE any mutation
 		#orig_weapons.append(w.duplicate(true) as Weapon)
 	_weapons        = deep_weapons
+	
 	_emit_weapon_changed()
 
 func get_weapons() -> Array[Weapon]:
@@ -155,7 +156,9 @@ func _set_mag(value: int) -> void:
 
 
 func _emit_weapon_changed() -> void:
-	var weapon: Weapon = _weapons[current_weapon_index] if current_weapon_index >= 0 else null
+	if _weapons.size() <= 0:
+		return
+	var weapon: Weapon = _weapons[current_weapon_index]
 	weapon_changed.emit(current_weapon_index, weapon)
 	mag_changed.emit(weapon.mag_current, weapon.mag_size)
 #endregion
