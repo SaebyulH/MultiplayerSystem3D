@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://cccu8xmm1tqq7"]
 
 [ext_resource type="PackedScene" uid="uid://6mr0d18yn8po" path="res://weapon/projectiles/scenes/simple_projectile.tscn" id="1_ja76d"]
-[ext_resource type="Texture2D" uid="uid://00y158dnpv02" path="res://assets/soccer-and-football-seamless-pattern-sport-ball-texture-football-background-black-and-white-pattern-with-soccer-geometric-hexagons-illustration-on-white-background-vector.jpg" id="2_6oebn"]
+[ext_resource type="Texture2D" uid="uid://00y158dnpv02" path="res://assets/soccer.jpg" id="2_6oebn"]
 
 [sub_resource type="PhysicsMaterial" id="PhysicsMaterial_6oebn"]
 bounce = 1.0

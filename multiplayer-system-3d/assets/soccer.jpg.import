@@ -3,7 +3,7 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://00y158dnpv02"
-path.s3tc="res://.godot/imported/soccer-and-football-seamless-pattern-sport-ball-texture-football-background-black-and-white-pattern-with-soccer-geometric-hexagons-illustration-on-white-background-vector.jpg-6ba4ad1dea14e5582e3ed997450248b8.s3tc.ctex"
+path.s3tc="res://.godot/imported/soccer.jpg-bc9b57913d5fe6be8f509402a8854f45.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -11,8 +11,8 @@ metadata={
 
 [deps]
 
-source_file="res://assets/soccer-and-football-seamless-pattern-sport-ball-texture-football-background-black-and-white-pattern-with-soccer-geometric-hexagons-illustration-on-white-background-vector.jpg"
-dest_files=["res://.godot/imported/soccer-and-football-seamless-pattern-sport-ball-texture-football-background-black-and-white-pattern-with-soccer-geometric-hexagons-illustration-on-white-background-vector.jpg-6ba4ad1dea14e5582e3ed997450248b8.s3tc.ctex"]
+source_file="res://assets/soccer.jpg"
+dest_files=["res://.godot/imported/soccer.jpg-bc9b57913d5fe6be8f509402a8854f45.s3tc.ctex"]
 
 [params]
 
