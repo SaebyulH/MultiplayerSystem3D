@@ -111,7 +111,8 @@ func _rollback_tick(delta, tick, is_fresh):
 		var player_id := name.to_int()
 		if my_id == player_id and not despawned:
 			camera.make_current()
-			
+			$BodyHurtbox/MeshInstance3D2.hide()
+			$BodyHurtbox/CollisionShape3D.hide()
 		else:
 			camera.current = false
 			camera.visible = false
