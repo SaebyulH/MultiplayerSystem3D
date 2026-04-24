@@ -208,7 +208,7 @@ func _apply_movement_from_input(delta):
 		body.mouse_sens_y = 0.002
 		speed = 5.0
 	
-	print(knockback_velocity.length())
+	#print(knockback_velocity.length())
 		
 
 
