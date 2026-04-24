@@ -139,7 +139,7 @@ func reset() -> void:
 	# Re-deep-copy from the originals so mag counts return to full
 	for weapon in _weapons:
 		weapon.reset()
-	if _weapons.size()>=0:
+	if _weapons.size() > 0:
 		_emit_weapon_changed()
 	
 	
@@ -296,8 +296,10 @@ func _begin_reload_server() -> void:
 	_notify_reload_started.rpc()
 
 
-@rpc("call_local")
+@rpc("any_peer", "call_local")
 func _notify_reload_started() -> void:
+	if _weapons.is_empty() or current_weapon_index >= _weapons.size():
+		return
 	_is_reloading = true
 	_play_sound(_weapons[current_weapon_index].reload_sound)
 	mag_changed.emit(
@@ -372,8 +374,8 @@ func _try_fire() -> void:
 		return
 	if _fire_cooldown > 0.0:
 		return
-	if current_weapon_index != current_weapon_index:
-		return
+	#if current_weapon_index != current_weapon_index:
+		#return
 
 	var weapon: Weapon = _weapons[current_weapon_index]
 	if weapon.mag_current <= 0 and not weapon.has_infinite_ammo:
@@ -423,6 +425,8 @@ func _do_fire_client() -> void:
 #region RPCs
 @rpc("any_peer", "call_local")
 func _play_empty() -> void:
+	if _weapons.is_empty() or current_weapon_index >= _weapons.size():
+		return
 	_play_sound(_weapons[current_weapon_index].empty_sound)
 
 
@@ -483,6 +487,8 @@ func _sync_mag(authoritative_mag: int) -> void:
 	# Server → all peers. Overwrites the local mag display with the server's
 	# count after every accepted shot. This is the reconciliation step that
 	# prevents client display drift from silent server rejections.
+	if _weapons.is_empty() or current_weapon_index >= _weapons.size():
+		return
 	var weapon: Weapon = _weapons[current_weapon_index]
 	weapon.mag_current = clamp(authoritative_mag, 0, weapon.mag_size)
 	mag_changed.emit(weapon.mag_current, weapon.mag_size)
@@ -632,7 +638,6 @@ func _flash_muzzle_flash(start_position: Vector3) -> void:
 		#if is_instance_valid(muzzle_flash):
 			#muzzle_flash.hide()
 	#)
-
 @rpc("any_peer", "call_local")
 func _on_hitscan_hit(
 	hit_position: Vector3,
@@ -668,25 +673,21 @@ func _on_hitscan_hit(
 	# --- Tween animation ---
 	var tween: Tween = get_tree().create_tween()
 
-	tween.tween_method(
-		func(t: float) -> void:
-			if not is_instance_valid(tracer_instance):
-				return
+	var tracer_fn := func(t: float) -> void:
+		if not is_instance_valid(tracer_instance):
+			return
+		var current_start: Vector3 = start_position.lerp(hit_position, t)
+		var mid: Vector3 = current_start.lerp(hit_position, 0.5)
+		var dir: Vector3 = hit_position - current_start
+		var tracer_len: float = dir.length()
+		tracer_instance.global_position = mid
+		cylinder.height = tracer_len
+		if tracer_len > 0.001:
+			tracer_instance.global_transform.basis = Basis(
+				Quaternion(Vector3.UP, dir.normalized())
+			)
 
-			var current_start: Vector3 = start_position.lerp(hit_position, t)
-			var mid: Vector3 = current_start.lerp(hit_position, 0.5)
-			var dir: Vector3 = hit_position - current_start
-			var tracer_len: float = dir.length()
-
-			tracer_instance.global_position = mid
-			cylinder.height = tracer_len
-
-			if tracer_len > 0.001:
-				tracer_instance.global_transform.basis = Basis(
-					Quaternion(Vector3.UP, dir.normalized())
-				),
-		0.0, 1.0, distance * 0.02
-	)
+	tween.tween_method(tracer_fn, 0.0, 1.0, distance * 0.02)
 
 	# --- Lifetime control (race: tween vs 4s timer) ---
 	var alive := true
@@ -699,19 +700,21 @@ func _on_hitscan_hit(
 			tracer_instance.queue_free()
 	)
 
-	# --- Bullet hole cleanup (unchanged) ---
+	# --- Bullet hole cleanup ---
 	get_tree().create_timer(7.0).timeout.connect(func():
 		if is_instance_valid(bullet_hole):
 			bullet_hole.queue_free()
 	)
-
-
+	
+	
 @rpc("any_peer", "call_local")
 func _apply_recoil_rpc(rolled: Vector3) -> void:
 	recoil.target_rotation += rolled
 
 @rpc("any_peer", "call_local")
 func _play_shoot_sound() -> void:
+	if _weapons.is_empty() or current_weapon_index >= _weapons.size():
+		return
 	_play_sound(_weapons[current_weapon_index].shoot_sound)
 
 func _align_weapon_to_raycast() -> void:
