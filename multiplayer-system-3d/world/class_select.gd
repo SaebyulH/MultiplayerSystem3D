@@ -91,6 +91,7 @@ func _on_secondary_selected(index: int) -> void:
 		return
 	_spawn_weapon_preview(selected_class.secondary_weapons[index], secondary_viewport)
 
+
 func _on_confirm_pressed() -> void:
 	world.class_selected = true
 
@@ -106,16 +107,61 @@ func _on_confirm_pressed() -> void:
 	var primary: Weapon = selected_class.primary_weapons[primary_index]
 	var secondary: Weapon = selected_class.secondary_weapons[secondary_index]
 
-	_apply_loadout.rpc(player_id, primary.resource_path, secondary.resource_path)
-
 	visible = false
 	PlayerInput.ui_open = false
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 
-@rpc("any_peer", "call_local", "reliable")
+	if multiplayer.is_server():
+		# Host-as-player: call directly, no RPC
+		_request_loadout(player_id, primary.resource_path, secondary.resource_path)
+	else:
+		_request_loadout.rpc_id(1, player_id, primary.resource_path, secondary.resource_path)
+
+# Client → server only
+@rpc("any_peer", "reliable")
+func _request_loadout(target_player_id: String, primary_path: String, secondary_path: String) -> void:
+	if not multiplayer.is_server():
+		return
+
+	# Validate sender is who they claim to be
+	var sender_id := multiplayer.get_remote_sender_id()
+	if sender_id != 0 and str(sender_id) != target_player_id:
+		return
+
+	var primary: Weapon = load(primary_path) as Weapon
+	var secondary: Weapon = load(secondary_path) as Weapon
+	if primary == null or secondary == null:
+		return
+
+	var player := GameManager.find_player(target_player_id)
+	if player == null:
+		return
+
+	var controller: WeaponController = player.get_node("WeaponController")
+	if controller == null:
+		return
+
+	var new_weapons: Array[Weapon] = []
+	new_weapons.append(primary.duplicate(true) as Weapon)
+	new_weapons.append(secondary.duplicate(true) as Weapon)
+
+	# Server applies state, then tells all peers to sync
+	controller.set_weapons(new_weapons)
+	controller.current_weapon_index = 0
+	player.despawned = false
+	player.no_health()
+
+	# Tell all peers to apply the same loadout
+	_apply_loadout.rpc(target_player_id, primary_path, secondary_path)
+
+
+# Server → all peers (not call_local — server already applied it above)
+@rpc("authority", "call_remote", "reliable")
 func _apply_loadout(target_player_id: String, primary_path: String, secondary_path: String) -> void:
 	var primary: Weapon = load(primary_path) as Weapon
 	var secondary: Weapon = load(secondary_path) as Weapon
+	if primary == null or secondary == null:
+		return
 
 	var player := GameManager.find_player(target_player_id)
 	if player == null:
@@ -130,7 +176,53 @@ func _apply_loadout(target_player_id: String, primary_path: String, secondary_pa
 	new_weapons.append(secondary.duplicate(true) as Weapon)
 	controller.set_weapons(new_weapons)
 	controller.current_weapon_index = 0
-
-	player.no_health()
-	controller.spawn_weapon_model()
 	player.despawned = false
+
+
+
+
+#
+#
+#func _on_confirm_pressed() -> void:
+	#world.class_selected = true
+#
+	#if selected_class == null:
+		#return
+#
+	#var primary_index := primary_option.selected
+	#var secondary_index := secondary_option.selected
+#
+	#if primary_index < 0 or secondary_index < 0:
+		#return
+#
+	#var primary: Weapon = selected_class.primary_weapons[primary_index]
+	#var secondary: Weapon = selected_class.secondary_weapons[secondary_index]
+#
+	#_apply_loadout.rpc(player_id, primary.resource_path, secondary.resource_path)
+#
+	#visible = false
+	#PlayerInput.ui_open = false
+	#Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+#
+#@rpc("any_peer", "call_local", "reliable")
+#func _apply_loadout(target_player_id: String, primary_path: String, secondary_path: String) -> void:
+	#var primary: Weapon = load(primary_path) as Weapon
+	#var secondary: Weapon = load(secondary_path) as Weapon
+#
+	#var player := GameManager.find_player(target_player_id)
+	#if player == null:
+		#return
+#
+	#var controller: WeaponController = player.get_node("WeaponController")
+	#if controller == null:
+		#return
+#
+	#var new_weapons: Array[Weapon] = []
+	#new_weapons.append(primary.duplicate(true) as Weapon)
+	#new_weapons.append(secondary.duplicate(true) as Weapon)
+	#controller.set_weapons(new_weapons)
+	#controller.current_weapon_index = 0
+#
+	#player.no_health()
+	#controller.spawn_weapon_model()
+	#player.despawned = false
