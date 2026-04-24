@@ -27,17 +27,12 @@ func reset_health():
 	health = starting_health
 
 
-func reset():
-	reset_health()
-	last_attacker = "NONE"
-	_time_since_last_damage = 0.0
-
-
 func apply_health_delta(delta: float, changer: String, changee: String):
+	print(get_stack())
 	var old_health := health
 	var new_health :float = clamp(old_health + delta, 0.0, starting_health)
 	var applied_delta := new_health - old_health
-
+	
 	if is_zero_approx(applied_delta):
 		return
 
@@ -50,6 +45,7 @@ func apply_health_delta(delta: float, changer: String, changee: String):
 			Leaderboard.request_add_self_damage(changer, applied_delta)
 		else:
 			Leaderboard.request_add_damage(changer, applied_delta)
+		last_attacker = changer
 	else:
 		if changee == changer:
 			Leaderboard.request_add_self_heal(changer, applied_delta)
@@ -64,16 +60,20 @@ func apply_health_delta(delta: float, changer: String, changee: String):
 		health = new_health
 
 
+func reset():
+	reset_health()
+	last_attacker = "NONE"
+	_time_since_last_damage = 0.0
+	_heal_timer = 0.0  # ← add this
+
 func _process(delta: float) -> void:
 	_time_since_last_damage += delta
-
 	if health <= 0.0 or health >= starting_health:
+		_heal_timer = 0.0  # don't pre-charge
 		return
 	if _time_since_last_damage < HEAL_DELAY:
 		return
-
 	_heal_timer += delta
-
 	if _heal_timer >= 1.0:
 		_heal_timer -= 1.0
 		apply_health_delta(passive_heal_per_sec, get_parent().name, get_parent().name)

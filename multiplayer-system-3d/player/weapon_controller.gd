@@ -29,21 +29,9 @@ var _fired_this_press: bool = false
 signal mag_changed(current: int, mag_max: int)
 signal weapon_changed(index: int, weapon: Weapon)
 
-@export var _weapons: Array[Weapon] 
-
-func set_weapons(new_weapons: Array[Weapon]):
-	var deep_weapons: Array[Weapon] = []
-	for w: Weapon in new_weapons:
-		var copy: Weapon = w.duplicate(true) as Weapon
-		deep_weapons.append(copy)
-		# Keep a second independent copy as the reset baseline BEFORE any mutation
-		#orig_weapons.append(w.duplicate(true) as Weapon)
-	_weapons        = deep_weapons
-	
-	_emit_weapon_changed()
-
-func get_weapons() -> Array[Weapon]:
-	return _weapons
+# Use @export only for editor-assigned defaults. All runtime mutation goes
+# through set_weapons() so the setter invariant is always enforced.
+@export var _weapons: Array[Weapon]
 
 @export var current_weapon_index: int = 0:
 	set(value):
@@ -61,8 +49,17 @@ func get_weapons() -> Array[Weapon]:
 @export var _raycast: RayCast3D
 
 var current_weapon_model: Node3D = null
-#var _reset_weapons: Array[Weapon]
 
+
+#region Readiness
+# Central invariant check. Every RPC and fire path that touches _weapons or
+# current_weapon_model calls this first. One place to fix, one place to read.
+func _is_ready() -> bool:
+	return not _weapons.is_empty() \
+		and current_weapon_index < _weapons.size() \
+		and current_weapon_model != null \
+		and is_instance_valid(current_weapon_model)
+#endregion
 
 
 #region Lifecycle
@@ -71,17 +68,10 @@ func _ready() -> void:
 	# its own mutable state. Without this, both the client-side and server-side
 	# WeaponController nodes share the same Weapon objects in memory, causing
 	# mag_current mutations from one peer to silently affect the other.
-	# Each WeaponController gets its own deep copy so client/server mutations
-	# never share the same Resource object.
 	var deep_weapons: Array[Weapon] = []
-	#var orig_weapons: Array[Weapon] = []
 	for w: Weapon in _weapons:
-		var copy: Weapon = w.duplicate(true) as Weapon
-		deep_weapons.append(copy)
-		# Keep a second independent copy as the reset baseline BEFORE any mutation
-		#orig_weapons.append(w.duplicate(true) as Weapon)
-	_weapons        = deep_weapons
-	#_reset_weapons = orig_weapons
+		deep_weapons.append(w.duplicate(true) as Weapon)
+	_weapons = deep_weapons
 
 	if not _weapons.is_empty() and _weapons[current_weapon_index] != null:
 		spawn_weapon_model()
@@ -97,16 +87,13 @@ func _physics_process(delta: float) -> void:
 	_align_weapon_to_raycast()
 	_tick_timers(delta)
 
-	# Only the owning peer drives fire input — not the server on behalf of others
-	var my_id: int     = multiplayer.get_unique_id()
-	var owner_id: int  = _parent_player.name.to_int()
+	var my_id: int    = multiplayer.get_unique_id()
+	var owner_id: int = _parent_player.name.to_int()
 	if my_id == owner_id:
 		_process_fire()
 
-	# Consume the one-frame release flag
 	if player_input.fire_just_released:
-		
-		_fired_this_press          = false
+		_fired_this_press           = false
 		player_input.fire_just_released = false
 
 
@@ -114,7 +101,6 @@ func _tick_timers(delta: float) -> void:
 	if _fire_cooldown > 0.0:
 		_fire_cooldown -= delta
 
-	# Reload timer only ticks on the server — completion is broadcast via RPC
 	if is_multiplayer_authority() and _is_reloading:
 		_reload_timer -= delta
 		if _reload_timer <= 0.0:
@@ -124,7 +110,6 @@ func _tick_timers(delta: float) -> void:
 		if player_input.fire_held:
 			_pre_fire_timer -= delta
 		else:
-			# optional: cancel if they released early
 			_pending_fire = false
 
 		if _pre_fire_timer <= 0.0:
@@ -134,20 +119,13 @@ func _tick_timers(delta: float) -> void:
 			else:
 				_do_fire_client()
 
+
 func reset() -> void:
 	current_weapon_index = 0
-	# Re-deep-copy from the originals so mag counts return to full
 	for weapon in _weapons:
 		weapon.reset()
-	if _weapons.size() > 0:
+	if not _weapons.is_empty():
 		_emit_weapon_changed()
-	
-	
-	
-	#var fresh: Array[Weapon] = []
-	#for w: Weapon in _reset_weapons:
-		#fresh.append(w.duplicate(true) as Weapon)
-	#weapons = fresh
 
 
 func _set_mag(value: int) -> void:
@@ -157,21 +135,49 @@ func _set_mag(value: int) -> void:
 
 
 func _emit_weapon_changed() -> void:
-	if _weapons.size() <= 0:
+	if _weapons.is_empty():
 		return
 	var weapon: Weapon = _weapons[current_weapon_index]
 	weapon_changed.emit(current_weapon_index, weapon)
 	mag_changed.emit(weapon.mag_current, weapon.mag_size)
 #endregion
 
+
+#region Loadout
+# The only correct way to assign weapons at runtime. Enforces all invariants:
+# deep-copies resources, resets timers, spawns the model, emits signals.
+# Nothing should ever write to _weapons directly outside of _ready().
+func set_weapons(new_weapons: Array[Weapon]) -> void:
+	var deep_weapons: Array[Weapon] = []
+	for w: Weapon in new_weapons:
+		deep_weapons.append(w.duplicate(true) as Weapon)
+	_weapons = deep_weapons
+
+	# Reset all firing state so stale cooldowns/reload flags from the previous
+	# loadout cannot bleed into the new one.
+	_is_reloading   = false
+	_reload_timer   = 0.0
+	_pending_fire   = false
+	_fire_cooldown  = 0.0
+
+	spawn_weapon_model()
+	_emit_weapon_changed()
+
+
+func get_weapons() -> Array[Weapon]:
+	return _weapons
+#endregion
+
+
 #region Helpers
 func _apply_recoil_data() -> void:
-	if _weapons.size() > 0:
-		var data: RecoilData = _weapons[current_weapon_index].recoil_data
-		recoil.recoil       = data.recoil
-		recoil.aim_recoil   = data.aim_recoil
-		recoil.snappiness   = data.snappiness
-		recoil.return_speed = data.return_speed
+	if _weapons.is_empty():
+		return
+	var data: RecoilData = _weapons[current_weapon_index].recoil_data
+	recoil.recoil       = data.recoil
+	recoil.aim_recoil   = data.aim_recoil
+	recoil.snappiness   = data.snappiness
+	recoil.return_speed = data.return_speed
 
 
 func _play_sound(stream: AudioStream) -> void:
@@ -189,6 +195,8 @@ func spawn_weapon_model() -> void:
 	if current_weapon_model != null:
 		current_weapon_model.queue_free()
 		current_weapon_model = null
+	if _weapons.is_empty():
+		return
 	var weapon: Weapon = _weapons[current_weapon_index]
 	if weapon.weapon_model == null:
 		return
@@ -199,11 +207,6 @@ func spawn_weapon_model() -> void:
 	weapon_model_parent.add_child(current_weapon_model)
 #endregion
 
-#region Loadout
-#func set_weapons
-
-
-#endregion
 
 #region Weapon switching
 func _on_weapon_index_changed() -> void:
@@ -214,7 +217,6 @@ func _on_weapon_index_changed() -> void:
 	if not _weapons.is_empty():
 		spawn_weapon_model()
 		_apply_recoil_data()
-	# If server switches weapon mid-reload, tell all clients reload is cancelled
 	if is_multiplayer_authority():
 		_cancel_reload.rpc()
 
@@ -248,6 +250,7 @@ func _previous_weapon_server() -> void:
 		current_weapon_index -= 1
 #endregion
 
+
 #region Reload
 # Reload is fully server-authoritative.
 # The client calls request_reload.rpc_id(1) — the server validates, runs the
@@ -258,17 +261,16 @@ func _previous_weapon_server() -> void:
 # gate and server gate are always in sync — no timer drift divergence.
 
 func start_reload() -> void:
+	if not _is_ready():
+		return
 	var weapon: Weapon = _weapons[current_weapon_index]
 	if _is_reloading or weapon.has_infinite_ammo:
 		return
 	if weapon.mag_current == weapon.mag_size:
 		return
-
 	if multiplayer.is_server():
 		_begin_reload_server()
 	else:
-		# Optimistically block firing locally so the player doesn't
-		# get ghost shots while the RPC round-trips
 		_is_reloading = true
 		request_reload.rpc_id(1)
 
@@ -285,6 +287,8 @@ func request_reload() -> void:
 
 
 func _begin_reload_server() -> void:
+	if not _is_ready():
+		return
 	var weapon: Weapon = _weapons[current_weapon_index]
 	if _is_reloading or weapon.has_infinite_ammo:
 		return
@@ -292,13 +296,12 @@ func _begin_reload_server() -> void:
 		return
 	_is_reloading = true
 	_reload_timer = weapon.reload_time
-	# Tell all peers (including the owning client) that reload has started
 	_notify_reload_started.rpc()
 
 
-@rpc("any_peer", "call_local")
+@rpc("call_local")
 func _notify_reload_started() -> void:
-	if _weapons.is_empty() or current_weapon_index >= _weapons.size():
+	if not _is_ready():
 		return
 	_is_reloading = true
 	_play_sound(_weapons[current_weapon_index].reload_sound)
@@ -309,19 +312,18 @@ func _notify_reload_started() -> void:
 
 
 func _finish_reload() -> void:
-	# Runs on server only — _tick_timers only runs the reload timer on authority
+	if not _is_ready():
+		return
 	var weapon: Weapon = _weapons[current_weapon_index]
 	if weapon.reload_individually:
 		_set_mag(weapon.mag_current + 1)
 		_is_reloading = false
 		if weapon.mag_current < weapon.mag_size:
 			if player_input.fire_held:
-				# interrupt reload cleanly
 				_is_reloading = false
 				return
 			else:
 				_begin_reload_server()
-			
 		else:
 			_confirm_reload_done.rpc(weapon.mag_current)
 	else:
@@ -332,7 +334,8 @@ func _finish_reload() -> void:
 
 @rpc("call_local")
 func _confirm_reload_done(new_mag: int) -> void:
-	# Authoritative mag value from server — overwrite whatever the client had
+	if _weapons.is_empty() or current_weapon_index >= _weapons.size():
+		return
 	var weapon: Weapon = _weapons[current_weapon_index]
 	weapon.mag_current = clamp(new_mag, 0, weapon.mag_size)
 	_is_reloading      = false
@@ -341,13 +344,11 @@ func _confirm_reload_done(new_mag: int) -> void:
 
 
 #region Firing — input processing (owning peer only)
-
 func _process_fire() -> void:
-	if _weapons.size() <= 0:
+	if not _is_ready():
 		return
 	var weapon: Weapon = _weapons[current_weapon_index]
 
-	# Empty mag click — feedback only, no RPC needed
 	if player_input.fire_held and not _fired_this_press:
 		if weapon.mag_current <= 0 and not weapon.has_infinite_ammo:
 			_play_empty.rpc()
@@ -364,25 +365,18 @@ func _process_fire() -> void:
 
 
 func _try_fire() -> void:
+	if not _is_ready():
+		return
 	if _fire_cooldown > 0.0 or _is_reloading or _pending_fire:
 		return
 
-	var pre_delay: float = _weapons[current_weapon_index].pre_shoot_delay
-	
-	# CLient side gate! — all must pass. nothing CHANGING, but we check!
-	if _is_reloading:
-		return
-	if _fire_cooldown > 0.0:
-		return
-	#if current_weapon_index != current_weapon_index:
-		#return
+	var weapon: Weapon   = _weapons[current_weapon_index]
+	var pre_delay: float = weapon.pre_shoot_delay
 
-	var weapon: Weapon = _weapons[current_weapon_index]
 	if weapon.mag_current <= 0 and not weapon.has_infinite_ammo:
 		return
 
-	# Apply Recoil Client side
-	var r: Vector3     = recoil.recoil
+	var r: Vector3      = recoil.recoil
 	var rolled: Vector3 = Vector3(
 		r.x,
 		randf_range(-r.y, r.y),
@@ -390,104 +384,50 @@ func _try_fire() -> void:
 	)
 	_apply_recoil_rpc.rpc(rolled)
 	
-	
 	if pre_delay > 0.0:
 		_pending_fire   = true
 		_pre_fire_timer = pre_delay
 	else:
-		# No pre-delay — fire immediately
 		if multiplayer.is_server():
 			fire_intent(current_weapon_index)
 		else:
 			fire_intent(current_weapon_index)
-			
-			#fire_intent(current_weapon_index)
-			
-			#_do_fire_client()
 
 
 func _do_fire_client() -> void:
-	# Pure client only. Send the intent RPC and set local cooldown to prevent
-	# spamming. Do NOT touch mag_current here — the server is the only source
-	# of truth for ammo. It calls _set_mag after every accepted shot, which
-	# emits mag_changed and updates this client's display via the RPC path.
-	# Optimistic deduction causes drift because the server may silently reject
-	# shots (cooldown, reload state) and there is no rollback of the deduction.
-	
-
-	
-	
-	
+	if not _is_ready():
+		return
 	_fire_cooldown = _weapons[current_weapon_index].post_shoot_delay
 	fire_intent.rpc_id(1, current_weapon_index)
 #endregion
 
+
 #region RPCs
 @rpc("any_peer", "call_local")
 func _play_empty() -> void:
-	if _weapons.is_empty() or current_weapon_index >= _weapons.size():
+	if not _is_ready():
 		return
 	_play_sound(_weapons[current_weapon_index].empty_sound)
 
 
-# Owning client → server (or direct call for host-as-player).
-# This is the single authoritative fire point. Everything before here is
-# prediction / UI only.
 @rpc("any_peer")
 func fire_intent(weapon_index: int) -> void:
-	#if not is_multiplayer_authority():
-		#return
-#
-	## Validate the sender is actually the player who owns this controller.
-	## get_remote_sender_id() returns 0 on a direct call (host-as-player) — allow it.
-	#var sender_id: int = multiplayer.get_remote_sender_id()
-	#var owner_id: int  = _parent_player.name.to_int()
-	#if sender_id != 0 and sender_id != owner_id:
-		#return
-
-	# Server-side gate — all must pass
-	#if _is_reloading:
-		#return
-	#if _fire_cooldown > 0.0:
-		#return
-	#if weapon_index != current_weapon_index:
-		#return
-#
+	if not _is_ready():
+		return
 	var weapon: Weapon = _weapons[current_weapon_index]
-	#if weapon.mag_current <= 0 and not weapon.has_infinite_ammo:
-		#return
 
-	# Authoritative deduction and cooldown — only happens here
 	if not weapon.has_infinite_ammo:
 		_set_mag(weapon.mag_current - 1)
 	_fire_cooldown = weapon.post_shoot_delay
 
-	# Push authoritative mag to all peers so client display stays in sync.
-	# Without this, a rejected shot (due to server-side cooldown or reload
-	# state mismatch) leaves the client's display one count too low forever.
-	if _weapons.size()<=0:
-		return
 	_sync_mag.rpc(_weapons[current_weapon_index].mag_current)
-
 	_execute_fire(weapon)
-
-	## Roll recoil once on server so all peers get identical values
-	#var r: Vector3     = recoil.recoil
-	#var rolled: Vector3 = Vector3(
-		#r.x,
-		#randf_range(-r.y, r.y),
-		#randf_range(-r.z, r.z)
-	#)
-	#_apply_recoil_rpc.rpc(rolled)
 	_play_shoot_sound.rpc()
 
 
 @rpc("any_peer", "call_local")
 func _sync_mag(authoritative_mag: int) -> void:
-	# Server → all peers. Overwrites the local mag display with the server's
-	# count after every accepted shot. This is the reconciliation step that
-	# prevents client display drift from silent server rejections.
-	if _weapons.is_empty() or current_weapon_index >= _weapons.size():
+	if not _is_ready():
 		return
 	var weapon: Weapon = _weapons[current_weapon_index]
 	weapon.mag_current = clamp(authoritative_mag, 0, weapon.mag_size)
@@ -495,6 +435,8 @@ func _sync_mag(authoritative_mag: int) -> void:
 
 
 func _execute_fire(weapon: Weapon) -> void:
+	if not _is_ready():
+		return
 	if weapon.bullet_type == Weapon.BulletType.HITSCAN:
 		var muzzle_node: Node3D = current_weapon_model.get_node("Muzzle") as Node3D
 		var muzzle_pos: Vector3 = muzzle_node.global_position
@@ -502,138 +444,96 @@ func _execute_fire(weapon: Weapon) -> void:
 
 		for shot_dir in weapon.multishot_data:
 			var shot_dir_v3: Vector3 = shot_dir as Vector3
-			var world_dir: Vector3 = \
+			var world_dir: Vector3   = \
 				weapon_model_parent.global_transform.basis * shot_dir_v3.normalized()
 
 			var space_state: PhysicsDirectSpaceState3D = \
 				_parent_player.get_world_3d().direct_space_state
-			var origin: Vector3 = weapon_model_parent.global_position
+			var origin: Vector3              = weapon_model_parent.global_position
 			var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
 				origin,
 				origin + world_dir * weapon.hitscan_range
 			)
-			query.exclude = [_parent_player.get_rid(), $"../HeadHurtbox".get_rid(), $"../BodyHurtbox".get_rid()]
+			query.exclude          = [_parent_player.get_rid(), $"../HeadHurtbox".get_rid(), $"../BodyHurtbox".get_rid()]
 			query.collide_with_areas = true
-			query.collision_mask = (1 << 0) | (1 << 2)  # = 0b00000101 = 5
-			
+			query.collision_mask   = (1 << 0) | (1 << 2)
+
 			var result: Dictionary = space_state.intersect_ray(query)
 			if not result.is_empty():
 				_on_hitscan_hit.rpc(result.position, result.normal, muzzle_pos)
-				
 				var collider: Node3D = result.collider
-				
-
-				
 				if collider is HurtboxComponent:
 					var distance := origin.distance_to(result.position)
-					var mult := _compute_falloff_multiplier(weapon, distance)
-					var damage := weapon.hitscan_damage * mult
-					if collider.is_head: damage *= weapon.headshot_multiplier
-					print("HIT HURTBOX")
+					var mult     := _compute_falloff_multiplier(weapon, distance)
+					var damage   := weapon.hitscan_damage * mult
+					if collider.is_head:
+						damage *= weapon.headshot_multiplier
 					var player_name = collider.get_parent().name
-					#collider.change_health(-damage, _parent_player.name)
 					_change_health_on_server.rpc_id(1, player_name, -damage, _parent_player.name)
 			else:
-				#TODO: really messy but should basically fake a hit when shooting the air if
-				#it has reasonable range
-				if weapon.hitscan_range >= 1000000000.0/10.0:
-					var far_pos: Vector3 = origin + world_dir * 10000.0
-					var fake_normal: Vector3 = -world_dir # or Vector3.ZERO if you don’t care
-
+				if weapon.hitscan_range >= 1000000000.0 / 10.0:
+					var far_pos: Vector3    = origin + world_dir * 10000.0
+					var fake_normal: Vector3 = -world_dir
 					_on_hitscan_hit.rpc(far_pos, fake_normal, muzzle_pos)
-	
-	
+
 	elif weapon.bullet_type == Weapon.BulletType.PROJECTILE:
 		for shot_dir in weapon.multishot_data:
-			_spawn_projectile_on_server.rpc_id(1, shot_dir, weapon_model_parent.global_transform.basis, _parent_player.name)
-			#var shot_dir_v3: Vector3 = shot_dir as Vector3
-			#var world_dir: Vector3 = \
-				#weapon_model_parent.global_transform.basis * shot_dir_v3.normalized()
-#
-			#var projectile_scene: Node3D = weapon.projectile_scene.instantiate() as Node3D
-			#projectile_scene.global_transform = weapon_model_parent.global_transform
-			#projectile_scene.shooter_name     = _parent_player.name
-#
-			#var speed: float = projectile_scene.linear_velocity.length()
-			#projectile_scene.linear_velocity = world_dir * speed
-#
-			#projectile_spawn_parent.add_child(projectile_scene, true)
+			_spawn_projectile_on_server.rpc_id(
+				1, shot_dir, weapon_model_parent.global_transform.basis, _parent_player.name
+			)
 
 
 @rpc("any_peer", "call_local", "reliable")
 func _spawn_projectile_on_server(shot_dir, basis, parent_player_name):
-	var weapon = _weapons[current_weapon_index]
+	if not _is_ready():
+		return
+	var weapon: Weapon    = _weapons[current_weapon_index]
 	var shot_dir_v3: Vector3 = shot_dir as Vector3
-	var world_dir: Vector3 = \
-		#weapon_model_parent.global_transform.basis * shot_dir_v3.normalized()
-		basis * shot_dir_v3.normalized()
-		
+	var world_dir: Vector3   = basis * shot_dir_v3.normalized()
 
-	var projectile_scene: Node3D = weapon.projectile_scene.instantiate() as Node3D
+	var projectile_scene: Node3D  = weapon.projectile_scene.instantiate() as Node3D
 	projectile_scene.global_transform = weapon_model_parent.global_transform
-	#projectile_scene.shooter_name     = _parent_player.name
 	projectile_scene.shooter_name     = parent_player_name
-	
 
 	var speed: float = projectile_scene.linear_velocity.length()
 	projectile_scene.linear_velocity = world_dir * speed
-
 	projectile_spawn_parent.add_child(projectile_scene, true)
-
-
 
 
 @rpc("any_peer", "call_local", "reliable")
 func _change_health_on_server(collider_name: String, delta, parent_player_name):
-	if is_multiplayer_authority():
-		
-		
-		var children = get_parent().get_parent().get_children()
-		
-		for child in children:
-			if child.name == collider_name and child is Player:
-				child.change_health(delta, parent_player_name)
-
+	if not is_multiplayer_authority():
+		return
+	for child in get_parent().get_parent().get_children():
+		if child.name == collider_name and child is Player:
+			child.change_health(delta, parent_player_name)
 
 
 func _compute_falloff_multiplier(weapon: Weapon, distance: float) -> float:
 	if not weapon.has_damage_falloff or weapon.falloff_curve == null:
 		return 1.0
-	
 	var t: float
-	
 	if weapon.falloff_end == weapon.falloff_start:
 		t = 0.0
 	else:
 		t = (distance - weapon.falloff_start) / (weapon.falloff_end - weapon.falloff_start)
-	
 	t = clamp(t, 0.0, 1.0)
-	
 	var curve: Curve = weapon.falloff_curve.curve
 	if curve == null:
 		return 1.0
-	
 	return curve.sample(t)
 
 
 @rpc("any_peer", "call_local")
 func _flash_muzzle_flash(start_position: Vector3) -> void:
-	if current_weapon_model == null:
+	if not _is_ready():
 		return
 	var muzzle_flash = $MuzzleFlash
 	muzzle_flash.global_rotation = current_weapon_model.global_rotation
 	muzzle_flash.global_position = start_position
 	muzzle_flash.fire()
 
-	#var duration: float = 0.1
-	#if muzzle_flash.has_node("Sparks"):
-		#var sparks: GPUParticles3D = muzzle_flash.get_node("Sparks") as GPUParticles3D
-		#duration = sparks.lifetime
 
-	#get_tree().create_timer(duration).timeout.connect(func() -> void:
-		#if is_instance_valid(muzzle_flash):
-			#muzzle_flash.hide()
-	#)
 @rpc("any_peer", "call_local")
 func _on_hitscan_hit(
 	hit_position: Vector3,
@@ -641,27 +541,27 @@ func _on_hitscan_hit(
 	start_position: Vector3
 ) -> void:
 	var bullet_hole_scene: PackedScene = load("res://effects/bullet_hole.tscn") as PackedScene
-	var bullet_hole: Node3D = bullet_hole_scene.instantiate() as Node3D
+	var bullet_hole: Node3D            = bullet_hole_scene.instantiate() as Node3D
 	projectile_spawn_parent.add_child(bullet_hole)
-	bullet_hole.global_position = hit_position
+	bullet_hole.global_position        = hit_position
 	bullet_hole.global_transform.basis = Basis(Quaternion(Vector3.UP, hit_normal))
 
 	# --- Tracer setup ---
-	var tracer_mat: StandardMaterial3D = StandardMaterial3D.new()
-	tracer_mat.albedo_color = Color(1.0, 0.588, 0.294, 1.0)
-	tracer_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	tracer_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	var tracer_mat: StandardMaterial3D  = StandardMaterial3D.new()
+	tracer_mat.albedo_color  = Color(1.0, 0.588, 0.294, 1.0)
+	tracer_mat.shading_mode  = BaseMaterial3D.SHADING_MODE_UNSHADED
+	tracer_mat.cull_mode     = BaseMaterial3D.CULL_DISABLED
 
 	var cylinder: CylinderMesh = CylinderMesh.new()
-	cylinder.top_radius = 0.01
+	cylinder.top_radius    = 0.01
 	cylinder.bottom_radius = 0.01
 	cylinder.radial_segments = 3
-	cylinder.rings = 1
-	cylinder.material = tracer_mat
+	cylinder.rings         = 1
+	cylinder.material      = tracer_mat
 
 	var tracer_instance: MeshInstance3D = MeshInstance3D.new()
-	tracer_instance.mesh = cylinder
-	tracer_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	tracer_instance.mesh         = cylinder
+	tracer_instance.cast_shadow  = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	projectile_spawn_parent.add_child(tracer_instance)
 
 	var distance: float = start_position.distance_to(hit_position)
@@ -673,9 +573,9 @@ func _on_hitscan_hit(
 		if not is_instance_valid(tracer_instance):
 			return
 		var current_start: Vector3 = start_position.lerp(hit_position, t)
-		var mid: Vector3 = current_start.lerp(hit_position, 0.5)
-		var dir: Vector3 = hit_position - current_start
-		var tracer_len: float = dir.length()
+		var mid: Vector3           = current_start.lerp(hit_position, 0.5)
+		var dir: Vector3           = hit_position - current_start
+		var tracer_len: float      = dir.length()
 		tracer_instance.global_position = mid
 		cylinder.height = tracer_len
 		if tracer_len > 0.001:
@@ -701,17 +601,19 @@ func _on_hitscan_hit(
 		if is_instance_valid(bullet_hole):
 			bullet_hole.queue_free()
 	)
-	
-	
+
+
 @rpc("any_peer", "call_local")
 func _apply_recoil_rpc(rolled: Vector3) -> void:
 	recoil.target_rotation += rolled
 
+
 @rpc("any_peer", "call_local")
 func _play_shoot_sound() -> void:
-	if _weapons.is_empty() or current_weapon_index >= _weapons.size():
+	if not _is_ready():
 		return
 	_play_sound(_weapons[current_weapon_index].shoot_sound)
+
 
 func _align_weapon_to_raycast() -> void:
 	if current_weapon_model == null or not _raycast.is_colliding():
@@ -721,5 +623,4 @@ func _align_weapon_to_raycast() -> void:
 	var dir: Vector3  = (to - from).normalized()
 	if dir.length_squared() > 0.0:
 		current_weapon_model.global_transform.basis = Basis.looking_at(dir, Vector3.UP)
-		
 #endregion

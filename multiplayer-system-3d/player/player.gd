@@ -134,7 +134,7 @@ func _physics_process(delta: float) -> void:
 	if not get_tree().get_multiplayer().has_multiplayer_peer():
 		return
 	
-	_apply_movement_from_input(delta)
+	#_apply_movement_from_input(delta)
 	## Apply aim for all instances
 	#rotation.y = player_input.body_rotation_y
 	#head.rotation.x = player_input.head_rotation_x
@@ -171,8 +171,9 @@ func _apply_movement_from_input(delta):
 	var direction := (forward * input_dir.y + right * input_dir.x).normalized()
 	
 	var calc_speed : float = 1.0
-	if weapon_controller.get_weapons().size() > 0:
-		calc_speed = speed * weapon_controller.get_weapons()[weapon_controller.current_weapon_index].player_speed_multiplier
+	var weapons := weapon_controller.get_weapons()
+	if not weapons.is_empty():
+		calc_speed = speed * weapons[weapon_controller.current_weapon_index].player_speed_multiplier
 	if is_crouching:
 		calc_speed *= crouch_speed_multiplier
 
