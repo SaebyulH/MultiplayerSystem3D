@@ -500,7 +500,7 @@ func _execute_fire(weapon: Weapon) -> void:
 				origin,
 				origin + world_dir * weapon.hitscan_range
 			)
-			query.exclude = [_parent_player]
+			query.exclude = [_parent_player.get_rid(), $"../HeadHurtbox".get_rid(), $"../BodyHurtbox".get_rid()]
 			query.collide_with_areas = true
 			query.collision_mask = (1 << 0) | (1 << 2)  # = 0b00000101 = 5
 			
