@@ -26,11 +26,23 @@ properties/0/replication_mode = 1
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4flbx"]
 transparency = 1
-albedo_color = Color(0.003921569, 0.003921569, 0.60784316, 0.7254902)
+albedo_color = Color(0.046625316, 0, 0.7632794, 0.42352942)
 
-[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1jxqw"]
-radius = 0.6459961
-height = 2.194336
+[sub_resource type="SphereShape3D" id="SphereShape3D_kb6p2"]
+radius = 0.2657069
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wodsf"]
+transparency = 1
+albedo_color = Color(0.75686276, 0, 0, 0.7019608)
+
+[sub_resource type="SphereMesh" id="SphereMesh_32hag"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_wodsf"]
+height = 1.519165
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_32hag"]
+radius = 0.797
+height = 2.447
 
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_1s1yo"]
 properties/0/path = NodePath("AttributeComponent:health")
@@ -121,18 +133,48 @@ _spawnable_scenes = PackedStringArray("uid://cccu8xmm1tqq7", "uid://dy7hw0uphca4
 spawn_path = NodePath("..")
 script = ExtResource("3_32hag")
 
-[node name="HurtboxComponent" type="Area3D" parent="." unique_id=481075083]
+[node name="HeadHurtbox" type="Area3D" parent="." unique_id=481075083]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6909796, 0)
+collision_layer = 4
+collision_mask = 0
+script = ExtResource("5_2hs0m")
+is_head = true
+metadata/_custom_type_script = "uid://c4uv27n00ycfc"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="HeadHurtbox" unique_id=1595505387]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.017822266, 0)
+shape = SubResource("SphereShape3D_kb6p2")
+
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="HeadHurtbox" unique_id=1360077016]
+transform = Transform3D(0.5464816, 0, 0, 0, 0.5464816, 0, 0, 0, 0.5464816, 0, 0, 0)
+material_override = SubResource("StandardMaterial3D_wodsf")
+mesh = SubResource("SphereMesh_32hag")
+
+[node name="BodyHurtbox" type="Area3D" parent="." unique_id=1010023186]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1398654, 0)
 collision_layer = 4
 collision_mask = 0
 script = ExtResource("5_2hs0m")
 metadata/_custom_type_script = "uid://c4uv27n00ycfc"
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="HurtboxComponent" unique_id=1595505387]
-shape = SubResource("CapsuleShape3D_1jxqw")
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BodyHurtbox" unique_id=194134934]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.3756714, 0)
+shape = SubResource("CapsuleShape3D_wodsf")
+
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="BodyHurtbox" unique_id=1278142914]
+transform = Transform3D(0.62510556, 0, 0, 0, 0.62510556, 0, 0, 0, 0.62510556, 0, -0.3800121, 0)
+material_override = SubResource("StandardMaterial3D_wodsf")
+mesh = SubResource("CapsuleMesh_32hag")
 
 [node name="HurtComponent" type="Node" parent="." unique_id=708236351 node_paths=PackedStringArray("hurtbox_component", "attribute_component")]
 script = ExtResource("6_1jxqw")
-hurtbox_component = NodePath("../HurtboxComponent")
+hurtbox_component = NodePath("../HeadHurtbox")
+attribute_component = NodePath("../AttributeComponent")
+metadata/_custom_type_script = "uid://cg1glglog46jg"
+
+[node name="HurtComponent2" type="Node" parent="." unique_id=25351424 node_paths=PackedStringArray("hurtbox_component", "attribute_component")]
+script = ExtResource("6_1jxqw")
+hurtbox_component = NodePath("../BodyHurtbox")
 attribute_component = NodePath("../AttributeComponent")
 metadata/_custom_type_script = "uid://cg1glglog46jg"
 

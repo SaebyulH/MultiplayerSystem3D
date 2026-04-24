@@ -192,8 +192,8 @@ func _apply_movement_from_input(delta):
 
 	if player_input.ads:
 		camera.fov = 20.0
-		body.mouse_sens_x = 0.001
-		body.mouse_sens_y = 0.001
+		body.mouse_sens_x = 0.002*0.268
+		body.mouse_sens_y = 0.002*0.268
 		speed = 2.5
 	else:
 		camera.fov = 90.0

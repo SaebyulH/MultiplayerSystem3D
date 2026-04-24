@@ -3,6 +3,7 @@ class_name HitboxComponent
 
 signal hit_hurtbox(hurtbox)
 @export var health_delta: float = -10.0
+@export var headshot_multiplier: float = 1.0
 @export var can_hit_shooter: bool = false
 ## With this enabled, STICK projectiles are basically poisonous! Warning!
 @export var can_hit_multiple_times: bool = false

@@ -22,6 +22,7 @@ mag_current = 40
 reload_time = 1.305
 recoil_data = SubResource("Resource_ubd5f")
 bullet_type = 1
+hitscan_range = 1000000000.0
 projectile_scene = ExtResource("2_ubd5f")
 weapon_model = ExtResource("6_ubd5f")
 shoot_sound = ExtResource("1_nqq1q")

@@ -48,7 +48,8 @@ enum BulletType {HITSCAN, PROJECTILE}
 ## Damage dealt per hitscan hit. Only used when bullet_type is HITSCAN.
 @export var hitscan_damage: float = 10.0
 ## Maximum range of the hitscan ray in units. Only used when bullet_type is HITSCAN.
-@export var hitscan_range: float = 10000000000.0
+@export var hitscan_range: float = 1000000000.0
+@export var headshot_multiplier: float = 1.0
 
 ## enables damage falloff from the start to end position
 @export var has_damage_falloff: bool = false:
@@ -94,7 +95,7 @@ func _validate_property(property: Dictionary) -> void:
 		if has_infinite_ammo:
 			property.usage |= PROPERTY_USAGE_READ_ONLY
 	# Hide hitscan-only props when bullet type is PROJECTILE
-	if property.name in ["hitscan_damage", "hitscan_range", "has_damage_falloff", ]:
+	if property.name in ["hitscan_damage", "hitscan_range", "has_damage_falloff", "headshot_multiplier"]:
 		if bullet_type == BulletType.PROJECTILE:
 			property.usage = PROPERTY_USAGE_NO_EDITOR
 			

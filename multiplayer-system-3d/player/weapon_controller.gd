@@ -155,7 +155,7 @@ func _set_mag(value: int) -> void:
 
 
 func _emit_weapon_changed() -> void:
-	var weapon: Weapon = _weapons[current_weapon_index]
+	var weapon: Weapon = _weapons[current_weapon_index] if current_weapon_index >= 0 else null
 	weapon_changed.emit(current_weapon_index, weapon)
 	mag_changed.emit(weapon.mag_current, weapon.mag_size)
 #endregion
@@ -501,7 +501,9 @@ func _execute_fire(weapon: Weapon) -> void:
 				origin + world_dir * weapon.hitscan_range
 			)
 			query.exclude = [_parent_player]
-
+			query.collide_with_areas = true
+			query.collision_mask = (1 << 0) | (1 << 2)  # = 0b00000101 = 5
+			
 			var result: Dictionary = space_state.intersect_ray(query)
 			if not result.is_empty():
 				_on_hitscan_hit.rpc(result.position, result.normal, muzzle_pos)
@@ -510,18 +512,19 @@ func _execute_fire(weapon: Weapon) -> void:
 				
 
 				
-				if collider.has_method("change_health"):
+				if collider is HurtboxComponent:
 					var distance := origin.distance_to(result.position)
 					var mult := _compute_falloff_multiplier(weapon, distance)
 					var damage := weapon.hitscan_damage * mult
-					
-					var collider_name = collider.name
+					if collider.is_head: damage *= weapon.headshot_multiplier
+					print("HIT HURTBOX")
+					var player_name = collider.get_parent().name
 					#collider.change_health(-damage, _parent_player.name)
-					_change_health_on_server.rpc_id(1, collider_name, -damage, _parent_player.name)
+					_change_health_on_server.rpc_id(1, player_name, -damage, _parent_player.name)
 			else:
 				#TODO: really messy but should basically fake a hit when shooting the air if
 				#it has reasonable range
-				if weapon.hitscan_range >= 10000000000.0/10:
+				if weapon.hitscan_range >= 1000000000.0/10.0:
 					var far_pos: Vector3 = origin + world_dir * 10000.0
 					var fake_normal: Vector3 = -world_dir # or Vector3.ZERO if you don’t care
 
