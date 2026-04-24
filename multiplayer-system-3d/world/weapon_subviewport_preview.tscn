@@ -1,21 +1,37 @@
 [gd_scene format=3 uid="uid://dpvv8ex8hflrg"]
 
+[ext_resource type="Script" uid="uid://bmalo8aynrk85" path="res://world/preview_root.gd" id="1_1b3t4"]
+
 [sub_resource type="QuadMesh" id="QuadMesh_23hc1"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_23hc1"]
+shading_mode = 0
 
 [node name="Node3D" type="Node3D" unique_id=27438632]
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=375288943]
-transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 0.771662, 0, 0)
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 0.7, 0, 0)
+fov = 26.5
 
 [node name="OmniLight3D" type="OmniLight3D" parent="." unique_id=1230982930]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.73169756, 0.61751, 0.48163563)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.14999938, 0.61751, 1.1243713)
+light_color = Color(0.64138085, 1, 1, 1)
+
+[node name="OmniLight3D2" type="OmniLight3D" parent="." unique_id=1734088563]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.6797167, -0.01799655, -0.88959396)
+light_color = Color(1, 0.49026394, 0.2443901, 1)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1785974577]
 transform = Transform3D(-3.0726267e-07, 0, 7.0293503, 0, 7.0293503, 0, -7.0293503, 0, -3.0726267e-07, -0.805231, 0, 0)
 mesh = SubResource("QuadMesh_23hc1")
+surface_material_override/0 = SubResource("StandardMaterial3D_23hc1")
 
 [node name="PreviewRoot" type="Node3D" parent="." unique_id=1206711765]
+script = ExtResource("1_1b3t4")
 
 [node name="Label3D" type="Label3D" parent="PreviewRoot" unique_id=1667166439]
-transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 0, 0, 0)
+transform = Transform3D(-2.0668772e-08, 0, 0.4728464, 0, 0.4728464, 0, -0.4728464, 0, -2.0668772e-08, 0, 0, 0)
 text = "No Class Selected"
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1418064702]
+transform = Transform3D(0.8660254, -0.35355338, 0.35355338, -0.50000006, -0.6123725, 0.6123725, 0, -0.7071068, -0.7071068, 0, 1.60589, 0)

@@ -5,7 +5,10 @@
 [ext_resource type="Script" uid="uid://bi46jlfs4i3pp" path="res://world/game_menu.gd" id="3_ur4i3"]
 [ext_resource type="AudioStream" uid="uid://exvh8mdgxfb8" path="res://assets/sounds/multikill-1.mp3" id="4_p2lt3"]
 [ext_resource type="Script" uid="uid://c2ud4axp2a0nj" path="res://world/class_select.gd" id="4_y31kp"]
+[ext_resource type="Texture2D" uid="uid://bk3hvsl8t0bt3" path="res://assets/Assault.png" id="6_43n3m"]
 [ext_resource type="PackedScene" uid="uid://dpvv8ex8hflrg" path="res://world/weapon_subviewport_preview.tscn" id="6_btayf"]
+[ext_resource type="Texture2D" uid="uid://cu8b4plsgc7l7" path="res://assets/Assasin.png" id="7_8kumn"]
+[ext_resource type="Texture2D" uid="uid://c84ennjo4gpgo" path="res://assets/Assistance.png" id="8_hwth4"]
 
 [node name="World1" type="Node3D" unique_id=1030413131 node_paths=PackedStringArray("leaderboard")]
 script = ExtResource("1_rf4cw")
@@ -127,11 +130,14 @@ size_flags_vertical = 3
 theme_override_font_sizes/font_size = 60
 fit_to_longest_item = false
 item_count = 3
-popup/item_0/text = "res://player/player_classes/assasin.tres"
-popup/item_0/id = 0
-popup/item_1/text = "res://player/player_classes/assault.tres"
-popup/item_1/id = 1
-popup/item_2/text = "res://player/player_classes/assistive.tres"
+popup/item_0/text = "res://player/player_classes/assault.tres"
+popup/item_0/icon = ExtResource("6_43n3m")
+popup/item_0/id = 1
+popup/item_1/text = "res://player/player_classes/assasin.tres"
+popup/item_1/icon = ExtResource("7_8kumn")
+popup/item_1/id = 0
+popup/item_2/text = "res://player/player_classes/assistance.tres"
+popup/item_2/icon = ExtResource("8_hwth4")
 popup/item_2/id = 2
 
 [node name="PrimarySection" type="VBoxContainer" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer" unique_id=648861188]

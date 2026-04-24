@@ -45,6 +45,15 @@ func _spawn_weapon_preview(weapon: Weapon, viewport: SubViewport) -> void:
 	model.scale = weapon.weapon_scale
 	viewport.get_node("Node3D/PreviewRoot").add_child(model)
 
+	# Wait one frame so the model is in the tree and Muzzle has a valid global_position
+	await get_tree().process_frame
+
+	var camera: Camera3D = viewport.get_node("Node3D/Camera3D")
+	var muzzle := model.get_node_or_null("Muzzle")
+	if muzzle:
+		var dist :float = muzzle.position.length()*2.7+0.4
+		camera.position.x = dist
+
 func load_classes(classes: Array[Class]) -> void:
 	available_classes = classes
 	class_option.clear()
