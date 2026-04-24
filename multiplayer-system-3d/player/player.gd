@@ -80,9 +80,9 @@ func _health_changed():
 
 func reset():
 	attribute_component.reset()
-	var last_weapon = weapon_controller.current_weapon_index
-	#weapon_controller.reset()
-	weapon_controller.current_weapon_index = last_weapon
+	#var last_weapon = weapon_controller.current_weapon_index
+	weapon_controller.reset()
+	#weapon_controller.current_weapon_index = last_weapon
 
 	needs_respawn = true
 	for node in GameManager.spawn_parent.get_children():

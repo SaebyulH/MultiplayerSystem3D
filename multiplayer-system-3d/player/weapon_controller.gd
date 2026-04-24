@@ -139,7 +139,8 @@ func reset() -> void:
 	# Re-deep-copy from the originals so mag counts return to full
 	for weapon in _weapons:
 		weapon.reset()
-	_emit_weapon_changed()
+	if _weapons.size()>=0:
+		_emit_weapon_changed()
 	
 	
 	
