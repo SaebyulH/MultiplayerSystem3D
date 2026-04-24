@@ -1,7 +1,7 @@
 extends CharacterBody3D
 class_name Player
 
-
+var _pending_knockback := Vector3.ZERO
 var despawned := true
 
 
@@ -98,9 +98,8 @@ func no_health():
 	#Leaderboard.request_add_kill(attribute_component.last_attacker)
 	#spawn_manager.respawn_player(name)
 	reset()
-
-func _rollback_tick(delta, tick, is_fresh):
 	
+func _rollback_tick(delta, tick, is_fresh):
 	if despawned:
 		global_position = GameManager.get_despawn_position()
 		$Body/PlayerUI.hide()
@@ -109,24 +108,25 @@ func _rollback_tick(delta, tick, is_fresh):
 		$Body/PlayerUI.show()
 		var my_id := multiplayer.get_unique_id()
 		var player_id := name.to_int()
-		if my_id == player_id and not despawned:
+		if my_id == player_id:
 			camera.make_current()
 			$BodyHurtbox/MeshInstance3D2.hide()
 			$BodyHurtbox/CollisionShape3D.hide()
 		else:
 			camera.current = false
 			camera.visible = false
-		
-	
 
+	if _pending_knockback.length() > 0.01:
+		knockback_velocity += _pending_knockback
+		if _pending_knockback.y > 0.0:
+			velocity.y = 0.0
+		_pending_knockback = Vector3.ZERO
 
-	
-	
-	
 	if needs_respawn:
 		global_position = respawn_position
 		velocity = Vector3.ZERO
 		needs_respawn = false
+
 	_apply_movement_from_input(delta)
 
 
@@ -151,11 +151,58 @@ func _force_update_is_on_floor():
 	velocity = old_velocity
 
 
-func apply_knockback(force: Vector3) -> void:
-	if force.length() < 0.01:
-		return
-	knockback_velocity += force
+#func apply_knockback(force: Vector3) -> void:
+	#if force.length() < 0.01:
+		#return
+	#knockback_velocity += force
 
+#func _apply_movement_from_input(delta):
+	#_force_update_is_on_floor()
+#
+	#if not is_on_floor():
+		#velocity += get_gravity() * delta
+	#elif player_input.jump_input and is_on_floor():
+		#velocity.y = JUMP_VELOCITY
+#
+	#var input_dir := player_input.input_dir
+	#var cam_basis: Basis = camera.global_transform.basis
+	#var forward := Vector3(cam_basis.z.x, 0, cam_basis.z.z).normalized()
+	#var right   := Vector3(cam_basis.x.x, 0, cam_basis.x.z).normalized()
+	#var direction := (forward * input_dir.y + right * input_dir.x).normalized()
+	#
+	#var calc_speed : float = 1.0
+	#var weapons := weapon_controller.get_weapons()
+	#if not weapons.is_empty():
+		#calc_speed = speed * weapons[weapon_controller.current_weapon_index].player_speed_multiplier
+	#if is_crouching:
+		#calc_speed *= crouch_speed_multiplier
+#
+	#if direction:
+		#velocity.x = direction.x * calc_speed
+		#velocity.z = direction.z * calc_speed
+	#else:
+		#velocity.x = move_toward(velocity.x, 0, calc_speed)
+		#velocity.z = move_toward(velocity.z, 0, calc_speed)
+#
+	## Decay and apply knockback separately
+	#velocity *= NetworkTime.physics_factor
+	#velocity += knockback_velocity  # moved to here, not scaled
+	#move_and_slide()
+	#velocity /= NetworkTime.physics_factor
+	## decay after move
+	#knockback_velocity = knockback_velocity.move_toward(Vector3.ZERO, knockback_decay * delta)
+#
+	#if player_input.ads:
+		#camera.fov = 20.0
+		#body.mouse_sens_x = 0.002*0.268
+		#body.mouse_sens_y = 0.002*0.268
+		#speed = 2.5
+	#else:
+		#camera.fov = 90.0
+		#body.mouse_sens_x = 0.002
+		#body.mouse_sens_y = 0.002
+		#speed = 5.0
+		
 func _apply_movement_from_input(delta):
 	_force_update_is_on_floor()
 
@@ -169,14 +216,15 @@ func _apply_movement_from_input(delta):
 	var forward := Vector3(cam_basis.z.x, 0, cam_basis.z.z).normalized()
 	var right   := Vector3(cam_basis.x.x, 0, cam_basis.x.z).normalized()
 	var direction := (forward * input_dir.y + right * input_dir.x).normalized()
-	
-	var calc_speed : float = 1.0
+
+	var calc_speed: float = speed
 	var weapons := weapon_controller.get_weapons()
 	if not weapons.is_empty():
 		calc_speed = speed * weapons[weapon_controller.current_weapon_index].player_speed_multiplier
 	if is_crouching:
 		calc_speed *= crouch_speed_multiplier
 
+	# Normal movement — this stomps x/z velocity
 	if direction:
 		velocity.x = direction.x * calc_speed
 		velocity.z = direction.z * calc_speed
@@ -184,27 +232,52 @@ func _apply_movement_from_input(delta):
 		velocity.x = move_toward(velocity.x, 0, calc_speed)
 		velocity.z = move_toward(velocity.z, 0, calc_speed)
 
-	# Decay and apply knockback separately
+	# Add knockback AFTER movement so it isn't stomped
+	velocity.x += knockback_velocity.x
+	velocity.y += knockback_velocity.y
+	velocity.z += knockback_velocity.z
+
 	velocity *= NetworkTime.physics_factor
-	velocity += knockback_velocity  # moved to here, not scaled
+	# In _apply_movement_from_input, right before move_and_slide:
+	if knockback_velocity.length() > 0.01:
+		print("[KNOCKBACK] applying knockback_velocity=", knockback_velocity, 
+			" on peer ", multiplayer.get_unique_id(),
+			" player=", name)
 	move_and_slide()
 	velocity /= NetworkTime.physics_factor
-	# decay after move
-	knockback_velocity = knockback_velocity.move_toward(Vector3.ZERO, knockback_decay * delta)
+
+	# Decay knockback by tick, not frame — consistent across resimulation
+	knockback_velocity = knockback_velocity.move_toward(
+		Vector3.ZERO,
+		knockback_decay * delta
+	)
+	# In _apply_movement_from_input, right after knockback decay:
+	if knockback_velocity.length() > 0.01:
+		print("[KNOCKBACK] after decay knockback_velocity=", knockback_velocity)
 
 	if player_input.ads:
 		camera.fov = 20.0
-		body.mouse_sens_x = 0.002*0.268
-		body.mouse_sens_y = 0.002*0.268
+		body.mouse_sens_x = 0.002 * 0.268
+		body.mouse_sens_y = 0.002 * 0.268
 		speed = 2.5
 	else:
 		camera.fov = 90.0
 		body.mouse_sens_x = 0.002
 		body.mouse_sens_y = 0.002
 		speed = 5.0
-		
-		
 
+@rpc("authority", "call_local", "reliable")
+func _receive_knockback(force: Vector3) -> void:
+	print("[KNOCKBACK] _receive_knockback called on peer ", multiplayer.get_unique_id(),
+		" | force=", force)
+	# Don't apply directly — queue it so rollback picks it up on the next tick
+	_pending_knockback += force
+
+func apply_knockback(force: Vector3) -> void:
+	if force.length() < 0.01:
+		return
+	knockback_velocity += force
+	print("[KNOCKBACK] knockback_velocity is now ", knockback_velocity)
 
 #func set_player_position(vector: Vector3):
 	#queue_global_position = vector

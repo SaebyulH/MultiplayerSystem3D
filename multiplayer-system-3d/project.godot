@@ -135,10 +135,6 @@ ads={
 3d_physics/layer_3="HURTBOX"
 3d_physics/layer_4="HITBOX"
 
-[netfox]
-
-time/sync_to_physics=true
-
 [physics]
 
 3d/physics_engine="Jolt Physics"
