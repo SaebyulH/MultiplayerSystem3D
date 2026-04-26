@@ -114,16 +114,39 @@ text = "Confirm Class"
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="ClassSection" type="VBoxContainer" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer" unique_id=552958007]
+[node name="TeamSection" type="VBoxContainer" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer" unique_id=552958007]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Label" type="Label" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer/ClassSection" unique_id=339212374]
+[node name="Label" type="Label" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer/TeamSection" unique_id=339212374]
+layout_mode = 2
+theme_override_font_sizes/font_size = 60
+text = "Team Select"
+
+[node name="TeamOption" type="OptionButton" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer/TeamSection" unique_id=2131896059]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 60
+fit_to_longest_item = false
+item_count = 3
+popup/item_0/text = "0"
+popup/item_0/id = 0
+popup/item_1/text = "1"
+popup/item_1/id = 1
+popup/item_2/text = "2"
+popup/item_2/id = 2
+
+[node name="ClassSection2" type="VBoxContainer" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer" unique_id=196097438]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label" type="Label" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer/ClassSection2" unique_id=200958300]
 layout_mode = 2
 theme_override_font_sizes/font_size = 60
 text = "Class Select"
 
-[node name="ClassOption" type="OptionButton" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer/ClassSection" unique_id=2131896059]
+[node name="ClassOption" type="OptionButton" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer/ClassSection2" unique_id=469872618]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
@@ -132,10 +155,10 @@ fit_to_longest_item = false
 item_count = 3
 popup/item_0/text = "res://player/player_classes/assault.tres"
 popup/item_0/icon = ExtResource("6_43n3m")
-popup/item_0/id = 1
+popup/item_0/id = 0
 popup/item_1/text = "res://player/player_classes/assasin.tres"
 popup/item_1/icon = ExtResource("7_8kumn")
-popup/item_1/id = 0
+popup/item_1/id = 1
 popup/item_2/text = "res://player/player_classes/assistance.tres"
 popup/item_2/icon = ExtResource("8_hwth4")
 popup/item_2/id = 2
@@ -174,7 +197,7 @@ stretch = true
 unique_name_in_owner = true
 own_world_3d = true
 handle_input_locally = false
-size = Vector2i(637, 188)
+size = Vector2i(477, 188)
 size_2d_override_stretch = true
 render_target_update_mode = 4
 
@@ -214,7 +237,7 @@ stretch = true
 unique_name_in_owner = true
 own_world_3d = true
 handle_input_locally = false
-size = Vector2i(638, 188)
+size = Vector2i(477, 188)
 size_2d_override_stretch = true
 render_target_update_mode = 4
 

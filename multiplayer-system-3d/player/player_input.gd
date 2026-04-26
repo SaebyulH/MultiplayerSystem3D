@@ -36,7 +36,7 @@ func _ready() -> void:
 
 
 func _gather() -> void:
-	if not is_multiplayer_authority():
+	if not is_inside_tree() or not is_multiplayer_authority():
 		return
 	input_dir  = Input.get_vector("move_left", "move_right", "move_forward", "move_backward")
 	jump_input = Input.is_action_pressed("ui_accept")

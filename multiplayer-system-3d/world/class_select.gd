@@ -1,5 +1,7 @@
 extends Control
 @onready var spawn_parent := %SpawnParent
+@onready var team_option: OptionButton = %TeamOption
+
 @onready var class_option: OptionButton = %ClassOption
 @onready var primary_option: OptionButton = %PrimaryWeaponOption
 @onready var secondary_option: OptionButton = %SecondaryWeaponOption
@@ -18,12 +20,15 @@ func _ready() -> void:
 	primary_option.visible = false
 	secondary_option.visible = false
 
+	# Load classes from editor-assigned items, then rebuild the option list cleanly
+	var loaded_classes: Array[Class] = []
 	for i in class_option.item_count:
 		var path := class_option.get_item_text(i)
-		var c := load(path) #as Class
+		var c := load(path)
 		if c:
-			available_classes.append(c)
-			class_option.set_item_text(i, c.class_display_name)
+			loaded_classes.append(c)
+
+	load_classes(loaded_classes)
 
 	class_option.item_selected.connect(_on_class_selected)
 	primary_option.item_selected.connect(_on_primary_selected)
@@ -45,13 +50,12 @@ func _spawn_weapon_preview(weapon: Weapon, viewport: SubViewport) -> void:
 	model.scale = weapon.weapon_scale
 	viewport.get_node("Node3D/PreviewRoot").add_child(model)
 
-	# Wait one frame so the model is in the tree and Muzzle has a valid global_position
 	await get_tree().process_frame
 
 	var camera: Camera3D = viewport.get_node("Node3D/Camera3D")
 	var muzzle := model.get_node_or_null("Muzzle")
 	if muzzle:
-		var dist :float = muzzle.position.length()*2.7+0.4
+		var dist: float = muzzle.position.length() * 2.7 + 0.4
 		camera.position.x = dist
 
 func load_classes(classes: Array[Class]) -> void:
@@ -62,7 +66,14 @@ func load_classes(classes: Array[Class]) -> void:
 		class_option.add_item(c.class_display_name)
 
 func _on_class_selected(index: int) -> void:
-	selected_class = available_classes[index]
+	# index 0 is the "-- Select Class --" placeholder
+	if index <= 0 or index - 1 >= available_classes.size():
+		selected_class = null
+		primary_option.visible = false
+		secondary_option.visible = false
+		return
+
+	selected_class = available_classes[index - 1]
 
 	primary_option.clear()
 	for w in selected_class.primary_weapons:
@@ -75,7 +86,7 @@ func _on_class_selected(index: int) -> void:
 	primary_option.visible = true
 	secondary_option.visible = true
 
-	# Auto-preview first weapon in each slot
+	# index into weapons is 0-based, no offset needed — no placeholder here
 	if selected_class.primary_weapons.size() > 0:
 		_spawn_weapon_preview(selected_class.primary_weapons[0], primary_viewport)
 	if selected_class.secondary_weapons.size() > 0:
@@ -91,6 +102,12 @@ func _on_secondary_selected(index: int) -> void:
 		return
 	_spawn_weapon_preview(selected_class.secondary_weapons[index], secondary_viewport)
 
+func _get_selected_team() -> Player.Team:
+	match team_option.selected:
+		0: return Player.Team.SPI
+		1: return Player.Team.SCI
+		2: return Player.Team.FFA
+	return Player.Team.SPI
 
 func _on_confirm_pressed() -> void:
 	world.class_selected = true
@@ -106,24 +123,23 @@ func _on_confirm_pressed() -> void:
 
 	var primary: Weapon = selected_class.primary_weapons[primary_index]
 	var secondary: Weapon = selected_class.secondary_weapons[secondary_index]
+	var team := _get_selected_team()
 
 	visible = false
 	PlayerInput.ui_open = false
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 
 	if multiplayer.is_server():
-		# Host-as-player: call directly, no RPC
-		_request_loadout(player_id, primary.resource_path, secondary.resource_path)
+		_request_loadout(player_id, primary.resource_path, secondary.resource_path, team)
 	else:
-		_request_loadout.rpc_id(1, player_id, primary.resource_path, secondary.resource_path)
+		_request_loadout.rpc_id(1, player_id, primary.resource_path, secondary.resource_path, team)
 
 # Client → server only
 @rpc("any_peer", "reliable")
-func _request_loadout(target_player_id: String, primary_path: String, secondary_path: String) -> void:
+func _request_loadout(target_player_id: String, primary_path: String, secondary_path: String, team: Player.Team) -> void:
 	if not multiplayer.is_server():
 		return
 
-	# Validate sender is who they claim to be
 	var sender_id := multiplayer.get_remote_sender_id()
 	if sender_id != 0 and str(sender_id) != target_player_id:
 		return
@@ -145,19 +161,17 @@ func _request_loadout(target_player_id: String, primary_path: String, secondary_
 	new_weapons.append(primary.duplicate(true) as Weapon)
 	new_weapons.append(secondary.duplicate(true) as Weapon)
 
-	# Server applies state, then tells all peers to sync
 	controller.set_weapons(new_weapons)
 	controller.current_weapon_index = 0
+	player.team = team
 	player.despawned = false
 	player.no_health()
 
-	# Tell all peers to apply the same loadout
-	_apply_loadout.rpc(target_player_id, primary_path, secondary_path)
+	_apply_loadout.rpc(target_player_id, primary_path, secondary_path, team)
 
-
-# Server → all peers (not call_local — server already applied it above)
+# Server → all peers
 @rpc("authority", "call_remote", "reliable")
-func _apply_loadout(target_player_id: String, primary_path: String, secondary_path: String) -> void:
+func _apply_loadout(target_player_id: String, primary_path: String, secondary_path: String, team: Player.Team) -> void:
 	var primary: Weapon = load(primary_path) as Weapon
 	var secondary: Weapon = load(secondary_path) as Weapon
 	if primary == null or secondary == null:
@@ -176,53 +190,5 @@ func _apply_loadout(target_player_id: String, primary_path: String, secondary_pa
 	new_weapons.append(secondary.duplicate(true) as Weapon)
 	controller.set_weapons(new_weapons)
 	controller.current_weapon_index = 0
+	player.team = team
 	player.despawned = false
-
-
-
-
-#
-#
-#func _on_confirm_pressed() -> void:
-	#world.class_selected = true
-#
-	#if selected_class == null:
-		#return
-#
-	#var primary_index := primary_option.selected
-	#var secondary_index := secondary_option.selected
-#
-	#if primary_index < 0 or secondary_index < 0:
-		#return
-#
-	#var primary: Weapon = selected_class.primary_weapons[primary_index]
-	#var secondary: Weapon = selected_class.secondary_weapons[secondary_index]
-#
-	#_apply_loadout.rpc(player_id, primary.resource_path, secondary.resource_path)
-#
-	#visible = false
-	#PlayerInput.ui_open = false
-	#Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
-#
-#@rpc("any_peer", "call_local", "reliable")
-#func _apply_loadout(target_player_id: String, primary_path: String, secondary_path: String) -> void:
-	#var primary: Weapon = load(primary_path) as Weapon
-	#var secondary: Weapon = load(secondary_path) as Weapon
-#
-	#var player := GameManager.find_player(target_player_id)
-	#if player == null:
-		#return
-#
-	#var controller: WeaponController = player.get_node("WeaponController")
-	#if controller == null:
-		#return
-#
-	#var new_weapons: Array[Weapon] = []
-	#new_weapons.append(primary.duplicate(true) as Weapon)
-	#new_weapons.append(secondary.duplicate(true) as Weapon)
-	#controller.set_weapons(new_weapons)
-	#controller.current_weapon_index = 0
-#
-	#player.no_health()
-	#controller.spawn_weapon_model()
-	#player.despawned = false

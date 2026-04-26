@@ -1,6 +1,13 @@
 class_name WeaponController extends Node
 var _bullet_hole_scene: PackedScene = preload("res://effects/bullet_hole.tscn")
 var _tracer_scene: PackedScene = preload("res://weapon/tracer.tscn")
+
+
+
+
+
+
+
 # ---------------------------------------------------------------------------
 # Architecture notes
 # ---------------------------------------------------------------------------
@@ -504,6 +511,10 @@ func _execute_fire(weapon: Weapon) -> void:
 					if collider.is_head:
 						damage *= weapon.headshot_multiplier
 					var player_name = collider.get_parent().name
+					
+					if collider.get_parent().team == get_parent().team:
+						damage *= Player.FRIENDLY_FIRE_MULTIPLIER
+						
 					_change_health_on_server.rpc_id(1, player_name, -damage, _parent_player.name)
 			else:
 				if weapon.hitscan_range >= 1000000000.0 / 10.0:

@@ -4,6 +4,7 @@ class_name PlayerBodyUI
 @export var attribute_component: AttributeComponent
 @export var weapon_controller: WeaponController
 
+@onready var team_text: Label = $TeamText
 @onready var health_bar: Label = $HealthBar
 @onready var ammo_bar: Label = $AmmoBar
 @onready var health_delta_bar: Label = $HealthDeltaBar
@@ -20,8 +21,7 @@ var _last_change := 0.0
 var _last_time := 0.0
 
 const HIDE_TIME := 2.0
-const MIN_DISPLAY_DELTA := 0.5  # ignore passive heal ticks
-
+const MIN_DISPLAY_DELTA := 0.5
 
 func _ready() -> void:
 	weapon_controller.mag_changed.connect(func(_a=null, _b=null): _update_weapon_list())
@@ -32,12 +32,12 @@ func _ready() -> void:
 	health_bar.visible = is_owner
 	health_delta_bar.visible = is_owner
 	ammo_bar.visible = is_owner
+	team_text.visible = is_owner
 
 	ammo_bar_public.visible = not is_owner
 	health_bar_public.visible = not is_owner
 	health_delta_bar_public.visible = not is_owner
 	name_public.visible = not is_owner
-	#$"../Marker".visible = not is_owner
 
 	name_public.text = ("Host" if (name.to_int() == 1) else "Client") + ", NetID: " + str(name)
 
@@ -49,6 +49,16 @@ func _ready() -> void:
 		return
 	_last_health = attribute_component.health
 
+	_update_team_text()
+
+func _update_team_text() -> void:
+	var player := get_parent().get_parent() as Player
+	if player == null:
+		return
+	match player.team:
+		Player.Team.SPI: team_text.text = "Team: SPI"
+		Player.Team.SCI: team_text.text = "Team: SCI"
+		Player.Team.FFA: team_text.text = "Team: FFA"
 
 func _update_weapon_list() -> void:
 	if weapon_controller == null:
@@ -66,7 +76,6 @@ func _update_weapon_list() -> void:
 		label.modulate = Color(1.0, 1.0, 0.0) if i == current_index else Color(1.0, 1.0, 1.0)
 		WeaponList.add_child(label)
 
-
 func _on_mag_or_weapon_updated(_current = null, _max = null) -> void:
 	if weapon_controller == null:
 		return
@@ -82,8 +91,10 @@ func _on_mag_or_weapon_updated(_current = null, _max = null) -> void:
 	ammo_bar.text = text
 	ammo_bar_public.text = text
 
-
 func _process(_delta: float) -> void:
+	# --- Team text (updates live in case team changes after spawn) ---
+	_update_team_text()
+
 	# --- Ammo / reload display ---
 	if weapon_controller._is_reloading:
 		var reload_text := "Reloading: %.1f" % weapon_controller._reload_timer
@@ -108,7 +119,6 @@ func _process(_delta: float) -> void:
 	if not is_equal_approx(current, _last_health):
 		var change := current - _last_health
 		_last_health = current
-		# Only show delta for meaningful changes — ignore passive heal ticks
 		if abs(change) >= MIN_DISPLAY_DELTA:
 			_last_change = change
 			_last_time = Time.get_ticks_msec() / 1000.0

@@ -67,6 +67,11 @@ albedo_color = Color(0.13077214, 0.13077214, 0.13077211, 1)
 [sub_resource type="BoxMesh" id="BoxMesh_kb6p2"]
 size = Vector3(1, 1.625, 0.54)
 
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_yllr7"]
+properties/0/path = NodePath(".:team")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+
 [node name="Player" type="CharacterBody3D" unique_id=51620469 node_paths=PackedStringArray("player_input", "rollback_sync", "attribute_component", "body", "weapon_controller")]
 collision_layer = 2
 collision_mask = 3
@@ -331,6 +336,21 @@ theme_override_constants/outline_size = 21
 theme_override_font_sizes/font_size = 48
 text = "-100"
 
+[node name="TeamText" type="Label" parent="Body/PlayerUI" unique_id=976503451]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 66.0
+offset_top = -320.0
+offset_right = 402.0
+offset_bottom = -253.0
+grow_vertical = 0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 21
+theme_override_font_sizes/font_size = 48
+text = "Team"
+
 [node name="AmmoBar" type="Label" parent="Body/PlayerUI" unique_id=1634747430]
 modulate = Color(0.8228527, 0.8322426, 0.84218675, 1)
 layout_mode = 1
@@ -363,5 +383,8 @@ grow_vertical = 2
 [node name="Label" type="Label" parent="Body/PlayerUI/WeaponList" unique_id=440692072]
 layout_mode = 2
 text = "FASFAS"
+
+[node name="MultiplayerSynchronizer2" type="MultiplayerSynchronizer" parent="." unique_id=1883977356]
+replication_config = SubResource("SceneReplicationConfig_yllr7")
 
 [connection signal="health_changed" from="AttributeComponent" to="Body/HealthBarPublic" method="_on_attribute_component_health_changed"]
