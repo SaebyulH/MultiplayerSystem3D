@@ -2,6 +2,9 @@ extends CanvasLayer
 
 @onready var phase_label: Label = $PhaseLabel
 @onready var timer_label: Label = $TimerLabel
+@onready var sci_timer_label: Label = $SCITimer
+@onready var spi_timer_label: Label = $SPITimer
+
 @onready var round_wins_label: Label = $RoundWinsLabel
 
 var gmc: GameModeComponent
@@ -19,11 +22,17 @@ func _ready() -> void:
 func _connect_signals() -> void:
 	gmc.phase_changed.connect(_on_phase_changed)
 	gmc.time_updated.connect(_on_time_updated)
+	gmc.koth_updated.connect(_on_koth_updated)
+	
 	gmc.round_won.connect(_on_round_won)
 	gmc.overtime_started.connect(_on_overtime_started)
 	gmc.match_won.connect(_on_match_won)
 
 # ── Signal handlers ──────────────────────────────────
+func _on_koth_updated(held: Dictionary):
+	sci_timer_label.text = "SCI " + _format_time(held[GameModeComponent.TeamID.SCI])
+	spi_timer_label.text = "SCI " + _format_time(held[GameModeComponent.TeamID.SPI])
+
 
 func _on_phase_changed(new_phase: GameModeComponent.PhaseState) -> void:
 	_refresh_all()

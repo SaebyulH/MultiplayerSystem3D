@@ -3,7 +3,7 @@ class_name ControlPoint
 
 @export var game_mode_component: GameModeComponent
 @export var default_owner: GameModeComponent.TeamID = GameModeComponent.TeamID.NONE
-@export var capture_time: float = 8.0
+@export var capture_time: float = 4.0
 @export var contest_slow_multiplier: float = 0.0
 @export var color_neutral: Color = Color.GRAY
 @export var color_spi: Color = Color.RED

@@ -55,6 +55,28 @@ offset_bottom = 263.0
 grow_horizontal = 2
 theme_override_font_sizes/font_size = 40
 
+[node name="SCITimer" type="Label" parent="GameMenu/CanvasLayer" unique_id=1658280348]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -401.0
+offset_top = 217.0
+offset_right = -195.0
+offset_bottom = 272.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 40
+
+[node name="SPITimer" type="Label" parent="GameMenu/CanvasLayer" unique_id=1802646721]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = 156.0
+offset_top = 217.0
+offset_right = 337.0
+offset_bottom = 272.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 40
+
 [node name="RoundWinsLabel" type="Label" parent="GameMenu/CanvasLayer" unique_id=1072502927]
 anchors_preset = 1
 anchor_left = 1.0

@@ -40,6 +40,7 @@ signal overtime_started()
 signal overtime_ended()
 signal time_updated(remaining: float)   # fires every second for HUD
 
+signal koth_updated(time_held: Dictionary)
 # ─────────────────────────────────────────────
 #  EXPORTS — GENERAL
 # ─────────────────────────────────────────────
@@ -99,7 +100,7 @@ signal time_updated(remaining: float)   # fires every second for HUD
 ## Number of rounds to win the match
 @export var rounds_to_win: int = 2
 ## How long a team must hold the point to win the round (seconds)
-@export var koth_capture_time_to_win: float = 120.0
+@export var koth_capture_time_to_win: float = 40.0
 ## Whether the capture clock pauses when point is contested
 @export var koth_pause_on_contest: bool = true
 
@@ -289,6 +290,7 @@ func _tick_koth(delta: float) -> void:
 	if holding_team != TeamID.NONE:
 		if not (koth_pause_on_contest and contested):
 			koth_time_held[holding_team] += delta
+			koth_updated.emit(koth_time_held)
 			_broadcast_koth_progress(koth_time_held)
 			if koth_time_held[holding_team] >= koth_capture_time_to_win:
 				_end_round(holding_team)
@@ -473,6 +475,7 @@ func _rpc_broadcast_payload(progress: float) -> void:
 @rpc("authority", "call_local", "unreliable")
 func _rpc_broadcast_koth(held: Dictionary) -> void:
 	koth_time_held = held
+	koth_updated.emit(koth_time_held)
 
 func _broadcast_time(remaining: float) -> void:
 	_rpc_broadcast_time.rpc(remaining)
