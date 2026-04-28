@@ -7,11 +7,11 @@ const FRIENDLY_FIRE_MULTIPLIER = 0.0
 
 var team: Team = Team.SPI
 
-func get_gmc_team() -> GameModeComponent.TeamID:
+func get_gmc_team() -> Player.Team:
 	match team:
-		Team.SPI: return GameModeComponent.TeamID.SPI
-		Team.SCI: return GameModeComponent.TeamID.SCI
-		_: return GameModeComponent.TeamID.NONE
+		Team.SPI: return Player.Team.SPI
+		Team.SCI: return Player.Team.SCI
+		_: return Player.Team.FFA
 
 var despawned := true
 

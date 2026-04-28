@@ -5,14 +5,24 @@ class_name Map
 @export var despawn_location: Marker3D
 var camera: Camera3D
 
-func _ready() -> void:
+#func _ready() -> void:
+	#GameManager.game_mode_component = $GameModeComponent
+	#spawn_locations.clear()
+	#
+	#for child in get_children():
+		#if child is Marker3D and child.name.begins_with("Spawn Location"):
+			#spawn_locations.append(child)
+			
+func _enter_tree() -> void:
 	GameManager.game_mode_component = $GameModeComponent
+	GameManager.spawn_parent.get_parent().get_node("GameMenu/CanvasLayer").setup_gmc()
+	
+	
 	spawn_locations.clear()
 	
 	for child in get_children():
 		if child is Marker3D and child.name.begins_with("Spawn Location"):
 			spawn_locations.append(child)
-		
 
 func get_random_spawn_location() -> Vector3:
 

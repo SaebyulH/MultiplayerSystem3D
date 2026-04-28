@@ -13,11 +13,11 @@ enum GameMode {
 	CONTROL,      # Like Overwatch Control/KOTH but BO3 with separate sub-maps
 }
 
-enum TeamID {
-	SPI,
-	SCI,
-	NONE,
-}
+#enum Player.Team {
+	#SPI,
+	#SCI,
+	#FFA,
+#}
 
 enum PhaseState {
 	WAITING_FOR_PLAYERS,
@@ -34,8 +34,8 @@ enum PhaseState {
 # ─────────────────────────────────────────────
 
 signal phase_changed(new_phase: PhaseState)
-signal round_won(winning_team: TeamID)
-signal match_won(winning_team: TeamID)
+signal round_won(winning_team: Player.Team)
+signal match_won(winning_team: Player.Team)
 signal overtime_started()
 signal overtime_ended()
 signal time_updated(remaining: float)   # fires every second for HUD
@@ -50,7 +50,7 @@ signal koth_updated(time_held: Dictionary)
 
 @export_group("Timing")
 ## How long players are locked in spawn before the round begins
-@export var setup_time: float = 10.0
+@export var setup_time: float = 5.0
 ## Delay after setup before objectives become capturable/pushable
 @export var objective_unlock_delay: float = 0.0
 ## Total round time (seconds). 0 = no limit
@@ -100,7 +100,7 @@ signal koth_updated(time_held: Dictionary)
 ## Number of rounds to win the match
 @export var rounds_to_win: int = 2
 ## How long a team must hold the point to win the round (seconds)
-@export var koth_capture_time_to_win: float = 40.0
+@export var koth_capture_time_to_win: float = 30.0
 ## Whether the capture clock pauses when point is contested
 @export var koth_pause_on_contest: bool = true
 
@@ -114,14 +114,14 @@ var overtime_timer: float = 0.0
 
 # Round wins per team
 var round_wins: Dictionary = {
-	TeamID.SPI: 0,
-	TeamID.SCI: 0,
+	Player.Team.SPI: 0,
+	Player.Team.SCI: 0,
 }
 
 # KOTH: time held per team this round (counts UP)
 var koth_time_held: Dictionary = {
-	TeamID.SPI: 0.0,
-	TeamID.SCI: 0.0,
+	Player.Team.SPI: 0.0,
+	Player.Team.SCI: 0.0,
 }
 
 # Escort
@@ -161,7 +161,7 @@ func unregister_control_point(cp: ControlPoint) -> void:
 # ─────────────────────────────────────────────
 
 func _process(delta: float) -> void:
-	if not multiplayer.is_server():
+	if not multiplayer.is_server() or not is_multiplayer_authority():
 		return
 
 	# HUD update once/sec
@@ -212,8 +212,8 @@ func _tick_active(delta: float) -> void:
 			_tick_koth(delta)
 
 	# Time expired
-	if round_time > 0.0 and phase_timer <= 0.0:
-		_on_time_expired()
+	#if round_time > 0.0 and phase_timer <= 0.0:
+		#_on_time_expired()
 
 func _tick_overtime(delta: float) -> void:
 	overtime_timer -= delta
@@ -276,7 +276,7 @@ func _tick_escort(delta: float) -> void:
 			_broadcast_payload_progress(payload_progress)
 
 func _tick_domination(delta: float) -> void:
-	if _all_points_owned_by_same_team() != TeamID.NONE:
+	if _all_points_owned_by_same_team() != Player.Team.FFA:
 		domination_hold_timer += delta
 		if domination_hold_timer >= domination_hold_time:
 			_end_round(_all_points_owned_by_same_team())
@@ -287,7 +287,7 @@ func _tick_koth(delta: float) -> void:
 	var holding_team := _get_koth_holder()
 	var contested := _is_koth_contested()
 
-	if holding_team != TeamID.NONE:
+	if holding_team != Player.Team.FFA:
 		if not (koth_pause_on_contest and contested):
 			koth_time_held[holding_team] += delta
 			koth_updated.emit(koth_time_held)
@@ -299,45 +299,67 @@ func _tick_koth(delta: float) -> void:
 #  EVENT HANDLERS
 # ─────────────────────────────────────────────
 
-func _on_time_expired() -> void:
-	if overtime_enabled and overtime_requires_contest and _is_objective_contested():
-		_start_overtime()
-	else:
-		# Determine winner by current state
-		var winner := _determine_time_expired_winner()
-		_end_round(winner)
+#func _on_time_expired() -> void:
+	#if overtime_enabled and overtime_requires_contest and _is_objective_contested():
+		#_start_overtime()
+	#else:
+		## Determine winner by current state
+		##var winner := _determine_time_expired_winner()
+		##_end_round(winner)
 
 func _on_escort_delivered() -> void:
-	_end_round(TeamID.SPI)  # Attackers win — configure per map
+	_end_round(Player.Team.SPI)  # Attackers win — configure per map
+
+#func _start_overtime() -> void:
+	#overtime_timer = overtime_max_duration
+	#_transition_phase(PhaseState.OVERTIME)
+	#overtime_started.emit()
+	#_rpc_notify_overtime_started.rpc()
 
 func _start_overtime() -> void:
 	overtime_timer = overtime_max_duration
 	_transition_phase(PhaseState.OVERTIME)
-	overtime_started.emit()
-	_rpc_notify_overtime_started.rpc()
+	# REMOVE THIS LINE: overtime_started.emit() 
+	_rpc_notify_overtime_started.rpc() # This will emit it for you locally!
+
 
 func _end_overtime_no_resolution() -> void:
 	var winner := _determine_time_expired_winner()
 	overtime_ended.emit()
 	_end_round(winner)
-
-func _end_round(winner: TeamID) -> void:
-	if winner != TeamID.NONE:
+#
+#func _end_round(winner: Player.Team) -> void:
+	#if winner != Player.Team.FFA:
+		#round_wins[winner] += 1
+	#round_won.emit(winner)
+	#_rpc_round_won.rpc(winner)
+#
+	#if round_wins[winner] >= rounds_to_win:
+		#_transition_phase(PhaseState.MATCH_END)
+		#match_won.emit(winner)
+		#_rpc_match_won.rpc(winner)
+	#else:
+		#_transition_phase(PhaseState.ROUND_END)
+		
+func _end_round(winner: Player.Team) -> void:
+	# Server increments the score authoritatively
+	if winner != Player.Team.FFA:
 		round_wins[winner] += 1
-	round_won.emit(winner)
-	_rpc_round_won.rpc(winner)
+		print("ROUND WINS INCREAESD")
+	# Sync the authoritative round_wins and notify all peers (including server)
+	_rpc_round_won.rpc(winner, round_wins.duplicate(true))
 
-	if round_wins[winner] >= rounds_to_win:
+	# Check win condition using server-authoritative state
+	if winner != Player.Team.FFA and round_wins[winner] >= rounds_to_win:
 		_transition_phase(PhaseState.MATCH_END)
-		match_won.emit(winner)
 		_rpc_match_won.rpc(winner)
 	else:
 		_transition_phase(PhaseState.ROUND_END)
-
+		
 func _start_new_round() -> void:
 	# Reset per-round state
-	koth_time_held[TeamID.SPI] = 0.0
-	koth_time_held[TeamID.SCI] = 0.0
+	koth_time_held[Player.Team.SPI] = 0.0
+	koth_time_held[Player.Team.SCI] = 0.0
 	domination_hold_timer = 0.0
 	payload_progress = 0.0
 	payload_checkpoint_index = 0
@@ -390,9 +412,9 @@ func _get_payload_pushers() -> Array:
 func _get_payload_defenders() -> Array:
 	return []
 
-func _get_koth_holder() -> TeamID:
+func _get_koth_holder() -> Player.Team:
 	if _control_points.is_empty():
-		return TeamID.NONE
+		return Player.Team.FFA
 	return _control_points[0].owning_team
 
 func _is_koth_contested() -> bool:
@@ -409,35 +431,35 @@ func _is_objective_contested() -> bool:
 		_:
 			return false
 
-func _all_points_owned_by_same_team() -> TeamID:
+func _all_points_owned_by_same_team() -> Player.Team:
 	if _control_points.is_empty():
-		return TeamID.NONE
-	var first_team: TeamID = _control_points[0].owning_team
-	if first_team == TeamID.NONE:
-		return TeamID.NONE
+		return Player.Team.FFA
+	var first_team: Player.Team = _control_points[0].owning_team
+	if first_team == Player.Team.FFA:
+		return Player.Team.FFA
 	for cp in _control_points:
 		if cp.owning_team != first_team:
-			return TeamID.NONE
+			return Player.Team.FFA
 	return first_team
 
-func _determine_time_expired_winner() -> TeamID:
+func _determine_time_expired_winner() -> Player.Team:
 	match game_mode:
 		GameMode.KOTH, GameMode.CONTROL:
 			# Whoever has more time held wins
-			if koth_time_held[TeamID.SPI] > koth_time_held[TeamID.SCI]:
-				return TeamID.SPI
-			elif koth_time_held[TeamID.SCI] > koth_time_held[TeamID.SPI]:
-				return TeamID.SCI
+			if koth_time_held[Player.Team.SPI] > koth_time_held[Player.Team.SCI]:
+				return Player.Team.SPI
+			elif koth_time_held[Player.Team.SCI] > koth_time_held[Player.Team.SPI]:
+				return Player.Team.SCI
 			else:
-				return TeamID.NONE  # Draw
+				return Player.Team.FFA  # Draw
 		GameMode.ESCORT, GameMode.HYBRID:
 			# Defenders win on time expiry
-			return TeamID.SCI
+			return Player.Team.SCI
 		GameMode.DOMINATION:
 			var holder := _all_points_owned_by_same_team()
 			return holder
 		_:
-			return TeamID.NONE
+			return Player.Team.FFA
 
 # ─────────────────────────────────────────────
 #  RPC — server → all clients
@@ -450,13 +472,13 @@ func _rpc_sync_phase(new_phase: PhaseState, timer: float) -> void:
 	phase_changed.emit(new_phase)
 
 @rpc("authority", "call_local", "reliable")
-func _rpc_round_won(winning_team: TeamID) -> void:
-	if winning_team != TeamID.NONE:
-		round_wins[winning_team] += 1
+func _rpc_round_won(winning_team: Player.Team, authoritative_wins: Dictionary) -> void:
+	# Clients adopt the server's authoritative round_wins
+	round_wins = authoritative_wins
 	round_won.emit(winning_team)
 
 @rpc("authority", "call_local", "reliable")
-func _rpc_match_won(winning_team: TeamID) -> void:
+func _rpc_match_won(winning_team: Player.Team) -> void:
 	match_won.emit(winning_team)
 
 @rpc("authority", "call_local", "reliable")

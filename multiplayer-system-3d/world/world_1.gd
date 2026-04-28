@@ -27,6 +27,8 @@ func _ready() -> void:
 		GameManager.spawn_parent.add_child(map)
 		print("MAP ADDED" + map_path)
 		
+		
+		
 		var spawn_manager_scene = load("res://world/spawn_manager.tscn")
 		var spawn_manager = spawn_manager_scene.instantiate()
 		spawn_manager.player_scene = player_scene

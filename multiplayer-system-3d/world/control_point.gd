@@ -2,19 +2,19 @@ extends Node3D
 class_name ControlPoint
 
 @export var game_mode_component: GameModeComponent
-@export var default_owner: GameModeComponent.TeamID = GameModeComponent.TeamID.NONE
+@export var default_owner: Player.Team = Player.Team.FFA
 @export var capture_time: float = 4.0
 @export var contest_slow_multiplier: float = 0.0
 @export var color_neutral: Color = Color.GRAY
 @export var color_spi: Color = Color.RED
 @export var color_sci: Color = Color.SKY_BLUE
 
-signal captured(team: GameModeComponent.TeamID)
+signal captured(team: Player.Team)
 signal contested(is_contested: bool)
-signal capture_progress_changed(team: GameModeComponent.TeamID, progress: float)
+signal capture_progress_changed(team: Player.Team, progress: float)
 
-var owning_team: GameModeComponent.TeamID
-var capture_team: GameModeComponent.TeamID
+var owning_team: Player.Team
+var capture_team: Player.Team
 var capture_progress: float = 0.0
 
 var is_contested: bool = false
@@ -58,21 +58,21 @@ func _process(delta: float) -> void:
 	if is_locked:
 		return
 
-	var spi_count := _count_team(GameModeComponent.TeamID.SPI)
-	var sci_count := _count_team(GameModeComponent.TeamID.SCI)
+	var spi_count := _count_team(Player.Team.SPI)
+	var sci_count := _count_team(Player.Team.SCI)
 
 	var new_contested := spi_count > 0 and sci_count > 0
 	if new_contested != is_contested:
 		is_contested = new_contested
 		contested.emit(is_contested)
 
-	var pushing_team := GameModeComponent.TeamID.NONE
+	var pushing_team := Player.Team.FFA
 	if spi_count > 0 and sci_count == 0:
-		pushing_team = GameModeComponent.TeamID.SPI
+		pushing_team = Player.Team.SPI
 	elif sci_count > 0 and spi_count == 0:
-		pushing_team = GameModeComponent.TeamID.SCI
+		pushing_team = Player.Team.SCI
 
-	if pushing_team == GameModeComponent.TeamID.NONE:
+	if pushing_team == Player.Team.FFA:
 		return
 
 	var effective_delta := delta
@@ -99,7 +99,7 @@ func _process(delta: float) -> void:
 		capture_progress -= effective_delta / capture_time
 		if capture_progress <= 0.0:
 			capture_progress = 0.0
-			owning_team = GameModeComponent.TeamID.NONE
+			owning_team = Player.Team.FFA
 			capture_team = pushing_team
 	else:
 		# capture from neutral
@@ -111,7 +111,7 @@ func _process(delta: float) -> void:
 	capture_progress_changed.emit(capture_team, capture_progress)
 	_rpc_sync_state.rpc(owning_team, capture_team, capture_progress, is_contested)
 
-func _capture(team: GameModeComponent.TeamID) -> void:
+func _capture(team: Player.Team) -> void:
 	owning_team = team
 	capture_team = team
 	capture_progress = 1.0
@@ -133,18 +133,18 @@ func _on_body_entered(body: Node3D) -> void:
 func _on_body_exited(body: Node3D) -> void:
 	_players_on_point.erase(body)
 
-func _count_team(team: GameModeComponent.TeamID) -> int:
+func _count_team(team: Player.Team) -> int:
 	var count := 0
 	for p in _players_on_point:
 		if p is Player and _player_team_to_gmc(p.team) == team:
 			count += 1
 	return count
 
-func _player_team_to_gmc(t: Player.Team) -> GameModeComponent.TeamID:
+func _player_team_to_gmc(t: Player.Team) -> Player.Team:
 	match t:
-		Player.Team.SPI: return GameModeComponent.TeamID.SPI
-		Player.Team.SCI: return GameModeComponent.TeamID.SCI
-		_: return GameModeComponent.TeamID.NONE
+		Player.Team.SPI: return Player.Team.SPI
+		Player.Team.SCI: return Player.Team.SCI
+		_: return Player.Team.FFA
 
 func _on_phase_changed(new_phase: GameModeComponent.PhaseState) -> void:
 	is_locked = not game_mode_component.is_objective_unlocked()
@@ -177,22 +177,22 @@ func _refresh_label() -> void:
 	elif capture_progress > 0.0:
 		capture_label.text = "%d%%" % int(capture_progress * 100)
 		capture_label.modulate = _team_color(capture_team)
-	elif owning_team != GameModeComponent.TeamID.NONE:
+	elif owning_team != Player.Team.FFA:
 		capture_label.text = _team_name(owning_team)
 		capture_label.modulate = _team_color(owning_team)
 	else:
 		capture_label.text = ""
 
-func _team_color(team: GameModeComponent.TeamID) -> Color:
+func _team_color(team: Player.Team) -> Color:
 	match team:
-		GameModeComponent.TeamID.SPI: return color_spi
-		GameModeComponent.TeamID.SCI: return color_sci
+		Player.Team.SPI: return color_spi
+		Player.Team.SCI: return color_sci
 		_: return color_neutral
 
-func _team_name(team: GameModeComponent.TeamID) -> String:
+func _team_name(team: Player.Team) -> String:
 	match team:
-		GameModeComponent.TeamID.SPI: return "SPI"
-		GameModeComponent.TeamID.SCI: return "SCI"
+		Player.Team.SPI: return "SPI"
+		Player.Team.SCI: return "SCI"
 		_: return ""
 
 # -----------------------------
@@ -211,7 +211,7 @@ func _rpc_sync_state(p_owning, p_cap_team, p_progress, p_contested) -> void:
 	_update_capture_ui()
 
 @rpc("authority", "call_local", "reliable")
-func _rpc_on_captured(team: GameModeComponent.TeamID) -> void:
+func _rpc_on_captured(team: Player.Team) -> void:
 	owning_team = team
 	capture_team = team
 	capture_progress = 1.0
