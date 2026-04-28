@@ -2,7 +2,7 @@ extends Node
 
 
 var spawn_parent: Node3D
-
+var game_mode_component: GameModeComponent  # ← add this
 
 func find_player(id: String) -> Node:
 	var node := spawn_parent

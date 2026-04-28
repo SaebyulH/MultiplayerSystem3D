@@ -7,7 +7,11 @@ const FRIENDLY_FIRE_MULTIPLIER = 0.0
 
 var team: Team = Team.SPI
 
-
+func get_gmc_team() -> GameModeComponent.TeamID:
+	match team:
+		Team.SPI: return GameModeComponent.TeamID.SPI
+		Team.SCI: return GameModeComponent.TeamID.SCI
+		_: return GameModeComponent.TeamID.NONE
 
 var despawned := true
 
@@ -108,6 +112,11 @@ func no_health():
 
 
 func _physics_process(delta: float) -> void:
+	
+	#if GameManager.game_mode_component and GameManager.game_mode_component.is_players_locked_in_spawn():
+		#velocity = Vector3.ZERO
+		#return
+		
 	if despawned:
 		global_position = GameManager.get_despawn_position()
 		$Body/PlayerUI.hide()

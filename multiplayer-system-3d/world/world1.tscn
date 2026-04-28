@@ -5,6 +5,7 @@
 [ext_resource type="Script" uid="uid://bi46jlfs4i3pp" path="res://world/game_menu.gd" id="3_ur4i3"]
 [ext_resource type="AudioStream" uid="uid://exvh8mdgxfb8" path="res://assets/sounds/multikill-1.mp3" id="4_p2lt3"]
 [ext_resource type="Script" uid="uid://c2ud4axp2a0nj" path="res://world/class_select.gd" id="4_y31kp"]
+[ext_resource type="Script" uid="uid://bqjxdoe65xamn" path="res://world/canvas_layer.gd" id="5_8kumn"]
 [ext_resource type="Texture2D" uid="uid://bk3hvsl8t0bt3" path="res://assets/Assault.png" id="6_43n3m"]
 [ext_resource type="PackedScene" uid="uid://dpvv8ex8hflrg" path="res://world/weapon_subviewport_preview.tscn" id="6_btayf"]
 [ext_resource type="Texture2D" uid="uid://cu8b4plsgc7l7" path="res://assets/Assasin.png" id="7_8kumn"]
@@ -28,6 +29,40 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("3_ur4i3")
 base_sound = ExtResource("4_p2lt3")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="GameMenu" unique_id=1326311598]
+script = ExtResource("5_8kumn")
+
+[node name="PhaseLabel" type="Label" parent="GameMenu/CanvasLayer" unique_id=385169001]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -124.0
+offset_top = 110.0
+offset_right = 124.0
+offset_bottom = 172.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 40
+
+[node name="TimerLabel" type="Label" parent="GameMenu/CanvasLayer" unique_id=489672120]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -161.0
+offset_top = 217.0
+offset_right = 161.0
+offset_bottom = 263.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 40
+
+[node name="RoundWinsLabel" type="Label" parent="GameMenu/CanvasLayer" unique_id=1072502927]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -303.0
+offset_bottom = 104.0
+grow_horizontal = 0
+theme_override_font_sizes/font_size = 40
 
 [node name="Killstreak" type="Label" parent="GameMenu" unique_id=1114400658]
 layout_mode = 1

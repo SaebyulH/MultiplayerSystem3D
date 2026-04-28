@@ -1,22 +1,63 @@
 [gd_scene format=3 uid="uid://cbujyyto6hg8p"]
 
+[ext_resource type="Script" uid="uid://1ytr4lg6soq" path="res://world/control_point.gd" id="1_nfcor"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_nfcor"]
+albedo_color = Color(1, 0.43137255, 1, 1)
+
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_461ne"]
 albedo_color = Color(1, 0.30980393, 0.30980393, 1)
 
+[sub_resource type="BoxShape3D" id="BoxShape3D_nfcor"]
+size = Vector3(3, 2, 3)
+
+[sub_resource type="TorusMesh" id="TorusMesh_nfcor"]
+inner_radius = 0.903
+outer_radius = 1.114
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jdfyh"]
+transparency = 1
+albedo_color = Color(0.4745098, 1, 1, 1)
+
 [node name="ControlPoint" type="Node3D" unique_id=170758615]
+script = ExtResource("1_nfcor")
 
 [node name="CSGCylinder3D" type="CSGCylinder3D" parent="." unique_id=1237880186]
 radius = 1.8432617
 height = 0.1015625
 
-[node name="CSGCylinder3D2" type="CSGCylinder3D" parent="." unique_id=853507708]
+[node name="Color" type="CSGCombiner3D" parent="." unique_id=554082605]
+material_override = SubResource("StandardMaterial3D_nfcor")
+
+[node name="CSGCylinder3D2" type="CSGCylinder3D" parent="Color" unique_id=853507708]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.025878906, 0)
 material_override = SubResource("StandardMaterial3D_461ne")
 radius = 0.7895508
 height = 0.15332031
 
-[node name="CSGCylinder3D3" type="CSGCylinder3D" parent="." unique_id=1924866647]
-transform = Transform3D(1, 0, 0, 0, 2.9802322e-08, -1, 0, 1, 2.9802322e-08, 0, 1.7559059, 0)
+[node name="CSGCylinder3D3" type="CSGCylinder3D" parent="Color" unique_id=1924866647]
+transform = Transform3D(1, 0, 0, 0, 2.9802322e-08, -1, 0, 1, 2.9802322e-08, 0, 3.7559059, 0)
 material_override = SubResource("StandardMaterial3D_461ne")
 radius = 0.7895508
 height = 0.15332031
+
+[node name="Area3D" type="Area3D" parent="." unique_id=877467246]
+collision_layer = 0
+collision_mask = 2
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Area3D" unique_id=2012495260]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+shape = SubResource("BoxShape3D_nfcor")
+
+[node name="CaptureUI" type="Node3D" parent="." unique_id=902638580]
+
+[node name="ProgressMesh" type="MeshInstance3D" parent="CaptureUI" unique_id=751444012]
+transform = Transform3D(1.7843547, 0, 0, 0, 1.7843547, 0, 0, 0, 1.7843547, 0, 0, 0)
+mesh = SubResource("TorusMesh_nfcor")
+surface_material_override/0 = SubResource("StandardMaterial3D_jdfyh")
+
+[node name="Label3D" type="Label3D" parent="CaptureUI" unique_id=1857864130]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+billboard = 1
+no_depth_test = true
+text = "FLAHDKLFLASJD"

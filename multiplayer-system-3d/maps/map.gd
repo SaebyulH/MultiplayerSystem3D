@@ -6,7 +6,7 @@ class_name Map
 var camera: Camera3D
 
 func _ready() -> void:
-	
+	GameManager.game_mode_component = $GameModeComponent
 	spawn_locations.clear()
 	
 	for child in get_children():
