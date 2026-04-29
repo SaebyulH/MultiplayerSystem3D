@@ -3,8 +3,9 @@
 [ext_resource type="Script" uid="uid://b3gtcm614wpi8" path="res://maps/map.gd" id="1_8rrov"]
 [ext_resource type="Texture2D" uid="uid://c4ln0bpu3tmo3" path="res://assets/environment/kloppenheim_06_puresky_4k.exr" id="2_wnf2b"]
 [ext_resource type="Script" uid="uid://ccrf5bdka2m35" path="res://player/auto_projectile_spawner.gd" id="4_duvhj"]
-[ext_resource type="PackedScene" uid="uid://cbujyyto6hg8p" path="res://world/control_point.tscn" id="4_uwnr7"]
+[ext_resource type="PackedScene" uid="uid://gkkfn2sdv7hc" path="res://world/playload/payload.tscn" id="5_obnvg"]
 [ext_resource type="Script" uid="uid://r6rneeolnvra" path="res://components/game_mode_component.gd" id="5_uwnr7"]
+[ext_resource type="PackedScene" uid="uid://bds042g4ismxf" path="res://world/payload_checkpoint_visual.tscn" id="6_obnvg"]
 
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_wnf2b"]
 panorama = ExtResource("2_wnf2b")
@@ -32,19 +33,43 @@ albedo_color = Color(0.31925523, 0.31925526, 0.31925526, 1)
 uv1_scale = Vector3(0.895, 0.895, 0.895)
 uv1_triplanar = true
 
-[node name="Game" type="Node3D" unique_id=159294576 node_paths=PackedStringArray("spawn_locations", "despawn_location")]
+[sub_resource type="Curve3D" id="Curve3D_duvhj"]
+_data = {
+"points": PackedVector3Array(0, 0, 0, 0, 0, 0, 10.415, 0, 0, 0, 0, 0, 0, 0, 0, -13.92, 0, 0, 0, 0, 0, 0, 0, 0, -12.875, 0.095, 17.71, 0, 0, 0, 0, 0, 0, 0, 0, 18.2),
+"tilts": PackedFloat32Array(0, 0, 0, 0)
+}
+point_count = 4
+
+[node name="Game" type="Node3D" unique_id=159294576 node_paths=PackedStringArray("despawn_location")]
 script = ExtResource("1_8rrov")
-spawn_locations = [NodePath("Spawn Location 1"), NodePath("Spawn Location 2")]
 despawn_location = NodePath("Despawn")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=765331845]
 environment = SubResource("Environment_yhcpw")
 
-[node name="Spawn Location 1" type="Marker3D" parent="." unique_id=908470764]
-transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, -2.797104, 3.569233, 17.53489)
+[node name="SCI Spawn Location" type="Marker3D" parent="." unique_id=908470764]
+transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, -23.762646, 1.3490553, 12.885022)
 
-[node name="Spawn Location 2" type="Marker3D" parent="." unique_id=235155852]
-transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, -2.5969925, 4.098453, 11.334593)
+[node name="SCI Spawn Location2" type="Marker3D" parent="." unique_id=1357951918]
+transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, -31.617609, 3.406314, 12.885022)
+
+[node name="SCI Spawn Location3" type="Marker3D" parent="." unique_id=611246810]
+transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, -27.469072, 1.280818, 12.885022)
+
+[node name="SCI Spawn Location4" type="Marker3D" parent="." unique_id=429331964]
+transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, -27.469072, 1.280818, 12.885022)
+
+[node name="SPI Spawn Location" type="Marker3D" parent="." unique_id=235155852]
+transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 16.403008, 1.6476772, 11.352692)
+
+[node name="SPI Spawn Location2" type="Marker3D" parent="." unique_id=1752718679]
+transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 13.563421, 1.6860459, 11.352692)
+
+[node name="SPI Spawn Location3" type="Marker3D" parent="." unique_id=823937133]
+transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 21.281181, 1.6619291, 11.352692)
+
+[node name="SPI Spawn Location4" type="Marker3D" parent="." unique_id=603654841]
+transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 28.015053, 3.3088834, 11.352692)
 
 [node name="Despawn" type="Marker3D" parent="." unique_id=1311557604]
 transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, -2.797104, -53.386234, 17.53489)
@@ -306,6 +331,18 @@ transform = Transform3D(-1, 4.371139e-08, 7.5710346e-08, 0, 0.8660254, -0.5, -8.
 operation = 2
 size = Vector3(2, 7, 15)
 
+[node name="ground2" type="CSGBox3D" parent="CSGCombiner3D" unique_id=1636309652]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20.5, 6.856256, 12.5)
+size = Vector3(2, 5, 8)
+
+[node name="ground3" type="CSGBox3D" parent="CSGCombiner3D" unique_id=735557278]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16.881104, 6.856256, 6.7263565)
+size = Vector3(12.762207, 5, 1.7509766)
+
+[node name="ground4" type="CSGBox3D" parent="CSGCombiner3D" unique_id=1108758180]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5429688, 6.856256, 20.821793)
+size = Vector3(21.914063, 5, 6.997162)
+
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=517602722]
 transform = Transform3D(0.72554255, -0.33358252, -0.60192263, 0.68817735, 0.35169467, 0.6346045, 0, -0.87466204, 0.48473334, 0, 9.392839, 0)
 shadow_enabled = true
@@ -321,10 +358,40 @@ script = ExtResource("4_duvhj")
 [node name="Camera3D" type="Camera3D" parent="." unique_id=542390642]
 transform = Transform3D(-0.6691307, -0.37717453, 0.64031523, 0, 0.8616291, 0.5075384, -0.7431448, 0.3396095, -0.5765425, 30.735, 23.336, -12.33)
 
-[node name="ControlPoint" parent="." unique_id=170758615 node_paths=PackedStringArray("game_mode_component") instance=ExtResource("4_uwnr7")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.49112356, 14)
-game_mode_component = NodePath("../GameModeComponent")
-
 [node name="GameModeComponent" type="Node" parent="." unique_id=1762082187]
 script = ExtResource("5_uwnr7")
+game_mode = 0
 metadata/_custom_type_script = "uid://r6rneeolnvra"
+
+[node name="Payload" parent="." unique_id=318310276 node_paths=PackedStringArray("game_mode_component", "path_follower", "checkpoints") instance=ExtResource("5_obnvg")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.083506, -0.8620981, 10.33771)
+game_mode_component = NodePath("../GameModeComponent")
+path_follower = NodePath("../Path3D/PayloadFollower")
+checkpoints = [NodePath("../Path3D/Node3D/PayloadCheckpointVisual"), NodePath("../Path3D/Node3D2/PayloadCheckpointVisual"), NodePath("../Path3D/Node3D3/PayloadCheckpointVisual")]
+
+[node name="Path3D" type="Path3D" parent="." unique_id=1807765996]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.10206318, 10.33771)
+curve = SubResource("Curve3D_duvhj")
+
+[node name="PayloadFollower" type="PathFollow3D" parent="Path3D" unique_id=407280533]
+transform = Transform3D(-4.371134e-08, 0, 0.99999887, 0, 1, 0, -0.99999887, 0, -4.371134e-08, 10.415, 0, 0)
+rotation_mode = 1
+loop = false
+
+[node name="Node3D" type="PathFollow3D" parent="Path3D" unique_id=1964347414]
+transform = Transform3D(-4.3711367e-08, 0, 0.99999964, 0, 0.99999976, 0, -0.9999995, 0, -4.3711374e-08, 0.8463737, 0, 0)
+progress = 9.568661
+
+[node name="PayloadCheckpointVisual" parent="Path3D/Node3D" unique_id=462281785 instance=ExtResource("6_obnvg")]
+
+[node name="Node3D2" type="PathFollow3D" parent="Path3D" unique_id=260445367]
+transform = Transform3D(-0.9982476, 0.005354725, -0.058902916, 0.005679915, 0.9999685, -0.005354806, 0.058872417, -0.0056799958, -0.9982482, -13.76356, 0.014221837, 2.6512496)
+progress = 26.991209
+
+[node name="PayloadCheckpointVisual" parent="Path3D/Node3D2" unique_id=912872897 instance=ExtResource("6_obnvg")]
+
+[node name="Node3D3" type="PathFollow3D" parent="Path3D" unique_id=167136176]
+transform = Transform3D(-0.038002, 0.007513991, -0.9992452, 0.0038468698, 0.99996185, 0.0073730713, 0.9992658, -0.003563793, -0.0380296, 0, 1.1641532e-10, 18.200003)
+progress = 54.960716
+
+[node name="PayloadCheckpointVisual" parent="Path3D/Node3D3" unique_id=1357804619 instance=ExtResource("6_obnvg")]

@@ -98,7 +98,7 @@ func reset():
 	needs_respawn = true
 	for node in GameManager.spawn_parent.get_children():
 		if node is Map:
-			respawn_position = node.get_random_spawn_location()
+			respawn_position = node.get_random_spawn_location(team)
 			break
 	print("PLAYER RESET!!!!")
 	

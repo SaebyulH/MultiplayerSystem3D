@@ -3,7 +3,7 @@ class_name SpawnManager
 
 @onready var spawn_parent: Node3D = get_parent().get_node("%SpawnParent")
 
-@export var spawn_locations: Array[Marker3D]
+#@export var spawn_locations: Array[Marker3D]
 
 var player_scene: PackedScene
 
@@ -30,26 +30,29 @@ func _add_player_to_game(network_id: int):
 	player_to_add.spawn_manager = self
 	spawn_parent.add_child(player_to_add)
 	player_to_add.global_position = Vector3(0, 100, 0)
-	player_to_add.global_position = get_random_spawn_location()
+	#player_to_add.global_position = get_random_spawn_location()
 	
 
 	Leaderboard.request_add_player(str(network_id))
+	#
+#func get_random_spawn_location() -> Vector3:
+	#
+	#GameManager.spawn_parent.get_node("Map").get_random
+	##
+	##
+	##if spawn_locations.size() > 0:
+		##var index = randi() % spawn_locations.size()
+		##return spawn_locations[index].global_position
+#
+	#return Vector3(0, 12, 0)
 	
-func get_random_spawn_location() -> Vector3:
-
-	if spawn_locations.size() > 0:
-		var index = randi() % spawn_locations.size()
-		return spawn_locations[index].global_position
-
-	return Vector3(0, 12, 0)
-	
-func respawn_player(player_name):
-	var path = NodePath(str(player_name))
-	if not spawn_parent.has_node(path):
-		push_error("Player not found: " + str(player_name))
-		return
-	
-	var player = spawn_parent.get_node(path)
-	#player.set_player_position(get_random_spawn_location())
-	player.global_position = get_random_spawn_location()
-	player.reset()
+#func respawn_player(player_name):
+	#var path = NodePath(str(player_name))
+	#if not spawn_parent.has_node(path):
+		#push_error("Player not found: " + str(player_name))
+		#return
+	#
+	#var player = spawn_parent.get_node(path)
+	##player.set_player_position(get_random_spawn_location())
+	#player.global_position = get_random_spawn_location()
+	#player.reset()

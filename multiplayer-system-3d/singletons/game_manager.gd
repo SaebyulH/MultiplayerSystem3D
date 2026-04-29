@@ -16,6 +16,7 @@ func find_player(id: String) -> Node:
 	return null
 
 
+
 func get_despawn_position() -> Vector3:
 	for node in spawn_parent.get_children():
 		if node is Map:

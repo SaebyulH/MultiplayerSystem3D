@@ -6,11 +6,11 @@ class_name GameModeComponent
 # ─────────────────────────────────────────────
 
 enum GameMode {
-	ESCORT,       # Push payload to end
-	DOMINATION,   # Hold all points simultaneously
-	KOTH,         # King of the Hill: best of N rounds
-	HYBRID,       # Capture point, then escort payload (like Overwatch Hybrid)
-	CONTROL,      # Like Overwatch Control/KOTH but BO3 with separate sub-maps
+	ESCORT,       ## Push payload to end
+	DOMINATION,   ## Hold all points simultaneously
+	KOTH,         ## King of the Hill: best of N rounds
+	HYBRID,       ## Capture point, then escort payload (like Overwatch Hybrid)
+	CONTROL,      ## Like Overwatch Control/KOTH but BO3 with separate sub-maps
 }
 
 #enum Player.Team {
@@ -156,6 +156,24 @@ func register_control_point(cp: ControlPoint) -> void:
 func unregister_control_point(cp: ControlPoint) -> void:
 	_control_points.erase(cp)
 
+
+# add at top with other state vars
+var _payload: PayloadNode = null
+
+func register_payload(p: PayloadNode) -> void:
+	_payload = p
+
+func on_payload_delivered(winning_team: Player.Team) -> void:
+	_end_round(winning_team)
+
+# replace the two stubs:
+func _get_payload_pushers() -> Array:
+	if _payload:
+		return [_payload.get_attackers_on_point()]  # count, not array — or adjust overtime check
+	return []
+
+
+
 # ─────────────────────────────────────────────
 #  PROCESS  (server only drives timers)
 # ─────────────────────────────────────────────
@@ -199,37 +217,74 @@ func _tick_objective_locked(delta: float) -> void:
 	if phase_timer <= 0.0:
 		_transition_phase(PhaseState.ACTIVE)
 
+#func _tick_active(delta: float) -> void:
+	#if round_time > 0.0:
+		#phase_timer -= delta
+#
+	#match game_mode:
+		#GameMode.ESCORT, GameMode.HYBRID:
+			#_tick_escort(delta)
+		#GameMode.DOMINATION:
+			#_tick_domination(delta)
+		#GameMode.KOTH, GameMode.CONTROL:
+			#_tick_koth(delta)
+#
+	## Time expired
+	##if round_time > 0.0 and phase_timer <= 0.0:
+		##_on_time_expired()
+#
+#
+#
+# In _tick_active, replace the escort case:
 func _tick_active(delta: float) -> void:
 	if round_time > 0.0:
 		phase_timer -= delta
 
 	match game_mode:
 		GameMode.ESCORT, GameMode.HYBRID:
-			_tick_escort(delta)
+			pass  # PayloadNode drives itself and calls on_payload_delivered directly
 		GameMode.DOMINATION:
 			_tick_domination(delta)
 		GameMode.KOTH, GameMode.CONTROL:
 			_tick_koth(delta)
 
-	# Time expired
 	#if round_time > 0.0 and phase_timer <= 0.0:
 		#_on_time_expired()
 
+# Same in _tick_overtime:
 func _tick_overtime(delta: float) -> void:
 	overtime_timer -= delta
 
 	match game_mode:
-		GameMode.ESCORT, GameMode.HYBRID:
-			_tick_escort(delta)
 		GameMode.KOTH, GameMode.CONTROL:
 			_tick_koth(delta)
+		# Escort overtime: payload just needs to keep moving, PayloadNode handles it
 
-	# Check if overtime should end without resolution
 	var still_contested := _is_objective_contested()
 	if not still_contested:
 		_end_overtime_no_resolution()
 	elif overtime_max_duration > 0.0 and overtime_timer <= 0.0:
 		_end_overtime_no_resolution()
+
+
+
+
+
+#func _tick_overtime(delta: float) -> void:
+	#overtime_timer -= delta
+#
+	#match game_mode:
+		#GameMode.ESCORT, GameMode.HYBRID:
+			#_tick_escort(delta)
+		#GameMode.KOTH, GameMode.CONTROL:
+			#_tick_koth(delta)
+#
+	## Check if overtime should end without resolution
+	#var still_contested := _is_objective_contested()
+	#if not still_contested:
+		#_end_overtime_no_resolution()
+	#elif overtime_max_duration > 0.0 and overtime_timer <= 0.0:
+		#_end_overtime_no_resolution()
 
 func _tick_round_end(delta: float) -> void:
 	phase_timer -= delta
@@ -364,6 +419,10 @@ func _start_new_round() -> void:
 	payload_progress = 0.0
 	payload_checkpoint_index = 0
 	payload_at_checkpoint = false
+	
+	for child in GameManager.spawn_parent.get_children():
+		if child is Player:
+			child.reset()
 
 	for cp in _control_points:
 		cp.reset_for_new_round()
@@ -404,10 +463,10 @@ func is_objective_unlocked() -> bool:
 func is_players_locked_in_spawn() -> bool:
 	return current_phase == PhaseState.SETUP or current_phase == PhaseState.WAITING_FOR_PLAYERS
 
-func _get_payload_pushers() -> Array:
-	# Returns players of the attacking team near the payload
-	# Stub: ControlPoint or PayloadNode should call notify_pushers each frame
-	return []  # Filled via notify_payload_contact
+#func _get_payload_pushers() -> Array:
+	## Returns players of the attacking team near the payload
+	## Stub: ControlPoint or PayloadNode should call notify_pushers each frame
+	#return []  # Filled via notify_payload_contact
 
 func _get_payload_defenders() -> Array:
 	return []
@@ -422,12 +481,23 @@ func _is_koth_contested() -> bool:
 		return false
 	return _control_points[0].is_contested
 
+#func _is_objective_contested() -> bool:
+	#match game_mode:
+		#GameMode.KOTH, GameMode.CONTROL:
+			#return _is_koth_contested()
+		#GameMode.ESCORT, GameMode.HYBRID:
+			#return not _get_payload_pushers().is_empty()
+		#_:
+			#return false
+
 func _is_objective_contested() -> bool:
 	match game_mode:
 		GameMode.KOTH, GameMode.CONTROL:
 			return _is_koth_contested()
 		GameMode.ESCORT, GameMode.HYBRID:
-			return not _get_payload_pushers().is_empty()
+			if _payload:
+				return _payload.is_contested or _payload.is_being_pushed
+			return false
 		_:
 			return false
 

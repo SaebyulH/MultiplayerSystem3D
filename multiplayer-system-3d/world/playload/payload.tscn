@@ -1,0 +1,40 @@
+[gd_scene format=3 uid="uid://gkkfn2sdv7hc"]
+
+[ext_resource type="Script" uid="uid://cog71e1br2yxp" path="res://world/playload/payload.gd" id="1_sq1n6"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_sq1n6"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_dd2is"]
+size = Vector3(3.8203125, 2, 2.584961)
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_gg84g"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sq1n6"]
+albedo_color = Color(0.30692267, 0.3069227, 0.3069227, 1)
+
+[node name="Payload" type="CharacterBody3D" unique_id=318310276]
+script = ExtResource("1_sq1n6")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1599369153]
+transform = Transform3D(1.9106855e-15, -4.371139e-08, 1, -1, -4.371139e-08, 0, 4.371139e-08, -1, -4.371139e-08, 0, 0.47854662, 0)
+shape = SubResource("CapsuleShape3D_sq1n6")
+
+[node name="PushZone" type="Area3D" parent="." unique_id=1737791234]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 0, 0, 0)
+collision_layer = 0
+collision_mask = 2
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="PushZone" unique_id=840188079]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.44348145, 0)
+shape = SubResource("BoxShape3D_dd2is")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=699896969]
+transform = Transform3D(1.9106855e-15, -4.371139e-08, 1, -1, -4.371139e-08, 0, 4.371139e-08, -1, -4.371139e-08, 0, 0.47962546, 0)
+mesh = SubResource("CapsuleMesh_gg84g")
+surface_material_override/0 = SubResource("StandardMaterial3D_sq1n6")
+
+[node name="Label3D" type="Label3D" parent="." unique_id=1114900898]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1221764, 0)
+billboard = 1
+no_depth_test = true
+text = "fasdfasdfa"

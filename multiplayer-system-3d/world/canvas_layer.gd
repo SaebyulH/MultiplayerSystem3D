@@ -63,12 +63,18 @@ func _on_koth_updated(held: Dictionary) -> void:
 	]
 
 
+
+
 func _on_phase_changed(new_phase: GameModeComponent.PhaseState) -> void:
 	_refresh_all()
 
 
 func _on_time_updated(remaining: float) -> void:
 	timer_label.text = _format_time(remaining)
+	if gmc.domination_hold_timer <= 0.01:
+		$DominationHoldTimer.text = ""
+	else:
+		$DominationHoldTimer.text = "DOMINATION:" + _format_time(gmc.domination_hold_timer) + "/" + _format_time(gmc.domination_hold_time)
 
 
 func _on_round_won(winning_team: Player.Team) -> void:

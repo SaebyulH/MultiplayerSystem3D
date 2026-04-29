@@ -32,7 +32,7 @@ func _ready() -> void:
 		var spawn_manager_scene = load("res://world/spawn_manager.tscn")
 		var spawn_manager = spawn_manager_scene.instantiate()
 		spawn_manager.player_scene = player_scene
-		spawn_manager.spawn_locations = map.spawn_locations
+		#spawn_manager.spawn_locations = map.spawn_locations
 		add_child(spawn_manager)
 
 func _on_main_menu_pressed() -> void:

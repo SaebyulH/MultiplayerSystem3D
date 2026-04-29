@@ -44,27 +44,41 @@ offset_bottom = 211.0
 grow_horizontal = 2
 theme_override_font_sizes/font_size = 40
 text = "Phase"
+horizontal_alignment = 1
 
 [node name="TimerLabel" type="Label" parent="GameMenu/CanvasLayer" unique_id=489672120]
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -161.0
-offset_top = 278.0
+offset_top = 215.0
 offset_right = 161.0
 offset_bottom = 333.0
 grow_horizontal = 2
 theme_override_font_sizes/font_size = 40
 text = "Time"
+horizontal_alignment = 1
+
+[node name="DominationHoldTimer" type="Label" parent="GameMenu/CanvasLayer" unique_id=590330153]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -161.0
+offset_top = 270.0
+offset_right = 161.0
+offset_bottom = 333.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 40
+text = "Time"
+horizontal_alignment = 1
 
 [node name="SCITimer" type="Label" parent="GameMenu/CanvasLayer" unique_id=1658280348]
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -401.0
-offset_top = 217.0
-offset_right = -195.0
-offset_bottom = 272.0
+offset_left = -341.0
+offset_right = -170.0
+offset_bottom = 55.0
 grow_horizontal = 2
 theme_override_font_sizes/font_size = 40
 text = "SCI"
@@ -73,10 +87,9 @@ text = "SCI"
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = 156.0
-offset_top = 217.0
-offset_right = 337.0
-offset_bottom = 272.0
+offset_left = 192.0
+offset_right = 383.0
+offset_bottom = 55.0
 grow_horizontal = 2
 theme_override_font_sizes/font_size = 40
 text = "SPI"

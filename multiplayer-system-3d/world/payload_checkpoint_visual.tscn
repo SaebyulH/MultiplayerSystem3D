@@ -1,0 +1,29 @@
+[gd_scene format=3 uid="uid://bds042g4ismxf"]
+
+[ext_resource type="Script" uid="uid://o6pwirwxhwdo" path="res://world/payload_checkpoint_visual.gd" id="1_6uxfd"]
+
+[sub_resource type="TorusMesh" id="TorusMesh_6uxfd"]
+inner_radius = 0.779
+outer_radius = 0.972
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tqksi"]
+transparency = 1
+albedo_color = Color(0.8862745, 0.69411767, 0, 0.18039216)
+
+[node name="PayloadCheckpointVisual" type="Marker3D" unique_id=462281785]
+script = ExtResource("1_6uxfd")
+
+[node name="MeshInstance3D3" type="MeshInstance3D" parent="." unique_id=938794391]
+transform = Transform3D(3.357968e-15, -7.6821344e-08, 1.7574675, -1.7574675, -7.6821344e-08, 3.865172e-22, 7.6821344e-08, -1.7574675, -7.6821344e-08, 0, 0, 1)
+mesh = SubResource("TorusMesh_6uxfd")
+surface_material_override/0 = SubResource("StandardMaterial3D_tqksi")
+
+[node name="MeshInstance3D4" type="MeshInstance3D" parent="." unique_id=129755876]
+transform = Transform3D(3.357968e-15, -7.6821344e-08, 1.7574675, -1.7574675, -7.6821344e-08, 3.865172e-22, 7.6821344e-08, -1.7574675, -7.6821344e-08, 0, 0, 0)
+mesh = SubResource("TorusMesh_6uxfd")
+surface_material_override/0 = SubResource("StandardMaterial3D_tqksi")
+
+[node name="MeshInstance3D5" type="MeshInstance3D" parent="." unique_id=1973378164]
+transform = Transform3D(3.357968e-15, -7.6821344e-08, 1.7574675, -1.7574675, -7.6821344e-08, 3.865172e-22, 7.6821344e-08, -1.7574675, -7.6821344e-08, 0, 0, -1)
+mesh = SubResource("TorusMesh_6uxfd")
+surface_material_override/0 = SubResource("StandardMaterial3D_tqksi")

@@ -154,6 +154,7 @@ func _on_phase_changed(new_phase: GameModeComponent.PhaseState) -> void:
 # -----------------------------
 
 func _update_color() -> void:
+	csg_color.material_override = csg_color.material_override.duplicate(true)
 	csg_color.material_override.albedo_color = _team_color(owning_team)
 
 func _update_capture_ui() -> void:
