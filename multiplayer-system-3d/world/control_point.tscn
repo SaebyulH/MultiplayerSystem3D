@@ -2,6 +2,11 @@
 
 [ext_resource type="Script" uid="uid://1ytr4lg6soq" path="res://world/control_point.gd" id="1_nfcor"]
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_0vfn2"]
+albedo_color = Color(0.5689727, 0.56897277, 0.5689727, 1)
+metallic = 1.0
+roughness = 0.47
+
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_nfcor"]
 albedo_color = Color(1, 0.43137255, 1, 1)
 
@@ -9,7 +14,7 @@ albedo_color = Color(1, 0.43137255, 1, 1)
 albedo_color = Color(1, 0.30980393, 0.30980393, 1)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_nfcor"]
-size = Vector3(3, 2, 3)
+size = Vector3(6.5876465, 4.882324, 5.65625)
 
 [sub_resource type="TorusMesh" id="TorusMesh_nfcor"]
 inner_radius = 1.597
@@ -23,9 +28,12 @@ albedo_color = Color(0.4745098, 1, 1, 1)
 script = ExtResource("1_nfcor")
 
 [node name="CSGCylinder3D" type="CSGCylinder3D" parent="." unique_id=1237880186]
+transform = Transform3D(1.6932502, 0, 0, 0, 1.6932502, 0, 0, 0, 1.6932502, 0, 0, 0)
 use_collision = true
 radius = 1.8432617
 height = 0.1015625
+sides = 28
+material = SubResource("StandardMaterial3D_0vfn2")
 
 [node name="Color" type="CSGCombiner3D" parent="." unique_id=554082605]
 material_override = SubResource("StandardMaterial3D_nfcor")
@@ -48,7 +56,7 @@ collision_layer = 0
 collision_mask = 2
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Area3D" unique_id=2012495260]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.441162, 0)
 shape = SubResource("BoxShape3D_nfcor")
 
 [node name="CaptureUI" type="Node3D" parent="." unique_id=902638580]

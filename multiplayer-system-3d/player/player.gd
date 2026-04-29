@@ -2,6 +2,11 @@ extends CharacterBody3D
 class_name Player
 
 
+@export var acceleration: float = 40.0
+@export var friction: float = 18.0
+@export var air_acceleration: float = 40.0
+@export var air_friction: float = 4.0
+
 enum Team {SPI, SCI, FFA} #If set to FFA, you can damage anyone
 const FRIENDLY_FIRE_MULTIPLIER = 0.0
 
@@ -175,13 +180,17 @@ func apply_knockback(force: Vector3) -> void:
 	if force.length() < 0.01:
 		return
 	knockback_velocity += force
-
+	
+	
+	
+	
 func _apply_movement_from_input(delta):
 	_force_update_is_on_floor()
+	var on_floor := is_on_floor()
 
-	if not is_on_floor():
+	if not on_floor:
 		velocity += get_gravity() * delta
-	elif player_input.jump_input and is_on_floor():
+	elif player_input.jump_input:
 		knockback_velocity = Vector3.ZERO
 		velocity.y = JUMP_VELOCITY
 
@@ -190,43 +199,96 @@ func _apply_movement_from_input(delta):
 	var forward := Vector3(cam_basis.z.x, 0, cam_basis.z.z).normalized()
 	var right   := Vector3(cam_basis.x.x, 0, cam_basis.x.z).normalized()
 	var direction := (forward * input_dir.y + right * input_dir.x).normalized()
-	
-	var calc_speed : float = 1.0
+
+	var calc_speed: float = speed
 	var weapons := weapon_controller.get_weapons()
 	if not weapons.is_empty():
 		calc_speed = speed * weapons[weapon_controller.current_weapon_index].player_speed_multiplier
 	if is_crouching:
 		calc_speed *= crouch_speed_multiplier
 
-	if direction:
-		velocity.x = direction.x * calc_speed
-		velocity.z = direction.z * calc_speed
-	else:
-		velocity.x = move_toward(velocity.x, 0, calc_speed)
-		velocity.z = move_toward(velocity.z, 0, calc_speed)
+	var accel := acceleration if on_floor else air_acceleration
+	var fric  := friction     if on_floor else air_friction
 
-	# Decay and apply knockback separately
+	if direction:
+		# Accelerate toward target velocity
+		var target_x := direction.x * calc_speed
+		var target_z := direction.z * calc_speed
+		velocity.x = move_toward(velocity.x, target_x, accel * delta)
+		velocity.z = move_toward(velocity.z, target_z, accel * delta)
+	else:
+		# Decelerate to zero
+		velocity.x = move_toward(velocity.x, 0.0, fric * delta)
+		velocity.z = move_toward(velocity.z, 0.0, fric * delta)
+
 	velocity *= NetworkTime.physics_factor
-	
-	velocity += knockback_velocity # moved to here, not scaled
-	
+	velocity += knockback_velocity
 	move_and_slide()
-	
-	#velocity -= knockback_velocity
 	velocity /= NetworkTime.physics_factor
-	# decay after move
 	knockback_velocity = knockback_velocity.move_toward(Vector3.ZERO, knockback_decay * delta)
 
 	if player_input.ads:
 		camera.fov = 20.0
-		body.mouse_sens_x = 0.002*0.268
-		body.mouse_sens_y = 0.002*0.268
+		body.mouse_sens_x = 0.002 * 0.268
+		body.mouse_sens_y = 0.002 * 0.268
 		speed = 2.5
 	else:
 		camera.fov = 90.0
 		body.mouse_sens_x = 0.002
 		body.mouse_sens_y = 0.002
 		speed = 5.0
+
+#func _apply_movement_from_input(delta):
+	#_force_update_is_on_floor()
+#
+	#if not is_on_floor():
+		#velocity += get_gravity() * delta
+	#elif player_input.jump_input and is_on_floor():
+		#knockback_velocity = Vector3.ZERO
+		#velocity.y = JUMP_VELOCITY
+#
+	#var input_dir := player_input.input_dir
+	#var cam_basis: Basis = camera.global_transform.basis
+	#var forward := Vector3(cam_basis.z.x, 0, cam_basis.z.z).normalized()
+	#var right   := Vector3(cam_basis.x.x, 0, cam_basis.x.z).normalized()
+	#var direction := (forward * input_dir.y + right * input_dir.x).normalized()
+	#
+	#var calc_speed : float = 1.0
+	#var weapons := weapon_controller.get_weapons()
+	#if not weapons.is_empty():
+		#calc_speed = speed * weapons[weapon_controller.current_weapon_index].player_speed_multiplier
+	#if is_crouching:
+		#calc_speed *= crouch_speed_multiplier
+#
+	#if direction:
+		#velocity.x = direction.x * calc_speed
+		#velocity.z = direction.z * calc_speed
+	#else:
+		#velocity.x = move_toward(velocity.x, 0, calc_speed)
+		#velocity.z = move_toward(velocity.z, 0, calc_speed)
+#
+	## Decay and apply knockback separately
+	#velocity *= NetworkTime.physics_factor
+	#
+	#velocity += knockback_velocity # moved to here, not scaled
+	#
+	#move_and_slide()
+	#
+	##velocity -= knockback_velocity
+	#velocity /= NetworkTime.physics_factor
+	## decay after move
+	#knockback_velocity = knockback_velocity.move_toward(Vector3.ZERO, knockback_decay * delta)
+#
+	#if player_input.ads:
+		#camera.fov = 20.0
+		#body.mouse_sens_x = 0.002*0.268
+		#body.mouse_sens_y = 0.002*0.268
+		#speed = 2.5
+	#else:
+		#camera.fov = 90.0
+		#body.mouse_sens_x = 0.002
+		#body.mouse_sens_y = 0.002
+		#speed = 5.0
 	
 	#print(knockback_velocity.length())
 		

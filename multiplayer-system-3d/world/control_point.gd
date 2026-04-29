@@ -30,6 +30,18 @@ func _ready() -> void:
 	owning_team = default_owner
 	capture_team = default_owner
 
+	# --- Ensure unique materials (only once) ---
+	if csg_color.material_override:
+		csg_color.material_override = csg_color.material_override.duplicate(true)
+
+	if progress_mesh.material_override:
+		progress_mesh.material_override = progress_mesh.material_override.duplicate(true)
+
+	var surf_mat := progress_mesh.get_active_material(0)
+	if surf_mat:
+		progress_mesh.set_surface_override_material(0, surf_mat.duplicate(true))
+	# ------------------------------------------
+
 	_update_color()
 	_update_capture_ui()
 
@@ -79,30 +91,23 @@ func _process(delta: float) -> void:
 	if is_contested:
 		effective_delta *= contest_slow_multiplier
 
-	# -----------------------------
-	# DEFENDING (same team as owner)
-	# -----------------------------
+	# DEFENDING
 	if pushing_team == owning_team:
 		if capture_team != owning_team:
-			# push progress back toward owner
 			capture_progress += effective_delta / capture_time
 			if capture_progress >= 1.0:
 				capture_progress = 1.0
 				capture_team = owning_team
 		return
 
-	# -----------------------------
 	# ATTACKING
-	# -----------------------------
 	if capture_team != pushing_team:
-		# first neutralize
 		capture_progress -= effective_delta / capture_time
 		if capture_progress <= 0.0:
 			capture_progress = 0.0
 			owning_team = Player.Team.FFA
 			capture_team = pushing_team
 	else:
-		# capture from neutral
 		capture_progress += effective_delta / capture_time
 		if capture_progress >= 1.0:
 			capture_progress = 1.0
@@ -154,8 +159,9 @@ func _on_phase_changed(new_phase: GameModeComponent.PhaseState) -> void:
 # -----------------------------
 
 func _update_color() -> void:
-	csg_color.material_override = csg_color.material_override.duplicate(true)
-	csg_color.material_override.albedo_color = _team_color(owning_team)
+	if csg_color.material_override and csg_color.material_override is StandardMaterial3D:
+		var mat := csg_color.material_override as StandardMaterial3D
+		mat.albedo_color = _team_color(owning_team)
 
 func _update_capture_ui() -> void:
 	_refresh_progress_mesh()
@@ -169,7 +175,8 @@ func _refresh_progress_mesh() -> void:
 
 	var mat := progress_mesh.get_active_material(0)
 	if mat and mat is StandardMaterial3D:
-		mat.albedo_color = Color.WHITE if is_contested else col
+		var smat := mat as StandardMaterial3D
+		smat.albedo_color = Color.WHITE if is_contested else col
 
 func _refresh_label() -> void:
 	if is_contested:
