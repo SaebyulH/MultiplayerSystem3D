@@ -45,12 +45,15 @@ func apply_health_delta(delta: float, changer: String, changee: String):
 			Leaderboard.request_add_self_damage(changer, applied_delta)
 		else:
 			Leaderboard.request_add_damage(changer, applied_delta)
+			GameManager.find_player(changer).weapon_controller.play_hit_sound.rpc_id(changer.to_int())
 		last_attacker = changer
 	else:
 		if changee == changer:
 			Leaderboard.request_add_self_heal(changer, applied_delta)
 		else:
 			Leaderboard.request_add_heal_other(changer, applied_delta)
+			GameManager.find_player(changer).weapon_controller.play_hit_heal_sound.rpc_id(changer.to_int())
+			
 
 	if old_health > 0.0 and new_health <= 0.0:
 		Leaderboard.request_add_kill(changer)

@@ -1,12 +1,8 @@
 class_name WeaponController extends Node
 var _bullet_hole_scene: PackedScene = preload("res://effects/bullet_hole.tscn")
 var _tracer_scene: PackedScene = preload("res://weapon/tracer.tscn")
-
-
-
-
-
-
+var _hit_sound: AudioStream = preload("res://assets/sounds/Hitsound.wav")
+var _hit_heal_sound: AudioStream = preload("res://assets/sounds/medkit_sound.mp3")
 
 # ---------------------------------------------------------------------------
 # Architecture notes
@@ -58,7 +54,6 @@ signal weapon_changed(index: int, weapon: Weapon)
 
 var current_weapon_model: Node3D = null
 
-
 #region Readiness
 # Central invariant check. Every RPC and fire path that touches _weapons or
 # current_weapon_model calls this first. One place to fix, one place to read.
@@ -68,7 +63,6 @@ func _is_ready() -> bool:
 		and current_weapon_model != null \
 		and is_instance_valid(current_weapon_model)
 #endregion
-
 
 #region Lifecycle
 func _ready() -> void:
@@ -89,7 +83,6 @@ func _ready() -> void:
 	player_input.reload.connect(start_reload)
 
 	_apply_recoil_data()
-
 
 func _physics_process(delta: float) -> void:
 	_align_weapon_to_raycast()
@@ -677,6 +670,18 @@ func _play_shoot_sound() -> void:
 		return
 	_play_sound(_weapons[current_weapon_index].shoot_sound)
 
+#HIT SOUNDSm -called from attrubute component
+@rpc("any_peer", "call_local")
+func play_hit_sound() -> void:
+	if not _is_ready():
+		return
+	_play_sound(_hit_sound)
+
+@rpc("any_peer", "call_remote")
+func play_hit_heal_sound() -> void:
+	if not _is_ready():
+		return
+	_play_sound(_hit_heal_sound)
 
 func _align_weapon_to_raycast() -> void:
 	if current_weapon_model == null or not _raycast.is_colliding():

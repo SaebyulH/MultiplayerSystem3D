@@ -321,7 +321,7 @@ render_target_update_mode = 4
 [node name="Node3D" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer/SecondarySection/SubViewportContainer/SecondarySubViewport" unique_id=528727344 instance=ExtResource("6_btayf")]
 
 [node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="." unique_id=267556738]
-_spawnable_scenes = PackedStringArray("uid://cmix6q8a6hgcu", "uid://bhsrnwae043e1", "uid://7ccxfopdhtv8", "uid://x64r4as832eo", "uid://72ju85r15v1e")
+_spawnable_scenes = PackedStringArray("uid://cmix6q8a6hgcu", "uid://bhsrnwae043e1", "uid://7ccxfopdhtv8", "uid://x64r4as832eo", "uid://72ju85r15v1e", "uid://ohyji3hlfle6", "uid://ubib085fbj7w", "uid://cpdne6lbfqxh")
 spawn_path = NodePath("../SpawnParent")
 
 [connection signal="pressed" from="GameMenu/VBoxContainer/HBoxContainer/MainMenu" to="." method="_on_main_menu_pressed"]
