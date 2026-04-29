@@ -39,7 +39,10 @@ func _ready() -> void:
 	health_delta_bar_public.visible = not is_owner
 	name_public.visible = not is_owner
 
-	name_public.text = ("Host" if (name.to_int() == 1) else "Client") + ", NetID: " + str(name)
+	# Authority computes the display name and broadcasts it to all peers
+	if is_owner:
+		var display_name := ("Host" if (name.to_int() == 1) else "Client") + ", NetID: " + str(name)
+		_set_name_label.rpc(display_name)
 
 	_on_mag_or_weapon_updated()
 	weapon_controller.mag_changed.connect(_on_mag_or_weapon_updated)
@@ -50,6 +53,45 @@ func _ready() -> void:
 	_last_health = attribute_component.health
 
 	_update_team_text()
+
+@rpc("authority", "call_local", "reliable")
+func _set_name_label(display_name: String) -> void:
+	name_public.text = display_name
+#
+#var _last_health := 0.0
+#var _last_change := 0.0
+#var _last_time := 0.0
+#
+#const HIDE_TIME := 2.0
+#const MIN_DISPLAY_DELTA := 0.5
+#
+#func _ready() -> void:
+	#weapon_controller.mag_changed.connect(func(_a=null, _b=null): _update_weapon_list())
+	#weapon_controller.weapon_changed.connect(func(_a=null, _b=null): _update_weapon_list())
+	#_update_weapon_list()
+#
+	#var is_owner := is_multiplayer_authority()
+	#health_bar.visible = is_owner
+	#health_delta_bar.visible = is_owner
+	#ammo_bar.visible = is_owner
+	#team_text.visible = is_owner
+#
+	#ammo_bar_public.visible = not is_owner
+	#health_bar_public.visible = not is_owner
+	#health_delta_bar_public.visible = not is_owner
+	#name_public.visible = not is_owner
+#
+	#name_public.text = ("Host" if (name.to_int() == 1) else "Client") + ", NetID: " + str(name)
+#
+	#_on_mag_or_weapon_updated()
+	#weapon_controller.mag_changed.connect(_on_mag_or_weapon_updated)
+	#weapon_controller.weapon_changed.connect(_on_mag_or_weapon_updated)
+#
+	#if attribute_component == null:
+		#return
+	#_last_health = attribute_component.health
+#
+	#_update_team_text()
 
 func _update_team_text() -> void:
 	var player := get_parent().get_parent() as Player
