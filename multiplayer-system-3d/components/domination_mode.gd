@@ -28,6 +28,18 @@ var points: Dictionary = {
 	Player.Team.SCI: 0.0,
 }
 
+
+func get_sync_state() -> Dictionary:
+	return {
+		"points": points,
+	}
+
+func apply_sync_state(state: Dictionary) -> void:
+	points = state.get("points", points)
+
+
+
+
 # ─────────────────────────────────────────────
 #  PUBLIC API
 # ─────────────────────────────────────────────

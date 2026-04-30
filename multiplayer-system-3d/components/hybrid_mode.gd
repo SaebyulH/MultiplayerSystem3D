@@ -27,6 +27,17 @@ var _control_points: Array[ControlPoint] = []
 var point_is_captured: bool = false
 var time_held: float = 0.0
 
+
+func get_sync_state() -> Dictionary:
+	return {
+		"captured": point_is_captured,
+		"time_held": time_held,
+	}
+
+func apply_sync_state(state: Dictionary) -> void:
+	point_is_captured = state.get("captured", point_is_captured)
+	time_held = state.get("time_held", time_held)
+
 # ─────────────────────────────────────────────
 #  PUBLIC API
 # ─────────────────────────────────────────────

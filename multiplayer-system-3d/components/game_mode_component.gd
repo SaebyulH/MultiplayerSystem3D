@@ -97,16 +97,43 @@ func _create_mode_nodes() -> void:
 	# Only create if not already assigned in the inspector
 	if not escort_mode:
 		escort_mode = EscortMode.new()
-		add_child(escort_mode)
+		#add_child(escort_mode)
 	if not hybrid_mode:
 		hybrid_mode = HybridMode.new()
-		add_child(hybrid_mode)
+		#add_child(hybrid_mode)
 	if not koth_mode:
 		koth_mode = KothMode.new()
-		add_child(koth_mode)
+		#add_child(koth_mode)
 	if not domination_mode:
 		domination_mode = DominationMode.new()
-		add_child(domination_mode)
+		#add_child(domination_mode)
+
+@rpc("authority", "call_local", "reliable")
+func _rpc_sync_state(state: Dictionary) -> void:
+	current_phase = state["phase"]
+	phase_timer = state["phase_timer"]
+	round_wins = state["round_wins"]
+
+	if koth_mode:
+		koth_mode.apply_sync_state(state["koth"])
+
+	if domination_mode:
+		domination_mode.apply_sync_state(state["domination"])
+
+	if hybrid_mode:
+		hybrid_mode.apply_sync_state(state["hybrid"])
+
+func _build_snapshot() -> Dictionary:
+	return {
+		"phase": current_phase,
+		"phase_timer": phase_timer,
+		"round_wins": round_wins,
+
+		"koth": koth_mode.get_sync_state() if koth_mode else {},
+		"domination": domination_mode.get_sync_state() if domination_mode else {},
+		"hybrid": hybrid_mode.get_sync_state() if hybrid_mode else {},
+	}
+
 
 func _connect_mode_signals() -> void:
 	if escort_mode:
@@ -179,6 +206,8 @@ func _process(delta: float) -> void:
 			_tick_overtime(delta)
 		PhaseState.ROUND_END:
 			_tick_round_end(delta)
+		
+	_rpc_sync_state.rpc(_build_snapshot())
 
 # ─────────────────────────────────────────────
 #  PHASE TICKS
@@ -398,3 +427,4 @@ func _broadcast_time(remaining: float) -> void:
 
 func _broadcast_koth_progress(held: Dictionary) -> void:
 	_rpc_broadcast_koth.rpc(held)
+	

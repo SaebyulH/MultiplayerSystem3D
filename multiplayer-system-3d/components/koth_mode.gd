@@ -20,6 +20,18 @@ signal time_held_updated(time_held: Dictionary)
 # ─────────────────────────────────────────────
 #  STATE  (injected by GameModeComponent)
 # ─────────────────────────────────────────────
+func get_sync_state() -> Dictionary:
+	return {
+		"time_held": time_held,
+		"contested": _is_contested(),
+	}
+
+func apply_sync_state(state: Dictionary) -> void:
+	time_held = state.get("time_held", time_held)
+
+
+
+
 
 var _control_points: Array[ControlPoint] = []
 
