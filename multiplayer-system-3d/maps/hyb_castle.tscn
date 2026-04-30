@@ -1,14 +1,15 @@
-[gd_scene format=3 uid="uid://ubib085fbj7w"]
+[gd_scene format=3 uid="uid://oidyxhn6wjax"]
 
-[ext_resource type="Script" uid="uid://b3gtcm614wpi8" path="res://maps/map.gd" id="1_75vr2"]
-[ext_resource type="Texture2D" uid="uid://c4ln0bpu3tmo3" path="res://assets/environment/kloppenheim_06_puresky_4k.exr" id="2_kbhve"]
-[ext_resource type="Script" uid="uid://ccrf5bdka2m35" path="res://player/auto_projectile_spawner.gd" id="3_00sab"]
-[ext_resource type="Script" uid="uid://r6rneeolnvra" path="res://components/game_mode_component.gd" id="4_y570s"]
-[ext_resource type="PackedScene" uid="uid://gkkfn2sdv7hc" path="res://world/payload/payload.tscn" id="5_w7u4x"]
-[ext_resource type="PackedScene" uid="uid://bds042g4ismxf" path="res://world/payload_checkpoint_visual.tscn" id="6_1kq08"]
+[ext_resource type="Script" uid="uid://b3gtcm614wpi8" path="res://maps/map.gd" id="1_817op"]
+[ext_resource type="Texture2D" uid="uid://c4ln0bpu3tmo3" path="res://assets/environment/kloppenheim_06_puresky_4k.exr" id="2_l3pqv"]
+[ext_resource type="Script" uid="uid://ccrf5bdka2m35" path="res://player/auto_projectile_spawner.gd" id="3_34d7b"]
+[ext_resource type="Script" uid="uid://r6rneeolnvra" path="res://components/game_mode_component.gd" id="4_telcu"]
+[ext_resource type="PackedScene" uid="uid://cbujyyto6hg8p" path="res://world/control_point.tscn" id="5_ytskv"]
+[ext_resource type="PackedScene" uid="uid://gkkfn2sdv7hc" path="res://world/payload/payload.tscn" id="6_34d7b"]
+[ext_resource type="PackedScene" uid="uid://bds042g4ismxf" path="res://world/payload_checkpoint_visual.tscn" id="7_telcu"]
 
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_wnf2b"]
-panorama = ExtResource("2_kbhve")
+panorama = ExtResource("2_l3pqv")
 
 [sub_resource type="Sky" id="Sky_yhcpw"]
 sky_material = SubResource("PanoramaSkyMaterial_wnf2b")
@@ -33,15 +34,15 @@ albedo_color = Color(0.31925523, 0.31925526, 0.31925526, 1)
 uv1_scale = Vector3(0.895, 0.895, 0.895)
 uv1_triplanar = true
 
-[sub_resource type="Curve3D" id="Curve3D_duvhj"]
+[sub_resource type="Curve3D" id="Curve3D_ytskv"]
 _data = {
-"points": PackedVector3Array(0, 0, 0, 0, 0, 0, 10.415, 0, 0, 0, 0, 0, 0, 0, 0, -13.92, 0, 0, 0, 0, 0, 0, 0, 0, -12.875, 0.095, 17.71, 0, 0, 0, 0, 0, 0, 0, 0, 18.2),
-"tilts": PackedFloat32Array(0, 0, 0, 0)
+"points": PackedVector3Array(0, 0, 0, 0, 0, 0, 10.2, 0, -18.895, 0, 0, 0, 0, 0, 0, 10.415, 0, 0, 0, 0, 0, 0, 0, 0, -13.92, 0, 0, 0, 0, 0, 0, 0, 0, -12.875, 0.095, 17.71, 0, 0, 0, 0, 0, 0, 0, 0, 18.2),
+"tilts": PackedFloat32Array(0, 0, 0, 0, 0)
 }
-point_count = 4
+point_count = 5
 
 [node name="Game" type="Node3D" unique_id=159294576 node_paths=PackedStringArray("despawn_location")]
-script = ExtResource("1_75vr2")
+script = ExtResource("1_817op")
 despawn_location = NodePath("Despawn")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=765331845]
@@ -63,7 +64,7 @@ transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545
 transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 16.403008, 1.6476772, 11.352692)
 
 [node name="SPI Spawn Location2" type="Marker3D" parent="." unique_id=1752718679]
-transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 13.563421, 1.6860459, 11.352692)
+transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 18.736818, 1.6860459, 11.352692)
 
 [node name="SPI Spawn Location3" type="Marker3D" parent="." unique_id=823937133]
 transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 21.281181, 1.6619291, 11.352692)
@@ -336,8 +337,12 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20.5, 6.856256, 12.5)
 size = Vector3(2, 5, 8)
 
 [node name="ground3" type="CSGBox3D" parent="CSGCombiner3D" unique_id=735557278]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16.881104, 6.856256, 6.7263565)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16.881104, 6.856256, 15.218395)
 size = Vector3(12.762207, 5, 1.7509766)
+
+[node name="ground5" type="CSGBox3D" parent="CSGCombiner3D" unique_id=1994150063]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14.701187, 6.856256, 8.169617)
+size = Vector3(1.4694824, 5, 12.314453)
 
 [node name="ground4" type="CSGBox3D" parent="CSGCombiner3D" unique_id=1108758180]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5429688, 6.856256, 20.821793)
@@ -353,45 +358,67 @@ top_level = true
 [node name="ProjectileSpawner" type="MultiplayerSpawner" parent="ProjectilesParent" unique_id=1469450871]
 _spawnable_scenes = PackedStringArray("uid://dy7hw0uphca40", "uid://v27fq461i5vr", "uid://bo0edtxgakruc", "uid://6mr0d18yn8po", "uid://daan6liu8ej2", "uid://cccu8xmm1tqq7", "uid://dy7hw0uphca40", "uid://v27fq461i5vr", "uid://dfyafkr18mtuq", "uid://bo0edtxgakruc", "uid://6mr0d18yn8po", "uid://daan6liu8ej2")
 spawn_path = NodePath("..")
-script = ExtResource("3_00sab")
+script = ExtResource("3_34d7b")
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=542390642]
 transform = Transform3D(-0.6691307, -0.37717453, 0.64031523, 0, 0.8616291, 0.5075384, -0.7431448, 0.3396095, -0.5765425, 30.735, 23.336, -12.33)
 
 [node name="GameModeComponent" type="Node" parent="." unique_id=1762082187]
-script = ExtResource("4_y570s")
-game_mode = 0
+script = ExtResource("4_telcu")
+game_mode = 3
 metadata/_custom_type_script = "uid://r6rneeolnvra"
 
-[node name="Payload" parent="." unique_id=318310276 node_paths=PackedStringArray("game_mode_component", "path_follower", "checkpoints") instance=ExtResource("5_w7u4x")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.083506, -0.8620981, 10.33771)
+[node name="ControlPoint" parent="." unique_id=170758615 node_paths=PackedStringArray("game_mode_component") instance=ExtResource("5_ytskv")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16.96315, -0.47639704, -3.0186272)
+game_mode_component = NodePath("../GameModeComponent")
+
+[node name="Payload" parent="." unique_id=318310276 node_paths=PackedStringArray("game_mode_component", "path_follower", "checkpoints") instance=ExtResource("6_34d7b")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.980138, -0.8620981, -9.029431)
 game_mode_component = NodePath("../GameModeComponent")
 path_follower = NodePath("../Path3D/PayloadFollower")
 checkpoints = [NodePath("../Path3D/Node3D/PayloadCheckpointVisual"), NodePath("../Path3D/Node3D2/PayloadCheckpointVisual"), NodePath("../Path3D/Node3D3/PayloadCheckpointVisual")]
 
-[node name="Path3D" type="Path3D" parent="." unique_id=1807765996]
+[node name="Path3D" type="Path3D" parent="." unique_id=676221600]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.10206318, 10.33771)
-curve = SubResource("Curve3D_duvhj")
+curve = SubResource("Curve3D_ytskv")
 
-[node name="PayloadFollower" type="PathFollow3D" parent="Path3D" unique_id=407280533]
-transform = Transform3D(-4.371134e-08, 0, 0.99999887, 0, 1, 0, -0.99999887, 0, -4.371134e-08, 10.415, 0, 0)
+[node name="PayloadFollower" type="PathFollow3D" parent="Path3D" unique_id=279449156]
+transform = Transform3D(-0.9999312, 0, -0.011377909, 0, 1, 0, 0.011377909, 0, -0.9999312, 10.2, 0, -18.895)
 rotation_mode = 1
 loop = false
 
-[node name="Node3D" type="PathFollow3D" parent="Path3D" unique_id=1964347414]
-transform = Transform3D(-4.3711367e-08, 0, 0.99999964, 0, 0.99999976, 0, -0.9999995, 0, -4.3711374e-08, 0.8463737, 0, 0)
-progress = 9.568661
+[node name="Node3D" type="PathFollow3D" parent="Path3D" unique_id=283913741]
+transform = Transform3D(-0.9999317, 0, -0.011377915, 0, 0.99999964, 0, 0.011377915, 0, -0.9999317, 10.398663, 0, -1.435819)
+progress = 17.459774
 
-[node name="PayloadCheckpointVisual" parent="Path3D/Node3D" unique_id=462281785 instance=ExtResource("6_1kq08")]
+[node name="PayloadCheckpointVisual" parent="Path3D/Node3D" unique_id=462281785 instance=ExtResource("7_telcu")]
 
-[node name="Node3D2" type="PathFollow3D" parent="Path3D" unique_id=260445367]
-transform = Transform3D(-0.9982472, 0.0053547225, -0.058902886, 0.005679913, 0.9999681, -0.005354803, 0.05887239, -0.0056799934, -0.99824774, -13.76356, 0.014221837, 2.6512496)
-progress = 26.991209
+[node name="Node3D2" type="PathFollow3D" parent="Path3D" unique_id=1805850213]
+transform = Transform3D(-4.3711136e-08, 0, 0.9999949, 0, 0.99999505, 0, -0.9999942, 0, -4.3711164e-08, 4.4658523, 0, 0)
+progress = 24.845465
 
-[node name="PayloadCheckpointVisual" parent="Path3D/Node3D2" unique_id=912872897 instance=ExtResource("6_1kq08")]
+[node name="PayloadCheckpointVisual" parent="Path3D/Node3D2" unique_id=1633043086 instance=ExtResource("7_telcu")]
 
-[node name="Node3D3" type="PathFollow3D" parent="Path3D" unique_id=167136176]
-transform = Transform3D(-0.038002, 0.007513991, -0.9992452, 0.0038468698, 0.99996185, 0.0073730713, 0.9992658, -0.003563793, -0.0380296, 0, 1.1641532e-10, 18.200003)
+[node name="Node3D3" type="PathFollow3D" parent="Path3D" unique_id=704746823]
+transform = Transform3D(-0.99822754, 0.005358357, -0.058901787, 0.005683522, 0.99995303, -0.0053547034, 0.058871206, -0.0056801275, -0.9982291, -13.229095, 0.062809415, 11.709001)
 progress = 54.960716
 
-[node name="PayloadCheckpointVisual" parent="Path3D/Node3D3" unique_id=1357804619 instance=ExtResource("6_1kq08")]
+[node name="PayloadCheckpointVisual" parent="Path3D/Node3D3" unique_id=394312367 instance=ExtResource("7_telcu")]
+
+[node name="Node3D4" type="PathFollow3D" parent="Path3D" unique_id=816479006]
+transform = Transform3D(-4.3711232e-08, 0, 0.9999964, 0, 0.99999964, 0, -0.9999964, 0, -4.3711232e-08, -9.899421, 0, 0)
+progress = 39.210632
+
+[node name="PayloadCheckpointVisual" parent="Path3D/Node3D4" unique_id=339094023 instance=ExtResource("7_telcu")]
+
+[node name="Node3D5" type="PathFollow3D" parent="Path3D" unique_id=1256611387]
+transform = Transform3D(-4.3711136e-08, 0, 0.9999949, 0, 0.99999505, 0, -0.9999942, 0, -4.3711164e-08, -5.0913672, 0, 0)
+progress = 34.40255
+
+[node name="PayloadCheckpointVisual" parent="Path3D/Node3D5" unique_id=1765611327 instance=ExtResource("7_telcu")]
+
+[node name="Node3D6" type="PathFollow3D" parent="Path3D" unique_id=1696483240]
+transform = Transform3D(-0.03800141, 0.007514091, -0.99922776, 0.0038521986, 0.9999476, 0.007372944, 0.9992482, -0.003569134, -0.038029056, 0, 1.1641532e-10, 18.200003)
+progress = 73.85691
+
+[node name="PayloadCheckpointVisual" parent="Path3D/Node3D6" unique_id=814555535 instance=ExtResource("7_telcu")]

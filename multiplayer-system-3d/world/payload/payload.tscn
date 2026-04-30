@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://gkkfn2sdv7hc"]
 
-[ext_resource type="Script" uid="uid://cog71e1br2yxp" path="res://world/playload/payload.gd" id="1_sq1n6"]
+[ext_resource type="Script" uid="uid://cog71e1br2yxp" path="res://world/payload/payload.gd" id="1_sq1n6"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_sq1n6"]
 size = Vector3(1, 2, 1)
@@ -14,7 +14,7 @@ size = Vector3(1, 1, 2)
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sq1n6"]
 albedo_color = Color(0.30692267, 0.3069227, 0.3069227, 1)
 
-[node name="Payload" type="CharacterBody3D" unique_id=318310276]
+[node name="Payload" type="CharacterBody3D" unique_id=318310276 groups=["payload"]]
 script = ExtResource("1_sq1n6")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1599369153]

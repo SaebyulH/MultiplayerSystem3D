@@ -33,78 +33,31 @@ base_sound = ExtResource("4_p2lt3")
 [node name="CanvasLayer" type="CanvasLayer" parent="GameMenu" unique_id=1326311598]
 script = ExtResource("5_8kumn")
 
-[node name="PhaseLabel" type="Label" parent="GameMenu/CanvasLayer" unique_id=385169001]
-anchors_preset = 5
+[node name="Label" type="Label" parent="GameMenu/CanvasLayer" unique_id=1810573380]
+anchors_preset = 7
 anchor_left = 0.5
+anchor_top = 1.0
 anchor_right = 0.5
-offset_left = -124.0
-offset_top = 155.0
-offset_right = 124.0
-offset_bottom = 211.0
+anchor_bottom = 1.0
+offset_left = -398.5
+offset_top = -477.0
+offset_right = 398.5
 grow_horizontal = 2
-theme_override_font_sizes/font_size = 40
-text = "Phase"
+grow_vertical = 0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 20
+theme_override_font_sizes/font_size = 32
+text = "ACTIVE
+Time: 4:32
+Rounds  SPI 1/2  —  SCI 0/2
+
+── KOTH ──
+SPI  0:18 / 0:30  [██████░░░░░░]
+SCI  0:07 / 0:30  [██░░░░░░░░░░]
+
+── CONTROL POINTS ──
+CP1 [SPI]  SCI capping 40%  ×2  [████░░░░░░]"
 horizontal_alignment = 1
-
-[node name="TimerLabel" type="Label" parent="GameMenu/CanvasLayer" unique_id=489672120]
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -161.0
-offset_top = 215.0
-offset_right = 161.0
-offset_bottom = 333.0
-grow_horizontal = 2
-theme_override_font_sizes/font_size = 40
-text = "Time"
-horizontal_alignment = 1
-
-[node name="DominationHoldTimer" type="Label" parent="GameMenu/CanvasLayer" unique_id=590330153]
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -161.0
-offset_top = 270.0
-offset_right = 161.0
-offset_bottom = 333.0
-grow_horizontal = 2
-theme_override_font_sizes/font_size = 40
-text = "Time"
-horizontal_alignment = 1
-
-[node name="SCITimer" type="Label" parent="GameMenu/CanvasLayer" unique_id=1658280348]
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -341.0
-offset_right = -170.0
-offset_bottom = 55.0
-grow_horizontal = 2
-theme_override_font_sizes/font_size = 40
-text = "SCI"
-
-[node name="SPITimer" type="Label" parent="GameMenu/CanvasLayer" unique_id=1802646721]
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = 192.0
-offset_right = 383.0
-offset_bottom = 55.0
-grow_horizontal = 2
-theme_override_font_sizes/font_size = 40
-text = "SPI"
-
-[node name="RoundWinsLabel" type="Label" parent="GameMenu/CanvasLayer" unique_id=1072502927]
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -151.5
-offset_top = 95.0
-offset_right = 151.5
-offset_bottom = 190.0
-grow_horizontal = 2
-theme_override_font_sizes/font_size = 40
-text = "RoundsToWin"
 
 [node name="Killstreak" type="Label" parent="GameMenu" unique_id=1114400658]
 layout_mode = 1
@@ -321,7 +274,7 @@ render_target_update_mode = 4
 [node name="Node3D" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer/SecondarySection/SubViewportContainer/SecondarySubViewport" unique_id=528727344 instance=ExtResource("6_btayf")]
 
 [node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="." unique_id=267556738]
-_spawnable_scenes = PackedStringArray("uid://cmix6q8a6hgcu", "uid://bhsrnwae043e1", "uid://7ccxfopdhtv8", "uid://x64r4as832eo", "uid://72ju85r15v1e", "uid://ohyji3hlfle6", "uid://ubib085fbj7w", "uid://cpdne6lbfqxh")
+_spawnable_scenes = PackedStringArray("uid://cmix6q8a6hgcu", "uid://bhsrnwae043e1", "uid://7ccxfopdhtv8", "uid://x64r4as832eo", "uid://72ju85r15v1e", "uid://ohyji3hlfle6", "uid://ubib085fbj7w", "uid://cpdne6lbfqxh", "uid://oidyxhn6wjax")
 spawn_path = NodePath("../SpawnParent")
 
 [connection signal="pressed" from="GameMenu/VBoxContainer/HBoxContainer/MainMenu" to="." method="_on_main_menu_pressed"]

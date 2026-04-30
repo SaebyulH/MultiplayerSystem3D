@@ -40,6 +40,7 @@ enabled=PackedStringArray("res://addons/console/plugin.cfg", "res://addons/netfo
 [global_group]
 
 players=""
+payload=""
 
 [input]
 

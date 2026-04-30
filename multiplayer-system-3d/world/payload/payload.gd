@@ -13,7 +13,7 @@ class_name PayloadNode
 @export var push_radius: float = 3.0
 ## Base push speed with 1 attacker (progress 0..1 per second)
 @export var push_speed_base: float = 0.035
-## Speed multiplier curve per additional pusher (diminishing returns)
+## Speed multiplier per pusher count (diminishing returns)
 ## Index 0 = 1 pusher, index 1 = 2 pushers, etc.
 @export var push_speed_curve: Array[float] = [1.0, 1.6, 2.0, 2.3, 2.5]
 @export var max_push_players: int = 3
@@ -51,11 +51,14 @@ var progress: float = 0.0
 var is_delivered: bool = false
 var is_locked: bool = true
 
+## Read by GameModeComponent / HybridMode for overtime/contested checks
+var is_contested: bool = false
+var is_being_pushed: bool = false
+
 var _return_countdown: float = 0.0
 var _next_checkpoint_index: int = 0
 var _pushers: Array = []
 
-## Cached progress values for each checkpoint — computed once in _ready
 var _checkpoint_progresses: Array[float] = []
 
 @onready var push_zone: Area3D = $PushZone
@@ -79,7 +82,6 @@ func _ready() -> void:
 	_mesh_mat = StandardMaterial3D.new()
 	mesh.set_surface_override_material(0, _mesh_mat)
 
-	# Cache checkpoint progress values so we're not computing them every frame
 	_bake_checkpoint_progresses()
 
 	push_zone.body_entered.connect(_on_body_entered)
@@ -87,6 +89,11 @@ func _ready() -> void:
 
 	game_mode_component.phase_changed.connect(_on_phase_changed)
 	game_mode_component.round_won.connect(_on_round_won)
+
+	# Hybrid: unlock payload only when the point is capped
+	if game_mode_component.game_mode == GameModeComponent.GameMode.HYBRID:
+		game_mode_component.hybrid_point_captured_signal.connect(_on_hybrid_point_captured)
+
 	game_mode_component.register_payload(self)
 
 	_sync_position_to_path()
@@ -96,6 +103,16 @@ func _bake_checkpoint_progresses() -> void:
 	_checkpoint_progresses.clear()
 	for cp in checkpoints:
 		_checkpoint_progresses.append(_world_pos_to_path_progress(cp.global_position))
+
+# ─────────────────────────────────────────────
+#  PUBLIC API
+# ─────────────────────────────────────────────
+
+## Called by HybridMode when the capture point is taken
+func set_locked(locked: bool) -> void:
+	is_locked = locked
+	if is_locked:
+		_set_state(PayloadState.LOCKED)
 
 # ─────────────────────────────────────────────
 #  PROCESS
@@ -112,8 +129,11 @@ func _process(delta: float) -> void:
 	var attackers := _count_team(attacking_team)
 	var defenders := _count_team(_get_defending_team())
 
-	# ── Determine new state ──────────────────
+	# ── Update readable flags ─────────────────
+	is_being_pushed = attackers > 0 and defenders == 0
+	is_contested = attackers > 0 and defenders > 0
 
+	# ── Determine new state ───────────────────
 	var new_state: PayloadState
 
 	if attackers > 0 and defenders == 0:
@@ -121,6 +141,8 @@ func _process(delta: float) -> void:
 	elif attackers > 0 and defenders > 0:
 		new_state = PayloadState.CONTESTED
 	else:
+		is_being_pushed = false
+		is_contested = false
 		if _return_countdown > 0.0:
 			_return_countdown -= delta
 			new_state = PayloadState.IDLE
@@ -129,11 +151,9 @@ func _process(delta: float) -> void:
 			if progress > checkpoint_floor + 0.0005:
 				new_state = PayloadState.RETURNING
 			else:
-				# Snapped to or below checkpoint floor
 				new_state = PayloadState.AT_CHECKPOINT
 
-	# ── Apply movement ───────────────────────
-
+	# ── Apply movement ────────────────────────
 	match new_state:
 		PayloadState.PUSHING:
 			_return_countdown = return_delay
@@ -151,20 +171,18 @@ func _process(delta: float) -> void:
 		PayloadState.RETURNING:
 			var checkpoint_floor := _get_checkpoint_floor()
 			progress -= return_speed * delta
-			# Hard clamp — never go past the floor
 			if progress <= checkpoint_floor:
 				progress = checkpoint_floor
 				new_state = PayloadState.AT_CHECKPOINT
 
 		PayloadState.AT_CHECKPOINT:
-			# Lock progress exactly at checkpoint floor
 			progress = _get_checkpoint_floor()
 
 	if new_state != payload_state:
 		_set_state(new_state)
 
 	_sync_position_to_path()
-	_update_label()  # every frame for countdown timer
+	_update_label()
 	_rpc_sync.rpc(progress, payload_state, _return_countdown)
 
 # ─────────────────────────────────────────────
@@ -174,7 +192,6 @@ func _process(delta: float) -> void:
 func _get_speed_multiplier(attacker_count: int) -> float:
 	if attacker_count <= 0:
 		return 0.0
-	# Clamp to curve length
 	var idx := mini(attacker_count, push_speed_curve.size()) - 1
 	idx = mini(idx, max_push_players - 1)
 	return push_speed_curve[idx]
@@ -221,14 +238,10 @@ func _check_checkpoints() -> void:
 		checkpoint_reached.emit(_next_checkpoint_index)
 		_rpc_checkpoint_reached.rpc(_next_checkpoint_index)
 		_next_checkpoint_index += 1
-		# Don't set AT_CHECKPOINT here — we're actively pushing through it
 
 func _get_checkpoint_floor() -> float:
-	## The progress value the payload cannot roll back past.
-	## This is the LAST checkpoint the payload has passed.
 	if _next_checkpoint_index == 0:
 		return 0.0
-	# _next_checkpoint_index points to the NEXT one, so last passed = index - 1
 	return _checkpoint_progresses[_next_checkpoint_index - 1]
 
 func _world_pos_to_path_progress(world_pos: Vector3) -> float:
@@ -246,6 +259,8 @@ func _world_pos_to_path_progress(world_pos: Vector3) -> float:
 
 func _on_delivered() -> void:
 	is_delivered = true
+	is_being_pushed = false
+	is_contested = false
 	progress = 1.0
 	payload_delivered.emit()
 	_set_state(PayloadState.DELIVERED)
@@ -260,14 +275,42 @@ func _on_delivered() -> void:
 func _on_round_won(_winning_team: Player.Team) -> void:
 	if not multiplayer.is_server():
 		return
-	progress = 0.0
-	is_delivered = false
-	_return_countdown = 0.0
-	_next_checkpoint_index = 0
-	_pushers.clear()
-	_sync_position_to_path()
-	_set_state(PayloadState.LOCKED)
-	_rpc_sync.rpc(progress, payload_state, _return_countdown)
+	# Use reliable RPC so clients are guaranteed to receive the reset
+	# even if unreliable _rpc_sync packets were dropped
+	#_rpc_reset.rpc()
+
+# ─────────────────────────────────────────────
+#  PHASE HANDLER
+# ─────────────────────────────────────────────
+
+func _on_phase_changed(new_phase: GameModeComponent.PhaseState) -> void:
+	
+	if new_phase == GameModeComponent.PhaseState.SETUP:
+		_rpc_reset.rpc()
+		
+		
+		
+	var is_hybrid := game_mode_component and \
+		game_mode_component.game_mode == GameModeComponent.GameMode.HYBRID
+
+	if is_hybrid:
+		# Stay locked until _on_hybrid_point_captured fires — ignore phase alone
+		if not game_mode_component.hybrid_mode or \
+				not game_mode_component.hybrid_mode.point_is_captured:
+			is_locked = true
+			_set_state(PayloadState.LOCKED)
+		return
+
+	# Normal Escort / other modes
+	is_locked = not game_mode_component.is_objective_unlocked()
+	if is_locked:
+		_set_state(PayloadState.LOCKED)
+
+func _on_hybrid_point_captured() -> void:
+	# Fires on both server and client via RPC from GameModeComponent
+	# Just clear the lock — _process picks up pushers next frame (server)
+	# and _rpc_sync updates clients
+	is_locked = false
 
 # ─────────────────────────────────────────────
 #  TEAM HELPERS
@@ -307,15 +350,6 @@ func _on_body_exited(body: Node3D) -> void:
 	_pushers.erase(body)
 
 # ─────────────────────────────────────────────
-#  PHASE HANDLER
-# ─────────────────────────────────────────────
-
-func _on_phase_changed(new_phase: GameModeComponent.PhaseState) -> void:
-	is_locked = not game_mode_component.is_objective_unlocked()
-	if is_locked:
-		_set_state(PayloadState.LOCKED)
-
-# ─────────────────────────────────────────────
 #  VISUALS
 # ─────────────────────────────────────────────
 
@@ -327,13 +361,13 @@ func _update_color() -> void:
 	if not _mesh_mat:
 		return
 	match payload_state:
-		PayloadState.PUSHING:     _mesh_mat.albedo_color = Color.RED
-		PayloadState.CONTESTED:   _mesh_mat.albedo_color = Color.ORANGE
-		PayloadState.RETURNING:   _mesh_mat.albedo_color = Color.CORNFLOWER_BLUE
+		PayloadState.PUSHING:       _mesh_mat.albedo_color = Color.RED
+		PayloadState.CONTESTED:     _mesh_mat.albedo_color = Color.ORANGE
+		PayloadState.RETURNING:     _mesh_mat.albedo_color = Color.CORNFLOWER_BLUE
 		PayloadState.AT_CHECKPOINT: _mesh_mat.albedo_color = Color.YELLOW
-		PayloadState.DELIVERED:   _mesh_mat.albedo_color = Color.GREEN
-		PayloadState.LOCKED:      _mesh_mat.albedo_color = Color.DARK_GRAY
-		_:                        _mesh_mat.albedo_color = Color.WHITE
+		PayloadState.DELIVERED:     _mesh_mat.albedo_color = Color.GREEN
+		PayloadState.LOCKED:        _mesh_mat.albedo_color = Color.DARK_GRAY
+		_:                          _mesh_mat.albedo_color = Color.WHITE
 
 func _update_label() -> void:
 	if not label:
@@ -352,7 +386,6 @@ func _update_label() -> void:
 		PayloadState.RETURNING:
 			label.text = "RETURNING\n%d%%" % int(progress * 100)
 		PayloadState.IDLE:
-			# Countdown until rollback starts
 			label.text = "%.1fs\n%d%%" % [_return_countdown, int(progress * 100)]
 		PayloadState.LOCKED:
 			label.text = "LOCKED"
@@ -372,6 +405,21 @@ func _rpc_sync(p_progress: float, p_state: PayloadState, p_countdown: float) -> 
 	_update_visuals()
 
 @rpc("authority", "call_local", "reliable")
+func _rpc_reset() -> void:
+	progress = 0.0
+	is_delivered = false
+	is_being_pushed = false
+	is_contested = false
+	_return_countdown = 0.0
+	_next_checkpoint_index = 0
+	_pushers.clear()
+	var is_hybrid := game_mode_component and \
+		game_mode_component.game_mode == GameModeComponent.GameMode.HYBRID
+	is_locked = is_hybrid
+	_sync_position_to_path()
+	_set_state(PayloadState.LOCKED)
+
+@rpc("authority", "call_local", "reliable")
 func _rpc_checkpoint_reached(index: int) -> void:
 	checkpoint_reached.emit(index)
 
@@ -386,5 +434,6 @@ func _rpc_push_stopped() -> void:
 @rpc("authority", "call_local", "reliable")
 func _rpc_delivered() -> void:
 	is_delivered = true
+	
 	payload_delivered.emit()
 	_update_visuals()
