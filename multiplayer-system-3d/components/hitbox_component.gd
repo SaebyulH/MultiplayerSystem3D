@@ -5,6 +5,11 @@ signal hit_hurtbox(hurtbox)
 @export var health_delta: float = -10.0
 @export var headshot_multiplier: float = 1.0
 @export var can_hit_shooter: bool = false
+
+@export var can_hit_team: bool = false
+@export var can_hit_enemy: bool = true
+@export var enemy_delta_multiplier: float = 1.0  ##Like crusaders crossbow if -2.0 etc.
+
 ## With this enabled, STICK projectiles are basically poisonous! Warning!
 @export var can_hit_multiple_times: bool = false
 
@@ -16,13 +21,34 @@ func _ready() -> void:
 func _on_hurtbox_entered(hurtbox: Area3D):
 	if not can_hit_shooter:
 		if get_parent().shooter_name == hurtbox.get_parent().name: return
+	
+	
+	
+	
 	if not hurtbox is HurtboxComponent: return
 	
-	hurtbox.hurt_or_heal.emit(self)
+	var hit_ally: bool = (hurtbox.get_parent().team == get_parent().shooter_team)
+	
+	if hit_ally and not can_hit_team:
+		return
+	#we hit an enemy
+	elif not can_hit_enemy:
+		return
+	
+	
+	
+	
+	hurtbox.hurt_or_heal.emit(self, hit_ally)
 	hit_hurtbox.emit(hurtbox)
 	
 	if not can_hit_multiple_times:
 		area_entered.disconnect(_on_hurtbox_entered)
+		
+		
+		
+		
+
+
 	#print("Hitbox named " + name + " has hit Hurtbox named" + hurtbox.name)
 
 	#print("Hurtbox named " + hurtbox.name + " has been hit by Hurtbox named" + name)

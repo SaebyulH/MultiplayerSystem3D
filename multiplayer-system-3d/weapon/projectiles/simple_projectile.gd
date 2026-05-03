@@ -6,6 +6,9 @@ var _local_offset: Transform3D
 
 # AUX
 var shooter_name: String
+var shooter_team: Player.Team
+
+
 #var _distance_traveled: float = 0.0
 var _time_alive := 0.0
 @export var lifetime: float = 100.5
@@ -70,19 +73,29 @@ func _on_hit_hurtbox(hurtbox: HurtboxComponent) -> void:
 	elif hurtbox_hit_mode == HurtboxHitMode.PASSTHROUGH:
 		pass
 	elif hurtbox_hit_mode == HurtboxHitMode.EXPLODE:
-		start_explode()
+		await start_explode()
 	elif world_hit_mode == WorldHitMode.STICK:
 		#_hitbox_component.health_delta = 0.0
 		_attach_to(hurtbox)
-		
-		
+
+@rpc("any_peer","call_local", "reliable")
+func hide_model():
+	for child in get_children():
+		if child is MeshInstance3D:
+			child.hide()
+
+
+#This is ONLY FOR THE WORLD it does not collide with PLAYER COLLISION bc its mask
+#is only world
 func _on_body_entered(body: Node3D) -> void:
 	if not is_multiplayer_authority():
 		return
 	# Optional: ignore shooter
-	if body.name == shooter_name:
-		return
+	#if body.name == shooter_name:
+		#return
+		#
 	
+	#if body.get
 	#if explode_on_world:
 		#freeze = true
 		#if _explosion_component:
@@ -93,12 +106,14 @@ func _on_body_entered(body: Node3D) -> void:
 	elif world_hit_mode == WorldHitMode.NOTHING:
 		pass
 	elif world_hit_mode == WorldHitMode.EXPLODE:
+
 		await start_explode()
 	elif world_hit_mode == WorldHitMode.STICK:
 		#_hitbox_component.health_delta = 0.0
 		_attach_to(body)
 
 func start_explode():
+	hide_model.rpc()
 	freeze = true
 	_explosion_component.explode()
 	await get_tree().create_timer(10.0).timeout

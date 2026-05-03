@@ -3,7 +3,6 @@
 [ext_resource type="Texture2D" uid="uid://o36viwa6s4g6" path="res://effects/cloud.png" id="1_jhnc4"]
 [ext_resource type="Script" uid="uid://bycoj14g3au4j" path="res://effects/explosion.gd" id="1_m0j43"]
 [ext_resource type="Texture2D" uid="uid://d04bdcsparr5v" path="res://effects/ExplodeFlash.png" id="2_82o5v"]
-[ext_resource type="Texture2D" uid="uid://b0fhvpsbv0bnp" path="res://effects/debris.png" id="2_jh1to"]
 [ext_resource type="Texture2D" uid="uid://7liph1bkabn2" path="res://effects/smoke2.png" id="3_cu3rm"]
 
 [sub_resource type="Shader" id="Shader_yc3gs"]
@@ -75,90 +74,18 @@ curve = SubResource("Curve_m0j43")
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_jh1to"]
 particle_flag_align_y = true
 spread = 180.0
-initial_velocity_min = 2.0
-initial_velocity_max = 4.0
+initial_velocity_min = 8.0
+initial_velocity_max = 16.0
 gravity = Vector3(0, -3.075, 0)
 scale_min = 0.19999999
 scale_max = 0.29999998
 scale_curve = SubResource("CurveTexture_cu3rm")
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_16q0m"]
-top_radius = 0.015
+top_radius = 0.075
 bottom_radius = 0.0
+height = 3.0
 radial_segments = 4
-
-[sub_resource type="Shader" id="Shader_ol7ih"]
-code = "// NOTE: Shader automatically converted from Godot Engine 4.6.2.stable's StandardMaterial3D.
-
-shader_type spatial;
-render_mode blend_mix, depth_draw_opaque, cull_disabled, diffuse_burley, specular_schlick_ggx, unshaded;
-
-uniform vec4 albedo : source_color;
-uniform sampler2D texture_albedo : source_color, filter_linear_mipmap, repeat_enable;
-uniform ivec2 albedo_texture_size;
-uniform float point_size : hint_range(0.1, 128.0, 0.1);
-
-uniform float roughness : hint_range(0.0, 1.0);
-uniform sampler2D texture_metallic : hint_default_white, filter_linear_mipmap, repeat_enable;
-uniform vec4 metallic_texture_channel;
-uniform sampler2D texture_roughness : hint_roughness_r, filter_linear_mipmap, repeat_enable;
-
-uniform float specular : hint_range(0.0, 1.0, 0.01);
-uniform float metallic : hint_range(0.0, 1.0, 0.01);
-
-uniform vec3 uv1_scale;
-uniform vec3 uv1_offset;
-uniform vec3 uv2_scale;
-uniform vec3 uv2_offset;
-
-void vertex() {
-	UV = UV * uv1_scale.xy + uv1_offset.xy;
-}
-
-void fragment() {
-	vec2 base_uv = UV;
-
-	vec4 albedo_tex = texture(texture_albedo, base_uv);
-	ALBEDO = albedo.rgb * albedo_tex.rgb;
-
-	float metallic_tex = dot(texture(texture_metallic, base_uv), metallic_texture_channel);
-	METALLIC = metallic_tex * metallic;
-	SPECULAR = specular;
-
-	vec4 roughness_texture_channel = vec4(1.0, 0.0, 0.0, 0.0);
-	float roughness_tex = dot(texture(texture_roughness, base_uv), roughness_texture_channel);
-	ROUGHNESS = roughness_tex * roughness;
-	ALPHA *= albedo.a * albedo_tex.a;
-}
-"
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_qqpr7"]
-render_priority = 0
-shader = SubResource("Shader_ol7ih")
-shader_parameter/albedo = Color(1.6411257, 1.2177738, 0, 1)
-shader_parameter/texture_albedo = ExtResource("2_jh1to")
-shader_parameter/albedo_texture_size = Vector2i(1024, 1024)
-shader_parameter/point_size = 1.0
-shader_parameter/roughness = 1.0
-shader_parameter/metallic_texture_channel = Vector4(1, 0, 0, 0)
-shader_parameter/specular = 0.5
-shader_parameter/metallic = 0.0
-shader_parameter/uv1_scale = Vector3(1, 1, 1)
-shader_parameter/uv1_offset = Vector3(0, 0, 0)
-shader_parameter/uv2_scale = Vector3(1, 1, 1)
-shader_parameter/uv2_offset = Vector3(0, 0, 0)
-
-[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_e0qm4"]
-particle_flag_align_y = true
-spread = 180.0
-initial_velocity_min = 5.0
-initial_velocity_max = 6.0
-gravity = Vector3(0, -3.075, 0)
-scale_min = 0.049999997
-scale_max = 0.099999994
-scale_curve = SubResource("CurveTexture_cu3rm")
-
-[sub_resource type="QuadMesh" id="QuadMesh_jh1to"]
 
 [sub_resource type="Shader" id="Shader_f0vdp"]
 code = "// NOTE: Shader automatically converted from Godot Engine 4.6.2.stable's StandardMaterial3D.
@@ -253,7 +180,9 @@ void fragment() {
 	// Emission Operator: Add
 	EMISSION = (emission.rgb + emission_tex) * emission_energy;
 	ALPHA *= albedo.a * albedo_tex.a;
-	ALPHA_SCISSOR_THRESHOLD = 0.1;
+	
+	
+
 }
 "
 
@@ -279,15 +208,15 @@ shader_parameter/uv2_scale = Vector3(1, 1, 1)
 shader_parameter/uv2_offset = Vector3(0, 0, 0)
 
 [sub_resource type="Curve" id="Curve_jh1to"]
-_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(0.26996195, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+_data = [Vector2(0, 1), 0.0, -0.43761322, 0, 0, Vector2(1e-05, 1), 0.0, 0.0, 0, 0, Vector2(0.5064935, 0), 0.0, 0.0, 0, 0]
 point_count = 3
 
 [sub_resource type="CurveTexture" id="CurveTexture_16q0m"]
 curve = SubResource("Curve_jh1to")
 
 [sub_resource type="Curve" id="Curve_3tyj0"]
-_data = [Vector2(0, 0.046957374), 0.0, 7.5540915, 0, 0, Vector2(0.23574145, 0.77575463), 0.9556378, 0.9556378, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
-point_count = 3
+_data = [Vector2(0, 0.046957374), 0.0, 4.7248244, 0, 0, Vector2(0.4831169, 1), 0.27323046, 0.0, 0, 0]
+point_count = 2
 
 [sub_resource type="CurveTexture" id="CurveTexture_va4mh"]
 curve = SubResource("Curve_3tyj0")
@@ -303,8 +232,8 @@ spread = 180.0
 initial_velocity_min = 0.099999994
 initial_velocity_max = 0.39999998
 gravity = Vector3(0, 0, 0)
-scale_min = 0.79999995
-scale_max = 2.0
+scale_min = 2.3
+scale_max = 3.5
 scale_curve = SubResource("CurveTexture_va4mh")
 alpha_curve = SubResource("CurveTexture_16q0m")
 
@@ -396,7 +325,8 @@ void fragment() {
 	float roughness_tex = dot(texture(texture_roughness, base_uv), roughness_texture_channel);
 	ROUGHNESS = roughness_tex * roughness;
 	ALPHA *= albedo.a * albedo_tex.a;
-	ALPHA_SCISSOR_THRESHOLD = 0.1;
+	//ALPHA_SCISSOR_THRESHOLD = 0.1;
+	
 }
 "
 
@@ -420,14 +350,14 @@ shader_parameter/uv2_scale = Vector3(1, 1, 1)
 shader_parameter/uv2_offset = Vector3(0, 0, 0)
 
 [sub_resource type="Curve" id="Curve_va4mh"]
-_data = [Vector2(0, 0.25347322), 0.0, 0.0, 0, 0, Vector2(1, 0.034499288), 0.0, 0.0, 0, 0]
-point_count = 2
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.25454545, 0.9428571), 0.0, -0.059285626, 0, 0, Vector2(0.51688313, 0), -0.45227882, 0.0, 0, 0]
+point_count = 3
 
 [sub_resource type="CurveTexture" id="CurveTexture_arak1"]
 curve = SubResource("Curve_va4mh")
 
 [sub_resource type="Curve" id="Curve_e0qm4"]
-_data = [Vector2(0, 0), 0.0, 2.9953551, 0, 0, Vector2(1, 1), 0.35495135, 0.0, 0, 0]
+_data = [Vector2(0, 0), 0.0, 1.512018, 0, 0, Vector2(0.5402598, 0.9836734), 0.38475233, 0.0, 0, 0]
 point_count = 2
 
 [sub_resource type="CurveTexture" id="CurveTexture_xbh8s"]
@@ -442,9 +372,11 @@ direction = Vector3(0, 0.05, 0)
 spread = 68.108
 initial_velocity_min = 0.39999998
 initial_velocity_max = 1.1999999
-gravity = Vector3(0, 2, 0)
-scale_min = 0.79999995
-scale_max = 1.5999999
+angular_velocity_min = -80.45001
+angular_velocity_max = 80.44998
+gravity = Vector3(0, 3, 0)
+scale_min = 2.2
+scale_max = 3.0
 scale_curve = SubResource("CurveTexture_xbh8s")
 alpha_curve = SubResource("CurveTexture_arak1")
 
@@ -529,14 +461,14 @@ shader_parameter/uv2_scale = Vector3(1, 1, 1)
 shader_parameter/uv2_offset = Vector3(0, 0, 0)
 
 [sub_resource type="Curve" id="Curve_cu3rm"]
-_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(0.62357414, 0.8255869), -0.75085855, -0.75085855, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
-point_count = 3
+_data = [Vector2(0.12987012, 1), 0.0, 0.0, 0, 0, Vector2(0.29350647, 0), 0.0, 0.0, 0, 0]
+point_count = 2
 
 [sub_resource type="CurveTexture" id="CurveTexture_jh1to"]
 curve = SubResource("Curve_cu3rm")
 
 [sub_resource type="Curve" id="Curve_xbh8s"]
-_data = [Vector2(0, 0.034499288), 0.0, 3.7160716, 0, 0, Vector2(0.098859325, 1), 0.35495135, 0.0, 0, 0, Vector2(0.66159695, 0.015812159), 0.0, 0.0, 0, 0]
+_data = [Vector2(0, 0.034499288), 0.0, 3.7160716, 0, 0, Vector2(0.18701297, 0.9959183), 0.35495135, 0.0, 0, 0, Vector2(0.33766234, 0), 0.0, 0.0, 0, 0]
 point_count = 3
 
 [sub_resource type="CurveTexture" id="CurveTexture_82o5v"]
@@ -547,100 +479,44 @@ particle_flag_rotate_y = true
 angle_min = -720.0
 angle_max = 720.0
 gravity = Vector3(0, 0, 0)
-scale_min = 0.39999998
+scale_min = 2.0
+scale_max = 3.0
 scale_curve = SubResource("CurveTexture_82o5v")
 alpha_curve = SubResource("CurveTexture_jh1to")
 
-[sub_resource type="Shader" id="Shader_bqgkx"]
-code = "// NOTE: Shader automatically converted from Godot Engine 4.6.2.stable's StandardMaterial3D.
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_yc3gs"]
+transparency = 1
+shading_mode = 0
+vertex_color_use_as_albedo = true
+albedo_color = Color(1.353256, 0.9187788, 0.17022151, 1)
+albedo_texture = ExtResource("1_jhnc4")
 
-shader_type spatial;
-render_mode blend_add, depth_draw_opaque, cull_disabled, diffuse_burley, specular_schlick_ggx, unshaded;
-
-uniform vec4 albedo : source_color;
-uniform sampler2D texture_albedo : source_color, filter_linear_mipmap, repeat_enable;
-uniform ivec2 albedo_texture_size;
-uniform float point_size : hint_range(0.1, 128.0, 0.1);
-
-uniform float roughness : hint_range(0.0, 1.0);
-uniform sampler2D texture_metallic : hint_default_white, filter_linear_mipmap, repeat_enable;
-uniform vec4 metallic_texture_channel;
-uniform sampler2D texture_roughness : hint_roughness_r, filter_linear_mipmap, repeat_enable;
-
-uniform float specular : hint_range(0.0, 1.0, 0.01);
-uniform float metallic : hint_range(0.0, 1.0, 0.01);
-
-uniform vec3 uv1_scale;
-uniform vec3 uv1_offset;
-uniform vec3 uv2_scale;
-uniform vec3 uv2_offset;
-
-void vertex() {
-	UV = UV * uv1_scale.xy + uv1_offset.xy;
-}
-
-void fragment() {
-	vec2 base_uv = UV;
-
-	vec4 albedo_tex = texture(texture_albedo, base_uv);
-
-	// Vertex Color Use as Albedo: Enabled
-	albedo_tex *= COLOR;
-
-	ALBEDO = albedo.rgb * albedo_tex.rgb;
-
-	float metallic_tex = dot(texture(texture_metallic, base_uv), metallic_texture_channel);
-	METALLIC = metallic_tex * metallic;
-	SPECULAR = specular;
-
-	vec4 roughness_texture_channel = vec4(1.0, 0.0, 0.0, 0.0);
-	float roughness_tex = dot(texture(texture_roughness, base_uv), roughness_texture_channel);
-	ROUGHNESS = roughness_tex * roughness;
-	ALPHA *= albedo.a * albedo_tex.a;
-	ALPHA_SCISSOR_THRESHOLD = 0.1;
-}
-"
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_pdkcr"]
-render_priority = 0
-shader = SubResource("Shader_bqgkx")
-shader_parameter/albedo = Color(1.6411257, 0.6185747, 0, 1)
-shader_parameter/texture_albedo = ExtResource("2_82o5v")
-shader_parameter/albedo_texture_size = Vector2i(1024, 1024)
-shader_parameter/point_size = 1.0
-shader_parameter/roughness = 1.0
-shader_parameter/metallic_texture_channel = Vector4(1, 0, 0, 0)
-shader_parameter/specular = 0.5
-shader_parameter/metallic = 0.0
-shader_parameter/uv1_scale = Vector3(1, 1, 1)
-shader_parameter/uv1_offset = Vector3(0, 0, 0)
-shader_parameter/uv2_scale = Vector3(1, 1, 1)
-shader_parameter/uv2_offset = Vector3(0, 0, 0)
-
-[sub_resource type="Curve" id="Curve_16q0m"]
-_data = [Vector2(0, 1), 0.0, -0.020080753, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+[sub_resource type="Curve" id="Curve_yc3gs"]
+_data = [Vector2(0, 1), 0.0, -0.020080753, 0, 0, Vector2(0.7038961, 0), 0.0, 0.0, 0, 0]
 point_count = 2
 
-[sub_resource type="CurveTexture" id="CurveTexture_3tyj0"]
-curve = SubResource("Curve_16q0m")
+[sub_resource type="CurveTexture" id="CurveTexture_i4ulv"]
+curve = SubResource("Curve_yc3gs")
 
-[sub_resource type="Curve" id="Curve_jhnc4"]
-_data = [Vector2(0, 0), 0.0, 3.7160716, 0, 0, Vector2(1, 1), 0.35495135, 0.0, 0, 0]
+[sub_resource type="Curve" id="Curve_2bmfb"]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.46233764, 1), 0.0, 0.0, 0, 0]
 point_count = 2
 
-[sub_resource type="CurveTexture" id="CurveTexture_e0qm4"]
-curve = SubResource("Curve_jhnc4")
+[sub_resource type="CurveTexture" id="CurveTexture_yc3gs"]
+curve = SubResource("Curve_2bmfb")
 
-[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_3tyj0"]
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_ol7ih"]
 particle_flag_rotate_y = true
 angle_min = -622.4
 angle_max = 193.6
 gravity = Vector3(0, 0, 0)
-scale_curve = SubResource("CurveTexture_e0qm4")
-alpha_curve = SubResource("CurveTexture_3tyj0")
+scale_curve = SubResource("CurveTexture_yc3gs")
+alpha_curve = SubResource("CurveTexture_i4ulv")
 
 [sub_resource type="TorusMesh" id="TorusMesh_e0qm4"]
-outer_radius = 0.455
+inner_radius = 0.9
+rings = 15
+ring_segments = 3
 
 [sub_resource type="Shader" id="Shader_5gi8n"]
 code = "// NOTE: Shader automatically converted from Godot Engine 4.6.2.stable's StandardMaterial3D.
@@ -688,7 +564,7 @@ void fragment() {
 	float roughness_tex = dot(texture(texture_roughness, base_uv), roughness_texture_channel);
 	ROUGHNESS = roughness_tex * roughness;
 	ALPHA *= albedo.a * albedo_tex.a;
-	ALPHA_SCISSOR_THRESHOLD = 0.1;
+	//ALPHA_SCISSOR_THRESHOLD = 0.1;
 }
 "
 
@@ -708,6 +584,13 @@ shader_parameter/uv1_offset = Vector3(0, 0, 0)
 shader_parameter/uv2_scale = Vector3(1, 1, 1)
 shader_parameter/uv2_offset = Vector3(0, 0, 0)
 
+[sub_resource type="Curve" id="Curve_16q0m"]
+_data = [Vector2(0, 1), 0.0, -0.020080753, 0, 0, Vector2(0.7714286, 0), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_3tyj0"]
+curve = SubResource("Curve_16q0m")
+
 [sub_resource type="Curve" id="Curve_arak1"]
 _data = [Vector2(0, 0), 0.0, 1.3853567, 0, 0, Vector2(1, 1), 0.35495135, 0.0, 0, 0]
 point_count = 2
@@ -722,13 +605,13 @@ angle_max = 193.6
 spread = 180.0
 initial_velocity_max = 0.01
 gravity = Vector3(0, 0, 0)
-scale_max = 1.3
+scale_min = 2.0
+scale_max = 3.0
 scale_curve = SubResource("CurveTexture_b18ly")
 alpha_curve = SubResource("CurveTexture_3tyj0")
 
 [sub_resource type="TorusMesh" id="TorusMesh_yc3gs"]
-inner_radius = 0.076
-outer_radius = 0.262
+inner_radius = 0.9
 
 [node name="Explosion" type="Node3D" unique_id=1946821248]
 script = ExtResource("1_m0j43")
@@ -737,46 +620,36 @@ script = ExtResource("1_m0j43")
 material_override = SubResource("ShaderMaterial_i4ulv")
 emitting = false
 amount = 15
-lifetime = 2.0
+lifetime = 0.8
 one_shot = true
 explosiveness = 1.0
 randomness = 0.55
-fixed_fps = 12
+fixed_fps = 24
 process_material = SubResource("ParticleProcessMaterial_jh1to")
 draw_pass_1 = SubResource("CylinderMesh_16q0m")
-
-[node name="GlowingDebris" type="GPUParticles3D" parent="." unique_id=1997808719]
-material_override = SubResource("ShaderMaterial_qqpr7")
-emitting = false
-amount = 15
-lifetime = 2.0
-one_shot = true
-explosiveness = 1.0
-randomness = 0.81
-fixed_fps = 12
-process_material = SubResource("ParticleProcessMaterial_e0qm4")
-draw_pass_1 = SubResource("QuadMesh_jh1to")
 
 [node name="Cloud" type="GPUParticles3D" parent="." unique_id=1082139972]
 material_override = SubResource("ShaderMaterial_5lase")
 emitting = false
-amount = 6
+amount = 4
+lifetime = 0.5
 one_shot = true
 explosiveness = 1.0
 randomness = 0.53
-fixed_fps = 12
+fixed_fps = 48
+interpolate = false
 process_material = SubResource("ParticleProcessMaterial_m0j43")
 draw_pass_1 = SubResource("QuadMesh_jhnc4")
 
 [node name="Smoke" type="GPUParticles3D" parent="." unique_id=968186526]
 material_override = SubResource("ShaderMaterial_ol7ih")
 emitting = false
-amount = 25
-lifetime = 3.0
+amount = 5
 one_shot = true
-explosiveness = 0.57
+explosiveness = 0.84
 randomness = 0.59
-fixed_fps = 24
+fixed_fps = 48
+interpolate = false
 process_material = SubResource("ParticleProcessMaterial_16q0m")
 draw_pass_1 = SubResource("QuadMesh_jhnc4")
 
@@ -784,33 +657,36 @@ draw_pass_1 = SubResource("QuadMesh_jhnc4")
 material_override = SubResource("ShaderMaterial_u3uhv")
 emitting = false
 amount = 1
+lifetime = 0.25
 one_shot = true
 explosiveness = 1.0
 randomness = 0.66
-fixed_fps = 12
+interpolate = false
 process_material = SubResource("ParticleProcessMaterial_cu3rm")
 draw_pass_1 = SubResource("QuadMesh_jhnc4")
 
 [node name="Ring" type="GPUParticles3D" parent="." unique_id=1144808914]
-material_override = SubResource("ShaderMaterial_pdkcr")
+material_override = SubResource("StandardMaterial3D_yc3gs")
 emitting = false
-amount = 3
-lifetime = 2.0
+amount = 1
+lifetime = 0.7
 one_shot = true
 explosiveness = 1.0
-randomness = 0.26
-fixed_fps = 12
-process_material = SubResource("ParticleProcessMaterial_3tyj0")
+use_fixed_seed = true
+seed = 2114673705
+fixed_fps = 60
+interpolate = false
+process_material = SubResource("ParticleProcessMaterial_ol7ih")
 draw_pass_1 = SubResource("TorusMesh_e0qm4")
 
 [node name="SmokeRings" type="GPUParticles3D" parent="." unique_id=688180358]
 material_override = SubResource("ShaderMaterial_j87x5")
 emitting = false
-amount = 3
-lifetime = 2.0
+amount = 2
+lifetime = 0.6
 one_shot = true
 explosiveness = 1.0
 randomness = 1.0
-fixed_fps = 24
+interpolate = false
 process_material = SubResource("ParticleProcessMaterial_va4mh")
 draw_pass_1 = SubResource("TorusMesh_yc3gs")

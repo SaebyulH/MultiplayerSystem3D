@@ -9,11 +9,15 @@ func _ready() -> void:
 	hurtbox_component.hurt_or_heal.connect(_on_hurt_or_heal)
 
 
-func _on_hurt_or_heal(hitbox_component: HitboxComponent) -> void:
+func _on_hurt_or_heal(hitbox_component: HitboxComponent, is_ally_hit: bool) -> void:
 	if not is_multiplayer_authority():
 		return
 
 	var health_delta := hitbox_component.health_delta
+	
+	if not is_ally_hit:
+		health_delta *= hitbox_component.enemy_delta_multiplier
+	
 	var changer := _resolve_changer_name(hitbox_component)
 
 	var original_health := attribute_component.health

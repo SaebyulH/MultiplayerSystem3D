@@ -24,6 +24,8 @@ shape = SubResource("BoxShape3D_vqu1i")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -1)
 health_delta = 25.0
 can_hit_shooter = true
+can_hit_team = true
+can_hit_enemy = false
 
 [node name="CollisionShape3D" parent="HitboxComponent" index="0" unique_id=1314331169]
 shape = SubResource("BoxShape3D_3kjll")

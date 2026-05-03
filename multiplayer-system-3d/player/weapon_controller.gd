@@ -518,12 +518,12 @@ func _execute_fire(weapon: Weapon) -> void:
 	elif weapon.bullet_type == Weapon.BulletType.PROJECTILE:
 		for shot_dir in weapon.multishot_data:
 			_spawn_projectile_on_server.rpc_id(
-				1, shot_dir, weapon_model_parent.global_transform.basis, _parent_player.name
+				1, shot_dir, weapon_model_parent.global_transform.basis, _parent_player.name, _parent_player.team
 			)
 
 
 @rpc("any_peer", "call_local", "reliable")
-func _spawn_projectile_on_server(shot_dir, basis, parent_player_name):
+func _spawn_projectile_on_server(shot_dir, basis, parent_player_name, team):
 	if not _is_ready():
 		return
 	var weapon: Weapon    = _weapons[current_weapon_index]
@@ -536,6 +536,7 @@ func _spawn_projectile_on_server(shot_dir, basis, parent_player_name):
 
 	var speed: float = projectile_scene.linear_velocity.length()
 	projectile_scene.linear_velocity = world_dir * speed
+	projectile_scene.shooter_team = team
 	projectile_spawn_parent.add_child(projectile_scene, true)
 
 
@@ -670,14 +671,15 @@ func _play_shoot_sound() -> void:
 		return
 	_play_sound(_weapons[current_weapon_index].shoot_sound)
 
-#HIT SOUNDSm -called from attrubute component
+## Played when you hit someone, called by attribute component
 @rpc("any_peer", "call_local")
 func play_hit_sound() -> void:
 	if not _is_ready():
 		return
 	_play_sound(_hit_sound)
 
-@rpc("any_peer", "call_remote")
+##Played when you heal someone, called by attribute component
+@rpc("any_peer", "call_local")
 func play_hit_heal_sound() -> void:
 	if not _is_ready():
 		return

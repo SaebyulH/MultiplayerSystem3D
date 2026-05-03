@@ -36,7 +36,7 @@ world_hit_mode = 2
 health_delta = 0.0
 
 [node name="ExplosionComponent" parent="." index="3" unique_id=473826993]
-splash_health_delta = -180
+knockback_force = 5.0
 
 [node name="MeshInstance3D2" type="MeshInstance3D" parent="." index="4" unique_id=251685809]
 transform = Transform3D(-0.17077659, 1.4929762e-08, 6.526007e-16, 0, -7.464881e-09, 0.17077659, 1.4929762e-08, 0.17077659, 7.464881e-09, 0, 0, 0)

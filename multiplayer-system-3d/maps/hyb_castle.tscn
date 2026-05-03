@@ -376,7 +376,7 @@ game_mode_component = NodePath("../GameModeComponent")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.980138, -0.8620981, -9.029431)
 game_mode_component = NodePath("../GameModeComponent")
 path_follower = NodePath("../Path3D/PayloadFollower")
-checkpoints = [NodePath("../Path3D/Node3D/PayloadCheckpointVisual"), NodePath("../Path3D/Node3D2/PayloadCheckpointVisual"), NodePath("../Path3D/Node3D3/PayloadCheckpointVisual")]
+checkpoints = [NodePath("../Path3D/Node3D/PayloadCheckpointVisual"), NodePath("../Path3D/Node3D2/PayloadCheckpointVisual"), NodePath("../Path3D/Node3D3/PayloadCheckpointVisual"), NodePath("../Path3D/Node3D4/PayloadCheckpointVisual"), NodePath("../Path3D/Node3D5/PayloadCheckpointVisual"), NodePath("../Path3D/Node3D6/PayloadCheckpointVisual")]
 
 [node name="Path3D" type="Path3D" parent="." unique_id=676221600]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.10206318, 10.33771)
@@ -400,7 +400,7 @@ progress = 24.845465
 [node name="PayloadCheckpointVisual" parent="Path3D/Node3D2" unique_id=1633043086 instance=ExtResource("7_telcu")]
 
 [node name="Node3D3" type="PathFollow3D" parent="Path3D" unique_id=704746823]
-transform = Transform3D(-0.99822754, 0.005358357, -0.058901787, 0.005683522, 0.99995303, -0.0053547034, 0.058871206, -0.0056801275, -0.9982291, -13.229095, 0.062809415, 11.709001)
+transform = Transform3D(-0.99822754, 0.005358355, -0.058901764, 0.005683522, 0.9999527, -0.0053547015, 0.058871206, -0.0056801257, -0.9982287, -13.229095, 0.062809415, 11.709001)
 progress = 54.960716
 
 [node name="PayloadCheckpointVisual" parent="Path3D/Node3D3" unique_id=394312367 instance=ExtResource("7_telcu")]
@@ -418,7 +418,7 @@ progress = 34.40255
 [node name="PayloadCheckpointVisual" parent="Path3D/Node3D5" unique_id=1765611327 instance=ExtResource("7_telcu")]
 
 [node name="Node3D6" type="PathFollow3D" parent="Path3D" unique_id=1696483240]
-transform = Transform3D(-0.03800141, 0.007514091, -0.99922776, 0.0038521986, 0.9999476, 0.007372944, 0.9992482, -0.003569134, -0.038029056, 0, 1.1641532e-10, 18.200003)
+transform = Transform3D(-0.03800141, 0.007514091, -0.9992274, 0.0038521986, 0.9999476, 0.007372942, 0.9992482, -0.003569134, -0.03802904, 0, 1.1641532e-10, 18.200003)
 progress = 73.85691
 
 [node name="PayloadCheckpointVisual" parent="Path3D/Node3D6" unique_id=814555535 instance=ExtResource("7_telcu")]
