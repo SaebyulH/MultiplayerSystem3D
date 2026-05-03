@@ -9,9 +9,8 @@
 [ext_resource type="AudioStream" uid="uid://u24dsvsfmlr2" path="res://assets/sounds/gun_sound.mp3" id="6_k8rya"]
 [ext_resource type="PackedScene" uid="uid://dcup71m4ndxch" path="res://weapon/tf2/minigun.tscn" id="7_012nf"]
 
-[sub_resource type="Resource" id="Resource_012nf"]
+[sub_resource type="Resource" id="Resource_lbqq1"]
 script = ExtResource("3_58sk7")
-recoil = Vector3(0.5, 0.5, 0.2)
 metadata/_custom_type_script = "uid://yvevtn4dsddy"
 
 [resource]
@@ -22,7 +21,8 @@ post_shoot_delay = 0.025
 has_infinite_ammo = true
 mag_size = 12
 mag_current = 12
-recoil_data = SubResource("Resource_012nf")
+recoil_data = SubResource("Resource_lbqq1")
+recoil_knockback = Vector3(0, 0, 0.4)
 hitscan_damage = 3.0
 projectile_scene = ExtResource("2_p5ocs")
 weapon_model = ExtResource("7_012nf")

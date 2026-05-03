@@ -2,6 +2,12 @@
 
 [ext_resource type="PackedScene" uid="uid://6mr0d18yn8po" path="res://weapon/projectiles/scenes/simple_projectile.tscn" id="1_junr8"]
 
+[sub_resource type="SphereShape3D" id="SphereShape3D_21xcj"]
+radius = 0.36645794
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_84p14"]
+radius = 0.35911286
+
 [sub_resource type="CylinderMesh" id="CylinderMesh_21xcj"]
 bottom_radius = 0.949
 
@@ -32,14 +38,17 @@ linear_velocity = Vector3(0, 0, -21)
 hurtbox_hit_mode = 2
 world_hit_mode = 2
 
+[node name="CollisionShape3D" parent="." index="0" unique_id=1810742212]
+shape = SubResource("SphereShape3D_21xcj")
+
 [node name="HitboxComponent" parent="." index="2" unique_id=1963592485]
 health_delta = 0.0
 
-[node name="ExplosionComponent" parent="." index="3" unique_id=473826993]
-knockback_force = 5.0
+[node name="CollisionShape3D" parent="HitboxComponent" index="0" unique_id=1314331169]
+shape = SubResource("SphereShape3D_84p14")
 
 [node name="MeshInstance3D2" type="MeshInstance3D" parent="." index="4" unique_id=251685809]
-transform = Transform3D(-0.17077659, 1.4929762e-08, 6.526007e-16, 0, -7.464881e-09, 0.17077659, 1.4929762e-08, 0.17077659, 7.464881e-09, 0, 0, 0)
+transform = Transform3D(-0.12494474, 1.0923015e-08, 4.7746024e-16, 0, -5.4615077e-09, 0.12494474, 1.0923015e-08, 0.12494474, 5.4615077e-09, 0, 0, 0.11489868)
 mesh = SubResource("CylinderMesh_21xcj")
 surface_material_override/0 = SubResource("StandardMaterial3D_84p14")
 

@@ -21,6 +21,7 @@ post_shoot_delay = 0.625
 reload_individually = true
 reload_time = 0.7
 recoil_data = SubResource("Resource_gean7")
+recoil_knockback = Vector3(0, 0, 4)
 hitscan_damage = 6.0
 has_damage_falloff = true
 projectile_scene = ExtResource("2_m3yhk")

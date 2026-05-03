@@ -14,8 +14,8 @@ height = 1.0380859
 height = 2.429
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vafdq"]
-albedo_color = Color(0.88881123, 0, 0.13460961, 1)
-metallic = 0.35
+albedo_color = Color(0.5105782, 0.47050238, 0.41186652, 1)
+metallic = 1.0
 roughness = 0.8
 emission = Color(0.85268945, 0.71366084, 0.3015667, 1)
 emission_energy_multiplier = 21.81
@@ -51,6 +51,6 @@ mesh = SubResource("CapsuleMesh_fvy8b")
 surface_material_override/0 = SubResource("StandardMaterial3D_vafdq")
 
 [node name="MeshInstance3D2" type="MeshInstance3D" parent="." index="5" unique_id=571936436]
-transform = Transform3D(-0.22831589, 1.9960009e-08, 8.724798e-16, -3.5456095e-23, -9.980005e-09, 0.22831589, 1.9960009e-08, 0.22831589, 9.980005e-09, 0, 0, 0)
+transform = Transform3D(-0.22831587, 1.2618784e-08, 8.724798e-16, -3.5456092e-23, -6.3093926e-09, 0.22831589, 1.9960007e-08, 0.14434206, 9.980005e-09, 0, 0, 0)
 mesh = SubResource("CylinderMesh_xug51")
 surface_material_override/0 = SubResource("StandardMaterial3D_ss17q")

@@ -39,10 +39,11 @@ signal weapon_changed(index: int, weapon: Weapon)
 
 @export var current_weapon_index: int = 0:
 	set(value):
+		_on_weapon_index_changed()
 		if value == current_weapon_index:
 			return
 		current_weapon_index = clamp(value, 0, _weapons.size() - 1)
-		_on_weapon_index_changed()
+		#_on_weapon_index_changed()
 		_emit_weapon_changed()
 
 @export var weapon_model_parent: Node3D
@@ -419,6 +420,7 @@ func _try_fire() -> void:
 	)
 	_apply_recoil_rpc.rpc(rolled)
 	
+	
 	if pre_delay > 0.0:
 		_pending_fire   = true
 		_pre_fire_timer = pre_delay
@@ -472,6 +474,14 @@ func _sync_mag(authoritative_mag: int) -> void:
 func _execute_fire(weapon: Weapon) -> void:
 	if not _is_ready():
 		return
+	
+	# Handle knockback recoil
+	var basis: Basis = weapon_model_parent.global_transform.basis
+	var recoil: Vector3 = basis * weapon.recoil_knockback
+
+	_knockback_player_on_server.rpc_id(1, recoil)
+		
+		
 	if weapon.bullet_type == Weapon.BulletType.HITSCAN:
 		var muzzle_node: Node3D = current_weapon_model.get_node("Muzzle") as Node3D
 		var muzzle_pos: Vector3 = muzzle_node.global_position
@@ -520,6 +530,11 @@ func _execute_fire(weapon: Weapon) -> void:
 			_spawn_projectile_on_server.rpc_id(
 				1, shot_dir, weapon_model_parent.global_transform.basis, _parent_player.name, _parent_player.team
 			)
+
+@rpc("any_peer", "call_local", "reliable")
+func _knockback_player_on_server(vector: Vector3):
+	get_parent().apply_knockback(vector)
+
 
 
 @rpc("any_peer", "call_local", "reliable")
@@ -663,6 +678,7 @@ func _on_hitscan_hit(hit_position: Vector3, hit_normal: Vector3, start_position:
 @rpc("any_peer", "call_local")
 func _apply_recoil_rpc(rolled: Vector3) -> void:
 	recoil.target_rotation += rolled
+	
 
 
 @rpc("any_peer", "call_local")

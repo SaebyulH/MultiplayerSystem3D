@@ -190,5 +190,6 @@ func _apply_loadout(target_player_id: String, primary_path: String, secondary_pa
 	new_weapons.append(secondary.duplicate(true) as Weapon)
 	controller.set_weapons(new_weapons)
 	controller.current_weapon_index = 0
+	#controller._apply_recoil_data()
 	player.team = team
 	player.despawned = false

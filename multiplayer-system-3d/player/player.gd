@@ -115,8 +115,16 @@ func no_health():
 	#spawn_manager.respawn_player(name)
 	reset()
 
+@rpc("call_local")
+func _sync_head():
+	$HeadHurtbox.global_rotation = %Head.global_rotation
+	$BodyHurtbox.global_rotation = $Body.global_rotation
+
 
 func _physics_process(delta: float) -> void:
+	
+	if is_multiplayer_authority():
+		_sync_head.rpc()
 	
 	#if GameManager.game_mode_component and GameManager.game_mode_component.is_players_locked_in_spawn():
 		#velocity = Vector3.ZERO

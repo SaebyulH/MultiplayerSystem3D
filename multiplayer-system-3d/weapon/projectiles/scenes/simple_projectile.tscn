@@ -6,7 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://bu0bci3kls47y" path="res://effects/explosion.tscn" id="4_cxcuy"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1pkh4"]
-height = 1.8164063
+height = 1.2509766
 
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_a85iw"]
 properties/0/path = NodePath(".:global_transform")

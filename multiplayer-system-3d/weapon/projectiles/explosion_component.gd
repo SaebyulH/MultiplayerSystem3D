@@ -7,10 +7,10 @@ var exploded := false
 @export var splash_radius := 3.0
 
 
-@export var min_knockback_percent := 0.3 ##For distance based knockball falloff
+@export var min_knockback_percent := 0.5 ##For distance based knockball falloff
 
 #Technically rather redunant, but useful to avoid confusuion
-@export var self_health_delta_multiplier := 0.1
+@export var self_health_delta_multiplier := 0.25
 @export var team_health_delta_multiplier := 0.0
 @export var enemy_health_delta_multiplier := 1.0
 
