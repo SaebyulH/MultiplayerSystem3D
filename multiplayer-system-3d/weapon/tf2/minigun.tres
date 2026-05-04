@@ -2,31 +2,35 @@
 
 [ext_resource type="AudioStream" uid="uid://bwfdsxbmx4ko8" path="res://assets/sounds/empty_gun.mp3" id="1_012nf"]
 [ext_resource type="Texture2D" uid="uid://b6gktr1vfryte" path="res://defaults/default_damage_falloff_curve.tres" id="2_lbqq1"]
-[ext_resource type="PackedScene" uid="uid://6mr0d18yn8po" path="res://weapon/projectiles/scenes/simple_projectile.tscn" id="2_p5ocs"]
 [ext_resource type="Script" uid="uid://yvevtn4dsddy" path="res://player/recoil/recoil_data.gd" id="3_58sk7"]
 [ext_resource type="AudioStream" uid="uid://cqbknmbhlwhu" path="res://assets/sounds/reload.mp3" id="4_ecjoq"]
 [ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="5_r4gvk"]
 [ext_resource type="AudioStream" uid="uid://u24dsvsfmlr2" path="res://assets/sounds/gun_sound.mp3" id="6_k8rya"]
 [ext_resource type="PackedScene" uid="uid://dcup71m4ndxch" path="res://weapon/tf2/minigun.tscn" id="7_012nf"]
+[ext_resource type="Script" uid="uid://djg0ti1n45f8b" path="res://weapon/weapon_fire.gd" id="8_1h707"]
 
-[sub_resource type="Resource" id="Resource_lbqq1"]
+[sub_resource type="Resource" id="Resource_qfct1"]
 script = ExtResource("3_58sk7")
-metadata/_custom_type_script = "uid://yvevtn4dsddy"
+
+[sub_resource type="Resource" id="Resource_u4lxf"]
+script = ExtResource("8_1h707")
+automatic = true
+post_shoot_delay = 0.03
+recoil_data = SubResource("Resource_qfct1")
+recoil_knockback = Vector3(0, 0, 0.4)
+shoot_sound = ExtResource("6_k8rya")
+empty_sound = ExtResource("1_012nf")
+metadata/_custom_type_script = "uid://djg0ti1n45f8b"
 
 [resource]
 script = ExtResource("5_r4gvk")
 display_name = "Minigun"
 automatic = true
-post_shoot_delay = 0.025
 has_infinite_ammo = true
 mag_size = 12
 mag_current = 12
-recoil_data = SubResource("Resource_lbqq1")
-recoil_knockback = Vector3(0, 0, 0.4)
-hitscan_damage = 3.0
-projectile_scene = ExtResource("2_p5ocs")
+player_speed_multiplier = 0.5
+weapon_fires = Array[ExtResource("8_1h707")]([SubResource("Resource_u4lxf")])
 weapon_model = ExtResource("7_012nf")
-shoot_sound = ExtResource("6_k8rya")
-empty_sound = ExtResource("1_012nf")
 reload_sound = ExtResource("4_ecjoq")
 metadata/_custom_type_script = "uid://qjf4ciit3dqy"

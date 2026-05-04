@@ -60,20 +60,28 @@ func _spawn_weapon_preview(weapon: Weapon, viewport: SubViewport) -> void:
 
 func load_classes(classes: Array[Class]) -> void:
 	available_classes = classes
-	class_option.clear()
-	class_option.add_item("-- Select Class --")
-	for c in classes:
-		class_option.add_item(c.class_display_name)
+
+	# Skip index 0 if it's your "-- Select Class --" placeholder
+	var start_index := 0
+
+	for i in range(classes.size()):
+		var item_index := start_index + i
+		var c := classes[i]
+
+		if c == null or item_index >= class_option.item_count:
+			continue
+
+		class_option.set_item_text(item_index, c.class_display_name)
 
 func _on_class_selected(index: int) -> void:
 	# index 0 is the "-- Select Class --" placeholder
-	if index <= 0 or index - 1 >= available_classes.size():
+	if index < 0 or index - 1 >= available_classes.size():
 		selected_class = null
 		primary_option.visible = false
 		secondary_option.visible = false
 		return
 
-	selected_class = available_classes[index - 1]
+	selected_class = available_classes[index]
 
 	primary_option.clear()
 	for w in selected_class.primary_weapons:

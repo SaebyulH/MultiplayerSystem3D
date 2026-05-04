@@ -1,32 +1,48 @@
 [gd_resource type="Resource" script_class="Weapon" format=3 uid="uid://2k6bc50djxgg"]
 
 [ext_resource type="AudioStream" uid="uid://bwfdsxbmx4ko8" path="res://assets/sounds/empty_gun.mp3" id="1_2qilo"]
-[ext_resource type="PackedScene" uid="uid://6mr0d18yn8po" path="res://weapon/projectiles/scenes/simple_projectile.tscn" id="2_beuli"]
 [ext_resource type="Texture2D" uid="uid://b6gktr1vfryte" path="res://defaults/default_damage_falloff_curve.tres" id="2_m3grl"]
 [ext_resource type="Script" uid="uid://yvevtn4dsddy" path="res://player/recoil/recoil_data.gd" id="3_8elsf"]
 [ext_resource type="AudioStream" uid="uid://cqbknmbhlwhu" path="res://assets/sounds/reload.mp3" id="4_o1tgv"]
 [ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="5_2bg43"]
 [ext_resource type="AudioStream" uid="uid://u24dsvsfmlr2" path="res://assets/sounds/gun_sound.mp3" id="6_wq2aq"]
 [ext_resource type="PackedScene" uid="uid://cyhde3bbrrrv" path="res://weapon/tf2/smg.tscn" id="7_2qilo"]
+[ext_resource type="Script" uid="uid://djg0ti1n45f8b" path="res://weapon/weapon_fire.gd" id="8_7udf0"]
 
-[sub_resource type="Resource" id="Resource_2qilo"]
+[sub_resource type="Resource" id="Resource_8ac3t"]
 script = ExtResource("3_8elsf")
-recoil = Vector3(0.5, 0.1, 0)
-metadata/_custom_type_script = "uid://yvevtn4dsddy"
+
+[sub_resource type="Resource" id="Resource_sh272"]
+script = ExtResource("8_7udf0")
+action_type = null
+automatic = true
+post_shoot_delay = 0.05
+recoil_data = SubResource("Resource_8ac3t")
+hitscan_damage = 7.0
+has_damage_falloff = true
+shoot_sound = ExtResource("6_wq2aq")
+empty_sound = ExtResource("1_2qilo")
+metadata/_custom_type_script = "uid://djg0ti1n45f8b"
+
+[sub_resource type="Resource" id="Resource_m3grl"]
+script = ExtResource("3_8elsf")
+
+[sub_resource type="Resource" id="Resource_7udf0"]
+script = ExtResource("8_7udf0")
+action_type = 1
+recoil_data = SubResource("Resource_m3grl")
+shoot_sound = ExtResource("6_wq2aq")
+empty_sound = ExtResource("1_2qilo")
+metadata/_custom_type_script = "uid://djg0ti1n45f8b"
 
 [resource]
 script = ExtResource("5_2bg43")
 display_name = "SMG"
 automatic = true
-post_shoot_delay = 0.105
 mag_size = 25
 mag_current = 25
 reload_time = 1.1
-recoil_data = SubResource("Resource_2qilo")
-hitscan_damage = 8.0
-projectile_scene = ExtResource("2_beuli")
+weapon_fires = Array[ExtResource("8_7udf0")]([SubResource("Resource_sh272"), SubResource("Resource_7udf0")])
 weapon_model = ExtResource("7_2qilo")
-shoot_sound = ExtResource("6_wq2aq")
-empty_sound = ExtResource("1_2qilo")
 reload_sound = ExtResource("4_o1tgv")
 metadata/_custom_type_script = "uid://qjf4ciit3dqy"

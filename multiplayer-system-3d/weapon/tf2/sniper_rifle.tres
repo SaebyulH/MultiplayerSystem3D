@@ -1,44 +1,34 @@
 [gd_resource type="Resource" script_class="Weapon" format=3 uid="uid://cg4gfj2es24p4"]
 
 [ext_resource type="AudioStream" uid="uid://bwfdsxbmx4ko8" path="res://assets/sounds/empty_gun.mp3" id="1_ifphy"]
-[ext_resource type="PackedScene" uid="uid://6mr0d18yn8po" path="res://weapon/projectiles/scenes/simple_projectile.tscn" id="2_80jd3"]
 [ext_resource type="Script" uid="uid://yvevtn4dsddy" path="res://player/recoil/recoil_data.gd" id="3_yhfpo"]
 [ext_resource type="AudioStream" uid="uid://cqbknmbhlwhu" path="res://assets/sounds/reload.mp3" id="4_a8kh8"]
 [ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="5_uoru5"]
 [ext_resource type="AudioStream" uid="uid://u24dsvsfmlr2" path="res://assets/sounds/gun_sound.mp3" id="6_onw8i"]
+[ext_resource type="Script" uid="uid://djg0ti1n45f8b" path="res://weapon/weapon_fire.gd" id="7_b7nwq"]
 [ext_resource type="PackedScene" uid="uid://ccapjs1b2aucy" path="res://weapon/tf2/sniper_rifle.tscn" id="7_gdsaj"]
+[ext_resource type="Texture2D" uid="uid://b6gktr1vfryte" path="res://defaults/default_damage_falloff_curve.tres" id="8_vfkuf"]
 
-[sub_resource type="Curve" id="Curve_mksn7"]
-_data = [Vector2(0, 0.13632995), 0.0, 0.0, 0, 0, Vector2(0.5331412, 1), 0.0, 0.0, 0, 0]
-point_count = 2
-
-[sub_resource type="CurveTexture" id="CurveTexture_btwad"]
-curve = SubResource("Curve_mksn7")
-
-[sub_resource type="Resource" id="Resource_mksn7"]
+[sub_resource type="Resource" id="Resource_so61o"]
 script = ExtResource("3_yhfpo")
-recoil = Vector3(0, 0, 0)
-aim_recoil = Vector3(0, 0, 0)
-metadata/_custom_type_script = "uid://yvevtn4dsddy"
+
+[sub_resource type="Resource" id="Resource_aikgn"]
+script = ExtResource("7_b7nwq")
+automatic = true
+recoil_data = SubResource("Resource_so61o")
+headshot_multiplier = 20.0
+has_damage_falloff = true
+shoot_sound = ExtResource("6_onw8i")
+empty_sound = ExtResource("1_ifphy")
+metadata/_custom_type_script = "uid://djg0ti1n45f8b"
 
 [resource]
 script = ExtResource("5_uoru5")
 display_name = "Sniper Rifle"
-post_shoot_delay = 1.0
 mag_size = 15
 mag_current = 15
 reload_time = 5.0
-recoil_data = SubResource("Resource_mksn7")
-hitscan_damage = 60.0
-hitscan_range = 10000000000.0
-headshot_multiplier = 5.0
-has_damage_falloff = true
-falloff_start = 0.0
-falloff_end = 120.0
-falloff_curve = SubResource("CurveTexture_btwad")
-projectile_scene = ExtResource("2_80jd3")
+weapon_fires = Array[ExtResource("7_b7nwq")]([SubResource("Resource_aikgn")])
 weapon_model = ExtResource("7_gdsaj")
-shoot_sound = ExtResource("6_onw8i")
-empty_sound = ExtResource("1_ifphy")
 reload_sound = ExtResource("4_a8kh8")
 metadata/_custom_type_script = "uid://qjf4ciit3dqy"

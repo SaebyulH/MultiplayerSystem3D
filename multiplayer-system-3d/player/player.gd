@@ -26,7 +26,7 @@ var respawn_position := Vector3.ZERO
 
 # In Player.gd
 var knockback_velocity := Vector3.ZERO
-@export var knockback_decay: float = 100.0  # how fast it fades per second
+#@export var knockback_decay: float = 100.0  # how fast it fades per second
 
 var speed = 5.0
 const JUMP_VELOCITY = 5.0
@@ -233,6 +233,8 @@ func _apply_movement_from_input(delta):
 	velocity += knockback_velocity
 	move_and_slide()
 	velocity /= NetworkTime.physics_factor
+	
+	var knockback_decay = velocity.length() ** 2 * 10
 	knockback_velocity = knockback_velocity.move_toward(Vector3.ZERO, knockback_decay * delta)
 
 	if player_input.ads:

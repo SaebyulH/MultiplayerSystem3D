@@ -2,31 +2,31 @@
 
 [ext_resource type="AudioStream" uid="uid://bwfdsxbmx4ko8" path="res://assets/sounds/empty_gun.mp3" id="1_la0ju"]
 [ext_resource type="Texture2D" uid="uid://b6gktr1vfryte" path="res://defaults/default_damage_falloff_curve.tres" id="2_dxxqn"]
-[ext_resource type="PackedScene" uid="uid://6mr0d18yn8po" path="res://weapon/projectiles/scenes/simple_projectile.tscn" id="2_thl8w"]
 [ext_resource type="Script" uid="uid://yvevtn4dsddy" path="res://player/recoil/recoil_data.gd" id="3_r57kw"]
 [ext_resource type="AudioStream" uid="uid://cqbknmbhlwhu" path="res://assets/sounds/reload.mp3" id="4_t54mp"]
 [ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="5_cr0at"]
 [ext_resource type="AudioStream" uid="uid://u24dsvsfmlr2" path="res://assets/sounds/gun_sound.mp3" id="6_banbv"]
 [ext_resource type="PackedScene" uid="uid://ux8ogr6fmr5y" path="res://weapon/tf2/pistol.tscn" id="7_la0ju"]
+[ext_resource type="Script" uid="uid://djg0ti1n45f8b" path="res://weapon/weapon_fire.gd" id="8_hadn0"]
 
-[sub_resource type="Resource" id="Resource_la0ju"]
+[sub_resource type="Resource" id="Resource_8ac3t"]
 script = ExtResource("3_r57kw")
-metadata/_custom_type_script = "uid://yvevtn4dsddy"
+
+[sub_resource type="Resource" id="Resource_0y2y5"]
+script = ExtResource("8_hadn0")
+post_shoot_delay = 0.05
+recoil_data = SubResource("Resource_8ac3t")
+has_damage_falloff = true
+shoot_sound = ExtResource("6_banbv")
+empty_sound = ExtResource("1_la0ju")
+metadata/_custom_type_script = "uid://djg0ti1n45f8b"
 
 [resource]
 script = ExtResource("5_cr0at")
 display_name = "Pistol"
-post_shoot_delay = 0.05
 mag_size = 21
 mag_current = 21
-recoil_data = SubResource("Resource_la0ju")
-hitscan_damage = 15.0
-has_damage_falloff = true
-falloff_start = 30.0
-falloff_end = 100.0
-projectile_scene = ExtResource("2_thl8w")
+weapon_fires = Array[ExtResource("8_hadn0")]([SubResource("Resource_0y2y5")])
 weapon_model = ExtResource("7_la0ju")
-shoot_sound = ExtResource("6_banbv")
-empty_sound = ExtResource("1_la0ju")
 reload_sound = ExtResource("4_t54mp")
 metadata/_custom_type_script = "uid://qjf4ciit3dqy"

@@ -7,25 +7,31 @@
 [ext_resource type="AudioStream" uid="uid://cqbknmbhlwhu" path="res://assets/sounds/reload.mp3" id="4_swp8c"]
 [ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="5_1h1n0"]
 [ext_resource type="PackedScene" uid="uid://d3smja8hfgqx1" path="res://weapon/tf2/medpack_gun.tscn" id="7_7o0d2"]
+[ext_resource type="Script" uid="uid://djg0ti1n45f8b" path="res://weapon/weapon_fire.gd" id="7_fllnc"]
+[ext_resource type="AudioStream" uid="uid://u24dsvsfmlr2" path="res://assets/sounds/gun_sound.mp3" id="8_dmguv"]
 
-[sub_resource type="Resource" id="Resource_ubd5f"]
+[sub_resource type="Resource" id="Resource_we44c"]
 script = ExtResource("3_rvrs0")
-metadata/_custom_type_script = "uid://yvevtn4dsddy"
+
+[sub_resource type="Resource" id="Resource_7ulhg"]
+script = ExtResource("7_fllnc")
+automatic = true
+recoil_data = SubResource("Resource_we44c")
+bullet_type = 1
+projectile_scene = ExtResource("3_7o0d2")
+shoot_sound = ExtResource("8_dmguv")
+empty_sound = ExtResource("1_ce6dx")
+metadata/_custom_type_script = "uid://djg0ti1n45f8b"
 
 [resource]
 script = ExtResource("5_1h1n0")
 display_name = "Medpack Launcher"
 automatic = true
-post_shoot_delay = 1.0
 has_infinite_ammo = true
 mag_size = 40
 mag_current = 40
 reload_time = 1.305
-recoil_data = SubResource("Resource_ubd5f")
-bullet_type = 1
-projectile_scene = ExtResource("3_7o0d2")
+weapon_fires = Array[ExtResource("7_fllnc")]([SubResource("Resource_7ulhg")])
 weapon_model = ExtResource("7_7o0d2")
-shoot_sound = ExtResource("1_ce6dx")
-empty_sound = ExtResource("1_ce6dx")
 reload_sound = ExtResource("4_swp8c")
 metadata/_custom_type_script = "uid://qjf4ciit3dqy"

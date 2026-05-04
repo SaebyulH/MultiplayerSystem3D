@@ -1,6 +1,7 @@
 [gd_resource type="Resource" script_class="Class" format=3 uid="uid://di6fqvkmt05o6"]
 
 [ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="1_qjte0"]
+[ext_resource type="Resource" uid="uid://c1iei2xvith2m" path="res://weapon/tf2/rocket_launcher.tres" id="2_4smbg"]
 [ext_resource type="Resource" uid="uid://dfnw7kxcnpp38" path="res://weapon/tf2/rocket_grenade_launcher.tres" id="2_5au0l"]
 [ext_resource type="Script" uid="uid://cbg4mqtqfaara" path="res://player/class.gd" id="2_l1baf"]
 [ext_resource type="Resource" uid="uid://bt7greuesenrm" path="res://weapon/tf2/impact_grenade_launcher.tres" id="3_4smbg"]
@@ -12,6 +13,6 @@
 [resource]
 script = ExtResource("2_l1baf")
 class_display_name = "Assault"
-primary_weapons = Array[ExtResource("1_qjte0")]([ExtResource("2_5au0l"), ExtResource("3_4smbg"), ExtResource("4_5au0l"), ExtResource("5_4smbg")])
+primary_weapons = Array[ExtResource("1_qjte0")]([ExtResource("2_4smbg"), ExtResource("2_5au0l"), ExtResource("3_4smbg"), ExtResource("4_5au0l"), ExtResource("5_4smbg")])
 secondary_weapons = Array[ExtResource("1_qjte0")]([ExtResource("7_2cd3m"), ExtResource("8_skpeg")])
 metadata/_custom_type_script = "uid://cbg4mqtqfaara"

@@ -6,27 +6,42 @@
 [ext_resource type="Script" uid="uid://yvevtn4dsddy" path="res://player/recoil/recoil_data.gd" id="4_yjhda"]
 [ext_resource type="AudioStream" uid="uid://cqbknmbhlwhu" path="res://assets/sounds/reload.mp3" id="5_g475m"]
 [ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="6_vhjx2"]
-[ext_resource type="AudioStream" uid="uid://u24dsvsfmlr2" path="res://assets/sounds/gun_sound.mp3" id="7_powb6"]
 [ext_resource type="PackedScene" uid="uid://dxan4dlwbf6dl" path="res://weapon/tf2/rocket_grenade_launcher.tscn" id="8_hj0ba"]
+[ext_resource type="Script" uid="uid://djg0ti1n45f8b" path="res://weapon/weapon_fire.gd" id="8_os82w"]
+[ext_resource type="AudioStream" uid="uid://b1tqmb3x8y6b6" path="res://assets/sounds/smg.mp3" id="9_yjhda"]
 
-[sub_resource type="Resource" id="Resource_vw4sm"]
+[sub_resource type="Resource" id="Resource_2id02"]
 script = ExtResource("4_yjhda")
-metadata/_custom_type_script = "uid://yvevtn4dsddy"
+
+[sub_resource type="Resource" id="Resource_cbdh0"]
+script = ExtResource("8_os82w")
+automatic = true
+post_shoot_delay = 0.8
+recoil_data = SubResource("Resource_2id02")
+bullet_type = 1
+projectile_scene = ExtResource("3_os82w")
+shoot_sound = ExtResource("9_yjhda")
+empty_sound = ExtResource("1_hj0ba")
+metadata/_custom_type_script = "uid://djg0ti1n45f8b"
+
+[sub_resource type="Resource" id="Resource_ur13p"]
+script = ExtResource("4_yjhda")
+
+[sub_resource type="Resource" id="Resource_qisbw"]
+script = ExtResource("8_os82w")
+automatic = true
+recoil_data = SubResource("Resource_ur13p")
+metadata/_custom_type_script = "uid://djg0ti1n45f8b"
 
 [resource]
 script = ExtResource("6_vhjx2")
 display_name = "RGL"
 automatic = true
-post_shoot_delay = 1.2
 mag_size = 4
 mag_current = 4
 reload_individually = true
 reload_time = 1.2
-recoil_data = SubResource("Resource_vw4sm")
-bullet_type = 1
-projectile_scene = ExtResource("3_os82w")
+weapon_fires = Array[ExtResource("8_os82w")]([SubResource("Resource_cbdh0"), SubResource("Resource_qisbw")])
 weapon_model = ExtResource("8_hj0ba")
-shoot_sound = ExtResource("7_powb6")
-empty_sound = ExtResource("1_hj0ba")
 reload_sound = ExtResource("5_g475m")
 metadata/_custom_type_script = "uid://qjf4ciit3dqy"
