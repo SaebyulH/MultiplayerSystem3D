@@ -8,6 +8,8 @@ class_name Player
 @export var air_friction: float = 4.0
 @export var tick_interpolator: TickInterpolator
 
+@export var respawn_time: float = 1.5
+var respawn_timer: float = 0.0
 var _pending_spawn_position: Vector3 = Vector3.ZERO
 var _has_pending_spawn: bool = false
 
@@ -116,16 +118,19 @@ func _get_spawn_position() -> Vector3:
 
 @rpc("any_peer", "call_local")
 func rpc_reset(pos: Vector3) -> void:
+	despawn()
+	respawn_timer = respawn_time
 	_pending_spawn_position = pos
 	_has_pending_spawn = true
 	velocity = Vector3.ZERO
 	knockback_velocity = Vector3.ZERO
-	spawn()
+	
 	
 func no_health() -> void:
 	print(name + " KILLED BY " + attribute_component.last_attacker)
 	attribute_component.reset()
 	weapon_controller.reset()
+	
 	if multiplayer.is_server():
 		rpc_reset.rpc(_get_spawn_position())
 
@@ -138,11 +143,15 @@ func _sync_head():
 var spawned := false
 
 func despawn():
+	hide()
 	spawned = false
 	global_position = GameManager.get_despawn_position()
 	$Body/PlayerUI.hide()
+	camera.current = false
+	camera.visible = false	
 
 func spawn():
+	show()
 	spawned = true
 	$Body/PlayerUI.show()
 	var my_id := multiplayer.get_unique_id()
@@ -177,15 +186,28 @@ func spawn():
 var _debug_frames := 0
 
 func _physics_process(delta: float) -> void:
+	
+	#if not spawned:
+		#return
+		#hide()
+	#show()
+	
 	if is_multiplayer_authority():
 		_sync_head.rpc()
+		
+	#EVERYONE DOES THIS
+	if respawn_timer >= 0.0:
+		respawn_timer -= delta
+	else:
+		if not spawned:
+			spawn()
+		
 	if spawned and _debug_frames < 10:
 		_debug_frames += 1
 		print("[physics_process] frame=%d peer=%d pos=%s vel=%s" % [_debug_frames, multiplayer.get_unique_id(), global_position, velocity])
 			
 func _rollback_tick(delta, tick, is_fresh):
-	if not spawned:
-		return
+
 	if _has_pending_spawn:
 		global_position = _pending_spawn_position
 		velocity = Vector3.ZERO

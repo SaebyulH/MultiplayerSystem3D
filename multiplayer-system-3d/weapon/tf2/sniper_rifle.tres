@@ -16,8 +16,20 @@ script = ExtResource("3_yhfpo")
 script = ExtResource("7_b7nwq")
 automatic = true
 recoil_data = SubResource("Resource_so61o")
-headshot_multiplier = 20.0
+hitscan_damage = 25.0
+headshot_multiplier = 10.0
 has_damage_falloff = true
+shoot_sound = ExtResource("6_onw8i")
+empty_sound = ExtResource("1_ifphy")
+metadata/_custom_type_script = "uid://djg0ti1n45f8b"
+
+[sub_resource type="Resource" id="Resource_btwad"]
+script = ExtResource("3_yhfpo")
+
+[sub_resource type="Resource" id="Resource_b7nwq"]
+script = ExtResource("7_b7nwq")
+action_type = 1
+recoil_data = SubResource("Resource_btwad")
 shoot_sound = ExtResource("6_onw8i")
 empty_sound = ExtResource("1_ifphy")
 metadata/_custom_type_script = "uid://djg0ti1n45f8b"
@@ -28,7 +40,7 @@ display_name = "Sniper Rifle"
 mag_size = 15
 mag_current = 15
 reload_time = 5.0
-weapon_fires = Array[ExtResource("7_b7nwq")]([SubResource("Resource_aikgn")])
+weapon_fires = Array[ExtResource("7_b7nwq")]([SubResource("Resource_aikgn"), SubResource("Resource_b7nwq")])
 weapon_model = ExtResource("7_gdsaj")
 reload_sound = ExtResource("4_a8kh8")
 metadata/_custom_type_script = "uid://qjf4ciit3dqy"
