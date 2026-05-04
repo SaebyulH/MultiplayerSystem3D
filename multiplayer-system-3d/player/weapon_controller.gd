@@ -472,22 +472,21 @@ func _try_fire(weapon_fire_index: int) -> void:
 	#var data: RecoilData = _weapons[current_weapon_index].weapon_fires[0].recoil_data if fire_type == FireType.PRIMARY else _weapons[current_weapon_index].weapon_fires[1].recoil_data
 	var data: RecoilData = _weapons[current_weapon_index].weapon_fires[weapon_fire_index].recoil_data
 	
-	recoil.recoil       = data.recoil
-	recoil.aim_recoil   = data.aim_recoil
-	recoil.snappiness   = data.snappiness
-	recoil.return_speed = data.return_speed
-	
-	
+	var data_dict := {
+		"recoil": data.recoil,
+		"aim_recoil": data.aim_recoil,
+		"snappiness": data.snappiness,
+		"return_speed": data.return_speed
+	}
+
 	var r: Vector3      = recoil.recoil
 	var rolled: Vector3 = Vector3(
 		r.x,
 		randf_range(-r.y, r.y),
 		randf_range(-r.z, r.z)
 	)
-	
-	
-	
-	_apply_recoil_rpc.rpc(rolled)
+
+	_apply_recoil_rpc.rpc(data_dict, rolled)
 	
 	
 	if pre_delay > 0.0:
@@ -499,6 +498,9 @@ func _try_fire(weapon_fire_index: int) -> void:
 			fire_intent(current_weapon_index, weapon_fire_index)
 		else:
 			fire_intent(current_weapon_index, weapon_fire_index)
+
+
+
 
 
 func _do_fire_client() -> void:
@@ -753,10 +755,13 @@ func _on_hitscan_hit(hit_position: Vector3, hit_normal: Vector3, start_position:
 
 
 @rpc("any_peer", "call_local")
-func _apply_recoil_rpc(rolled: Vector3) -> void:
+func _apply_recoil_rpc(data: Dictionary, rolled: Vector3) -> void:
 	if _weapons.is_empty():
 		return
-
+	recoil.recoil       = data.recoil
+	recoil.aim_recoil   = data.aim_recoil
+	recoil.snappiness   = data.snappiness
+	recoil.return_speed = data.return_speed
 	
 	
 	
