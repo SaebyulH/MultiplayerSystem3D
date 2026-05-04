@@ -89,6 +89,18 @@ enum BulletType {HITSCAN, PROJECTILE}
 @export var projectile_scene: PackedScene
 ## Each Vector3 defines the direction of one bullet fired per shot, enabling spread or multishot patterns.
 @export var multishot_data: Array[Vector3] = [Vector3(0, 0, -1)]
+enum MultishotMode {
+		SHOTGUN, ## Each bullet deals the weapon's hitscan damage. 
+		BURST, ## Fires a burst of bullets every time it shoots.
+		SHAPE ## Only applies to hitscan! Multiple bullets over 1 do not do extra damage: Ideal for melee
+	}
+@export var multishot_mode: MultishotMode = MultishotMode.SHOTGUN:
+	set(value):
+		multishot_mode = value
+		notify_property_list_changed()
+@export var burst_post_shoot_delay: float = 0.05 ##Note that if this is higher than the actual shoot delay, it will act interesting, it does not add to the delay!
+@export var burst_fire_has_recoil: bool = true
+
 
 #@export_group("Visuals")
 ### The 3D model scene to spawn and attach to the weapon holder.
@@ -128,10 +140,15 @@ func _validate_property(property: Dictionary) -> void:
 		if bullet_type == BulletType.PROJECTILE:
 			property.usage = PROPERTY_USAGE_NO_EDITOR
 
+
 	if property.name in ["falloff_start", "falloff_end", "falloff_curve"]:
 		if has_damage_falloff == false:
 			property.usage = PROPERTY_USAGE_NO_EDITOR
 
 	if property.name == "projectile_scene":
 		if bullet_type == BulletType.HITSCAN:
+			property.usage = PROPERTY_USAGE_NO_EDITOR
+	
+	if property.name in ["burst_post_shoot_delay", "burst_fire_has_recoil"]:
+		if multishot_mode != MultishotMode.BURST:
 			property.usage = PROPERTY_USAGE_NO_EDITOR

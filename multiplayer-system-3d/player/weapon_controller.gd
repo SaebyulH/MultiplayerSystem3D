@@ -437,7 +437,7 @@ func _handle_fire_input(weapon: Weapon, fire_index: int, input_held: bool) -> vo
 
 	_try_fire(fire_index)
 
-	if not weapon.automatic:
+	if not  weapon.weapon_fires[fire_index].automatic:
 		_fired_this_press[fire_index] = true
 #endregion
 
@@ -527,7 +527,7 @@ func fire_intent(weapon_index: int, weapon_fire_index: int) -> void:
 
 	if not weapon.has_infinite_ammo:
 		_set_mag(weapon.mag_current - (_weapons[weapon_index].weapon_fires[weapon_fire_index].ammo_cost))
-	_fire_cooldown = weapon.weapon_fires[0].post_shoot_delay#
+	_fire_cooldown = weapon.weapon_fires[weapon_fire_index].post_shoot_delay#
 
 	_sync_mag.rpc(_weapons[current_weapon_index].mag_current)
 	_execute_fire(weapon, weapon_fire_index)
@@ -542,70 +542,128 @@ func _sync_mag(authoritative_mag: int) -> void:
 	weapon.mag_current = clamp(authoritative_mag, 0, weapon.mag_size)
 	mag_changed.emit(weapon.mag_current, weapon.mag_size)
 
-
 func _execute_fire(weapon: Weapon, weapon_fire_index: int) -> void:
 	if not _is_ready():
 		return
-	
-	# Handle knockback recoil
-	var weapon_fire: WeaponFire= weapon.weapon_fires[weapon_fire_index]
-	
-	
-	
-	var basis: Basis = weapon_model_parent.global_transform.basis
-	var recoil: Vector3 = basis * weapon_fire.recoil_knockback
 
-	_knockback_player_on_server.rpc_id(1, recoil)
-		
-		
+	var weapon_fire: WeaponFire = weapon.weapon_fires[weapon_fire_index]
+
+	# Don't apply recoil here for BURST — it handles its own
+	if weapon_fire.multishot_mode != WeaponFire.MultishotMode.BURST:
+		var basis: Basis = weapon_model_parent.global_transform.basis
+		var recoil: Vector3 = basis * weapon_fire.recoil_knockback
+		_knockback_player_on_server.rpc_id(1, recoil)
+
+	match weapon_fire.multishot_mode:
+		WeaponFire.MultishotMode.SHOTGUN:
+			_fire_all_shots(weapon, weapon_fire_index, false)
+		WeaponFire.MultishotMode.BURST:
+			_fire_burst(weapon, weapon_fire_index)
+		WeaponFire.MultishotMode.SHAPE:
+			_fire_all_shots(weapon, weapon_fire_index, true)
+
+
+func _fire_burst(weapon: Weapon, weapon_fire_index: int) -> void:
+	var weapon_fire: WeaponFire = weapon.weapon_fires[weapon_fire_index]
+	for i in weapon_fire.multishot_data.size():
+		# First shot always gets recoil, subsequent shots only if burst_fire_has_recoil 
+		# NOTE that recoil might still seem to apply since the FIRST recoil can move the camera 
+		# while the next shots are fires.
+		if i == 0 or weapon_fire.burst_fire_has_recoil:
+			var basis: Basis = weapon_model_parent.global_transform.basis
+			var recoil: Vector3 = basis * weapon_fire.recoil_knockback
+			_knockback_player_on_server.rpc_id(1, recoil)
+		_fire_single_shot(weapon, weapon_fire_index, weapon_fire.multishot_data[i], null)
+		if i < weapon_fire.multishot_data.size() - 1:
+			await get_tree().create_timer(weapon_fire.burst_post_shoot_delay).timeout
+
+func _fire_all_shots(weapon: Weapon, weapon_fire_index: int, is_shape: bool) -> void:
+	var weapon_fire: WeaponFire = weapon.weapon_fires[weapon_fire_index]
+	# player_name -> { "hit": bool, "is_head": bool, "collider": HurtboxComponent, "distance": float }
+	var shape_hits: Dictionary = {}
+	for shot_dir in weapon_fire.multishot_data:
+		_fire_single_shot(weapon, weapon_fire_index, shot_dir, shape_hits if is_shape else null)
+	
+	if is_shape:
+		_apply_shape_damage(weapon, weapon_fire_index, shape_hits)
+
+
+func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3, shape_hits) -> void:
+	var weapon_fire: WeaponFire = weapon.weapon_fires[weapon_fire_index]
+
 	if weapon_fire.bullet_type == WeaponFire.BulletType.HITSCAN:
 		var muzzle_node: Node3D = current_weapon_model.get_node("Muzzle") as Node3D
 		var muzzle_pos: Vector3 = muzzle_node.global_position
 		_flash_muzzle_flash.rpc(muzzle_pos)
 
-		for shot_dir in weapon_fire.multishot_data:
-			var shot_dir_v3: Vector3 = shot_dir as Vector3
-			var world_dir: Vector3   = \
-				weapon_model_parent.global_transform.basis * shot_dir_v3.normalized()
+		var world_dir: Vector3 = weapon_model_parent.global_transform.basis * shot_dir.normalized()
+		var space_state: PhysicsDirectSpaceState3D = _parent_player.get_world_3d().direct_space_state
+		var origin: Vector3 = weapon_model_parent.global_position
+		var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
+			origin,
+			origin + world_dir * weapon_fire.hitscan_range
+		)
+		query.exclude = [_parent_player.get_rid(), $"../HeadHurtbox".get_rid(), $"../BodyHurtbox".get_rid()]
+		query.collide_with_areas = true
+		query.collision_mask = (1 << 0) | (1 << 2)
+		var result: Dictionary = space_state.intersect_ray(query)
 
-			var space_state: PhysicsDirectSpaceState3D = \
-				_parent_player.get_world_3d().direct_space_state
-			var origin: Vector3              = weapon_model_parent.global_position
-			var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
-				origin,
-				origin + world_dir * weapon_fire.hitscan_range
-			)
-			query.exclude          = [_parent_player.get_rid(), $"../HeadHurtbox".get_rid(), $"../BodyHurtbox".get_rid()]
-			query.collide_with_areas = true
-			query.collision_mask   = (1 << 0) | (1 << 2)
-
-			var result: Dictionary = space_state.intersect_ray(query)
-			if not result.is_empty():
-				_on_hitscan_hit.rpc(result.position, result.normal, muzzle_pos)
-				var collider: Node3D = result.collider
-				if collider is HurtboxComponent:
+		if not result.is_empty():
+			_on_hitscan_hit.rpc(result.position, result.normal, muzzle_pos)
+			var collider: Node3D = result.collider
+			if collider is HurtboxComponent:
+				if shape_hits != null:
+					# Collect hit info, defer damage to _apply_shape_damage
+					var player_name: String = collider.get_parent().name
+					var distance: float = origin.distance_to(result.position)
+					if not shape_hits.has(player_name):
+						shape_hits[player_name] = {
+							"is_head": collider.is_head,
+							"collider": collider,
+							"distance": distance,
+						}
+					elif collider.is_head:
+						# Already recorded this player, but upgrade to crit if any ray hits head
+						shape_hits[player_name]["is_head"] = true
+				else:
+					# SHOTGUN / BURST: apply damage immediately as before
 					var distance := origin.distance_to(result.position)
-					var mult     := _compute_falloff_multiplier(weapon, weapon_fire_index, distance)
-					var damage   := weapon_fire.hitscan_damage * mult
+					var mult := _compute_falloff_multiplier(weapon, weapon_fire_index, distance)
+					var damage := weapon_fire.hitscan_damage * mult
 					if collider.is_head:
 						damage *= weapon_fire.headshot_multiplier
 					var player_name = collider.get_parent().name
-					
 					if collider.get_parent().team == get_parent().team:
 						damage *= Player.FRIENDLY_FIRE_MULTIPLIER
-						
 					_change_health_on_server.rpc_id(1, player_name, -damage, _parent_player.name)
-			else:
-				if weapon_fire.hitscan_range >= 1000000000.0 / 10.0:
-					var far_pos: Vector3    = origin + world_dir * 10000.0
-					var fake_normal: Vector3 = -world_dir
-					_on_hitscan_hit.rpc(far_pos, fake_normal, muzzle_pos)
+		else:
+			if weapon_fire.hitscan_range >= 1000000000.0 / 10.0:
+				var far_pos: Vector3 = origin + world_dir * 10000.0
+				var fake_normal: Vector3 = -world_dir
+				_on_hitscan_hit.rpc(far_pos, fake_normal, muzzle_pos)
 
 	elif weapon_fire.bullet_type == WeaponFire.BulletType.PROJECTILE:
-		for shot_dir in weapon_fire.multishot_data:
-			_spawn_projectile_on_server.rpc_id(
-				1, weapon_fire_index, shot_dir, weapon_model_parent.global_transform.basis, _parent_player.name, _parent_player.team
-			)
+		_spawn_projectile_on_server.rpc_id(
+			1, weapon_fire_index, shot_dir, weapon_model_parent.global_transform.basis,
+			_parent_player.name, _parent_player.team
+		)
+
+
+func _apply_shape_damage(weapon: Weapon, weapon_fire_index: int, shape_hits: Dictionary) -> void:
+	var weapon_fire: WeaponFire = weapon.weapon_fires[weapon_fire_index]
+	for player_name in shape_hits:
+		var hit: Dictionary = shape_hits[player_name]
+		var collider: HurtboxComponent = hit["collider"]
+		var distance: float = hit["distance"]
+		var mult: float = _compute_falloff_multiplier(weapon, weapon_fire_index, distance)
+		var damage: float = weapon_fire.hitscan_damage * mult
+		if hit["is_head"]:
+			damage *= weapon_fire.headshot_multiplier
+		if collider.get_parent().team == get_parent().team:
+			damage *= Player.FRIENDLY_FIRE_MULTIPLIER
+		_change_health_on_server.rpc_id(1, player_name, -damage, _parent_player.name)
+		
+		
 
 @rpc("any_peer", "call_local", "reliable")
 func _knockback_player_on_server(vector: Vector3):

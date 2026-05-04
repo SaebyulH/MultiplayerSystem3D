@@ -312,7 +312,7 @@ func _start_new_round() -> void:
 	_round_ended = false
 	for child in GameManager.spawn_parent.get_children():
 		if child is Player:
-			child.rpc_reset.rpc()
+			child.rpc_reset.rpc(child._get_spawn_position())
 
 	match game_mode:
 		GameMode.ESCORT:

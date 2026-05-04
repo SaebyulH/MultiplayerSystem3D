@@ -42,7 +42,7 @@ shape = SubResource("CapsuleShape3D_7rxcs")
 
 [node name="HitboxComponent" parent="." index="2" unique_id=1963592485]
 health_delta = 5.0
-can_hit_team = true
+can_hit_other_teamates = true
 enemy_delta_multiplier = -2.0
 
 [node name="CollisionShape3D" parent="HitboxComponent" index="0" unique_id=1314331169]

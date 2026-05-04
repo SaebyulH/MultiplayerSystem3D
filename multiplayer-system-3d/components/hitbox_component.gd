@@ -6,7 +6,7 @@ signal hit_hurtbox(hurtbox)
 @export var headshot_multiplier: float = 1.0
 @export var can_hit_shooter: bool = false
 
-@export var can_hit_team: bool = false
+@export var can_hit_other_teamates: bool = false ##DOES NOT INCLUDE YOU
 @export var can_hit_enemy: bool = true
 @export var enemy_delta_multiplier: float = 1.0  ##Like crusaders crossbow if -2.0 etc.
 
@@ -19,17 +19,22 @@ func _ready() -> void:
 	
 
 func _on_hurtbox_entered(hurtbox: Area3D):
-	if not can_hit_shooter:
-		if get_parent().shooter_name == hurtbox.get_parent().name: return
-	
-	
-	
-	
+
 	if not hurtbox is HurtboxComponent: return
+
+
+	var hit_self: bool = (get_parent().shooter_name == hurtbox.get_parent().name)
+	
+	if not can_hit_shooter and hit_self:
+		return
+	
 	
 	var hit_ally: bool = (hurtbox.get_parent().team == get_parent().shooter_team)
 	
-	if hit_ally and not can_hit_team:
+	var hit_other_ally: bool = hit_ally and not hit_self
+	
+	
+	if hit_other_ally and not can_hit_other_teamates:
 		return
 	#we hit an enemy
 	elif not can_hit_enemy:

@@ -196,7 +196,8 @@ func _physics_process(delta: float) -> void:
 		_sync_head.rpc()
 		
 	#EVERYONE DOES THIS
-	if respawn_timer >= 0.0:
+	if respawn_timer > 0.0:
+		
 		respawn_timer -= delta
 	else:
 		if not spawned:

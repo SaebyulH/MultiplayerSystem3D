@@ -12,11 +12,25 @@
 [sub_resource type="Resource" id="Resource_8ac3t"]
 script = ExtResource("3_r57kw")
 
-[sub_resource type="Resource" id="Resource_0y2y5"]
+[sub_resource type="Resource" id="Resource_dxxqn"]
 script = ExtResource("8_hadn0")
 post_shoot_delay = 0.05
 recoil_data = SubResource("Resource_8ac3t")
 has_damage_falloff = true
+burst_fire_has_recoil = false
+shoot_sound = ExtResource("6_banbv")
+empty_sound = ExtResource("1_la0ju")
+metadata/_custom_type_script = "uid://djg0ti1n45f8b"
+
+[sub_resource type="Resource" id="Resource_hadn0"]
+script = ExtResource("8_hadn0")
+automatic = true
+post_shoot_delay = 0.6
+ammo_cost = 3
+recoil_data = SubResource("Resource_8ac3t")
+has_damage_falloff = true
+multishot_data = Array[Vector3]([Vector3(0, 0, -1), Vector3(0, 0, -1), Vector3(0, 0, -1)])
+multishot_mode = 1
 shoot_sound = ExtResource("6_banbv")
 empty_sound = ExtResource("1_la0ju")
 metadata/_custom_type_script = "uid://djg0ti1n45f8b"
@@ -26,7 +40,7 @@ script = ExtResource("5_cr0at")
 display_name = "Pistol"
 mag_size = 21
 mag_current = 21
-weapon_fires = Array[ExtResource("8_hadn0")]([SubResource("Resource_0y2y5")])
+weapon_fires = Array[ExtResource("8_hadn0")]([SubResource("Resource_dxxqn"), SubResource("Resource_hadn0")])
 weapon_model = ExtResource("7_la0ju")
 reload_sound = ExtResource("4_t54mp")
 metadata/_custom_type_script = "uid://qjf4ciit3dqy"

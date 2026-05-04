@@ -7,7 +7,7 @@ class_name Weapon
 
 @export_group("Universal Combat")
 ## If true, the weapon fires repeatedly while the trigger is held.
-@export var automatic: bool = false
+#@export var automatic: bool = false
 ### Delay in seconds before the shot is fired after pulling the trigger.
 #@export var pre_shoot_delay: float = 0.0
 ### Minimum time in seconds between shots.

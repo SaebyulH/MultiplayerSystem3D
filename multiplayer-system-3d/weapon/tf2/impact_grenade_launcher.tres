@@ -23,12 +23,26 @@ shoot_sound = ExtResource("7_pgm2h")
 empty_sound = ExtResource("1_hpkqo")
 metadata/_custom_type_script = "uid://djg0ti1n45f8b"
 
+[sub_resource type="Resource" id="Resource_1xu7o"]
+script = ExtResource("8_k0mbf")
+automatic = true
+post_shoot_delay = 1.5
+ammo_cost = 3
+recoil_data = SubResource("Resource_k0mbf")
+bullet_type = 1
+projectile_scene = ExtResource("3_ggyi2")
+multishot_data = Array[Vector3]([Vector3(0, 0, -1), Vector3(0, 0, -1), Vector3(0, 0, -1)])
+multishot_mode = 1
+shoot_sound = ExtResource("7_pgm2h")
+empty_sound = ExtResource("1_hpkqo")
+metadata/_custom_type_script = "uid://djg0ti1n45f8b"
+
 [resource]
 script = ExtResource("6_eoc3h")
 display_name = "IGL"
 automatic = true
 reload_individually = true
-weapon_fires = Array[ExtResource("8_k0mbf")]([SubResource("Resource_ggyi2")])
+weapon_fires = Array[ExtResource("8_k0mbf")]([SubResource("Resource_ggyi2"), SubResource("Resource_1xu7o")])
 weapon_model = ExtResource("8_hpkqo")
 reload_sound = ExtResource("5_j5ej3")
 metadata/_custom_type_script = "uid://qjf4ciit3dqy"
