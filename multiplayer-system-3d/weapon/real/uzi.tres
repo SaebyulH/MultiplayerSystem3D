@@ -14,9 +14,21 @@ script = ExtResource("3_kj4n2")
 
 [sub_resource type="Resource" id="Resource_6ginj"]
 script = ExtResource("8_fe2cc")
+action_type = null
 automatic = true
 post_shoot_delay = 0.04
 recoil_data = SubResource("Resource_ig0ij")
+shoot_sound = ExtResource("9_gjlh6")
+empty_sound = ExtResource("1_eyhsm")
+metadata/_custom_type_script = "uid://djg0ti1n45f8b"
+
+[sub_resource type="Resource" id="Resource_yfkxk"]
+script = ExtResource("3_kj4n2")
+
+[sub_resource type="Resource" id="Resource_fe2cc"]
+script = ExtResource("8_fe2cc")
+action_type = 1
+recoil_data = SubResource("Resource_yfkxk")
 shoot_sound = ExtResource("9_gjlh6")
 empty_sound = ExtResource("1_eyhsm")
 metadata/_custom_type_script = "uid://djg0ti1n45f8b"
@@ -27,7 +39,7 @@ display_name = "UZI"
 automatic = true
 mag_size = 40
 mag_current = 40
-weapon_fires = Array[ExtResource("8_fe2cc")]([SubResource("Resource_6ginj")])
+weapon_fires = Array[ExtResource("8_fe2cc")]([SubResource("Resource_6ginj"), SubResource("Resource_fe2cc")])
 weapon_model = ExtResource("7_iqyyw")
 reload_sound = ExtResource("4_upepp")
 metadata/_custom_type_script = "uid://qjf4ciit3dqy"

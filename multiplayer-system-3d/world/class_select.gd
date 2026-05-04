@@ -172,10 +172,11 @@ func _request_loadout(target_player_id: String, primary_path: String, secondary_
 	controller.set_weapons(new_weapons)
 	controller.current_weapon_index = 0
 	player.team = team
-	player.despawned = false
-	player.no_health()
-
+	
+	
 	_apply_loadout.rpc(target_player_id, primary_path, secondary_path, team)
+	var spawn_pos :Vector3= player._get_spawn_position()
+	player.rpc_reset.rpc(spawn_pos)
 
 # Server → all peers
 @rpc("authority", "call_remote", "reliable")
@@ -200,4 +201,6 @@ func _apply_loadout(target_player_id: String, primary_path: String, secondary_pa
 	controller.current_weapon_index = 0
 	#controller._apply_recoil_data()
 	player.team = team
-	player.despawned = false
+	
+	#player.despawned = false
+	

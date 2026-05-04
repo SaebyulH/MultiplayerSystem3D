@@ -72,10 +72,11 @@ properties/0/path = NodePath(".:team")
 properties/0/spawn = true
 properties/0/replication_mode = 1
 
-[node name="Player" type="CharacterBody3D" unique_id=51620469 node_paths=PackedStringArray("player_input", "rollback_sync", "attribute_component", "body", "weapon_controller")]
+[node name="Player" type="CharacterBody3D" unique_id=51620469 node_paths=PackedStringArray("tick_interpolator", "player_input", "rollback_sync", "attribute_component", "body", "weapon_controller")]
 collision_layer = 2
 collision_mask = 3
 script = ExtResource("1_4flbx")
+tick_interpolator = NodePath("TickInterpolator")
 player_input = NodePath("PlayerInput")
 rollback_sync = NodePath("RollbackSynchronizer")
 attribute_component = NodePath("AttributeComponent")
@@ -111,7 +112,7 @@ script = ExtResource("3_2uvqg")
 root = NodePath("..")
 enable_prediction = true
 state_properties = Array[String]([":global_transform", ":velocity"])
-input_properties = Array[String](["PlayerInput:input_dir", "PlayerInput:jump_input", "PlayerInput:crouch", "PlayerInput:ads"])
+input_properties = Array[String](["PlayerInput:input_dir", "PlayerInput:jump_input", "PlayerInput:crouch"])
 metadata/_custom_type_script = "uid://d350u8evihs1u"
 
 [node name="TickInterpolator" type="Node" parent="." unique_id=1904018816 node_paths=PackedStringArray("root")]

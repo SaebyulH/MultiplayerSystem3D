@@ -6,6 +6,13 @@ class_name Player
 @export var friction: float = 18.0
 @export var air_acceleration: float = 40.0
 @export var air_friction: float = 4.0
+@export var tick_interpolator: TickInterpolator
+
+var _pending_spawn_position: Vector3 = Vector3.ZERO
+var _has_pending_spawn: bool = false
+
+
+var ads: bool = false
 
 enum Team {SPI, SCI, FFA} #If set to FFA, you can damage anyone
 const FRIENDLY_FIRE_MULTIPLIER = 0.0
@@ -18,11 +25,11 @@ func get_gmc_team() -> Player.Team:
 		Team.SCI: return Player.Team.SCI
 		_: return Player.Team.FFA
 
-var despawned := true
+#var despawned := true
 
 
-var needs_respawn := false
-var respawn_position := Vector3.ZERO
+#var needs_respawn := false
+#var respawn_position := Vector3.ZERO
 
 # In Player.gd
 var knockback_velocity := Vector3.ZERO
@@ -78,42 +85,49 @@ func _enter_tree() -> void:
 
 func _ready() -> void:
 	add_to_group("players")
-
-	#input_synchronizer.set_visibility_for(1, true)
 	attribute_component.health_changed.connect(_health_changed)
-
-	# Only the peer who OWNS this player activates their camera
-
-
-
-
 	attribute_component.no_health.connect(no_health)
-		
 	rollback_sync.process_settings()
+	despawn()
+	## Initial spawn
+	#if multiplayer.is_server():
+		#for node in GameManager.spawn_parent.get_children():
+			#if node is Map:
+				#rpc_reset.rpc(node.get_random_spawn_location(team))
+				#break
 		
 func _health_changed():
 	pass
 
-func reset():
-	attribute_component.reset()
-	#var last_weapon = weapon_controller.current_weapon_index
-	weapon_controller.reset()
-	#weapon_controller.current_weapon_index = last_weapon
-
-	needs_respawn = true
+func _get_spawn_position() -> Vector3:
 	for node in GameManager.spawn_parent.get_children():
 		if node is Map:
-			respawn_position = node.get_random_spawn_location(team)
-			break
-	print("PLAYER RESET!!!!")
+			return node.get_random_spawn_location(team)
+	return Vector3.ZERO
+
+
+
+#func reset() -> void:
+	#attribute_component.reset()
+	#weapon_controller.reset()
+	#if multiplayer.is_server():
+		#rpc_reset.rpc(_get_spawn_position())
+	#print("PLAYER RESET!!!!")
+
+@rpc("any_peer", "call_local")
+func rpc_reset(pos: Vector3) -> void:
+	_pending_spawn_position = pos
+	_has_pending_spawn = true
+	velocity = Vector3.ZERO
+	knockback_velocity = Vector3.ZERO
+	spawn()
 	
-#executed only by authority anyway
-func no_health():
+func no_health() -> void:
 	print(name + " KILLED BY " + attribute_component.last_attacker)
-	#Leaderboard.request_add_death(name)
-	#Leaderboard.request_add_kill(attribute_component.last_attacker)
-	#spawn_manager.respawn_player(name)
-	reset()
+	attribute_component.reset()
+	weapon_controller.reset()
+	if multiplayer.is_server():
+		rpc_reset.rpc(_get_spawn_position())
 
 @rpc("call_local")
 func _sync_head():
@@ -121,45 +135,63 @@ func _sync_head():
 	$BodyHurtbox.global_rotation = $Body.global_rotation
 
 
+var spawned := false
+
+func despawn():
+	spawned = false
+	global_position = GameManager.get_despawn_position()
+	$Body/PlayerUI.hide()
+
+func spawn():
+	spawned = true
+	$Body/PlayerUI.show()
+	var my_id := multiplayer.get_unique_id()
+	var player_id := name.to_int()
+	if my_id == player_id and spawned:
+		camera.make_current()
+		$BodyHurtbox/MeshInstance3D2.hide()
+		$BodyHurtbox/CollisionShape3D.hide()
+	else:
+		camera.current = false
+		camera.visible = false	
+
+
+
+#if despawned:
+		#global_position = GameManager.get_despawn_position()
+		#$Body/PlayerUI.hide()
+		#return
+	#else:
+		#$Body/PlayerUI.show()
+		#var my_id := multiplayer.get_unique_id()
+		#var player_id := name.to_int()
+		#if my_id == player_id and not despawned:
+			#camera.make_current()
+			#$BodyHurtbox/MeshInstance3D2.hide()
+			#$BodyHurtbox/CollisionShape3D.hide()
+		#else:
+			#camera.current = false
+			#camera.visible = false	
+
+
+var _debug_frames := 0
+
 func _physics_process(delta: float) -> void:
-	
 	if is_multiplayer_authority():
 		_sync_head.rpc()
-	
-	#if GameManager.game_mode_component and GameManager.game_mode_component.is_players_locked_in_spawn():
-		#velocity = Vector3.ZERO
-		#return
-		
-	if despawned:
-		global_position = GameManager.get_despawn_position()
-		$Body/PlayerUI.hide()
-		return
-	else:
-		$Body/PlayerUI.show()
-		var my_id := multiplayer.get_unique_id()
-		var player_id := name.to_int()
-		if my_id == player_id and not despawned:
-			camera.make_current()
-			$BodyHurtbox/MeshInstance3D2.hide()
-			$BodyHurtbox/CollisionShape3D.hide()
-		else:
-			camera.current = false
-			camera.visible = false	
-			
+	if spawned and _debug_frames < 10:
+		_debug_frames += 1
+		print("[physics_process] frame=%d peer=%d pos=%s vel=%s" % [_debug_frames, multiplayer.get_unique_id(), global_position, velocity])
 			
 func _rollback_tick(delta, tick, is_fresh):
-
-	
-
-
-
-	
-	
-	
-	if needs_respawn:
-		global_position = respawn_position
+	if not spawned:
+		return
+	if _has_pending_spawn:
+		global_position = _pending_spawn_position
 		velocity = Vector3.ZERO
-		needs_respawn = false
+		_has_pending_spawn = false
+		tick_interpolator.teleport()
+		return
 	_apply_movement_from_input(delta)
 
 
@@ -237,7 +269,7 @@ func _apply_movement_from_input(delta):
 	var knockback_decay = velocity.length() ** 2 * 10
 	knockback_velocity = knockback_velocity.move_toward(Vector3.ZERO, knockback_decay * delta)
 
-	if player_input.ads:
+	if ads:
 		camera.fov = 20.0
 		body.mouse_sens_x = 0.002 * 0.268
 		body.mouse_sens_y = 0.002 * 0.268

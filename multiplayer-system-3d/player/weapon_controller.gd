@@ -33,7 +33,8 @@ var _pending_fire_index: int = 0
 
 var _pre_fire_timer: float  = 0.0
 var _fire_cooldown: float   = 0.0
-var _fired_this_press: bool = false
+#var _fired_this_press: bool = false
+var _fired_this_press: Dictionary[int, bool] = {}
 
 signal mag_changed(current: int, mag_max: int)
 signal weapon_changed(index: int, weapon: Weapon)
@@ -107,13 +108,13 @@ func _physics_process(delta: float) -> void:
 	if my_id == owner_id:
 		_process_fire()
 
-	if player_input.primary_fire_just_released:
-		_fired_this_press           = false
-		player_input.primary_fire_just_released = false
-	
-	if player_input.secondary_fire_just_released:
-		_fired_this_press           = false
-		player_input.secondary_fire_just_released = false
+	#if player_input.primary_fire_just_released:
+		#_fired_this_press           = false
+		#player_input.primary_fire_just_released = false
+	#
+	#if player_input.secondary_fire_just_released:
+		#_fired_this_press           = false
+		#player_input.secondary_fire_just_released = false
 	
 
 #func _tick_timers(delta: float) -> void:
@@ -401,44 +402,53 @@ func _confirm_reload_done(new_mag: int) -> void:
 func _process_fire() -> void:
 	if not _is_ready():
 		return
+
 	var weapon: Weapon = _weapons[current_weapon_index]
+
+	_handle_fire_input(weapon, 0, player_input.primary_fire_held)
+	_handle_fire_input(weapon, 1, player_input.secondary_fire_held)
+	_handle_fire_input(weapon, 2, player_input.tertiary_fire_held)
 	
-	
-	#Fire empty sound if there is no ammo. Do not play if there is no attack 
-	if (player_input.primary_fire_held) and not _fired_this_press:
-		#early exit
-		if weapon.weapon_fires.size() >= 1 and weapon.mag_current < (_weapons[current_weapon_index].weapon_fires[0].ammo_cost ) and not weapon.has_infinite_ammo:
-			_play_empty.rpc(0)
-			_fired_this_press = true
-			return
-	
-	#Fire empty sound if there is no ammo. Do not play if there is no attack 
-	if (player_input.secondary_fire_held) and not _fired_this_press:
-		#early exit
-		if weapon.weapon_fires.size() >= 2 and weapon.mag_current < (_weapons[current_weapon_index].weapon_fires[1].ammo_cost ) and not weapon.has_infinite_ammo:
-			_play_empty.rpc(1)
-			_fired_this_press = true
-			return
-	
-	
-	
-	if weapon.automatic:
-		if player_input.primary_fire_held:
-			if weapon.weapon_fires.size() >= 1:
-				_try_fire(0)
-		if player_input.secondary_fire_held:
-			if weapon.weapon_fires.size() >= 2:
-				_try_fire(1)
-	else:
-		if player_input.primary_fire_held and not _fired_this_press:
-			if weapon.weapon_fires.size() >= 1:
-				_try_fire(0)
-				_fired_this_press = true
-		if player_input.secondary_fire_held and not _fired_this_press:
-			if weapon.weapon_fires.size() >= 2:
-				_try_fire(1)
-				_fired_this_press = true	
+	# _handle_fire_input(weapon, 2, player_input.tertiary_fire_held)  # trivial to add
+
+
+func _handle_fire_input(weapon: Weapon, fire_index: int, input_held: bool) -> void:
+	if fire_index >= weapon.weapon_fires.size():
+		return
+	if not input_held:
+		_fired_this_press.erase(fire_index)
+		return
+	if _fired_this_press.get(fire_index, false):
+		return
+
+	var fire: WeaponFire = weapon.weapon_fires[fire_index]
+
+	if fire.action_type == WeaponFire.ActionType.ADS:
+		toggle_ads_synced.rpc()
+		_fired_this_press[fire_index] = true
+		return
+
+	if fire.action_type == WeaponFire.ActionType.SHOOT \
+			and not weapon.has_infinite_ammo \
+			and weapon.mag_current < fire.ammo_cost:
+		_play_empty.rpc(fire_index)
+		_fired_this_press[fire_index] = true
+		return
+
+	_try_fire(fire_index)
+
+	if not weapon.automatic:
+		_fired_this_press[fire_index] = true
+#endregion
+
+
 		
+@rpc("any_peer", "call_local")
+func toggle_ads_synced():
+	_parent_player.ads = not _parent_player.ads
+
+
+
 
 
 func _try_fire(weapon_fire_index: int) -> void:
@@ -452,7 +462,8 @@ func _try_fire(weapon_fire_index: int) -> void:
 	var pre_delay: float = weapon.weapon_fires[weapon_fire_index].pre_shoot_delay
 	
 
-	if weapon.mag_current < (_weapons[current_weapon_index].weapon_fires[0].ammo_cost if player_input.primary_fire_held else _weapons[current_weapon_index].weapon_fires[1].ammo_cost) and not weapon.has_infinite_ammo:
+	var fire: WeaponFire = weapon.weapon_fires[weapon_fire_index]
+	if not weapon.has_infinite_ammo and weapon.mag_current < fire.ammo_cost:
 		return
 
 
@@ -572,7 +583,7 @@ func _execute_fire(weapon: Weapon, weapon_fire_index: int) -> void:
 				var collider: Node3D = result.collider
 				if collider is HurtboxComponent:
 					var distance := origin.distance_to(result.position)
-					var mult     := _compute_falloff_multiplier(weapon, distance)
+					var mult     := _compute_falloff_multiplier(weapon, weapon_fire_index, distance)
 					var damage   := weapon_fire.hitscan_damage * mult
 					if collider.is_head:
 						damage *= weapon_fire.headshot_multiplier
@@ -627,16 +638,19 @@ func _change_health_on_server(collider_name: String, delta, parent_player_name):
 			child.change_health(delta, parent_player_name)
 
 
-func _compute_falloff_multiplier(weapon: Weapon, distance: float) -> float:
-	if not weapon.has_damage_falloff or weapon.falloff_curve == null:
+func _compute_falloff_multiplier(weapon: Weapon, weapon_fire_index: int, distance: float) -> float:
+	
+	var weapon_fire = weapon.weapon_fires[weapon_fire_index]
+	
+	if not weapon_fire.has_damage_falloff or weapon_fire.falloff_curve == null:
 		return 1.0
 	var t: float
-	if weapon.falloff_end == weapon.falloff_start:
+	if weapon_fire.falloff_end == weapon_fire.falloff_start:
 		t = 0.0
 	else:
-		t = (distance - weapon.falloff_start) / (weapon.falloff_end - weapon.falloff_start)
+		t = (distance - weapon_fire.falloff_start) / (weapon_fire.falloff_end - weapon_fire.falloff_start)
 	t = clamp(t, 0.0, 1.0)
-	var curve: Curve = weapon.falloff_curve.curve
+	var curve: Curve = weapon_fire.falloff_curve.curve
 	if curve == null:
 		return 1.0
 	return curve.sample(t)

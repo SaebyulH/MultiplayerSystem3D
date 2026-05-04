@@ -6,6 +6,7 @@
 [ext_resource type="Script" uid="uid://yvevtn4dsddy" path="res://player/recoil/recoil_data.gd" id="3_g856l"]
 [ext_resource type="AudioStream" uid="uid://cqbknmbhlwhu" path="res://assets/sounds/reload.mp3" id="4_vtkbg"]
 [ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="5_l0ia1"]
+[ext_resource type="PackedScene" uid="uid://v27fq461i5vr" path="res://weapon/projectiles/scenes/grenade.tscn" id="6_to6rp"]
 [ext_resource type="PackedScene" uid="uid://cdlmcusd2xxl1" path="res://weapon/tf2/rocket_launcher.tscn" id="7_vw4sm"]
 [ext_resource type="Script" uid="uid://djg0ti1n45f8b" path="res://weapon/weapon_fire.gd" id="8_to6rp"]
 [ext_resource type="AudioStream" uid="uid://b1tqmb3x8y6b6" path="res://assets/sounds/smg.mp3" id="9_ku154"]
@@ -13,7 +14,7 @@
 [sub_resource type="Resource" id="Resource_2id02"]
 script = ExtResource("3_g856l")
 
-[sub_resource type="Resource" id="Resource_cbdh0"]
+[sub_resource type="Resource" id="Resource_to6rp"]
 script = ExtResource("8_to6rp")
 automatic = true
 post_shoot_delay = 0.8
@@ -29,12 +30,25 @@ script = ExtResource("3_g856l")
 
 [sub_resource type="Resource" id="Resource_qisbw"]
 script = ExtResource("8_to6rp")
+action_type = null
 automatic = true
 ammo_cost = 4
 recoil_data = SubResource("Resource_ur13p")
 bullet_type = 1
 projectile_scene = ExtResource("2_vw4sm")
 multishot_data = Array[Vector3]([Vector3(0, 0.1, -1), Vector3(0, -0.1, -1), Vector3(0.1, 0, -1), Vector3(-0.1, 0, -1)])
+metadata/_custom_type_script = "uid://djg0ti1n45f8b"
+
+[sub_resource type="Resource" id="Resource_cbdh0"]
+script = ExtResource("8_to6rp")
+action_type = null
+automatic = true
+post_shoot_delay = 0.8
+recoil_data = SubResource("Resource_2id02")
+bullet_type = 1
+projectile_scene = ExtResource("6_to6rp")
+shoot_sound = ExtResource("9_ku154")
+empty_sound = ExtResource("1_vw4sm")
 metadata/_custom_type_script = "uid://djg0ti1n45f8b"
 
 [resource]
@@ -45,7 +59,7 @@ mag_size = 4
 mag_current = 4
 reload_individually = true
 reload_time = 0.9
-weapon_fires = Array[ExtResource("8_to6rp")]([SubResource("Resource_cbdh0"), SubResource("Resource_qisbw")])
+weapon_fires = Array[ExtResource("8_to6rp")]([SubResource("Resource_to6rp"), SubResource("Resource_qisbw"), SubResource("Resource_cbdh0")])
 weapon_model = ExtResource("7_vw4sm")
 reload_sound = ExtResource("4_vtkbg")
 metadata/_custom_type_script = "uid://qjf4ciit3dqy"
