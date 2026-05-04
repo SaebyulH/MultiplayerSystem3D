@@ -46,6 +46,7 @@ enum ActionType {SHOOT, ADS, SHIELD}
 ### Recoil behaviour data for this weapon.
 @export var recoil_data: RecoilData = RecoilData.new()
 
+
 ##recoil knockback, moving the player physically
 @export var recoil_knockback: Vector3 = Vector3.ZERO
 ## Multiplier applied to the player's movement speed while this weapon is equipped.

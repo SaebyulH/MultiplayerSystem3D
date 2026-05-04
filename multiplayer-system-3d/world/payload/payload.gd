@@ -1,4 +1,4 @@
-extends CharacterBody3D
+extends AnimatableBody3D
 class_name PayloadNode
 
 # ─────────────────────────────────────────────
@@ -90,13 +90,12 @@ func _ready() -> void:
 	game_mode_component.phase_changed.connect(_on_phase_changed)
 	game_mode_component.round_won.connect(_on_round_won)
 
-	# Hybrid: unlock payload only when the point is capped
 	if game_mode_component.game_mode == GameModeComponent.GameMode.HYBRID:
 		game_mode_component.hybrid_point_captured_signal.connect(_on_hybrid_point_captured)
 
 	game_mode_component.register_payload(self)
 
-	_sync_position_to_path()
+	_apply_position_to_path()
 	_set_state(PayloadState.LOCKED)
 
 func _bake_checkpoint_progresses() -> void:
@@ -108,7 +107,6 @@ func _bake_checkpoint_progresses() -> void:
 #  PUBLIC API
 # ─────────────────────────────────────────────
 
-## Called by HybridMode when the capture point is taken
 func set_locked(locked: bool) -> void:
 	is_locked = locked
 	if is_locked:
@@ -118,20 +116,20 @@ func set_locked(locked: bool) -> void:
 #  PROCESS
 # ─────────────────────────────────────────────
 
-func _process(delta: float) -> void:
-	_tick_healing(delta)
-
+func _physics_process(delta: float) -> void:
 	if not multiplayer.is_server():
 		return
 	if is_delivered or is_locked:
 		return
+
+	_tick_healing(delta)
 
 	var attackers := _count_team(attacking_team)
 	var defenders := _count_team(_get_defending_team())
 
 	# ── Update readable flags ─────────────────
 	is_being_pushed = attackers > 0 and defenders == 0
-	is_contested = attackers > 0 and defenders > 0
+	is_contested    = attackers > 0 and defenders > 0
 
 	# ── Determine new state ───────────────────
 	var new_state: PayloadState
@@ -142,7 +140,7 @@ func _process(delta: float) -> void:
 		new_state = PayloadState.CONTESTED
 	else:
 		is_being_pushed = false
-		is_contested = false
+		is_contested    = false
 		if _return_countdown > 0.0:
 			_return_countdown -= delta
 			new_state = PayloadState.IDLE
@@ -181,6 +179,8 @@ func _process(delta: float) -> void:
 	if new_state != payload_state:
 		_set_state(new_state)
 
+	# Server drives physics position with move_and_collide so players
+	# are carried rather than shoved
 	_sync_position_to_path()
 	_update_label()
 	_rpc_sync.rpc(progress, payload_state, _return_countdown)
@@ -209,8 +209,7 @@ func _set_state(new_state: PayloadState) -> void:
 # ─────────────────────────────────────────────
 
 func _tick_healing(delta: float) -> void:
-	if payload_state == PayloadState.LOCKED or is_delivered:
-		return
+	# Server only — called after the is_server() guard in _physics_process
 	for p in _pushers:
 		if p is Player and p.team == attacking_team:
 			p.change_health(heal_per_second * delta, p.name)
@@ -219,12 +218,19 @@ func _tick_healing(delta: float) -> void:
 #  PATH POSITION
 # ─────────────────────────────────────────────
 
+## Server: use move_and_collide so CharacterBody3D players are carried by
+## the cart rather than shoved away from it.
 func _sync_position_to_path() -> void:
-	if not path_follower:
-		return
+	path_follower.progress_ratio = progress
+	var target_pos := path_follower.global_position + vertical_offset
+	#move_and_collide(target_pos - global_position)
+	global_basis = path_follower.global_basis
+	global_transform = path_follower.global_transform
+
+func _apply_position_to_path() -> void:
 	path_follower.progress_ratio = progress
 	global_position = path_follower.global_position + vertical_offset
-	global_basis = path_follower.global_basis
+	global_basis    = path_follower.global_basis
 
 # ─────────────────────────────────────────────
 #  CHECKPOINTS
@@ -258,10 +264,10 @@ func _world_pos_to_path_progress(world_pos: Vector3) -> float:
 # ─────────────────────────────────────────────
 
 func _on_delivered() -> void:
-	is_delivered = true
+	is_delivered    = true
 	is_being_pushed = false
-	is_contested = false
-	progress = 1.0
+	is_contested    = false
+	progress        = 1.0
 	payload_delivered.emit()
 	_set_state(PayloadState.DELIVERED)
 	_rpc_delivered.rpc()
@@ -273,43 +279,31 @@ func _on_delivered() -> void:
 # ─────────────────────────────────────────────
 
 func _on_round_won(_winning_team: Player.Team) -> void:
-	if not multiplayer.is_server():
-		return
-	# Use reliable RPC so clients are guaranteed to receive the reset
-	# even if unreliable _rpc_sync packets were dropped
-	#_rpc_reset.rpc()
+	pass
 
 # ─────────────────────────────────────────────
 #  PHASE HANDLER
 # ─────────────────────────────────────────────
 
 func _on_phase_changed(new_phase: GameModeComponent.PhaseState) -> void:
-	
 	if new_phase == GameModeComponent.PhaseState.SETUP:
 		_rpc_reset.rpc()
-		
-		
-		
+
 	var is_hybrid := game_mode_component and \
 		game_mode_component.game_mode == GameModeComponent.GameMode.HYBRID
 
 	if is_hybrid:
-		# Stay locked until _on_hybrid_point_captured fires — ignore phase alone
 		if not game_mode_component.hybrid_mode or \
 				not game_mode_component.hybrid_mode.point_is_captured:
 			is_locked = true
 			_set_state(PayloadState.LOCKED)
 		return
 
-	# Normal Escort / other modes
 	is_locked = not game_mode_component.is_objective_unlocked()
 	if is_locked:
 		_set_state(PayloadState.LOCKED)
 
 func _on_hybrid_point_captured() -> void:
-	# Fires on both server and client via RPC from GameModeComponent
-	# Just clear the lock — _process picks up pushers next frame (server)
-	# and _rpc_sync updates clients
 	is_locked = false
 
 # ─────────────────────────────────────────────
@@ -320,7 +314,7 @@ func _get_defending_team() -> Player.Team:
 	match attacking_team:
 		Player.Team.SPI: return Player.Team.SCI
 		Player.Team.SCI: return Player.Team.SPI
-		_: return Player.Team.FFA
+		_:               return Player.Team.FFA
 
 func _count_team(team: Player.Team) -> int:
 	var count := 0
@@ -381,7 +375,7 @@ func _update_label() -> void:
 			label.text = "CONTESTED\n%d%%" % int(progress * 100)
 		PayloadState.PUSHING:
 			var attackers := _count_team(attacking_team)
-			var mult := _get_speed_multiplier(attackers)
+			var mult      := _get_speed_multiplier(attackers)
 			label.text = "PUSHING x%.1f\n%d%%" % [mult, int(progress * 100)]
 		PayloadState.RETURNING:
 			label.text = "RETURNING\n%d%%" % int(progress * 100)
@@ -398,25 +392,28 @@ func _update_label() -> void:
 
 @rpc("authority", "call_local", "unreliable")
 func _rpc_sync(p_progress: float, p_state: PayloadState, p_countdown: float) -> void:
-	progress = p_progress
-	payload_state = p_state
+	if multiplayer.is_server():
+		return
+	progress          = p_progress
+	payload_state     = p_state
 	_return_countdown = p_countdown
-	_sync_position_to_path()
+	# Clients use direct assignment — no physics involvement
+	_apply_position_to_path()
 	_update_visuals()
 
 @rpc("authority", "call_local", "reliable")
 func _rpc_reset() -> void:
-	progress = 0.0
-	is_delivered = false
-	is_being_pushed = false
-	is_contested = false
-	_return_countdown = 0.0
+	progress              = 0.0
+	is_delivered          = false
+	is_being_pushed       = false
+	is_contested          = false
+	_return_countdown     = 0.0
 	_next_checkpoint_index = 0
 	_pushers.clear()
 	var is_hybrid := game_mode_component and \
 		game_mode_component.game_mode == GameModeComponent.GameMode.HYBRID
 	is_locked = is_hybrid
-	_sync_position_to_path()
+	_apply_position_to_path()
 	_set_state(PayloadState.LOCKED)
 
 @rpc("authority", "call_local", "reliable")
@@ -433,7 +430,8 @@ func _rpc_push_stopped() -> void:
 
 @rpc("authority", "call_local", "reliable")
 func _rpc_delivered() -> void:
+	if multiplayer.is_server():
+		return
 	is_delivered = true
-	
 	payload_delivered.emit()
 	_update_visuals()
