@@ -13,6 +13,15 @@ var respawn_timer: float = 0.0
 var _pending_spawn_position: Vector3 = Vector3.ZERO
 var _has_pending_spawn: bool = false
 
+var is_bot: bool = false  # set by SpawnManager before add_child
+
+# In your player script
+var entity_id: String :
+	get:
+		return name   # for players, entity_id == name == str(network_id)
+	set(value):
+		name = value  # bots set this explicitly before add_child
+
 
 var ads: bool = false
 
@@ -71,20 +80,22 @@ var pitch := 0.0
 #@onready var leaderboard: LeaderboardComponent = get_node("/root/Main/World1/LeaderboardComponent")
 
 
-
-
 func _enter_tree() -> void:
-	#The Player Input node is controlled by the LOCAL
-	player_input.set_multiplayer_authority(str(name).to_int())
-	body.set_multiplayer_authority(str(name).to_int())
-	#$ProjectilesParent.set_multiplayer_authority(str(name).to_int())
-	
-	#set_multiplayer_authority(str(name).to_int())
-	
-	
-	#
-	#%Name
-
+	if is_bot:
+		player_input.set_multiplayer_authority(1)
+		body.set_multiplayer_authority(1)
+		# Cover the synchronizer explicitly
+		#if has_node("MultiplayerSynchronizer"):
+			#$MultiplayerSynchronizer.set_multiplayer_authority(1)
+	else:
+		var id := str(name).to_int()
+		set_multiplayer_authority(1)
+		player_input.set_multiplayer_authority(id)
+		body.set_multiplayer_authority(id)
+		#if has_node("MultiplayerSynchronizer"):
+			#$MultiplayerSynchronizer.set_multiplayer_authority(id)
+			
+			
 func _ready() -> void:
 	add_to_group("players")
 	attribute_component.health_changed.connect(_health_changed)
@@ -154,15 +165,20 @@ func spawn():
 	show()
 	spawned = true
 	$Body/PlayerUI.show()
-	var my_id := multiplayer.get_unique_id()
-	var player_id := name.to_int()
-	if my_id == player_id and spawned:
-		camera.make_current()
-		$BodyHurtbox/MeshInstance3D2.hide()
-		$BodyHurtbox/CollisionShape3D.hide()
+	if not is_bot:
+		var my_id := multiplayer.get_unique_id()
+		var player_id := name.to_int()
+		if my_id == player_id:
+			camera.make_current()
+			$BodyHurtbox/MeshInstance3D2.hide()
+			$BodyHurtbox/CollisionShape3D.hide()
+		else:
+			camera.current = false
+			camera.visible = false
 	else:
+		# bots never take camera, always hide their hurtbox mesh
 		camera.current = false
-		camera.visible = false	
+		camera.visible = false
 
 
 
@@ -192,9 +208,9 @@ func _physics_process(delta: float) -> void:
 		#hide()
 	#show()
 	
-	if is_multiplayer_authority():
-		_sync_head.rpc()
-		
+	#if is_multiplayer_authority():
+		#_sync_head.rpc()
+		#
 	#EVERYONE DOES THIS
 	if respawn_timer > 0.0:
 		
@@ -215,6 +231,7 @@ func _rollback_tick(delta, tick, is_fresh):
 		_has_pending_spawn = false
 		tick_interpolator.teleport()
 		return
+		
 	_apply_movement_from_input(delta)
 
 

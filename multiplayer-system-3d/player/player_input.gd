@@ -34,7 +34,11 @@ func _ready() -> void:
 	NetworkTime.before_tick_loop.connect(_gather)
 
 func _gather() -> void:
+	
 	if not is_inside_tree() or not is_multiplayer_authority():
+		return
+		
+	if get_parent().is_bot:
 		return
 	if ui_open:
 		input_dir  = Vector2.ZERO
@@ -45,6 +49,8 @@ func _gather() -> void:
 	crouch     = Input.is_action_pressed("crouch")
 
 func _input(event: InputEvent) -> void:
+	if get_parent().is_bot:
+		return
 	if not is_multiplayer_authority():
 		return
 

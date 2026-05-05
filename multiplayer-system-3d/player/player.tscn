@@ -10,6 +10,7 @@
 [ext_resource type="Script" uid="uid://d2kgugh2o23ba" path="res://player/weapon_controller.gd" id="6_ebec5"]
 [ext_resource type="Script" uid="uid://cxit1cumphn3q" path="res://components/attribute_component.gd" id="7_1jxqw"]
 [ext_resource type="Script" uid="uid://w4bkel2abkvv" path="res://player/body.gd" id="13_kb6p2"]
+[ext_resource type="Script" uid="uid://t16cjccio2s4" path="res://player/bot_controller.gd" id="14_kb6p2"]
 [ext_resource type="Script" uid="uid://bk7h6t34yea7r" path="res://player/recoil/recoil.gd" id="14_wodsf"]
 [ext_resource type="PackedScene" uid="uid://em68gvqy1f84" path="res://effects/muzzle_flash.tscn" id="27_5ejfk"]
 [ext_resource type="Script" uid="uid://dmbwmsfd27dhh" path="res://player/player_ui.gd" id="34_ge24q"]
@@ -47,6 +48,9 @@ height = 2.447
 properties/0/path = NodePath("AttributeComponent:health")
 properties/0/spawn = true
 properties/0/replication_mode = 1
+properties/1/path = NodePath(".:team")
+properties/1/spawn = true
+properties/1/replication_mode = 1
 
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_kb6p2"]
 properties/0/path = NodePath(".:rotation")
@@ -67,11 +71,6 @@ albedo_color = Color(0.13077214, 0.13077214, 0.13077211, 1)
 [sub_resource type="BoxMesh" id="BoxMesh_kb6p2"]
 size = Vector3(1, 1.625, 0.54)
 
-[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_yllr7"]
-properties/0/path = NodePath(".:team")
-properties/0/spawn = true
-properties/0/replication_mode = 1
-
 [node name="Player" type="CharacterBody3D" unique_id=51620469 node_paths=PackedStringArray("tick_interpolator", "player_input", "rollback_sync", "attribute_component", "body", "weapon_controller")]
 collision_layer = 2
 collision_mask = 3
@@ -82,6 +81,10 @@ rollback_sync = NodePath("RollbackSynchronizer")
 attribute_component = NodePath("AttributeComponent")
 body = NodePath("Body")
 weapon_controller = NodePath("WeaponController")
+
+[node name="BotController" type="Node" parent="." unique_id=1301960893 node_paths=PackedStringArray("player")]
+script = ExtResource("14_kb6p2")
+player = NodePath("..")
 
 [node name="WeaponController" type="Node" parent="." unique_id=1956241137 node_paths=PackedStringArray("weapon_model_parent", "projectile_spawn_parent", "player_input", "recoil", "_parent_player", "_raycast")]
 script = ExtResource("6_ebec5")
@@ -384,8 +387,5 @@ grow_vertical = 2
 [node name="Label" type="Label" parent="Body/PlayerUI/WeaponList" unique_id=440692072]
 layout_mode = 2
 text = "FASFAS"
-
-[node name="MultiplayerSynchronizer2" type="MultiplayerSynchronizer" parent="." unique_id=1883977356]
-replication_config = SubResource("SceneReplicationConfig_yllr7")
 
 [connection signal="health_changed" from="AttributeComponent" to="Body/HealthBarPublic" method="_on_attribute_component_health_changed"]

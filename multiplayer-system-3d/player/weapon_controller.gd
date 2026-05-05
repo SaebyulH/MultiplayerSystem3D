@@ -103,10 +103,13 @@ func _physics_process(delta: float) -> void:
 	_align_weapon_to_raycast()
 	_tick_timers(delta)
 
-	var my_id: int    = multiplayer.get_unique_id()
-	var owner_id: int = _parent_player.name.to_int()
-	if my_id == owner_id:
-		_process_fire()
+	if _parent_player.is_bot:
+		_process_fire()  # server drives bot firing directly
+	else:
+		var my_id: int = multiplayer.get_unique_id()
+		var owner_id: int = _parent_player.name.to_int()
+		if my_id == owner_id:
+			_process_fire()
 
 	#if player_input.primary_fire_just_released:
 		#_fired_this_press           = false
@@ -152,7 +155,7 @@ func _tick_timers(delta: float) -> void:
 			_finish_reload()
 
 	if _pending_fire:
-		if player_input.fire_held:
+		if player_input.primary_fire_held or player_input.secondary_fire_held or player_input.tertiary_fire_held:
 			_pre_fire_timer -= delta
 		else:
 			_pending_fire = false
@@ -332,13 +335,13 @@ func start_reload() -> void:
 
 @rpc("any_peer")
 func request_reload() -> void:
-	# Only the server should process reload requests
 	if not multiplayer.is_server():
 		return
-	var sender_id: int = multiplayer.get_remote_sender_id()
-	var owner_id: int  = _parent_player.name.to_int()
-	if sender_id != 0 and sender_id != owner_id:
-		return
+	if not _parent_player.is_bot:
+		var sender_id: int = multiplayer.get_remote_sender_id()
+		var owner_id: int = _parent_player.name.to_int()
+		if sender_id != 0 and sender_id != owner_id:
+			return
 	_begin_reload_server()
 
 func _begin_reload_server() -> void:
@@ -678,7 +681,10 @@ func _spawn_projectile_on_server(weapon_fire_index, shot_dir, basis, parent_play
 	var weapon: Weapon    = _weapons[current_weapon_index]
 	var shot_dir_v3: Vector3 = shot_dir as Vector3
 	var world_dir: Vector3   = basis * shot_dir_v3.normalized()
-
+	
+	#TODO: FInd out why this is being caused
+	if not weapon_fire_index < weapon.weapon_fires.size() or not weapon.weapon_fires[weapon_fire_index].projectile_scene:
+		return
 	var projectile_scene: Node3D  = weapon.weapon_fires[weapon_fire_index].projectile_scene.instantiate() as Node3D
 	projectile_scene.global_transform = weapon_model_parent.global_transform
 	projectile_scene.shooter_name     = parent_player_name
@@ -725,75 +731,6 @@ func _flash_muzzle_flash(start_position: Vector3) -> void:
 	muzzle_flash.global_position = start_position
 	muzzle_flash.fire()
 
-#
-#@rpc("any_peer", "call_local")
-#func _on_hitscan_hit(
-	#hit_position: Vector3,
-	#hit_normal: Vector3,
-	#start_position: Vector3
-#) -> void:
-	#var bullet_hole_scene: PackedScene = load("res://effects/bullet_hole.tscn") as PackedScene
-	#var bullet_hole: Node3D            = bullet_hole_scene.instantiate() as Node3D
-	#projectile_spawn_parent.add_child(bullet_hole)
-	#bullet_hole.global_position        = hit_position
-	#bullet_hole.global_transform.basis = Basis(Quaternion(Vector3.UP, hit_normal))
-#
-	## --- Tracer setup ---
-	#var tracer_mat: StandardMaterial3D  = StandardMaterial3D.new()
-	#tracer_mat.albedo_color  = Color(1.0, 0.588, 0.294, 1.0)
-	#tracer_mat.shading_mode  = BaseMaterial3D.SHADING_MODE_UNSHADED
-	#tracer_mat.cull_mode     = BaseMaterial3D.CULL_DISABLED
-#
-	#var cylinder: CylinderMesh = CylinderMesh.new()
-	#cylinder.top_radius    = 0.01
-	#cylinder.bottom_radius = 0.01
-	#cylinder.radial_segments = 3
-	#cylinder.rings         = 1
-	#cylinder.material      = tracer_mat
-#
-	#var tracer_instance: MeshInstance3D = MeshInstance3D.new()
-	#tracer_instance.mesh         = cylinder
-	#tracer_instance.cast_shadow  = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	#projectile_spawn_parent.add_child(tracer_instance)
-#
-	#var distance: float = start_position.distance_to(hit_position)
-#
-	## --- Tween animation ---
-	#var tween: Tween = get_tree().create_tween()
-#
-	#var tracer_fn := func(t: float) -> void:
-		#if not is_instance_valid(tracer_instance):
-			#return
-		#var current_start: Vector3 = start_position.lerp(hit_position, t)
-		#var mid: Vector3           = current_start.lerp(hit_position, 0.5)
-		#var dir: Vector3           = hit_position - current_start
-		#var tracer_len: float      = dir.length()
-		#tracer_instance.global_position = mid
-		#cylinder.height = tracer_len
-		#if tracer_len > 0.001:
-			#tracer_instance.global_transform.basis = Basis(
-				#Quaternion(Vector3.UP, dir.normalized())
-			#)
-#
-	#tween.tween_method(tracer_fn, 0.0, 1.0, distance * 0.02)
-#
-	## --- Lifetime control (race: tween vs 4s timer) ---
-	#var alive := true
-#
-	#get_tree().create_timer(4.0).timeout.connect(func():
-		#if alive and is_instance_valid(tracer_instance):
-			#alive = false
-			#if is_instance_valid(tween):
-				#tween.kill()
-			#tracer_instance.queue_free()
-	#)
-#
-	## --- Bullet hole cleanup ---
-	#get_tree().create_timer(7.0).timeout.connect(func():
-		#if is_instance_valid(bullet_hole):
-			#bullet_hole.queue_free()
-	#)
-	
 @rpc("any_peer", "call_local")
 func _on_hitscan_hit(hit_position: Vector3, hit_normal: Vector3, start_position: Vector3) -> void:
 	# Bullet hole

@@ -150,7 +150,8 @@ func _request_loadout(target_player_id: String, primary_path: String, secondary_
 
 	var sender_id := multiplayer.get_remote_sender_id()
 	if sender_id != 0 and str(sender_id) != target_player_id:
-		return
+		if not target_player_id.begins_with("bot_"):
+			return
 
 	var primary: Weapon = load(primary_path) as Weapon
 	var secondary: Weapon = load(secondary_path) as Weapon

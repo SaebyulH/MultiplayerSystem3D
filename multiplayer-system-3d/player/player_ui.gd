@@ -15,6 +15,8 @@ class_name PlayerBodyUI
 @onready var name_public := %NamePublic
 
 @onready var WeaponList := $WeaponList
+@onready var _owner_player := $"../.."
+
 
 var _last_health := 0.0
 var _last_change := 0.0
@@ -29,15 +31,15 @@ func _ready() -> void:
 	_update_weapon_list()
 
 	var is_owner := is_multiplayer_authority()
-	health_bar.visible = is_owner
-	health_delta_bar.visible = is_owner
-	ammo_bar.visible = is_owner
-	team_text.visible = is_owner
+	health_bar.visible = is_owner and not _owner_player.is_bot
+	health_delta_bar.visible = is_owner and not _owner_player.is_bot
+	ammo_bar.visible = is_owner and not _owner_player.is_bot
+	team_text.visible = is_owner and not _owner_player.is_bot
 
-	ammo_bar_public.visible = not is_owner
-	health_bar_public.visible = not is_owner
-	health_delta_bar_public.visible = not is_owner
-	name_public.visible = not is_owner
+	ammo_bar_public.visible = not is_owner or _owner_player.is_bot
+	health_bar_public.visible = not is_owner or _owner_player.is_bot
+	health_delta_bar_public.visible = not is_owner or _owner_player.is_bot
+	name_public.visible = not is_owner or _owner_player.is_bot
 
 	# Authority computes the display name and broadcasts it to all peers
 	if is_owner:

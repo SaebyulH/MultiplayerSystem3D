@@ -38,6 +38,9 @@ func apply_health_delta(delta: float, changer: String, changee: String):
 
 	print("player " + changer + " changed health of player " + changee + " by " + str(applied_delta))
 
+
+
+	var changer_node = GameManager.find_player(changer)
 	if applied_delta < 0:
 		_time_since_last_damage = 0.0
 
@@ -45,14 +48,16 @@ func apply_health_delta(delta: float, changer: String, changee: String):
 			Leaderboard.request_add_self_damage(changer, applied_delta)
 		else:
 			Leaderboard.request_add_damage(changer, applied_delta)
-			GameManager.find_player(changer).weapon_controller.play_hit_sound.rpc_id(changer.to_int())
+			if not changer_node.is_bot:
+				changer_node.weapon_controller.play_hit_sound.rpc_id(changer.to_int())
 		last_attacker = changer
 	else:
 		if changee == changer:
 			Leaderboard.request_add_self_heal(changer, applied_delta)
 		else:
 			Leaderboard.request_add_heal_other(changer, applied_delta)
-			GameManager.find_player(changer).weapon_controller.play_hit_heal_sound.rpc_id(changer.to_int())
+			if not changer_node.is_bot:
+				changer_node.weapon_controller.play_hit_heal_sound.rpc_id(changer.to_int())
 			
 
 	if old_health > 0.0 and new_health <= 0.0:

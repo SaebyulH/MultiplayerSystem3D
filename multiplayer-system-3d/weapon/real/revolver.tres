@@ -12,11 +12,14 @@
 [sub_resource type="Resource" id="Resource_4qm62"]
 script = ExtResource("3_u8c68")
 
-[sub_resource type="Resource" id="Resource_muyjb"]
+[sub_resource type="Resource" id="Resource_k6wjh"]
 script = ExtResource("8_4qm62")
+automatic = true
 pre_shoot_delay = 0.2
 post_shoot_delay = 0.0
 recoil_data = SubResource("Resource_4qm62")
+hitscan_damage = 15.0
+headshot_multiplier = 15.0
 shoot_sound = ExtResource("6_6e506")
 empty_sound = ExtResource("1_owikt")
 metadata/_custom_type_script = "uid://djg0ti1n45f8b"
@@ -26,7 +29,7 @@ script = ExtResource("5_ualsw")
 display_name = "Revolver"
 reload_individually = true
 reload_time = 0.2
-weapon_fires = Array[ExtResource("8_4qm62")]([SubResource("Resource_muyjb")])
+weapon_fires = Array[ExtResource("8_4qm62")]([SubResource("Resource_k6wjh")])
 weapon_model = ExtResource("7_j1b5w")
 reload_sound = ExtResource("4_0pqnt")
 metadata/_custom_type_script = "uid://qjf4ciit3dqy"

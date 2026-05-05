@@ -16,6 +16,7 @@ script = ExtResource("3_d0x52")
 script = ExtResource("8_d0x52")
 automatic = true
 recoil_data = SubResource("Resource_v75b2")
+recoil_knockback = Vector3(0, 0, 3)
 has_damage_falloff = true
 multishot_data = Array[Vector3]([Vector3(0, 0, -2), Vector3(0, 0.2, -2), Vector3(0, -0.2, -2), Vector3(0.2, 0, -2), Vector3(-0.2, 0, -2), Vector3(-0.14, -0.14, -2), Vector3(0.14, -0.14, -2), Vector3(-0.14, 0.14, -2), Vector3(0.14, 0.14, -2)])
 shoot_sound = ExtResource("6_qtiku")
@@ -25,7 +26,6 @@ metadata/_custom_type_script = "uid://djg0ti1n45f8b"
 [resource]
 script = ExtResource("5_mkmiw")
 display_name = "Scattergun"
-automatic = true
 reload_individually = true
 reload_time = 0.7
 weapon_fires = Array[ExtResource("8_d0x52")]([SubResource("Resource_mkmiw")])
