@@ -26,10 +26,17 @@ const HIDE_TIME := 2.0
 const MIN_DISPLAY_DELTA := 0.5
 
 func _ready() -> void:
+	_owner_player.team_changed.connect(_update_health_bar_color)
+	var current_client_player = GameManager.find_player(str(multiplayer.get_unique_id()))
+	current_client_player.team_changed.connect(_update_health_bar_color)
+	
+	_update_health_bar_color()
+	
 	weapon_controller.mag_changed.connect(func(_a=null, _b=null): _update_weapon_list())
 	weapon_controller.weapon_changed.connect(func(_a=null, _b=null): _update_weapon_list())
 	_update_weapon_list()
-
+	
+	
 	var is_owner := is_multiplayer_authority()
 	health_bar.visible = is_owner and not _owner_player.is_bot
 	health_delta_bar.visible = is_owner and not _owner_player.is_bot
@@ -37,6 +44,8 @@ func _ready() -> void:
 	team_text.visible = is_owner and not _owner_player.is_bot
 
 	ammo_bar_public.visible = not is_owner or _owner_player.is_bot
+	
+	
 	health_bar_public.visible = not is_owner or _owner_player.is_bot
 	health_delta_bar_public.visible = not is_owner or _owner_player.is_bot
 	name_public.visible = not is_owner or _owner_player.is_bot
@@ -55,6 +64,23 @@ func _ready() -> void:
 	_last_health = attribute_component.health
 
 	_update_team_text()
+
+
+func _update_health_bar_color():
+	var local_id = str(multiplayer.get_unique_id())
+	var current_client_player = GameManager.find_player(local_id)
+	print("Local ID: ", local_id)
+	print("Current client player: ", current_client_player)
+	print("Owner player: ", _owner_player)
+	print("Owner team: ", _owner_player.team)
+	print("Client team: ", current_client_player.team if current_client_player else "NULL - player not found!")
+	
+	var is_enemy_to_current_client: bool = _owner_player.team != current_client_player.team
+
+	var health_bar_public_color: Color = Color.GREEN if not is_enemy_to_current_client else Color.RED
+	health_bar_public.modulate = health_bar_public_color
+
+
 
 @rpc("authority", "call_local", "reliable")
 func _set_name_label(display_name: String) -> void:
@@ -149,7 +175,7 @@ func _process(_delta: float) -> void:
 	if attribute_component == null:
 		return
 
-	var hp := attribute_component.health
+	var hp := int(attribute_component.health)
 	var bar := ""
 	for i in range(int(hp / 10)):
 		bar += "█"

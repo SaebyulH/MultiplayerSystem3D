@@ -28,7 +28,6 @@ linear_velocity = Vector3(0, 0, -50)
 linear_damp = 3.0
 angular_velocity = Vector3(0.017453292, 0.017453292, 0.017453292)
 lifetime = 4.0
-hurtbox_hit_mode = 3
 world_hit_mode = 3
 
 [node name="HitboxComponent" parent="." index="2" unique_id=1963592485]

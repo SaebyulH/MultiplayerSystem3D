@@ -30,9 +30,8 @@ volumetric_fog_enabled = true
 volumetric_fog_density = 0.0042
 adjustment_enabled = true
 
-[node name="Game" type="Node3D" unique_id=159294576 node_paths=PackedStringArray("spawn_locations", "despawn_location")]
+[node name="Game" type="Node3D" unique_id=159294576 node_paths=PackedStringArray("despawn_location")]
 script = ExtResource("1_4t2r1")
-spawn_locations = [NodePath("Spawn Location 1"), NodePath("Spawn Location 2")]
 despawn_location = NodePath("Despawn")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1758273969]
@@ -690,12 +689,6 @@ transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 5.15
 operation = 2
 size = Vector3(7, 3.2636719, 11.876953)
 
-[node name="Spawn Location 1" type="Marker3D" parent="." unique_id=1320012314]
-transform = Transform3D(-0.8660254, -0.4330128, 0.24999999, -0.4330127, 0.39951903, -0.8080127, 0.25000006, -0.8080126, -0.53349364, -15.175713, -4.1309204, 36.358383)
-
-[node name="Spawn Location 2" type="Marker3D" parent="." unique_id=1492294772]
-transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 26.156445, -4.220581, 36.966476)
-
 [node name="Despawn" type="Marker3D" parent="." unique_id=1517920648]
 transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, -2.797104, -53.386234, 17.53489)
 
@@ -812,6 +805,30 @@ transform = Transform3D(0.99165696, -0.11322553, 0.06161529, 0.1286234, 0.837566
 [node name="Camera3D" type="Camera3D" parent="." unique_id=1251576215]
 transform = Transform3D(0.7289686, -0.22625269, -0.6460762, 0, 0.9438009, -0.3305144, 0.6845471, 0.24093463, 0.6880013, -11.292, -4.179, 53.3)
 fov = 80.0
+
+[node name="SCI Spawn Location" type="Marker3D" parent="." unique_id=773152619]
+transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, -15.202596, -2.573486, 21.415329)
+
+[node name="SCI Spawn Location2" type="Marker3D" parent="." unique_id=1874558958]
+transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, -18.507954, -1.7380171, 15.688158)
+
+[node name="SCI Spawn Location3" type="Marker3D" parent="." unique_id=1422817215]
+transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, -14.359417, -1.9300038, 39.855743)
+
+[node name="SCI Spawn Location4" type="Marker3D" parent="." unique_id=2040063146]
+transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, -14.359418, -2.1382165, 37.451244)
+
+[node name="SPI Spawn Location" type="Marker3D" parent="." unique_id=942949346]
+transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 25.380579, -2.3633573, 20.957293)
+
+[node name="SPI Spawn Location2" type="Marker3D" parent="." unique_id=1063334410]
+transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 28.810797, -4.2934513, 11.352692)
+
+[node name="SPI Spawn Location3" type="Marker3D" parent="." unique_id=624997852]
+transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 26.412273, -2.0374131, 35.835697)
+
+[node name="SPI Spawn Location4" type="Marker3D" parent="." unique_id=287715696]
+transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 25.828518, -3.960489, 38.549362)
 
 [editable path="Node3D3"]
 [editable path="Node3D2"]

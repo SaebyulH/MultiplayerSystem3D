@@ -44,9 +44,9 @@ func remove_bot(entity_id: String) -> void:
 	
 # At the top — point these at your actual class resources
 const BOT_CLASSES: Array[String] = [
-	#"res://player/player_classes/assasin.tres",
+	"res://player/player_classes/assasin.tres",
 	"res://player/player_classes/assault.tres",
-	#"res://player/player_classes/assistance.tres",
+	"res://player/player_classes/assistance.tres",
 ]
 
 func _input(event: InputEvent) -> void:
@@ -65,14 +65,15 @@ func add_bot(team: Player.Team) -> void:
 	var bot = player_scene.instantiate()
 	bot.name = entity_id
 	bot.is_bot = true
+	bot.team = team  # ← set BEFORE add_child so _ready() sees correct team
 	bot.set_multiplayer_authority(1)
 	bot.spawn_manager = self
 	spawn_parent.add_child(bot)
 	bot.global_position = Vector3(0, 100, 0)
 	Leaderboard.request_add_player(entity_id)
-	_apply_bot_loadout(entity_id, team)
+	_apply_bot_loadout(entity_id)
 
-func _apply_bot_loadout(entity_id: String, team: Player.Team) -> void:
+func _apply_bot_loadout(entity_id: String) -> void:
 	# Pick a random class
 	var class_path := BOT_CLASSES[randi() % BOT_CLASSES.size()]
 	var bot_class := load(class_path) as Class
@@ -98,6 +99,6 @@ func _apply_bot_loadout(entity_id: String, team: Player.Team) -> void:
 	controller.set_weapons(new_weapons)
 	controller.current_weapon_index = 0
 
-	player.team = team
+	#player.team = team
 	var spawn_pos :Vector3= player._get_spawn_position()
 	player.rpc_reset.rpc(spawn_pos)

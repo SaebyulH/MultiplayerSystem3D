@@ -6,10 +6,13 @@ var mouse_sens_x: float = 0.002
 var mouse_sens_y: float = 0.002
 
 func _ready() -> void:
-	if is_multiplayer_authority():
-		$Recoil/Head/Skin2.hide()
-		$Recoil/Head/Skin3.hide()
-		$Skin2.hide()
+	if is_multiplayer_authority() and not $"..".is_bot:
+		$Recoil/Head/Face.hide()
+		$Torso.hide()
+		$LeftLeg.hide()
+		$RighLeg.hide()
+		$Recoil/Head/RightEye.hide()
+		$Recoil/Head/LeftEye.hide()
 func _input(event: InputEvent) -> void:
 	if not is_multiplayer_authority():
 		return

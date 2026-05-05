@@ -28,8 +28,30 @@ var ads: bool = false
 enum Team {SPI, SCI, FFA} #If set to FFA, you can damage anyone
 const FRIENDLY_FIRE_MULTIPLIER = 0.0
 
-var team: Team = Team.SPI
+signal team_changed()
 
+
+var skins: Array[MeshInstance3D] = []
+
+const TEAM_COLORS: Dictionary = {
+	Team.SCI: Color.WHITE,
+	Team.SPI: Color.BLACK,
+}
+
+var team: Team = Team.SPI:
+	set(value):
+		team = value
+		if is_inside_tree():
+			var color: Color = TEAM_COLORS.get(value, Color.PURPLE)
+			var mat := StandardMaterial3D.new()
+			mat.albedo_color = color
+			for skin in skins:
+				if skin == null:
+					continue
+				skin.set_surface_override_material(0, mat)
+		team_changed.emit()
+			
+			
 func get_gmc_team() -> Player.Team:
 	match team:
 		Team.SPI: return Player.Team.SPI
@@ -97,6 +119,21 @@ func _enter_tree() -> void:
 			
 			
 func _ready() -> void:
+	skins = [
+		$Body/Recoil/Head/WeaponParent/RightArm,
+		$Body/Recoil/Head/WeaponParent/RightForearm,
+		$Body/Recoil/Head/WeaponParent/LeftForearm,
+		$Body/Recoil/Head/WeaponParent/LeftArm,
+		$Body/Recoil/Head/Helmet,
+		$Body/Torso,
+		$Body/LeftLeg,
+		$Body/RighLeg,
+	]
+	team = team
+	
+	
+	
+	
 	add_to_group("players")
 	attribute_component.health_changed.connect(_health_changed)
 	attribute_component.no_health.connect(no_health)
