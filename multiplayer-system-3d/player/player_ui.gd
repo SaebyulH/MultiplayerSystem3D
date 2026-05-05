@@ -26,9 +26,9 @@ const HIDE_TIME := 2.0
 const MIN_DISPLAY_DELTA := 0.5
 
 func _ready() -> void:
-	_owner_player.team_changed.connect(_update_health_bar_color)
-	var current_client_player = GameManager.find_player(str(multiplayer.get_unique_id()))
-	current_client_player.team_changed.connect(_update_health_bar_color)
+	#_owner_player.team_changed.connect(_update_health_bar_color)
+	#var current_client_player = GameManager.find_player(str(multiplayer.get_unique_id()))
+	#current_client_player.team_changed.connect(_update_health_bar_color)
 	
 	_update_health_bar_color()
 	
@@ -67,8 +67,12 @@ func _ready() -> void:
 
 
 func _update_health_bar_color():
+
 	var local_id = str(multiplayer.get_unique_id())
 	var current_client_player = GameManager.find_player(local_id)
+	
+	if not current_client_player:
+		return
 	print("Local ID: ", local_id)
 	print("Current client player: ", current_client_player)
 	print("Owner player: ", _owner_player)
@@ -164,7 +168,7 @@ func _on_mag_or_weapon_updated(_current = null, _max = null) -> void:
 func _process(_delta: float) -> void:
 	# --- Team text (updates live in case team changes after spawn) ---
 	_update_team_text()
-
+	_update_health_bar_color()
 	# --- Ammo / reload display ---
 	if weapon_controller._is_reloading:
 		var reload_text := "Reloading: %.1f" % weapon_controller._reload_timer
