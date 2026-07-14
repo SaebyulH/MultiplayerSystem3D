@@ -274,24 +274,27 @@ func start_reload() -> void:
 func request_reload() -> void:
 	if not multiplayer.is_server():
 		return
+	var sender_id: int = multiplayer.get_remote_sender_id()
 	if not _parent_player.is_bot:
-		var sender_id: int = multiplayer.get_remote_sender_id()
 		var owner_id: int = _parent_player.name.to_int()
 		if sender_id != 0 and sender_id != owner_id:
 			return
-	_begin_reload_server()
+	if not _begin_reload_server():
+		if sender_id != 0 and sender_id != 1:
+			_reload_rejected.rpc_id(sender_id)
 
-func _begin_reload_server() -> void:
+func _begin_reload_server() -> bool:
 	if not _is_ready():
-		return
+		return false
 	var weapon: Weapon = _weapons[current_weapon_index]
 	if _is_reloading or weapon.has_infinite_ammo:
-		return
+		return false
 	if weapon.mag_current == weapon.mag_size:
-		return
+		return false
 	_is_reloading = true
 	_reload_timer = weapon.reload_time
 	_notify_reload_started.rpc()
+	return true
 
 
 @rpc("call_local")
@@ -305,6 +308,9 @@ func _notify_reload_started() -> void:
 		_weapons[current_weapon_index].mag_size
 	)
 
+@rpc("authority", "call_local", "reliable")
+func _reload_rejected() -> void:
+	_is_reloading = false
 
 func _finish_reload() -> void:
 	if not _is_ready():
@@ -315,10 +321,10 @@ func _finish_reload() -> void:
 		_is_reloading = false
 		if weapon.mag_current < weapon.mag_size:
 			if player_input.primary_fire_held or player_input.secondary_fire_held:
-				_is_reloading = false
 				return
 			else:
-				_begin_reload_server()
+				if not _begin_reload_server():
+					_confirm_reload_done.rpc(weapon.mag_current)
 		else:
 			_confirm_reload_done.rpc(weapon.mag_current)
 	else:
