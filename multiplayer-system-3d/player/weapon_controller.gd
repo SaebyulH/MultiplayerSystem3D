@@ -5,7 +5,6 @@ var _hit_sound: AudioStream = preload("res://assets/sounds/Hitsound.wav")
 var _hit_heal_sound: AudioStream = preload("res://assets/sounds/medkit_sound.mp3")
 
 
-#enum FireType {PRIMARY, SECONDARY}
 # ---------------------------------------------------------------------------
 # Architecture notes
 # ---------------------------------------------------------------------------
@@ -33,7 +32,6 @@ var _pending_fire_index: int = 0
 
 var _pre_fire_timer: float  = 0.0
 var _fire_cooldown: float   = 0.0
-#var _fired_this_press: bool = false
 var _fired_this_press: Dictionary[int, bool] = {}
 
 signal mag_changed(current: int, mag_max: int)
@@ -46,7 +44,6 @@ signal weapon_changed(index: int, weapon: Weapon)
 		if value == _weapons:
 			return
 		_weapons = value
-		#even though index might be same
 		_on_weapon_index_changed()
 		_emit_weapon_changed()
 
@@ -56,8 +53,6 @@ signal weapon_changed(index: int, weapon: Weapon)
 			return
 		current_weapon_index = clamp(value, 0, _weapons.size() - 1)
 		_on_weapon_index_changed()
-		
-		#_on_weapon_index_changed()
 		_emit_weapon_changed()
 
 @export var weapon_model_parent: Node3D
@@ -97,8 +92,6 @@ func _ready() -> void:
 	player_input.next_weapon.connect(next_weapon)
 	player_input.reload.connect(start_reload)
 
-	#_apply_recoil_data()
-
 func _physics_process(delta: float) -> void:
 	_align_weapon_to_raycast()
 	_tick_timers(delta)
@@ -111,44 +104,11 @@ func _physics_process(delta: float) -> void:
 		if my_id == owner_id:
 			_process_fire()
 
-	#if player_input.primary_fire_just_released:
-		#_fired_this_press           = false
-		#player_input.primary_fire_just_released = false
-	#
-	#if player_input.secondary_fire_just_released:
-		#_fired_this_press           = false
-		#player_input.secondary_fire_just_released = false
-	
-
-#func _tick_timers(delta: float) -> void:
-	#if _fire_cooldown > 0.0:
-		#_fire_cooldown -= delta
-#
-	#if is_multiplayer_authority() and _is_reloading:
-		#_reload_timer -= delta
-		#if _reload_timer <= 0.0:
-			#_finish_reload()
-#
-	#if _pending_fire:
-		#if player_input.fire_held:
-			#_pre_fire_timer -= delta
-		#else:
-			#_pending_fire = false
-#
-		#if _pre_fire_timer <= 0.0:
-			#_pending_fire = false
-			#if multiplayer.is_server():
-				#fire_intent(current_weapon_index)
-			#else:
-				#_do_fire_client()
-
 func _tick_timers(delta: float) -> void:
 	if _fire_cooldown > 0.0:
 		_fire_cooldown -= delta
 
 	# Reload timer should tick on the server, since reload is server-authoritative.
-	# is_multiplayer_authority() returns true for the OWNING CLIENT, not the server,
-	# which means _finish_reload() was never being called server-side.
 	if multiplayer.is_server() and _is_reloading:
 		_reload_timer -= delta
 		if _reload_timer <= 0.0:
@@ -164,7 +124,6 @@ func _tick_timers(delta: float) -> void:
 			_pending_fire = false
 			if multiplayer.is_server():
 				fire_intent(current_weapon_index, _pending_fire_index)
-					
 			else:
 				_do_fire_client()
 
@@ -218,16 +177,6 @@ func get_weapons() -> Array[Weapon]:
 
 
 #region Helpers
-#func _apply_recoil_data() -> void:
-	#if _weapons.is_empty():
-		#return
-	#var data: RecoilData = _weapons[current_weapon_index].recoil_data
-	#recoil.recoil       = data.recoil
-	#recoil.aim_recoil   = data.aim_recoil
-	#recoil.snappiness   = data.snappiness
-	#recoil.return_speed = data.return_speed
-
-
 func _play_sound(stream: AudioStream) -> void:
 	if stream == null:
 		return
@@ -264,7 +213,6 @@ func _on_weapon_index_changed() -> void:
 	_fire_cooldown = 0.0
 	if not _weapons.is_empty():
 		spawn_weapon_model()
-		#_apply_recoil_data()
 	if is_multiplayer_authority():
 		_cancel_reload.rpc()
 
@@ -321,17 +269,6 @@ func start_reload() -> void:
 	else:
 		_is_reloading = true
 		request_reload.rpc_id(1)
-
-#
-#@rpc("any_peer")
-#func request_reload() -> void:
-	#if not is_multiplayer_authority():
-		#return
-	#var sender_id: int = multiplayer.get_remote_sender_id()
-	#var owner_id: int  = _parent_player.name.to_int()
-	#if sender_id != 0 and sender_id != owner_id:
-		#return
-	#_begin_reload_server()
 
 @rpc("any_peer")
 func request_reload() -> void:
@@ -400,7 +337,6 @@ func _confirm_reload_done(new_mag: int) -> void:
 	mag_changed.emit(weapon.mag_current, weapon.mag_size)
 #endregion
 
-#TODO: FIX ALL SHITTY CODE about primary and secondary fire shit later THIS IS SUPER SPAGHETTI!!!!!!!!!!!!!!!!!!!!!!!!!!
 #region Firing — input processing (owning peer only)
 func _process_fire() -> void:
 	if not _is_ready():
@@ -411,8 +347,6 @@ func _process_fire() -> void:
 	_handle_fire_input(weapon, 0, player_input.primary_fire_held)
 	_handle_fire_input(weapon, 1, player_input.secondary_fire_held)
 	_handle_fire_input(weapon, 2, player_input.tertiary_fire_held)
-	
-	# _handle_fire_input(weapon, 2, player_input.tertiary_fire_held)  # trivial to add
 
 
 func _handle_fire_input(weapon: Weapon, fire_index: int, input_held: bool) -> void:
@@ -440,17 +374,15 @@ func _handle_fire_input(weapon: Weapon, fire_index: int, input_held: bool) -> vo
 
 	_try_fire(fire_index)
 
-	if not  weapon.weapon_fires[fire_index].automatic:
+	if not weapon.weapon_fires[fire_index].automatic:
 		_fired_this_press[fire_index] = true
 #endregion
 
 
-		
+
 @rpc("any_peer", "call_local")
 func toggle_ads_synced():
 	_parent_player.ads = not _parent_player.ads
-
-
 
 
 
@@ -461,20 +393,15 @@ func _try_fire(weapon_fire_index: int) -> void:
 		return
 
 	var weapon: Weapon   = _weapons[current_weapon_index]
-	#var pre_delay: float = weapon.weapon_fires[0].pre_shoot_delay if fire_type == FireType.PRIMARY else weapon.weapon_fires[1].pre_shoot_delay
 	var pre_delay: float = weapon.weapon_fires[weapon_fire_index].pre_shoot_delay
-	
+
 
 	var fire: WeaponFire = weapon.weapon_fires[weapon_fire_index]
 	if not weapon.has_infinite_ammo and weapon.mag_current < fire.ammo_cost:
 		return
 
-
-
-
-	#var data: RecoilData = _weapons[current_weapon_index].weapon_fires[0].recoil_data if fire_type == FireType.PRIMARY else _weapons[current_weapon_index].weapon_fires[1].recoil_data
 	var data: RecoilData = _weapons[current_weapon_index].weapon_fires[weapon_fire_index].recoil_data
-	
+
 	var data_dict := {
 		"recoil": data.recoil,
 		"aim_recoil": data.aim_recoil,
@@ -490,8 +417,8 @@ func _try_fire(weapon_fire_index: int) -> void:
 	)
 
 	_apply_recoil_rpc.rpc(data_dict, rolled)
-	
-	
+
+
 	if pre_delay > 0.0:
 		_pending_fire   = true
 		_pending_fire_index = weapon_fire_index
@@ -501,8 +428,6 @@ func _try_fire(weapon_fire_index: int) -> void:
 			fire_intent(current_weapon_index, weapon_fire_index)
 		else:
 			fire_intent(current_weapon_index, weapon_fire_index)
-
-
 
 
 
@@ -520,7 +445,7 @@ func _play_empty(weapon_fire_index: int) -> void:
 	if not _is_ready():
 		return
 	_play_sound(_weapons[current_weapon_index].weapon_fires[weapon_fire_index].empty_sound)
-		
+
 
 @rpc("any_peer")
 func fire_intent(weapon_index: int, weapon_fire_index: int) -> void:
@@ -530,7 +455,7 @@ func fire_intent(weapon_index: int, weapon_fire_index: int) -> void:
 
 	if not weapon.has_infinite_ammo:
 		_set_mag(weapon.mag_current - (_weapons[weapon_index].weapon_fires[weapon_fire_index].ammo_cost))
-	_fire_cooldown = weapon.weapon_fires[weapon_fire_index].post_shoot_delay#
+	_fire_cooldown = weapon.weapon_fires[weapon_fire_index].post_shoot_delay
 
 	_sync_mag.rpc(_weapons[current_weapon_index].mag_current)
 	_execute_fire(weapon, weapon_fire_index)
@@ -572,9 +497,6 @@ func _execute_fire(weapon: Weapon, weapon_fire_index: int) -> void:
 func _fire_burst(weapon: Weapon, weapon_fire_index: int) -> void:
 	var weapon_fire: WeaponFire = weapon.weapon_fires[weapon_fire_index]
 	for i in weapon_fire.multishot_data.size():
-		# First shot always gets recoil, subsequent shots only if burst_fire_has_recoil 
-		# NOTE that recoil might still seem to apply since the FIRST recoil can move the camera 
-		# while the next shots are fires.
 		if i == 0 or weapon_fire.burst_fire_has_recoil:
 			var basis: Basis = weapon_model_parent.global_transform.basis
 			var recoil: Vector3 = basis * weapon_fire.recoil_knockback
@@ -588,11 +510,10 @@ func _fire_burst(weapon: Weapon, weapon_fire_index: int) -> void:
 
 func _fire_all_shots(weapon: Weapon, weapon_fire_index: int, is_shape: bool) -> void:
 	var weapon_fire: WeaponFire = weapon.weapon_fires[weapon_fire_index]
-	# player_name -> { "hit": bool, "is_head": bool, "collider": HurtboxComponent, "distance": float }
 	var shape_hits: Dictionary = {}
 	for shot_dir in weapon_fire.multishot_data:
 		_fire_single_shot(weapon, weapon_fire_index, shot_dir, shape_hits if is_shape else null)
-	
+
 	if is_shape:
 		_apply_shape_damage(weapon, weapon_fire_index, shape_hits)
 
@@ -622,7 +543,6 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 			var collider: Node3D = result.collider
 			if collider is HurtboxComponent:
 				if shape_hits != null:
-					# Collect hit info, defer damage to _apply_shape_damage
 					var player_name: String = collider.get_parent().name
 					var distance: float = origin.distance_to(result.position)
 					if not shape_hits.has(player_name):
@@ -632,10 +552,8 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 							"distance": distance,
 						}
 					elif collider.is_head:
-						# Already recorded this player, but upgrade to crit if any ray hits head
 						shape_hits[player_name]["is_head"] = true
 				else:
-					# SHOTGUN / BURST: apply damage immediately as before
 					var distance := origin.distance_to(result.position)
 					var mult := _compute_falloff_multiplier(weapon, weapon_fire_index, distance)
 					var damage := weapon_fire.hitscan_damage * mult
@@ -677,13 +595,11 @@ func _apply_shape_damage(weapon: Weapon, weapon_fire_index: int, shape_hits: Dic
 			_apply_damage_direct(player_name, -damage, _parent_player.name)
 		else:
 			_change_health_on_server.rpc_id(1, player_name, -damage, _parent_player.name)
-		
-		
+
 
 @rpc("any_peer", "call_local", "unreliable")
 func _knockback_player_on_server(vector: Vector3):
 	get_parent().apply_knockback(vector)
-
 
 
 @rpc("any_peer", "call_local", "reliable")
@@ -693,8 +609,7 @@ func _spawn_projectile_on_server(weapon_fire_index, shot_dir, basis, parent_play
 	var weapon: Weapon    = _weapons[current_weapon_index]
 	var shot_dir_v3: Vector3 = shot_dir as Vector3
 	var world_dir: Vector3   = basis * shot_dir_v3.normalized()
-	
-	#TODO: FInd out why this is being caused
+
 	if not weapon_fire_index < weapon.weapon_fires.size() or not weapon.weapon_fires[weapon_fire_index].projectile_scene:
 		return
 	var projectile_scene: Node3D  = weapon.weapon_fires[weapon_fire_index].projectile_scene.instantiate() as Node3D
@@ -720,9 +635,9 @@ func _change_health_on_server(collider_name: String, delta, parent_player_name):
 
 
 func _compute_falloff_multiplier(weapon: Weapon, weapon_fire_index: int, distance: float) -> float:
-	
+
 	var weapon_fire = weapon.weapon_fires[weapon_fire_index]
-	
+
 	if not weapon_fire.has_damage_falloff or weapon_fire.falloff_curve == null:
 		return 1.0
 	var t: float
@@ -748,7 +663,6 @@ func _flash_muzzle_flash(start_position: Vector3) -> void:
 
 @rpc("any_peer", "call_local")
 func _on_hitscan_hit(hit_position: Vector3, hit_normal: Vector3, start_position: Vector3) -> void:
-	# Bullet hole
 	var bullet_hole: Node3D = _bullet_hole_scene.instantiate() as Node3D
 	projectile_spawn_parent.add_child(bullet_hole)
 	bullet_hole.global_position        = hit_position
@@ -758,7 +672,6 @@ func _on_hitscan_hit(hit_position: Vector3, hit_normal: Vector3, start_position:
 			bullet_hole.queue_free()
 	)
 
-	# Tracer — fully self-contained, no captures
 	var tracer: Tracer = _tracer_scene.instantiate() as Tracer
 	projectile_spawn_parent.add_child(tracer)
 	tracer.fire(start_position, hit_position)
@@ -772,11 +685,8 @@ func _apply_recoil_rpc(data: Dictionary, rolled: Vector3) -> void:
 	recoil.aim_recoil   = data.aim_recoil
 	recoil.snappiness   = data.snappiness
 	recoil.return_speed = data.return_speed
-	
-	
-	
+
 	recoil.target_rotation += rolled
-	
 
 
 @rpc("any_peer", "call_local")

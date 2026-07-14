@@ -4,11 +4,8 @@ var duration: float = 10.0
 
 @onready var particles := [
 	$Debris,
-	#$GlowingDebris,
 	$Cloud,
 	$Smoke,
-	#$SmokeDark,
-	
 	$Boom,
 	$Ring,
 	$SmokeRings
@@ -24,7 +21,7 @@ func start_effect(scale: float) -> void:
 
 			mat.scale_min *= scale
 			mat.scale_max *= scale
-			
+
 			if p == $Debris:
 				mat.initial_velocity_min *= scale*0.4
 				mat.initial_velocity_max *= scale*0.4

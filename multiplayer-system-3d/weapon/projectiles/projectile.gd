@@ -19,13 +19,11 @@ func _physics_process(delta: float) -> void:
 	if not is_multiplayer_authority():
 		return
 
-	# Lifetime handling
 	_time_alive += delta
 	if _time_alive >= lifetime:
 		queue_free()
 		return
 
-	# Movement (fixed)
 	velocity.y -= gravity * delta
 	global_position += velocity * delta
 
@@ -35,8 +33,4 @@ func _on_hit_hurtbox(hurtbox: HurtboxComponent) -> void:
 		return
 
 	_has_hit = true
-	
-	# TODO: apply damage here if needed
-	# hurtbox.apply_damage(...)
-
 	queue_free()

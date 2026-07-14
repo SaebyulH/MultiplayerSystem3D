@@ -229,7 +229,6 @@ func _tick_healing(delta: float) -> void:
 func _sync_position_to_path() -> void:
 	path_follower.progress_ratio = progress
 	var target_pos := path_follower.global_position + vertical_offset
-	#move_and_collide(target_pos - global_position)
 	global_basis = path_follower.global_basis
 	global_transform = path_follower.global_transform
 

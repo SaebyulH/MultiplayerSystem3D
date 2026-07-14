@@ -26,17 +26,13 @@ const HIDE_TIME := 2.0
 const MIN_DISPLAY_DELTA := 0.5
 
 func _ready() -> void:
-	#_owner_player.team_changed.connect(_update_health_bar_color)
-	#var current_client_player = GameManager.find_player(str(multiplayer.get_unique_id()))
-	#current_client_player.team_changed.connect(_update_health_bar_color)
-	
 	_update_health_bar_color()
-	
+
 	weapon_controller.mag_changed.connect(func(_a=null, _b=null): _update_weapon_list())
 	weapon_controller.weapon_changed.connect(func(_a=null, _b=null): _update_weapon_list())
 	_update_weapon_list()
-	
-	
+
+
 	var is_owner := is_multiplayer_authority()
 	health_bar.visible = is_owner and not _owner_player.is_bot
 	health_delta_bar.visible = is_owner and not _owner_player.is_bot
@@ -44,8 +40,8 @@ func _ready() -> void:
 	team_text.visible = is_owner and not _owner_player.is_bot
 
 	ammo_bar_public.visible = not is_owner or _owner_player.is_bot
-	
-	
+
+
 	health_bar_public.visible = not is_owner or _owner_player.is_bot
 	health_delta_bar_public.visible = not is_owner or _owner_player.is_bot
 	name_public.visible = not is_owner or _owner_player.is_bot
@@ -70,11 +66,10 @@ func _update_health_bar_color():
 
 	var local_id = str(multiplayer.get_unique_id())
 	var current_client_player = GameManager.find_player(local_id)
-	
+
 	if not current_client_player:
 		return
-	pass  # debug prints removed
-	
+
 	var is_enemy_to_current_client: bool = _owner_player.team != current_client_player.team
 
 	var health_bar_public_color: Color = Color.GREEN if not is_enemy_to_current_client else Color.RED
@@ -85,41 +80,6 @@ func _update_health_bar_color():
 @rpc("authority", "call_local", "reliable")
 func _set_name_label(display_name: String) -> void:
 	name_public.text = display_name
-#
-#var _last_health := 0.0
-#var _last_change := 0.0
-#var _last_time := 0.0
-#
-#const HIDE_TIME := 2.0
-#const MIN_DISPLAY_DELTA := 0.5
-#
-#func _ready() -> void:
-	#weapon_controller.mag_changed.connect(func(_a=null, _b=null): _update_weapon_list())
-	#weapon_controller.weapon_changed.connect(func(_a=null, _b=null): _update_weapon_list())
-	#_update_weapon_list()
-#
-	#var is_owner := is_multiplayer_authority()
-	#health_bar.visible = is_owner
-	#health_delta_bar.visible = is_owner
-	#ammo_bar.visible = is_owner
-	#team_text.visible = is_owner
-#
-	#ammo_bar_public.visible = not is_owner
-	#health_bar_public.visible = not is_owner
-	#health_delta_bar_public.visible = not is_owner
-	#name_public.visible = not is_owner
-#
-	#name_public.text = ("Host" if (name.to_int() == 1) else "Client") + ", NetID: " + str(name)
-#
-	#_on_mag_or_weapon_updated()
-	#weapon_controller.mag_changed.connect(_on_mag_or_weapon_updated)
-	#weapon_controller.weapon_changed.connect(_on_mag_or_weapon_updated)
-#
-	#if attribute_component == null:
-		#return
-	#_last_health = attribute_component.health
-#
-	#_update_team_text()
 
 func _update_team_text() -> void:
 	var player := get_parent().get_parent() as Player
@@ -162,16 +122,16 @@ func _on_mag_or_weapon_updated(_current = null, _max = null) -> void:
 	ammo_bar_public.text = text
 
 func _process(_delta: float) -> void:
-	# --- Team text (updates live in case team changes after spawn) ---
+	# Team text (updates live in case team changes after spawn)
 	_update_team_text()
 	_update_health_bar_color()
-	# --- Ammo / reload display ---
+	# Ammo / reload display
 	if weapon_controller._is_reloading:
 		var reload_text := "Reloading: %.1f" % weapon_controller._reload_timer
 		ammo_bar.text = reload_text
 		ammo_bar_public.text = reload_text
 
-	# --- Health bar ---
+	# Health bar
 	if attribute_component == null:
 		return
 
@@ -180,7 +140,7 @@ func _process(_delta: float) -> void:
 	health_bar.text = str(hp) + "\n" + bar
 	health_bar_public.text = str(hp) + " " + bar
 
-	# --- Health delta display ---
+	# Health delta display
 	var current := attribute_component.health
 
 	if not is_equal_approx(current, _last_health):

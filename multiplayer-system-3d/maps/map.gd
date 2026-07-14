@@ -1,7 +1,6 @@
 extends Node
 class_name Map
 
-#@export var spawn_locations: Array[Marker3D] = []
 @export var spi_spawn_locations: Array[Marker3D] = []
 @export var sci_spawn_locations: Array[Marker3D] = []
 
@@ -11,14 +10,6 @@ class_name Map
 @export var despawn_location: Marker3D
 var camera: Camera3D
 
-#func _ready() -> void:
-	#GameManager.game_mode_component = $GameModeComponent
-	#spawn_locations.clear()
-	#
-	#for child in get_children():
-		#if child is Marker3D and child.name.begins_with("Spawn Location"):
-			#spawn_locations.append(child)
-			
 func _enter_tree() -> void:
 	GameManager.game_mode_component = $GameModeComponent
 	GameManager.spawn_parent.get_parent().get_node("GameMenu/CanvasLayer").setup_gmc()

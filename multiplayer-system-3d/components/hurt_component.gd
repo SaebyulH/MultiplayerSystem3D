@@ -20,17 +20,10 @@ func _on_hurt_or_heal(hitbox_component: HitboxComponent, is_ally_hit: bool) -> v
 
 	var changer := _resolve_changer_name(hitbox_component)
 
-	var original_health := attribute_component.health
-
 	if hurtbox_component.is_head:
 		health_delta *= hitbox_component.headshot_multiplier
 
-
-	# Centralized health_delta handling (leaderboard + death logic included)
-	#attribute_component.apply_health_delta(health_delta, changer, str(get_parent().name))
-
 	attribute_component.apply_health_delta(health_delta, _resolve_changer_name(hitbox_component), get_parent().name)
-	pass  # health change print removed
 
 
 func _resolve_changer_name(hitbox_component: HitboxComponent) -> String:

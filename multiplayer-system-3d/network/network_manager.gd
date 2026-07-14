@@ -13,7 +13,7 @@ func create_server():
 	enet_network_peer.create_server(SERVER_PORT)
 	get_tree().get_multiplayer().multiplayer_peer = enet_network_peer
 	if OS.is_debug_build(): print("Server created!")
-	
+
 func create_client(host_ip: String = "localhost", host_port: int = SERVER_PORT):
 	is_hosting_game = false
 	_setup_client_connection_signals()
@@ -34,7 +34,6 @@ func _server_disconnected():
 func enter_existing_game_scene():
 	if OS.is_debug_build(): print("Entering game scene")
 	game_scene = preload(GAME_SCENE).instantiate()
-	# Add as child of current scene instead of replacing it
 	get_tree().current_scene.add_child(game_scene)
 	get_tree().current_scene.hide_main_menu()
 
@@ -42,19 +41,9 @@ func load_game_scene(map_path: String):
 	if OS.is_debug_build(): print("Loading game scene")
 	game_scene = preload(GAME_SCENE).instantiate()
 	game_scene.map_path = map_path
-
-	# Add as child of current scene instead of replacing it
 	get_tree().current_scene.add_child(game_scene)
 	get_tree().current_scene.hide_main_menu()
 
-#func _swap_scene(new_scene: Node):
-	#var root = get_tree().root
-	#var current = get_tree().current_scene
-	#if current:
-		#root.remove_child(current)
-		#current.queue_free()
-	#root.add_child(new_scene)
-	#get_tree().current_scene = new_scene
 func terminate_connection_load_main_menu():
 	if OS.is_debug_build(): print("Terminate connection, load main menu...")
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
@@ -83,29 +72,5 @@ func _terminate_connection():
 
 func _disconnect_client_connection_signals():
 	var mp = get_tree().get_multiplayer()
-	if mp.server_disconnected.is_connected(_server_disconnected):  # correct check
+	if mp.server_disconnected.is_connected(_server_disconnected):
 		mp.server_disconnected.disconnect(_server_disconnected)
-		
-		
-		
-#func terminate_connection_load_main_menu():
-	#print("Terminate connection, load main menu...")
-	#Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
-	#_load_main_menu()
-	#_terminate_connection()
-	#_disconnect_client_connection_signals()
-
-
-#func _load_main_menu():
-	#get_tree().current_scene.remove_child(game_scene)
-	#
-	#get_tree().current_scene.show_main_menu()
-	##get_tree().call_deferred(&"change_scene_to_packed", preload(MAIN_MENU_SCENE))
-		#
-#func _terminate_connection():
-	#print("terminate connection")
-	#get_tree().get_multiplayer().multiplayer_peer = null
-#
-#func _disconnect_client_connection_signals():
-	#if get_tree().get_multiplayer().server_disconnected.has_connections():
-		#get_tree().get_multiplayer().server_disconnected.disconnect(_server_disconnected)
