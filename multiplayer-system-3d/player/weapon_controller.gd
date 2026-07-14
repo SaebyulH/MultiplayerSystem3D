@@ -293,15 +293,16 @@ func _begin_reload_server() -> bool:
 		return false
 	_is_reloading = true
 	_reload_timer = weapon.reload_time
-	_notify_reload_started.rpc()
+	_notify_reload_started.rpc(_reload_timer)
 	return true
 
 
 @rpc("call_local")
-func _notify_reload_started() -> void:
+func _notify_reload_started(timer_value: float) -> void:
 	if not _is_ready():
 		return
 	_is_reloading = true
+	_reload_timer = timer_value
 	_play_sound(_weapons[current_weapon_index].reload_sound)
 	mag_changed.emit(
 		_weapons[current_weapon_index].mag_current,
@@ -314,6 +315,8 @@ func _reload_rejected() -> void:
 
 func _finish_reload() -> void:
 	if not _is_ready():
+		_is_reloading = false
+		_reload_timer = 0.0
 		return
 	var weapon: Weapon = _weapons[current_weapon_index]
 	if weapon.reload_individually:
@@ -321,6 +324,7 @@ func _finish_reload() -> void:
 		_is_reloading = false
 		if weapon.mag_current < weapon.mag_size:
 			if player_input.primary_fire_held or player_input.secondary_fire_held:
+				_confirm_reload_done.rpc(weapon.mag_current)
 				return
 			else:
 				if not _begin_reload_server():
@@ -673,10 +677,14 @@ func _on_hitscan_hit(hit_position: Vector3, hit_normal: Vector3, start_position:
 	projectile_spawn_parent.add_child(bullet_hole)
 	bullet_hole.global_position        = hit_position
 	bullet_hole.global_transform.basis = Basis(Quaternion(Vector3.UP, hit_normal))
-	get_tree().create_timer(7.0).timeout.connect(func():
-		if is_instance_valid(bullet_hole):
-			bullet_hole.queue_free()
-	)
+	# Timer is a child of bullet_hole — if bullet_hole is freed (parent cleanup),
+	# the timer is freed too, so the timeout never fires with a stale reference.
+	var timer := Timer.new()
+	timer.one_shot = true
+	timer.wait_time = 7.0
+	timer.timeout.connect(bullet_hole.queue_free)
+	bullet_hole.add_child(timer)
+	timer.start()
 
 	var tracer: Tracer = _tracer_scene.instantiate() as Tracer
 	projectile_spawn_parent.add_child(tracer)
