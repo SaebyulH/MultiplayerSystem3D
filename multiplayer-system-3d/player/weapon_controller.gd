@@ -555,7 +555,10 @@ func _execute_fire(weapon: Weapon, weapon_fire_index: int) -> void:
 	if weapon_fire.multishot_mode != WeaponFire.MultishotMode.BURST:
 		var basis: Basis = weapon_model_parent.global_transform.basis
 		var recoil: Vector3 = basis * weapon_fire.recoil_knockback
-		get_parent().apply_knockback(recoil)
+		if multiplayer.is_server():
+			get_parent().apply_knockback(recoil)
+		else:
+			_knockback_player_on_server.rpc_id(1, recoil)
 
 	match weapon_fire.multishot_mode:
 		WeaponFire.MultishotMode.SHOTGUN:
@@ -575,7 +578,10 @@ func _fire_burst(weapon: Weapon, weapon_fire_index: int) -> void:
 		if i == 0 or weapon_fire.burst_fire_has_recoil:
 			var basis: Basis = weapon_model_parent.global_transform.basis
 			var recoil: Vector3 = basis * weapon_fire.recoil_knockback
-			get_parent().apply_knockback(recoil)
+			if multiplayer.is_server():
+				get_parent().apply_knockback(recoil)
+			else:
+				_knockback_player_on_server.rpc_id(1, recoil)
 		_fire_single_shot(weapon, weapon_fire_index, weapon_fire.multishot_data[i], null)
 		if i < weapon_fire.multishot_data.size() - 1:
 			await get_tree().create_timer(weapon_fire.burst_post_shoot_delay).timeout
@@ -638,7 +644,10 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 					var player_name = collider.get_parent().name
 					if collider.get_parent().team == get_parent().team:
 						damage *= Player.FRIENDLY_FIRE_MULTIPLIER
-					_apply_damage_direct(player_name, -damage, _parent_player.name)
+					if multiplayer.is_server():
+						_apply_damage_direct(player_name, -damage, _parent_player.name)
+					else:
+						_change_health_on_server.rpc_id(1, player_name, -damage, _parent_player.name)
 		else:
 			if weapon_fire.hitscan_range >= 1000000000.0 / 10.0:
 				var far_pos: Vector3 = origin + world_dir * 10000.0
@@ -664,7 +673,10 @@ func _apply_shape_damage(weapon: Weapon, weapon_fire_index: int, shape_hits: Dic
 			damage *= weapon_fire.headshot_multiplier
 		if collider.get_parent().team == get_parent().team:
 			damage *= Player.FRIENDLY_FIRE_MULTIPLIER
-		_apply_damage_direct(player_name, -damage, _parent_player.name)
+		if multiplayer.is_server():
+			_apply_damage_direct(player_name, -damage, _parent_player.name)
+		else:
+			_change_health_on_server.rpc_id(1, player_name, -damage, _parent_player.name)
 		
 		
 

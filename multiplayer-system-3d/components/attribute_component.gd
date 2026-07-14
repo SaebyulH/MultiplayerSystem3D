@@ -36,8 +36,7 @@ func apply_health_delta(delta: float, changer: String, changee: String):
 	if is_zero_approx(applied_delta):
 		return
 
-	if OS.is_debug_build():
-		print("player " + changer + " changed health of player " + changee + " by " + str(applied_delta))
+	pass  # health change print removed
 
 
 

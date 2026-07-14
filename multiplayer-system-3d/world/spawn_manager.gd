@@ -13,11 +13,11 @@ func _ready() -> void:
 	randomize()
 
 func _peer_connected(network_id):
-	print("Peer connected: Network ID: %s" % network_id)
+	if OS.is_debug_build(): print("Peer connected: Network ID: %s" % network_id)
 	_add_player_to_game(network_id)
 
 func _peer_disconnected(network_id):
-	print("Peer disconnected: Network ID: %s" % network_id)
+	if OS.is_debug_build(): print("Peer disconnected: Network ID: %s" % network_id)
 	var player_to_remove = spawn_parent.find_child(str(network_id), false, false)
 	if player_to_remove:
 		player_to_remove.queue_free()

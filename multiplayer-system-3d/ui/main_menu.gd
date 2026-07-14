@@ -21,7 +21,7 @@ func _get_selected_map():
 
 func _on_host_game_pressed() -> void:
 	if not _get_selected_map():
-		print("select map first!")
+		if OS.is_debug_build(): print("select map first!")
 		return
 	NetworkManager.create_server()
 	NetworkManager.load_game_scene(_get_selected_map())
@@ -35,21 +35,21 @@ func _on_join_game_pressed() -> void:
 	NetworkManager.create_client(address)
 
 func _on_connected_to_server():
-	print("Connected! My ID: ", multiplayer.get_unique_id())
+	if OS.is_debug_build(): print("Connected! My ID: ", multiplayer.get_unique_id())
 	NetworkManager.enter_existing_game_scene()
 
 func _on_connection_failed():
-	print("Connection failed!")
+	if OS.is_debug_build(): print("Connection failed!")
 
 func _on_peer_connected(id: int):
-	print("Peer connected: ", id)
+	if OS.is_debug_build(): print("Peer connected: ", id)
 
 func _on_send_test_message_pressed() -> void:
 	_send_test_message.rpc("I am connected to you")
 
 @rpc("any_peer", "call_remote")
 func _send_test_message(message: String):
-	print("Peer [%s] recieved message [%s] from peer [%s]"
+	if OS.is_debug_build(): print("Peer [%s] recieved message [%s] from peer [%s]"
 	%[get_tree().get_multiplayer().get_unique_id(),
 	message,
 	get_tree().get_multiplayer().get_remote_sender_id()])

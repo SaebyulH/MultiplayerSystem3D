@@ -25,7 +25,7 @@ func _ready() -> void:
 		var map = load(map_path).instantiate()
 		map.name = "Map"
 		GameManager.spawn_parent.add_child(map)
-		print("MAP ADDED" + map_path)
+		if OS.is_debug_build(): print("MAP ADDED" + map_path)
 		
 		
 		

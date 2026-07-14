@@ -30,13 +30,7 @@ func _on_hurt_or_heal(hitbox_component: HitboxComponent, is_ally_hit: bool) -> v
 	#attribute_component.apply_health_delta(health_delta, changer, str(get_parent().name))
 
 	attribute_component.apply_health_delta(health_delta, _resolve_changer_name(hitbox_component), get_parent().name)
-	if OS.is_debug_build():
-		print(
-			"Health of entity " + str(get_parent().name) +
-			": " + str(original_health) +
-			" -> " + str(attribute_component.health) +
-			" | changer: " + changer
-		)
+	pass  # health change print removed
 
 
 func _resolve_changer_name(hitbox_component: HitboxComponent) -> String:

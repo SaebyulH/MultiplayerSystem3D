@@ -100,8 +100,7 @@ func explode():
 		
 		attr.apply_health_delta(damage, shooter_name, player.name)
 
-		if OS.is_debug_build():
-			print("Explosion damaged ", player.name, " for ", damage)
+		pass  # explosion damage print removed
 
 		# ----------------------------------------------------
 		# Knockback (deterministic impulse)

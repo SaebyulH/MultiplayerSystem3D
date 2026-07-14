@@ -12,7 +12,7 @@ func create_server():
 	var enet_network_peer: ENetMultiplayerPeer = ENetMultiplayerPeer.new()
 	enet_network_peer.create_server(SERVER_PORT)
 	get_tree().get_multiplayer().multiplayer_peer = enet_network_peer
-	print("Server created!")
+	if OS.is_debug_build(): print("Server created!")
 	
 func create_client(host_ip: String = "localhost", host_port: int = SERVER_PORT):
 	is_hosting_game = false
@@ -20,26 +20,26 @@ func create_client(host_ip: String = "localhost", host_port: int = SERVER_PORT):
 	var enet_network_peer: ENetMultiplayerPeer = ENetMultiplayerPeer.new()
 	enet_network_peer.create_client(host_ip, host_port)
 	get_tree().get_multiplayer().multiplayer_peer = enet_network_peer
-	print("Client peer created!")
+	if OS.is_debug_build(): print("Client peer created!")
 
 func _setup_client_connection_signals():
 	if not get_tree().get_multiplayer().server_disconnected.is_connected(_server_disconnected):
 		get_tree().get_multiplayer().server_disconnected.connect(_server_disconnected)
 
 func _server_disconnected():
-	print("Server has disconnected!")
+	if OS.is_debug_build(): print("Server has disconnected!")
 	NetworkTimeSynchronizer.stop()  # stop before terminate tears down the peer
 	terminate_connection_load_main_menu()
 
 func enter_existing_game_scene():
-	print("Entering game scene")
+	if OS.is_debug_build(): print("Entering game scene")
 	game_scene = preload(GAME_SCENE).instantiate()
 	# Add as child of current scene instead of replacing it
 	get_tree().current_scene.add_child(game_scene)
 	get_tree().current_scene.hide_main_menu()
 
 func load_game_scene(map_path: String):
-	print("Loading game scene")
+	if OS.is_debug_build(): print("Loading game scene")
 	game_scene = preload(GAME_SCENE).instantiate()
 	game_scene.map_path = map_path
 
@@ -56,7 +56,7 @@ func load_game_scene(map_path: String):
 	#root.add_child(new_scene)
 	#get_tree().current_scene = new_scene
 func terminate_connection_load_main_menu():
-	print("Terminate connection, load main menu...")
+	if OS.is_debug_build(): print("Terminate connection, load main menu...")
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	_terminate_connection()              # disconnect peer FIRST
 	_disconnect_client_connection_signals()
@@ -74,7 +74,7 @@ func _load_main_menu():
 	get_tree().current_scene.show_main_menu()
 
 func _terminate_connection():
-	print("terminate connection")
+	if OS.is_debug_build(): print("terminate connection")
 	var mp = get_tree().get_multiplayer()
 	if mp.multiplayer_peer != null:
 		NetworkTimeSynchronizer.stop()  # stop sync loop before peer is nulled

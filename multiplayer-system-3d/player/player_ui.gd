@@ -73,11 +73,7 @@ func _update_health_bar_color():
 	
 	if not current_client_player:
 		return
-	print("Local ID: ", local_id)
-	print("Current client player: ", current_client_player)
-	print("Owner player: ", _owner_player)
-	print("Owner team: ", _owner_player.team)
-	print("Client team: ", current_client_player.team if current_client_player else "NULL - player not found!")
+	pass  # debug prints removed
 	
 	var is_enemy_to_current_client: bool = _owner_player.team != current_client_player.team
 
