@@ -41,7 +41,8 @@ func explode():
 	var players := get_tree().get_nodes_in_group("players")
 
 	if players.is_empty():
-		print('NO PLAYERS in group "players"')
+		if OS.is_debug_build():
+			print('NO PLAYERS in group "players"')
 	
 	var explosion_origin = global_position
 	for player in players:
@@ -99,7 +100,8 @@ func explode():
 		
 		attr.apply_health_delta(damage, shooter_name, player.name)
 
-		print("Explosion damaged ", player.name, " for ", damage)
+		if OS.is_debug_build():
+			print("Explosion damaged ", player.name, " for ", damage)
 
 		# ----------------------------------------------------
 		# Knockback (deterministic impulse)
@@ -127,7 +129,8 @@ func explode():
 @rpc("call_local", "reliable")
 func _explode_visual():
 	#set_physics_process(false)
-	print("visual explode on: ", multiplayer.get_unique_id())
+	if OS.is_debug_build():
+		print("visual explode on: ", multiplayer.get_unique_id())
 	$Explosion.start_effect(splash_radius)
 	#await get_tree().create_timer($Explosion.duration).timeout
 

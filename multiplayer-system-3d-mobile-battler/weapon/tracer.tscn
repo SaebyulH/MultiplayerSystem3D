@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://dkr1vw1sciy2p"]
+
+[ext_resource type="Script" uid="uid://dsge8xfint8pr" path="res://weapon/tracer.gd" id="1_huo62"]
+
+[node name="Tracer" type="MeshInstance3D" unique_id=1914218868]
+script = ExtResource("1_huo62")

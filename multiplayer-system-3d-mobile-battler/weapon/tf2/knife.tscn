@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://dv3kpihd8amww"]
+
+[ext_resource type="PackedScene" uid="uid://cjsh8f2788g1b" path="res://assets/models/ImageToStl.com_c_knife/c_knife.glb" id="1_ks6iq"]
+
+[node name="Pistol" type="Node3D" unique_id=664585380]
+
+[node name="Muzzle" type="Node3D" parent="." unique_id=2026291909]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.2185047, -1.9302944)
+
+[node name="c_knife2" parent="." unique_id=1899419538 instance=ExtResource("1_ks6iq")]
+transform = Transform3D(0.02598076, 0.0106066, 0.0106066, 0, 0.021213202, -0.021213202, -0.015, 0.018371172, 0.018371172, 0, 0, 0)

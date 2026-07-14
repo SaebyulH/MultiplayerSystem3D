@@ -115,7 +115,8 @@ func _tick_stuck_detection() -> void:
 			_force_wander_timer = 5.0
 			player.player_input.jump_input = false
 			_pick_wander_target()
-			print("[%s] stuck! forcing wander" % player.name)
+			if OS.is_debug_build():
+				print("[%s] stuck! forcing wander" % player.name)
 	else:
 		_stuck_jump_count = 0
 		player.player_input.jump_input = false

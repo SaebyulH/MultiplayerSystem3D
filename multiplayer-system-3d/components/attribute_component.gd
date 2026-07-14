@@ -28,7 +28,7 @@ func reset_health():
 
 
 func apply_health_delta(delta: float, changer: String, changee: String):
-	print(get_stack())
+
 	var old_health := health
 	var new_health :float = clamp(old_health + delta, 0.0, starting_health)
 	var applied_delta := new_health - old_health
@@ -36,7 +36,8 @@ func apply_health_delta(delta: float, changer: String, changee: String):
 	if is_zero_approx(applied_delta):
 		return
 
-	print("player " + changer + " changed health of player " + changee + " by " + str(applied_delta))
+	if OS.is_debug_build():
+		print("player " + changer + " changed health of player " + changee + " by " + str(applied_delta))
 
 
 

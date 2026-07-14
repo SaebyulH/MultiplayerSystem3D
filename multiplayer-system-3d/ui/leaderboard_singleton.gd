@@ -9,6 +9,9 @@ var _damage_dealt: Dictionary = {}
 var _self_damage: Dictionary = {}
 var _self_heal: Dictionary = {}
 var _heal_others: Dictionary = {}
+var _dirty: bool = false
+var _sync_cooldown: float = 0.0
+const LEADERBOARD_SYNC_INTERVAL: float = 0.5
 
 signal killstreak_changed(player_name: String, killstreak: int)
 signal player_removed(player_name: String)
@@ -35,8 +38,9 @@ func _add_player(player_name: String):
 	_self_heal[player_name] = 0
 	_heal_others[player_name] = 0
 
-	print("Player %s added" % player_name)
-	_sync_scores()
+	if OS.is_debug_build():
+		print("Player %s added" % player_name)
+	_mark_dirty()
 
 @rpc("any_peer", "call_local")
 func _remove_player(player_name: String):
@@ -51,8 +55,9 @@ func _remove_player(player_name: String):
 	_self_heal.erase(player_name)
 	_heal_others.erase(player_name)
 
-	print("Player %s removed" % player_name)
-	_sync_scores()
+	if OS.is_debug_build():
+		print("Player %s removed" % player_name)
+	_mark_dirty()
 	rpc("_receive_player_removed", player_name)
 
 # -------------------------
@@ -66,9 +71,10 @@ func _add_kill(killer_name: String):
 
 	_player_kills[killer_name] = _player_kills.get(killer_name, 0) + 1
 	_killstreak[killer_name] = _killstreak.get(killer_name, 0) + 1
-	_sync_scores()
+	_mark_dirty()
 	killstreak_changed.emit(killer_name, _killstreak[killer_name])
-	print("Kill:", killer_name)
+	if OS.is_debug_build():
+		print("Kill:", killer_name)
 
 
 @rpc("any_peer", "call_local")
@@ -79,8 +85,9 @@ func _add_death(dead_player_name: String):
 	_player_deaths[dead_player_name] = _player_deaths.get(dead_player_name, 0) + 1
 	_killstreak[dead_player_name] = 0
 
-	print("Death:", dead_player_name)
-	_sync_scores()
+	if OS.is_debug_build():
+		print("Death:", dead_player_name)
+	_mark_dirty()
 
 
 @rpc("any_peer", "call_local")
@@ -89,7 +96,7 @@ func _add_damage(player_name: String, amount: float):
 		return
 
 	_damage_dealt[player_name] = _damage_dealt.get(player_name, 0) + amount
-	_sync_scores()
+	_mark_dirty()
 
 
 # -------------------------
@@ -102,7 +109,7 @@ func _add_self_damage(player_name: String, amount: float):
 		return
 
 	_self_damage[player_name] = _self_damage.get(player_name, 0) + amount
-	_sync_scores()
+	_mark_dirty()
 
 
 @rpc("any_peer", "call_local")
@@ -111,7 +118,7 @@ func _add_self_heal(player_name: String, amount: float):
 		return
 
 	_self_heal[player_name] = _self_heal.get(player_name, 0) + amount
-	_sync_scores()
+	_mark_dirty()
 
 
 @rpc("any_peer", "call_local")
@@ -120,11 +127,23 @@ func _add_heal_other(healer_name: String, amount: float):
 		return
 
 	_heal_others[healer_name] = _heal_others.get(healer_name, 0) + amount
-	_sync_scores()
+	_mark_dirty()
 
 # -------------------------
 # SYNC
 # -------------------------
+
+func _mark_dirty() -> void:
+	_dirty = true
+
+func _process(delta: float) -> void:
+	if not _dirty:
+		return
+	_sync_cooldown -= delta
+	if _sync_cooldown <= 0.0:
+		_sync_cooldown = LEADERBOARD_SYNC_INTERVAL
+		_dirty = false
+		_sync_scores()
 
 func _sync_scores():
 	rpc("_receive_scores",

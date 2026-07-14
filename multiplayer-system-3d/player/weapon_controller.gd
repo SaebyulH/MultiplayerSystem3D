@@ -555,7 +555,7 @@ func _execute_fire(weapon: Weapon, weapon_fire_index: int) -> void:
 	if weapon_fire.multishot_mode != WeaponFire.MultishotMode.BURST:
 		var basis: Basis = weapon_model_parent.global_transform.basis
 		var recoil: Vector3 = basis * weapon_fire.recoil_knockback
-		_knockback_player_on_server.rpc_id(1, recoil)
+		get_parent().apply_knockback(recoil)
 
 	match weapon_fire.multishot_mode:
 		WeaponFire.MultishotMode.SHOTGUN:
@@ -575,7 +575,7 @@ func _fire_burst(weapon: Weapon, weapon_fire_index: int) -> void:
 		if i == 0 or weapon_fire.burst_fire_has_recoil:
 			var basis: Basis = weapon_model_parent.global_transform.basis
 			var recoil: Vector3 = basis * weapon_fire.recoil_knockback
-			_knockback_player_on_server.rpc_id(1, recoil)
+			get_parent().apply_knockback(recoil)
 		_fire_single_shot(weapon, weapon_fire_index, weapon_fire.multishot_data[i], null)
 		if i < weapon_fire.multishot_data.size() - 1:
 			await get_tree().create_timer(weapon_fire.burst_post_shoot_delay).timeout
@@ -638,7 +638,7 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 					var player_name = collider.get_parent().name
 					if collider.get_parent().team == get_parent().team:
 						damage *= Player.FRIENDLY_FIRE_MULTIPLIER
-					_change_health_on_server.rpc_id(1, player_name, -damage, _parent_player.name)
+					_apply_damage_direct(player_name, -damage, _parent_player.name)
 		else:
 			if weapon_fire.hitscan_range >= 1000000000.0 / 10.0:
 				var far_pos: Vector3 = origin + world_dir * 10000.0
@@ -664,11 +664,11 @@ func _apply_shape_damage(weapon: Weapon, weapon_fire_index: int, shape_hits: Dic
 			damage *= weapon_fire.headshot_multiplier
 		if collider.get_parent().team == get_parent().team:
 			damage *= Player.FRIENDLY_FIRE_MULTIPLIER
-		_change_health_on_server.rpc_id(1, player_name, -damage, _parent_player.name)
+		_apply_damage_direct(player_name, -damage, _parent_player.name)
 		
 		
 
-@rpc("any_peer", "call_local", "reliable")
+@rpc("any_peer", "call_local", "unreliable")
 func _knockback_player_on_server(vector: Vector3):
 	get_parent().apply_knockback(vector)
 
@@ -695,13 +695,16 @@ func _spawn_projectile_on_server(weapon_fire_index, shot_dir, basis, parent_play
 	projectile_spawn_parent.add_child(projectile_scene, true)
 
 
+func _apply_damage_direct(collider_name: String, delta: float, parent_player_name: String) -> void:
+	var target: Player = GameManager.find_player(collider_name)
+	if target:
+		target.change_health(delta, parent_player_name)
+
 @rpc("any_peer", "call_local", "reliable")
 func _change_health_on_server(collider_name: String, delta, parent_player_name):
 	if not is_multiplayer_authority():
 		return
-	for child in get_parent().get_parent().get_children():
-		if child.name == collider_name and child is Player:
-			child.change_health(delta, parent_player_name)
+	_apply_damage_direct(collider_name, delta, parent_player_name)
 
 
 func _compute_falloff_multiplier(weapon: Weapon, weapon_fire_index: int, distance: float) -> float:

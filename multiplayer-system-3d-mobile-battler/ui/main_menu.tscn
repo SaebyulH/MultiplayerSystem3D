@@ -1,0 +1,117 @@
+[gd_scene format=3 uid="uid://dmsrhguradefj"]
+
+[ext_resource type="Script" uid="uid://bx1i286d50fsm" path="res://ui/main_menu.gd" id="1_06t4h"]
+[ext_resource type="Texture2D" uid="uid://cxrr0eq7x77qo" path="res://assets/Screenshot 2026-04-23 191708.png" id="2_0dkrt"]
+
+[node name="MainMenu" type="Control" unique_id=1617106146]
+layout_mode = 3
+anchor_right = 0.5385417
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_06t4h")
+metadata/_edit_use_anchors_ = true
+
+[node name="Screenshot20260423191708" type="Sprite2D" parent="." unique_id=1177980423]
+position = Vector2(960.0001, 540)
+scale = Vector2(1.1442251, 1.2887827)
+texture = ExtResource("2_0dkrt")
+
+[node name="Panel" type="Panel" parent="." unique_id=1236353337]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1849103427]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -310.0
+offset_top = -215.0
+offset_right = 310.0
+offset_bottom = 215.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Label" type="Label" parent="VBoxContainer" unique_id=1832888493]
+layout_mode = 2
+theme_override_font_sizes/font_size = 60
+text = "Multiplayer System"
+horizontal_alignment = 1
+
+[node name="Label4" type="Label" parent="VBoxContainer" unique_id=241166218]
+layout_mode = 2
+
+[node name="Label3" type="Label" parent="VBoxContainer" unique_id=122746595]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Map Select"
+horizontal_alignment = 1
+
+[node name="IPLabel" type="Label" parent="VBoxContainer" unique_id=1415127053]
+visible = false
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "IP HERE"
+horizontal_alignment = 1
+
+[node name="OptionButton" type="OptionButton" parent="VBoxContainer" unique_id=744683259]
+layout_mode = 2
+theme_override_font_sizes/font_size = 64
+item_count = 8
+popup/item_0/text = "res://maps/esc_castle.tscn"
+popup/item_0/id = 6
+popup/item_1/text = "res://maps/koth_castle.tscn"
+popup/item_1/id = 4
+popup/item_2/text = "res://maps/dom_castle.tscn"
+popup/item_2/id = 5
+popup/item_3/text = "res://maps/hyb_castle.tscn"
+popup/item_3/id = 7
+popup/item_4/text = "res://maps/courtyard.tscn"
+popup/item_4/id = 2
+popup/item_5/text = "res://maps/dust2scn.scn"
+popup/item_5/id = 3
+popup/item_6/text = "res://maps/underground.tscn"
+popup/item_6/id = 1
+popup/item_7/text = "res://maps/castle.tscn"
+popup/item_7/id = 0
+
+[node name="HostGame" type="Button" parent="VBoxContainer" unique_id=557223411]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Host Game"
+
+[node name="Label2" type="Label" parent="VBoxContainer" unique_id=1603314391]
+layout_mode = 2
+
+[node name="AddressInput" type="LineEdit" parent="VBoxContainer" unique_id=1603602727]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+placeholder_text = "IP Address"
+
+[node name="JoinGame" type="Button" parent="VBoxContainer" unique_id=1057923406]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Join Game"
+
+[node name="JoinLocal" type="Button" parent="VBoxContainer" unique_id=986033482]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Join Local (This Computer)"
+
+[node name="SendTestMessage" type="Button" parent="VBoxContainer" unique_id=789396056]
+visible = false
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Send Test Message"
+
+[connection signal="pressed" from="VBoxContainer/HostGame" to="." method="_on_host_game_pressed"]
+[connection signal="pressed" from="VBoxContainer/JoinGame" to="." method="_on_join_game_pressed"]
+[connection signal="pressed" from="VBoxContainer/JoinLocal" to="." method="_on_join_local_pressed"]
+[connection signal="pressed" from="VBoxContainer/SendTestMessage" to="." method="_on_send_test_message_pressed"]

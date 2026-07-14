@@ -56,6 +56,8 @@ var is_contested: bool = false
 var is_being_pushed: bool = false
 
 var _return_countdown: float = 0.0
+var _sync_timer: float = 0.0
+const PAYLOAD_SYNC_RATE: float = 0.066  # ~15 Hz
 var _next_checkpoint_index: int = 0
 var _pushers: Array = []
 
@@ -183,7 +185,11 @@ func _physics_process(delta: float) -> void:
 	# are carried rather than shoved
 	_sync_position_to_path()
 	_update_label()
-	_rpc_sync.rpc(progress, payload_state, _return_countdown)
+	var _state_changed: bool = new_state != payload_state
+	_sync_timer += delta
+	if _state_changed or _sync_timer >= PAYLOAD_SYNC_RATE:
+		_sync_timer = 0.0
+		_rpc_sync.rpc(progress, payload_state, _return_countdown)
 
 # ─────────────────────────────────────────────
 #  SPEED CURVE

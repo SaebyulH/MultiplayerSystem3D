@@ -16,6 +16,8 @@ signal capture_progress_changed(team: Player.Team, progress: float)
 var owning_team: Player.Team
 var capture_team: Player.Team
 var capture_progress: float = 0.0
+var _sync_timer: float = 0.0
+const CP_SYNC_RATE: float = 0.1  # 10 Hz
 
 var is_contested: bool = false
 var is_locked: bool = true
@@ -114,7 +116,10 @@ func _process(delta: float) -> void:
 			_capture(pushing_team)
 
 	capture_progress_changed.emit(capture_team, capture_progress)
-	_rpc_sync_state.rpc(owning_team, capture_team, capture_progress, is_contested)
+	_sync_timer += delta
+	if _sync_timer >= CP_SYNC_RATE:
+		_sync_timer = 0.0
+		_rpc_sync_state.rpc(owning_team, capture_team, capture_progress, is_contested)
 
 func _capture(team: Player.Team) -> void:
 	owning_team = team

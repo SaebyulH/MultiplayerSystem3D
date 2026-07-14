@@ -175,7 +175,8 @@ func rpc_reset(pos: Vector3) -> void:
 	
 	
 func no_health() -> void:
-	print(name + " KILLED BY " + attribute_component.last_attacker)
+	if OS.is_debug_build():
+		print(name + " KILLED BY " + attribute_component.last_attacker)
 	attribute_component.reset()
 	weapon_controller.reset()
 	
@@ -256,9 +257,9 @@ func _physics_process(delta: float) -> void:
 		if not spawned:
 			spawn()
 		
-	if spawned and _debug_frames < 10:
-		_debug_frames += 1
-		print("[physics_process] frame=%d peer=%d pos=%s vel=%s" % [_debug_frames, multiplayer.get_unique_id(), global_position, velocity])
+		#	if spawned and _debug_frames < 10:
+		#		_debug_frames += 1
+		#		print("[physics_process] frame=%d peer=%d pos=%s vel=%s" % [_debug_frames, multiplayer.get_unique_id(), global_position, velocity])
 			
 func _rollback_tick(delta, tick, is_fresh):
 

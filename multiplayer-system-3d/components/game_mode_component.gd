@@ -81,6 +81,8 @@ var round_wins: Dictionary = {
 }
 
 var _hud_tick: float = 0.0
+var _sync_timer: float = 0.0
+const SYNC_INTERVAL: float = 0.2  # 5 Hz game state sync
 
 # ─────────────────────────────────────────────
 #  INIT
@@ -207,7 +209,10 @@ func _process(delta: float) -> void:
 		PhaseState.ROUND_END:
 			_tick_round_end(delta)
 		
-	_rpc_sync_state.rpc(_build_snapshot())
+	_sync_timer += delta
+	if _sync_timer >= SYNC_INTERVAL:
+		_sync_timer = 0.0
+		_rpc_sync_state.rpc(_build_snapshot())
 
 # ─────────────────────────────────────────────
 #  PHASE TICKS

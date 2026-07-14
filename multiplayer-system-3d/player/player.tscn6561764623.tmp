@@ -1,0 +1,417 @@
+[gd_scene format=3 uid="uid://cmix6q8a6hgcu"]
+
+[ext_resource type="Script" uid="uid://c10owjifp8g7w" path="res://player/player.gd" id="1_4flbx"]
+[ext_resource type="Script" uid="uid://dqtlwc44t1kfa" path="res://player/player_input.gd" id="2_onrkg"]
+[ext_resource type="Script" uid="uid://d350u8evihs1u" path="res://addons/netfox/rollback/rollback-synchronizer.gd" id="3_2uvqg"]
+[ext_resource type="Script" uid="uid://ccrf5bdka2m35" path="res://player/auto_projectile_spawner.gd" id="3_32hag"]
+[ext_resource type="Script" uid="uid://dour8fehaaugp" path="res://addons/netfox/tick-interpolator.gd" id="4_1s1yo"]
+[ext_resource type="Script" uid="uid://c4uv27n00ycfc" path="res://components/hurtbox_component.gd" id="5_2hs0m"]
+[ext_resource type="Script" uid="uid://cg1glglog46jg" path="res://components/hurt_component.gd" id="6_1jxqw"]
+[ext_resource type="Script" uid="uid://d2kgugh2o23ba" path="res://player/weapon_controller.gd" id="6_ebec5"]
+[ext_resource type="Script" uid="uid://cxit1cumphn3q" path="res://components/attribute_component.gd" id="7_1jxqw"]
+[ext_resource type="Script" uid="uid://w4bkel2abkvv" path="res://player/body.gd" id="13_kb6p2"]
+[ext_resource type="Script" uid="uid://t16cjccio2s4" path="res://player/bot_controller.gd" id="14_kb6p2"]
+[ext_resource type="Script" uid="uid://bk7h6t34yea7r" path="res://player/recoil/recoil.gd" id="14_wodsf"]
+[ext_resource type="PackedScene" uid="uid://em68gvqy1f84" path="res://effects/muzzle_flash.tscn" id="27_5ejfk"]
+[ext_resource type="Script" uid="uid://dmbwmsfd27dhh" path="res://player/player_ui.gd" id="34_ge24q"]
+
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_2ieo8"]
+properties/0/path = NodePath(".:current_weapon_index")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_kb6p2"]
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_wodsf"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4flbx"]
+transparency = 1
+albedo_color = Color(0.046625316, 0, 0.7632794, 0.42352942)
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_kb6p2"]
+radius = 0.2657069
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wodsf"]
+transparency = 1
+albedo_color = Color(0.75686276, 0, 0, 0.7019608)
+
+[sub_resource type="SphereMesh" id="SphereMesh_32hag"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_wodsf"]
+height = 1.519165
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_32hag"]
+radius = 0.797
+height = 2.447
+
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_1s1yo"]
+properties/0/path = NodePath("AttributeComponent:health")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+properties/1/path = NodePath(".:team")
+properties/1/spawn = true
+properties/1/replication_mode = 1
+
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_kb6p2"]
+properties/0/path = NodePath(".:rotation")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+properties/1/path = NodePath("Recoil/Head:rotation")
+properties/1/spawn = true
+properties/1/replication_mode = 1
+
+[sub_resource type="BoxMesh" id="BoxMesh_32hag"]
+size = Vector3(1, 4.005, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_32hag"]
+albedo_color = Color(0.468777, 0.46877706, 0.468777, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_wodsf"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tqiix"]
+albedo_color = Color(1, 0.85882354, 0.6745098, 1)
+
+[sub_resource type="SphereMesh" id="SphereMesh_e7oew"]
+height = 0.5
+is_hemisphere = true
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kb6p2"]
+albedo_color = Color(0.13077214, 0.13077214, 0.13077211, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_kb6p2"]
+size = Vector3(1, 1.625, 0.54)
+
+[node name="Player" type="CharacterBody3D" unique_id=51620469 node_paths=PackedStringArray("tick_interpolator", "player_input", "rollback_sync", "attribute_component", "body", "weapon_controller")]
+collision_layer = 2
+collision_mask = 3
+script = ExtResource("1_4flbx")
+tick_interpolator = NodePath("TickInterpolator")
+player_input = NodePath("PlayerInput")
+rollback_sync = NodePath("RollbackSynchronizer")
+attribute_component = NodePath("AttributeComponent")
+body = NodePath("Body")
+weapon_controller = NodePath("WeaponController")
+
+[node name="BotController" type="Node" parent="." unique_id=1301960893 node_paths=PackedStringArray("player")]
+script = ExtResource("14_kb6p2")
+player = NodePath("..")
+
+[node name="WeaponController" type="Node" parent="." unique_id=1956241137 node_paths=PackedStringArray("weapon_model_parent", "projectile_spawn_parent", "player_input", "recoil", "_parent_player", "_raycast")]
+script = ExtResource("6_ebec5")
+weapon_model_parent = NodePath("../Body/Recoil/Head/WeaponParent")
+projectile_spawn_parent = NodePath("../ProjectilesParent")
+player_input = NodePath("../PlayerInput")
+recoil = NodePath("../Body/Recoil")
+_parent_player = NodePath("..")
+_raycast = NodePath("../Body/Recoil/Head/Camera3D/Raycast")
+metadata/_custom_type_script = "uid://d2kgugh2o23ba"
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="WeaponController" unique_id=829106885]
+replication_config = SubResource("SceneReplicationConfig_2ieo8")
+
+[node name="AudioStreamPlayer3D" type="AudioStreamPlayer3D" parent="WeaponController" unique_id=1913075685]
+
+[node name="MuzzleFlash" parent="WeaponController" unique_id=419486684 instance=ExtResource("27_5ejfk")]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=218472258]
+shape = SubResource("CapsuleShape3D_kb6p2")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1851645100]
+visible = false
+mesh = SubResource("CapsuleMesh_wodsf")
+surface_material_override/0 = SubResource("StandardMaterial3D_4flbx")
+
+[node name="RollbackSynchronizer" type="Node" parent="." unique_id=744606291 node_paths=PackedStringArray("root")]
+script = ExtResource("3_2uvqg")
+root = NodePath("..")
+enable_prediction = true
+state_properties = Array[String]([":global_transform", ":velocity"])
+input_properties = Array[String](["PlayerInput:input_dir", "PlayerInput:jump_input", "PlayerInput:crouch"])
+metadata/_custom_type_script = "uid://d350u8evihs1u"
+
+[node name="TickInterpolator" type="Node" parent="." unique_id=1904018816 node_paths=PackedStringArray("root")]
+script = ExtResource("4_1s1yo")
+root = NodePath("..")
+properties = Array[String]([":global_transform", ":velocity"])
+metadata/_custom_type_script = "uid://dour8fehaaugp"
+
+[node name="PlayerInput" type="Node" parent="." unique_id=1318037509]
+script = ExtResource("2_onrkg")
+
+[node name="ProjectilesParent" type="Node3D" parent="." unique_id=1774207359]
+top_level = true
+
+[node name="ProjectileSpawner" type="MultiplayerSpawner" parent="ProjectilesParent" unique_id=290768895]
+_spawnable_scenes = PackedStringArray("uid://cccu8xmm1tqq7", "uid://dy7hw0uphca40", "uid://v27fq461i5vr", "uid://dfyafkr18mtuq", "uid://bo0edtxgakruc", "uid://6mr0d18yn8po", "uid://daan6liu8ej2", "uid://cccu8xmm1tqq7", "uid://dy7hw0uphca40", "uid://v27fq461i5vr", "uid://dfyafkr18mtuq", "uid://bo0edtxgakruc", "uid://6mr0d18yn8po", "uid://daan6liu8ej2")
+spawn_path = NodePath("..")
+script = ExtResource("3_32hag")
+
+[node name="HeadHurtbox" type="Area3D" parent="." unique_id=481075083]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6909796, 0)
+collision_layer = 4
+collision_mask = 0
+script = ExtResource("5_2hs0m")
+is_head = true
+metadata/_custom_type_script = "uid://c4uv27n00ycfc"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="HeadHurtbox" unique_id=1595505387]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.017822266, 0)
+shape = SubResource("SphereShape3D_kb6p2")
+
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="HeadHurtbox" unique_id=1360077016]
+transform = Transform3D(0.5464816, 0, 0, 0, 0.5464816, 0, 0, 0, 0.5464816, 0, 0, 0)
+visible = false
+material_override = SubResource("StandardMaterial3D_wodsf")
+mesh = SubResource("SphereMesh_32hag")
+
+[node name="BodyHurtbox" type="Area3D" parent="." unique_id=1010023186]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1398654, 0)
+collision_layer = 4
+collision_mask = 0
+script = ExtResource("5_2hs0m")
+metadata/_custom_type_script = "uid://c4uv27n00ycfc"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BodyHurtbox" unique_id=194134934]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.3756714, 0)
+shape = SubResource("CapsuleShape3D_wodsf")
+
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="BodyHurtbox" unique_id=1278142914]
+transform = Transform3D(0.62510556, 0, 0, 0, 0.62510556, 0, 0, 0, 0.62510556, 0, -0.3800121, 0)
+visible = false
+material_override = SubResource("StandardMaterial3D_wodsf")
+mesh = SubResource("CapsuleMesh_32hag")
+
+[node name="HurtComponent" type="Node" parent="." unique_id=708236351 node_paths=PackedStringArray("hurtbox_component", "attribute_component")]
+script = ExtResource("6_1jxqw")
+hurtbox_component = NodePath("../HeadHurtbox")
+attribute_component = NodePath("../AttributeComponent")
+metadata/_custom_type_script = "uid://cg1glglog46jg"
+
+[node name="HurtComponent2" type="Node" parent="." unique_id=25351424 node_paths=PackedStringArray("hurtbox_component", "attribute_component")]
+script = ExtResource("6_1jxqw")
+hurtbox_component = NodePath("../BodyHurtbox")
+attribute_component = NodePath("../AttributeComponent")
+metadata/_custom_type_script = "uid://cg1glglog46jg"
+
+[node name="AttributeComponent" type="Node" parent="." unique_id=831078121]
+script = ExtResource("7_1jxqw")
+metadata/_custom_type_script = "uid://cxit1cumphn3q"
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=1858913668]
+replication_config = SubResource("SceneReplicationConfig_1s1yo")
+
+[node name="Body" type="Node3D" parent="." unique_id=598024395 node_paths=PackedStringArray("head")]
+script = ExtResource("13_kb6p2")
+head = NodePath("Recoil/Head")
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="Body" unique_id=187997880]
+replication_config = SubResource("SceneReplicationConfig_kb6p2")
+
+[node name="Recoil" type="Node3D" parent="Body" unique_id=274010588]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6650573, 0)
+script = ExtResource("14_wodsf")
+
+[node name="Head" type="Node3D" parent="Body/Recoil" unique_id=581817051]
+unique_name_in_owner = true
+
+[node name="Camera3D" type="Camera3D" parent="Body/Recoil/Head" unique_id=1440942893]
+unique_name_in_owner = true
+fov = 90.0
+
+[node name="Raycast" type="RayCast3D" parent="Body/Recoil/Head/Camera3D" unique_id=330718818]
+target_position = Vector3(0, 0, -100000)
+
+[node name="WeaponParent" type="Node3D" parent="Body/Recoil/Head" unique_id=1022201944]
+
+[node name="RightArm" type="MeshInstance3D" parent="Body/Recoil/Head/WeaponParent" unique_id=1367727221]
+transform = Transform3D(0.10290378, -0.03368738, -0.040336303, 0.01487895, 0.10373236, -0.04867501, 0.050403092, 0.038154975, 0.096720055, 0.21079843, -0.39905983, -0.05466762)
+mesh = SubResource("BoxMesh_32hag")
+surface_material_override/0 = SubResource("StandardMaterial3D_32hag")
+
+[node name="RightForearm" type="MeshInstance3D" parent="Body/Recoil/Head/WeaponParent" unique_id=31490221]
+transform = Transform3D(0.11430204, 0.011746423, -0.012170299, -0.009746699, -0.022206599, -0.11297308, -0.013823748, 0.11278269, -0.020976517, 0.21930444, -0.49350226, -0.27968284)
+mesh = SubResource("BoxMesh_32hag")
+surface_material_override/0 = SubResource("StandardMaterial3D_32hag")
+
+[node name="LeftForearm" type="MeshInstance3D" parent="Body/Recoil/Head/WeaponParent" unique_id=1224638582]
+transform = Transform3D(-0.072061, 0.0854119, 0.029378042, -0.028286997, 0.014350918, -0.1111078, -0.08577939, -0.076484725, 0.011959696, 0.09560159, -0.48071414, -0.5163804)
+mesh = SubResource("BoxMesh_32hag")
+surface_material_override/0 = SubResource("StandardMaterial3D_32hag")
+
+[node name="LeftArm" type="MeshInstance3D" parent="Body/Recoil/Head/WeaponParent" unique_id=951024443]
+transform = Transform3D(-0.09425567, 0.060751524, -0.02785976, -0.013134585, -0.06406306, -0.09525994, -0.06553164, -0.074540086, 0.059164397, -0.19685566, -0.37884992, -0.21519944)
+mesh = SubResource("BoxMesh_32hag")
+surface_material_override/0 = SubResource("StandardMaterial3D_32hag")
+
+[node name="Face" type="MeshInstance3D" parent="Body/Recoil/Head" unique_id=579986966]
+transform = Transform3D(0.326937, 0, 0, 0, 0.326937, 0, 0, 0, 0.326937, 0, 0.046078205, 0)
+mesh = SubResource("BoxMesh_wodsf")
+surface_material_override/0 = SubResource("StandardMaterial3D_tqiix")
+
+[node name="Helmet" type="MeshInstance3D" parent="Body/Recoil/Head" unique_id=2067128649]
+transform = Transform3D(0.5678568, 0, 0, 0, 0.5195701, -0.22914688, 0, 0.22914688, 0.5195701, 0, 0.098164976, 0)
+mesh = SubResource("SphereMesh_e7oew")
+surface_material_override/0 = SubResource("StandardMaterial3D_32hag")
+
+[node name="RightEye" type="MeshInstance3D" parent="Body/Recoil/Head" unique_id=1301557840]
+transform = Transform3D(0.07898294, 0, 0, 0, 0.07898294, 0, 0, 0, 0.07898294, 0.08205414, 0.04202491, -0.15975216)
+mesh = SubResource("BoxMesh_wodsf")
+surface_material_override/0 = SubResource("StandardMaterial3D_kb6p2")
+
+[node name="LeftEye" type="MeshInstance3D" parent="Body/Recoil/Head" unique_id=1615018128]
+transform = Transform3D(0.07898294, 0, 0, 0, 0.07898294, 0, 0, 0, 0.07898294, -0.0892587, 0.04202491, -0.15975216)
+mesh = SubResource("BoxMesh_wodsf")
+surface_material_override/0 = SubResource("StandardMaterial3D_kb6p2")
+
+[node name="Torso" type="MeshInstance3D" parent="Body" unique_id=583927625]
+transform = Transform3D(0.42766076, 0, 0, 0, 0.42766076, 0, 0, 0, 0.42766076, 0, 0.15616643, 0.020640612)
+mesh = SubResource("BoxMesh_kb6p2")
+surface_material_override/0 = SubResource("StandardMaterial3D_32hag")
+
+[node name="LeftLeg" type="MeshInstance3D" parent="Body" unique_id=172419924]
+transform = Transform3D(0.19128741, 0, 0, 0, 0.19128741, 0, 0, 0, 0.19128741, -0.10764241, -0.593606, 0.00477314)
+mesh = SubResource("BoxMesh_32hag")
+surface_material_override/0 = SubResource("StandardMaterial3D_32hag")
+
+[node name="RighLeg" type="MeshInstance3D" parent="Body" unique_id=1170353479]
+transform = Transform3D(0.19128741, 0, 0, 0, 0.19128741, 0, 0, 0, 0.19128741, 0.10657835, -0.5957482, 0.00477314)
+mesh = SubResource("BoxMesh_32hag")
+surface_material_override/0 = SubResource("StandardMaterial3D_32hag")
+
+[node name="AmmoBarPublic" type="Label3D" parent="Body" unique_id=1596545662]
+transform = Transform3D(0.17002402, 0, 0, 0, 0.17002402, 0, 0, 0, 0.17002402, 0, 1.0468503, 0)
+billboard = 1
+modulate = Color(1, 0.7809618, 0.4214451, 1)
+text = "Ammo"
+font_size = 200
+
+[node name="HealthBarPublic" type="Label3D" parent="Body" unique_id=889122120]
+transform = Transform3D(0.29378334, 0, 0, 0, 0.29378334, 0, 0, 0, 0.29378334, 0, 1.2449931, 0)
+billboard = 1
+modulate = Color(0.56665117, 0.9911565, 0, 1)
+text = "Health"
+font_size = 200
+
+[node name="HealthDeltaBarPublic" type="Label3D" parent="Body" unique_id=650819067]
+transform = Transform3D(0.19529937, 0, 0, 0, 0.19529937, 0, 0, 0, 0.19529937, 0, 1.4560332, 0)
+billboard = 1
+modulate = Color(0.9850748, 0, 0.18224221, 1)
+text = "HealthLoss"
+font_size = 200
+
+[node name="NamePublic" type="Label3D" parent="Body" unique_id=1590526754]
+unique_name_in_owner = true
+transform = Transform3D(0.27165377, 0, 0, 0, 0.27165377, 0, 0, 0, 0.27165377, 0, 1.6851037, 0)
+billboard = 1
+modulate = Color(0.16206557, 0.1620656, 0.16206557, 1)
+text = "Name"
+font_size = 200
+
+[node name="PlayerUI" type="Control" parent="Body" unique_id=156596542 node_paths=PackedStringArray("attribute_component", "weapon_controller")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("34_ge24q")
+attribute_component = NodePath("../../AttributeComponent")
+weapon_controller = NodePath("../../WeaponController")
+
+[node name="ColorRect" type="ColorRect" parent="Body/PlayerUI" unique_id=571062117]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -4.0
+offset_top = -4.0
+offset_right = 4.0
+offset_bottom = 4.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="HealthBar" type="Label" parent="Body/PlayerUI" unique_id=1283418878]
+modulate = Color(0, 1, 0.30748522, 1)
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 66.0
+offset_top = -190.0
+offset_right = 402.0
+offset_bottom = -53.0
+grow_vertical = 0
+theme_override_colors/font_outline_color = Color(0.20746574, 0.24072838, 0.16662738, 1)
+theme_override_constants/outline_size = 21
+theme_override_font_sizes/font_size = 48
+text = "100
+▋▋▋▋▋▋▋▋▋▋▋▋"
+
+[node name="HealthDeltaBar" type="Label" parent="Body/PlayerUI" unique_id=1220165996]
+modulate = Color(0, 1, 0.30748522, 1)
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 66.0
+offset_top = -250.0
+offset_right = 402.0
+offset_bottom = -179.0
+grow_vertical = 0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 21
+theme_override_font_sizes/font_size = 48
+text = "-100"
+
+[node name="TeamText" type="Label" parent="Body/PlayerUI" unique_id=976503451]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 66.0
+offset_top = -320.0
+offset_right = 402.0
+offset_bottom = -253.0
+grow_vertical = 0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 21
+theme_override_font_sizes/font_size = 48
+text = "Team"
+
+[node name="AmmoBar" type="Label" parent="Body/PlayerUI" unique_id=1634747430]
+modulate = Color(0.8228527, 0.8322426, 0.84218675, 1)
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 1497.0
+offset_top = -190.0
+offset_right = 1852.0
+offset_bottom = -53.0
+grow_vertical = 0
+theme_override_constants/outline_size = 26
+theme_override_font_sizes/font_size = 80
+text = "6/6"
+horizontal_alignment = 2
+
+[node name="WeaponList" type="VBoxContainer" parent="Body/PlayerUI" unique_id=436197744]
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -270.0
+offset_top = -167.0
+offset_bottom = 167.0
+grow_horizontal = 0
+grow_vertical = 2
+
+[node name="Label" type="Label" parent="Body/PlayerUI/WeaponList" unique_id=440692072]
+layout_mode = 2
+text = "FASFAS"
+
+[connection signal="health_changed" from="AttributeComponent" to="Body/HealthBarPublic" method="_on_attribute_component_health_changed"]

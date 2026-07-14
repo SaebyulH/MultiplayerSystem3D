@@ -180,10 +180,7 @@ func _process(_delta: float) -> void:
 		return
 
 	var hp := int(attribute_component.health)
-	var bar := ""
-	for i in range(int(hp / 10)):
-		bar += "█"
-
+	var bar := "█".repeat(int(hp / 10))
 	health_bar.text = str(hp) + "\n" + bar
 	health_bar_public.text = str(hp) + " " + bar
 

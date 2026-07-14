@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://dv73bh3gld32d"]
+
+[ext_resource type="PackedScene" uid="uid://bb1ka4qjp58co" path="res://assets/models/ImageToStl.com_c_revolver/c_revolver.glb" id="1_sd31k"]
+
+[node name="Scattergun" type="Node3D" unique_id=664585380]
+
+[node name="Muzzle" type="Node3D" parent="." unique_id=2026291909]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.08155689, -0.4436891)
+
+[node name="c_revolver" parent="." unique_id=991461838 instance=ExtResource("1_sd31k")]
+transform = Transform3D(-0.03, 0, -2.6226834e-09, 2.6226834e-09, -1.3113416e-09, -0.03, -1.1464112e-16, -0.03, 1.3113416e-09, 0, 0, 0)

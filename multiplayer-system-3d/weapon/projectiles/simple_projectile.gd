@@ -11,7 +11,7 @@ var shooter_team: Player.Team
 
 #var _distance_traveled: float = 0.0
 var _time_alive := 0.0
-@export var lifetime: float = 100.5
+@export var lifetime: float = 5.0
 @export var explode_on_timeout: bool = false
 # DAMAGE COMPONENTS
 @export var _hitbox_component: HitboxComponent

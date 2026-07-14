@@ -1,0 +1,20 @@
+[gd_scene format=3 uid="uid://b10rhr5f0qk1u"]
+
+[ext_resource type="PackedScene" uid="uid://dbvire4mf15ag" path="res://assets/models/ImageToStl.com_c_syringegun/c_syringegun.glb" id="1_i5af1"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_i5af1"]
+transparency = 1
+albedo_color = Color(0.601223, 0.601223, 0.60122293, 0.11372549)
+
+[node name="Pistol" type="Node3D" unique_id=664585380]
+
+[node name="Muzzle" type="Node3D" parent="." unique_id=2026291909]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.12967256, -0.49123335)
+
+[node name="c_syringegun2" parent="." unique_id=44388376 instance=ExtResource("1_i5af1")]
+transform = Transform3D(-0.033, 0, -2.8849518e-09, 2.8849518e-09, -1.4424758e-09, -0.033, -1.2610525e-16, -0.033, 1.4424758e-09, 0, 0, 0)
+
+[node name="Node7" parent="c_syringegun2/Node0/c_syringegun_qc_skeleton/c_syringegun" parent_id_path=PackedInt32Array(44388376, 350100048) index="0" unique_id=1633057393]
+surface_material_override/1 = SubResource("StandardMaterial3D_i5af1")
+
+[editable path="c_syringegun2"]

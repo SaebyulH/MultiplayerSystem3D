@@ -1,0 +1,283 @@
+[gd_scene format=3 uid="uid://syjn6m0nu2ig"]
+
+[ext_resource type="Script" uid="uid://bd6lublcioe52" path="res://world/world_1.gd" id="1_rf4cw"]
+[ext_resource type="PackedScene" uid="uid://cmix6q8a6hgcu" path="res://player/player.tscn" id="2_7dtx0"]
+[ext_resource type="Script" uid="uid://bi46jlfs4i3pp" path="res://world/game_menu.gd" id="3_ur4i3"]
+[ext_resource type="AudioStream" uid="uid://exvh8mdgxfb8" path="res://assets/sounds/multikill-1.mp3" id="4_p2lt3"]
+[ext_resource type="Script" uid="uid://c2ud4axp2a0nj" path="res://world/class_select.gd" id="4_y31kp"]
+[ext_resource type="Script" uid="uid://bqjxdoe65xamn" path="res://world/canvas_layer.gd" id="5_8kumn"]
+[ext_resource type="Texture2D" uid="uid://bk3hvsl8t0bt3" path="res://assets/Assault.png" id="6_43n3m"]
+[ext_resource type="PackedScene" uid="uid://dpvv8ex8hflrg" path="res://world/weapon_subviewport_preview.tscn" id="6_btayf"]
+[ext_resource type="Texture2D" uid="uid://cu8b4plsgc7l7" path="res://assets/Assasin.png" id="7_8kumn"]
+[ext_resource type="Texture2D" uid="uid://c84ennjo4gpgo" path="res://assets/Assistance.png" id="8_hwth4"]
+
+[node name="World1" type="Node3D" unique_id=1030413131 node_paths=PackedStringArray("leaderboard")]
+script = ExtResource("1_rf4cw")
+player_scene = ExtResource("2_7dtx0")
+leaderboard = NodePath("GameMenu/VBoxContainer/Leaderboard")
+
+[node name="SpawnParent" type="Node3D" parent="." unique_id=1706707506]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
+
+[node name="GameMenu" type="Control" parent="." unique_id=897483677]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("3_ur4i3")
+base_sound = ExtResource("4_p2lt3")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="GameMenu" unique_id=1326311598]
+script = ExtResource("5_8kumn")
+
+[node name="Label" type="Label" parent="GameMenu/CanvasLayer" unique_id=1810573380]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -398.5
+offset_top = -477.0
+offset_right = 398.5
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 20
+theme_override_font_sizes/font_size = 32
+text = "ACTIVE
+Time: 4:32
+Rounds  SPI 1/2  —  SCI 0/2
+
+── KOTH ──
+SPI  0:18 / 0:30  [██████░░░░░░]
+SCI  0:07 / 0:30  [██░░░░░░░░░░]
+
+── CONTROL POINTS ──
+CP1 [SPI]  SCI capping 40%  ×2  [████░░░░░░]"
+horizontal_alignment = 1
+
+[node name="Killstreak" type="Label" parent="GameMenu" unique_id=1114400658]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -480.0
+offset_top = -169.0
+offset_right = 480.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 18
+theme_override_font_sizes/font_size = 60
+text = "☠︎︎:
+"
+horizontal_alignment = 1
+
+[node name="Panel" type="Panel" parent="GameMenu" unique_id=1568453324]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ID" type="Label" parent="GameMenu" unique_id=1439683636]
+layout_mode = 1
+offset_right = 108.0
+offset_bottom = 115.0
+theme_override_font_sizes/font_size = 60
+text = "ID"
+
+[node name="VBoxContainer" type="VBoxContainer" parent="GameMenu" unique_id=1846671306]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="GameMenu/VBoxContainer" unique_id=869186600]
+layout_mode = 2
+alignment = 1
+
+[node name="MainMenu" type="Button" parent="GameMenu/VBoxContainer/HBoxContainer" unique_id=1729705955]
+layout_mode = 2
+theme_override_font_sizes/font_size = 60
+text = "Main Menu"
+
+[node name="Leaderboard" type="ItemList" parent="GameMenu/VBoxContainer" unique_id=584755671]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 24
+
+[node name="ClassSelect" type="Control" parent="GameMenu/VBoxContainer" unique_id=19748501]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+script = ExtResource("4_y31kp")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="GameMenu/VBoxContainer/ClassSelect" unique_id=1426070812]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 520.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ConfirmBuild" type="Button" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer" unique_id=1085279259]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_font_sizes/font_size = 60
+text = "Confirm Class"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer" unique_id=842489698]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="TeamSection" type="VBoxContainer" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer" unique_id=552958007]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label" type="Label" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer/TeamSection" unique_id=339212374]
+layout_mode = 2
+theme_override_font_sizes/font_size = 60
+text = "Team Select"
+
+[node name="TeamOption" type="OptionButton" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer/TeamSection" unique_id=2131896059]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 60
+fit_to_longest_item = false
+item_count = 3
+popup/item_0/text = "0"
+popup/item_0/id = 0
+popup/item_1/text = "1"
+popup/item_1/id = 1
+popup/item_2/text = "2"
+popup/item_2/id = 2
+
+[node name="ClassSection2" type="VBoxContainer" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer" unique_id=196097438]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label" type="Label" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer/ClassSection2" unique_id=200958300]
+layout_mode = 2
+theme_override_font_sizes/font_size = 60
+text = "Class Select"
+
+[node name="ClassOption" type="OptionButton" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer/ClassSection2" unique_id=469872618]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 60
+fit_to_longest_item = false
+item_count = 3
+popup/item_0/text = "res://player/player_classes/assault.tres"
+popup/item_0/icon = ExtResource("6_43n3m")
+popup/item_0/id = 0
+popup/item_1/text = "res://player/player_classes/assasin.tres"
+popup/item_1/icon = ExtResource("7_8kumn")
+popup/item_1/id = 1
+popup/item_2/text = "res://player/player_classes/assistance.tres"
+popup/item_2/icon = ExtResource("8_hwth4")
+popup/item_2/id = 2
+
+[node name="PrimarySection" type="VBoxContainer" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer" unique_id=648861188]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBoxContainer2" type="VBoxContainer" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer/PrimarySection" unique_id=813982347]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer/PrimarySection/VBoxContainer2" unique_id=1998715346]
+layout_mode = 2
+theme_override_font_sizes/font_size = 60
+text = "Primary"
+
+[node name="PrimaryWeaponOption" type="OptionButton" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer/PrimarySection/VBoxContainer2" unique_id=1629862108]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 60
+item_count = 3
+popup/item_0/text = "ASSASIN"
+popup/item_0/id = 0
+popup/item_1/text = "ASSAULT"
+popup/item_1/id = 1
+popup/item_2/text = "ASSISTIVE"
+popup/item_2/id = 2
+
+[node name="SubViewportContainer" type="SubViewportContainer" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer/PrimarySection" unique_id=976288995]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+stretch = true
+
+[node name="PrimarySubViewport" type="SubViewport" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer/PrimarySection/SubViewportContainer" unique_id=1556160592]
+unique_name_in_owner = true
+own_world_3d = true
+handle_input_locally = false
+size = Vector2i(477, 188)
+size_2d_override_stretch = true
+render_target_update_mode = 4
+
+[node name="Node3D" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer/PrimarySection/SubViewportContainer/PrimarySubViewport" unique_id=27438632 instance=ExtResource("6_btayf")]
+
+[node name="SecondarySection" type="VBoxContainer" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer" unique_id=1534910386]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBoxContainer3" type="VBoxContainer" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer/SecondarySection" unique_id=659284524]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer/SecondarySection/VBoxContainer3" unique_id=166602554]
+layout_mode = 2
+theme_override_font_sizes/font_size = 60
+text = "Secondary"
+
+[node name="SecondaryWeaponOption" type="OptionButton" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer/SecondarySection/VBoxContainer3" unique_id=1467890301]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 60
+item_count = 3
+popup/item_0/text = "ASSASIN"
+popup/item_0/id = 0
+popup/item_1/text = "ASSAULT"
+popup/item_1/id = 1
+popup/item_2/text = "ASSISTIVE"
+popup/item_2/id = 2
+
+[node name="SubViewportContainer" type="SubViewportContainer" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer/SecondarySection" unique_id=2131047702]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+stretch = true
+
+[node name="SecondarySubViewport" type="SubViewport" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer/SecondarySection/SubViewportContainer" unique_id=672334693]
+unique_name_in_owner = true
+own_world_3d = true
+handle_input_locally = false
+size = Vector2i(477, 188)
+size_2d_override_stretch = true
+render_target_update_mode = 4
+
+[node name="Node3D" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer/SecondarySection/SubViewportContainer/SecondarySubViewport" unique_id=528727344 instance=ExtResource("6_btayf")]
+
+[node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="." unique_id=267556738]
+_spawnable_scenes = PackedStringArray("uid://cmix6q8a6hgcu", "uid://bhsrnwae043e1", "uid://7ccxfopdhtv8", "uid://x64r4as832eo", "uid://72ju85r15v1e", "uid://ohyji3hlfle6", "uid://ubib085fbj7w", "uid://cpdne6lbfqxh", "uid://oidyxhn6wjax")
+spawn_path = NodePath("../SpawnParent")
+
+[connection signal="pressed" from="GameMenu/VBoxContainer/HBoxContainer/MainMenu" to="." method="_on_main_menu_pressed"]
+
+[editable path="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer/PrimarySection/SubViewportContainer/PrimarySubViewport/Node3D"]
+[editable path="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer/SecondarySection/SubViewportContainer/SecondarySubViewport/Node3D"]
