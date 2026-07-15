@@ -108,10 +108,11 @@ func _tick_timers(delta: float) -> void:
 	if _fire_cooldown > 0.0:
 		_fire_cooldown -= delta
 
-	# Reload timer should tick on the server, since reload is server-authoritative.
-	if multiplayer.is_server() and _is_reloading:
+	# Reload timer ticks on all peers for client-side visual progress.
+	# Only the server triggers the actual reload completion.
+	if _is_reloading:
 		_reload_timer -= delta
-		if _reload_timer <= 0.0:
+		if multiplayer.is_server() and _reload_timer <= 0.0:
 			_finish_reload()
 
 	if _pending_fire:
@@ -130,11 +131,31 @@ func _tick_timers(delta: float) -> void:
 func reset() -> void:
 	_is_reloading = false
 	_reload_timer = 0.0
+	_pending_fire = false
+	_fire_cooldown = 0.0
 	current_weapon_index = 0
 	for weapon in _weapons:
 		weapon.reset()
+
+	# Server broadcasts authoritative mag values to all peers after reset.
 	if not _weapons.is_empty():
+		if multiplayer.is_server():
+			var mags: Array[int] = []
+			for w in _weapons:
+				mags.append(w.mag_current)
+			_sync_all_mags.rpc(mags)
 		_emit_weapon_changed()
+
+@rpc("authority", "call_local", "reliable")
+func _sync_all_mags(mags: Array[int]) -> void:
+	if _weapons.is_empty():
+		return
+	for i in mini(mags.size(), _weapons.size()):
+		_weapons[i].mag_current = clamp(mags[i], 0, _weapons[i].mag_size)
+	mag_changed.emit(
+		_weapons[current_weapon_index].mag_current,
+		_weapons[current_weapon_index].mag_size
+	)
 
 
 func _set_mag(value: int) -> void:
@@ -323,6 +344,8 @@ func _finish_reload() -> void:
 	var weapon: Weapon = _weapons[current_weapon_index]
 	if weapon.reload_individually:
 		_set_mag(weapon.mag_current + 1)
+		# Sync each shell to clients so the ammo counter updates incrementally.
+		_sync_mag.rpc(weapon.mag_current)
 		_is_reloading = false
 		if weapon.mag_current < weapon.mag_size:
 			if player_input.primary_fire_held or player_input.secondary_fire_held:
@@ -439,7 +462,11 @@ func _try_fire(weapon_fire_index: int) -> void:
 		if multiplayer.is_server():
 			fire_intent(current_weapon_index, weapon_fire_index)
 		else:
-			fire_intent(current_weapon_index, weapon_fire_index)
+			# Client: send fire intent to the server for authoritative processing.
+			# We optimistically set the cooldown for responsive feel; the server
+			# will sync the authoritative mag back via _sync_mag.
+			_fire_cooldown = _weapons[current_weapon_index].weapon_fires[weapon_fire_index].post_shoot_delay
+			fire_intent.rpc_id(1, current_weapon_index, weapon_fire_index)
 
 
 
@@ -447,7 +474,7 @@ func _do_fire_client() -> void:
 	if not _is_ready():
 		return
 	_fire_cooldown = _weapons[current_weapon_index].post_shoot_delay
-	fire_intent.rpc_id(1, current_weapon_index)
+	fire_intent.rpc_id(1, current_weapon_index, _pending_fire_index)
 #endregion
 
 

@@ -142,13 +142,16 @@ func rpc_reset(pos: Vector3) -> void:
 	velocity = Vector3.ZERO
 	knockback_velocity = Vector3.ZERO
 
+	# Reset health and weapons on every peer so clients stay in sync.
+	attribute_component.reset()
+	weapon_controller.reset()
+
 
 func no_health() -> void:
 	if OS.is_debug_build():
 		print(name + " KILLED BY " + attribute_component.last_attacker)
-	attribute_component.reset()
-	weapon_controller.reset()
 
+	# State reset is handled inside rpc_reset so it runs on every peer.
 	if multiplayer.is_server():
 		rpc_reset.rpc(_get_spawn_position())
 

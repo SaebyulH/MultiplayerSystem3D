@@ -30,6 +30,8 @@ var _reload_bar_fill: ColorRect
 
 var _weapon_list: VBoxContainer
 var _crosshair: ColorRect
+var _respawn_label: Label
+var _respawn_label_bg: ColorRect
 
 # Health delta tracking
 var _last_health: float = 0.0
@@ -92,6 +94,7 @@ func _build_ui() -> void:
 	_build_health()
 	_build_ammo()
 	_build_weapon_list()
+	_build_respawn_timer()
 
 func _build_crosshair() -> void:
 	# Small dot at screen centre
@@ -244,6 +247,41 @@ func _build_weapon_list() -> void:
 	_weapon_list.add_theme_constant_override("separation", 4)
 	add_child(_weapon_list)
 
+func _build_respawn_timer() -> void:
+	# ── Respawn countdown (center of screen) ──
+	var container := Control.new()
+	container.anchor_left   = 0.5
+	container.anchor_right  = 0.5
+	container.anchor_top    = 0.5
+	container.anchor_bottom = 0.5
+	container.offset_left   = -150.0
+	container.offset_top    = -30.0
+	container.offset_right  = 150.0
+	container.offset_bottom = 30.0
+	container.visible = false
+	add_child(container)
+
+	_respawn_label_bg = ColorRect.new()
+	_respawn_label_bg.color = Color(0.0, 0.0, 0.0, 0.55)
+	_respawn_label_bg.anchor_left   = 0.0
+	_respawn_label_bg.anchor_right  = 1.0
+	_respawn_label_bg.anchor_top    = 0.0
+	_respawn_label_bg.anchor_bottom = 1.0
+	container.add_child(_respawn_label_bg)
+
+	_respawn_label = Label.new()
+	_respawn_label.anchor_left   = 0.0
+	_respawn_label.anchor_right  = 1.0
+	_respawn_label.anchor_top    = 0.0
+	_respawn_label.anchor_bottom = 1.0
+	_respawn_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_respawn_label.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
+	_respawn_label.add_theme_color_override("font_color", Color(0.95, 0.95, 0.95))
+	_respawn_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+	_respawn_label.add_theme_constant_override("outline_size", 6)
+	_respawn_label.add_theme_font_size_override("font_size", 32)
+	container.add_child(_respawn_label)
+
 # ─────────────────────────────────────────────
 #  Updates (called from _process)
 # ─────────────────────────────────────────────
@@ -261,6 +299,7 @@ func _process(_delta: float) -> void:
 	_update_health_delta()
 	_update_ammo()
 	_update_team()
+	_update_respawn_timer()
 
 func _update_health() -> void:
 	if not attribute_component or not is_inside_tree():
@@ -390,6 +429,18 @@ func _update_team() -> void:
 			col = Color(0.70, 0.70, 0.70)
 	_team_label.text = txt
 	_team_label.modulate = col
+
+func _update_respawn_timer() -> void:
+	var container := _respawn_label.get_parent() as Control
+	if not container or not _owner_player:
+		return
+
+	if not _owner_player.spawned and _owner_player.respawn_timer > 0.0:
+		container.visible = true
+		var seconds := ceili(_owner_player.respawn_timer)
+		_respawn_label.text = "Spawning in %d…" % seconds
+	else:
+		container.visible = false
 
 # ─────────────────────────────────────────────
 #  Signal handlers
