@@ -66,7 +66,7 @@ size = Vector3(1, 4.005, 1)
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_32hag"]
 albedo_color = Color(0.468777, 0.46877706, 0.468777, 1)
 
-[sub_resource type="BoxMesh" id="BoxMesh_wodsf"]
+[sub_resource type="SphereMesh" id="SphereMesh_gyt1i"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tqiix"]
 albedo_color = Color(1, 0.85882354, 0.6745098, 1)
@@ -74,6 +74,8 @@ albedo_color = Color(1, 0.85882354, 0.6745098, 1)
 [sub_resource type="SphereMesh" id="SphereMesh_e7oew"]
 height = 0.5
 is_hemisphere = true
+
+[sub_resource type="BoxMesh" id="BoxMesh_wodsf"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kb6p2"]
 albedo_color = Color(0.13077214, 0.13077214, 0.13077211, 1)
@@ -142,7 +144,7 @@ script = ExtResource("2_onrkg")
 top_level = true
 
 [node name="ProjectileSpawner" type="MultiplayerSpawner" parent="ProjectilesParent" unique_id=290768895]
-_spawnable_scenes = PackedStringArray("uid://cccu8xmm1tqq7", "uid://dy7hw0uphca40", "uid://v27fq461i5vr", "uid://dfyafkr18mtuq", "uid://bo0edtxgakruc", "uid://6mr0d18yn8po", "uid://daan6liu8ej2", "uid://cccu8xmm1tqq7", "uid://dy7hw0uphca40", "uid://v27fq461i5vr", "uid://dfyafkr18mtuq", "uid://bo0edtxgakruc", "uid://6mr0d18yn8po", "uid://daan6liu8ej2")
+_spawnable_scenes = PackedStringArray("uid://cccu8xmm1tqq7", "uid://dy7hw0uphca40", "uid://v27fq461i5vr", "uid://dfyafkr18mtuq", "uid://bo0edtxgakruc", "uid://6mr0d18yn8po", "uid://daan6liu8ej2", "uid://cccu8xmm1tqq7", "uid://dy7hw0uphca40", "uid://v27fq461i5vr", "uid://dfyafkr18mtuq", "uid://bo0edtxgakruc", "uid://6mr0d18yn8po", "uid://daan6liu8ej2", "uid://bhmnsehfve81e", "uid://cccu8xmm1tqq7", "uid://dy7hw0uphca40", "uid://v27fq461i5vr", "uid://dfyafkr18mtuq", "uid://evq31o8nptpq", "uid://bo0edtxgakruc", "uid://6mr0d18yn8po", "uid://daan6liu8ej2")
 spawn_path = NodePath("..")
 script = ExtResource("3_32hag")
 
@@ -245,8 +247,8 @@ mesh = SubResource("BoxMesh_32hag")
 surface_material_override/0 = SubResource("StandardMaterial3D_32hag")
 
 [node name="Face" type="MeshInstance3D" parent="Body/Recoil/Head" unique_id=579986966]
-transform = Transform3D(0.326937, 0, 0, 0, 0.326937, 0, 0, 0, 0.326937, 0, 0.046078205, 0)
-mesh = SubResource("BoxMesh_wodsf")
+transform = Transform3D(0.4374137, 0, 0, 0, 0.4374137, 0, 0, 0, 0.4374137, 0, 0.046078205, 0)
+mesh = SubResource("SphereMesh_gyt1i")
 surface_material_override/0 = SubResource("StandardMaterial3D_tqiix")
 
 [node name="Helmet" type="MeshInstance3D" parent="Body/Recoil/Head" unique_id=2067128649]

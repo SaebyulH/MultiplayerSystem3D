@@ -14,6 +14,11 @@ size = Vector3(1, 1, 2)
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sq1n6"]
 albedo_color = Color(0.30692267, 0.3069227, 0.3069227, 1)
 
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_2ft10"]
+properties/0/path = NodePath(".:position")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+
 [node name="Payload" type="AnimatableBody3D" unique_id=30073179 groups=["payload"]]
 script = ExtResource("1_sq1n6")
 
@@ -40,3 +45,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1221764, 0)
 billboard = 1
 no_depth_test = true
 text = "fasdfasdfa"
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=937173571]
+replication_config = SubResource("SceneReplicationConfig_2ft10")

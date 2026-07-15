@@ -63,11 +63,6 @@ var _pushers: Array = []
 
 var _checkpoint_progresses: Array[float] = []
 
-# Client-side interpolation state
-var _display_progress: float = 0.0
-var _interp_timer: float = 0.0
-const INTERP_RATE: float = 4.0  # catch-up speed for client smoothing
-
 @onready var push_zone: Area3D = $PushZone
 @onready var label: Label3D = $Label3D
 @onready var mesh: MeshInstance3D = $MeshInstance3D
@@ -122,27 +117,6 @@ func set_locked(locked: bool) -> void:
 # ─────────────────────────────────────────────
 #  PROCESS
 # ─────────────────────────────────────────────
-
-## Client-only: smoothly interpolate the visual payload position toward the
-## latest synced progress.  This prevents snapping when sync packets arrive
-## at ~15 Hz.
-func _process(delta: float) -> void:
-	if multiplayer.is_server():
-		return
-	if is_delivered or is_locked:
-		return
-	if payload_state in [PayloadState.LOCKED, PayloadState.DELIVERED]:
-		return
-
-	# Move display progress toward authoritative progress at a fixed rate.
-	# INTERP_RATE is in "progress-units per second" — the payload moves at
-	# ~0.035 units/s, so INTERP_RATE = 4.0 catches up in ~8 ms of error.
-	_display_progress = move_toward(_display_progress, progress, delta * INTERP_RATE)
-
-	# Apply the display position visually (no physics involvement).
-	path_follower.progress_ratio = _display_progress
-	global_position = path_follower.global_position + vertical_offset
-	global_basis    = path_follower.global_basis
 
 func _physics_process(delta: float) -> void:
 	if not multiplayer.is_server():
@@ -250,16 +224,14 @@ func _tick_healing(delta: float) -> void:
 #  PATH POSITION
 # ─────────────────────────────────────────────
 
-## Server: position the payload at the path follower + vertical_offset.
-## Uses direct transform assignment (not move_and_collide) — the payload
-## is an AnimatableBody3D so players standing on it are carried naturally.
+## Server: use move_and_collide so CharacterBody3D players are carried by
+## the cart rather than shoved away from it.
 func _sync_position_to_path() -> void:
 	path_follower.progress_ratio = progress
-	global_position = path_follower.global_position + vertical_offset
-	global_basis    = path_follower.global_basis
+	var target_pos := path_follower.global_position + vertical_offset
+	global_basis = path_follower.global_basis
+	global_transform = path_follower.global_transform
 
-## Client: same positioning logic as the server, so progress → world-position
-## is deterministic regardless of which peer runs it.
 func _apply_position_to_path() -> void:
 	path_follower.progress_ratio = progress
 	global_position = path_follower.global_position + vertical_offset
@@ -423,21 +395,20 @@ func _update_label() -> void:
 #  RPC
 # ─────────────────────────────────────────────
 
-@rpc("authority", "call_local", "reliable")
+@rpc("authority", "call_local", "unreliable")
 func _rpc_sync(p_progress: float, p_state: PayloadState, p_countdown: float) -> void:
 	if multiplayer.is_server():
 		return
-	# Update authoritative target — _display_progress stays where it is and
-	# _process smoothly interpolates toward this new value.
 	progress          = p_progress
 	payload_state     = p_state
 	_return_countdown = p_countdown
+	# Clients use direct assignment — no physics involvement
+	_apply_position_to_path()
 	_update_visuals()
 
 @rpc("authority", "call_local", "reliable")
 func _rpc_reset() -> void:
 	progress              = 0.0
-	_display_progress     = 0.0
 	is_delivered          = false
 	is_being_pushed       = false
 	is_contested          = false
@@ -466,7 +437,6 @@ func _rpc_push_stopped() -> void:
 func _rpc_delivered() -> void:
 	if multiplayer.is_server():
 		return
-	is_delivered      = true
-	_display_progress = 1.0
+	is_delivered = true
 	payload_delivered.emit()
 	_update_visuals()

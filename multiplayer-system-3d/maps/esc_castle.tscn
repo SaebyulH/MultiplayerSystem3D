@@ -38,7 +38,7 @@ albedo_color = Color(0, 0, 0, 1)
 
 [sub_resource type="Curve3D" id="Curve3D_duvhj"]
 _data = {
-"points": PackedVector3Array(0, 0, 0, 0, 0, 0, 16.633778, 0.7900977, 0, 0, 0, 0, 0, 0, 0, 5.3282514, 1.3274851, -8.450931, 0, 0, 0, 0, 0, 0, -13.942582, 0.095, -6.4720306, 0, 0, 0, 0, 0, 0, -15.377696, 2.351532, 5.8264456, 0, 0, 0, 0, 0, 0, -14.808344, 4.637663, 12.999221),
+"points": PackedVector3Array(0, 0, 0, 0, 0, 0, 16.634, 1, 0, 0, 0, 0, 0, 0, 0, 5.328, 1, -8.451, 0, 0, 0, 0, 0, 0, -13.943, 1, -6.472, 0, 0, 0, 0, 0, 0, -15.378, 1, -1.7579632, 0, 0, 0, 0, 0, 0, -14.808, 5.0371723, 12.999),
 "tilts": PackedFloat32Array(0, 0, 0, 0, 0)
 }
 point_count = 5
@@ -335,8 +335,12 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.3498983, 6.856256, 24.8085
 size = Vector3(46.97534, 5, 6.997162)
 
 [node name="ground5" type="CSGBox3D" parent="CSGCombiner3D" unique_id=1545469780]
-transform = Transform3D(0.018813252, 0, 0.11800892, 0, 0.11949915, 0, -0.11800892, 0, 0.018813252, -1.3076603, 7.585297, 7.620357)
-size = Vector3(46.97534, 40.02942, 0.49514008)
+transform = Transform3D(0.018813252, 0, 0.11800892, 0, 0.11949915, 0, -0.11800892, 0, 0.018813252, -1.895075, 7.585297, 11.305002)
+size = Vector3(109.42224, 40.02942, 0.49514008)
+
+[node name="ground6" type="CSGBox3D" parent="CSGCombiner3D" unique_id=1009733930]
+transform = Transform3D(0.018813252, 0, 0.11800892, 0, 0.11949915, 0, -0.11800892, 0, 0.018813252, 0.6016902, 7.585297, -5.590704)
+size = Vector3(109.42224, 40.02942, 0.49514008)
 
 [node name="ground12" type="CSGBox3D" parent="CSGCombiner3D" unique_id=826231130]
 transform = Transform3D(1.2690672, 0, 0, 0, 1.2114513, 0.37804422, 0, -0.37804422, 1.2114513, -14.807135, 4.1729865, 15.652748)
@@ -438,24 +442,24 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.10206318, 10.33771)
 curve = SubResource("Curve3D_duvhj")
 
 [node name="PayloadFollower" type="PathFollow3D" parent="Path3D" unique_id=407280533]
-transform = Transform3D(0.5987136, 0, 0.80094993, 0, 1, 0, -0.80094993, 0, 0.5987136, 16.633778, 0.7900977, 0)
+transform = Transform3D(0.5987006, 0, 0.80095965, 0, 1, 0, -0.80095965, 0, 0.5987006, 16.634, 1, 0)
 rotation_mode = 1
 loop = false
 
 [node name="Node3D" type="PathFollow3D" parent="Path3D" unique_id=1964347414]
-transform = Transform3D(0.59871465, 0.030471954, 0.8003717, -1.8626288e-09, 0.9992719, -0.03804419, -0.80095136, 0.022777915, 0.5982813, 8.975101, 1.1541387, -5.7248936)
+transform = Transform3D(0.59870124, 0, 0.8009606, 0, 0.99999446, 0, -0.8009606, 0, 0.59870124, 8.969685, 1, -5.728916)
 progress = 9.568661
 
 [node name="PayloadCheckpointVisual" parent="Path3D/Node3D" unique_id=462281785 instance=ExtResource("6_1kq08")]
 
 [node name="Node3D2" type="PathFollow3D" parent="Path3D" unique_id=260445367]
-transform = Transform3D(-0.10151667, -0.064172156, 0.9927436, -0.00992885, 0.9979026, 0.06349191, -0.994767, -0.0034113328, -0.10194391, -7.444651, 0.51058155, -7.1392956)
+transform = Transform3D(-0.10215415, 0, 0.994749, 0, 0.99996835, 0, -0.9947514, 0, -0.10215391, -7.4804735, 1, -7.1356573)
 progress = 26.991209
 
 [node name="PayloadCheckpointVisual" parent="Path3D/Node3D2" unique_id=912872897 instance=ExtResource("6_1kq08")]
 
 [node name="Node3D3" type="PathFollow3D" parent="Path3D" unique_id=167136176]
-transform = Transform3D(-0.99136066, 0.107147895, -0.07541228, 0.12514827, 0.9447732, -0.30280465, 0.03880331, -0.30962628, -0.950055, -14.808342, 4.6376634, 12.999222)
+transform = Transform3D(-0.9986693, 0.03504125, -0.037230596, 0.04364123, 0.9635883, -0.2636943, 0.02663533, -0.26496953, -0.96387434, -14.808001, 5.037173, 12.999001)
 progress = 54.960716
 
 [node name="PayloadCheckpointVisual" parent="Path3D/Node3D3" unique_id=1357804619 instance=ExtResource("6_1kq08")]
