@@ -37,6 +37,9 @@ func _connect_signals() -> void:
 	if gmc.hybrid_mode:
 		gmc.hybrid_point_captured_signal.connect(_on_any_change)
 
+	if gmc.deathmatch_mode:
+		gmc.deathmatch_mode.deathmatch_ended.connect(_on_any_change)
+
 func register_control_point(cp: ControlPoint) -> void:
 	if cp not in _control_points:
 		_control_points.append(cp)
@@ -86,6 +89,8 @@ func _refresh() -> void:
 		GameModeComponent.GameMode.ESCORT:
 			lines.append_array(_escort_lines())
 		GameModeComponent.GameMode.HYBRID:
+		GameModeComponent.GameMode.DEATHMATCH:
+			lines.append_array(_deathmatch_lines())
 			lines.append_array(_hybrid_lines())
 
 	if not _control_points.is_empty():
@@ -186,6 +191,24 @@ func _hybrid_lines() -> Array[String]:
 		var payload := _get_payload()
 		if payload:
 			lines.append(_payload_line(payload))
+
+func _deathmatch_lines() -> Array[String]:
+	var lines: Array[String] = []
+	if not gmc.deathmatch_mode:
+		return lines
+	lines.append("── DEATHMATCH ──")
+	if gmc.deathmatch_mode.winner_name != "":
+		var reason_text := "First to %d kills!" % gmc.deathmatch_mode.kills_to_win if gmc.deathmatch_mode.end_reason == "kills" else "Most kills after time!"
+		lines.append("%s wins!  Match over  —  %s" % [gmc.deathmatch_mode.winner_name, reason_text])
+		return lines
+	var players := Leaderboard.get_players()
+	players.sort_custom(func(a, b): return Leaderboard.get_kills(a) > Leaderboard.get_kills(b))
+	for p in players:
+		var kills := Leaderboard.get_kills(p)
+		lines.append("  %s:  %d" % [p, kills])
+	if players.is_empty():
+		lines.append("  (waiting for players)")
+	return lines
 		else:
 			lines.append("(no payload)")
 	return lines

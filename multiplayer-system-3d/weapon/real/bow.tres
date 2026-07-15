@@ -17,7 +17,7 @@ recoil = Vector3(0, 0, 0)
 [sub_resource type="Resource" id="Resource_sun5j"]
 script = ExtResource("3_7ijep")
 automatic = true
-post_shoot_delay = 0.1
+post_shoot_delay = 1.0
 recoil_data = SubResource("Resource_0iqug")
 bullet_type = 1
 hitscan_damage = 15.0
@@ -41,9 +41,9 @@ metadata/_custom_type_script = "uid://djg0ti1n45f8b"
 [resource]
 script = ExtResource("2_2cfp8")
 display_name = "Bow"
-has_infinite_ammo = true
-reload_individually = true
-reload_time = 0.2
+mag_size = 12
+mag_current = 12
+reload_time = 2.0
 weapon_fires = Array[ExtResource("3_7ijep")]([SubResource("Resource_sun5j"), SubResource("Resource_iwiee")])
 weapon_model = ExtResource("9_7ijep")
 reload_sound = ExtResource("1_sgsea")

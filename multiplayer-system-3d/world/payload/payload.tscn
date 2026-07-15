@@ -41,7 +41,7 @@ mesh = SubResource("BoxMesh_dd2is")
 surface_material_override/0 = SubResource("StandardMaterial3D_sq1n6")
 
 [node name="Label3D" type="Label3D" parent="." unique_id=1114900898]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1221764, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4005625, 0)
 billboard = 1
 no_depth_test = true
 text = "fasdfasdfa"

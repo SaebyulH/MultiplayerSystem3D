@@ -11,6 +11,7 @@ enum GameMode {
 	KOTH,        ## King of the Hill: best of N rounds
 	HYBRID,      ## Capture point, then escort payload
 	CONTROL,     ## Like KOTH but BO3 with separate sub-maps
+	DEATHMATCH,  ## Free-for-all: first to 20 kills or highest after 10 min
 }
 
 enum PhaseState {
@@ -58,14 +59,14 @@ signal hybrid_point_captured_signal()
 @export var rounds_to_win: int = 2
 
 # ─────────────────────────────────────────────
-#  MODE NODES  (assign in editor or via code)
+#  MODE NODES  (created in _create_mode_nodes)
 # ─────────────────────────────────────────────
 
-@export_group("Mode Nodes")
-@export var escort_mode: EscortMode
-@export var hybrid_mode: HybridMode
-@export var koth_mode: KothMode
-@export var domination_mode: DominationMode
+var escort_mode: EscortMode
+var hybrid_mode: HybridMode
+var koth_mode: KothMode
+var domination_mode: DominationMode
+var deathmatch_mode: DeathmatchMode
 
 # ─────────────────────────────────────────────
 #  RUNTIME STATE
@@ -99,16 +100,14 @@ func _create_mode_nodes() -> void:
 	# Only create if not already assigned in the inspector
 	if not escort_mode:
 		escort_mode = EscortMode.new()
-		#add_child(escort_mode)
 	if not hybrid_mode:
 		hybrid_mode = HybridMode.new()
-		#add_child(hybrid_mode)
 	if not koth_mode:
 		koth_mode = KothMode.new()
-		#add_child(koth_mode)
 	if not domination_mode:
 		domination_mode = DominationMode.new()
-		#add_child(domination_mode)
+	if not deathmatch_mode:
+		deathmatch_mode = DeathmatchMode.new()
 
 @rpc("authority", "call_local", "reliable")
 func _rpc_sync_state(state: Dictionary) -> void:
@@ -125,6 +124,9 @@ func _rpc_sync_state(state: Dictionary) -> void:
 	if hybrid_mode:
 		hybrid_mode.apply_sync_state(state["hybrid"])
 
+	if deathmatch_mode:
+		deathmatch_mode.apply_sync_state(state.get("deathmatch", {}))
+
 func _build_snapshot() -> Dictionary:
 	return {
 		"phase": current_phase,
@@ -134,6 +136,7 @@ func _build_snapshot() -> Dictionary:
 		"koth": koth_mode.get_sync_state() if koth_mode else {},
 		"domination": domination_mode.get_sync_state() if domination_mode else {},
 		"hybrid": hybrid_mode.get_sync_state() if hybrid_mode else {},
+		"deathmatch": deathmatch_mode.get_sync_state() if deathmatch_mode else {},
 	}
 
 
@@ -148,6 +151,8 @@ func _connect_mode_signals() -> void:
 		koth_mode.time_held_updated.connect(_on_koth_time_held_updated)
 	if domination_mode:
 		domination_mode.round_won.connect(_end_round)
+	if deathmatch_mode:
+		deathmatch_mode.deathmatch_ended.connect(_on_deathmatch_ended)
 
 # ─────────────────────────────────────────────
 #  REGISTRATION  (called by ControlPoint / PayloadNode)
@@ -208,7 +213,7 @@ func _process(delta: float) -> void:
 			_tick_overtime(delta)
 		PhaseState.ROUND_END:
 			_tick_round_end(delta)
-		
+
 	_sync_timer += delta
 	if _sync_timer >= SYNC_INTERVAL:
 		_sync_timer = 0.0
@@ -238,6 +243,8 @@ func _tick_active(delta: float) -> void:
 	if round_time > 0.0:
 		phase_timer -= delta
 
+	# Mode-specific tick
+	var match_ended := false
 	match game_mode:
 		GameMode.ESCORT:
 			pass  # EscortMode / PayloadNode drives itself
@@ -250,6 +257,12 @@ func _tick_active(delta: float) -> void:
 		GameMode.KOTH, GameMode.CONTROL:
 			if koth_mode:
 				koth_mode.tick(delta)
+		GameMode.DEATHMATCH:
+			if deathmatch_mode:
+				match_ended = deathmatch_mode.tick()
+
+	if match_ended:
+		return
 
 	if round_time > 0.0 and phase_timer <= 0.0:
 		_on_time_expired()
@@ -281,10 +294,22 @@ func _on_hybrid_point_captured() -> void:
 
 func _on_koth_time_held_updated(time_held: Dictionary) -> void:
 	koth_updated.emit(time_held)
-	# time_held is also included in the periodic _rpc_sync_state snapshot,
-	# so a separate per-frame broadcast is unnecessary.
+
+func _on_deathmatch_ended(winner_name: String, reason: String) -> void:
+	if _round_ended:
+		return
+	_round_ended = true
+	_rpc_deathmatch_ended.rpc(winner_name, reason)
+	_transition_phase(PhaseState.MATCH_END)
 
 func _on_time_expired() -> void:
+	# Deathmatch handles time expiry differently — no teams.
+	if game_mode == GameMode.DEATHMATCH:
+		if deathmatch_mode:
+			deathmatch_mode.determine_timer_winner()
+			_on_deathmatch_ended(deathmatch_mode.winner_name, deathmatch_mode.end_reason)
+		return
+
 	if overtime_enabled and overtime_requires_contest and _is_objective_contested():
 		_start_overtime()
 	else:
@@ -345,6 +370,9 @@ func _start_new_round() -> void:
 		GameMode.KOTH, GameMode.CONTROL:
 			if koth_mode:
 				koth_mode.reset()
+		GameMode.DEATHMATCH:
+			if deathmatch_mode:
+				deathmatch_mode.reset()
 
 	_transition_phase(PhaseState.SETUP)
 
@@ -361,7 +389,10 @@ func _transition_phase(new_phase: PhaseState) -> void:
 		PhaseState.OBJECTIVE_LOCKED:
 			phase_timer = objective_unlock_delay
 		PhaseState.ACTIVE:
-			phase_timer = round_time
+			if game_mode == GameMode.DEATHMATCH and deathmatch_mode:
+				phase_timer = deathmatch_mode.round_duration
+			else:
+				phase_timer = round_time
 		PhaseState.OVERTIME:
 			phase_timer = overtime_max_duration
 		PhaseState.ROUND_END:
@@ -386,6 +417,8 @@ func _is_objective_contested() -> bool:
 	match game_mode:
 		GameMode.KOTH, GameMode.CONTROL:
 			return koth_mode.is_contested() if koth_mode else false
+		GameMode.DEATHMATCH:
+			return false
 		GameMode.ESCORT:
 			return escort_mode.is_contested() if escort_mode else false
 		GameMode.HYBRID:
@@ -397,6 +430,8 @@ func _determine_time_expired_winner() -> Player.Team:
 	match game_mode:
 		GameMode.KOTH, GameMode.CONTROL:
 			return koth_mode.determine_tiebreak_winner() if koth_mode else Player.Team.FFA
+		GameMode.DEATHMATCH:
+			return Player.Team.FFA
 		GameMode.ESCORT, GameMode.HYBRID:
 			return Player.Team.SCI  # Defenders win on time expiry
 		GameMode.DOMINATION:
@@ -431,6 +466,13 @@ func _rpc_notify_overtime_started() -> void:
 func _rpc_notify_hybrid_point_captured() -> void:
 	hybrid_point_captured_signal.emit()
 
+@rpc("authority", "call_local", "reliable")
+func _rpc_deathmatch_ended(winner_name: String, reason: String) -> void:
+	if deathmatch_mode:
+		deathmatch_mode.winner_name = winner_name
+		deathmatch_mode.end_reason = reason
+		deathmatch_mode.deathmatch_ended.emit(winner_name, reason)
+
 @rpc("authority", "call_local", "unreliable")
 func _rpc_broadcast_time(remaining: float) -> void:
 	phase_timer = remaining
@@ -442,4 +484,3 @@ func _rpc_set_rounds_to_win(target: int) -> void:
 
 func _broadcast_time(remaining: float) -> void:
 	_rpc_broadcast_time.rpc(remaining)
-	

@@ -7,6 +7,7 @@ class_name HUDController
 ## ────────────
 ##   HUDController (CanvasLayer)        ← replaces canvas_layer.gd
 ##   ├── Shared elements (phase label, timer bar, round scores)
+##   ├── DeathmatchPanel                ← full-width top strip (DM only)
 ##   └── ModePanelContainer
 ##        └── BaseModePanel subclass    ← one per game mode, swapped in
 ##
@@ -43,6 +44,9 @@ var _panel_container: Control
 # Active panel
 var _active_panel: BaseModePanel = null
 var _panel_registry: Dictionary = {}
+
+# Deathmatch overlay (child of CanvasLayer, not _panel_container)
+var _deathmatch_panel: DeathmatchPanel = null
 
 # Internal
 var _initialized := false
@@ -173,9 +177,17 @@ func _connect_mode_signals() -> void:
 	if gmc.hybrid_mode:
 		gmc.hybrid_point_captured_signal.connect(_on_hybrid_updated)
 
-	# Escort mode is polled in _process() — no extra signals needed
+	if gmc.deathmatch_mode:
+		gmc.deathmatch_mode.deathmatch_ended.connect(_on_deathmatch_ended)
 
 func _create_panel_registry() -> void:
+	# Deathmatch panel lives outside _panel_container so it can span
+	# the full width at the top of the screen (not constricted by the
+	# centered HUD layout).
+	_deathmatch_panel = DeathmatchPanel.new()
+	_deathmatch_panel.visible = false
+	add_child(_deathmatch_panel)
+
 	# Create one panel per game mode; they stay hidden until switched to.
 	_panel_registry[GameModeComponent.GameMode.KOTH]      = _make_panel(KothPanel.new())
 	_panel_registry[GameModeComponent.GameMode.CONTROL]    = _make_panel(KothPanel.new())
@@ -200,11 +212,19 @@ func _switch_to_mode(mode: GameModeComponent.GameMode) -> void:
 	# Hide previous
 	if _active_panel:
 		_active_panel.visible = false
+	_deathmatch_panel.visible = false
 
 	# Show new
-	_active_panel = _panel_registry.get(mode)
-	if _active_panel:
-		_active_panel.visible = true
+	if mode == GameModeComponent.GameMode.DEATHMATCH:
+		_panel_container.visible = false
+		_round_score_label.visible = false
+		_deathmatch_panel.visible = true
+	else:
+		_panel_container.visible = true
+		_round_score_label.visible = true
+		_active_panel = _panel_registry.get(mode)
+		if _active_panel:
+			_active_panel.visible = true
 
 	# Immediate data push
 	_push_data_to_panel()
@@ -214,9 +234,13 @@ func _switch_to_mode(mode: GameModeComponent.GameMode) -> void:
 # ─────────────────────────────────────────────
 
 func _push_data_to_panel() -> void:
-	if not _active_panel or not gmc:
-		return
-	_active_panel.update_display(_build_mode_data())
+	# Push to normal mode panel.
+	if _active_panel and gmc:
+		_active_panel.update_display(_build_mode_data())
+
+	# Also push to deathmatch overlay when active.
+	if _deathmatch_panel and _deathmatch_panel.visible and gmc:
+		_deathmatch_panel.update_display(_build_mode_data())
 
 func _build_mode_data() -> Dictionary:
 	match gmc.game_mode:
@@ -228,6 +252,8 @@ func _build_mode_data() -> Dictionary:
 			return _escort_data()
 		GameModeComponent.GameMode.HYBRID:
 			return _hybrid_data()
+		GameModeComponent.GameMode.DEATHMATCH:
+			return _deathmatch_data()
 	return {}
 
 func _koth_data() -> Dictionary:
@@ -286,10 +312,20 @@ func _hybrid_data() -> Dictionary:
 			data["next_checkpoint_index"]  = payload._next_checkpoint_index
 	return data
 
+func _deathmatch_data() -> Dictionary:
+	if not gmc.deathmatch_mode:
+		return {}
+	return {
+		"deathmatch_ended": gmc.deathmatch_mode.winner_name != "",
+		"winner_name": gmc.deathmatch_mode.winner_name,
+		"end_reason": gmc.deathmatch_mode.end_reason,
+		"phase_timer": gmc.phase_timer,
+		"round_time": gmc.round_time,
+		"kills_to_win": gmc.deathmatch_mode.kills_to_win,
+	}
+
 func _count_owned_cps() -> Dictionary:
 	var owned := { Player.Team.SPI: 0, Player.Team.SCI: 0 }
-	# The HUD's control points are registered via register_control_point()
-	# but for simplicity we trust the server state.
 	if gmc.domination_mode and gmc.domination_mode.has_method("_count_owned_points"):
 		return gmc.domination_mode._count_owned_points()
 	return owned
@@ -315,7 +351,6 @@ func _on_phase_changed(new_phase: GameModeComponent.PhaseState) -> void:
 	_push_data_to_panel()
 
 func _on_time_updated(_remaining: float) -> void:
-	# Timer bar syncs in _process(), but also push data for payload poll
 	_push_data_to_panel()
 
 func _on_round_won(_team: Player.Team) -> void:
@@ -340,6 +375,9 @@ func _on_koth_updated(_held) -> void:
 func _on_domination_updated(_points) -> void:
 	_push_data_to_panel()
 
+func _on_deathmatch_ended(_winner: String, _reason: String) -> void:
+	_push_data_to_panel()
+
 func _on_hybrid_updated() -> void:
 	_push_data_to_panel()
 
@@ -356,6 +394,13 @@ func _update_round_score() -> void:
 	_round_score_label.text = "Rounds:  SPI %d/%d  —  SCI %d/%d" % [spi, target, sci, target]
 
 func _phase_text(phase: GameModeComponent.PhaseState) -> String:
+	if gmc and gmc.game_mode == GameModeComponent.GameMode.DEATHMATCH:
+		match phase:
+			GameModeComponent.PhaseState.SETUP:     return "DEATHMATCH — SETUP"
+			GameModeComponent.PhaseState.ACTIVE:     return "DEATHMATCH"
+			GameModeComponent.PhaseState.ROUND_END:  return "ROUND OVER"
+			GameModeComponent.PhaseState.MATCH_END:  return "MATCH OVER"
+			_:                                       return ""
 	match phase:
 		GameModeComponent.PhaseState.WAITING_FOR_PLAYERS:  return "WAITING FOR PLAYERS"
 		GameModeComponent.PhaseState.SETUP:                return "SETUP"
