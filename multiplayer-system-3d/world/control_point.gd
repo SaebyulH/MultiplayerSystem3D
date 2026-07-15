@@ -208,6 +208,30 @@ func _team_name(team: Player.Team) -> String:
 		Player.Team.SCI: return "SCI"
 		_: return ""
 
+## Returns a dictionary snapshot of this point's state for HUD sync.
+func get_cp_state() -> Dictionary:
+	return {
+		"owning_team": owning_team,
+		"capture_team": capture_team,
+		"capture_progress": capture_progress,
+		"is_contested": is_contested,
+		"is_locked": is_locked,
+	}
+
+## Apply a state dictionary from a sync snapshot.
+## Called when a late-joining client receives the full game state,
+## or when the periodic reliable sync arrives.
+func apply_cp_state(state: Dictionary) -> void:
+	owning_team = state.get("owning_team", owning_team)
+	capture_team = state.get("capture_team", capture_team)
+	capture_progress = state.get("capture_progress", capture_progress)
+	is_contested = state.get("is_contested", is_contested)
+	is_locked = state.get("is_locked", is_locked)
+
+	capture_progress_changed.emit(capture_team, capture_progress)
+	_update_color()
+	_update_capture_ui()
+
 # -----------------------------
 # RPC
 # -----------------------------

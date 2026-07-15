@@ -15,6 +15,18 @@ func _ready() -> void:
 func _peer_connected(network_id):
 	if OS.is_debug_build(): print("Peer connected: Network ID: %s" % network_id)
 	_add_player_to_game(network_id)
+	# Existing players were added before this peer connected, so their
+	# rpc_reset already fired.  When Godot replicates those nodes to the
+	# new peer, _ready() calls despawn() and nothing re-shows them.
+	# Sync their visibility a frame later, once tree sync is settled.
+	_sync_existing_players_to_peer(network_id)
+
+## Make already-spawned players visible to a late-joining peer.
+func _sync_existing_players_to_peer(peer_id: int) -> void:
+	await get_tree().process_frame
+	for child in spawn_parent.get_children():
+		if child is Player and child.spawned and child.name != str(peer_id):
+			child.rpc_sync_full_state.rpc_id(peer_id, child.global_position, child._loadout_primary_path, child._loadout_secondary_path)
 
 func _peer_disconnected(network_id):
 	if OS.is_debug_build(): print("Peer disconnected: Network ID: %s" % network_id)

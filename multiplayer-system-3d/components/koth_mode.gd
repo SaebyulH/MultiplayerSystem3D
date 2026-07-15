@@ -21,13 +21,22 @@ signal time_held_updated(time_held: Dictionary)
 #  STATE  (injected by GameModeComponent)
 # ─────────────────────────────────────────────
 func get_sync_state() -> Dictionary:
+	var cp_states: Array[Dictionary] = []
+	for cp in _control_points:
+		cp_states.append(cp.get_cp_state())
 	return {
 		"time_held": time_held,
 		"contested": _is_contested(),
+		"control_points": cp_states,
 	}
 
 func apply_sync_state(state: Dictionary) -> void:
 	time_held = state.get("time_held", time_held)
+
+	# Apply control-point states so late-joiners see current capture progress
+	var cp_states: Array = state.get("control_points", [])
+	for i in mini(cp_states.size(), _control_points.size()):
+		_control_points[i].apply_cp_state(cp_states[i])
 
 
 
@@ -50,6 +59,13 @@ func register_control_point(cp: ControlPoint) -> void:
 
 func unregister_control_point(cp: ControlPoint) -> void:
 	_control_points.erase(cp)
+
+## Returns snapshot dictionaries for all registered control points.
+func get_cp_states() -> Array[Dictionary]:
+	var states: Array[Dictionary] = []
+	for cp in _control_points:
+		states.append(cp.get_cp_state())
+	return states
 
 func tick(delta: float) -> void:
 	var holding_team := _get_holder()

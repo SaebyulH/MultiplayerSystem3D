@@ -64,13 +64,11 @@ func _process(_delta: float) -> void:
 	# Timer bar updates every frame
 	_timer_bar.set_time(gmc.phase_timer, gmc.round_time)
 
-	# Payload-based modes need polling (return countdown isn't signal-driven)
-	var needs_poll: bool = gmc.game_mode in [
-		GameModeComponent.GameMode.ESCORT,
-		GameModeComponent.GameMode.HYBRID,
-	]
-	if needs_poll:
-		_push_data_to_panel()
+	# Poll every frame for all modes so the HUD stays in sync with the
+	# latest server-authoritative state (arrives via reliable _rpc_sync_state
+	# at 10 Hz).  This keeps capture-progress bars smooth and ensures
+	# late-joining players see correct data immediately.
+	_push_data_to_panel()
 
 # ─────────────────────────────────────────────
 #  Build shared UI (called from _ready)
@@ -238,6 +236,7 @@ func _koth_data() -> Dictionary:
 	return {
 		"time_held":          gmc.koth_mode.time_held.duplicate(),
 		"capture_time_to_win": gmc.koth_mode.capture_time_to_win,
+		"control_points":     gmc.koth_mode.get_cp_states(),
 	}
 
 func _domination_data() -> Dictionary:
@@ -249,6 +248,7 @@ func _domination_data() -> Dictionary:
 		"points_to_win":              gmc.domination_mode.points_to_win,
 		"owned_points":               owned,
 		"pps":                        gmc.domination_mode.points_per_second_per_point,
+		"control_points":             gmc.domination_mode.get_cp_states(),
 	}
 
 func _escort_data() -> Dictionary:
@@ -318,11 +318,11 @@ func _on_time_updated(_remaining: float) -> void:
 	# Timer bar syncs in _process(), but also push data for payload poll
 	_push_data_to_panel()
 
-func _on_round_won(_team, _wins) -> void:
+func _on_round_won(_team: Player.Team) -> void:
 	_update_round_score()
 	_push_data_to_panel()
 
-func _on_match_won(_team) -> void:
+func _on_match_won(_team: Player.Team) -> void:
 	_update_round_score()
 	_push_data_to_panel()
 

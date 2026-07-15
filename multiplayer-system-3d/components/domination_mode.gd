@@ -13,9 +13,11 @@ signal points_updated(points: Dictionary)
 # ─────────────────────────────────────────────
 
 ## Points required to win the round
-@export var points_to_win: float = 1000.0
+@export var points_to_win: float = 100.0
 ## Points earned per second per captured control point
 @export var points_per_second_per_point: float = 1.0
+## Rounds needed to win the match (overrides GameModeComponent.rounds_to_win when > 0)
+@export var rounds_to_win: int = 1
 
 # ─────────────────────────────────────────────
 #  STATE
@@ -30,12 +32,21 @@ var points: Dictionary = {
 
 
 func get_sync_state() -> Dictionary:
+	var cp_states: Array[Dictionary] = []
+	for cp in _control_points:
+		cp_states.append(cp.get_cp_state())
 	return {
 		"points": points,
+		"control_points": cp_states,
 	}
 
 func apply_sync_state(state: Dictionary) -> void:
 	points = state.get("points", points)
+
+	# Apply control-point states so late-joiners see current capture progress
+	var cp_states: Array = state.get("control_points", [])
+	for i in mini(cp_states.size(), _control_points.size()):
+		_control_points[i].apply_cp_state(cp_states[i])
 
 
 
@@ -50,6 +61,13 @@ func register_control_point(cp: ControlPoint) -> void:
 
 func unregister_control_point(cp: ControlPoint) -> void:
 	_control_points.erase(cp)
+
+## Returns snapshot dictionaries for all registered control points.
+func get_cp_states() -> Array[Dictionary]:
+	var states: Array[Dictionary] = []
+	for cp in _control_points:
+		states.append(cp.get_cp_state())
+	return states
 
 func tick(delta: float) -> void:
 	var owned := _count_owned_points()

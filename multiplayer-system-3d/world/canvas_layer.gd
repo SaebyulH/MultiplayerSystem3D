@@ -51,13 +51,11 @@ func register_control_point(cp: ControlPoint) -> void:
 func _process(_delta: float) -> void:
 	if not _initialized:
 		return
-	# Payload return countdown isn't signal-driven so we poll it
-	var needs_poll := gmc.game_mode in [
-		GameModeComponent.GameMode.ESCORT,
-		GameModeComponent.GameMode.HYBRID,
-	]
-	if needs_poll:
-		_refresh()
+	# Poll every frame for all modes -- the underlying data is synced
+	# reliably by GameModeComponent._rpc_sync_state at 10 Hz, so
+	# this keeps capture-progress bars smooth and ensures late-joining
+	# players see current state immediately.
+	_refresh()
 
 # ─────────────────────────────────────────────
 #  SIGNAL SINK
@@ -308,8 +306,8 @@ func _score_bar(value: float, max_value: float) -> String:
 func _fmt(seconds: float) -> String:
 	if seconds <= 0.0:
 		return "0:00"
-	var m := int(seconds) / 60
-	var s := int(seconds) % 60
+	var m: int = int(seconds / 60.0)
+	var s: int = int(seconds) % 60
 	return "%d:%02d" % [m, s]
 
 func _phase_text(phase: GameModeComponent.PhaseState) -> String:

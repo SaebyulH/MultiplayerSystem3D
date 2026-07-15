@@ -94,6 +94,6 @@ func set_overtime(active: bool) -> void:
 static func _fmt(seconds: float) -> String:
 	if seconds <= 0.0:
 		return "0:00"
-	var m := int(seconds) / 60
-	var s := int(seconds) % 60
+	var m: int = int(seconds / 60.0)
+	var s: int = int(seconds) % 60
 	return "%d:%02d" % [m, s]

@@ -494,6 +494,9 @@ func _request_loadout(tpid: String, pp: String, sp: String, team: Player.Team) -
 	ctrl.set_weapons(nw)
 	ctrl.current_weapon_index = 0
 	player.team = team
+	# Store paths so late-joining peers can be synced.
+	player._loadout_primary_path = pp
+	player._loadout_secondary_path = sp
 	_apply_loadout.rpc(tpid, pp, sp, team)
 	player.rpc_reset.rpc(player._get_spawn_position())
 

@@ -92,6 +92,10 @@ var pitch := 0.0
 var _spawn_pending_position: Vector3 = Vector3.ZERO
 var spawned := false
 
+# Stored so late-joining peers can be synced with the correct weapon models.
+var _loadout_primary_path: String = ""
+var _loadout_secondary_path: String = ""
+
 # Used to be _pending_spawn_position / _has_pending_spawn — removed.
 
 
@@ -145,6 +149,33 @@ func rpc_reset(pos: Vector3) -> void:
 	# Reset health and weapons on every peer so clients stay in sync.
 	attribute_component.reset()
 	weapon_controller.reset()
+
+## Full-state sync for a late-joining peer.  Handles visibility and weapon
+## loadout in one atomic RPC so the player does not flicker into view with
+## wrong weapon models.
+@rpc("authority", "call_remote", "reliable")
+func rpc_sync_full_state(pos: Vector3, pp: String, sp: String) -> void:
+	# -- Weapons first (before spawn, so correct model is visible) --
+	if not pp.is_empty() and not sp.is_empty():
+		var ctrl: WeaponController = $WeaponController
+		if ctrl:
+			var primary: Weapon = load(pp) as Weapon
+			var secondary: Weapon = load(sp) as Weapon
+			if primary and secondary:
+				var nw: Array[Weapon] = [
+					primary.duplicate(true) as Weapon,
+					secondary.duplicate(true) as Weapon,
+				]
+				ctrl.set_weapons(nw)
+				ctrl.current_weapon_index = 0
+
+	# -- Visibility --
+	if spawned:
+		return
+	global_position = pos
+	velocity = Vector3.ZERO
+	knockback_velocity = Vector3.ZERO
+	spawn()
 
 
 func no_health() -> void:

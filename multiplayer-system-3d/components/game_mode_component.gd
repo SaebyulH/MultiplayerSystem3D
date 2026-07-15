@@ -82,7 +82,7 @@ var round_wins: Dictionary = {
 
 var _hud_tick: float = 0.0
 var _sync_timer: float = 0.0
-const SYNC_INTERVAL: float = 0.2  # 5 Hz game state sync
+const SYNC_INTERVAL: float = 0.1  # 10 Hz game state sync
 
 # ─────────────────────────────────────────────
 #  INIT
@@ -214,6 +214,9 @@ func _process(delta: float) -> void:
 		_sync_timer = 0.0
 		_rpc_sync_state.rpc(_build_snapshot())
 
+		# Also sync rounds_to_win in case a mode overrides it.
+		_rpc_set_rounds_to_win.rpc(_effective_rounds_to_win())
+
 # ─────────────────────────────────────────────
 #  PHASE TICKS
 # ─────────────────────────────────────────────
@@ -278,7 +281,8 @@ func _on_hybrid_point_captured() -> void:
 
 func _on_koth_time_held_updated(time_held: Dictionary) -> void:
 	koth_updated.emit(time_held)
-	_broadcast_koth_progress(time_held)
+	# time_held is also included in the periodic _rpc_sync_state snapshot,
+	# so a separate per-frame broadcast is unnecessary.
 
 func _on_time_expired() -> void:
 	if overtime_enabled and overtime_requires_contest and _is_objective_contested():
@@ -307,14 +311,23 @@ func _end_round(winner: Player.Team) -> void:
 		round_wins[winner] += 1
 	_rpc_round_won.rpc(winner, round_wins.duplicate(true))
 
-	if winner != Player.Team.FFA and round_wins[winner] >= rounds_to_win:
+	if winner != Player.Team.FFA and round_wins[winner] >= _effective_rounds_to_win():
 		_transition_phase(PhaseState.MATCH_END)
 		_rpc_match_won.rpc(winner)
 	else:
 		_transition_phase(PhaseState.ROUND_END)
 
+## Returns the number of rounds needed to win, checking mode-specific overrides.
+func _effective_rounds_to_win() -> int:
+	match game_mode:
+		GameMode.DOMINATION:
+			if domination_mode and domination_mode.rounds_to_win > 0:
+				return domination_mode.rounds_to_win
+	return rounds_to_win
+
 func _start_new_round() -> void:
 	_round_ended = false
+	_rpc_set_rounds_to_win.rpc(_effective_rounds_to_win())
 	for child in GameManager.spawn_parent.get_children():
 		if child is Player:
 			child.rpc_reset.rpc(child._get_spawn_position())
@@ -423,13 +436,10 @@ func _rpc_broadcast_time(remaining: float) -> void:
 	phase_timer = remaining
 	time_updated.emit(remaining)
 
-@rpc("authority", "call_local", "unreliable")
-func _rpc_broadcast_koth(held: Dictionary) -> void:
-	koth_updated.emit(held)
+@rpc("authority", "call_local", "reliable")
+func _rpc_set_rounds_to_win(target: int) -> void:
+	rounds_to_win = target
 
 func _broadcast_time(remaining: float) -> void:
 	_rpc_broadcast_time.rpc(remaining)
-
-func _broadcast_koth_progress(held: Dictionary) -> void:
-	_rpc_broadcast_koth.rpc(held)
 	

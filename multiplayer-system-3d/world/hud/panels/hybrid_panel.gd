@@ -228,8 +228,8 @@ func _rebuild_checkpoints(checkpoints: Array, next_idx: int) -> void:
 # ─────────────────────────────────────────────
 
 static func _fmt(seconds: float) -> String:
-	var m := int(seconds) / 60
-	var s := int(seconds) % 60
+	var m: int = int(seconds / 60.0)
+	var s: int = int(seconds) % 60
 	return "%d:%02d" % [m, s]
 
 func get_panel_name() -> String:
