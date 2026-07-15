@@ -10,8 +10,6 @@ class_name Player
 
 @export var respawn_time: float = 1.5
 var respawn_timer: float = 0.0
-var _pending_spawn_position: Vector3 = Vector3.ZERO
-var _has_pending_spawn: bool = false
 
 var is_bot: bool = false  # set by SpawnManager before add_child
 
@@ -87,6 +85,15 @@ var spawn_manager: SpawnManager
 
 var pitch := 0.0
 
+# ── Respawn state ─────────────────────────────────
+# Persistent across rollback: _spawn_pending_position is NOT consumed inside
+# _rollback_tick, so re-simulations of death/respawn ticks always see it.
+# It is consumed only in _physics_process (real frames only).
+var _spawn_pending_position: Vector3 = Vector3.ZERO
+var spawned := false
+
+# Used to be _pending_spawn_position / _has_pending_spawn — removed.
+
 
 func _enter_tree() -> void:
 	if is_bot:
@@ -131,8 +138,7 @@ func _get_spawn_position() -> Vector3:
 func rpc_reset(pos: Vector3) -> void:
 	despawn()
 	respawn_timer = respawn_time
-	_pending_spawn_position = pos
-	_has_pending_spawn = true
+	_spawn_pending_position = pos
 	velocity = Vector3.ZERO
 	knockback_velocity = Vector3.ZERO
 
@@ -152,19 +158,23 @@ func _sync_head():
 	$BodyHurtbox.global_rotation = $Body.global_rotation
 
 
-var spawned := false
-
+## Hide the player: disable collision, stop camera, move off-grid.
+## Projectiles (child of ProjectilesParent) are NOT touched.
 func despawn():
 	hide()
 	spawned = false
+	collider.disabled = true
 	global_position = GameManager.get_despawn_position()
 	$Body/PlayerUI.hide()
 	camera.current = false
 	camera.visible = false
 
+## Show the player: enable collision, restore camera, position at the given
+## location (already set before calling this).
 func spawn():
 	show()
 	spawned = true
+	collider.disabled = false
 	$Body/PlayerUI.show()
 	if not is_bot:
 		var my_id := multiplayer.get_unique_id()
@@ -184,17 +194,30 @@ func spawn():
 func _physics_process(delta: float) -> void:
 	if respawn_timer > 0.0:
 		respawn_timer -= delta
-	else:
-		if not spawned:
-			spawn()
+	# Only auto-spawn when a spawn position was explicitly queued (e.g. by
+	# rpc_reset from class-select or death).  This prevents the player from
+	# popping into the world before class select.
+	elif not spawned and _spawn_pending_position != Vector3.ZERO:
+		var pos := _spawn_pending_position
+		_spawn_pending_position = Vector3.ZERO
+		global_position = pos
+		velocity = Vector3.ZERO
+		knockback_velocity = Vector3.ZERO
+		spawn()
 
 func _rollback_tick(delta, tick, is_fresh):
-
-	if _has_pending_spawn:
-		global_position = _pending_spawn_position
+	# ── Respawn / teleport handling ────────────────
+	# _spawn_pending_position persists across re-simulation because it is
+	# consumed only in _physics_process (real frames only).  Every rollback
+	# tick, whether fresh or re-simulated, sees the same flag and teleports.
+	if _spawn_pending_position != Vector3.ZERO:
+		global_position = _spawn_pending_position
 		velocity = Vector3.ZERO
-		_has_pending_spawn = false
 		tick_interpolator.teleport()
+		return
+
+	# Don't simulate movement while dead (no respawn queued yet).
+	if not spawned:
 		return
 
 	_apply_movement_from_input(delta)

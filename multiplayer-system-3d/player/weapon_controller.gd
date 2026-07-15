@@ -128,6 +128,8 @@ func _tick_timers(delta: float) -> void:
 				_do_fire_client()
 
 func reset() -> void:
+	_is_reloading = false
+	_reload_timer = 0.0
 	current_weapon_index = 0
 	for weapon in _weapons:
 		weapon.reset()
