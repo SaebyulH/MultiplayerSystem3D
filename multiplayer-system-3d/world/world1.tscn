@@ -5,7 +5,7 @@
 [ext_resource type="Script" uid="uid://bi46jlfs4i3pp" path="res://world/game_menu.gd" id="3_ur4i3"]
 [ext_resource type="AudioStream" uid="uid://exvh8mdgxfb8" path="res://assets/sounds/multikill-1.mp3" id="4_p2lt3"]
 [ext_resource type="Script" uid="uid://c2ud4axp2a0nj" path="res://world/class_select.gd" id="4_y31kp"]
-[ext_resource type="Script" uid="uid://bqjxdoe65xamn" path="res://world/canvas_layer.gd" id="5_8kumn"]
+[ext_resource type="Script" uid="uid://cev3tyynx0m7e" path="res://world/hud/hud_controller.gd" id="5_8kumn"]
 [ext_resource type="Texture2D" uid="uid://bk3hvsl8t0bt3" path="res://assets/Assault.png" id="6_43n3m"]
 [ext_resource type="PackedScene" uid="uid://dpvv8ex8hflrg" path="res://world/weapon_subviewport_preview.tscn" id="6_btayf"]
 [ext_resource type="Texture2D" uid="uid://cu8b4plsgc7l7" path="res://assets/Assasin.png" id="7_8kumn"]
@@ -32,32 +32,6 @@ base_sound = ExtResource("4_p2lt3")
 
 [node name="CanvasLayer" type="CanvasLayer" parent="GameMenu" unique_id=1326311598]
 script = ExtResource("5_8kumn")
-
-[node name="Label" type="Label" parent="GameMenu/CanvasLayer" unique_id=1810573380]
-anchors_preset = 7
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -398.5
-offset_top = -477.0
-offset_right = 398.5
-grow_horizontal = 2
-grow_vertical = 0
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 20
-theme_override_font_sizes/font_size = 32
-text = "ACTIVE
-Time: 4:32
-Rounds  SPI 1/2  —  SCI 0/2
-
-── KOTH ──
-SPI  0:18 / 0:30  [██████░░░░░░]
-SCI  0:07 / 0:30  [██░░░░░░░░░░]
-
-── CONTROL POINTS ──
-CP1 [SPI]  SCI capping 40%  ×2  [████░░░░░░]"
-horizontal_alignment = 1
 
 [node name="Killstreak" type="Label" parent="GameMenu" unique_id=1114400658]
 layout_mode = 1
