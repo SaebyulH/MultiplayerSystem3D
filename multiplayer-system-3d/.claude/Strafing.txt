@@ -1,0 +1,110 @@
+Here is a complete structural implementation plan and clean GDScript code designed to be easily parsed and executed by an automated coding assistant like Claude Code.
+
+This implementation utilizes Godot's CharacterBody3D and splits ground movement from air movement to reproduce the classic Quake physics calculation exactly.
+
+1. Architectural Overview
+To achieve authentic Quake/Source-style movement, we override standard acceleration interpolation (like lerp()) in favor of vector projections. The core engine loop splits logic depending on whether the character is_on_floor():
+
+Ground Movement: Applies normal acceleration and ground friction (which drops velocity significantly when touching the ground).
+
+Air Movement: Bypasses ground friction entirely and passes the input vectors into a custom vector projection function (air_accelerate).
+
+2. Implementation Script (movement_component.gd)
+Attach this script directly to a CharacterBody3D node. It exposes the necessary tweaking parameters, including the requested air_accelerate modifier.
+
+extends CharacterBody3D
+
+@export_category("Movement Constants")
+@export var max_ground_speed: float = 7.0       # Corresponds to classic max running speed
+@export var max_air_wish_speed: float = 30.0    # The classic Quake air wish speed cap (clip value)
+@export var ground_acceleration: float = 10.0   # How fast you accelerate on the ground
+@export var air_accelerate: float = 10.0        # Controls speed gain efficiency from air strafing
+@export var friction: float = 6.0               # Ground friction coefficient
+@export var gravity: float = 20.0               # Gravity force applied per second
+@export var jump_velocity: float = 6.5          # Instant vertical impulse force
+
+func _physics_process(delta: float) -> void:
+	# Apply gravity if airborne
+	if not is_on_floor():
+		velocity.y -= gravity * delta
+
+	# Handle Jump input
+	if Input.is_action_just_pressed("jump") and is_on_floor():
+		velocity.y = jump_velocity
+
+	# Get normalized raw movement vector relative to camera/player layout
+	var input_dir := Input.get_vector("move_left", "move_right", "move_forward", "move_backward")
+	
+	# Transform input direction relative to the player's current horizontal orientation
+	var transform_basis := global_transform.basis
+	var wish_dir := (transform_basis.x * input_dir.x + transform_basis.z * input_dir.y).normalized()
+
+	# Route calculation based on grounding state
+	if is_on_floor():
+		apply_friction(delta)
+		move_ground(wish_dir, max_ground_speed, ground_acceleration, delta)
+	else:
+		move_air(wish_dir, max_ground_speed, air_accelerate, delta)
+
+	# Execute Godot's safe movement step
+	move_and_slide()
+
+## Handles friction calculation on the ground before adding new acceleration forces
+func apply_friction(delta: float) -> void:
+	var speed := velocity.length()
+	if speed < 0.001:
+		return
+
+	# Calculate dynamic drop using friction coefficient
+	var drop := speed * friction * delta
+	var new_speed := max(0.0, speed - drop)
+	
+	# Scale horizontal velocity proportionally
+	velocity.x = (velocity.x / speed) * new_speed
+	velocity.z = (velocity.z / speed) * new_speed
+
+## Normal ground movement logic
+func move_ground(wish_dir: Vector3, max_speed: float, accel: float, delta: float) -> void:
+	var current_speed := velocity.dot(wish_dir)
+	var add_speed := max_speed - current_speed
+	
+	if add_speed <= 0:
+		return
+		
+	var accel_speed := accel * max_speed * delta
+	accel_speed = min(accel_speed, add_speed)
+	
+	velocity += wish_dir * accel_speed
+
+## Handles Quake-style air movement utilizing the specific dot product check
+func move_air(wish_dir: Vector3, grounded_max_speed: float, accel: float, delta: float) -> void:
+	# Only evaluate horizontal vectors for strafe velocity
+	var horizontal_velocity := Vector3(velocity.x, 0.0, velocity.z)
+	
+	# 1. Project horizontal velocity onto your input 'wish direction' via Dot Product
+	var current_speed := horizontal_velocity.dot(wish_dir)
+	
+	# 2. Prevent acceleration if already exceeding the low air speed cap along this projection line
+	var add_speed := max_air_wish_speed - current_speed
+	if add_speed <= 0:
+		return
+		
+	# 3. Compute frame acceleration limit based on the unclipped ground max speed
+	var accel_speed := accel * grounded_max_speed * delta
+	accel_speed = min(accel_speed, add_speed)
+	
+	# 4. Inject the calculated acceleration vector directly into the character's global velocity
+	velocity.x += wish_dir.x * accel_speed
+	velocity.z += wish_dir.z * accel_speed
+
+3. Key Implementation Details for Claude Code
+When prompting your coding assistant to integrate this logic, ensure it preserves these exact mathematical interactions:
+
+Horizontal Isolation: Notice that move_air separates horizontal_velocity before running the dot product calculations. If vertical velocity (v 
+y
+​
+ ) from jumping or falling is left inside the projection, looking up or down while strafing will corrupt the math and limit speed gains.
+
+Dual Wish Speeds: The script accurately sets add_speed using the restrictive max_air_wish_speed (30.0), but calculates the acceleration frame limit step (accel_speed) using your base grounded_max_speed (7.0 or its engine conversion units). This mismatch is what explicitly breaks the speed cap at sideways angles.
+
+Tuning air_accelerate: Increasing the air_accelerate property will make it much easier to gain speed at wider angles and allows the player to perform much sharper turns without losing momentum. Lowering it mirrors newer engine modifications (like Titanfall or Call of Duty) where angles must be much tighter to achieve speed.

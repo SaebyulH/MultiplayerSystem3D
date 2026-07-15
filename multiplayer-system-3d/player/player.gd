@@ -4,7 +4,7 @@ class_name Player
 
 @export var acceleration: float = 40.0
 @export var friction: float = 18.0
-@export var air_acceleration: float = 40.0
+@export var air_acceleration: float = 100.0
 @export var air_friction: float = 4.0
 @export var tick_interpolator: TickInterpolator
 
@@ -292,24 +292,42 @@ func _apply_movement_from_input(delta):
 	if is_crouching:
 		calc_speed *= crouch_speed_multiplier
 
-	var accel := acceleration if on_floor else air_acceleration
-	var fric  := friction     if on_floor else air_friction
-
-	if direction:
-		var target_x := direction.x * calc_speed
-		var target_z := direction.z * calc_speed
-		velocity.x = move_toward(velocity.x, target_x, accel * delta)
-		velocity.z = move_toward(velocity.z, target_z, accel * delta)
+	if on_floor:
+		# Ground movement
+		if direction:
+			var target_x := direction.x * calc_speed
+			var target_z := direction.z * calc_speed
+			velocity.x = move_toward(velocity.x, target_x, acceleration * delta)
+			velocity.z = move_toward(velocity.z, target_z, acceleration * delta)
+		else:
+			velocity.x = move_toward(velocity.x, 0.0, friction * delta)
+			velocity.z = move_toward(velocity.z, 0.0, friction * delta)
 	else:
-		velocity.x = move_toward(velocity.x, 0.0, fric * delta)
-		velocity.z = move_toward(velocity.z, 0.0, fric * delta)
+		# Source-style air strafe
+		var max_air_speed: float = calc_speed * 1.15
+		var horiz_vel: Vector3 = Vector3(velocity.x, 0.0, velocity.z)
+		var proj_vel: Vector3 = horiz_vel.dot(direction) * direction
+		var is_away: bool = direction.dot(proj_vel) <= 0.0
+		if direction.length() > 0.0 and (proj_vel.length() < max_air_speed or is_away):
+			var vc: Vector3 = direction * air_acceleration * delta
+			if not is_away:
+				var max_add: float = max_air_speed - proj_vel.length()
+				if max_add > 0.0:
+					vc = vc.limit_length(max_add)
+				else:
+					vc = Vector3.ZERO
+			else:
+				vc = vc.limit_length(max_air_speed + proj_vel.length())
+			velocity.x += vc.x
+			velocity.z += vc.z
+		# No friction in air -- horizontal velocity persists.
 
 	velocity *= NetworkTime.physics_factor
 	velocity += knockback_velocity
 	move_and_slide()
 	velocity /= NetworkTime.physics_factor
 
-	var knockback_decay = velocity.length() ** 2 * 10
+	var knockback_decay: float = velocity.length() ** 2 * 10
 	knockback_velocity = knockback_velocity.move_toward(Vector3.ZERO, knockback_decay * delta)
 
 	if ads:
