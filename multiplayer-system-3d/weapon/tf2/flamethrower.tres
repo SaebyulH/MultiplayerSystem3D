@@ -8,7 +8,7 @@
 [ext_resource type="AudioStream" uid="uid://c8co0mlb235da" path="res://assets/sounds/fire.mp3" id="6_873px"]
 [ext_resource type="Script" uid="uid://djg0ti1n45f8b" path="res://weapon/weapon_fire.gd" id="7_306c0"]
 [ext_resource type="PackedScene" uid="uid://yh8k5dx8kf7b" path="res://weapon/tf2/flamethrower.tscn" id="7_g3hn7"]
-[ext_resource type="AudioStream" uid="uid://cqbknmbhlwhu" path="res://assets/sounds/reload.mp3" id="8_3fkee"]
+[ext_resource type="AudioStream" path="res://assets/sounds/freesound_community-g36c-reload-sound-84437.mp3" id="8_3fkee"]
 
 [sub_resource type="Resource" id="Resource_1riue"]
 script = ExtResource("3_0488q")

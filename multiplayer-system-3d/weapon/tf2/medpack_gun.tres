@@ -20,7 +20,7 @@ automatic = true
 recoil_data = SubResource("Resource_we44c")
 bullet_type = 1
 projectile_scene = ExtResource("3_7o0d2")
-shoot_sound = ExtResource("8_dmguv")
+shoot_sound = ExtResource("1_ce6dx")
 empty_sound = ExtResource("1_ce6dx")
 metadata/_custom_type_script = "uid://djg0ti1n45f8b"
 

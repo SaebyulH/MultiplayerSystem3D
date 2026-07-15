@@ -2,9 +2,9 @@
 
 [ext_resource type="AudioStream" uid="uid://bwfdsxbmx4ko8" path="res://assets/sounds/empty_gun.mp3" id="1_ifphy"]
 [ext_resource type="Script" uid="uid://yvevtn4dsddy" path="res://player/recoil/recoil_data.gd" id="3_yhfpo"]
-[ext_resource type="AudioStream" uid="uid://cqbknmbhlwhu" path="res://assets/sounds/reload.mp3" id="4_a8kh8"]
+[ext_resource type="AudioStream" path="res://assets/sounds/mortal_music-m40a1-reload-524732.mp3" id="4_a8kh8"]
 [ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="5_uoru5"]
-[ext_resource type="AudioStream" uid="uid://u24dsvsfmlr2" path="res://assets/sounds/gun_sound.mp3" id="6_onw8i"]
+[ext_resource type="AudioStream" path="res://assets/sounds/freesound_community-rifle-gunshot-99749.mp3" id="6_onw8i"]
 [ext_resource type="Script" uid="uid://djg0ti1n45f8b" path="res://weapon/weapon_fire.gd" id="7_b7nwq"]
 [ext_resource type="PackedScene" uid="uid://ccapjs1b2aucy" path="res://weapon/tf2/sniper_rifle.tscn" id="7_gdsaj"]
 [ext_resource type="Texture2D" uid="uid://b6gktr1vfryte" path="res://defaults/default_damage_falloff_curve.tres" id="8_vfkuf"]

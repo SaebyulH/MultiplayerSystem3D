@@ -142,7 +142,6 @@ func _build_ui_in(cl: CanvasLayer) -> void:
 	var p_col := _preview_column("PRIMARY")
 	_primary_viewport = _vp()
 	_primary_container(p_col).add_child(_primary_viewport)
-	_primary_viewport.add_child(_preview_world())
 	_primary_option = _opt(); _primary_option.visible = false
 	_primary_stats = _stat_label()
 	p_col.add_child(_primary_option)
@@ -153,7 +152,6 @@ func _build_ui_in(cl: CanvasLayer) -> void:
 	var s_col := _preview_column("SECONDARY")
 	_secondary_viewport = _vp()
 	_secondary_container(s_col).add_child(_secondary_viewport)
-	_secondary_viewport.add_child(_preview_world())
 	_secondary_option = _opt(); _secondary_option.visible = false
 	_secondary_stats = _stat_label()
 	s_col.add_child(_secondary_option)
@@ -242,7 +240,11 @@ func _vp() -> SubViewport:
 	vp.own_world_3d = true
 	vp.handle_input_locally = false
 	vp.size = Vector2i(340, 200)
-	vp.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE
+	vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	# Instantiate the exact preview scene that worked in the old .tscn setup.
+	var preview_scene := load("res://world/weapon_subviewport_preview.tscn") as PackedScene
+	if preview_scene:
+		vp.add_child(preview_scene.instantiate())
 	return vp
 
 func _primary_container(parent: VBoxContainer) -> SubViewportContainer:
@@ -263,48 +265,12 @@ func _secondary_container(parent: VBoxContainer) -> SubViewportContainer:
 	parent.add_child(svc)
 	return svc
 
-func _preview_world() -> Node3D:
-	var root := Node3D.new()
-	root.name = "WorldRoot"
-
-	# Lighting — "own_world_3d" creates a fresh World3D which needs lights.
-	var light := DirectionalLight3D.new()
-	light.position = Vector3(3, 4, 2)
-	light.look_at(Vector3.ZERO)
-	root.add_child(light)
-
-	var light2 := DirectionalLight3D.new()
-	light2.position = Vector3(-2, 1, -3)
-	light2.light_energy = 0.4
-	root.add_child(light2)
-
-	# Basic environment for sky/fill
-	var world_env := WorldEnvironment.new()
-	var env := Environment.new()
-	env.background_mode = Environment.BG_COLOR
-	env.background_color = Color(0.12, 0.12, 0.14)
-	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color(0.5, 0.5, 0.55)
-	env.ambient_light_energy = 0.5
-	world_env.environment = env
-	root.add_child(world_env)
-
-	var camera := Camera3D.new()
-	camera.name = "Camera3D"
-	camera.position = Vector3(4, 0.5, 0)
-	root.add_child(camera)
-
-	var pr := Node3D.new()
-	pr.name = "PreviewRoot"
-	root.add_child(pr)
-	return root
-
 # ─────────────────────────────────────────────
 #  Preview
 # ─────────────────────────────────────────────
 
 func _clear_viewport(vp: SubViewport) -> void:
-	var pr: Node = vp.get_node_or_null("WorldRoot/PreviewRoot")
+	var pr: Node = vp.get_node_or_null("Node3D/PreviewRoot")
 	if not pr:
 		return
 	for child in pr.get_children():
@@ -318,12 +284,12 @@ func _spawn_weapon_preview(weapon: Weapon, vp: SubViewport) -> void:
 	model.position = Vector3.ZERO
 	model.rotation = weapon.weapon_rotation
 	model.scale = weapon.weapon_scale
-	var pr: Node = vp.get_node_or_null("WorldRoot/PreviewRoot")
+	var pr: Node = vp.get_node_or_null("Node3D/PreviewRoot")
 	if not pr:
 		return
 	pr.add_child(model)
 	await get_tree().process_frame
-	var camera := vp.get_node_or_null("WorldRoot/Camera3D") as Camera3D
+	var camera := vp.get_node_or_null("Node3D/Camera3D") as Camera3D
 	if not camera:
 		return
 	var muzzle_node: Node = model.get_node_or_null("Muzzle")
