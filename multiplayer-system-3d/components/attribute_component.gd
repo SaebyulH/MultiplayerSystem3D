@@ -7,7 +7,7 @@ signal no_health
 var last_attacker = "NONE"
 var killstreak := 0
 
-@export var passive_heal_per_sec: float = 1.0
+@export var passive_heal_per_sec: float = 10.0
 var _heal_timer: float = 0.0
 
 var _time_since_last_damage: float = 0.0
@@ -82,7 +82,6 @@ func _process(delta: float) -> void:
 		return
 	if _time_since_last_damage < HEAL_DELAY:
 		return
-	_heal_timer += delta
-	if _heal_timer >= 1.0:
-		_heal_timer -= 1.0
-		apply_health_delta(passive_heal_per_sec, get_parent().name, get_parent().name)
+	# Apply heal per-frame for smooth sub-second increments.
+	# Over one second this still totals passive_heal_per_sec.
+	apply_health_delta(passive_heal_per_sec * delta, get_parent().name, get_parent().name)
