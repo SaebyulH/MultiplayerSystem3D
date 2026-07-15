@@ -58,6 +58,9 @@ func _process(_delta: float) -> void:
 	if not _initialized or not gmc:
 		return
 
+	# Hide the HUD while the class-select screen is open so the two don't overlap.
+	_root.visible = not PlayerInput.ui_open
+
 	# Timer bar updates every frame
 	_timer_bar.set_time(gmc.phase_timer, gmc.round_time)
 
