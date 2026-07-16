@@ -4,8 +4,9 @@ class_name Player
 
 @export var acceleration: float = 40.0
 @export var friction: float = 18.0
-@export var air_acceleration: float = 100.0
-@export var air_friction: float = 4.0
+@export var air_acceleration: float = 12
+#accell
+@export var air_speed_cap: float = 1.5
 @export var tick_interpolator: TickInterpolator
 
 @export var respawn_time: float = 1.5
@@ -269,6 +270,24 @@ func apply_knockback(force: Vector3) -> void:
 	knockback_velocity += force
 
 
+
+## Source-style air acceleration.
+## [param wish_dir] – normalized input direction.
+## [param wish_speed] – desired speed along that direction (capped by [member air_speed_cap]).
+## [param delta] – frame delta.
+func _air_accelerate(wish_dir: Vector3, wish_speed: float, delta: float) -> void:
+	var vel: Vector3 = Vector3(velocity.x, 0.0, velocity.z)
+	var capped_wish_speed: float = min(wish_speed, air_speed_cap)
+	var current_speed: float = vel.dot(wish_dir)
+	var add_speed: float = capped_wish_speed - current_speed
+	if add_speed <= 0.0:
+		return
+	var accel_speed: float = air_acceleration * capped_wish_speed * delta
+	accel_speed = min(accel_speed, add_speed)
+	vel += wish_dir * accel_speed
+	velocity.x = vel.x
+	velocity.z = vel.z
+
 func _apply_movement_from_input(delta):
 	_force_update_is_on_floor()
 	var on_floor := is_on_floor()
@@ -303,24 +322,10 @@ func _apply_movement_from_input(delta):
 			velocity.x = move_toward(velocity.x, 0.0, friction * delta)
 			velocity.z = move_toward(velocity.z, 0.0, friction * delta)
 	else:
-		# Source-style air strafe
-		var max_air_speed: float = calc_speed * 1.15
-		var horiz_vel: Vector3 = Vector3(velocity.x, 0.0, velocity.z)
-		var proj_vel: Vector3 = horiz_vel.dot(direction) * direction
-		var is_away: bool = direction.dot(proj_vel) <= 0.0
-		if direction.length() > 0.0 and (proj_vel.length() < max_air_speed or is_away):
-			var vc: Vector3 = direction * air_acceleration * delta
-			if not is_away:
-				var max_add: float = max_air_speed - proj_vel.length()
-				if max_add > 0.0:
-					vc = vc.limit_length(max_add)
-				else:
-					vc = Vector3.ZERO
-			else:
-				vc = vc.limit_length(max_air_speed + proj_vel.length())
-			velocity.x += vc.x
-			velocity.z += vc.z
-		# No friction in air -- horizontal velocity persists.
+		# Source-style air acceleration
+		if direction.length() > 0.0:
+			var wish_speed: float = calc_speed * input_dir.length()
+			_air_accelerate(direction, wish_speed, delta)
 
 	velocity *= NetworkTime.physics_factor
 	velocity += knockback_velocity
@@ -330,16 +335,19 @@ func _apply_movement_from_input(delta):
 	var knockback_decay: float = velocity.length() ** 2 * 10
 	knockback_velocity = knockback_velocity.move_toward(Vector3.ZERO, knockback_decay * delta)
 
+	const BASE_MOUSE_SENS: float = 0.002
+	const BASE_FOV: float = 90.0
+
 	if ads:
 		camera.fov = 20.0
-		body.mouse_sens_x = 0.002 * 0.268
-		body.mouse_sens_y = 0.002 * 0.268
 		speed = 2.5
 	else:
-		camera.fov = 90.0
-		body.mouse_sens_x = 0.002
-		body.mouse_sens_y = 0.002
+		camera.fov = 120.0
 		speed = 5.0
+
+	var fov_ratio: float = camera.fov / BASE_FOV
+	body.mouse_sens_x = BASE_MOUSE_SENS * fov_ratio
+	body.mouse_sens_y = BASE_MOUSE_SENS * fov_ratio
 
 func change_health(health: float, changer: String):
 	attribute_component.apply_health_delta(health, changer, self.name)
