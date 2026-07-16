@@ -66,6 +66,42 @@ size = Vector3(1, 4.005, 1)
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_32hag"]
 albedo_color = Color(0.468777, 0.46877706, 0.468777, 1)
 
+[sub_resource type="Animation" id="Animation_kb6p2"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("WeaponHandle:rotation")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0, 0, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_wodsf"]
+resource_name = "shoot"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("WeaponHandle:rotation")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.26, 0.56),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector3(0, 0, 0), Vector3(0.40345144, 0, 0), Vector3(0, 0, 0)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_32hag"]
+_data = {
+&"RESET": SubResource("Animation_kb6p2"),
+&"shoot": SubResource("Animation_wodsf")
+}
+
 [sub_resource type="SphereMesh" id="SphereMesh_gyt1i"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tqiix"]
@@ -98,14 +134,15 @@ weapon_controller = NodePath("WeaponController")
 script = ExtResource("14_kb6p2")
 player = NodePath("..")
 
-[node name="WeaponController" type="Node" parent="." unique_id=1956241137 node_paths=PackedStringArray("weapon_model_parent", "projectile_spawn_parent", "player_input", "recoil", "_parent_player", "_raycast")]
+[node name="WeaponController" type="Node" parent="." unique_id=1956241137 node_paths=PackedStringArray("weapon_model_parent", "projectile_spawn_parent", "player_input", "recoil", "_parent_player", "_raycast", "shoot_animation")]
 script = ExtResource("6_ebec5")
-weapon_model_parent = NodePath("../Body/Recoil/Head/WeaponParent")
+weapon_model_parent = NodePath("../Body/Recoil/Head/WeaponParent/WeaponHandle")
 projectile_spawn_parent = NodePath("../ProjectilesParent")
 player_input = NodePath("../PlayerInput")
 recoil = NodePath("../Body/Recoil")
 _parent_player = NodePath("..")
 _raycast = NodePath("../Body/Recoil/Head/Camera3D/Raycast")
+shoot_animation = NodePath("../Body/Recoil/Head/WeaponParent/AnimationPlayer")
 metadata/_custom_type_script = "uid://d2kgugh2o23ba"
 
 [node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="WeaponController" unique_id=829106885]
@@ -248,6 +285,9 @@ surface_material_override/0 = SubResource("StandardMaterial3D_32hag")
 
 [node name="WeaponHandle" type="Node3D" parent="Body/Recoil/Head/WeaponParent" unique_id=1175799872]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.21047497, -0.44708264, -0.5573963)
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Body/Recoil/Head/WeaponParent" unique_id=1089897270]
+libraries/ = SubResource("AnimationLibrary_32hag")
 
 [node name="Face" type="MeshInstance3D" parent="Body/Recoil/Head" unique_id=579986966]
 transform = Transform3D(0.4374137, 0, 0, 0, 0.4374137, 0, 0, 0, 0.4374137, 0, 0.046078205, 0)
