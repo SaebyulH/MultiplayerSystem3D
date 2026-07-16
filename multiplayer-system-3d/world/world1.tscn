@@ -81,6 +81,7 @@ layout_mode = 2
 alignment = 1
 
 [node name="MainMenu" type="Button" parent="GameMenu/VBoxContainer/HBoxContainer" unique_id=1729705955]
+visible = false
 layout_mode = 2
 theme_override_font_sizes/font_size = 60
 text = "Main Menu"
@@ -201,7 +202,7 @@ stretch = true
 unique_name_in_owner = true
 own_world_3d = true
 handle_input_locally = false
-size = Vector2i(477, 188)
+size = Vector2i(477, 279)
 size_2d_override_stretch = true
 render_target_update_mode = 4
 
@@ -241,14 +242,14 @@ stretch = true
 unique_name_in_owner = true
 own_world_3d = true
 handle_input_locally = false
-size = Vector2i(477, 188)
+size = Vector2i(477, 279)
 size_2d_override_stretch = true
 render_target_update_mode = 4
 
 [node name="Node3D" parent="GameMenu/VBoxContainer/ClassSelect/VBoxContainer/HBoxContainer/SecondarySection/SubViewportContainer/SecondarySubViewport" unique_id=528727344 instance=ExtResource("6_btayf")]
 
 [node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="." unique_id=267556738]
-_spawnable_scenes = PackedStringArray("uid://cmix6q8a6hgcu", "uid://bhsrnwae043e1", "uid://7ccxfopdhtv8", "uid://x64r4as832eo", "uid://72ju85r15v1e", "uid://ohyji3hlfle6", "uid://ubib085fbj7w", "uid://cpdne6lbfqxh", "uid://oidyxhn6wjax", "uid://bvkjbsfmhw2yf")
+_spawnable_scenes = PackedStringArray("uid://cmix6q8a6hgcu", "uid://bhsrnwae043e1", "uid://7ccxfopdhtv8", "uid://x64r4as832eo", "uid://ohyji3hlfle6", "uid://ubib085fbj7w", "uid://cpdne6lbfqxh", "uid://oidyxhn6wjax", "uid://bvkjbsfmhw2yf")
 spawn_path = NodePath("../SpawnParent")
 
 [connection signal="pressed" from="GameMenu/VBoxContainer/HBoxContainer/MainMenu" to="." method="_on_main_menu_pressed"]

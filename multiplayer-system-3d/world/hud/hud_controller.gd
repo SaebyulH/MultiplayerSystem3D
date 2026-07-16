@@ -35,7 +35,6 @@ var gmc: GameModeComponent
 
 # Shared UI nodes
 var _root: Control
-var _phase_label: Label
 var _timer_bar: TimerBar
 var _round_score_label: Label
 var _overtime_label: Label
@@ -81,6 +80,34 @@ func _process(_delta: float) -> void:
 func _build_shared_ui() -> void:
 	layer = 1  # above game world but below console (layer 3)
 
+	# Timer bar -- full width, top of screen, direct child of CanvasLayer
+	_timer_bar = TimerBar.new()
+	_timer_bar.anchor_left   = 0.0
+	_timer_bar.anchor_right  = 1.0
+	_timer_bar.anchor_top    = 0.0
+	_timer_bar.anchor_bottom = 0.0
+	_timer_bar.offset_top    = 0
+	_timer_bar.offset_bottom = 32
+	add_child(_timer_bar)
+
+	# Overtime flash label -- below the timer bar
+	_overtime_label = Label.new()
+	_overtime_label.text = "OVERTIME"
+	_overtime_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_overtime_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+	_overtime_label.add_theme_constant_override("outline_size", 8)
+	_overtime_label.add_theme_font_size_override("font_size", 20)
+	_overtime_label.add_theme_color_override("font_color", Color(1, 0.3, 0.3))
+	_overtime_label.anchor_left   = 0.0
+	_overtime_label.anchor_right  = 1.0
+	_overtime_label.anchor_top    = 0.0
+	_overtime_label.anchor_bottom = 0.0
+	_overtime_label.offset_top    = 34
+	_overtime_label.offset_bottom = 56
+	_overtime_label.visible = false
+	add_child(_overtime_label)
+
+	# Centered HUD container (round score + mode panels)
 	_root = Control.new()
 	_root.anchor_left   = 0.5
 	_root.anchor_top    = 0.0
@@ -99,21 +126,7 @@ func _build_shared_ui() -> void:
 	main_vbox.anchor_bottom = 1.0
 	_root.add_child(main_vbox)
 
-	# ── Phase label ────────────────────────
-	_phase_label = Label.new()
-	_phase_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_phase_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-	_phase_label.add_theme_constant_override("outline_size", 10)
-	_phase_label.add_theme_font_size_override("font_size", 28)
-	_phase_label.add_theme_color_override("font_color", Color(1, 1, 1, 0.95))
-	main_vbox.add_child(_phase_label)
-
-	# ── Timer bar ──────────────────────────
-	_timer_bar = TimerBar.new()
-	_timer_bar.custom_minimum_size = Vector2(0, 28)
-	main_vbox.add_child(_timer_bar)
-
-	# ── Round score ────────────────────────
+	# Round score
 	_round_score_label = Label.new()
 	_round_score_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_round_score_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
@@ -122,27 +135,12 @@ func _build_shared_ui() -> void:
 	_round_score_label.add_theme_color_override("font_color", Color(0.85, 0.85, 0.85))
 	main_vbox.add_child(_round_score_label)
 
-	# ── Mode panel container ───────────────
+	# Mode panel container
 	_panel_container = Control.new()
 	_panel_container.custom_minimum_size = Vector2(0, 120)
 	_panel_container.anchor_left   = 0.0
 	_panel_container.anchor_right  = 1.0
 	main_vbox.add_child(_panel_container)
-
-	# ── Overtime label ─────────────────────
-	_overtime_label = Label.new()
-	_overtime_label.text = "⚠ OVERTIME ⚠"
-	_overtime_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_overtime_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-	_overtime_label.add_theme_constant_override("outline_size", 10)
-	_overtime_label.add_theme_font_size_override("font_size", 26)
-	_overtime_label.add_theme_color_override("font_color", Color(1, 0.3, 0.3))
-	_overtime_label.visible = false
-	main_vbox.add_child(_overtime_label)
-
-# ─────────────────────────────────────────────
-#  Setup — called by Map._enter_tree()
-# ─────────────────────────────────────────────
 
 func setup_gmc() -> void:
 	await get_tree().process_frame
@@ -345,7 +343,6 @@ func _get_payload() -> PayloadNode:
 # ─────────────────────────────────────────────
 
 func _on_phase_changed(new_phase: GameModeComponent.PhaseState) -> void:
-	_phase_label.text = _phase_text(new_phase)
 	_overtime_label.visible = (new_phase == GameModeComponent.PhaseState.OVERTIME)
 	_timer_bar.set_overtime(new_phase == GameModeComponent.PhaseState.OVERTIME)
 	_push_data_to_panel()

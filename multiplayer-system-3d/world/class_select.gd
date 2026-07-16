@@ -20,6 +20,7 @@ var _class_option: OptionButton
 var _primary_option: OptionButton
 var _secondary_option: OptionButton
 var _confirm_button: Button
+var _mode_label: Label
 
 var _primary_viewport: SubViewport
 var _secondary_viewport: SubViewport
@@ -113,6 +114,19 @@ func _build_ui_in(cl: CanvasLayer) -> void:
 	col.add_child(title)
 	col.add_child(_sep())
 
+	# Game-mode info
+	_mode_label = Label.new()
+	_mode_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_mode_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+	_mode_label.add_theme_constant_override("outline_size", 4)
+	_mode_label.add_theme_font_size_override("font_size", 15)
+	_mode_label.add_theme_color_override("font_color", Color(0.85, 0.85, 0.5))
+	_mode_label.text = ""
+	col.add_child(_mode_label)
+	col.add_child(_sep())
+	# Update mode text once GMC is available (deferred to avoid nulls).
+	_populate_mode_info.call_deferred()
+
 	# ── Team / Class row ─────────────────────
 	var top_row := CenterContainer.new()
 	col.add_child(top_row)
@@ -167,6 +181,18 @@ func _build_ui_in(cl: CanvasLayer) -> void:
 	_confirm_button.disabled = true
 	btn_row.add_child(_confirm_button)
 
+	# Main Menu button
+	var menu_row: CenterContainer = CenterContainer.new()
+	col.add_child(menu_row)
+	var menu_btn: Button = Button.new()
+	menu_btn.text = "Main Menu"
+	menu_btn.add_theme_font_size_override("font_size", 18)
+	menu_btn.pressed.connect(func():
+		_canvas.queue_free()
+		NetworkManager.terminate_connection_load_main_menu()
+	)
+	menu_row.add_child(menu_btn)
+
 # ─────────────────────────────────────────────
 #  Tiny helpers
 # ─────────────────────────────────────────────
@@ -185,6 +211,30 @@ func _spacer_h() -> Control:
 	c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	return c
 
+
+
+func _populate_mode_info() -> void:
+	if not _mode_label: return
+	_mode_label.text = _get_mode_description()
+func _get_mode_description() -> String:
+	var gmc: GameModeComponent = GameManager.game_mode_component
+	if not gmc:
+		return ""
+	match gmc.game_mode:
+		GameModeComponent.GameMode.KOTH:
+			return "King of the Hill -- Hold the point to win"
+		GameModeComponent.GameMode.CONTROL:
+			return "Control -- Best of 3, hold the point"
+		GameModeComponent.GameMode.DOMINATION:
+			return "Domination -- Hold the most points to score"
+		GameModeComponent.GameMode.ESCORT:
+			return "Escort -- Push the payload to the end"
+		GameModeComponent.GameMode.HYBRID:
+			return "Hybrid -- Capture the point, then escort"
+		GameModeComponent.GameMode.DEATHMATCH:
+			return "Deathmatch -- First to 20 kills wins"
+		_:
+			return ""
 func _sep() -> ColorRect:
 	var c := ColorRect.new()
 	c.custom_minimum_size = Vector2(0, 2)

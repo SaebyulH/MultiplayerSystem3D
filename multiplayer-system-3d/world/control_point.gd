@@ -184,7 +184,10 @@ func _refresh_progress_mesh() -> void:
 		smat.albedo_color = Color.WHITE if is_contested else col
 
 func _refresh_label() -> void:
-	if is_contested:
+	if is_locked:
+		capture_label.text = "LOCKED"
+		capture_label.modulate = Color(0.8, 0.8, 0.8)
+	elif is_contested:
 		capture_label.text = "CONTESTED"
 		capture_label.modulate = Color.WHITE
 	elif capture_progress > 0.0:
