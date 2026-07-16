@@ -560,15 +560,16 @@ func _fire_all_shots(weapon: Weapon, weapon_fire_index: int, is_shape: bool) -> 
 
 func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3, shape_hits) -> void:
 	var weapon_fire: WeaponFire = weapon.weapon_fires[weapon_fire_index]
+	var camera: Camera3D = _raycast.get_parent() as Camera3D
 
 	if weapon_fire.bullet_type == WeaponFire.BulletType.HITSCAN:
 		var muzzle_node: Node3D = current_weapon_model.get_node("Muzzle") as Node3D
 		var muzzle_pos: Vector3 = muzzle_node.global_position
 		_flash_muzzle_flash.rpc(muzzle_pos)
 
-		var world_dir: Vector3 = weapon_model_parent.global_transform.basis * shot_dir.normalized()
+		var world_dir: Vector3 = camera.global_transform.basis * shot_dir.normalized()
 		var space_state: PhysicsDirectSpaceState3D = _parent_player.get_world_3d().direct_space_state
-		var origin: Vector3 = weapon_model_parent.global_position
+		var origin: Vector3 = camera.global_position
 		var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
 			origin,
 			origin + world_dir * weapon_fire.hitscan_range
@@ -614,7 +615,7 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 
 	elif weapon_fire.bullet_type == WeaponFire.BulletType.PROJECTILE:
 		_spawn_projectile_on_server.rpc_id(
-			1, weapon_fire_index, shot_dir, weapon_model_parent.global_transform.basis,
+			1, weapon_fire_index, shot_dir, camera.global_transform.basis,
 			_parent_player.name, _parent_player.team
 		)
 
