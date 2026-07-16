@@ -64,6 +64,12 @@ func apply_health_delta(delta: float, changer: String, changee: String):
 		if changee != changer:
 			Leaderboard.request_add_kill(changer)
 			Leaderboard.request_add_death(changee)
+			# Heal on kill: restore HP to the killer based on their character.
+			var killer: Player = GameManager.find_player(changer)
+			if killer and killer._character:
+				var hok: float = killer._character.heal_on_kill
+				if hok > 0.0:
+					killer.change_health(hok, changer)
 	
 	if abs(applied_delta) > 0.0001:
 		health = new_health
@@ -76,12 +82,20 @@ func reset():
 	_heal_timer = 0.0  # ← add this
 
 func _process(delta: float) -> void:
+	# Read character-specific regen values.
+	var char_reg: float = 0.0
+	var char_delay: float = 0.0
+	var p: Player = get_parent() as Player
+	if p and p._character:
+		char_reg = p._character.regen_per_sec
+		char_delay = p._character.regen_delay
+	var heal_rate: float = passive_heal_per_sec + char_reg
+	var heal_delay: float = max(HEAL_DELAY + char_delay, 0.0)
+
 	_time_since_last_damage += delta
 	if health <= 0.0 or health >= starting_health:
-		_heal_timer = 0.0  # don't pre-charge
+		_heal_timer = 0.0
 		return
-	if _time_since_last_damage < HEAL_DELAY:
+	if _time_since_last_damage < heal_delay:
 		return
-	# Apply heal per-frame for smooth sub-second increments.
-	# Over one second this still totals passive_heal_per_sec.
-	apply_health_delta(passive_heal_per_sec * delta, get_parent().name, get_parent().name)
+	apply_health_delta(heal_rate * delta, get_parent().name, get_parent().name)

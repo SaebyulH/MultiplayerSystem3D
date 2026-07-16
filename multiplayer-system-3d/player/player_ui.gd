@@ -15,7 +15,7 @@ class_name PlayerBodyUI
 @onready var _health_delta_bar_public: Label3D = $"../HealthDeltaBarPublic"
 @onready var _name_public: Label3D = %NamePublic
 
-# ── Built UI nodes ───────────────────────────
+# -- Built UI nodes --
 
 var _health_bar_bg: ColorRect
 var _health_bar_fill: ColorRect
@@ -23,6 +23,7 @@ var _health_label: Label
 
 var _health_delta_label: Label
 var _team_label: Label
+var _character_label: Label
 
 var _ammo_label: Label
 var _reload_bar_bg: ColorRect
@@ -47,9 +48,9 @@ const BAR_WIDTH: float = 260.0
 const BAR_HEIGHT: float = 28.0
 const HEALTH_TOP: float = 120.0  # distance from bottom
 
-# ─────────────────────────────────────────────
+# --------------------------------------------------
 #  Lifecycle
-# ─────────────────────────────────────────────
+# --------------------------------------------------
 
 func _ready() -> void:
 	# Nuke all old scene children so they don't overlap
@@ -83,9 +84,9 @@ func _connect_signals() -> void:
 	_on_ammo_updated()
 	_on_weapon_changed()
 
-# ─────────────────────────────────────────────
+# --------------------------------------------------
 #  UI Building
-# ─────────────────────────────────────────────
+# --------------------------------------------------
 
 func _build_ui() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -111,7 +112,7 @@ func _build_crosshair() -> void:
 	add_child(_crosshair)
 
 func _build_health() -> void:
-	# ── Container (bottom-left, fixed size) ──
+	# -- Container (bottom-left, fixed size) --
 	var container := Control.new()
 	container.anchor_left   = 0.0
 	container.anchor_right  = 0.0
@@ -154,7 +155,7 @@ func _build_health() -> void:
 	_health_label.add_theme_font_size_override("font_size", 22)
 	container.add_child(_health_label)
 
-	# ── Delta label (above bar) ─────────────
+	# -- Delta label (above bar) --
 	_health_delta_label = Label.new()
 	_health_delta_label.anchor_left   = 0.0
 	_health_delta_label.anchor_right  = 0.0
@@ -171,7 +172,7 @@ func _build_health() -> void:
 	_health_delta_label.add_theme_font_size_override("font_size", 24)
 	add_child(_health_delta_label)
 
-	# ── Team label (above delta) ────────────
+	# -- Team label (above delta) --
 	_team_label = Label.new()
 	_team_label.anchor_left   = 0.0
 	_team_label.anchor_right  = 0.0
@@ -189,8 +190,25 @@ func _build_health() -> void:
 	_update_team()
 	add_child(_team_label)
 
+	# -- Character label (below health bar) --
+	_character_label = Label.new()
+	_character_label.anchor_left   = 0.0
+	_character_label.anchor_right  = 0.0
+	_character_label.anchor_top    = 1.0
+	_character_label.anchor_bottom = 1.0
+	_character_label.offset_left   = MARGIN
+	_character_label.offset_top    = -(HEALTH_TOP - 28.0)
+	_character_label.offset_right  = MARGIN + BAR_WIDTH
+	_character_label.offset_bottom = -(HEALTH_TOP - 48.0)
+	_character_label.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
+	_character_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_character_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+	_character_label.add_theme_constant_override("outline_size", 4)
+	_character_label.add_theme_font_size_override("font_size", 14)
+	add_child(_character_label)
+
 func _build_ammo() -> void:
-	# ── Ammo count (bottom-right) ───────────
+	# -- Ammo count (bottom-right) --
 	_ammo_label = Label.new()
 	_ammo_label.anchor_left   = 0.0
 	_ammo_label.anchor_right  = 1.0
@@ -207,7 +225,7 @@ func _build_ammo() -> void:
 	_ammo_label.add_theme_font_size_override("font_size", 56)
 	add_child(_ammo_label)
 
-	# ── Reload bar (bottom edge of screen) ──
+	# -- Reload bar (bottom edge of screen) --
 	var reload_container := Control.new()
 	reload_container.anchor_left   = 0.0
 	reload_container.anchor_right  = 1.0
@@ -248,7 +266,7 @@ func _build_weapon_list() -> void:
 	add_child(_weapon_list)
 
 func _build_respawn_timer() -> void:
-	# ── Respawn countdown (center of screen) ──
+	# -- Respawn countdown (center of screen) --
 	var container := Control.new()
 	container.anchor_left   = 0.5
 	container.anchor_right  = 0.5
@@ -282,12 +300,12 @@ func _build_respawn_timer() -> void:
 	_respawn_label.add_theme_font_size_override("font_size", 32)
 	container.add_child(_respawn_label)
 
-# ─────────────────────────────────────────────
+# --------------------------------------------------
 #  Updates (called from _process)
-# ─────────────────────────────────────────────
+# --------------------------------------------------
 
 func _process(_delta: float) -> void:
-	# Enforce ownership visibility every frame — parent's show()/hide() overrides
+	# Enforce ownership visibility every frame -- parent's show()/hide() overrides
 	# our visible flag, so we must re-assert it.
 	var should_show := is_multiplayer_authority() and not _owner_player.is_bot
 	if visible != should_show:
@@ -299,6 +317,7 @@ func _process(_delta: float) -> void:
 	_update_health_delta()
 	_update_ammo()
 	_update_team()
+	_update_character()
 	_update_respawn_timer()
 
 func _update_health() -> void:
@@ -430,6 +449,13 @@ func _update_team() -> void:
 	_team_label.text = txt
 	_team_label.modulate = col
 
+func _update_character() -> void:
+	if _owner_player and _owner_player._character:
+		_character_label.text = _owner_player._character.character_name
+		_character_label.modulate = Color(0.7, 0.7, 0.7)
+	else:
+		_character_label.text = ""
+
 func _update_respawn_timer() -> void:
 	var container := _respawn_label.get_parent() as Control
 	if not container or not _owner_player:
@@ -438,13 +464,13 @@ func _update_respawn_timer() -> void:
 	if not _owner_player.spawned and _owner_player.respawn_timer > 0.0:
 		container.visible = true
 		var seconds := ceili(_owner_player.respawn_timer)
-		_respawn_label.text = "Spawning in %d…" % seconds
+		_respawn_label.text = "Spawning in %d..." % seconds
 	else:
 		container.visible = false
 
-# ─────────────────────────────────────────────
+# --------------------------------------------------
 #  Signal handlers
-# ─────────────────────────────────────────────
+# --------------------------------------------------
 
 func _on_ammo_updated(_current = null, _max = null) -> void:
 	_update_ammo()

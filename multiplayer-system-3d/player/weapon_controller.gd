@@ -1,4 +1,10 @@
 class_name WeaponController extends Node
+
+## Random pitch variation applied to every weapon sound.
+## 0.0 = all sounds play at their original pitch.
+## 0.05 = pitch varies ±5 % (0.95 – 1.05).  Higher values sound more chaotic.
+const PITCH_RANGE: float = 0.05
+
 var _bullet_hole_scene: PackedScene = preload("res://effects/bullet_hole.tscn")
 var _tracer_scene: PackedScene = preload("res://weapon/tracer.tscn")
 var _hit_sound: AudioStream = preload("res://assets/sounds/Hitsound.wav")
@@ -207,6 +213,7 @@ func _play_sound(stream: AudioStream) -> void:
 	var player: AudioStreamPlayer3D = AudioStreamPlayer3D.new()
 	player.stream           = stream
 	player.global_transform = weapon_model_parent.global_transform
+	player.pitch_scale      = 1.0 + randf_range(-PITCH_RANGE, PITCH_RANGE)
 	add_child(player)
 	player.play()
 	player.finished.connect(player.queue_free)
@@ -316,7 +323,8 @@ func _begin_reload_server() -> bool:
 	if weapon.mag_current == weapon.mag_size:
 		return false
 	_is_reloading = true
-	_reload_timer = weapon.reload_time
+	var reload_mult: float = _parent_player._character.reload_speed_mult if _parent_player._character else 1.0
+	_reload_timer = weapon.reload_time / max(reload_mult, 0.01)
 	_notify_reload_started.rpc(_reload_timer)
 	return true
 
@@ -466,7 +474,7 @@ func _try_fire(weapon_fire_index: int) -> void:
 			# Client: send fire intent to the server for authoritative processing.
 			# We optimistically set the cooldown for responsive feel; the server
 			# will sync the authoritative mag back via _sync_mag.
-			_fire_cooldown = _weapons[current_weapon_index].weapon_fires[weapon_fire_index].post_shoot_delay
+			_fire_cooldown = _weapons[current_weapon_index].weapon_fires[weapon_fire_index].post_shoot_delay * (_parent_player._character.shoot_delay_mult if _parent_player._character else 1.0)
 			fire_intent.rpc_id(1, current_weapon_index, weapon_fire_index)
 
 
@@ -474,7 +482,7 @@ func _try_fire(weapon_fire_index: int) -> void:
 func _do_fire_client() -> void:
 	if not _is_ready():
 		return
-	_fire_cooldown = _weapons[current_weapon_index].post_shoot_delay
+	_fire_cooldown = _weapons[current_weapon_index].post_shoot_delay * (_parent_player._character.shoot_delay_mult if _parent_player._character else 1.0)
 	fire_intent.rpc_id(1, current_weapon_index, _pending_fire_index)
 #endregion
 
@@ -495,7 +503,8 @@ func fire_intent(weapon_index: int, weapon_fire_index: int) -> void:
 
 	if not weapon.has_infinite_ammo:
 		_set_mag(weapon.mag_current - (_weapons[weapon_index].weapon_fires[weapon_fire_index].ammo_cost))
-	_fire_cooldown = weapon.weapon_fires[weapon_fire_index].post_shoot_delay
+	var rate_mult: float = _parent_player._character.shoot_delay_mult if _parent_player._character else 1.0
+	_fire_cooldown = weapon.weapon_fires[weapon_fire_index].post_shoot_delay * rate_mult
 
 	_sync_mag.rpc(_weapons[current_weapon_index].mag_current)
 	_execute_fire(weapon, weapon_fire_index)
@@ -666,7 +675,15 @@ func _spawn_projectile_on_server(weapon_fire_index, shot_dir, basis, parent_play
 func _apply_damage_direct(collider_name: String, delta: float, parent_player_name: String) -> void:
 	var target: Player = GameManager.find_player(collider_name)
 	if target:
-		target.change_health(delta, parent_player_name)
+		# Apply shooter's damage amp.
+		var shooter: Player = GameManager.find_player(parent_player_name)
+		var dmg_mult: float = shooter._character.damage_amp_mult if shooter and shooter._character else 1.0
+		target.change_health(delta * dmg_mult, parent_player_name)
+		# Lifesteal: heal shooter for a percentage of damage dealt.
+		if delta < 0.0 and shooter and shooter._character:
+			var lifesteal: float = abs(delta * dmg_mult) * shooter._character.lifesteal_percent
+			if lifesteal > 0.0:
+				shooter.change_health(lifesteal, parent_player_name)
 
 @rpc("any_peer", "call_local", "reliable")
 func _change_health_on_server(collider_name: String, delta, parent_player_name):

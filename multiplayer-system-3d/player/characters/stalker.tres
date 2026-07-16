@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="Character" format=3 uid="uid://c4ubuepwbpmej"]
+
+[ext_resource type="Script" uid="uid://bxv3anwekoggx" path="res://player/character.gd" id="1_char"]
+
+[resource]
+script = ExtResource("1_char")
+character_name = "Stalker"
+description = "Normal Assasin."

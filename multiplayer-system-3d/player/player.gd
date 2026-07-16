@@ -2,9 +2,9 @@ extends CharacterBody3D
 class_name Player
 
 
-@export var acceleration: float = 40.0
-@export var friction: float = 18.0
-@export var air_acceleration: float = 12
+@export var acceleration: float = 100.0
+@export var friction: float = 30.0
+@export var air_acceleration: float = 25
 #accell
 @export var air_speed_cap: float = 1.5
 @export var tick_interpolator: TickInterpolator
@@ -76,10 +76,47 @@ var queue_velocity := Vector3(0.0, 0.0, 0.0)
 
 var is_crouching: bool = false
 
+# Character selection
+var _character: Character = null
+
 @export var crouch_height: float = 1.0
 @export var stand_height: float = 2.0
+@export var crouch_transition_speed: float = 40.0
 
 @export var crouch_speed_multiplier: float = 0.5
+
+# Crouch acceleration is low regardless of speed — you can't gain much speed
+# while crouched, you can only preserve what you already have.
+@export var crouch_ground_acceleration: float = 15.0
+
+# Crouch / slide friction scales with current speed.
+# Slow/stopped → normal friction (regular crouch).
+# Fast       → near-zero friction (slide, preserves momentum).
+@export var crouch_slide_friction: float = 0.2    # min friction when sliding
+@export var crouch_slide_threshold: float = 3.0   # speed where slide fully kicks in
+
+# Slide entry / exit.
+@export var slide_entry_boost: float = 2.0        # speed burst when entering a slide
+@export var min_slide_speed: float = 3.0          # below this, slide friction won't hold
+
+# Slope acceleration — lets gravity build real speed downhill.
+@export var slope_accel_multiplier: float = 4.0   # accel multiplier on slopes
+@export var slope_gravity: float = 20.0            # downhill force on slopes (units/s²)
+@export var min_slope_angle: float = 5.0           # degrees, min slope for accel boost
+
+# Standing friction ramps UP at high speeds to kill momentum.
+@export var stand_speed_friction: float = 25.0
+@export var stand_speed_friction_threshold: float = 5.0
+
+# One-time slowdown when landing fast without crouching.
+@export var ground_impact_speed_threshold: float = 8.0
+@export var ground_impact_deceleration: float = 40.0
+
+# Stored at _ready() — the original values from the scene file.
+var _stand_collider_height: float = 0.0
+var _stand_recoil_y: float = 0.0
+var _was_on_floor: bool = false
+var _was_sliding: bool = false
 
 
 var spawn_manager: SpawnManager
@@ -96,6 +133,7 @@ var spawned := false
 # Stored so late-joining peers can be synced with the correct weapon models.
 var _loadout_primary_path: String = ""
 var _loadout_secondary_path: String = ""
+var _loadout_character_path: String = ""
 
 # Used to be _pending_spawn_position / _has_pending_spawn — removed.
 
@@ -128,6 +166,13 @@ func _ready() -> void:
 	attribute_component.health_changed.connect(_health_changed)
 	attribute_component.no_health.connect(no_health)
 	rollback_sync.process_settings()
+
+	# Store reference values for crouch transitions.
+	var shape: CapsuleShape3D = collider.shape as CapsuleShape3D
+	if shape:
+		_stand_collider_height = shape.height
+	_stand_recoil_y = %Recoil.position.y
+
 	despawn()
 
 func _health_changed():
@@ -155,7 +200,7 @@ func rpc_reset(pos: Vector3) -> void:
 ## loadout in one atomic RPC so the player does not flicker into view with
 ## wrong weapon models.
 @rpc("authority", "call_remote", "reliable")
-func rpc_sync_full_state(pos: Vector3, pp: String, sp: String) -> void:
+func rpc_sync_full_state(pos: Vector3, pp: String, sp: String, cp: String = "") -> void:
 	# -- Weapons first (before spawn, so correct model is visible) --
 	if not pp.is_empty() and not sp.is_empty():
 		var ctrl: WeaponController = $WeaponController
@@ -169,6 +214,13 @@ func rpc_sync_full_state(pos: Vector3, pp: String, sp: String) -> void:
 				]
 				ctrl.set_weapons(nw)
 				ctrl.current_weapon_index = 0
+
+	# -- Character --
+	if not cp.is_empty():
+		var char_res: Character = load(cp) as Character
+		if char_res:
+			set_character(char_res)
+			_loadout_character_path = cp
 
 	# -- Visibility --
 	if spawned:
@@ -277,12 +329,14 @@ func apply_knockback(force: Vector3) -> void:
 ## [param delta] – frame delta.
 func _air_accelerate(wish_dir: Vector3, wish_speed: float, delta: float) -> void:
 	var vel: Vector3 = Vector3(velocity.x, 0.0, velocity.z)
-	var capped_wish_speed: float = min(wish_speed, air_speed_cap)
+	var eff_air_cap: float = _cmult(air_speed_cap, _character.air_speed_cap_mult if _character else 1.0)
+	var capped_wish_speed: float = min(wish_speed, eff_air_cap)
 	var current_speed: float = vel.dot(wish_dir)
 	var add_speed: float = capped_wish_speed - current_speed
 	if add_speed <= 0.0:
 		return
-	var accel_speed: float = air_acceleration * capped_wish_speed * delta
+	var eff_air_accel: float = _cmult(air_acceleration, _character.air_accel_mult if _character else 1.0)
+	var accel_speed: float = eff_air_accel * capped_wish_speed * delta
 	accel_speed = min(accel_speed, add_speed)
 	vel += wish_dir * accel_speed
 	velocity.x = vel.x
@@ -292,11 +346,29 @@ func _apply_movement_from_input(delta):
 	_force_update_is_on_floor()
 	var on_floor := is_on_floor()
 
+	# ── Crouch: smooth collider, camera, and physics blend ──
+	# All crouch effects share one continuous factor (0 = stand, 1 = crouch)
+	# so nothing snaps instantly while the collider is still animating.
+	is_crouching = player_input.crouch
+	var target_height: float = crouch_height if player_input.crouch else _stand_collider_height
+	var shape: CapsuleShape3D = collider.shape as CapsuleShape3D
+	var crouch_factor: float = 0.0
+	if shape and _stand_collider_height > 0.0:
+		shape.height = move_toward(shape.height, target_height, crouch_transition_speed * delta)
+		# Keep the capsule bottom fixed so the body doesn't bob up/down.
+		var half_diff: float = (_stand_collider_height - shape.height) * 0.5
+		collider.position.y = -half_diff
+		%Recoil.position.y = _stand_recoil_y - half_diff
+		# Continuous blend factor derived from actual collider height.
+		var denom: float = _stand_collider_height - crouch_height
+		if denom > 0.0:
+			crouch_factor = clamp((_stand_collider_height - shape.height) / denom, 0.0, 1.0)
+
 	if not on_floor:
 		velocity += get_gravity() * delta
 	elif player_input.jump_input:
 		knockback_velocity = Vector3.ZERO
-		velocity.y = JUMP_VELOCITY
+		velocity.y = _cmult(JUMP_VELOCITY, _character.jump_mult if _character else 1.0)
 
 	var input_dir := player_input.input_dir
 	var cam_basis: Basis = camera.global_transform.basis
@@ -304,28 +376,99 @@ func _apply_movement_from_input(delta):
 	var right   := Vector3(cam_basis.x.x, 0, cam_basis.x.z).normalized()
 	var direction := (forward * input_dir.y + right * input_dir.x).normalized()
 
-	var calc_speed: float = speed
+	var calc_speed: float = _cmult(speed, _character.speed_mult if _character else 1.0)
 	var weapons := weapon_controller.get_weapons()
 	if not weapons.is_empty():
-		calc_speed = speed * weapons[weapon_controller.current_weapon_index].player_speed_multiplier
-	if is_crouching:
-		calc_speed *= crouch_speed_multiplier
+		calc_speed = calc_speed * weapons[weapon_controller.current_weapon_index].player_speed_multiplier
+	# Blend speed penalty smoothly with the collider.
+	var eff_crouch_mult: float = crouch_speed_multiplier + (_character.crouch_speed_mult if _character else 1.0)
+	calc_speed *= lerp(1.0, eff_crouch_mult, crouch_factor)
 
 	if on_floor:
-		# Ground movement
+		var h_speed: float = Vector2(velocity.x, velocity.z).length()
+
+		# Detect slope for acceleration boost and slide sustain.
+		var floor_normal: Vector3 = get_floor_normal()
+		var slope_angle: float = rad_to_deg(acos(Vector3.UP.dot(floor_normal)))
+		var on_slope: bool = slope_angle > min_slope_angle
+
+		# True slide (not just crouching while slow): requires either speed
+		# or pushing downhill on a slope.
+		var slide_active: bool = crouch_factor > 0.5 \
+			and (h_speed > min_slide_speed or (on_slope and direction.length() > 0.0))
+
+		# Entry boost — one burst when you first hit a real slide.
+		if slide_active and not _was_sliding:
+			var boost_dir: Vector2 = Vector2(velocity.x, velocity.z)
+			var boost_len: float = boost_dir.length()
+			if boost_len > 0.0:
+				boost_dir /= boost_len
+				var eff_boost: float = _cmult(slide_entry_boost, _character.slide_entry_boost_mult if _character else 1.0)
+				velocity.x += boost_dir.x * eff_boost
+				velocity.z += boost_dir.y * eff_boost
+				h_speed = Vector2(velocity.x, velocity.z).length()
+		_was_sliding = slide_active
+
+		# Acceleration: low while crouching, boosted on slopes.
+		var base_accel: float = _cmult(acceleration, _character.acceleration_mult if _character else 1.0)
+		var accel: float = lerp(base_accel, crouch_ground_acceleration, crouch_factor)
+		if crouch_factor > 0.0 and on_slope:
+			accel *= slope_accel_multiplier
+
+		# Friction: speed-dependent based on crouch state.
+		var fric: float = _cmult(friction, _character.friction_mult if _character else 1.0)
+		if crouch_factor > 0.0:
+			var slide_t: float
+			if not slide_active:
+				# Too slow for a slide → normal crouch friction.
+				slide_t = 0.0
+			elif direction.length() > 0.0:
+				slide_t = clamp(h_speed / crouch_slide_threshold, 0.3, 1.0)
+			else:
+				slide_t = clamp(h_speed / crouch_slide_threshold, 0.0, 1.0)
+			var eff_slide_fric: float = _cmult(crouch_slide_friction, _character.slide_friction_mult if _character else 1.0)
+			var crouch_fric: float = lerp(friction, eff_slide_fric, slide_t)
+			fric = lerp(friction, crouch_fric, crouch_factor)
+		elif h_speed > stand_speed_friction_threshold:
+			# Standing: extra friction at high speeds to kill momentum.
+			var excess: float = (h_speed - stand_speed_friction_threshold) / stand_speed_friction_threshold
+			fric += stand_speed_friction * excess
+
 		if direction:
 			var target_x := direction.x * calc_speed
 			var target_z := direction.z * calc_speed
-			velocity.x = move_toward(velocity.x, target_x, acceleration * delta)
-			velocity.z = move_toward(velocity.z, target_z, acceleration * delta)
+			# When sliding, don't cap downhill speed — let slope gravity build it.
+			if crouch_factor > 0.0:
+				var vel_dot_dir: float = velocity.x * direction.x + velocity.z * direction.z
+				if vel_dot_dir > calc_speed:
+					target_x = direction.x * vel_dot_dir
+					target_z = direction.z * vel_dot_dir
+			velocity.x = move_toward(velocity.x, target_x, accel * delta)
+			velocity.z = move_toward(velocity.z, target_z, accel * delta)
 		else:
-			velocity.x = move_toward(velocity.x, 0.0, friction * delta)
-			velocity.z = move_toward(velocity.z, 0.0, friction * delta)
+			velocity.x = move_toward(velocity.x, 0.0, fric * delta)
+			velocity.z = move_toward(velocity.z, 0.0, fric * delta)
+
+		# Slope gravity: pull downhill when crouching, regardless of input.
+		if crouch_factor > 0.0 and on_slope:
+			var gravity_dir: Vector3 = Vector3.DOWN
+			var downhill: Vector3 = (gravity_dir - floor_normal * gravity_dir.dot(floor_normal)).normalized()
+			var eff_slope_grav: float = _cmult(slope_gravity, _character.slope_gravity_mult if _character else 1.0)
+			velocity.x += downhill.x * eff_slope_grav * delta
+			velocity.z += downhill.z * eff_slope_grav * delta
+
+		# One-time slowdown on landing fast without crouching.
+		if not _was_on_floor and crouch_factor < 0.5:
+			if h_speed > ground_impact_speed_threshold:
+				velocity.x = move_toward(velocity.x, 0.0, ground_impact_deceleration * delta)
+				velocity.z = move_toward(velocity.z, 0.0, ground_impact_deceleration * delta)
 	else:
-		# Source-style air acceleration
+		# Source-style air acceleration — crouch has no effect in the air.
 		if direction.length() > 0.0:
 			var wish_speed: float = calc_speed * input_dir.length()
 			_air_accelerate(direction, wish_speed, delta)
+
+	_was_on_floor = on_floor
 
 	velocity *= NetworkTime.physics_factor
 	velocity += knockback_velocity
@@ -342,7 +485,7 @@ func _apply_movement_from_input(delta):
 		camera.fov = 20.0
 		speed = 2.5
 	else:
-		camera.fov = 120.0
+		camera.fov = 90.0
 		speed = 5.0
 
 	var fov_ratio: float = camera.fov / BASE_FOV
@@ -351,3 +494,14 @@ func _apply_movement_from_input(delta):
 
 func change_health(health: float, changer: String):
 	attribute_component.apply_health_delta(health, changer, self.name)
+
+## Apply character stat offsets on top of base values.
+func set_character(char: Character) -> void:
+	_character = char
+	if char:
+		attribute_component.starting_health = 100.0 * char.health_mult
+		attribute_component.reset_health()
+
+## Read a base stat with an optional character offset applied.
+func _cmult(base: float, mult: float) -> float:
+	return base * mult

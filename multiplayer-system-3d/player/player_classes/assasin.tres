@@ -10,10 +10,14 @@
 [ext_resource type="Resource" uid="uid://kb8a36qmhbsa" path="res://weapon/tf2/bat.tres" id="8_3tebw"]
 [ext_resource type="Resource" uid="uid://2k6bc50djxgg" path="res://weapon/tf2/machine_pistol.tres" id="8_oiapg"]
 [ext_resource type="Resource" uid="uid://bcrlsyiwg0v84" path="res://weapon/tf2/pistol.tres" id="9_5cljb"]
+[ext_resource type="Script" path="res://player/character.gd" id="10_char"]
+[ext_resource type="Resource" path="res://player/characters/ghost.tres" id="11_char"]
+[ext_resource type="Resource" path="res://player/characters/stalker.tres" id="12_char"]
 
 [resource]
 script = ExtResource("4_oiapg")
 class_display_name = "Assasin"
 primary_weapons = Array[ExtResource("1_lj83e")]([ExtResource("5_5cljb"), ExtResource("2_lj83e"), ExtResource("6_5cljb"), ExtResource("5_oiapg")])
 secondary_weapons = Array[ExtResource("1_lj83e")]([ExtResource("8_3tebw"), ExtResource("7_3tebw"), ExtResource("9_5cljb"), ExtResource("8_oiapg")])
+characters = Array[ExtResource("10_char")]([ExtResource("11_char"), ExtResource("12_char")])
 metadata/_custom_type_script = "uid://cbg4mqtqfaara"

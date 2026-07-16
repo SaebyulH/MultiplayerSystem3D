@@ -19,6 +19,7 @@ var _team_option: OptionButton
 var _class_option: OptionButton
 var _primary_option: OptionButton
 var _secondary_option: OptionButton
+var _character_option: OptionButton
 var _confirm_button: Button
 var _mode_label: Label
 
@@ -27,6 +28,7 @@ var _secondary_viewport: SubViewport
 
 var _primary_stats: RichTextLabel
 var _secondary_stats: RichTextLabel
+var _character_stats: RichTextLabel
 
 # ─────────────────────────────────────────────
 #  Lifecycle
@@ -62,6 +64,7 @@ func _ready() -> void:
 	load_classes(loaded_classes)
 
 	_class_option.item_selected.connect(_on_class_selected)
+	_character_option.item_selected.connect(_on_character_selected)
 	_primary_option.item_selected.connect(_on_primary_selected)
 	_secondary_option.item_selected.connect(_on_secondary_selected)
 	_confirm_button.pressed.connect(_on_confirm_pressed)
@@ -145,6 +148,18 @@ func _build_ui_in(cl: CanvasLayer) -> void:
 	_class_option.item_count = 1
 	opt_row.add_child(_labeled("CLASS", _class_option))
 
+	col.add_child(_sep())
+
+	# ── Character row ─────────────────────────
+	var char_row := CenterContainer.new()
+	col.add_child(char_row)
+	_character_option = _opt()
+	_character_option.add_item("-- Select Character --", 0)
+	char_row.add_child(_labeled("CHARACTER", _character_option))
+
+	_character_stats = _stat_label()
+	_character_stats.visible = false
+	col.add_child(_character_stats)
 	col.add_child(_sep())
 
 	# ── Preview row ──────────────────────────
@@ -370,9 +385,19 @@ func _on_class_selected(index: int) -> void:
 		_confirm_button.disabled = true
 		_primary_stats.visible = false
 		_secondary_stats.visible = false
+		_character_stats.visible = false
 		return
 
 	selected_class = available_classes[index - 1]
+
+	_character_option.clear()
+	_character_option.add_item("-- Select Character --", 0)
+	if selected_class.characters.size() > 0:
+		for char in selected_class.characters:
+			if char:
+				_character_option.add_item(char.character_name)
+		_character_option.select(1)
+	_refresh_character_stats()
 
 	_primary_option.clear()
 	for w in selected_class.primary_weapons:
@@ -404,6 +429,9 @@ func _on_secondary_selected(index: int) -> void:
 		return
 	_spawn_weapon_preview(selected_class.secondary_weapons[index], _secondary_viewport)
 	_refresh_stats()
+
+func _on_character_selected(_index: int) -> void:
+	_refresh_character_stats()
 
 # ─────────────────────────────────────────────
 #  Stats
@@ -483,6 +511,93 @@ func _weapon_stats(weapon: Weapon) -> String:
 
 	return "  • %s" % "\n  • ".join(parts)
 
+func _refresh_character_stats() -> void:
+	var ci := _character_option.selected - 1
+	if ci < 0 or selected_class == null or ci >= selected_class.characters.size():
+		_character_stats.text = ""
+		_character_stats.visible = false
+		return
+	var char: Character = selected_class.characters[ci]
+	if not char:
+		_character_stats.text = ""
+		_character_stats.visible = false
+		return
+	var parts: PackedStringArray = []
+	parts.append("[b]%s[/b]" % char.character_name)
+	if not char.description.is_empty():
+		parts.append("[i]%s[/i]" % char.description)
+	var stat_lines: PackedStringArray = _char_stat_lines(char)
+	if stat_lines.size() > 0:
+		parts.append("")
+		parts.append_array(stat_lines)
+	_character_stats.text = "\n".join(parts)
+	_character_stats.visible = true
+
+func _char_stat_lines(char: Character) -> PackedStringArray:
+	var lines: PackedStringArray = []
+	_add_stat_group(lines, "Movement", [
+		["Speed", char.speed_mult, false],
+		["Acceleration", char.acceleration_mult, false],
+		["Friction", char.friction_mult, false],
+		["Crouch Speed", char.crouch_speed_mult, false],
+	])
+	_add_stat_group(lines, "Air", [
+		["Air Accel", char.air_accel_mult, false],
+		["Air Speed Cap", char.air_speed_cap_mult, false],
+		["Jump", char.jump_mult, false],
+	])
+	_add_stat_group(lines, "Slide", [
+		["Slide Friction", char.slide_friction_mult, false],
+		["Entry Boost", char.slide_entry_boost_mult, false],
+		["Slope Gravity", char.slope_gravity_mult, false],
+	])
+	_add_stat_group(lines, "Combat", [
+		["Damage", char.damage_amp_mult, false],
+		["Reload Speed", char.reload_speed_mult, false],
+		["Fire Rate", char.shoot_delay_mult, true],
+	])
+	_add_stat_group(lines, "Defense", [
+		["Health", char.health_mult, false, false],
+		["Lifesteal", char.lifesteal_percent, false],
+		["Regen / sec", char.regen_per_sec, false, true],
+		["Regen Delay", char.regen_delay, false, true],
+		["Heal on Kill", char.heal_on_kill, false, true],
+	])
+	return lines
+
+func _add_stat_group(lines: PackedStringArray, title: String, stats: Array) -> void:
+	var group_lines: PackedStringArray = []
+	for stat in stats:
+		var label: String = stat[0]
+		var value: float = stat[1]
+		var invert: bool = stat[2] if stat.size() > 2 else false
+		var additive: bool = stat[3] if stat.size() > 3 else false
+		# Additive stats: skip when 0.  Multiplicative: skip when 1.0.
+		if additive:
+			if is_equal_approx(value, 0.0):
+				continue
+			var sign: String = "+" if value >= 0.0 else ""
+			group_lines.append("  %s %s%.1f" % [label, sign, value])
+		elif label == "Lifesteal":
+			if is_equal_approx(value, 0.0):
+				continue
+			group_lines.append("  %s +%.0f%%" % [label, value * 100.0])
+		else:
+			if is_equal_approx(value, 1.0):
+				continue
+			if invert:
+				var effective: float = 1.0 / maxf(value, 0.01)
+				var pct: int = int(round((effective - 1.0) * 100.0))
+				var sign: String = "+" if pct >= 0 else ""
+				group_lines.append("  %s %s%d%%" % [label, sign, pct])
+			else:
+				var pct: int = int(round((value - 1.0) * 100.0))
+				var sign: String = "+" if pct >= 0 else ""
+				group_lines.append("  %s %s%d%%" % [label, sign, pct])
+	if group_lines.size() > 0:
+		lines.append("[b]%s[/b]" % title)
+		lines.append_array(group_lines)
+
 # ─────────────────────────────────────────────
 #  Confirm
 # ─────────────────────────────────────────────
@@ -505,6 +620,12 @@ func _on_confirm_pressed() -> void:
 
 	var primary: Weapon = selected_class.primary_weapons[pi]
 	var secondary: Weapon = selected_class.secondary_weapons[si]
+	var ci := _character_option.selected - 1
+	var character_path := ""
+	if ci >= 0 and ci < selected_class.characters.size():
+		var char: Character = selected_class.characters[ci]
+		if char:
+			character_path = char.resource_path
 	var team := _get_selected_team()
 
 	# Hide our canvas (don't free — user can re-open with E later)
@@ -515,16 +636,16 @@ func _on_confirm_pressed() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 
 	if multiplayer.is_server():
-		_request_loadout(player_id, primary.resource_path, secondary.resource_path, team)
+		_request_loadout(player_id, primary.resource_path, secondary.resource_path, team, character_path)
 	else:
-		_request_loadout.rpc_id(1, player_id, primary.resource_path, secondary.resource_path, team)
+		_request_loadout.rpc_id(1, player_id, primary.resource_path, secondary.resource_path, team, character_path)
 
 # ─────────────────────────────────────────────
 #  RPCs
 # ─────────────────────────────────────────────
 
 @rpc("any_peer", "reliable")
-func _request_loadout(tpid: String, pp: String, sp: String, team: Player.Team) -> void:
+func _request_loadout(tpid: String, pp: String, sp: String, team: Player.Team, cp: String = "") -> void:
 	if not multiplayer.is_server():
 		return
 	var sid := multiplayer.get_remote_sender_id()
@@ -544,14 +665,20 @@ func _request_loadout(tpid: String, pp: String, sp: String, team: Player.Team) -
 	ctrl.set_weapons(nw)
 	ctrl.current_weapon_index = 0
 	player.team = team
+	# Apply character if one was selected.
+	if not cp.is_empty():
+		var char_res: Character = load(cp) as Character
+		if char_res:
+			player.set_character(char_res)
+			player._loadout_character_path = cp
 	# Store paths so late-joining peers can be synced.
 	player._loadout_primary_path = pp
 	player._loadout_secondary_path = sp
-	_apply_loadout.rpc(tpid, pp, sp, team)
+	_apply_loadout.rpc(tpid, pp, sp, team, cp)
 	player.rpc_reset.rpc(player._get_spawn_position())
 
 @rpc("authority", "call_remote", "reliable")
-func _apply_loadout(tpid: String, pp: String, sp: String, team: Player.Team) -> void:
+func _apply_loadout(tpid: String, pp: String, sp: String, team: Player.Team, cp: String = "") -> void:
 	var primary: Weapon = load(pp) as Weapon
 	var secondary: Weapon = load(sp) as Weapon
 	if primary == null or secondary == null:
@@ -566,3 +693,9 @@ func _apply_loadout(tpid: String, pp: String, sp: String, team: Player.Team) -> 
 	ctrl.set_weapons(nw)
 	ctrl.current_weapon_index = 0
 	player.team = team
+	# Apply character on all peers.
+	if not cp.is_empty():
+		var char_res: Character = load(cp) as Character
+		if char_res:
+			player.set_character(char_res)
+			player._loadout_character_path = cp
