@@ -35,7 +35,7 @@ func reset():
 ## The 3D model scene to spawn and attach to the weapon holder.
 @export var weapon_model: PackedScene
 ## Positional offset of the weapon model relative to the weapon holder.
-@export var weapon_offset: Vector3 = Vector3(0.2, -0.4, -0.55)
+@export var weapon_offset: Vector3 = Vector3(0.0, 0.0, 0.0)
 ## Rotation of the weapon model in degrees, converted to radians internally.
 @export_custom(PROPERTY_HINT_RANGE, "-360,360,0.1,radians")
 var weapon_rotation: Vector3 = Vector3.ZERO

@@ -61,6 +61,7 @@ signal weapon_changed(index: int, weapon: Weapon)
 @export var recoil: Recoil
 @export var _parent_player: Player
 @export var _raycast: RayCast3D
+@export var shoot_animation: AnimationPlayer
 
 var current_weapon_model: Node3D = null
 
@@ -737,6 +738,9 @@ func _play_shoot_sound(weapon_fire_index: int) -> void:
 	if not _is_ready():
 		return
 	_play_sound(_weapons[current_weapon_index].weapon_fires[weapon_fire_index].shoot_sound)
+	if shoot_animation and shoot_animation.has_animation("shoot"):
+		shoot_animation.stop()
+		shoot_animation.play("shoot")
 
 ## Played when you hit someone, called by attribute component
 @rpc("any_peer", "call_local")
