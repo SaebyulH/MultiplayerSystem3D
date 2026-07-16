@@ -456,30 +456,21 @@ func _on_weapon_changed(_index = null, _weapon = null) -> void:
 func _update_weapon_list() -> void:
 	if not weapon_controller:
 		return
+	for child in _weapon_list.get_children():
+		child.queue_free()
 
 	var weapons := weapon_controller.get_weapons()
 	var current_index := weapon_controller.current_weapon_index
-	var children := _weapon_list.get_children()
 
-	# Rebuild only if the weapon count changed (rare: weapon swap to different loadout)
-	if children.size() != weapons.size():
-		for child in children:
-			child.queue_free()
-		for i in weapons.size():
-			var label := Label.new()
-			label.text = weapons[i].display_name
-			label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-			label.add_theme_constant_override("outline_size", 4)
-			label.add_theme_font_size_override("font_size", 20)
-			_weapon_list.add_child(label)
-		children = _weapon_list.get_children()
-
-	# Highlight the active weapon (fast path — no re-creation)
-	for i in children.size():
-		var label: Label = children[i] as Label
+	for i in weapons.size():
+		var label := Label.new()
+		label.text = weapons[i].display_name
+		label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+		label.add_theme_constant_override("outline_size", 4)
+		label.add_theme_font_size_override("font_size", 20)
 		if i == current_index:
 			label.modulate = Color(1.0, 0.85, 0.20)
 			label.add_theme_font_size_override("font_size", 24)
 		else:
 			label.modulate = Color(0.65, 0.65, 0.65)
-			label.add_theme_font_size_override("font_size", 20)
+		_weapon_list.add_child(label)

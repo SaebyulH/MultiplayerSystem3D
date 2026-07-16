@@ -25,19 +25,9 @@ func _ready() -> void:
 	Leaderboard.killstreak_changed.connect(_on_killstreak_changed)
 
 
-var _last_hash: int = 0
-var _refresh_timer: float = 0.0
-
 func _process(delta: float) -> void:
 	if Leaderboard == null:
 		return
-
-	# Throttle: only rebuild when data changed, or at most every 0.5s
-	_refresh_timer -= delta
-	var current_hash := Leaderboard.get_kills("")  # forces a cheap "is dirty" check
-	if _refresh_timer > 0.0:
-		return
-	_refresh_timer = 0.5
 
 	leaderboard.clear()
 

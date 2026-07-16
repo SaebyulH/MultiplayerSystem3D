@@ -9,12 +9,9 @@ var killstreak := 0
 
 @export var passive_heal_per_sec: float = 10.0
 var _heal_timer: float = 0.0
-var _heal_batch: float = 0.0
-var _heal_batch_timer: float = 0.0
 
 var _time_since_last_damage: float = 0.0
 const HEAL_DELAY := 5.0
-const HEAL_BATCH_INTERVAL := 0.5
 
 @export var starting_health := 100.0
 
@@ -56,7 +53,7 @@ func apply_health_delta(delta: float, changer: String, changee: String):
 		last_attacker = changer
 	else:
 		if changee == changer:
-			_heal_batch += applied_delta
+			Leaderboard.request_add_self_heal(changer, applied_delta)
 		else:
 			Leaderboard.request_add_heal_other(changer, applied_delta)
 			if not changer_node.is_bot:
@@ -80,14 +77,6 @@ func reset():
 
 func _process(delta: float) -> void:
 	_time_since_last_damage += delta
-
-	# Flush batched heal leaderboard data periodically
-	_heal_batch_timer -= delta
-	if _heal_batch_timer <= 0.0 and abs(_heal_batch) > 0.01:
-		_heal_batch_timer = HEAL_BATCH_INTERVAL
-		Leaderboard.request_add_self_heal(get_parent().name, _heal_batch)
-		_heal_batch = 0.0
-
 	if health <= 0.0 or health >= starting_health:
 		_heal_timer = 0.0  # don't pre-charge
 		return
