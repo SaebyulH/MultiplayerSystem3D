@@ -29,7 +29,6 @@ data = PackedByteArray("//PkZAAg6gckAKy8AJyjKmRtRhABct/3/cNYdIdMNWYzljzxOt0IXFAD
 [sub_resource type="Resource" id="Resource_qfct1"]
 script = ExtResource("8_1h707")
 automatic = true
-pre_shoot_delay = 0.2
 post_shoot_delay = 0.03
 recoil_data = SubResource("Resource_lbqq1")
 recoil_knockback = Vector3(0, 0, 0.4)
