@@ -13,6 +13,10 @@ class_name BaseModePanel
 ##   2. Implement update_display()
 ##   3. Register it in HUDController._create_panel_registry()
 
+## If set, team progress bars should be added here (top-center row)
+## instead of in the panel's own VBox.
+var team_bar_row: HBoxContainer = null
+
 # ─────────────────────────────────────────────
 #  Virtual
 # ─────────────────────────────────────────────

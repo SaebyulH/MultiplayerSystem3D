@@ -35,11 +35,13 @@ var gmc: GameModeComponent
 
 # Shared UI nodes
 var _root: Control
-var _phase_label: Label
 var _timer_bar: TimerBar
 var _round_score_label: Label
 var _overtime_label: Label
 var _panel_container: Control
+var _team_bar_row: HBoxContainer
+var _team_spi_bar: TeamProgressBar
+var _team_sci_bar: TeamProgressBar
 
 # Active panel
 var _active_panel: BaseModePanel = null
@@ -81,14 +83,70 @@ func _process(_delta: float) -> void:
 func _build_shared_ui() -> void:
 	layer = 1  # above game world but below console (layer 3)
 
+	# Timer bar -- full width, top of screen, direct child of CanvasLayer
+	_timer_bar = TimerBar.new()
+	_timer_bar.anchor_left   = 0.0
+	_timer_bar.anchor_right  = 1.0
+	_timer_bar.anchor_top    = 0.0
+	_timer_bar.anchor_bottom = 0.0
+	_timer_bar.offset_top    = 0
+	_timer_bar.offset_bottom = 32
+	add_child(_timer_bar)
+
+	# Team score bars -- centered row below the timer
+	_team_bar_row = HBoxContainer.new()
+	_team_bar_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	_team_bar_row.add_theme_constant_override("separation", 12)
+	_team_bar_row.anchor_left   = 0.5
+	_team_bar_row.anchor_right  = 0.5
+	_team_bar_row.anchor_top    = 0.0
+	_team_bar_row.anchor_bottom = 0.0
+	_team_bar_row.offset_top    = 34
+	_team_bar_row.offset_bottom = 60
+	_team_bar_row.offset_left   = -260
+
+	# Create team bars once (shared across modes)
+	_team_spi_bar = TeamProgressBar.new()
+	_team_spi_bar.set_bar_color(Color(0.88, 0.24, 0.24))
+	_team_spi_bar.custom_minimum_size = Vector2(240, 28)
+	_team_spi_bar.visible = false
+	_team_bar_row.add_child(_team_spi_bar)
+
+	_team_sci_bar = TeamProgressBar.new()
+	_team_sci_bar.set_bar_color(Color(0.20, 0.60, 0.86))
+	_team_sci_bar.custom_minimum_size = Vector2(240, 28)
+	_team_sci_bar.visible = false
+	_team_bar_row.add_child(_team_sci_bar)
+	_team_bar_row.offset_right  = 260
+	add_child(_team_bar_row)
+
+	# Overtime flash label -- below the timer bar
+	_overtime_label = Label.new()
+	_overtime_label.text = "OVERTIME"
+	_overtime_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_overtime_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+	_overtime_label.add_theme_constant_override("outline_size", 8)
+	_overtime_label.add_theme_font_size_override("font_size", 20)
+	_overtime_label.add_theme_color_override("font_color", Color(1, 0.3, 0.3))
+	_overtime_label.anchor_left   = 0.0
+	_overtime_label.anchor_right  = 1.0
+	_overtime_label.anchor_top    = 0.0
+	_overtime_label.anchor_bottom = 0.0
+	_overtime_label.offset_top    = 34
+	_overtime_label.offset_bottom = 56
+	_overtime_label.visible = false
+	add_child(_overtime_label)
+
+	# Centered HUD container (round score + mode panels)
 	_root = Control.new()
 	_root.anchor_left   = 0.5
-	_root.anchor_top    = 0.0
 	_root.anchor_right  = 0.5
-	_root.anchor_bottom = 0.0
+	_root.anchor_top    = 1.0
+	_root.anchor_bottom = 1.0
 	_root.offset_left   = -hud_width * 0.5
-	_root.offset_top    = hud_margin_top
 	_root.offset_right  = hud_width * 0.5
+	_root.offset_top    = -200
+	_root.offset_bottom = -40
 	add_child(_root)
 
 	var main_vbox := VBoxContainer.new()
@@ -99,21 +157,7 @@ func _build_shared_ui() -> void:
 	main_vbox.anchor_bottom = 1.0
 	_root.add_child(main_vbox)
 
-	# ── Phase label ────────────────────────
-	_phase_label = Label.new()
-	_phase_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_phase_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-	_phase_label.add_theme_constant_override("outline_size", 10)
-	_phase_label.add_theme_font_size_override("font_size", 28)
-	_phase_label.add_theme_color_override("font_color", Color(1, 1, 1, 0.95))
-	main_vbox.add_child(_phase_label)
-
-	# ── Timer bar ──────────────────────────
-	_timer_bar = TimerBar.new()
-	_timer_bar.custom_minimum_size = Vector2(0, 28)
-	main_vbox.add_child(_timer_bar)
-
-	# ── Round score ────────────────────────
+	# Round score
 	_round_score_label = Label.new()
 	_round_score_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_round_score_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
@@ -122,27 +166,12 @@ func _build_shared_ui() -> void:
 	_round_score_label.add_theme_color_override("font_color", Color(0.85, 0.85, 0.85))
 	main_vbox.add_child(_round_score_label)
 
-	# ── Mode panel container ───────────────
+	# Mode panel container
 	_panel_container = Control.new()
 	_panel_container.custom_minimum_size = Vector2(0, 120)
 	_panel_container.anchor_left   = 0.0
 	_panel_container.anchor_right  = 1.0
 	main_vbox.add_child(_panel_container)
-
-	# ── Overtime label ─────────────────────
-	_overtime_label = Label.new()
-	_overtime_label.text = "⚠ OVERTIME ⚠"
-	_overtime_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_overtime_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-	_overtime_label.add_theme_constant_override("outline_size", 10)
-	_overtime_label.add_theme_font_size_override("font_size", 26)
-	_overtime_label.add_theme_color_override("font_color", Color(1, 0.3, 0.3))
-	_overtime_label.visible = false
-	main_vbox.add_child(_overtime_label)
-
-# ─────────────────────────────────────────────
-#  Setup — called by Map._enter_tree()
-# ─────────────────────────────────────────────
 
 func setup_gmc() -> void:
 	await get_tree().process_frame
@@ -197,6 +226,7 @@ func _create_panel_registry() -> void:
 
 func _make_panel(panel: BaseModePanel) -> BaseModePanel:
 	panel.visible = false
+	panel.team_bar_row = _team_bar_row
 	panel.anchor_left   = 0.0
 	panel.anchor_right  = 1.0
 	panel.anchor_top    = 0.0
@@ -235,6 +265,7 @@ func _switch_to_mode(mode: GameModeComponent.GameMode) -> void:
 
 func _push_data_to_panel() -> void:
 	# Push to normal mode panel.
+	_update_team_bars()
 	if _active_panel and gmc:
 		_active_panel.update_display(_build_mode_data())
 
@@ -345,7 +376,6 @@ func _get_payload() -> PayloadNode:
 # ─────────────────────────────────────────────
 
 func _on_phase_changed(new_phase: GameModeComponent.PhaseState) -> void:
-	_phase_label.text = _phase_text(new_phase)
 	_overtime_label.visible = (new_phase == GameModeComponent.PhaseState.OVERTIME)
 	_timer_bar.set_overtime(new_phase == GameModeComponent.PhaseState.OVERTIME)
 	_push_data_to_panel()
@@ -385,6 +415,45 @@ func _on_hybrid_updated() -> void:
 #  Helpers
 # ─────────────────────────────────────────────
 
+
+func _update_team_bars() -> void:
+	var show := gmc.game_mode in [GameModeComponent.GameMode.KOTH, GameModeComponent.GameMode.CONTROL, GameModeComponent.GameMode.DOMINATION]
+	_team_spi_bar.visible = show
+	_team_sci_bar.visible = show
+	if not show:
+		return
+
+	match gmc.game_mode:
+		GameModeComponent.GameMode.KOTH, GameModeComponent.GameMode.CONTROL:
+			if not gmc.koth_mode:
+				return
+			var held := gmc.koth_mode.time_held
+			var target := gmc.koth_mode.capture_time_to_win
+			var spi_t: float = held.get(Player.Team.SPI, 0.0)
+			var sci_t: float = held.get(Player.Team.SCI, 0.0)
+			_team_spi_bar.set_progress(spi_t / target if target > 0 else 0.0)
+			_team_sci_bar.set_progress(sci_t / target if target > 0 else 0.0)
+			_team_spi_bar.set_labels("SPI", _fmt_seconds(spi_t) + " / " + _fmt_seconds(target))
+			_team_sci_bar.set_labels("SCI", _fmt_seconds(sci_t) + " / " + _fmt_seconds(target))
+
+		GameModeComponent.GameMode.DOMINATION:
+			if not gmc.domination_mode:
+				return
+			var pts := gmc.domination_mode.points
+			var target := gmc.domination_mode.points_to_win
+			var spi_p: float = pts.get(Player.Team.SPI, 0.0)
+			var sci_p: float = pts.get(Player.Team.SCI, 0.0)
+			_team_spi_bar.set_progress(spi_p / target if target > 0 else 0.0)
+			_team_sci_bar.set_progress(sci_p / target if target > 0 else 0.0)
+			_team_spi_bar.set_labels("SPI", "%d  /  %d" % [int(spi_p), int(target)])
+			_team_sci_bar.set_labels("SCI", "%d  /  %d" % [int(sci_p), int(target)])
+
+static func _fmt_seconds(seconds: float) -> String:
+	if seconds <= 0.0:
+		return "0:00"
+	var m: int = int(seconds / 60.0)
+	var s: int = int(seconds) % 60
+	return "%d:%02d" % [m, s]
 func _update_round_score() -> void:
 	if not gmc:
 		return
