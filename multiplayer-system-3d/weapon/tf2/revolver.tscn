@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://dv73bh3gld32d"]
+
+[ext_resource type="PackedScene" uid="uid://bd22pntf5u5fl" path="res://weapon/tf2/low_poly_.38_detective_revolver.glb" id="1_rghsj"]
+
+[node name="Scattergun" type="Node3D" unique_id=664585380]
+
+[node name="Muzzle" type="Node3D" parent="." unique_id=2026291909]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.09278688, -0.3385353)
+
+[node name="Sketchfab_Scene" parent="." unique_id=16994856 instance=ExtResource("1_rghsj")]
+transform = Transform3D(1.8, 0, 0, 0, 1.8, 0, 0, 0, 1.8, 0, -0.02, -0.205)

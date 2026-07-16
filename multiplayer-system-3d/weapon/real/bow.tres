@@ -41,9 +41,9 @@ metadata/_custom_type_script = "uid://djg0ti1n45f8b"
 [resource]
 script = ExtResource("2_2cfp8")
 display_name = "Bow"
-mag_size = 12
-mag_current = 12
-reload_time = 2.0
+mag_size = 1
+mag_current = 1
+reload_time = 1.6
 weapon_fires = Array[ExtResource("3_7ijep")]([SubResource("Resource_sun5j"), SubResource("Resource_iwiee")])
 weapon_model = ExtResource("9_7ijep")
 reload_sound = ExtResource("1_sgsea")

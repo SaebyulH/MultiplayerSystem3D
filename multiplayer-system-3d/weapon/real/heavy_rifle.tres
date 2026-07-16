@@ -1,0 +1,55 @@
+[gd_resource type="Resource" script_class="Weapon" format=3 uid="uid://fcl45ysewp0w"]
+
+[ext_resource type="AudioStream" uid="uid://2leuuyy3stnp" path="res://assets/sounds/mortal_music-m40a1-reload-524732.mp3" id="1_np3fa"]
+[ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="2_drcn0"]
+[ext_resource type="Script" uid="uid://djg0ti1n45f8b" path="res://weapon/weapon_fire.gd" id="3_2wfvi"]
+[ext_resource type="AudioStream" uid="uid://bwfdsxbmx4ko8" path="res://assets/sounds/empty_gun.mp3" id="4_tjmpd"]
+[ext_resource type="Script" uid="uid://yvevtn4dsddy" path="res://player/recoil/recoil_data.gd" id="5_cma7f"]
+[ext_resource type="AudioStream" uid="uid://h5oipa516ci8" path="res://assets/sounds/kalsstockmedia-thunderous-sci-fi-gunshot-sound-341615.mp3" id="6_378ei"]
+[ext_resource type="AudioStream" uid="uid://b66x0rfx3im4" path="res://assets/sounds/freesound_community-rifle-gunshot-99749.mp3" id="6_tv8c2"]
+[ext_resource type="Texture2D" uid="uid://b6gktr1vfryte" path="res://defaults/default_damage_falloff_curve.tres" id="7_1f6g4"]
+[ext_resource type="PackedScene" uid="uid://dy60h13dywknx" path="res://weapon/real/heavy_rifle.tscn" id="8_ny6lo"]
+
+[sub_resource type="Curve" id="Curve_btwad"]
+_data = [Vector2(0, 0.095017195), 0.0, 0.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_b7nwq"]
+curve = SubResource("Curve_btwad")
+
+[sub_resource type="Resource" id="Resource_so61o"]
+script = ExtResource("5_cma7f")
+
+[sub_resource type="Resource" id="Resource_aikgn"]
+script = ExtResource("3_2wfvi")
+post_shoot_delay = 1.2
+recoil_data = SubResource("Resource_so61o")
+hitscan_damage = 100.0
+headshot_multiplier = 10.0
+falloff_curve = SubResource("CurveTexture_b7nwq")
+shoot_sound = ExtResource("6_378ei")
+empty_sound = ExtResource("4_tjmpd")
+metadata/_custom_type_script = "uid://djg0ti1n45f8b"
+
+[sub_resource type="Resource" id="Resource_btwad"]
+script = ExtResource("5_cma7f")
+
+[sub_resource type="Resource" id="Resource_b7nwq"]
+script = ExtResource("3_2wfvi")
+action_type = 1
+recoil_data = SubResource("Resource_btwad")
+shoot_sound = ExtResource("6_tv8c2")
+empty_sound = ExtResource("4_tjmpd")
+metadata/_custom_type_script = "uid://djg0ti1n45f8b"
+
+[resource]
+script = ExtResource("2_drcn0")
+display_name = "Heavy Rifle"
+mag_size = 3
+mag_current = 3
+reload_time = 2.0
+player_speed_multiplier = 0.8
+weapon_fires = Array[ExtResource("3_2wfvi")]([SubResource("Resource_aikgn"), SubResource("Resource_b7nwq")])
+weapon_model = ExtResource("8_ny6lo")
+reload_sound = ExtResource("1_np3fa")
+metadata/_custom_type_script = "uid://qjf4ciit3dqy"

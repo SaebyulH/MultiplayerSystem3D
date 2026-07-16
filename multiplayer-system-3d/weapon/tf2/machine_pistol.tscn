@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://cyhde3bbrrrv"]
+
+[ext_resource type="PackedScene" uid="uid://b5togot37rhkh" path="res://weapon/tf2/low-poly_pasam.glb" id="1_dcmej"]
+
+[node name="Scattergun" type="Node3D" unique_id=664585380]
+
+[node name="Muzzle" type="Node3D" parent="." unique_id=2026291909]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.18330759, -0.6711741)
+
+[node name="Sketchfab_Scene" parent="." unique_id=1097360820 instance=ExtResource("1_dcmej")]
+transform = Transform3D(-4.371139e-11, 0, 0.001, 0, 0.001, 0, -0.001, 0, -4.371139e-11, 0, 0.023436837, -0.24971497)

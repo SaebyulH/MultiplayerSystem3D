@@ -3,9 +3,9 @@
 [ext_resource type="AudioStream" uid="uid://bwfdsxbmx4ko8" path="res://assets/sounds/empty_gun.mp3" id="1_la0ju"]
 [ext_resource type="Texture2D" uid="uid://b6gktr1vfryte" path="res://defaults/default_damage_falloff_curve.tres" id="2_dxxqn"]
 [ext_resource type="Script" uid="uid://yvevtn4dsddy" path="res://player/recoil/recoil_data.gd" id="3_r57kw"]
-[ext_resource type="AudioStream" path="res://assets/sounds/freesound_community-mag-reload-81594.mp3" id="4_t54mp"]
+[ext_resource type="AudioStream" uid="uid://b63r5283kwaa3" path="res://assets/sounds/freesound_community-mag-reload-81594.mp3" id="4_t54mp"]
 [ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="5_cr0at"]
-[ext_resource type="AudioStream" path="res://assets/sounds/freesound_community-single-gunshot-54-40780.mp3" id="6_banbv"]
+[ext_resource type="AudioStream" uid="uid://cgtklyqabb5ar" path="res://assets/sounds/freesound_community-single-gunshot-54-40780.mp3" id="6_banbv"]
 [ext_resource type="PackedScene" uid="uid://ux8ogr6fmr5y" path="res://weapon/tf2/pistol.tscn" id="7_la0ju"]
 [ext_resource type="Script" uid="uid://djg0ti1n45f8b" path="res://weapon/weapon_fire.gd" id="8_hadn0"]
 
@@ -16,6 +16,8 @@ script = ExtResource("3_r57kw")
 script = ExtResource("8_hadn0")
 post_shoot_delay = 0.05
 recoil_data = SubResource("Resource_8ac3t")
+hitscan_damage = 15.0
+headshot_multiplier = 8.0
 has_damage_falloff = true
 burst_fire_has_recoil = false
 shoot_sound = ExtResource("6_banbv")

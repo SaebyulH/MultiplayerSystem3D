@@ -28,7 +28,7 @@ height = 26.752
 
 [node name="SimpleProjectile" unique_id=1706686187 instance=ExtResource("1_1tiyg")]
 mass = 0.458
-linear_velocity = Vector3(0, 0, -30)
+linear_velocity = Vector3(0, 0, -60)
 lifetime = 5.0
 hurtbox_hit_mode = 3
 world_hit_mode = 3
@@ -38,7 +38,7 @@ transform = Transform3D(-0.3480795, 3.0430073e-08, 1.3301409e-15, 5.4054674e-23,
 shape = SubResource("CapsuleShape3D_7rxcs")
 
 [node name="HitboxComponent" parent="." index="2" unique_id=1963592485]
-health_delta = -40.0
+health_delta = -100.0
 headshot_multiplier = 3.0
 
 [node name="CollisionShape3D" parent="HitboxComponent" index="0" unique_id=1314331169]
