@@ -10,6 +10,8 @@ var target_rotation : Vector3
 @export var return_speed : float
 
 func _process(delta):
+	if not is_multiplayer_authority():
+		return
 	target_rotation = lerp(target_rotation, Vector3.ZERO, return_speed * delta)
 	current_rotation = lerp(current_rotation, target_rotation, snappiness * delta)
 	rotation = current_rotation

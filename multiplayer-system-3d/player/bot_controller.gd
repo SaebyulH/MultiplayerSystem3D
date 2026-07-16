@@ -27,7 +27,7 @@ const STUCK_JUMP_ATTEMPTS: int        = 2
 
 # Steering
 const STEER_DISTANCE: float       = 8.0
-const STEER_ANGLES: Array[float]  = [-75, -55, -35, -20, -10, 0, 10, 20, 35, 55, 75]
+const STEER_ANGLES: Array[float]  = [-60, -30, -10, 0, 10, 30, 60]
 const STEER_RAY_HEIGHT: float     = 0.5
 const WALL_FOLLOW_DISTANCE: float = 3.0
 

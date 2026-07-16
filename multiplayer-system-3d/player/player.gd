@@ -61,6 +61,11 @@ var knockback_velocity := Vector3.ZERO
 var speed = 5.0
 const JUMP_VELOCITY = 5.0
 
+# Per-frame change tracking — avoid redundant state writes
+var _last_ads: bool = false
+var _last_speed: float = 5.0
+var _last_fov: float = 90.0
+
 var queue_velocity := Vector3(0.0, 0.0, 0.0)
 
 @export var player_input: PlayerInput
@@ -258,10 +263,9 @@ func _rollback_tick(delta, tick, is_fresh):
 	_apply_movement_from_input(delta)
 
 func _force_update_is_on_floor():
-	var old_velocity = velocity
-	velocity = Vector3.ZERO
-	move_and_slide()
-	velocity = old_velocity
+	# Reuse floor state from the previous frame's move_and_slide().
+	# Avoids a redundant physics integration step every tick.
+	pass
 
 
 func apply_knockback(force: Vector3) -> void:
@@ -338,16 +342,19 @@ func _apply_movement_from_input(delta):
 	const BASE_MOUSE_SENS: float = 0.002
 	const BASE_FOV: float = 90.0
 
-	if ads:
-		camera.fov = 20.0
-		speed = 2.5
-	else:
-		camera.fov = 120.0
-		speed = 5.0
-
-	var fov_ratio: float = camera.fov / BASE_FOV
-	body.mouse_sens_x = BASE_MOUSE_SENS * fov_ratio
-	body.mouse_sens_y = BASE_MOUSE_SENS * fov_ratio
+	if ads != _last_ads:
+		_last_ads = ads
+		if ads:
+			camera.fov = 20.0
+			speed = 2.5
+		else:
+			camera.fov = 120.0
+			speed = 5.0
+		_last_fov = camera.fov
+		_last_speed = speed
+		var fov_ratio: float = camera.fov / BASE_FOV
+		body.mouse_sens_x = BASE_MOUSE_SENS * fov_ratio
+		body.mouse_sens_y = BASE_MOUSE_SENS * fov_ratio
 
 func change_health(health: float, changer: String):
 	attribute_component.apply_health_delta(health, changer, self.name)

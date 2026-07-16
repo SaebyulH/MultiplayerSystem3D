@@ -52,6 +52,7 @@ var _deathmatch_panel: DeathmatchPanel = null
 
 # Internal
 var _initialized := false
+var _hud_timer: float = 0.0
 
 # ─────────────────────────────────────────────
 #  Lifecycle
@@ -60,21 +61,21 @@ var _initialized := false
 func _ready() -> void:
 	_build_shared_ui()
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if not _initialized or not gmc:
 		return
 
 	# Hide the HUD while the class-select screen is open so the two don't overlap.
 	_root.visible = not PlayerInput.ui_open
 
-	# Timer bar updates every frame
+	# Timer bar updates every frame (smooth countdown)
 	_timer_bar.set_time(gmc.phase_timer, gmc.round_time)
 
-	# Poll every frame for all modes so the HUD stays in sync with the
-	# latest server-authoritative state (arrives via reliable _rpc_sync_state
-	# at 10 Hz).  This keeps capture-progress bars smooth and ensures
-	# late-joining players see correct data immediately.
-	_push_data_to_panel()
+	# Throttle full data rebuild to ~10 Hz — matches server sync rate
+	_hud_timer -= delta
+	if _hud_timer <= 0.0:
+		_hud_timer = 0.1
+		_push_data_to_panel()
 
 # ─────────────────────────────────────────────
 #  Build shared UI (called from _ready)

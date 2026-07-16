@@ -94,7 +94,8 @@ func _ready() -> void:
 	player_input.reload.connect(start_reload)
 
 func _physics_process(delta: float) -> void:
-	_align_weapon_to_raycast()
+	if _parent_player.spawned:
+		_align_weapon_to_raycast()
 	_tick_timers(delta)
 
 	if _parent_player.is_bot:
@@ -693,7 +694,7 @@ func _compute_falloff_multiplier(weapon: Weapon, weapon_fire_index: int, distanc
 	return curve.sample(t)
 
 
-@rpc("any_peer", "call_local")
+@rpc("any_peer", "call_local", "unreliable")
 func _flash_muzzle_flash(start_position: Vector3) -> void:
 	if not _is_ready():
 		return
@@ -702,7 +703,7 @@ func _flash_muzzle_flash(start_position: Vector3) -> void:
 	muzzle_flash.global_position = start_position
 	muzzle_flash.fire()
 
-@rpc("any_peer", "call_local")
+@rpc("any_peer", "call_local", "unreliable")
 func _on_hitscan_hit(hit_position: Vector3, hit_normal: Vector3, start_position: Vector3) -> void:
 	var bullet_hole: Node3D = _bullet_hole_scene.instantiate() as Node3D
 	projectile_spawn_parent.add_child(bullet_hole)
@@ -722,7 +723,7 @@ func _on_hitscan_hit(hit_position: Vector3, hit_normal: Vector3, start_position:
 	tracer.fire(start_position, hit_position)
 
 
-@rpc("any_peer", "call_local")
+@rpc("any_peer", "call_local", "unreliable")
 func _apply_recoil_rpc(data: Dictionary, rolled: Vector3) -> void:
 	if _weapons.is_empty():
 		return
@@ -734,7 +735,7 @@ func _apply_recoil_rpc(data: Dictionary, rolled: Vector3) -> void:
 	recoil.target_rotation += rolled
 
 
-@rpc("any_peer", "call_local")
+@rpc("any_peer", "call_local", "unreliable")
 func _play_shoot_sound(weapon_fire_index: int) -> void:
 	if not _is_ready():
 		return
