@@ -45,6 +45,5 @@ has_infinite_ammo = true
 player_speed_multiplier = 1.25
 weapon_fires = Array[ExtResource("8_0341t")]([SubResource("Resource_rx36s"), SubResource("Resource_da3ra")])
 weapon_model = ExtResource("7_2ijdx")
-weapon_offset = Vector3(0.2, -0.4, -0.55)
 reload_sound = ExtResource("4_w4h84")
 metadata/_custom_type_script = "uid://qjf4ciit3dqy"

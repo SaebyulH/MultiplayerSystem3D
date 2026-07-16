@@ -47,6 +47,5 @@ mag_current = 65
 reload_time = 5.0
 weapon_fires = Array[ExtResource("3_2fnnu")]([SubResource("Resource_6ginj"), SubResource("Resource_fe2cc")])
 weapon_model = ExtResource("8_whadi")
-weapon_offset = Vector3(0.2, -0.4, -0.55)
 reload_sound = ExtResource("1_whadi")
 metadata/_custom_type_script = "uid://qjf4ciit3dqy"

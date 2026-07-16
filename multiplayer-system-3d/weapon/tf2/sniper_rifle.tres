@@ -50,6 +50,5 @@ mag_current = 12
 reload_time = 5.0
 weapon_fires = Array[ExtResource("7_b7nwq")]([SubResource("Resource_aikgn"), SubResource("Resource_b7nwq")])
 weapon_model = ExtResource("7_gdsaj")
-weapon_offset = Vector3(0.2, -0.4, -0.55)
 reload_sound = ExtResource("4_a8kh8")
 metadata/_custom_type_script = "uid://qjf4ciit3dqy"
