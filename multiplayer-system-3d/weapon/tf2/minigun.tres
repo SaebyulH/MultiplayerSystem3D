@@ -29,9 +29,15 @@ data = PackedByteArray("//PkZAAg6gckAKy8AJyjKmRtRhABct/3/cNYdIdMNWYzljzxOt0IXFAD
 [sub_resource type="Resource" id="Resource_qfct1"]
 script = ExtResource("8_1h707")
 automatic = true
+pre_shoot_delay = 0.2
 post_shoot_delay = 0.03
 recoil_data = SubResource("Resource_lbqq1")
 recoil_knockback = Vector3(0, 0, 0.4)
+hitscan_damage = 8.0
+headshot_multiplier = 2.0
+has_damage_falloff = true
+falloff_start = 40.0
+falloff_end = 80.0
 falloff_curve = SubResource("CurveTexture_agci3")
 shoot_sound = SubResource("AudioStreamMP3_1h707")
 empty_sound = SubResource("AudioStreamMP3_uowba")

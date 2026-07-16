@@ -1,0 +1,51 @@
+[gd_resource type="Resource" script_class="Weapon" format=3 uid="uid://cisxheoqndfda"]
+
+[ext_resource type="AudioStream" uid="uid://cgtklyqabb5ar" path="res://assets/sounds/freesound_community-single-gunshot-54-40780.mp3" id="1_id0kd"]
+[ext_resource type="AudioStream" uid="uid://boye782l1uug2" path="res://assets/sounds/freesound_community-g36c-reload-sound-84437.mp3" id="1_whadi"]
+[ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="2_2mafd"]
+[ext_resource type="Script" uid="uid://djg0ti1n45f8b" path="res://weapon/weapon_fire.gd" id="3_2fnnu"]
+[ext_resource type="AudioStream" uid="uid://bwfdsxbmx4ko8" path="res://assets/sounds/empty_gun.mp3" id="4_qdvu8"]
+[ext_resource type="Texture2D" uid="uid://b6gktr1vfryte" path="res://defaults/default_damage_falloff_curve.tres" id="5_pcoow"]
+[ext_resource type="Script" uid="uid://yvevtn4dsddy" path="res://player/recoil/recoil_data.gd" id="6_q508k"]
+[ext_resource type="AudioStream" uid="uid://bvpt8qhaass4w" path="res://assets/sounds/freesound_community-submachine-gun.mp3" id="7_ivsv3"]
+[ext_resource type="PackedScene" uid="uid://bmlox6njxbtgb" path="res://weapon/real/rifle.tscn" id="8_whadi"]
+
+[sub_resource type="Resource" id="Resource_ig0ij"]
+script = ExtResource("6_q508k")
+recoil = Vector3(0.1, 0.02, 0)
+
+[sub_resource type="Resource" id="Resource_6ginj"]
+script = ExtResource("3_2fnnu")
+automatic = true
+post_shoot_delay = 0.03
+recoil_data = SubResource("Resource_ig0ij")
+hitscan_damage = 9.0
+headshot_multiplier = 3.0
+has_damage_falloff = true
+falloff_start = 20.0
+falloff_end = 60.0
+shoot_sound = ExtResource("1_id0kd")
+empty_sound = ExtResource("4_qdvu8")
+metadata/_custom_type_script = "uid://djg0ti1n45f8b"
+
+[sub_resource type="Resource" id="Resource_yfkxk"]
+script = ExtResource("6_q508k")
+
+[sub_resource type="Resource" id="Resource_fe2cc"]
+script = ExtResource("3_2fnnu")
+action_type = 1
+recoil_data = SubResource("Resource_yfkxk")
+shoot_sound = ExtResource("7_ivsv3")
+empty_sound = ExtResource("4_qdvu8")
+metadata/_custom_type_script = "uid://djg0ti1n45f8b"
+
+[resource]
+script = ExtResource("2_2mafd")
+display_name = "Rifle"
+mag_size = 65
+mag_current = 65
+reload_time = 1.8
+weapon_fires = Array[ExtResource("3_2fnnu")]([SubResource("Resource_6ginj"), SubResource("Resource_fe2cc")])
+weapon_model = ExtResource("8_whadi")
+reload_sound = ExtResource("1_whadi")
+metadata/_custom_type_script = "uid://qjf4ciit3dqy"

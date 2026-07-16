@@ -3,10 +3,10 @@
 [ext_resource type="AudioStream" uid="uid://bwfdsxbmx4ko8" path="res://assets/sounds/empty_gun.mp3" id="1_adjpb"]
 [ext_resource type="Texture2D" uid="uid://b6gktr1vfryte" path="res://defaults/default_damage_falloff_curve.tres" id="2_d0x52"]
 [ext_resource type="Script" uid="uid://yvevtn4dsddy" path="res://player/recoil/recoil_data.gd" id="3_d0x52"]
-[ext_resource type="AudioStream" path="res://assets/sounds/freesound_community-rifle-or-shotgun-reload-6787.mp3" id="4_v75b2"]
+[ext_resource type="AudioStream" uid="uid://b0m2w0v8mtmwa" path="res://assets/sounds/freesound_community-rifle-or-shotgun-reload-6787.mp3" id="4_v75b2"]
 [ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="5_mkmiw"]
-[ext_resource type="AudioStream" path="res://assets/sounds/universfield-shotgun-blast-352038.mp3" id="6_qtiku"]
-[ext_resource type="PackedScene" uid="uid://sa4wv6avtccw" path="res://weapon/tf2/scattergun.tscn" id="7_0w5kr"]
+[ext_resource type="AudioStream" uid="uid://bvog00etgf8vt" path="res://assets/sounds/universfield-shotgun-blast-352038.mp3" id="6_qtiku"]
+[ext_resource type="PackedScene" uid="uid://sa4wv6avtccw" path="res://weapon/tf2/shotgun.tscn" id="7_0w5kr"]
 [ext_resource type="Script" uid="uid://djg0ti1n45f8b" path="res://weapon/weapon_fire.gd" id="8_d0x52"]
 
 [sub_resource type="Resource" id="Resource_v75b2"]

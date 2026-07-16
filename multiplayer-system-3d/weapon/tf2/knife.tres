@@ -5,7 +5,7 @@
 [ext_resource type="Script" uid="uid://yvevtn4dsddy" path="res://player/recoil/recoil_data.gd" id="3_0yaxy"]
 [ext_resource type="AudioStream" uid="uid://cqbknmbhlwhu" path="res://assets/sounds/reload.mp3" id="4_2myur"]
 [ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="5_r200w"]
-[ext_resource type="AudioStream" path="res://assets/sounds/freesound_community-knife-slice-41231.mp3" id="6_2metf"]
+[ext_resource type="AudioStream" uid="uid://4v1iw33cexcc" path="res://assets/sounds/freesound_community-knife-slice-41231.mp3" id="6_2metf"]
 [ext_resource type="PackedScene" uid="uid://dv3kpihd8amww" path="res://weapon/tf2/knife.tscn" id="7_usffl"]
 [ext_resource type="Script" uid="uid://djg0ti1n45f8b" path="res://weapon/weapon_fire.gd" id="8_s81mx"]
 
