@@ -44,7 +44,6 @@ func _build() -> void:
 	_sci_bar = TeamProgressBar.new()
 	vbox.add_child(_sci_bar)
 	_sci_bar.set_bar_color(Color(0.20, 0.60, 0.86))
-
 	# Info line
 	_info_label = Label.new()
 	_info_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -59,6 +58,10 @@ func _build() -> void:
 	_cp_container.add_theme_constant_override("separation", 8)
 	_cp_container.alignment = BoxContainer.ALIGNMENT_CENTER
 	vbox.add_child(_cp_container)
+	_spi_bar.visible = false
+	_sci_bar.visible = false
+	_info_label.visible = false
+	header.visible = false
 
 func update_display(data: Dictionary) -> void:
 	var points := data.get("points", {}) as Dictionary

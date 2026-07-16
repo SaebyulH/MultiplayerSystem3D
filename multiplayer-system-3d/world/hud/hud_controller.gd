@@ -39,6 +39,9 @@ var _timer_bar: TimerBar
 var _round_score_label: Label
 var _overtime_label: Label
 var _panel_container: Control
+var _team_bar_row: HBoxContainer
+var _team_spi_bar: TeamProgressBar
+var _team_sci_bar: TeamProgressBar
 
 # Active panel
 var _active_panel: BaseModePanel = null
@@ -90,6 +93,33 @@ func _build_shared_ui() -> void:
 	_timer_bar.offset_bottom = 32
 	add_child(_timer_bar)
 
+	# Team score bars -- centered row below the timer
+	_team_bar_row = HBoxContainer.new()
+	_team_bar_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	_team_bar_row.add_theme_constant_override("separation", 12)
+	_team_bar_row.anchor_left   = 0.5
+	_team_bar_row.anchor_right  = 0.5
+	_team_bar_row.anchor_top    = 0.0
+	_team_bar_row.anchor_bottom = 0.0
+	_team_bar_row.offset_top    = 34
+	_team_bar_row.offset_bottom = 60
+	_team_bar_row.offset_left   = -260
+
+	# Create team bars once (shared across modes)
+	_team_spi_bar = TeamProgressBar.new()
+	_team_spi_bar.set_bar_color(Color(0.88, 0.24, 0.24))
+	_team_spi_bar.custom_minimum_size = Vector2(240, 28)
+	_team_spi_bar.visible = false
+	_team_bar_row.add_child(_team_spi_bar)
+
+	_team_sci_bar = TeamProgressBar.new()
+	_team_sci_bar.set_bar_color(Color(0.20, 0.60, 0.86))
+	_team_sci_bar.custom_minimum_size = Vector2(240, 28)
+	_team_sci_bar.visible = false
+	_team_bar_row.add_child(_team_sci_bar)
+	_team_bar_row.offset_right  = 260
+	add_child(_team_bar_row)
+
 	# Overtime flash label -- below the timer bar
 	_overtime_label = Label.new()
 	_overtime_label.text = "OVERTIME"
@@ -110,12 +140,13 @@ func _build_shared_ui() -> void:
 	# Centered HUD container (round score + mode panels)
 	_root = Control.new()
 	_root.anchor_left   = 0.5
-	_root.anchor_top    = 0.0
 	_root.anchor_right  = 0.5
-	_root.anchor_bottom = 0.0
+	_root.anchor_top    = 1.0
+	_root.anchor_bottom = 1.0
 	_root.offset_left   = -hud_width * 0.5
-	_root.offset_top    = hud_margin_top
 	_root.offset_right  = hud_width * 0.5
+	_root.offset_top    = -200
+	_root.offset_bottom = -40
 	add_child(_root)
 
 	var main_vbox := VBoxContainer.new()
@@ -195,6 +226,7 @@ func _create_panel_registry() -> void:
 
 func _make_panel(panel: BaseModePanel) -> BaseModePanel:
 	panel.visible = false
+	panel.team_bar_row = _team_bar_row
 	panel.anchor_left   = 0.0
 	panel.anchor_right  = 1.0
 	panel.anchor_top    = 0.0
@@ -233,6 +265,7 @@ func _switch_to_mode(mode: GameModeComponent.GameMode) -> void:
 
 func _push_data_to_panel() -> void:
 	# Push to normal mode panel.
+	_update_team_bars()
 	if _active_panel and gmc:
 		_active_panel.update_display(_build_mode_data())
 
@@ -382,6 +415,45 @@ func _on_hybrid_updated() -> void:
 #  Helpers
 # ─────────────────────────────────────────────
 
+
+func _update_team_bars() -> void:
+	var show := gmc.game_mode in [GameModeComponent.GameMode.KOTH, GameModeComponent.GameMode.CONTROL, GameModeComponent.GameMode.DOMINATION]
+	_team_spi_bar.visible = show
+	_team_sci_bar.visible = show
+	if not show:
+		return
+
+	match gmc.game_mode:
+		GameModeComponent.GameMode.KOTH, GameModeComponent.GameMode.CONTROL:
+			if not gmc.koth_mode:
+				return
+			var held := gmc.koth_mode.time_held
+			var target := gmc.koth_mode.capture_time_to_win
+			var spi_t: float = held.get(Player.Team.SPI, 0.0)
+			var sci_t: float = held.get(Player.Team.SCI, 0.0)
+			_team_spi_bar.set_progress(spi_t / target if target > 0 else 0.0)
+			_team_sci_bar.set_progress(sci_t / target if target > 0 else 0.0)
+			_team_spi_bar.set_labels("SPI", _fmt_seconds(spi_t) + " / " + _fmt_seconds(target))
+			_team_sci_bar.set_labels("SCI", _fmt_seconds(sci_t) + " / " + _fmt_seconds(target))
+
+		GameModeComponent.GameMode.DOMINATION:
+			if not gmc.domination_mode:
+				return
+			var pts := gmc.domination_mode.points
+			var target := gmc.domination_mode.points_to_win
+			var spi_p: float = pts.get(Player.Team.SPI, 0.0)
+			var sci_p: float = pts.get(Player.Team.SCI, 0.0)
+			_team_spi_bar.set_progress(spi_p / target if target > 0 else 0.0)
+			_team_sci_bar.set_progress(sci_p / target if target > 0 else 0.0)
+			_team_spi_bar.set_labels("SPI", "%d  /  %d" % [int(spi_p), int(target)])
+			_team_sci_bar.set_labels("SCI", "%d  /  %d" % [int(sci_p), int(target)])
+
+static func _fmt_seconds(seconds: float) -> String:
+	if seconds <= 0.0:
+		return "0:00"
+	var m: int = int(seconds / 60.0)
+	var s: int = int(seconds) % 60
+	return "%d:%02d" % [m, s]
 func _update_round_score() -> void:
 	if not gmc:
 		return

@@ -34,6 +34,7 @@ base_sound = ExtResource("4_p2lt3")
 script = ExtResource("5_8kumn")
 
 [node name="Killstreak" type="Label" parent="GameMenu" unique_id=1114400658]
+visible = false
 layout_mode = 1
 anchors_preset = 7
 anchor_left = 0.5
@@ -62,6 +63,7 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="ID" type="Label" parent="GameMenu" unique_id=1439683636]
+visible = false
 layout_mode = 1
 offset_right = 108.0
 offset_bottom = 115.0

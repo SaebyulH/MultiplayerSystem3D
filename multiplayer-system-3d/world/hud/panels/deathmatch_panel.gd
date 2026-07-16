@@ -53,7 +53,16 @@ func _build() -> void:
 	_end_label.add_theme_font_size_override("font_size", 26)
 	_end_label.add_theme_color_override("font_color", Color(1, 0.85, 0.2))
 	_end_label.visible = false
-	vbox.add_child(_end_label)
+	# Center of screen, as a direct child of the CanvasLayer
+	_end_label.anchor_left   = 0.5
+	_end_label.anchor_right  = 0.5
+	_end_label.anchor_top    = 0.5
+	_end_label.anchor_bottom = 0.5
+	_end_label.offset_left   = -300
+	_end_label.offset_right  = 300
+	_end_label.offset_top    = -30
+	_end_label.offset_bottom = 10
+	add_child(_end_label)
 
 func update_display(data: Dictionary) -> void:
 	var ended: bool   = data.get("deathmatch_ended", false)

@@ -246,13 +246,16 @@ transform = Transform3D(-0.09425567, 0.060751524, -0.02785976, -0.013134585, -0.
 mesh = SubResource("BoxMesh_32hag")
 surface_material_override/0 = SubResource("StandardMaterial3D_32hag")
 
+[node name="WeaponHandle" type="Node3D" parent="Body/Recoil/Head/WeaponParent" unique_id=1175799872]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.21047497, -0.44708264, -0.5573963)
+
 [node name="Face" type="MeshInstance3D" parent="Body/Recoil/Head" unique_id=579986966]
 transform = Transform3D(0.4374137, 0, 0, 0, 0.4374137, 0, 0, 0, 0.4374137, 0, 0.046078205, 0)
 mesh = SubResource("SphereMesh_gyt1i")
 surface_material_override/0 = SubResource("StandardMaterial3D_tqiix")
 
 [node name="Helmet" type="MeshInstance3D" parent="Body/Recoil/Head" unique_id=2067128649]
-transform = Transform3D(0.5678568, 0, 0, 0, 0.5195701, -0.22914688, 0, 0.22914688, 0.5195701, 0, 0.098164976, 0)
+transform = Transform3D(0.44936314, 0, 0, 0, 0.37751144, -0.24374652, 0, 0.24374652, 0.37751144, 0, 0.0860669, 0.023175657)
 mesh = SubResource("SphereMesh_e7oew")
 surface_material_override/0 = SubResource("StandardMaterial3D_32hag")
 
