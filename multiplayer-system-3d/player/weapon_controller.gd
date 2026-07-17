@@ -38,6 +38,7 @@ var _pending_fire_index: int = 0
 
 var _pre_fire_timer: float  = 0.0
 var _fire_cooldown: float   = 0.0
+var _current_spread: float  = 0.0
 var _fired_this_press: Dictionary[int, bool] = {}
 
 signal mag_changed(current: int, mag_max: int)
@@ -115,6 +116,13 @@ func _tick_timers(delta: float) -> void:
 	if _fire_cooldown > 0.0:
 		_fire_cooldown -= delta
 
+	# Spread decay when not actively firing.
+	if _is_ready():
+		var weapon: Weapon = _weapons[current_weapon_index]
+		var firing_now: bool = player_input.primary_fire_held or player_input.secondary_fire_held or player_input.tertiary_fire_held
+		if not firing_now and _current_spread > weapon.min_spread:
+			_current_spread = maxf(_current_spread - weapon.spread_decay * delta, weapon.min_spread)
+
 	# Reload timer ticks on all peers for client-side visual progress.
 	# Only the server triggers the actual reload completion.
 	if _is_reloading:
@@ -140,6 +148,7 @@ func reset() -> void:
 	_reload_timer = 0.0
 	_pending_fire = false
 	_fire_cooldown = 0.0
+	_current_spread = 0.0
 	current_weapon_index = 0
 	for weapon in _weapons:
 		weapon.reset()
@@ -196,6 +205,7 @@ func set_weapons(new_weapons: Array[Weapon]) -> void:
 	_reload_timer   = 0.0
 	_pending_fire   = false
 	_fire_cooldown  = 0.0
+	_current_spread = 0.0
 
 	spawn_weapon_model()
 	_emit_weapon_changed()
@@ -238,10 +248,11 @@ func spawn_weapon_model() -> void:
 
 #region Weapon switching
 func _on_weapon_index_changed() -> void:
-	_is_reloading  = false
-	_reload_timer  = 0.0
-	_pending_fire  = false
-	_fire_cooldown = 0.0
+	_is_reloading   = false
+	_reload_timer   = 0.0
+	_pending_fire   = false
+	_fire_cooldown  = 0.0
+	_current_spread = 0.0
 	if not _weapons.is_empty():
 		spawn_weapon_model()
 	if is_multiplayer_authority():
@@ -577,6 +588,21 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 		_flash_muzzle_flash.rpc(muzzle_pos)
 
 		var world_dir: Vector3 = camera.global_transform.basis * shot_dir.normalized()
+
+		# Apply weapon spread.
+		if weapon.spread_per_shot > 0.0:
+			_current_spread = minf(_current_spread + weapon.spread_per_shot, weapon.max_spread)
+			var spread_rad: float = deg_to_rad(_current_spread)
+			var angle: float = randf() * TAU
+			var radius: float = randf() * spread_rad
+			var right: Vector3 = world_dir.cross(Vector3.UP).normalized()
+			if right.length_squared() < 0.01:
+				right = world_dir.cross(Vector3.RIGHT).normalized()
+			var up: Vector3 = world_dir.cross(right).normalized()
+			world_dir = world_dir.rotated(right, sin(angle) * radius)
+			world_dir = world_dir.rotated(up, cos(angle) * radius)
+			world_dir = world_dir.normalized()
+
 		var space_state: PhysicsDirectSpaceState3D = _parent_player.get_world_3d().direct_space_state
 		var origin: Vector3 = camera.global_position
 		var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(

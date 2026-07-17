@@ -30,6 +30,16 @@ func reset():
 @export_group("Fire")
 @export var weapon_fires: Array[WeaponFire] = []
 
+@export_group("Spread")
+## Minimum spread in degrees — always applied, even on the first shot.
+@export var min_spread: float = 0.0
+## Degrees of spread added per shot.
+@export var spread_per_shot: float = 0.0
+## Maximum accumulated spread in degrees (cone half-angle).
+@export var max_spread: float = 30.0
+## Degrees per second the spread decays when not firing.
+@export var spread_decay: float = 20.0
+
 
 @export_group("Visuals")
 ## The 3D model scene to spawn and attach to the weapon holder.

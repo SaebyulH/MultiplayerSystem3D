@@ -10,7 +10,6 @@ speed_mult = 0.6
 acceleration_mult = 0.9
 friction_mult = 1.2
 crouch_speed_mult = 0.9
-jump_mult = 1.6
 slide_friction_mult = 1.2
 slide_entry_boost_mult = 0.8
 slope_gravity_mult = 0.8

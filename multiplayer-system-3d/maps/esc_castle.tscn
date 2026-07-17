@@ -38,10 +38,10 @@ albedo_color = Color(0, 0, 0, 1)
 
 [sub_resource type="Curve3D" id="Curve3D_duvhj"]
 _data = {
-"points": PackedVector3Array(0, 0, 0, 0, 0, 0, 16.634, 1, 0, 0, 0, 0, 0, 0, 0, 5.328, 1, -8.451, 0, 0, 0, 0, 0, 0, -13.943, 1, -6.472, 0, 0, 0, 0, 0, 0, -15.378, 1, -1.7579632, 0, 0, 0, 0, 0, 0, -14.808, 5.0371723, 12.999),
-"tilts": PackedFloat32Array(0, 0, 0, 0, 0)
+"points": PackedVector3Array(0, 0, 0, 0, 0, 0, -72.437164, -0.60207844, 8.058674, 0, 0, 0, 0, 0, 0, -34.116776, -0.6020632, 7.9112167, 0, 0, 0, 0, 0, 0, -24.114334, -0.6020632, 3.3005104, 0, 0, 0, 0, 0, 0, -26.56929, -0.60207844, -9.621624, 0, 0, 0, 0, 0, 0, -3.996292, -0.6020708, -11.139864, 0, 0, 0, 0, 0, 0, 4.789383, -0.6020708, -21.24311, 0, 0, 0, 0, 0, 0, 1.4084015, -0.602067, -49.9692, 0, 0, 0, 0, 0, 0, -25.200684, -0.6020708, -52.038536, 0, 0, 0, 0, 0, 0, -39.30388, -0.6020708, -51.51227, 0, 0, 0, 0, 0, 0, -56.57051, 2.781353, -52.50517, 0, 0, 0, 0, 0, 0, -72.46619, 5.032695, -51.687),
+"tilts": PackedFloat32Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 }
-point_count = 5
+point_count = 11
 
 [node name="Game" type="Node3D" unique_id=159294576 node_paths=PackedStringArray("despawn_location")]
 script = ExtResource("1_75vr2")
@@ -87,9 +87,65 @@ collision_mask = 0
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.5, 3, 12.5)
 size = Vector3(96, 5, 96)
 
+[node name="ground2" type="CSGBox3D" parent="CSGCombiner3D" unique_id=2025361759]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 154.12529, 3, 12.5)
+size = Vector3(121.677246, 5, 96)
+
+[node name="ground7" type="CSGBox3D" parent="CSGCombiner3D" unique_id=992046507]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 108.569626, 8.418705, 33.476383)
+size = Vector3(30.565918, 7.61084, 17.304688)
+
+[node name="ground13" type="CSGBox3D" parent="CSGCombiner3D" unique_id=1858727521]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 138.07431, 10.109318, 16.944075)
+size = Vector3(48.051025, 10.992065, 17.304688)
+
+[node name="ground18" type="CSGBox3D" parent="CSGCombiner3D" unique_id=650411164]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 157.30006, 19.1426, 29.29594)
+size = Vector3(7.2597656, 15.838684, 17.304688)
+
+[node name="ground14" type="CSGBox3D" parent="CSGCombiner3D" unique_id=1996529727]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 161.70909, 8.439976, 40.962776)
+size = Vector3(15.903015, 7.6533813, 12.894531)
+
+[node name="ground10" type="CSGBox3D" parent="CSGCombiner3D" unique_id=257252608]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 153.61737, 8.418705, 58.782494)
+size = Vector3(121.65631, 7.61084, 3.2159424)
+
+[node name="ground11" type="CSGBox3D" parent="CSGCombiner3D" unique_id=1242981326]
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 118.96115, 11.7967205, 48.24151)
+size = Vector3(9.942505, 18.273254, 0.5504761)
+
+[node name="ground9" type="CSGBox3D" parent="CSGCombiner3D" unique_id=1337711839]
+transform = Transform3D(0.9351144, 0.35434607, 0, -0.35434607, 0.9351144, 0, 0, 0, 1, 133.76334, 4.3733983, 33.476383)
+size = Vector3(24.206543, 7.61084, 17.304688)
+
+[node name="ground15" type="CSGBox3D" parent="CSGCombiner3D" unique_id=1156781319]
+transform = Transform3D(0.8387496, 0.5445174, 0, -0.5445174, 0.8387496, 0, 0, 0, 1, 177.32109, 2.7936683, 38.62046)
+size = Vector3(23.502563, 7.61084, 8.497559)
+
+[node name="ground16" type="CSGBox3D" parent="CSGCombiner3D" unique_id=1493922207]
+transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 206.32109, 10.638691, 13.242043)
+size = Vector3(15.903015, 12.050812, 92.62256)
+
+[node name="ground19" type="CSGBox3D" parent="CSGCombiner3D" unique_id=852168979]
+transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 95.859795, 2.4753265, -9.418468)
+size = Vector3(15.903015, 12.719978, 9.432617)
+
+[node name="ground20" type="CSGBox3D" parent="CSGCombiner3D" unique_id=975687171]
+transform = Transform3D(-0.9888319, 0.14903599, 8.644642e-08, 0.14903599, 0.9888319, -1.302914e-08, -8.742278e-08, 0, -1, 109.20562, 1.6048303, -9.072238)
+size = Vector3(33.265305, 12.050812, 13.101318)
+
+[node name="ground17" type="CSGBox3D" parent="CSGCombiner3D" unique_id=1553537601]
+transform = Transform3D(-0.8387496, -0.5445174, 8.742278e-08, -0.5445174, 0.8387496, 0, -7.3325815e-08, -4.7603223e-08, -1, 190.70909, 2.7936683, 46.746468)
+size = Vector3(23.502563, 7.61084, 24.461914)
+
+[node name="ground8" type="CSGBox3D" parent="CSGCombiner3D" unique_id=19423571]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 104.744125, 18.472212, 29.486828)
+size = Vector3(22.914917, 22.16101, 13.772461)
+
 [node name="box" type="CSGBox3D" parent="CSGCombiner3D" unique_id=779251740]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.5, 9.5, 14.5)
-size = Vector3(68, 16, 68)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 27.647034, 9.5, 14.5)
+size = Vector3(7.7059326, 16, 68)
 
 [node name="box2" type="CSGBox3D" parent="CSGCombiner3D" unique_id=1320039210]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.5, 11.5, 14.5)
@@ -161,11 +217,6 @@ transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -32.
 operation = 2
 size = Vector3(66, 7, 6)
 
-[node name="box4" type="CSGBox3D" parent="CSGCombiner3D" unique_id=781731660]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.5, 19.5, 14.5)
-operation = 2
-size = Vector3(68, 6, 68)
-
 [node name="box9" type="CSGBox3D" parent="CSGCombiner3D" unique_id=1872743645]
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 27.5, 11, 14.5)
 operation = 2
@@ -188,11 +239,6 @@ transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -32.
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.5, 11.5, 14.5)
 operation = 2
 size = Vector3(68, 6, 68)
-
-[node name="box8" type="CSGBox3D" parent="CSGCombiner3D" unique_id=469513494]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.5, 14, 14.5)
-operation = 2
-size = Vector3(52, 17, 52)
 
 [node name="box14" type="CSGBox3D" parent="CSGCombiner3D" unique_id=33616866]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -34.5, 11, -11)
@@ -382,6 +428,10 @@ size = Vector3(2, 5, 13.597656)
 transform = Transform3D(-4.371139e-08, 0, 1, 1, -4.371139e-08, 4.371139e-08, 4.371139e-08, 1, 1.9106855e-15, -41.748375, 11.509003, 13.966296)
 size = Vector3(2, 15.758362, 13.597656)
 
+[node name="ground12" type="CSGBox3D" parent="CSGCombiner3D3" unique_id=583152857]
+transform = Transform3D(-4.371139e-08, 0, 1, 1, -4.371139e-08, 4.371139e-08, 4.371139e-08, 1, 1.9106855e-15, 169.58624, 11.509003, -33.64092)
+size = Vector3(2, 15.758362, 13.597656)
+
 [node name="CSGCombiner3D2" type="CSGCombiner3D" parent="." unique_id=1159653454]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -6, 0)
 material_override = SubResource("StandardMaterial3D_gyt1i")
@@ -398,6 +448,50 @@ size = Vector3(4, 15, 4)
 [node name="ground5" type="CSGBox3D" parent="CSGCombiner3D2" unique_id=262015539]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 45.95343, 7.4615374, 15.105245)
 size = Vector3(14.6779785, 5, 1.7509766)
+
+[node name="ground9" type="CSGBox3D" parent="CSGCombiner3D2" unique_id=2090028377]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 92.81324, 8.702748, 43.562366)
+size = Vector3(2.5196533, 7.482422, 1.7509766)
+
+[node name="ground12" type="CSGBox3D" parent="CSGCombiner3D2" unique_id=864480345]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 92.81324, 8.702748, 57.10549)
+size = Vector3(2.5196533, 7.482422, 1.7509766)
+
+[node name="ground13" type="CSGBox3D" parent="CSGCombiner3D2" unique_id=1054972864]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 92.56275, 10.504386, 50.380497)
+size = Vector3(13.03125, 1.7580566, 2.2519531)
+
+[node name="ground14" type="CSGBox3D" parent="CSGCombiner3D2" unique_id=1357165570]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 79.84452, 4.5127287, 44.51813)
+size = Vector3(24.755981, 1.7580566, 27.688416)
+
+[node name="ground17" type="CSGBox3D" parent="CSGCombiner3D2" unique_id=1297768007]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 79.84452, 12.071689, 33.14951)
+size = Vector3(2.0187378, 16.875977, 27.688416)
+
+[node name="ground18" type="CSGBox3D" parent="CSGCombiner3D2" unique_id=452237503]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 79.84452, 12.071689, 58.200768)
+size = Vector3(2.0187378, 16.875977, 27.688416)
+
+[node name="ground19" type="CSGBox3D" parent="CSGCombiner3D2" unique_id=2143719386]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 67.02376, 12.071689, 46.257492)
+size = Vector3(2.0187378, 16.875977, 27.688416)
+
+[node name="ground16" type="CSGBox3D" parent="CSGCombiner3D2" unique_id=71589448]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 90.66581, 11.074003, 38.391773)
+size = Vector3(8.665802, 1.7580566, 6.0458374)
+
+[node name="ground15" type="CSGBox3D" parent="CSGCombiner3D2" unique_id=287616960]
+transform = Transform3D(-6.024987e-08, -0.6372828, 1.3783563, -2.7856515e-08, 1.3783563, 0.6372828, -1.5185505, 0, -6.637795e-08, 83.204895, 3.9308047, 38.215115)
+size = Vector3(5.5146484, 7.109131, 9.85498)
+
+[node name="ground10" type="CSGBox3D" parent="CSGCombiner3D2" unique_id=1755301757]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 92.81324, 15.282637, 36.938293)
+size = Vector3(1.3497314, 7.482422, 1.7509766)
+
+[node name="ground11" type="CSGBox3D" parent="CSGCombiner3D2" unique_id=514981455]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 92.81324, 15.282637, 42.017)
+size = Vector3(1.3497314, 7.482422, 1.7509766)
 
 [node name="ground6" type="CSGBox3D" parent="CSGCombiner3D2" unique_id=1822011552]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 40.115025, 7.4615374, 7.353839)
@@ -438,28 +532,28 @@ path_follower = NodePath("../Path3D/PayloadFollower")
 checkpoints = [NodePath("../Path3D/Node3D/PayloadCheckpointVisual"), NodePath("../Path3D/Node3D2/PayloadCheckpointVisual"), NodePath("../Path3D/Node3D3/PayloadCheckpointVisual")]
 
 [node name="Path3D" type="Path3D" parent="." unique_id=1807765996]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.10206318, 10.33771)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 171.24782, 0.10206318, 40.860638)
 curve = SubResource("Curve3D_duvhj")
 
 [node name="PayloadFollower" type="PathFollow3D" parent="Path3D" unique_id=407280533]
-transform = Transform3D(0.5987006, 0, 0.80095965, 0, 1, 0, -0.80095965, 0, 0.5987006, 16.634, 1, 0)
+transform = Transform3D(0.0038478852, 0, -0.9999569, 0, 1, 0, 0.9999569, 0, 0.0038478852, -72.437164, -0.60207844, 8.058674)
 rotation_mode = 1
 loop = false
 
 [node name="Node3D" type="PathFollow3D" parent="Path3D" unique_id=1964347414]
-transform = Transform3D(0.59870124, 0, 0.8009606, 0, 0.99999446, 0, -0.8009606, 0, 0.59870124, 8.969685, 1, -5.728916)
+transform = Transform3D(0.0038478894, -3.9306943e-07, -0.999958, -1.3285337e-06, 0.9999944, -3.981732e-07, 0.999958, 1.3300947e-06, 0.0038478894, -62.868725, -0.6020746, 8.021854)
 progress = 9.568661
 
 [node name="PayloadCheckpointVisual" parent="Path3D/Node3D" unique_id=462281785 instance=ExtResource("6_1kq08")]
 
 [node name="Node3D2" type="PathFollow3D" parent="Path3D" unique_id=260445367]
-transform = Transform3D(-0.10215415, 0, 0.994749, 0, 0.99996835, 0, -0.9947514, 0, -0.10215391, -7.4804735, 1, -7.1356573)
+transform = Transform3D(0.0038478577, -3.9305908e-07, -0.9999477, -1.3285223e-06, 0.99996823, -3.9816905e-07, 0.99994975, 1.3300595e-06, 0.0038478498, -45.446056, -0.60206765, 7.954812)
 progress = 26.991209
 
 [node name="PayloadCheckpointVisual" parent="Path3D/Node3D2" unique_id=912872897 instance=ExtResource("6_1kq08")]
 
 [node name="Node3D3" type="PathFollow3D" parent="Path3D" unique_id=167136176]
-transform = Transform3D(-0.9986693, 0.03504125, -0.037230596, 0.04364123, 0.9635883, -0.2636943, 0.02663533, -0.26496953, -0.96387434, -14.808001, 5.037173, 12.999001)
+transform = Transform3D(0.98239905, 4.5083718e-05, 0.18663864, -4.611032e-05, 0.9999742, 1.1600533e-06, -0.18663685, -9.745831e-06, 0.9824084, -25.164408, -0.6020697, -2.2267737)
 progress = 54.960716
 
 [node name="PayloadCheckpointVisual" parent="Path3D/Node3D3" unique_id=1357804619 instance=ExtResource("6_1kq08")]
