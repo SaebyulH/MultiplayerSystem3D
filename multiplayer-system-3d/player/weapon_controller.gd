@@ -503,6 +503,8 @@ func _do_fire_client() -> void:
 func _play_empty(weapon_fire_index: int) -> void:
 	if not _is_ready():
 		return
+	if weapon_fire_index < 0 or weapon_fire_index >= _weapons[current_weapon_index].weapon_fires.size():
+		return
 	_play_sound(_weapons[current_weapon_index].weapon_fires[weapon_fire_index].empty_sound)
 
 
@@ -780,6 +782,8 @@ func _apply_recoil_rpc(data: Dictionary, rolled: Vector3) -> void:
 @rpc("any_peer", "call_local")
 func _play_shoot_sound(weapon_fire_index: int) -> void:
 	if not _is_ready():
+		return
+	if weapon_fire_index < 0 or weapon_fire_index >= _weapons[current_weapon_index].weapon_fires.size():
 		return
 	_play_sound(_weapons[current_weapon_index].weapon_fires[weapon_fire_index].shoot_sound)
 	if shoot_animation and shoot_animation.has_animation("shoot"):
