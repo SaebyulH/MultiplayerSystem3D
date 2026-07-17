@@ -29,6 +29,9 @@ func _on_hurtbox_entered(hurtbox: Area3D):
 
 
 	var hit_ally: bool = (hurtbox.get_parent().team == get_parent().shooter_team)
+	# FFA has no allies — same team doesn't mean friendly.
+	if hit_ally and hurtbox.get_parent().team == Player.Team.FFA:
+		hit_ally = hurtbox.get_parent().name == get_parent().shooter_name
 
 	var hit_other_ally: bool = hit_ally and not hit_self
 
