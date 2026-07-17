@@ -605,10 +605,10 @@ func _add_stat_group(lines: PackedStringArray, title: String, stats: Array) -> v
 
 func _get_selected_team() -> Player.Team:
 	match _team_option.selected:
-		0:  return Player.Team.SPI
-		1:  return Player.Team.SCI
-		2:  return Player.Team.FFA
-	return Player.Team.SPI
+		0:  return Player.Team.FFA
+		1:  return Player.Team.SPI
+		2:  return Player.Team.SCI
+	return Player.Team.FFA
 
 func _on_confirm_pressed() -> void:
 	if selected_class == null:
