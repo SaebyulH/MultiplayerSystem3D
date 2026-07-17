@@ -1,11 +1,11 @@
 [gd_scene format=3 uid="uid://ccapjs1b2aucy"]
 
-[ext_resource type="PackedScene" uid="uid://d0gqdr122ddvj" path="res://weapon/tf2/low-poly_winchester_1895_russian.glb" id="1_74ctf"]
+[ext_resource type="PackedScene" uid="uid://bcd8pe06a8u1q" path="res://weapon/tf2/low-poly_haenel_rs9.glb" id="1_74ctf"]
 
 [node name="Scattergun" type="Node3D" unique_id=664585380]
 
 [node name="Muzzle" type="Node3D" parent="." unique_id=2026291909]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1271246, -1.8928432)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.09410755, -1.9498727)
 
-[node name="Sketchfab_Scene" parent="." unique_id=223059110 instance=ExtResource("1_74ctf")]
-transform = Transform3D(-8.6548546e-08, 0, 1.98, 0, 1.98, 0, -1.98, 0, -8.6548546e-08, 0, -0.05984056, -0.59427834)
+[node name="Sketchfab_Scene2" parent="." unique_id=343259006 instance=ExtResource("1_74ctf")]
+transform = Transform3D(-2.5352605e-08, 0, 0.58, 0, 0.58, 0, -0.58, 0, -2.5352605e-08, 0, 0.005813241, -0.5691732)
