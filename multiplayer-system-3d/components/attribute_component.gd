@@ -50,6 +50,7 @@ func apply_health_delta(delta: float, changer: String, changee: String):
 			Leaderboard.request_add_damage(changer, applied_delta)
 			if not changer_node.is_bot:
 				changer_node.weapon_controller.play_hit_sound.rpc_id(changer.to_int())
+				changer_node.damage_number_manager._receive_damage_number.rpc_id(changer.to_int(), changee, applied_delta)
 		last_attacker = changer
 	else:
 		if changee == changer:
@@ -58,6 +59,7 @@ func apply_health_delta(delta: float, changer: String, changee: String):
 			Leaderboard.request_add_heal_other(changer, applied_delta)
 			if not changer_node.is_bot:
 				changer_node.weapon_controller.play_hit_heal_sound.rpc_id(changer.to_int())
+				changer_node.damage_number_manager._receive_damage_number.rpc_id(changer.to_int(), changee, applied_delta)
 			
 
 	if old_health > 0.0 and new_health <= 0.0:

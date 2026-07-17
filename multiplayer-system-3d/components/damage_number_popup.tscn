@@ -1,0 +1,13 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://components/damage_number_popup.gd" id="1_popup"]
+
+[node name="DamageNumberPopup" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+mouse_filter = 2
+script = ExtResource("1_popup")
+
+[node name="Label" type="Label" parent="."]
+layout_mode = 0
+mouse_filter = 2

@@ -73,6 +73,7 @@ var queue_velocity := Vector3(0.0, 0.0, 0.0)
 @export var weapon_controller: WeaponController
 @onready var collider: CollisionShape3D = $CollisionShape3D
 @onready var mesh: MeshInstance3D = $MeshInstance3D
+@onready var damage_number_manager: DamageNumberManager = $DamageNumberManager
 
 var is_crouching: bool = false
 

@@ -14,6 +14,7 @@
 [ext_resource type="Script" uid="uid://bk7h6t34yea7r" path="res://player/recoil/recoil.gd" id="14_wodsf"]
 [ext_resource type="PackedScene" uid="uid://em68gvqy1f84" path="res://effects/muzzle_flash.tscn" id="27_5ejfk"]
 [ext_resource type="Script" uid="uid://dmbwmsfd27dhh" path="res://player/player_ui.gd" id="34_ge24q"]
+[ext_resource type="Script" uid="uid://hpdd6uclsu15" path="res://components/damage_number_manager.gd" id="35_dmn"]
 
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_2ieo8"]
 properties/0/path = NodePath(".:current_weapon_index")
@@ -133,6 +134,9 @@ weapon_controller = NodePath("WeaponController")
 [node name="BotController" type="Node" parent="." unique_id=1301960893 node_paths=PackedStringArray("player")]
 script = ExtResource("14_kb6p2")
 player = NodePath("..")
+
+[node name="DamageNumberManager" type="Node" parent="." unique_id=-2013220995]
+script = ExtResource("35_dmn")
 
 [node name="WeaponController" type="Node" parent="." unique_id=1956241137 node_paths=PackedStringArray("weapon_model_parent", "projectile_spawn_parent", "player_input", "recoil", "_parent_player", "_raycast", "shoot_animation")]
 script = ExtResource("6_ebec5")
