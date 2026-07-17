@@ -9,7 +9,6 @@
 [ext_resource type="Resource" uid="uid://cs4v42lotyscn" path="res://weapon/tf2/gravity_rocket_launcher.tres" id="6_vm0dj"]
 [ext_resource type="Resource" uid="uid://bcrlsyiwg0v84" path="res://weapon/tf2/pistol.tres" id="8_4smbg"]
 [ext_resource type="Resource" uid="uid://cy4bt3f2aadno" path="res://weapon/tf2/revolver.tres" id="9_2cd3m"]
-[ext_resource type="Resource" uid="uid://cisxheoqndfda" path="res://weapon/real/rifle.tres" id="9_jnj7a"]
 [ext_resource type="Resource" uid="uid://2k6bc50djxgg" path="res://weapon/tf2/machine_pistol.tres" id="9_skpeg"]
 [ext_resource type="Script" uid="uid://bxv3anwekoggx" path="res://player/character.gd" id="10_char"]
 [ext_resource type="Resource" uid="uid://rqbtee8x1try" path="res://player/characters/juggernaut.tres" id="11_char"]
@@ -18,7 +17,7 @@
 [resource]
 script = ExtResource("2_l1baf")
 class_display_name = "Assault"
-primary_weapons = Array[ExtResource("1_qjte0")]([ExtResource("2_4smbg"), ExtResource("6_vm0dj"), ExtResource("3_4smbg"), ExtResource("4_5au0l"), ExtResource("5_4smbg"), ExtResource("9_jnj7a")])
+primary_weapons = Array[ExtResource("1_qjte0")]([ExtResource("2_4smbg"), ExtResource("6_vm0dj"), ExtResource("3_4smbg"), ExtResource("4_5au0l"), ExtResource("5_4smbg")])
 secondary_weapons = Array[ExtResource("1_qjte0")]([ExtResource("9_2cd3m"), ExtResource("8_4smbg"), ExtResource("9_skpeg")])
 characters = Array[ExtResource("10_char")]([ExtResource("11_char"), ExtResource("12_char")])
 metadata/_custom_type_script = "uid://cbg4mqtqfaara"
