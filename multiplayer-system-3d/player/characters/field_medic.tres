@@ -5,9 +5,7 @@
 [resource]
 script = ExtResource("1_char")
 character_name = "Vampire Medic"
-description = "lifesteal medic"
-health_mult = 0.8
-lifesteal_percent = 1.0
-regen_per_sec = 8.0
-regen_delay = -2.0
+description = "A medic with negative health regen but with lifesteal"
+lifesteal_percent = 0.4
+regen_per_sec = -7.0
 heal_on_kill = 15.0

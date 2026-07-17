@@ -584,26 +584,26 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 	var weapon_fire: WeaponFire = weapon.weapon_fires[weapon_fire_index]
 	var camera: Camera3D = _raycast.get_parent() as Camera3D
 
+	var world_dir: Vector3 = camera.global_transform.basis * shot_dir.normalized()
+
+	# Apply weapon spread (shared by hitscan and projectile).
+	if weapon.spread_per_shot > 0.0 or weapon.min_spread > 0.0:
+		_current_spread = minf(maxf(_current_spread, weapon.min_spread) + weapon.spread_per_shot, weapon.max_spread)
+		var spread_rad: float = deg_to_rad(_current_spread)
+		var angle: float = randf() * TAU
+		var radius: float = randf() * spread_rad
+		var right: Vector3 = world_dir.cross(Vector3.UP).normalized()
+		if right.length_squared() < 0.01:
+			right = world_dir.cross(Vector3.RIGHT).normalized()
+		var up: Vector3 = world_dir.cross(right).normalized()
+		world_dir = world_dir.rotated(right, sin(angle) * radius)
+		world_dir = world_dir.rotated(up, cos(angle) * radius)
+		world_dir = world_dir.normalized()
+
 	if weapon_fire.bullet_type == WeaponFire.BulletType.HITSCAN:
 		var muzzle_node: Node3D = current_weapon_model.get_node("Muzzle") as Node3D
 		var muzzle_pos: Vector3 = muzzle_node.global_position
 		_flash_muzzle_flash.rpc(muzzle_pos)
-
-		var world_dir: Vector3 = camera.global_transform.basis * shot_dir.normalized()
-
-		# Apply weapon spread.
-		if weapon.spread_per_shot > 0.0:
-			_current_spread = minf(_current_spread + weapon.spread_per_shot, weapon.max_spread)
-			var spread_rad: float = deg_to_rad(_current_spread)
-			var angle: float = randf() * TAU
-			var radius: float = randf() * spread_rad
-			var right: Vector3 = world_dir.cross(Vector3.UP).normalized()
-			if right.length_squared() < 0.01:
-				right = world_dir.cross(Vector3.RIGHT).normalized()
-			var up: Vector3 = world_dir.cross(right).normalized()
-			world_dir = world_dir.rotated(right, sin(angle) * radius)
-			world_dir = world_dir.rotated(up, cos(angle) * radius)
-			world_dir = world_dir.normalized()
 
 		var space_state: PhysicsDirectSpaceState3D = _parent_player.get_world_3d().direct_space_state
 		var origin: Vector3 = camera.global_position
@@ -652,7 +652,7 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 
 	elif weapon_fire.bullet_type == WeaponFire.BulletType.PROJECTILE:
 		_spawn_projectile_on_server.rpc_id(
-			1, weapon_fire_index, shot_dir, camera.global_transform.basis,
+			1, weapon_fire_index, world_dir, Basis(),
 			_parent_player.name, _parent_player.team
 		)
 

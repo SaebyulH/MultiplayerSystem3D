@@ -8,4 +8,4 @@
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.14280033, -0.2949834)
 
 [node name="Sketchfab_Scene" parent="." unique_id=1843641099 instance=ExtResource("1_omp82")]
-transform = Transform3D(-8.829701e-08, 0, 2.02, 0, 2.02, 0, -2.02, 0, -8.829701e-08, 0, 0, -0.005)
+transform = Transform3D(-8.829701e-08, 0, 2.02, 0, 2.02, 0, -2.02, 0, -8.829701e-08, 0, 0.051881082, -0.14295651)

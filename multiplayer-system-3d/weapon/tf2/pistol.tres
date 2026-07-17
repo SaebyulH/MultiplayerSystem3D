@@ -14,10 +14,10 @@ script = ExtResource("3_r57kw")
 
 [sub_resource type="Resource" id="Resource_dxxqn"]
 script = ExtResource("8_hadn0")
-post_shoot_delay = 0.05
+post_shoot_delay = 0.06
 recoil_data = SubResource("Resource_8ac3t")
 hitscan_damage = 15.0
-headshot_multiplier = 8.0
+headshot_multiplier = 4.0
 has_damage_falloff = true
 burst_fire_has_recoil = false
 shoot_sound = ExtResource("6_banbv")
@@ -43,6 +43,10 @@ display_name = "Pistol"
 mag_size = 21
 mag_current = 21
 weapon_fires = Array[ExtResource("8_hadn0")]([SubResource("Resource_dxxqn"), SubResource("Resource_hadn0")])
+min_spread = null
+spread_per_shot = null
+max_spread = null
+spread_decay = null
 weapon_model = ExtResource("7_la0ju")
 reload_sound = ExtResource("4_t54mp")
 metadata/_custom_type_script = "uid://qjf4ciit3dqy"

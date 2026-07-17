@@ -36,6 +36,6 @@ class_name Character
 @export_group("Defense")
 @export var health_mult: float = 1.0
 @export var lifesteal_percent: float = 0.0
-@export var regen_per_sec: float = 0.0      # additive, added to base passive heal
-@export var regen_delay: float = 0.0        # additive, negative = faster regen start
-@export var heal_on_kill: float = 0.0       # additive, HP restored on kill
+@export var regen_per_sec: float = 5.0      # if set, overrides base passive heal rate
+@export var regen_delay: float = 5.0        # if set, overrides base heal delay (seconds)
+@export var heal_on_kill: float = 0.0       # HP restored on kill

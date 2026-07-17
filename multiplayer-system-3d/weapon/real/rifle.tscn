@@ -8,4 +8,4 @@
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.04024015, -0.2523659)
 
 [node name="Sketchfab_Scene2" parent="." unique_id=224226306 instance=ExtResource("1_ga110")]
-transform = Transform3D(-4.371139e-11, 0, 0.001, 0, 0.001, 0, -0.001, 0, -4.371139e-11, 0, -0.015602924, 0.10575307)
+transform = Transform3D(-4.371139e-11, 0, 0.001, 0, 0.001, 0, -0.001, 0, -4.371139e-11, 0, 0.031951807, 0.039622307)

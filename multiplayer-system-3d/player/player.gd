@@ -188,6 +188,8 @@ func _get_spawn_position() -> Vector3:
 func rpc_reset(pos: Vector3) -> void:
 	despawn()
 	respawn_timer = respawn_time
+	if pos == Vector3.ZERO:
+		pos = Vector3(0, 12, 0)
 	_spawn_pending_position = pos
 	velocity = Vector3.ZERO
 	knockback_velocity = Vector3.ZERO

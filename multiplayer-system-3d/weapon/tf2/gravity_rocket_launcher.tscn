@@ -1,0 +1,28 @@
+[gd_scene format=3 uid="uid://do4mxkcyd8y10"]
+
+[ext_resource type="PackedScene" uid="uid://b805fxoproo5p" path="res://weapon/tf2/low_poly_rpg_26.glb" id="1_gui7w"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_s7s8q"]
+albedo_color = Color(0.12716985, 0.09314748, 0.0545512, 1)
+
+[node name="Pistol" type="Node3D" unique_id=664585380]
+
+[node name="Muzzle" type="Node3D" parent="." unique_id=2026291909]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.13750175, -0.67846763)
+
+[node name="Sketchfab_Scene" parent="." unique_id=1500390495 instance=ExtResource("1_gui7w")]
+transform = Transform3D(9.51, 0, 0, 0, 9.51, 0, 0, 0, 9.51, 0, 0.16788453, -0.03289795)
+
+[node name="Tube_RPG_26_mat_0" parent="Sketchfab_Scene/Sketchfab_model/a9959c42edde47c68df149a614ec524c_fbx/RootNode/RPG_26/Tube" parent_id_path=PackedInt32Array(1500390495, 1645524418) index="0" unique_id=1088507060]
+surface_material_override/0 = SubResource("StandardMaterial3D_s7s8q")
+
+[node name="Front_Sight_RPG_26_mat_0" parent="Sketchfab_Scene/Sketchfab_model/a9959c42edde47c68df149a614ec524c_fbx/RootNode/RPG_26/Tube/Front_Sight_Mount/Rotation_Joint/Front_Sight" parent_id_path=PackedInt32Array(1500390495, 2062026080) index="0" unique_id=1609295764]
+transform = Transform3D(1, 0, 0, 0, 0.7734124, 0.6339032, 0, -0.6339032, 0.7734124, 0, 5.4670773, -1.7233589)
+
+[node name="Rear_Upper_Tube_RPG_26_mat_0" parent="Sketchfab_Scene/Sketchfab_model/a9959c42edde47c68df149a614ec524c_fbx/RootNode/RPG_26/Tube/Rear_Upper_Tube" parent_id_path=PackedInt32Array(1500390495, 798096745) index="0" unique_id=1231711695]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.84689146, 0)
+
+[node name="Rear_Sight_RPG_26_mat_0" parent="Sketchfab_Scene/Sketchfab_model/a9959c42edde47c68df149a614ec524c_fbx/RootNode/RPG_26/Tube/Rear_Sight_Housing/Rear_Sight" parent_id_path=PackedInt32Array(1500390495, 1241384250) index="0" unique_id=1574649510]
+transform = Transform3D(1, 0, 0, 0, 0.57566273, 0.8176872, 0, -0.8176872, 0.57566273, 0, 1.0686339, 0)
+
+[editable path="Sketchfab_Scene"]

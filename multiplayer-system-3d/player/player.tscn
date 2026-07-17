@@ -333,6 +333,7 @@ font_size = 200
 
 [node name="HealthBarPublic" type="Label3D" parent="Body" unique_id=889122120]
 transform = Transform3D(0.29378334, 0, 0, 0, 0.29378334, 0, 0, 0, 0.29378334, 0, 1.2449931, 0)
+visible = false
 billboard = 1
 modulate = Color(0.56665117, 0.9911565, 0, 1)
 text = "Health"
@@ -340,6 +341,7 @@ font_size = 200
 
 [node name="HealthDeltaBarPublic" type="Label3D" parent="Body" unique_id=650819067]
 transform = Transform3D(0.19529937, 0, 0, 0, 0.19529937, 0, 0, 0, 0.19529937, 0, 1.4560332, 0)
+visible = false
 billboard = 1
 modulate = Color(0.9850748, 0, 0.18224221, 1)
 text = "HealthLoss"
@@ -348,6 +350,7 @@ font_size = 200
 [node name="NamePublic" type="Label3D" parent="Body" unique_id=1590526754]
 unique_name_in_owner = true
 transform = Transform3D(0.27165377, 0, 0, 0, 0.27165377, 0, 0, 0, 0.27165377, 0, 1.6851037, 0)
+visible = false
 billboard = 1
 modulate = Color(0.16206557, 0.1620656, 0.16206557, 1)
 text = "Name"

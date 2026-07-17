@@ -41,8 +41,8 @@ metadata/_custom_type_script = "uid://djg0ti1n45f8b"
 [resource]
 script = ExtResource("2_4q5kx")
 display_name = "Grenade Launcher"
-mag_size = 40
-mag_current = 40
+mag_size = 9
+mag_current = 9
 reload_individually = true
 reload_time = 0.2
 weapon_fires = Array[ExtResource("3_1443g")]([SubResource("Resource_ggyi2"), SubResource("Resource_1xu7o")])

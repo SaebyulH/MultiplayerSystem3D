@@ -1,6 +1,6 @@
-[gd_scene format=3 uid="uid://bo0edtxgakruc"]
+[gd_scene format=3 uid="uid://c7dssrsml4sfp"]
 
-[ext_resource type="PackedScene" uid="uid://6mr0d18yn8po" path="res://weapon/projectiles/scenes/simple_projectile.tscn" id="1_junr8"]
+[ext_resource type="PackedScene" uid="uid://6mr0d18yn8po" path="res://weapon/projectiles/scenes/simple_projectile.tscn" id="1_tsae3"]
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_21xcj"]
 radius = 0.36645794
@@ -32,8 +32,7 @@ roughness = 0.45
 emission = Color(0.85268945, 0.71366084, 0.3015667, 1)
 emission_energy_multiplier = 21.81
 
-[node name="SimpleProjectile" unique_id=1706686187 instance=ExtResource("1_junr8")]
-gravity_scale = 0.0
+[node name="SimpleProjectile" unique_id=1706686187 instance=ExtResource("1_tsae3")]
 linear_velocity = Vector3(0, 0, -25)
 hurtbox_hit_mode = 2
 world_hit_mode = 2

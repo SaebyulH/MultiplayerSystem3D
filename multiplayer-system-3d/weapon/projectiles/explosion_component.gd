@@ -66,8 +66,9 @@ func explode():
 		if not hit.is_empty():
 			continue
 
-		# Damage falloff
-		var falloff: float = 1.0 - clamp(dist / splash_radius, min_knockback_percent, 1.0)
+		# Damage falloff: 100 % at centre, min_knockback_percent at max range.
+		var dist_ratio: float = clamp(dist / splash_radius, 0.0, 1.0)
+		var falloff: float = 1.0 - dist_ratio * (1.0 - min_knockback_percent)
 		var damage: float = splash_health_delta * falloff
 
 

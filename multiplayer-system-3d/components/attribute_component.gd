@@ -82,15 +82,19 @@ func reset():
 	_heal_timer = 0.0  # ← add this
 
 func _process(delta: float) -> void:
-	# Read character-specific regen values.
-	var char_reg: float = 0.0
-	var char_delay: float = 0.0
+	# Character regen overrides base values when set (non-null character).
+	var heal_rate: float = passive_heal_per_sec
+	var heal_delay: float = HEAL_DELAY
 	var p: Player = get_parent() as Player
 	if p and p._character:
-		char_reg = p._character.regen_per_sec
-		char_delay = p._character.regen_delay
-	var heal_rate: float = passive_heal_per_sec + char_reg
-	var heal_delay: float = max(HEAL_DELAY + char_delay, 0.0)
+		heal_rate = p._character.regen_per_sec
+		heal_delay = p._character.regen_delay
+
+	if heal_rate < 0.0:
+		# Negative regen = damage over time.  Applied directly, bypasses
+		# the heal-delay gate and can kill the player (setter emits no_health).
+		health = health + heal_rate * delta
+		return
 
 	_time_since_last_damage += delta
 	if health <= 0.0 or health >= starting_health:
