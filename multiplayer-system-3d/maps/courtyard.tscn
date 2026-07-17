@@ -246,6 +246,26 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 13.205529, 27.376892)
 operation = 2
 size = Vector3(7, 3, 11.876953)
 
+[node name="CSGBox3D77" type="CSGBox3D" parent="CSGCombiner3D" unique_id=930313575]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.562988, 11.482587, 27.376892)
+size = Vector3(1.1298828, 0.45947266, 11.876953)
+
+[node name="CSGBox3D78" type="CSGBox3D" parent="CSGCombiner3D" unique_id=960843165]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.562988, 11.482587, 6.6962624)
+size = Vector3(1.1298828, 0.45947266, 11.876953)
+
+[node name="CSGBox3D80" type="CSGBox3D" parent="CSGCombiner3D" unique_id=1143675249]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 23.188473, 11.482587, 6.6962624)
+size = Vector3(1.1298828, 0.45947266, 11.876953)
+
+[node name="CSGBox3D81" type="CSGBox3D" parent="CSGCombiner3D" unique_id=1672765635]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 23.188473, 11.482587, 27.413893)
+size = Vector3(1.1298828, 0.45947266, 11.876953)
+
+[node name="CSGBox3D82" type="CSGBox3D" parent="CSGCombiner3D" unique_id=1147914327]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.4259644, 11.268857, -5.7240505)
+size = Vector3(12.379639, 0.45947266, 2.303711)
+
 [node name="CSGBox3D42" type="CSGBox3D" parent="CSGCombiner3D" unique_id=1894343170]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15.309393, 8.705529, 16.652433)
 operation = 2
@@ -818,13 +838,13 @@ transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545
 transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, -14.071382, 6.6303053, 52.40719)
 
 [node name="SCI Spawn Location6" type="Marker3D" parent="." unique_id=1880930347]
-transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 4.5921144, 6.6303062, 58.830437)
+transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 4.5921144, 8.182719, 58.830437)
 
 [node name="SPI Spawn Location" type="Marker3D" parent="." unique_id=942949346]
-transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 6.954317, -10.839298, 51.778755)
+transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 7.872217, -7.5583735, 54.69443)
 
 [node name="SPI Spawn Location2" type="Marker3D" parent="." unique_id=199685403]
-transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 27.973886, -2.6558757, 51.778755)
+transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 28.225151, -1.1703241, 50.515076)
 
 [node name="SPI Spawn Location3" type="Marker3D" parent="." unique_id=900860959]
 transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 27.973886, -2.6558757, 28.971348)

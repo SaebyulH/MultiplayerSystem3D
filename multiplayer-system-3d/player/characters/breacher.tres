@@ -6,3 +6,7 @@
 script = ExtResource("1_char")
 character_name = "Normal Assault Class"
 description = "Normal Assault Class"
+speed_mult = 1.3
+acceleration_mult = 1.2
+air_accel_mult = 1.4
+air_speed_cap_mult = 1.8

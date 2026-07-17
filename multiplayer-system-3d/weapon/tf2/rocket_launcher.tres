@@ -55,11 +55,13 @@ metadata/_custom_type_script = "uid://djg0ti1n45f8b"
 [resource]
 script = ExtResource("5_l0ia1")
 display_name = "Rocket Launcher"
-mag_size = 4
-mag_current = 4
 reload_individually = true
-reload_time = 0.9
+reload_time = 0.4
 weapon_fires = Array[ExtResource("8_to6rp")]([SubResource("Resource_to6rp"), SubResource("Resource_qisbw"), SubResource("Resource_cbdh0")])
+min_spread = null
+spread_per_shot = null
+max_spread = null
+spread_decay = null
 weapon_model = ExtResource("7_vw4sm")
 reload_sound = ExtResource("4_vtkbg")
 metadata/_custom_type_script = "uid://qjf4ciit3dqy"
