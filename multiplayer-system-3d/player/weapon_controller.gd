@@ -638,7 +638,7 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 					if collider.is_head:
 						damage *= weapon_fire.headshot_multiplier
 					var player_name = collider.get_parent().name
-					if collider.get_parent().team == get_parent().team:
+					if collider.get_parent().team == get_parent().team and collider.get_parent().team != Player.Team.FFA:
 						damage *= Player.FRIENDLY_FIRE_MULTIPLIER
 					if multiplayer.is_server():
 						_apply_damage_direct(player_name, -damage, _parent_player.name)
@@ -667,7 +667,7 @@ func _apply_shape_damage(weapon: Weapon, weapon_fire_index: int, shape_hits: Dic
 		var damage: float = weapon_fire.hitscan_damage * mult
 		if hit["is_head"]:
 			damage *= weapon_fire.headshot_multiplier
-		if collider.get_parent().team == get_parent().team:
+		if collider.get_parent().team == get_parent().team and collider.get_parent().team != Player.Team.FFA:
 			damage *= Player.FRIENDLY_FIRE_MULTIPLIER
 		if multiplayer.is_server():
 			_apply_damage_direct(player_name, -damage, _parent_player.name)

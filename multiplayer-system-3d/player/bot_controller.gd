@@ -254,7 +254,9 @@ func _think() -> void:
 		range_limit = minf(SHOOT_RANGE, weapon.weapon_fires[safe_idx].hitscan_range)
 	var closest_dist := range_limit
 	for p in get_tree().get_nodes_in_group("players"):
-		if p == player or not p.spawned or p.team == player.team:
+		if p == player or not p.spawned:
+			continue
+		if player.team != Player.Team.FFA and p.team == player.team:
 			continue
 		var dist := player.global_position.distance_to(p.global_position)
 		if dist < closest_dist and _has_line_of_sight_to_player(p):

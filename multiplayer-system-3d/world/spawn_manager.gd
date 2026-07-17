@@ -68,6 +68,9 @@ func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("add_bot_sci"):
 		if multiplayer.is_server():
 			add_bot(Player.Team.SCI)
+	if event.is_action_pressed("add_bot_ffa"):
+		if multiplayer.is_server():
+			add_bot(Player.Team.FFA)
 
 func add_bot(team: Player.Team) -> void:
 	if not multiplayer.is_server():

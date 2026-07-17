@@ -138,9 +138,10 @@ func _build_ui_in(cl: CanvasLayer) -> void:
 	top_row.add_child(opt_row)
 
 	_team_option = _opt()
-	_team_option.add_item("SPI", 0)
-	_team_option.add_item("SCI", 1)
-	_team_option.add_item("FFA", 2)
+	_team_option.add_item("FFA", 0)
+	_team_option.add_item("SPI", 1)
+	_team_option.add_item("SCI", 2)
+	
 	opt_row.add_child(_labeled("TEAM", _team_option))
 
 	_class_option = _opt()

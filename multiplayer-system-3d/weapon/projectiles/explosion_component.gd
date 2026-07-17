@@ -78,7 +78,7 @@ func explode():
 			damage *= self_health_delta_multiplier
 		else:
 			#Only check for other people after checking self
-			if has_hit_team:
+			if has_hit_team and shooter_team != Player.Team.FFA:
 				damage *= team_health_delta_multiplier
 			else:
 				damage *= enemy_health_delta_multiplier
@@ -93,7 +93,7 @@ func explode():
 		if player.name == shooter_name:
 			force *= self_knockback_multiplier
 		else:
-			if has_hit_team:
+			if has_hit_team and shooter_team != Player.Team.FFA:
 				force *= team_knockback_multiplier
 			else:
 				force *= enemy_knockback_multiplier
