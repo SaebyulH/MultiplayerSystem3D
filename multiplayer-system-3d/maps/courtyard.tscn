@@ -101,9 +101,9 @@ operation = 2
 size = Vector3(16.75101, 4, 1.3954697)
 
 [node name="CSGBox3D34" type="CSGBox3D" parent="CSGCombiner3D" unique_id=1454340569]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.758545, -2.4950047, 26.447449)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.758545, -2.6290379, 26.447449)
 operation = 2
-size = Vector3(40.98242, 3, 7.900482)
+size = Vector3(40.98242, 3.2680664, 7.900482)
 
 [node name="CSGBox3D31" type="CSGBox3D" parent="CSGCombiner3D" unique_id=189980320]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.2244797, -2.1203098, 3.7079506)
@@ -836,10 +836,10 @@ transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545
 transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 8.023486, -2.6558757, -16.265549)
 
 [node name="SPI Spawn Location6" type="Marker3D" parent="." unique_id=1664959489]
-transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 4.3538027, -8.677025, 25.911499)
+transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 4.3538027, -2.8796306, 25.911499)
 
 [node name="SPI Spawn Location7" type="Marker3D" parent="." unique_id=1749222894]
-transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 21.006947, -8.677025, 28.402945)
+transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 21.006947, -3.1006322, 28.402945)
 
 [node name="GameModeComponent" type="Node" parent="." unique_id=1452925846]
 script = ExtResource("5_si2p5")
