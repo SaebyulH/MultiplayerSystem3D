@@ -98,7 +98,20 @@ func _build_ui() -> void:
 	_build_respawn_timer()
 
 func _build_crosshair() -> void:
-	# Small dot at screen centre
+	# Black outline
+	var outline := ColorRect.new()
+	outline.anchor_left   = 0.5
+	outline.anchor_right  = 0.5
+	outline.anchor_top    = 0.5
+	outline.anchor_bottom = 0.5
+	outline.offset_left   = -3.0
+	outline.offset_top    = -3.0
+	outline.offset_right  = 3.0
+	outline.offset_bottom = 3.0
+	outline.color = Color.BLACK
+	add_child(outline)
+
+	# Green center dot
 	_crosshair = ColorRect.new()
 	_crosshair.anchor_left   = 0.5
 	_crosshair.anchor_right  = 0.5
@@ -108,7 +121,7 @@ func _build_crosshair() -> void:
 	_crosshair.offset_top    = -2.0
 	_crosshair.offset_right  = 2.0
 	_crosshair.offset_bottom = 2.0
-	_crosshair.color = Color.WHITE
+	_crosshair.color = Color.LIME_GREEN # or Color.GREEN
 	add_child(_crosshair)
 
 func _build_health() -> void:
