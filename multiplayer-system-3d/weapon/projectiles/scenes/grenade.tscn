@@ -27,7 +27,7 @@ height = 1.078
 albedo_color = Color(0, 0, 0, 1)
 
 [node name="SimpleProjectile" unique_id=1706686187 instance=ExtResource("1_xcdij")]
-linear_velocity = Vector3(0, 0, -23)
+linear_velocity = Vector3(0, 0, -40)
 lifetime = 2.3
 explode_on_timeout = true
 hurtbox_hit_mode = 2

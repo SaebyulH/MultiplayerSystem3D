@@ -45,8 +45,8 @@ metadata/_custom_type_script = "uid://djg0ti1n45f8b"
 [resource]
 script = ExtResource("2_drcn0")
 display_name = "Heavy Rifle"
-mag_size = 3
-mag_current = 3
+mag_size = 2
+mag_current = 2
 reload_time = 4.0
 player_speed_multiplier = 0.75
 weapon_fires = Array[ExtResource("3_2wfvi")]([SubResource("Resource_aikgn"), SubResource("Resource_b7nwq")])
