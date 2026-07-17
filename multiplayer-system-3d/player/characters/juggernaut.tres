@@ -18,5 +18,5 @@ slide_entry_boost_mult = 0.5
 slope_gravity_mult = 0.7
 damage_amp_mult = 0.8
 health_mult = 2.0
-regen_per_sec = 3.0
+regen_per_sec = 1.5
 regen_delay = -5.0
