@@ -21,6 +21,10 @@ var exploded := false
 
 @export var knockback_force := 5.0
 
+## Preloaded explosion scene — spawned on-demand instead of sitting
+## idle as a child on every projectile.
+static var _explosion_scene: PackedScene = null
+
 
 # ----------------------------------------------------
 # ENTRY POINT (called only once by whoever triggers it)
@@ -110,4 +114,14 @@ func explode():
 func _explode_visual():
 	if OS.is_debug_build():
 		print("visual explode on: ", multiplayer.get_unique_id())
-	$Explosion.start_effect(splash_radius)
+
+	if _explosion_scene == null:
+		_explosion_scene = load("res://effects/explosion.tscn")
+
+	var explosion := _explosion_scene.instantiate()
+	var parent := get_parent()
+	if not parent:
+		return
+	explosion.position = position
+	parent.add_child(explosion)
+	explosion.start_effect(splash_radius)
