@@ -43,6 +43,11 @@ func _connect_detonate_signal() -> void:
 
 
 func _on_detonate_signal() -> void:
+	# Only the server applies damage.  The signal fires on every peer, but
+	# explode() applies splash damage — without this guard each peer would
+	# deal the full explosion damage, multiplying it by the player count.
+	if not is_multiplayer_authority():
+		return
 	await start_explode()
 
 func _physics_process(delta: float) -> void:
