@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="Weapon" format=3 uid="uid://bvblp16fblbdm"]
+[gd_resource type="Resource" script_class="Weapon" format=3 uid="uid://b4ydfvfklj5cl"]
 
 [ext_resource type="Texture2D" uid="uid://bfhwyt6yvnox5" path="res://killfeed_icons/grenade_launcher.png" id="1_4q5kx"]
 [ext_resource type="AudioStream" uid="uid://b63r5283kwaa3" path="res://assets/sounds/freesound_community-mag-reload-81594.mp3" id="1_dh2kp"]
@@ -9,7 +9,7 @@
 [ext_resource type="PackedScene" uid="uid://v27fq461i5vr" path="res://weapon/projectiles/scenes/grenade.tscn" id="6_2iu4t"]
 [ext_resource type="Script" uid="uid://yvevtn4dsddy" path="res://player/recoil/recoil_data.gd" id="7_8r8no"]
 [ext_resource type="AudioStream" uid="uid://bh3ikt5rq175b" path="res://assets/sounds/dragon-studio-gunshot-511311.mp3" id="8_x6q0y"]
-[ext_resource type="PackedScene" uid="uid://c1q8vj6e4wyxx" path="res://weapon/tf2/grenade_launcher.tscn" id="9_vfk28"]
+[ext_resource type="PackedScene" uid="uid://cfi4uxqyf4q5p" path="res://weapon/tf2/grenade_launcher.tscn" id="9_vfk28"]
 
 [sub_resource type="Resource" id="Resource_k0mbf"]
 script = ExtResource("7_8r8no")
