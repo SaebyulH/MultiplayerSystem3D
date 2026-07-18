@@ -12,6 +12,9 @@ var shooter_team: Player.Team
 var _time_alive := 0.0
 @export var lifetime: float = 5.0
 @export var explode_on_timeout: bool = false
+## If true, the projectile connects to its shooter's WeaponController.
+## signal_activated and explodes when the signal fires (e.g. mine detonation).
+@export var explode_on_signal: bool = false
 # DAMAGE COMPONENTS
 @export var _hitbox_component: HitboxComponent
 @export var _explosion_component: ExplosionComponent
@@ -24,6 +27,23 @@ enum WorldHitMode {DISSAPEAR, NOTHING, EXPLODE, STICK}
 
 func _ready() -> void:
 	_hitbox_component.hit_hurtbox.connect(_on_hit_hurtbox)
+	if explode_on_signal:
+		_connect_detonate_signal()
+
+
+## Looks up the shooter's WeaponController and connects its signal_activated
+## to this projectile's start_explode, so pressing the SIGNAL fire mode
+## detonates all linked projectiles.
+func _connect_detonate_signal() -> void:
+	var shooter := GameManager.find_player(shooter_name)
+	if shooter:
+		shooter.weapon_controller.signal_activated.connect(
+			_on_detonate_signal, CONNECT_ONE_SHOT
+		)
+
+
+func _on_detonate_signal() -> void:
+	await start_explode()
 
 func _physics_process(delta: float) -> void:
 	if not is_multiplayer_authority():

@@ -43,6 +43,9 @@ var _fired_this_press: Dictionary[int, bool] = {}
 
 signal mag_changed(current: int, mag_max: int)
 signal weapon_changed(index: int, weapon: Weapon)
+## Emitted when a SIGNAL-type fire mode is activated.  Projectiles can
+## connect to this to trigger custom behaviour (e.g. detonate mines).
+signal signal_activated
 
 # Use @export only for editor-assigned defaults. All runtime mutation goes
 # through set_weapons() so the setter invariant is always enforced.
@@ -257,6 +260,8 @@ func _on_weapon_index_changed() -> void:
 		spawn_weapon_model()
 	if is_multiplayer_authority():
 		_cancel_reload.rpc()
+	# Retract shield when switching away from a shield weapon.
+	_parent_player.retract_shield()
 
 
 @rpc("call_local")
@@ -409,6 +414,10 @@ func _handle_fire_input(weapon: Weapon, fire_index: int, input_held: bool) -> vo
 		return
 	if not input_held:
 		_fired_this_press.erase(fire_index)
+		# Hold-to-shield: retract when the button is released.
+		var released_fire: WeaponFire = weapon.weapon_fires[fire_index]
+		if released_fire.action_type == WeaponFire.ActionType.SHIELD:
+			retract_shield_synced.rpc()
 		return
 	if _fired_this_press.get(fire_index, false):
 		return
@@ -420,12 +429,24 @@ func _handle_fire_input(weapon: Weapon, fire_index: int, input_held: bool) -> vo
 		_fired_this_press[fire_index] = true
 		return
 
-	if fire.action_type == WeaponFire.ActionType.SHOOT \
-			and not weapon.has_infinite_ammo \
-			and weapon.mag_current < fire.ammo_cost:
-		_play_empty.rpc(fire_index)
+	if fire.action_type == WeaponFire.ActionType.SHIELD:
+		deploy_shield_synced.rpc(fire_index)
 		_fired_this_press[fire_index] = true
 		return
+
+	if fire.action_type == WeaponFire.ActionType.SIGNAL:
+		_send_signal.rpc()
+		_fired_this_press[fire_index] = true
+		return
+
+	if fire.action_type == WeaponFire.ActionType.SHOOT:
+		# Shield blocks shooting unless can_shoot_while_shielded is set.
+		if _parent_player.shield_blocks_shooting():
+			return
+		if not weapon.has_infinite_ammo and weapon.mag_current < fire.ammo_cost:
+			_play_empty.rpc(fire_index)
+			_fired_this_press[fire_index] = true
+			return
 
 	_try_fire(fire_index)
 
@@ -438,6 +459,25 @@ func _handle_fire_input(weapon: Weapon, fire_index: int, input_held: bool) -> vo
 @rpc("any_peer", "call_local")
 func toggle_ads_synced():
 	_parent_player.ads = not _parent_player.ads
+
+
+@rpc("any_peer", "call_local")
+func deploy_shield_synced(fire_index: int) -> void:
+	# Prevent stacking multiple shields.
+	if _parent_player.is_shield_active():
+		return
+	var fire: WeaponFire = _weapons[current_weapon_index].weapon_fires[fire_index]
+	_parent_player.deploy_shield(fire)
+
+
+@rpc("any_peer", "call_local")
+func retract_shield_synced() -> void:
+	_parent_player.retract_shield()
+
+
+@rpc("any_peer", "call_local")
+func _send_signal() -> void:
+	signal_activated.emit()
 
 
 
@@ -611,7 +651,13 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 			origin,
 			origin + world_dir * weapon_fire.hitscan_range
 		)
-		query.exclude = [_parent_player.get_rid(), $"../HeadHurtbox".get_rid(), $"../BodyHurtbox".get_rid()]
+		var exclude_rids := [_parent_player.get_rid(), $"../HeadHurtbox".get_rid(), $"../BodyHurtbox".get_rid()]
+		# Also exclude the player's own shield so they can't damage it.
+		if _parent_player.shield_instance:
+			var shield_area := _parent_player.shield_instance.get_node_or_null("ShieldArea") as Area3D
+			if shield_area:
+				exclude_rids.append(shield_area.get_rid())
+		query.exclude = exclude_rids
 		query.collide_with_areas = true
 		query.collision_mask = (1 << 0) | (1 << 2)
 		var result: Dictionary = space_state.intersect_ray(query)
@@ -637,13 +683,17 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 					var damage := weapon_fire.hitscan_damage * mult
 					if collider.is_head:
 						damage *= weapon_fire.headshot_multiplier
-					var player_name = collider.get_parent().name
-					if collider.get_parent().team == get_parent().team and collider.get_parent().team != Player.Team.FFA:
-						damage *= Player.FRIENDLY_FIRE_MULTIPLIER
-					if multiplayer.is_server():
-						_apply_damage_direct(player_name, -damage, _parent_player.name)
+					# Shield hurtbox — absorb all damage, no overflow to player.
+					if collider.get_parent() is PlayerShield:
+						(collider.get_parent() as PlayerShield).absorb_damage(damage)
 					else:
-						_change_health_on_server.rpc_id(1, player_name, -damage, _parent_player.name)
+						var player_name = collider.get_parent().name
+						if collider.get_parent().team == get_parent().team and collider.get_parent().team != Player.Team.FFA:
+							damage *= Player.FRIENDLY_FIRE_MULTIPLIER
+						if multiplayer.is_server():
+							_apply_damage_direct(player_name, -damage, _parent_player.name)
+						else:
+							_change_health_on_server.rpc_id(1, player_name, -damage, _parent_player.name)
 		else:
 			if weapon_fire.hitscan_range >= 1000000000.0 / 10.0:
 				var far_pos: Vector3 = origin + world_dir * 10000.0
@@ -659,14 +709,19 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 
 func _apply_shape_damage(weapon: Weapon, weapon_fire_index: int, shape_hits: Dictionary) -> void:
 	var weapon_fire: WeaponFire = weapon.weapon_fires[weapon_fire_index]
-	for player_name in shape_hits:
-		var hit: Dictionary = shape_hits[player_name]
+	for key in shape_hits:
+		var hit: Dictionary = shape_hits[key]
 		var collider: HurtboxComponent = hit["collider"]
 		var distance: float = hit["distance"]
 		var mult: float = _compute_falloff_multiplier(weapon, weapon_fire_index, distance)
 		var damage: float = weapon_fire.hitscan_damage * mult
 		if hit["is_head"]:
 			damage *= weapon_fire.headshot_multiplier
+		# Shield hurtbox — absorb all damage, no overflow to player.
+		if collider.get_parent() is PlayerShield:
+			(collider.get_parent() as PlayerShield).absorb_damage(damage)
+			continue
+		var player_name: String = key
 		if collider.get_parent().team == get_parent().team and collider.get_parent().team != Player.Team.FFA:
 			damage *= Player.FRIENDLY_FIRE_MULTIPLIER
 		if multiplayer.is_server():

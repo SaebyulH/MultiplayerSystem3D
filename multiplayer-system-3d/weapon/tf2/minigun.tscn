@@ -5,7 +5,7 @@
 [node name="Pistol" type="Node3D" unique_id=664585380]
 
 [node name="Muzzle" type="Node3D" parent="." unique_id=2026291909]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.2185047, -1.9302944)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.4598744, -3.0640006)
 
 [node name="Sketchfab_Scene" parent="." unique_id=1541398381 instance=ExtResource("1_kpx81")]
 transform = Transform3D(-1.7484555e-10, 0, -0.004, 0, 0.004, 0, 0.004, 0, -1.7484555e-10, 0, -0.3656423, -1.453975)

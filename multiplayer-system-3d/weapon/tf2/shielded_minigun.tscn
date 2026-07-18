@@ -1,0 +1,63 @@
+[gd_scene format=3 uid="uid://do1pe2p2365mv"]
+
+[ext_resource type="PackedScene" uid="uid://b0vde3rddp8k6" path="res://weapon/real/low-poly_m134_minigun.glb" id="1_pnuvv"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_g4v7s"]
+size = Vector3(0.36816406, 1, 0.07421875)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_yf5fn"]
+albedo_color = Color(0.5656037, 0.63941395, 0.5941841, 1)
+metallic = 1.0
+
+[node name="Pistol" type="Node3D" unique_id=664585380]
+
+[node name="Muzzle" type="Node3D" parent="." unique_id=2026291909]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.45227015, -2.1030774)
+
+[node name="Sketchfab_Scene" parent="." unique_id=1541398381 instance=ExtResource("1_pnuvv")]
+transform = Transform3D(-1.7484555e-10, 0, -0.004, 0, 0.004, 0, 0.004, 0, -1.7484555e-10, 0, -0.3656423, -1.453975)
+
+[node name="Object_12" parent="Sketchfab_Scene/Sketchfab_model/571e29a199c54ee198078e0049274ec7_fbx/RootNode/Armature/Object_9/Skeleton3D" parent_id_path=PackedInt32Array(1541398381, 650578154) index="0" unique_id=1148648916]
+transform = Transform3D(1, -1.625586e-14, -7.1054274e-15, -2.6864666e-16, 1.0000001, 4.2632564e-14, -4.2632564e-14, -8.526513e-14, 0.49255636, 0, -1.9632921e-08, 0.060253143)
+
+[node name="Object_17" parent="Sketchfab_Scene/Sketchfab_model/571e29a199c54ee198078e0049274ec7_fbx/RootNode/Armature/Object_9/Skeleton3D" parent_id_path=PackedInt32Array(1541398381, 650578154) index="5" unique_id=986432965]
+transform = Transform3D(1, -7.3740825e-15, 0, -2.6865513e-16, 1, 5.684342e-14, -1.4210855e-14, -5.684342e-14, 1, 0, 1.6558886e-08, -0.05081892)
+
+[node name="Object_18" parent="Sketchfab_Scene/Sketchfab_model/571e29a199c54ee198078e0049274ec7_fbx/RootNode/Armature/Object_9/Skeleton3D" parent_id_path=PackedInt32Array(1541398381, 650578154) index="6" unique_id=720219628]
+transform = Transform3D(1, -3.8213705e-15, 0, -2.6865852e-16, 1, 2.842171e-14, -7.1054274e-15, -2.842171e-14, 1, 0, 1.1039276e-08, -0.03387928)
+
+[node name="Object_19" parent="Sketchfab_Scene/Sketchfab_model/571e29a199c54ee198078e0049274ec7_fbx/RootNode/Armature/Object_9/Skeleton3D" parent_id_path=PackedInt32Array(1541398381, 650578154) index="7" unique_id=302160241]
+transform = Transform3D(1, -3.8213705e-15, 0, -2.6865852e-16, 1, 2.842171e-14, -7.1054274e-15, -2.842171e-14, 1, 0, 7.727431e-08, -0.23715305)
+
+[node name="Object_20" parent="Sketchfab_Scene/Sketchfab_model/571e29a199c54ee198078e0049274ec7_fbx/RootNode/Armature/Object_9/Skeleton3D" parent_id_path=PackedInt32Array(1541398381, 650578154) index="8" unique_id=1584232499]
+transform = Transform3D(1, -7.3740825e-15, 0, -2.6865513e-16, 1, 5.684342e-14, -1.4210855e-14, -5.684342e-14, 1, 0, -2.7597821e-08, 0.08469701)
+
+[node name="Object_21" parent="Sketchfab_Scene/Sketchfab_model/571e29a199c54ee198078e0049274ec7_fbx/RootNode/Armature/Object_9/Skeleton3D" parent_id_path=PackedInt32Array(1541398381, 650578154) index="9" unique_id=2132971622]
+transform = Transform3D(1, -7.3740825e-15, 0, -2.6865513e-16, 1, 5.684342e-14, -1.4210855e-14, -5.684342e-14, 1, 1.1920929e-07, 5.8507703e-07, -1.7955887)
+
+[node name="Object_22" parent="Sketchfab_Scene/Sketchfab_model/571e29a199c54ee198078e0049274ec7_fbx/RootNode/Armature/Object_9/Skeleton3D" parent_id_path=PackedInt32Array(1541398381, 650578154) index="10" unique_id=9603953]
+transform = Transform3D(1, -3.8213705e-15, 0, -2.6865852e-16, 1, 2.842171e-14, -7.1054274e-15, -2.842171e-14, 1, 0, 9.6593055e-08, -0.2964418)
+
+[node name="Object_23" parent="Sketchfab_Scene/Sketchfab_model/571e29a199c54ee198078e0049274ec7_fbx/RootNode/Armature/Object_9/Skeleton3D" parent_id_path=PackedInt32Array(1541398381, 650578154) index="11" unique_id=988196831]
+transform = Transform3D(1, -3.8213705e-15, 0, -2.6865852e-16, 1, 2.842171e-14, -7.1054274e-15, -2.842171e-14, 1, 0, 3.0357626e-08, -0.09316683)
+
+[node name="Object_24" parent="Sketchfab_Scene/Sketchfab_model/571e29a199c54ee198078e0049274ec7_fbx/RootNode/Armature/Object_9/Skeleton3D" parent_id_path=PackedInt32Array(1541398381, 650578154) index="12" unique_id=686382971]
+transform = Transform3D(1, -3.8213705e-15, 0, -2.6865852e-16, 1, 2.842171e-14, -7.1054274e-15, -2.842171e-14, 1, 0, 5.5196097e-09, -0.01693964)
+
+[node name="Object_25" parent="Sketchfab_Scene/Sketchfab_model/571e29a199c54ee198078e0049274ec7_fbx/RootNode/Armature/Object_9/Skeleton3D" parent_id_path=PackedInt32Array(1541398381, 650578154) index="13" unique_id=99502338]
+transform = Transform3D(1, -3.8213705e-15, 0, -2.6865852e-16, 1, 2.842171e-14, -7.1054274e-15, -2.842171e-14, 1, 0, 1.931852e-08, -0.059288025)
+
+[node name="Object_26" parent="Sketchfab_Scene/Sketchfab_model/571e29a199c54ee198078e0049274ec7_fbx/RootNode/Armature/Object_9/Skeleton3D" parent_id_path=PackedInt32Array(1541398381, 650578154) index="14" unique_id=916965967]
+transform = Transform3D(1, -3.8213705e-15, 0, -2.6865852e-16, 1, 2.842171e-14, -7.1054274e-15, -2.842171e-14, 1, 0, 3.8637268e-08, -0.118576765)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=2007667214]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.33764648, -0.35090703, -1.1875)
+mesh = SubResource("BoxMesh_g4v7s")
+surface_material_override/0 = SubResource("StandardMaterial3D_yf5fn")
+
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="." unique_id=1598953721]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.34580612, -0.35090703, -1.1875)
+mesh = SubResource("BoxMesh_g4v7s")
+surface_material_override/0 = SubResource("StandardMaterial3D_yf5fn")
+
+[editable path="Sketchfab_Scene"]

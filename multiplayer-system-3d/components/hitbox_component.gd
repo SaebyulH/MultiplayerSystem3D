@@ -21,17 +21,23 @@ func _on_hurtbox_entered(hurtbox: Area3D):
 
 	if not hurtbox is HurtboxComponent: return
 
+	# Shield hurtbox — use the shield's owning player for team checks.
+	var hurtbox_parent := hurtbox.get_parent()
+	if hurtbox_parent is PlayerShield:
+		hurtbox_parent = (hurtbox_parent as PlayerShield).player
+		if not hurtbox_parent:
+			return
 
-	var hit_self: bool = (get_parent().shooter_name == hurtbox.get_parent().name)
+	var hit_self: bool = (get_parent().shooter_name == hurtbox_parent.name)
 
 	if not can_hit_shooter and hit_self:
 		return
 
 
-	var hit_ally: bool = (hurtbox.get_parent().team == get_parent().shooter_team)
+	var hit_ally: bool = (hurtbox_parent.team == get_parent().shooter_team)
 	# FFA has no allies — same team doesn't mean friendly.
-	if hit_ally and hurtbox.get_parent().team == Player.Team.FFA:
-		hit_ally = hurtbox.get_parent().name == get_parent().shooter_name
+	if hit_ally and hurtbox_parent.team == Player.Team.FFA:
+		hit_ally = hurtbox_parent.name == get_parent().shooter_name
 
 	var hit_other_ally: bool = hit_ally and not hit_self
 

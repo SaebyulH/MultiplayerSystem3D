@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="Weapon" format=4 uid="uid://cy4bt3f2aadno"]
+[gd_resource type="Resource" script_class="Weapon" format=4 uid="uid://bj4kqmw4u3l4r"]
 
 [ext_resource type="Texture2D" uid="uid://co1t8ndk2iam1" path="res://killfeed_icons/spy_revolver.png" id="1_gpfi3"]
 [ext_resource type="AudioStream" uid="uid://d4ivmikv3xs2x" path="res://assets/sounds/freesound_community-clean-revolver-reload-6889.mp3" id="1_tlcfn"]

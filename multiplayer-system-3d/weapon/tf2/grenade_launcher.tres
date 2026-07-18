@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="Weapon" format=3 uid="uid://b4ydfvfklj5cl"]
+[gd_resource type="Resource" script_class="Weapon" format=3 uid="uid://bvblp16fblbdm"]
 
 [ext_resource type="Texture2D" uid="uid://bfhwyt6yvnox5" path="res://killfeed_icons/grenade_launcher.png" id="1_4q5kx"]
 [ext_resource type="AudioStream" uid="uid://b63r5283kwaa3" path="res://assets/sounds/freesound_community-mag-reload-81594.mp3" id="1_dh2kp"]

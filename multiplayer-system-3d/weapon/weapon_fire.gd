@@ -2,107 +2,142 @@
 extends Resource
 class_name WeaponFire
 
+## ---------------------------------------------------------------------------
+## WeaponFire — a single fire-mode slot on a Weapon resource.
+##
+## Action types
+##   SHOOT  – hitscan or projectile weapon
+##   ADS    – aim-down-sights (no bullet; hides bullet props in the inspector)
+##   SHIELD – deployable barrier that absorbs damage (see "Shield" group)
+## ---------------------------------------------------------------------------
+
 @export_group("Universal Combat")
 
-enum ActionType {SHOOT, ADS, SHIELD}
+enum ActionType {SHOOT, ADS, SHIELD, SIGNAL}
 
 @export var action_type: ActionType = ActionType.SHOOT:
 	set(value):
 		action_type = value
 		notify_property_list_changed()
 
-
-## If true, the weapon fires repeatedly while the trigger is held.
+## If true, the weapon fires repeatedly while the trigger is held.  (SHOOT only.)
 @export var automatic: bool = false
-## Delay in seconds before the shot is fired after pulling the trigger.
+## Delay in seconds before the shot is fired after pulling the trigger.  (SHOOT only.)
 @export var pre_shoot_delay: float = 0.0
-## Minimum time in seconds between shots.
+## Minimum time in seconds between shots.  (SHOOT only.)
 @export var post_shoot_delay: float = 0.5
 
-
-## Ammo consumed to shoot this type
+## Ammo consumed per shot.  (SHOOT only.)
 @export var ammo_cost: int = 1
 
-## Recoil behaviour data for this weapon.
+## Recoil behaviour data.  (SHOOT only.)
 @export var recoil_data: RecoilData = RecoilData.new()
-
-##recoil knockback, moving the player physically
+## Knockback impulse applied to the shooter.  (SHOOT only.)
 @export var recoil_knockback: Vector3 = Vector3.ZERO
 
 
+# ------------------------------------------------------------------------ Bullet
 @export_group("Bullet")
+
 enum BulletType {HITSCAN, PROJECTILE}
-## Whether the weapon uses instant hitscan or a physical projectile scene.
 @export var bullet_type: BulletType:
 	set(value):
 		bullet_type = value
 		notify_property_list_changed()
 		emit_changed()
-## Damage dealt per hitscan hit. Only used when bullet_type is HITSCAN.
-@export var hitscan_damage: float = 10.0
-## Maximum range of the hitscan ray in units. Only used when bullet_type is HITSCAN.
-@export var hitscan_range: float = 1000000000.0
-@export var headshot_multiplier: float = 1.0
 
-## enables damage falloff from the start to end position
+@export var hitscan_damage: float = 10.0          ## (HITSCAN, non-PROJECTILE)
+@export var hitscan_range: float = 1_000_000_000.0## (HITSCAN, non-PROJECTILE)
+@export var headshot_multiplier: float = 1.0       ## (HITSCAN, non-PROJECTILE)
+
 @export var has_damage_falloff: bool = false:
 	set(value):
 		has_damage_falloff = value
-
 		notify_property_list_changed()
 		emit_changed()
 
-
-@export var falloff_start: float = 10.0
-@export var falloff_end: float = 30.0
-## By default a linear falloff
+@export var falloff_start: float = 10.0            ## (HITSCAN, has_falloff)
+@export var falloff_end: float = 30.0              ## (HITSCAN, has_falloff)
 @export var falloff_curve: CurveTexture = preload("res://defaults/default_damage_falloff_curve.tres")
 
-## The projectile scene to spawn on fire. Damage is configured inside the scene. Only used when bullet_type is PROJECTILE.
-@export var projectile_scene: PackedScene
-## Each Vector3 defines the direction of one bullet fired per shot, enabling spread or multishot patterns.
+@export var projectile_scene: PackedScene          ## (PROJECTILE only)
+
+## Each Vector3 is one bullet's direction relative to the muzzle.
+## (SHOOT only, SHOTGUN / BURST / SHAPE modes.)
 @export var multishot_data: Array[Vector3] = [Vector3(0, 0, -1)]
+
 enum MultishotMode {
-		SHOTGUN, ## Each bullet deals the weapon's hitscan damage.
-		BURST, ## Fires a burst of bullets every time it shoots.
-		SHAPE ## Only applies to hitscan! Multiple bullets over 1 do not do extra damage: Ideal for melee
-	}
+	SHOTGUN,  ## every bullet deals full hitscan_damage
+	BURST,    ## fires a burst with a short inter-bullet delay
+	SHAPE,    ## hitscan-only; multiple rays, no extra damage (e.g. melee)
+}
 @export var multishot_mode: MultishotMode = MultishotMode.SHOTGUN:
 	set(value):
 		multishot_mode = value
 		notify_property_list_changed()
-@export var burst_post_shoot_delay: float = 0.05 ##Note that if this is higher than the actual shoot delay, it will act interesting, it does not add to the delay!
-@export var burst_fire_has_recoil: bool = true
+
+@export var burst_post_shoot_delay: float = 0.05   ## (BURST only)
+@export var burst_fire_has_recoil: bool = true     ## (BURST only)
 
 
+# ----------------------------------------------------------------------- Shield
+@export_group("Shield")
+
+## 3D scene instantiated as the shield visual + collision volume.
+## Must contain at least a MeshInstance3D (visual) and an Area3D named
+## "ShieldArea" with a CollisionShape3D child.
+@export var shield_scene: PackedScene
+
+## Maximum hit-points of the shield.
+@export var shield_hp: float = 100.0
+## Current shield HP — persists per WeaponFire so switching weapons and
+## coming back remembers the shield's remaining strength.
+@export var shield_current_hp: float = 100.0
+
+## Seconds after the last hit before regeneration begins.
+@export var shield_regen_delay: float = 2.0
+
+## HP restored per second while regenerating.
+@export var shield_regen_per_sec: float = 30.0
+
+## Extra seconds to wait after the shield breaks before regen can begin.
+@export var shield_break_regen_delay: float = 3.0
+
+## If false (default), shooting is blocked while the shield is deployed.
+@export var can_shoot_while_shielded: bool = false
+
+
+# ------------------------------------------------------------------------ Sound
 @export_group("Sound")
-## Sound played when the weapon fires successfully.
+
 @export var shoot_sound: AudioStream = load("res://assets/sounds/gun_sound.mp3")
-## Sound played when the trigger is pulled with an empty magazine.
 @export var empty_sound: AudioStream = load("res://assets/sounds/empty_gun.mp3")
 
+
+# ------------------------------------------------------------ property hiding
 func _validate_property(property: Dictionary) -> void:
-	var shoot_only_props: Array[String] = [
+	# ---- everything that only makes sense for SHOOT ----
+	const SHOOT_ONLY: Array[String] = [
 		"automatic", "pre_shoot_delay", "post_shoot_delay", "ammo_cost",
 		"recoil_data", "recoil_knockback",
 		"bullet_type", "hitscan_damage", "hitscan_range", "headshot_multiplier",
 		"has_damage_falloff", "falloff_start", "falloff_end", "falloff_curve",
-		"projectile_scene", "multishot_data",
+		"projectile_scene", "multishot_data", "multishot_mode",
+		"burst_post_shoot_delay", "burst_fire_has_recoil",
 		"shoot_sound", "empty_sound",
 	]
+	if property.name in SHOOT_ONLY and action_type != ActionType.SHOOT:
+		property.usage = PROPERTY_USAGE_NO_EDITOR
+		return
 
-	if property.name in shoot_only_props:
-		if action_type != ActionType.SHOOT:
-			property.usage = PROPERTY_USAGE_NO_EDITOR
-			return
-
-	if property.name in ["hitscan_damage", "hitscan_range", "has_damage_falloff", "headshot_multiplier"]:
+	# ---- bullet sub-visibility based on bullet_type ----
+	if property.name in ["hitscan_damage", "hitscan_range", "has_damage_falloff",
+			"headshot_multiplier"]:
 		if bullet_type == BulletType.PROJECTILE:
 			property.usage = PROPERTY_USAGE_NO_EDITOR
 
-
 	if property.name in ["falloff_start", "falloff_end", "falloff_curve"]:
-		if has_damage_falloff == false:
+		if not has_damage_falloff:
 			property.usage = PROPERTY_USAGE_NO_EDITOR
 
 	if property.name == "projectile_scene":
@@ -112,3 +147,12 @@ func _validate_property(property: Dictionary) -> void:
 	if property.name in ["burst_post_shoot_delay", "burst_fire_has_recoil"]:
 		if multishot_mode != MultishotMode.BURST:
 			property.usage = PROPERTY_USAGE_NO_EDITOR
+
+	# ---- shield properties hidden unless action_type == SHIELD ----
+	const SHIELD_ONLY: Array[String] = [
+		"shield_scene", "shield_hp", "shield_current_hp",
+		"shield_regen_delay", "shield_regen_per_sec", "shield_break_regen_delay",
+		"can_shoot_while_shielded",
+	]
+	if property.name in SHIELD_ONLY and action_type != ActionType.SHIELD:
+		property.usage = PROPERTY_USAGE_NO_EDITOR

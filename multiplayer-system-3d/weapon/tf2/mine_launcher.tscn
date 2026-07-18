@@ -1,0 +1,80 @@
+[gd_scene format=3 uid="uid://xkhl8qn8usf4"]
+
+[ext_resource type="PackedScene" uid="uid://c82fcb12vv8jt" path="res://weapon/tf2/low_poly_gl06.glb" id="1_tlxid"]
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_tlxid"]
+top_radius = 1.1279297
+bottom_radius = 1.1279297
+height = 0.30371094
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_su2e1"]
+albedo_color = Color(0.5105782, 0.47050238, 0.41186652, 1)
+metallic = 1.0
+roughness = 0.8
+emission = Color(0.85268945, 0.71366084, 0.3015667, 1)
+emission_energy_multiplier = 21.81
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_l83sh"]
+height = 1.078
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_w1hq1"]
+albedo_color = Color(1, 0, 0, 1)
+emission_enabled = true
+emission = Color(2.2241454, 0.5043554, 0.41116476, 1)
+
+[node name="Scattergun" type="Node3D" unique_id=664585380]
+
+[node name="Muzzle" type="Node3D" parent="." unique_id=2026291909]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.0054234713, 0.20029949, -0.63066256)
+
+[node name="Sketchfab_Scene" parent="." unique_id=396881549 instance=ExtResource("1_tlxid")]
+transform = Transform3D(8.41, 0, 0, 0, 8.41, 0, 0, 0, 8.41, 0, 0.010338929, 0.16254666)
+
+[node name="Barrel_GL06_mat_0" parent="Sketchfab_Scene/Sketchfab_model/1331a53e84a34da9ac34e88906c5eedc_fbx/RootNode/GL06/Barrel" parent_id_path=PackedInt32Array(396881549, 1819272530) index="0" unique_id=397215798]
+transform = Transform3D(3.3205514, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.95725775, 2.056762)
+
+[node name="Pic_Rail_Top_GL06_mat_0" parent="Sketchfab_Scene/Sketchfab_model/1331a53e84a34da9ac34e88906c5eedc_fbx/RootNode/GL06/Barrel/Pic_Rail_Top" parent_id_path=PackedInt32Array(396881549, 756444296) index="0" unique_id=56176092]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.074751794, 0)
+
+[node name="GL_Sights_Rail" parent="Sketchfab_Scene/Sketchfab_model/1331a53e84a34da9ac34e88906c5eedc_fbx/RootNode/GL06/Barrel" parent_id_path=PackedInt32Array(396881549, 1819272530) index="2" unique_id=1182995375]
+transform = Transform3D(1, 0, 0, 0, -0.014888973, 0.59048957, 0, -0.9998892, -0.008792758, 0, 4.4451885, 0)
+
+[node name="GL_Sights_Rail_GL06_Sights_mat_0" parent="Sketchfab_Scene/Sketchfab_model/1331a53e84a34da9ac34e88906c5eedc_fbx/RootNode/GL06/Barrel/GL_Sights_Rail" index="0" unique_id=1781100355]
+transform = Transform3D(1.6971843, 0, 0, 0, 1.6971844, 1.8626451e-09, 0, -1.4901161e-08, 1.6971847, 0, -4.7260647, 2.7482228)
+
+[node name="GL_Sights_GL06_Sights_mat_0" parent="Sketchfab_Scene/Sketchfab_model/1331a53e84a34da9ac34e88906c5eedc_fbx/RootNode/GL06/Barrel/GL_Sights_Rail/GL_Sights" parent_id_path=PackedInt32Array(396881549, 1253786289) index="0" unique_id=198963972]
+transform = Transform3D(1, 0, 0, 0, 1.0000001, 0, 0, -3.7252903e-09, 1.0000002, 0, -3.1632526, -1.8864732)
+
+[node name="Shell_40MM_Grenade_40mm_mat_0" parent="Sketchfab_Scene/Sketchfab_model/1331a53e84a34da9ac34e88906c5eedc_fbx/RootNode/GL06/Barrel/Shell_40MM" parent_id_path=PackedInt32Array(396881549, 2135458726) index="0" unique_id=834384170]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.0828117, 0)
+
+[node name="Body" parent="Sketchfab_Scene/Sketchfab_model/1331a53e84a34da9ac34e88906c5eedc_fbx/RootNode/GL06" parent_id_path=PackedInt32Array(396881549, 130129783) index="1" unique_id=720773476]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.18579078)
+
+[node name="Body_GL06_mat_0" parent="Sketchfab_Scene/Sketchfab_model/1331a53e84a34da9ac34e88906c5eedc_fbx/RootNode/GL06/Body" index="0" unique_id=1371766291]
+transform = Transform3D(4.3138204, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[node name="Stock_GL06_mat_0" parent="Sketchfab_Scene/Sketchfab_model/1331a53e84a34da9ac34e88906c5eedc_fbx/RootNode/GL06/Stock" parent_id_path=PackedInt32Array(396881549, 2035367456) index="0" unique_id=1876872985]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 0.35188633, 0, 0, 0.15966392)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=583914813]
+transform = Transform3D(-0.09698387, 8.4786e-09, 3.7061138e-16, 8.4786e-09, 0.09698387, 4.188344e-16, -3.7061138e-16, 4.188344e-16, -0.09698387, 0, 0.13806152, -0.16308594)
+mesh = SubResource("CylinderMesh_tlxid")
+surface_material_override/0 = SubResource("StandardMaterial3D_su2e1")
+
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="." unique_id=1709261168]
+transform = Transform3D(-0.107665904, 5.9505845e-09, 4.1143146e-16, -9.412453e-09, -0.068066746, -9.412454e-09, -1.1764438e-15, -5.9505845e-09, 0.10766592, 0, 0.13806152, -0.16308594)
+mesh = SubResource("CylinderMesh_l83sh")
+surface_material_override/0 = SubResource("StandardMaterial3D_w1hq1")
+
+[node name="MeshInstance3D3" type="MeshInstance3D" parent="." unique_id=1646110386]
+transform = Transform3D(-0.09698387, 8.4786e-09, 3.7061138e-16, 8.4786e-09, 0.09698387, 4.188344e-16, -3.7061138e-16, 4.188344e-16, -0.09698387, 0, 0.13806152, -0.37854004)
+mesh = SubResource("CylinderMesh_tlxid")
+surface_material_override/0 = SubResource("StandardMaterial3D_su2e1")
+
+[node name="MeshInstance3D4" type="MeshInstance3D" parent="." unique_id=1516009425]
+transform = Transform3D(-0.107665904, 5.9505845e-09, 4.1143146e-16, -9.412453e-09, -0.068066746, -9.412454e-09, -1.1764438e-15, -5.9505845e-09, 0.10766592, 0, 0.13806152, -0.37854004)
+mesh = SubResource("CylinderMesh_l83sh")
+surface_material_override/0 = SubResource("StandardMaterial3D_w1hq1")
+
+[editable path="Sketchfab_Scene"]

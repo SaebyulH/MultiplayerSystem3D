@@ -26,6 +26,7 @@ var _team_label: Label
 var _character_label: Label
 
 var _ammo_label: Label
+var _shield_label: Label
 var _reload_bar_bg: ColorRect
 var _reload_bar_fill: ColorRect
 
@@ -94,6 +95,7 @@ func _build_ui() -> void:
 	_build_crosshair()
 	_build_health()
 	_build_ammo()
+	_build_shield()
 	_build_weapon_list()
 	_build_respawn_timer()
 
@@ -265,6 +267,26 @@ func _build_ammo() -> void:
 	_reload_bar_fill.anchor_bottom = 1.0
 	reload_container.add_child(_reload_bar_fill)
 
+func _build_shield() -> void:
+	_shield_label = Label.new()
+	_shield_label.anchor_left   = 0.0
+	_shield_label.anchor_right  = 1.0
+	_shield_label.anchor_top    = 1.0
+	_shield_label.anchor_bottom = 1.0
+	_shield_label.offset_left   = 0.0
+	_shield_label.offset_top    = -(HEALTH_TOP + 4.0 + 30.0)
+	_shield_label.offset_right  = -MARGIN
+	_shield_label.offset_bottom = -(HEALTH_TOP + 4.0)
+	_shield_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_shield_label.vertical_alignment   = VERTICAL_ALIGNMENT_BOTTOM
+	_shield_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+	_shield_label.add_theme_constant_override("outline_size", 8)
+	_shield_label.add_theme_font_size_override("font_size", 22)
+	_shield_label.add_theme_color_override("font_color", Color(0.3, 0.85, 0.95))
+	_shield_label.visible = false
+	add_child(_shield_label)
+
+
 func _build_weapon_list() -> void:
 	_weapon_list = VBoxContainer.new()
 	_weapon_list.anchor_left   = 1.0
@@ -329,6 +351,7 @@ func _process(_delta: float) -> void:
 	_update_health()
 	_update_health_delta()
 	_update_ammo()
+	_update_shield()
 	_update_team()
 	_update_character()
 	_update_respawn_timer()
@@ -442,6 +465,31 @@ func _hide_reload() -> void:
 	var parent := _reload_bar_fill.get_parent() as Control
 	if parent:
 		parent.visible = false
+
+func _update_shield() -> void:
+	if not _owner_player or not _shield_label:
+		return
+	var si := _owner_player.shield_instance
+	var fire := _owner_player._active_shield_fire
+	# Show shield HP if a shield fire is on the current weapon (even if retracted).
+	if fire and fire.shield_hp > 0.0:
+		_shield_label.visible = true
+		var hp := si.hp if (si and si.active) else fire.shield_current_hp
+		var pct := hp / fire.shield_hp
+		if si and si.broken:
+			_shield_label.text = "Shield  BROKEN"
+			_shield_label.add_theme_color_override("font_color", Color(0.85, 0.25, 0.25))
+		else:
+			_shield_label.text = "Shield  %d / %d" % [int(hp), int(fire.shield_hp)]
+			if pct > 0.5:
+				_shield_label.add_theme_color_override("font_color", Color(0.3, 0.85, 0.95))
+			elif pct > 0.25:
+				_shield_label.add_theme_color_override("font_color", Color(0.95, 0.85, 0.3))
+			else:
+				_shield_label.add_theme_color_override("font_color", Color(0.95, 0.3, 0.3))
+	else:
+		_shield_label.visible = false
+
 
 func _update_team() -> void:
 	var player := _owner_player

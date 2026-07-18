@@ -23,7 +23,7 @@ script = ExtResource("3_yhfpo")
 [sub_resource type="Resource" id="Resource_aikgn"]
 script = ExtResource("7_b7nwq")
 recoil_data = SubResource("Resource_so61o")
-hitscan_damage = 75.0
+hitscan_damage = 90.0
 headshot_multiplier = 5.0
 has_damage_falloff = true
 falloff_start = 5.0

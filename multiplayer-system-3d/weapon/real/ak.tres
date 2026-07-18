@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="Weapon" format=3 uid="uid://ws2b86bpudcb"]
+[gd_resource type="Resource" script_class="Weapon" format=3 uid="uid://1xp4mq8uxkgl"]
 
 [ext_resource type="Texture2D" uid="uid://b3renmxv3dpvk" path="res://killfeed_icons/ak.png" id="1_ubq16"]
 [ext_resource type="AudioStream" uid="uid://bwfdsxbmx4ko8" path="res://assets/sounds/empty_gun.mp3" id="1_xuhsr"]

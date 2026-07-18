@@ -47,6 +47,9 @@ health_delta = 0.0
 [node name="CollisionShape3D" parent="HitboxComponent" index="0" unique_id=1314331169]
 shape = SubResource("SphereShape3D_84p14")
 
+[node name="ExplosionComponent" parent="." index="3" unique_id=473826993]
+splash_health_delta = -90
+
 [node name="MeshInstance3D2" type="MeshInstance3D" parent="." index="4" unique_id=251685809]
 transform = Transform3D(-0.12494474, 1.0923015e-08, 4.7746024e-16, 0, -5.4615077e-09, 0.12494474, 1.0923015e-08, 0.12494474, 5.4615077e-09, 0, 0, 0.11489868)
 mesh = SubResource("CylinderMesh_21xcj")

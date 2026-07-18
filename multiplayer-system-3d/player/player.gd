@@ -23,6 +23,11 @@ var entity_id: String :
 
 var ads: bool = false
 
+## Active shield instance — spawned when a SHIELD fire-mode is toggled on.
+var shield_instance: PlayerShield = null
+## The WeaponFire that spawned the current shield (null if no shield).
+var _active_shield_fire: WeaponFire = null
+
 enum Team {SPI, SCI, FFA} #If set to FFA, you can damage anyone
 const FRIENDLY_FIRE_MULTIPLIER = 0.0
 
@@ -253,6 +258,11 @@ func _sync_head():
 ## Hide the player: disable collision, stop camera, move off-grid.
 ## Projectiles (child of ProjectilesParent) are NOT touched.
 func despawn():
+	# Reset shield on death so the next life starts fresh.
+	if shield_instance:
+		shield_instance.reset_hp()
+	if _active_shield_fire:
+		_active_shield_fire.shield_current_hp = _active_shield_fire.shield_hp
 	hide()
 	spawned = false
 	collider.disabled = true
@@ -296,6 +306,9 @@ func _physics_process(delta: float) -> void:
 		velocity = Vector3.ZERO
 		knockback_velocity = Vector3.ZERO
 		spawn()
+
+	# Passive shield regen — runs even when retracted.
+	_shield_regen(delta)
 
 func _rollback_tick(delta, tick, is_fresh):
 	# ── Respawn / teleport handling ────────────────
@@ -498,7 +511,86 @@ func _apply_movement_from_input(delta):
 	body.mouse_sens_y = BASE_MOUSE_SENS * fov_ratio
 
 func change_health(health: float, changer: String):
+	# Negative delta = damage.  Shield absorbs everything, no overflow.
+	if health < 0.0 and shield_instance and shield_instance.active:
+		shield_instance.absorb_damage(-health)
+		return
 	attribute_component.apply_health_delta(health, changer, self.name)
+
+
+## Deploy a shield from a SHIELD-type WeaponFire.  Called by WeaponController.
+## Parents the shield to the camera so it stays locked to the player's view.
+func deploy_shield(fire: WeaponFire) -> void:
+	if not fire or not fire.shield_scene:
+		return
+	if is_shield_active():
+		return
+	retract_shield()
+
+	var instance := fire.shield_scene.instantiate()
+	$Body/Recoil/Head/WeaponParent.add_child(instance)
+	instance.position = Vector3.ZERO
+	print("[deploy_shield] instance=", instance, " is_PlayerShield=", instance is PlayerShield)
+
+	if instance is PlayerShield:
+		instance.player = self
+		instance.setup(fire)
+		instance.deploy()
+		shield_instance = instance
+	else:
+		# Scene doesn't have the PlayerShield script — apply basic visibility
+		# so users can see their shield even before wiring up the script.
+		_force_shield_visible(instance)
+	_active_shield_fire = fire
+
+
+## Fallback: walks a shield scene that has no PlayerShield script and makes
+## every MeshInstance3D visible with a solid cyan colour.
+func _force_shield_visible(node: Node) -> void:
+	if node is MeshInstance3D:
+		var mi := node as MeshInstance3D
+		if mi.material_override == null or not mi.material_override is StandardMaterial3D:
+			var smat := StandardMaterial3D.new()
+			smat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+			mi.material_override = smat
+		var smat := mi.material_override as StandardMaterial3D
+		smat.albedo_color = Color(0.3, 0.85, 0.95, 0.65)
+	for child in node.get_children():
+		_force_shield_visible(child)
+
+
+## Retract (remove) the current shield.  Called on toggle-off or weapon switch.
+func retract_shield() -> void:
+	if shield_instance:
+		shield_instance._sync_hp_to_fire()
+		shield_instance.retract()
+		shield_instance.queue_free()
+		shield_instance = null
+	# Keep _active_shield_fire so regen and HUD continue while retracted.
+	# Only cleared on weapon switch or death.
+
+
+## Returns true if a shield is currently deployed and not broken.
+func is_shield_active() -> bool:
+	return shield_instance != null and shield_instance.active and not shield_instance.broken
+
+
+## Returns true if the active shield prevents shooting.
+func shield_blocks_shooting() -> bool:
+	if not is_shield_active():
+		return false
+	if not _active_shield_fire:
+		return false
+	return not _active_shield_fire.can_shoot_while_shielded
+
+
+## Passive HP regen for the shield, even while retracted.
+func _shield_regen(delta: float) -> void:
+	if not _active_shield_fire:
+		return
+	var f := _active_shield_fire
+	if f.shield_current_hp < f.shield_hp:
+		f.shield_current_hp = minf(f.shield_current_hp + f.shield_regen_per_sec * delta, f.shield_hp)
 
 ## Apply character stat offsets on top of base values.
 func set_character(char: Character) -> void:

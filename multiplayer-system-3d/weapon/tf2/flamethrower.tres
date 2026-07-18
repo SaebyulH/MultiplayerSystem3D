@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="Weapon" format=3 uid="uid://dwwh1fream1b5"]
+[gd_resource type="Resource" script_class="Weapon" format=3 uid="uid://c67at3703hf5k"]
 
 [ext_resource type="Texture2D" uid="uid://uuhf48ttbti1" path="res://killfeed_icons/flamethrower.png" id="1_1riue"]
 [ext_resource type="AudioStream" uid="uid://bwfdsxbmx4ko8" path="res://assets/sounds/empty_gun.mp3" id="1_873px"]

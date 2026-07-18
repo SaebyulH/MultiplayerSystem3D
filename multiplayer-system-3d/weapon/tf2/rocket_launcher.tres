@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="Weapon" format=3 uid="uid://c1iei2xvith2m"]
+[gd_resource type="Resource" script_class="Weapon" format=3 uid="uid://d6l12qqornj2"]
 
 [ext_resource type="Texture2D" uid="uid://bfiqfysvbgqn5" path="res://killfeed_icons/rocket_launcher.png" id="1_2id02"]
 [ext_resource type="AudioStream" uid="uid://bwfdsxbmx4ko8" path="res://assets/sounds/empty_gun.mp3" id="1_vw4sm"]
