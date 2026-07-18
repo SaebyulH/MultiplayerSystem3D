@@ -64,7 +64,18 @@ func apply_health_delta(delta: float, changer: String, changee: String):
 
 	if old_health > 0.0 and new_health <= 0.0:
 		if changee != changer:
-			Leaderboard.request_add_kill(changer)
+			# Resolve weapon name for the kill feed.
+			var weapon_name: String = ""
+			if changer_node:
+				var wc: WeaponController = changer_node.weapon_controller
+				if wc:
+					var weapons: Array[Weapon] = wc.get_weapons()
+					if not weapons.is_empty():
+						var idx: int = wc.current_weapon_index
+						if idx >= 0 and idx < weapons.size():
+							weapon_name = weapons[idx].display_name
+
+			Leaderboard.request_add_kill(changer, changee, weapon_name)
 			Leaderboard.request_add_death(changee)
 			# Heal on kill: restore HP to the killer based on their character.
 			var killer: Player = GameManager.find_player(changer)

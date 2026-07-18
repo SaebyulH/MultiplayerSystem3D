@@ -143,11 +143,13 @@ func _enter_tree() -> void:
 	if is_bot:
 		player_input.set_multiplayer_authority(1)
 		body.set_multiplayer_authority(1)
+		$DamageNumberManager.set_multiplayer_authority(1)
 	else:
 		var id := str(name).to_int()
 		set_multiplayer_authority(1)
 		player_input.set_multiplayer_authority(id)
 		body.set_multiplayer_authority(id)
+		$DamageNumberManager.set_multiplayer_authority(id)
 
 
 func _ready() -> void:

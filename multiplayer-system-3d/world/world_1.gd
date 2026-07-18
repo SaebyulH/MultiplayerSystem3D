@@ -11,6 +11,10 @@ var map_path
 
 func _ready() -> void:
 	GameManager.spawn_parent = %SpawnParent
+
+	# Global kill feed — one per peer, cleaned up with the scene.
+	var kill_feed := KillFeed.new()
+	add_child(kill_feed)
 	
 	
 	
