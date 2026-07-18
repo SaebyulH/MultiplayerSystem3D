@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://dis2f3pf6jg4m"]
+
+[ext_resource type="Script" uid="uid://dp4x4irykn1nb" path="res://weapon/killfeed_icon_generator.gd" id="1_cgq3d"]
+
+[node name="KillfeedIconGenerator" type="Node" unique_id=1439025060]
+script = ExtResource("1_cgq3d")

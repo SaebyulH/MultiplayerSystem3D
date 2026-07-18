@@ -15,7 +15,7 @@ const LEADERBOARD_SYNC_INTERVAL: float = 0.5
 
 signal killstreak_changed(player_name: String, killstreak: int)
 signal player_removed(player_name: String)
-signal kill_feed_entry(killer_name: String, victim_name: String, weapon_name: String)
+signal kill_feed_entry(killer_name: String, victim_name: String, weapon_name: String, weapon_resource_path: String)
 
 # -------------------------
 # PLAYER MANAGEMENT
@@ -66,7 +66,7 @@ func _remove_player(player_name: String):
 # -------------------------
 
 @rpc("any_peer", "call_local")
-func _add_kill(killer_name: String, victim_name: String = "", weapon_name: String = ""):
+func _add_kill(killer_name: String, victim_name: String = "", weapon_name: String = "", weapon_resource_path: String = ""):
 	if not multiplayer.is_server():
 		return
 
@@ -77,7 +77,7 @@ func _add_kill(killer_name: String, victim_name: String = "", weapon_name: Strin
 
 	# Broadcast kill feed event to all peers.
 	if not victim_name.is_empty():
-		_broadcast_kill_feed.rpc(killer_name, victim_name, weapon_name)
+		_broadcast_kill_feed.rpc(killer_name, victim_name, weapon_name, weapon_resource_path)
 	if OS.is_debug_build():
 		print("Kill:", killer_name)
 
@@ -192,8 +192,8 @@ func _receive_player_removed(player_name: String):
 
 ## Broadcasts a single kill event to all peers for the kill feed.
 @rpc("any_peer", "call_local", "reliable")
-func _broadcast_kill_feed(killer_name: String, victim_name: String, weapon_name: String) -> void:
-	kill_feed_entry.emit(killer_name, victim_name, weapon_name)
+func _broadcast_kill_feed(killer_name: String, victim_name: String, weapon_name: String, weapon_resource_path: String) -> void:
+	kill_feed_entry.emit(killer_name, victim_name, weapon_name, weapon_resource_path)
 
 # -------------------------
 # REQUEST API
@@ -205,8 +205,8 @@ func request_add_player(player_name: String):
 func request_remove_player(player_name: String):
 	_remove_player.rpc_id(1, player_name)
 
-func request_add_kill(killer_name: String, victim_name: String = "", weapon_name: String = ""):
-	_add_kill.rpc_id(1, killer_name, victim_name, weapon_name)
+func request_add_kill(killer_name: String, victim_name: String = "", weapon_name: String = "", weapon_resource_path: String = ""):
+	_add_kill.rpc_id(1, killer_name, victim_name, weapon_name, weapon_resource_path)
 
 func request_add_death(dead_name: String):
 	_add_death.rpc_id(1, dead_name)

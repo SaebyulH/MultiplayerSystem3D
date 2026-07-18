@@ -8,7 +8,7 @@ albedo_color = Color(0.12716985, 0.09314748, 0.0545512, 1)
 [node name="Pistol" type="Node3D" unique_id=664585380]
 
 [node name="Muzzle" type="Node3D" parent="." unique_id=2026291909]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.13750175, -0.67846763)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.13750175, -0.969345)
 
 [node name="Sketchfab_Scene" parent="." unique_id=1500390495 instance=ExtResource("1_gui7w")]
 transform = Transform3D(9.51, 0, 0, 0, 9.51, 0, 0, 0, 9.51, 0, 0.16788453, -0.03289795)

@@ -52,6 +52,12 @@ var weapon_rotation: Vector3 = Vector3.ZERO
 ## Scale of the weapon model.
 @export var weapon_scale: Vector3 = Vector3(1.0, 1.0, 1.0)
 
+@export_group("Kill Feed")
+## Pre-rendered icon shown in the kill feed.  Generate with the
+## weapon/killfeed_icon_generator.gd editor script (File > Run in the
+## Script Editor while this project is open).
+@export var killfeed_icon: Texture2D
+
 @export_group("Sound")
 # Sound played when a reload begins.
 @export var reload_sound: AudioStream = load("res://assets/sounds/reload.mp3")

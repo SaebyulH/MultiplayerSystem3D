@@ -1,13 +1,14 @@
-[gd_resource type="Resource" script_class="Weapon" format=3 uid="uid://c8ii5ip83rppt"]
+[gd_resource type="Resource" script_class="Weapon" format=3]
 
-[ext_resource type="AudioStream" uid="uid://bwfdsxbmx4ko8" path="res://assets/sounds/empty_gun.mp3" id="1_b43b4"]
-[ext_resource type="Texture2D" uid="uid://b6gktr1vfryte" path="res://defaults/default_damage_falloff_curve.tres" id="2_ycje2"]
-[ext_resource type="Script" uid="uid://yvevtn4dsddy" path="res://player/recoil/recoil_data.gd" id="3_hvbk3"]
-[ext_resource type="AudioStream" uid="uid://b0m2w0v8mtmwa" path="res://assets/sounds/freesound_community-rifle-or-shotgun-reload-6787.mp3" id="4_xlp1x"]
-[ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="5_rn2e5"]
-[ext_resource type="AudioStream" uid="uid://bvog00etgf8vt" path="res://assets/sounds/universfield-shotgun-blast-352038.mp3" id="6_katwm"]
-[ext_resource type="Script" uid="uid://djg0ti1n45f8b" path="res://weapon/weapon_fire.gd" id="8_8gsuj"]
-[ext_resource type="PackedScene" uid="uid://sa4wv6avtccw" path="res://weapon/tf2/shotgun.tscn" id="8_ycje2"]
+[ext_resource type="Texture2D" path="res://killfeed_icons/shotgun.png" id="1_8gsuj"]
+[ext_resource type="AudioStream" path="res://assets/sounds/empty_gun.mp3" id="1_b43b4"]
+[ext_resource type="Texture2D" path="res://defaults/default_damage_falloff_curve.tres" id="2_ycje2"]
+[ext_resource type="Script" path="res://player/recoil/recoil_data.gd" id="3_hvbk3"]
+[ext_resource type="AudioStream" path="res://assets/sounds/freesound_community-rifle-or-shotgun-reload-6787.mp3" id="4_xlp1x"]
+[ext_resource type="Script" path="res://weapon/weapon.gd" id="5_rn2e5"]
+[ext_resource type="AudioStream" path="res://assets/sounds/universfield-shotgun-blast-352038.mp3" id="6_katwm"]
+[ext_resource type="Script" path="res://weapon/weapon_fire.gd" id="8_8gsuj"]
+[ext_resource type="PackedScene" path="res://weapon/tf2/shotgun.tscn" id="8_ycje2"]
 
 [sub_resource type="Resource" id="Resource_v75b2"]
 script = ExtResource("3_hvbk3")
@@ -33,10 +34,7 @@ mag_size = 16
 mag_current = 16
 reload_time = 1.8
 weapon_fires = Array[ExtResource("8_8gsuj")]([SubResource("Resource_mkmiw")])
-min_spread = null
-spread_per_shot = null
-max_spread = null
-spread_decay = null
 weapon_model = ExtResource("8_ycje2")
+killfeed_icon = ExtResource("1_8gsuj")
 reload_sound = ExtResource("4_xlp1x")
 metadata/_custom_type_script = "uid://qjf4ciit3dqy"

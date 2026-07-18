@@ -2,22 +2,29 @@ extends CanvasLayer
 class_name KillFeed
 
 ## Overwatch / TF2 style kill feed in the top-right corner.
-## Format:  KILLER  [weapon] >  KILLEE
+## Format:  KILLER  [weapon icon]  ▸  KILLEE
 ##
 ## Names are team-coloured.  The local player's own kills are highlighted
 ## with a brighter background and gold accent.
+##
+## Weapon icons are pre-rendered PNGs (generated once with
+## weapon/killfeed_icon_generator.gd).  No runtime SubViewport overhead.
 
 const MAX_VISIBLE := 5
 const ENTRY_LIFETIME: float = 8.0
 const FADE_DURATION: float = 1.5
 const SLIDE_DURATION: float = 0.25
-const ENTRY_HEIGHT: float = 26.0
-const ENTRY_SEPARATION: float = 2.0
+const ENTRY_HEIGHT: float = 36.0
+const ENTRY_SEPARATION: float = 3.0
 
 # Layout
 const PANEL_RIGHT: float = 16.0
 const PANEL_TOP: float = 48.0
-const PANEL_MAX_WIDTH: float = 420.0
+const PANEL_MAX_WIDTH: float = 500.0
+
+# Weapon icon display size (matches killfeed_icon_generator.gd output).
+const ICON_WIDTH: float = 128.0
+const ICON_HEIGHT: float = 72.0
 
 # Team colours (match the HUD / player_ui convention).
 const COLOR_SPI := Color(0.88, 0.24, 0.24)   # red
@@ -84,11 +91,11 @@ func _reposition() -> void:
 		bg.anchor_bottom = 1.0
 
 
-func _on_kill_event(killer_name: String, victim_name: String, weapon_name: String) -> void:
-	_add_entry(killer_name, victim_name, weapon_name)
+func _on_kill_event(killer_name: String, victim_name: String, weapon_name: String, icon_path: String) -> void:
+	_add_entry(killer_name, victim_name, weapon_name, icon_path)
 
 
-func _add_entry(killer_name: String, victim_name: String, weapon_name: String) -> void:
+func _add_entry(killer_name: String, victim_name: String, weapon_name: String, icon_path: String) -> void:
 	var my_id := str(multiplayer.get_unique_id())
 	var is_my_kill := (killer_name == my_id)
 
@@ -133,16 +140,21 @@ func _add_entry(killer_name: String, victim_name: String, weapon_name: String) -
 	var kl := _make_name_label(killer_display, killer_team, is_my_kill)
 	hbox.add_child(kl)
 
-	# Weapon name
-	var wl := Label.new()
-	wl.text = " " + weapon_name + " "
-	wl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	wl.add_theme_color_override("font_color", Color(0.55, 0.55, 0.60))
-	wl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-	wl.add_theme_constant_override("outline_size", 2)
-	wl.add_theme_font_size_override("font_size", 13)
-	wl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hbox.add_child(wl)
+	# Weapon icon (pre-rendered PNG) or text fallback
+	var weapon_icon := _make_weapon_icon(icon_path)
+	if weapon_icon:
+		hbox.add_child(weapon_icon)
+	else:
+		# Fallback: text label if no icon is available.
+		var wl := Label.new()
+		wl.text = " " + weapon_name + " "
+		wl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		wl.add_theme_color_override("font_color", Color(0.55, 0.55, 0.60))
+		wl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+		wl.add_theme_constant_override("outline_size", 2)
+		wl.add_theme_font_size_override("font_size", 15)
+		wl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		hbox.add_child(wl)
 
 	# Separator arrow
 	var arrow := Label.new()
@@ -151,7 +163,7 @@ func _add_entry(killer_name: String, victim_name: String, weapon_name: String) -
 	arrow.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
 	arrow.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
 	arrow.add_theme_constant_override("outline_size", 2)
-	arrow.add_theme_font_size_override("font_size", 13)
+	arrow.add_theme_font_size_override("font_size", 15)
 	arrow.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hbox.add_child(arrow)
 
@@ -219,7 +231,7 @@ func _make_name_label(display_name: String, team: int, is_own_kill: bool) -> Lab
 	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
 	lbl.add_theme_constant_override("outline_size", 2)
-	lbl.add_theme_font_size_override("font_size", 14)
+	lbl.add_theme_font_size_override("font_size", 16)
 	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	# Team colour
@@ -237,6 +249,29 @@ func _make_name_label(display_name: String, team: int, is_own_kill: bool) -> Lab
 		lbl.add_theme_color_override("font_color", c)
 
 	return lbl
+
+
+# ─────────────────────────────────────────────
+#  Weapon Icon (pre-rendered PNG)
+# ─────────────────────────────────────────────
+
+## Returns a TextureRect displaying the pre-rendered kill-feed icon, or
+## null if the icon path is empty or the PNG can't be loaded.
+func _make_weapon_icon(icon_path: String) -> TextureRect:
+	if icon_path.is_empty():
+		return null
+
+	var tex: Texture2D = load(icon_path) as Texture2D
+	if not tex:
+		return null
+
+	var rect := TextureRect.new()
+	rect.texture = tex
+	rect.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+	rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	rect.custom_minimum_size = Vector2(ICON_WIDTH, ICON_HEIGHT)
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return rect
 
 
 func _player_display(player_name: String) -> String:

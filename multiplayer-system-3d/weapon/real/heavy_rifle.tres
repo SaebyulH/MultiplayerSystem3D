@@ -1,14 +1,15 @@
-[gd_resource type="Resource" script_class="Weapon" format=3 uid="uid://fcl45ysewp0w"]
+[gd_resource type="Resource" script_class="Weapon" format=3]
 
-[ext_resource type="AudioStream" uid="uid://2leuuyy3stnp" path="res://assets/sounds/mortal_music-m40a1-reload-524732.mp3" id="1_np3fa"]
-[ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="2_drcn0"]
-[ext_resource type="Script" uid="uid://djg0ti1n45f8b" path="res://weapon/weapon_fire.gd" id="3_2wfvi"]
-[ext_resource type="AudioStream" uid="uid://bwfdsxbmx4ko8" path="res://assets/sounds/empty_gun.mp3" id="4_tjmpd"]
-[ext_resource type="Script" uid="uid://yvevtn4dsddy" path="res://player/recoil/recoil_data.gd" id="5_cma7f"]
-[ext_resource type="AudioStream" uid="uid://h5oipa516ci8" path="res://assets/sounds/kalsstockmedia-thunderous-sci-fi-gunshot-sound-341615.mp3" id="6_378ei"]
-[ext_resource type="AudioStream" uid="uid://b66x0rfx3im4" path="res://assets/sounds/freesound_community-rifle-gunshot-99749.mp3" id="6_tv8c2"]
-[ext_resource type="Texture2D" uid="uid://b6gktr1vfryte" path="res://defaults/default_damage_falloff_curve.tres" id="7_1f6g4"]
-[ext_resource type="PackedScene" uid="uid://dy60h13dywknx" path="res://weapon/real/heavy_rifle.tscn" id="8_ny6lo"]
+[ext_resource type="Texture2D" path="res://killfeed_icons/heavy_rifle.png" id="1_87q2j"]
+[ext_resource type="AudioStream" path="res://assets/sounds/mortal_music-m40a1-reload-524732.mp3" id="1_np3fa"]
+[ext_resource type="Script" path="res://weapon/weapon.gd" id="2_drcn0"]
+[ext_resource type="Script" path="res://weapon/weapon_fire.gd" id="3_2wfvi"]
+[ext_resource type="AudioStream" path="res://assets/sounds/empty_gun.mp3" id="4_tjmpd"]
+[ext_resource type="Script" path="res://player/recoil/recoil_data.gd" id="5_cma7f"]
+[ext_resource type="AudioStream" path="res://assets/sounds/kalsstockmedia-thunderous-sci-fi-gunshot-sound-341615.mp3" id="6_378ei"]
+[ext_resource type="AudioStream" path="res://assets/sounds/freesound_community-rifle-gunshot-99749.mp3" id="6_tv8c2"]
+[ext_resource type="Texture2D" path="res://defaults/default_damage_falloff_curve.tres" id="7_1f6g4"]
+[ext_resource type="PackedScene" path="res://weapon/real/heavy_rifle.tscn" id="8_ny6lo"]
 
 [sub_resource type="Curve" id="Curve_btwad"]
 _data = [Vector2(0, 0.095017195), 0.0, 0.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
@@ -50,11 +51,8 @@ mag_current = 2
 reload_time = 4.0
 player_speed_multiplier = 0.75
 weapon_fires = Array[ExtResource("3_2wfvi")]([SubResource("Resource_aikgn"), SubResource("Resource_b7nwq")])
-min_spread = null
-spread_per_shot = null
-max_spread = null
-spread_decay = null
 weapon_model = ExtResource("8_ny6lo")
 weapon_offset = Vector3(0.2, -0.4, -0.55)
+killfeed_icon = ExtResource("1_87q2j")
 reload_sound = ExtResource("1_np3fa")
 metadata/_custom_type_script = "uid://qjf4ciit3dqy"
