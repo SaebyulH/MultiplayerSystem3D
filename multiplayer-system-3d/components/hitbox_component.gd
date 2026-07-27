@@ -13,6 +13,10 @@ signal hit_hurtbox(hurtbox)
 ## With this enabled, STICK projectiles are basically poisonous! Warning!
 @export var can_hit_multiple_times: bool = false
 
+## Set by projectiles each frame to their current travel-time falloff multiplier.
+## Read by HurtComponent to display in damage numbers.
+var current_falloff_multiplier: float = 1.0
+
 func _ready() -> void:
 	area_entered.connect(_on_hurtbox_entered)
 

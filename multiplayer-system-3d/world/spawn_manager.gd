@@ -114,6 +114,11 @@ func _apply_bot_loadout(entity_id: String) -> void:
 	controller.set_weapons(new_weapons)
 	controller.current_weapon_index = 0
 
+	# Pick a random character within the class.
+	if not bot_class.characters.is_empty():
+		var char: Character = bot_class.characters[randi() % bot_class.characters.size()]
+		player.set_character(char)
+
 	#player.team = team
 	var spawn_pos :Vector3= player._get_spawn_position()
 	player.rpc_reset.rpc(spawn_pos)

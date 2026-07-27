@@ -31,12 +31,12 @@ data = PackedByteArray("//PkZAAbgfteG6ekAKBSipQBRkgACLISnNMt5BydoXCOQgguAasNWJuQ
 
 [sub_resource type="Resource" id="Resource_wwgc3"]
 script = ExtResource("3_5d3nm")
+zoom_fov = null
 automatic = true
-post_shoot_delay = 0.2
+post_shoot_delay = 0.25
 recoil_data = SubResource("Resource_5d3nm")
-hitscan_damage = 52.0
+hitscan_damage = 40.0
 headshot_multiplier = 2.0
-has_damage_falloff = true
 falloff_curve = SubResource("CurveTexture_gpfi3")
 shoot_sound = SubResource("AudioStreamMP3_gbadw")
 empty_sound = SubResource("AudioStreamMP3_lv7wg")
@@ -48,6 +48,7 @@ script = ExtResource("6_8y6wt")
 [sub_resource type="Resource" id="Resource_d7axr"]
 script = ExtResource("3_5d3nm")
 action_type = 1
+zoom_fov = 60.0
 recoil_data = SubResource("Resource_ym8lp")
 shoot_sound = ExtResource("8_f8w0m")
 empty_sound = ExtResource("4_gbadw")
@@ -55,7 +56,7 @@ metadata/_custom_type_script = "uid://djg0ti1n45f8b"
 
 [resource]
 script = ExtResource("2_gpfi3")
-display_name = "Spy Revolver"
+display_name = "Revolver"
 reload_time = 1.133
 weapon_fires = Array[ExtResource("3_5d3nm")]([SubResource("Resource_wwgc3"), SubResource("Resource_d7axr")])
 spread_per_shot = 0.1

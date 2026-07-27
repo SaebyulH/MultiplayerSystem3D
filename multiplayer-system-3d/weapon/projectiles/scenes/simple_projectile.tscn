@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://dvjbk5m0gpfc6" path="res://weapon/projectiles/simple_projectile.gd" id="1_6o6y1"]
 [ext_resource type="Script" uid="uid://y07sya4qpxdb" path="res://components/hitbox_component.gd" id="2_hlc54"]
 [ext_resource type="Script" uid="uid://c3053ldj8qbgo" path="res://weapon/projectiles/explosion_component.gd" id="3_vwtsb"]
+
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1pkh4"]
 height = 1.2509766
 
@@ -27,6 +28,7 @@ script = ExtResource("1_6o6y1")
 lifetime = 20.0
 _hitbox_component = NodePath("HitboxComponent")
 _explosion_component = NodePath("ExplosionComponent")
+falloff_enabled = true
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1810742212]
 transform = Transform3D(-0.3480795, 3.0430073e-08, 1.3301409e-15, 5.4054674e-23, -1.5215036e-08, 0.3480795, 3.0430073e-08, 0.3480795, 1.5215036e-08, 0, 0, 0)

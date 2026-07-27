@@ -27,7 +27,7 @@ func reset_health():
 	health = starting_health
 
 
-func apply_health_delta(delta: float, changer: String, changee: String):
+func apply_health_delta(delta: float, changer: String, changee: String, is_headshot: bool = false, falloff_mult: float = 1.0):
 
 	var old_health := health
 	var new_health :float = clamp(old_health + delta, 0.0, starting_health)
@@ -49,8 +49,11 @@ func apply_health_delta(delta: float, changer: String, changee: String):
 		else:
 			Leaderboard.request_add_damage(changer, applied_delta)
 			if not changer_node.is_bot:
-				changer_node.weapon_controller.play_hit_sound.rpc_id(changer.to_int())
-				changer_node.damage_number_manager._receive_damage_number.rpc_id(changer.to_int(), changee, applied_delta)
+				if is_headshot:
+					changer_node.weapon_controller.play_crit_sound.rpc_id(changer.to_int())
+				else:
+					changer_node.weapon_controller.play_hit_sound.rpc_id(changer.to_int())
+				changer_node.damage_number_manager._receive_damage_number.rpc_id(changer.to_int(), changee, applied_delta, is_headshot, falloff_mult)
 		last_attacker = changer
 	else:
 		if changee == changer:

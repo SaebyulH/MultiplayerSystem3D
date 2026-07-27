@@ -23,7 +23,7 @@ func _on_hurt_or_heal(hitbox_component: HitboxComponent, is_ally_hit: bool) -> v
 	if hurtbox_component.is_head:
 		health_delta *= hitbox_component.headshot_multiplier
 
-	attribute_component.apply_health_delta(health_delta, _resolve_changer_name(hitbox_component), get_parent().name)
+	attribute_component.apply_health_delta(health_delta, _resolve_changer_name(hitbox_component), get_parent().name, hurtbox_component.is_head, hitbox_component.current_falloff_multiplier)
 
 
 func _resolve_changer_name(hitbox_component: HitboxComponent) -> String:

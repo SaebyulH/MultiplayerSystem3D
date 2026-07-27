@@ -22,6 +22,7 @@ properties/0/spawn = true
 properties/0/replication_mode = 1
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_kb6p2"]
+radius = 0.20361328
 
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_wodsf"]
 
@@ -30,7 +31,7 @@ transparency = 1
 albedo_color = Color(0.046625316, 0, 0.7632794, 0.42352942)
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_kb6p2"]
-radius = 0.2657069
+radius = 0.32483688
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wodsf"]
 transparency = 1
@@ -39,7 +40,8 @@ albedo_color = Color(0.75686276, 0, 0, 0.7019608)
 [sub_resource type="SphereMesh" id="SphereMesh_32hag"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_wodsf"]
-height = 1.519165
+radius = 0.4116211
+height = 1.680481
 
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_32hag"]
 radius = 0.797
@@ -61,11 +63,20 @@ properties/1/path = NodePath("Recoil/Head:rotation")
 properties/1/spawn = true
 properties/1/replication_mode = 1
 
-[sub_resource type="BoxMesh" id="BoxMesh_32hag"]
-size = Vector3(1, 4.005, 1)
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_knn7v"]
+height = 3.3408203
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_32hag"]
 albedo_color = Color(0.468777, 0.46877706, 0.468777, 1)
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_g4c7l"]
+height = 3.178711
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_s7qer"]
+height = 3.3999023
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_bjvpn"]
+height = 3.303711
 
 [sub_resource type="Animation" id="Animation_kb6p2"]
 length = 0.001
@@ -108,17 +119,30 @@ _data = {
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tqiix"]
 albedo_color = Color(1, 0.85882354, 0.6745098, 1)
 
-[sub_resource type="SphereMesh" id="SphereMesh_e7oew"]
-height = 0.5
-is_hemisphere = true
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_e7oew"]
+albedo_color = Color(0.30849737, 0.19575572, 0, 1)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_2q3nt"]
+height = 0.5019531
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_c35mf"]
+top_radius = 0.51171875
+bottom_radius = 0.51171875
+height = 0.0847168
 
 [sub_resource type="BoxMesh" id="BoxMesh_wodsf"]
+size = Vector3(0.41210938, 0.98413086, 1)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kb6p2"]
 albedo_color = Color(0.13077214, 0.13077214, 0.13077211, 1)
 
-[sub_resource type="BoxMesh" id="BoxMesh_kb6p2"]
-size = Vector3(1, 1.625, 0.54)
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_65viv"]
+radius = 0.71484375
+height = 2.2348633
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_x7c3f"]
+radius = 0.765625
+height = 5.123535
 
 [node name="Player" type="CharacterBody3D" unique_id=51620469 node_paths=PackedStringArray("tick_interpolator", "player_input", "rollback_sync", "attribute_component", "body", "weapon_controller")]
 collision_layer = 2
@@ -157,6 +181,7 @@ replication_config = SubResource("SceneReplicationConfig_2ieo8")
 [node name="MuzzleFlash" parent="WeaponController" unique_id=419486684 instance=ExtResource("27_5ejfk")]
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=218472258]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 shape = SubResource("CapsuleShape3D_kb6p2")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1851645100]
@@ -190,7 +215,7 @@ spawn_path = NodePath("..")
 script = ExtResource("3_32hag")
 
 [node name="HeadHurtbox" type="Area3D" parent="." unique_id=481075083]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6909796, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6909796, 0)
 collision_layer = 4
 collision_mask = 0
 script = ExtResource("5_2hs0m")
@@ -198,7 +223,7 @@ is_head = true
 metadata/_custom_type_script = "uid://c4uv27n00ycfc"
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="HeadHurtbox" unique_id=1595505387]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.017822266, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.07060075, 0)
 shape = SubResource("SphereShape3D_kb6p2")
 
 [node name="MeshInstance3D2" type="MeshInstance3D" parent="HeadHurtbox" unique_id=1360077016]
@@ -215,7 +240,7 @@ script = ExtResource("5_2hs0m")
 metadata/_custom_type_script = "uid://c4uv27n00ycfc"
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="BodyHurtbox" unique_id=194134934]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.3756714, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7049866, 0)
 shape = SubResource("CapsuleShape3D_wodsf")
 
 [node name="MeshInstance3D2" type="MeshInstance3D" parent="BodyHurtbox" unique_id=1278142914]
@@ -252,7 +277,7 @@ replication_config = SubResource("SceneReplicationConfig_kb6p2")
 
 [node name="Recoil" type="Node3D" parent="Body" unique_id=274010588]
 unique_name_in_owner = true
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6650573, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6650573, 0)
 script = ExtResource("14_wodsf")
 
 [node name="Head" type="Node3D" parent="Body/Recoil" unique_id=581817051]
@@ -268,64 +293,74 @@ target_position = Vector3(0, 0, -100000)
 [node name="WeaponParent" type="Node3D" parent="Body/Recoil/Head" unique_id=1022201944]
 
 [node name="RightArm" type="MeshInstance3D" parent="Body/Recoil/Head/WeaponParent" unique_id=1367727221]
-transform = Transform3D(0.10290378, -0.03368738, -0.040336303, 0.01487895, 0.10373236, -0.04867501, 0.050403092, 0.038154975, 0.096720055, 0.21079843, -0.39905983, -0.05466762)
-mesh = SubResource("BoxMesh_32hag")
+transform = Transform3D(0.10290378, -0.03368738, -0.040336303, 0.01487895, 0.10373236, -0.04867501, 0.050403092, 0.038154975, 0.096720055, 0.24508761, -0.29390618, -0.05466762)
+mesh = SubResource("CapsuleMesh_knn7v")
 surface_material_override/0 = SubResource("StandardMaterial3D_32hag")
 
 [node name="RightForearm" type="MeshInstance3D" parent="Body/Recoil/Head/WeaponParent" unique_id=31490221]
-transform = Transform3D(0.11430204, 0.011746423, -0.012170299, -0.009746699, -0.022206599, -0.11297308, -0.013823748, 0.11278269, -0.020976517, 0.21930444, -0.49350226, -0.27968284)
-mesh = SubResource("BoxMesh_32hag")
+transform = Transform3D(0.11430204, 0.011746423, -0.012170299, -0.009746699, -0.022206599, -0.11297308, -0.013823748, 0.11278269, -0.020976517, 0.24667081, -0.37526104, -0.34615195)
+mesh = SubResource("CapsuleMesh_g4c7l")
 surface_material_override/0 = SubResource("StandardMaterial3D_32hag")
 
 [node name="LeftForearm" type="MeshInstance3D" parent="Body/Recoil/Head/WeaponParent" unique_id=1224638582]
-transform = Transform3D(-0.072061, 0.0854119, 0.029378042, -0.028286997, 0.014350918, -0.1111078, -0.08577939, -0.076484725, 0.011959696, 0.09560159, -0.48071414, -0.5163804)
-mesh = SubResource("BoxMesh_32hag")
+transform = Transform3D(-0.072061, 0.0854119, 0.029378042, -0.028286997, 0.014350918, -0.1111078, -0.08577939, -0.076484725, 0.011959696, 0.055134505, -0.38812107, -0.44943762)
+mesh = SubResource("CapsuleMesh_s7qer")
 surface_material_override/0 = SubResource("StandardMaterial3D_32hag")
 
 [node name="LeftArm" type="MeshInstance3D" parent="Body/Recoil/Head/WeaponParent" unique_id=951024443]
-transform = Transform3D(-0.09425567, 0.060751524, -0.02785976, -0.013134585, -0.06406306, -0.09525994, -0.06553164, -0.074540086, 0.059164397, -0.19685566, -0.37884992, -0.21519944)
-mesh = SubResource("BoxMesh_32hag")
+transform = Transform3D(-0.108253255, 0.03882302, -0.011182655, -0.0131345885, -0.064063065, -0.09525994, -0.038206823, -0.08797583, 0.06443244, -0.13449031, -0.27369627, -0.1902971)
+mesh = SubResource("CapsuleMesh_bjvpn")
 surface_material_override/0 = SubResource("StandardMaterial3D_32hag")
 
 [node name="WeaponHandle" type="Node3D" parent="Body/Recoil/Head/WeaponParent" unique_id=1175799872]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.21047497, -0.44708264, -0.5573963)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.19938248, -0.3225472, -0.4596845)
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="Body/Recoil/Head/WeaponParent" unique_id=1089897270]
 libraries/ = SubResource("AnimationLibrary_32hag")
 
 [node name="Face" type="MeshInstance3D" parent="Body/Recoil/Head" unique_id=579986966]
-transform = Transform3D(0.4374137, 0, 0, 0, 0.4374137, 0, 0, 0, 0.4374137, 0, 0.046078205, 0)
+transform = Transform3D(0.34022865, 0, 0, 0, 0.34022865, 0, 0, 0, 0.34022865, 0, 0.09007269, 0)
 mesh = SubResource("SphereMesh_gyt1i")
 surface_material_override/0 = SubResource("StandardMaterial3D_tqiix")
 
+[node name="Face2" type="MeshInstance3D" parent="Body/Recoil/Head" unique_id=1604961961]
+transform = Transform3D(0.34332755, 0, 0, 0, 0.30762246, 0, 0, 0, 0.29695496, 0, 0.09170157, 0.031341553)
+mesh = SubResource("SphereMesh_gyt1i")
+surface_material_override/0 = SubResource("StandardMaterial3D_e7oew")
+
 [node name="Helmet" type="MeshInstance3D" parent="Body/Recoil/Head" unique_id=2067128649]
-transform = Transform3D(0.44936314, 0, 0, 0, 0.37751144, -0.24374652, 0, 0.24374652, 0.37751144, 0, 0.0860669, 0.023175657)
-mesh = SubResource("SphereMesh_e7oew")
+transform = Transform3D(0.28557143, 0, 0, 0, 0.23494522, -0.08705986, 0, 0.0674007, 0.3034731, 0, 0.24593234, 0.043850385)
+mesh = SubResource("CylinderMesh_2q3nt")
+surface_material_override/0 = SubResource("StandardMaterial3D_32hag")
+
+[node name="Helmet2" type="MeshInstance3D" parent="Body/Recoil/Head" unique_id=1340017954]
+transform = Transform3D(0.2864767, 0, 0, 0, 0.2620715, -0.09815653, 0, 0.075182654, 0.34215382, 0, 0.2077151, -0.03686864)
+mesh = SubResource("CylinderMesh_c35mf")
 surface_material_override/0 = SubResource("StandardMaterial3D_32hag")
 
 [node name="RightEye" type="MeshInstance3D" parent="Body/Recoil/Head" unique_id=1301557840]
-transform = Transform3D(0.07898294, 0, 0, 0, 0.07898294, 0, 0, 0, 0.07898294, 0.08205414, 0.04202491, -0.15975216)
+transform = Transform3D(0.07898294, 0, 0, 0, 0.07898294, 0, 0, 0, 0.07898294, 0.08205414, 0.089562595, -0.122764856)
 mesh = SubResource("BoxMesh_wodsf")
 surface_material_override/0 = SubResource("StandardMaterial3D_kb6p2")
 
 [node name="LeftEye" type="MeshInstance3D" parent="Body/Recoil/Head" unique_id=1615018128]
-transform = Transform3D(0.07898294, 0, 0, 0, 0.07898294, 0, 0, 0, 0.07898294, -0.0892587, 0.04202491, -0.15975216)
+transform = Transform3D(0.07898294, 0, 0, 0, 0.07898294, 0, 0, 0, 0.07898294, -0.0892587, 0.089562595, -0.122764856)
 mesh = SubResource("BoxMesh_wodsf")
 surface_material_override/0 = SubResource("StandardMaterial3D_kb6p2")
 
 [node name="Torso" type="MeshInstance3D" parent="Body" unique_id=583927625]
-transform = Transform3D(0.42766076, 0, 0, 0, 0.42766076, 0, 0, 0, 0.42766076, 0, 0.15616643, 0.020640612)
-mesh = SubResource("BoxMesh_kb6p2")
+transform = Transform3D(0.42766076, 0, 0, 0, 0.42766076, 0, 0, 0, 0.24273126, 0, 1.1504239, 0.020640612)
+mesh = SubResource("CapsuleMesh_65viv")
 surface_material_override/0 = SubResource("StandardMaterial3D_32hag")
 
 [node name="LeftLeg" type="MeshInstance3D" parent="Body" unique_id=172419924]
-transform = Transform3D(0.19128741, 0, 0, 0, 0.19128741, 0, 0, 0, 0.19128741, -0.10764241, -0.593606, 0.00477314)
-mesh = SubResource("BoxMesh_32hag")
+transform = Transform3D(0.19128741, 0, 0, 0, 0.19128741, 0, 0, 0, 0.19128741, -0.10764241, 0.50301266, 0.00477314)
+mesh = SubResource("CapsuleMesh_x7c3f")
 surface_material_override/0 = SubResource("StandardMaterial3D_32hag")
 
 [node name="RighLeg" type="MeshInstance3D" parent="Body" unique_id=1170353479]
-transform = Transform3D(0.19128741, 0, 0, 0, 0.19128741, 0, 0, 0, 0.19128741, 0.10657835, -0.5957482, 0.00477314)
-mesh = SubResource("BoxMesh_32hag")
+transform = Transform3D(0.19128741, 0, 0, 0, 0.19128741, 0, 0, 0, 0.19128741, 0.10657835, 0.507788, 0.00477314)
+mesh = SubResource("CapsuleMesh_x7c3f")
 surface_material_override/0 = SubResource("StandardMaterial3D_32hag")
 
 [node name="AmmoBarPublic" type="Label3D" parent="Body" unique_id=1596545662]

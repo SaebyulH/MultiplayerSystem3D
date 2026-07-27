@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://bhmnsehfve81e"]
 
 [ext_resource type="PackedScene" uid="uid://6mr0d18yn8po" path="res://weapon/projectiles/scenes/simple_projectile.tscn" id="1_1tiyg"]
+[ext_resource type="Script" uid="uid://bvkx76wgvdc6t" path="res://weapon/projectiles/scenes/arrow.gd" id="2_s8rlu"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_7rxcs"]
 radius = 0.22558594
@@ -29,9 +30,10 @@ height = 26.752
 [node name="SimpleProjectile" unique_id=1706686187 instance=ExtResource("1_1tiyg")]
 mass = 0.458
 linear_velocity = Vector3(0, 0, -60)
-lifetime = 5.0
+script = ExtResource("2_s8rlu")
 hurtbox_hit_mode = 3
 world_hit_mode = 3
+falloff_enabled = false
 
 [node name="CollisionShape3D" parent="." index="0" unique_id=1810742212]
 transform = Transform3D(-0.3480795, 3.0430073e-08, 1.3301409e-15, 5.4054674e-23, -1.5215036e-08, 0.3480795, 3.0430073e-08, 0.3480795, 1.5215036e-08, 1.6954402e-08, -8.477201e-09, 0.19393578)

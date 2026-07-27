@@ -37,6 +37,7 @@ gravity_scale = 0.0
 linear_velocity = Vector3(0, 0, -25)
 hurtbox_hit_mode = 2
 world_hit_mode = 2
+align_to_velocity = null
 
 [node name="CollisionShape3D" parent="." index="0" unique_id=1810742212]
 shape = SubResource("SphereShape3D_21xcj")

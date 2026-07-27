@@ -2,30 +2,31 @@ class_name WeaponController extends Node
 
 ## Random pitch variation applied to every weapon sound.
 ## 0.0 = all sounds play at their original pitch.
-## 0.05 = pitch varies ±5 % (0.95 – 1.05).  Higher values sound more chaotic.
+## 0.05 = pitch varies Ã‚Â±5 % (0.95 Ã¢â‚¬â€œ 1.05).  Higher values sound more chaotic.
 const PITCH_RANGE: float = 0.05
 
 var _bullet_hole_scene: PackedScene = preload("res://effects/bullet_hole.tscn")
 var _tracer_scene: PackedScene = preload("res://weapon/tracer.tscn")
 var _hit_sound: AudioStream = preload("res://assets/sounds/Hitsound.wav")
 var _hit_heal_sound: AudioStream = preload("res://assets/sounds/medkit_sound.mp3")
+var _crit_sound: AudioStream = preload("res://assets/sounds/Crit_received1.wav")
 
 
 # ---------------------------------------------------------------------------
 # Architecture notes
 # ---------------------------------------------------------------------------
 # Fire authority model:
-#   • PlayerInput.fire_held / fire_just_released are NOT in the rollback
+#   Ã¢â‚¬Â¢ PlayerInput.fire_held / fire_just_released are NOT in the rollback
 #     synchronizer. Netfox would stomp them on re-simulation ticks.
 #     WeaponController reads them raw in _physics_process every frame.
-#   • The OWNING CLIENT runs _process_fire() every physics frame.
+#   Ã¢â‚¬Â¢ The OWNING CLIENT runs _process_fire() every physics frame.
 #     It maintains its own cooldown/pending state for responsiveness.
 #     When the gate passes it sends fire_intent.rpc_id(1).
-#   • The SERVER re-validates everything in fire_intent before acting.
-#     Ammo is only deducted once — authoritatively on the server.
+#   Ã¢â‚¬Â¢ The SERVER re-validates everything in fire_intent before acting.
+#     Ammo is only deducted once Ã¢â‚¬â€ authoritatively on the server.
 #     The client UI optimistically shows -1 mag; the server corrects via
 #     mag_changed if it rejects the shot.
-#   • Host-as-player skips the RPC and calls fire_intent() directly,
+#   Ã¢â‚¬Â¢ Host-as-player skips the RPC and calls fire_intent() directly,
 #     but uses a separate code path so it never pre-sets _fire_cooldown
 #     before the server validation gate runs.
 # ---------------------------------------------------------------------------
@@ -34,6 +35,8 @@ var _is_reloading: bool     = false
 var _reload_timer: float    = 0.0
 var _pending_fire: bool     = false
 var _pending_fire_index: int = 0
+var _queued_interrupt: bool = false
+var _any_fire_was_held: bool = false
 
 
 var _pre_fire_timer: float  = 0.0
@@ -45,7 +48,10 @@ signal mag_changed(current: int, mag_max: int)
 signal weapon_changed(index: int, weapon: Weapon)
 ## Emitted when a SIGNAL-type fire mode is activated.  Projectiles can
 ## connect to this to trigger custom behaviour (e.g. detonate mines).
-signal signal_activated
+## [param target] — world position the player is looking at via raycast
+##   (or 10 000 units ahead if nothing is hit).
+## [param player_transform] — shooter's world position.
+signal signal_activated(target: Vector3, player_transform: Vector3)
 
 # Use @export only for editor-assigned defaults. All runtime mutation goes
 # through set_weapons() so the setter invariant is always enforced.
@@ -83,6 +89,17 @@ func _is_ready() -> bool:
 		and current_weapon_index < _weapons.size() \
 		and current_weapon_model != null \
 		and is_instance_valid(current_weapon_model)
+
+## Returns the FOV to use when ADS is active for the current weapon.
+## Falls back to 20.0 if the weapon has no ADS fire mode.
+func get_ads_zoom_fov() -> float:
+	if _weapons.is_empty() or current_weapon_index >= _weapons.size():
+		return 20.0
+	var weapon: Weapon = _weapons[current_weapon_index]
+	for fire in weapon.weapon_fires:
+		if fire.action_type == WeaponFire.ActionType.ADS:
+			return fire.zoom_fov
+	return 20.0
 #endregion
 
 #region Lifecycle
@@ -152,6 +169,8 @@ func reset() -> void:
 	_pending_fire = false
 	_fire_cooldown = 0.0
 	_current_spread = 0.0
+	_queued_interrupt = false
+	_any_fire_was_held = false
 	current_weapon_index = 0
 	for weapon in _weapons:
 		weapon.reset()
@@ -256,6 +275,8 @@ func _on_weapon_index_changed() -> void:
 	_pending_fire   = false
 	_fire_cooldown  = 0.0
 	_current_spread = 0.0
+	_queued_interrupt = false
+	_any_fire_was_held = false
 	if not _weapons.is_empty():
 		spawn_weapon_model()
 	if is_multiplayer_authority():
@@ -263,11 +284,28 @@ func _on_weapon_index_changed() -> void:
 	# Retract shield when switching away from a shield weapon.
 	_parent_player.retract_shield()
 
+	# Auto-reload if switching to a weapon that is already empty — covers
+	# weapon-switch and spawn/respawn cases that fire_intent() never sees.
+	if multiplayer.is_server() and not _weapons.is_empty():
+		var switched_weapon: Weapon = _weapons[current_weapon_index]
+		if not switched_weapon.has_infinite_ammo and switched_weapon.mag_current <= 0:
+			start_reload()
+
+		# Reset ADS when switching to a weapon that has no ADS fire mode.
+		var has_ads: bool = false
+		for fire in switched_weapon.weapon_fires:
+			if fire.action_type == WeaponFire.ActionType.ADS:
+				has_ads = true
+				break
+		if not has_ads and _parent_player.ads:
+			toggle_ads_synced.rpc()
+
 
 @rpc("call_local")
 func _cancel_reload() -> void:
 	_is_reloading = false
 	_reload_timer = 0.0
+	_queued_interrupt = false
 
 
 func next_weapon() -> void:
@@ -296,12 +334,12 @@ func _previous_weapon_server() -> void:
 
 #region Reload
 # Reload is fully server-authoritative.
-# The client calls request_reload.rpc_id(1) — the server validates, runs the
+# The client calls request_reload.rpc_id(1) Ã¢â‚¬â€ the server validates, runs the
 # timer, and when done calls _confirm_reload_done.rpc() on all peers.
 # The client sets _is_reloading = true immediately for local gate purposes
 # (so it doesn't spam fire RPCs during reload), but the flag is only cleared
 # by _confirm_reload_done arriving from the server. This means the client
-# gate and server gate are always in sync — no timer drift divergence.
+# gate and server gate are always in sync Ã¢â‚¬â€ no timer drift divergence.
 
 func start_reload() -> void:
 	if not _is_ready():
@@ -340,7 +378,13 @@ func _begin_reload_server() -> bool:
 		return false
 	_is_reloading = true
 	var reload_mult: float = _parent_player._character.reload_speed_mult if _parent_player._character else 1.0
-	_reload_timer = weapon.reload_time / max(reload_mult, 0.01)
+	var base_time: float = weapon.reload_time / max(reload_mult, 0.01)
+	# For individual-reload weapons, fold the remaining fire cooldown into
+	# the reload so one shell can't be loaded faster than the weapon's
+	# intended cycle rate (reload + post_shoot_delay).
+	if weapon.reload_individually and _fire_cooldown > 0.0:
+		base_time += _fire_cooldown
+	_reload_timer = base_time
 	_notify_reload_started.rpc(_reload_timer)
 	return true
 
@@ -373,12 +417,11 @@ func _finish_reload() -> void:
 		_sync_mag.rpc(weapon.mag_current)
 		_is_reloading = false
 		if weapon.mag_current < weapon.mag_size:
-			if player_input.primary_fire_held or player_input.secondary_fire_held:
+			if _queued_interrupt:
+				_queued_interrupt = false
 				_confirm_reload_done.rpc(weapon.mag_current)
-				return
-			else:
-				if not _begin_reload_server():
-					_confirm_reload_done.rpc(weapon.mag_current)
+			elif not _begin_reload_server():
+				_confirm_reload_done.rpc(weapon.mag_current)
 		else:
 			_confirm_reload_done.rpc(weapon.mag_current)
 	else:
@@ -395,9 +438,16 @@ func _confirm_reload_done(new_mag: int) -> void:
 	weapon.mag_current = clamp(new_mag, 0, weapon.mag_size)
 	_is_reloading      = false
 	mag_changed.emit(weapon.mag_current, weapon.mag_size)
+
+	# When the player is still holding fire as reload completes, clear per‑press
+	# memory so the held button immediately resumes shooting.  This makes both
+	# full‑reload and individual‑reload weapons feel responsive when the reload
+	# finishes — no need to release and re‑press the trigger.
+	if player_input.primary_fire_held or player_input.secondary_fire_held or player_input.tertiary_fire_held:
+		_fired_this_press.clear()
 #endregion
 
-#region Firing — input processing (owning peer only)
+#region Firing Ã¢â‚¬â€ input processing (owning peer only)
 func _process_fire() -> void:
 	if not _is_ready():
 		return
@@ -407,6 +457,10 @@ func _process_fire() -> void:
 	_handle_fire_input(weapon, 0, player_input.primary_fire_held)
 	_handle_fire_input(weapon, 1, player_input.secondary_fire_held)
 	_handle_fire_input(weapon, 2, player_input.tertiary_fire_held)
+
+	# Track whether any fire was held this frame so the next frame can
+	# detect a fresh press (for queued individual-reload interrupt).
+	_any_fire_was_held = player_input.primary_fire_held or player_input.secondary_fire_held or player_input.tertiary_fire_held
 
 
 func _handle_fire_input(weapon: Weapon, fire_index: int, input_held: bool) -> void:
@@ -443,9 +497,21 @@ func _handle_fire_input(weapon: Weapon, fire_index: int, input_held: bool) -> vo
 		# Shield blocks shooting unless can_shoot_while_shielded is set.
 		if _parent_player.shield_blocks_shooting():
 			return
+
+		# Queue an interrupt for individual-reload weapons when fire is
+		# newly pressed mid-reload (not a continued hold from before
+		# the reload started).  The reload stops after the current
+		# shell finishes loading.
+		if _is_reloading and weapon.reload_individually and not _any_fire_was_held:
+			_queued_interrupt = true
+
 		if not weapon.has_infinite_ammo and weapon.mag_current < fire.ammo_cost:
 			_play_empty.rpc(fire_index)
 			_fired_this_press[fire_index] = true
+			# Trigger reload when trying to fire an empty magazine — covers
+			# weapon-switch cases where auto-reload in fire_intent() never ran.
+			if not _is_reloading:
+				start_reload()
 			return
 
 	_try_fire(fire_index)
@@ -477,7 +543,13 @@ func retract_shield_synced() -> void:
 
 @rpc("any_peer", "call_local")
 func _send_signal() -> void:
-	signal_activated.emit()
+	var camera: Camera3D = _raycast.get_parent() as Camera3D
+	var target_pos: Vector3
+	if _raycast and _raycast.is_colliding():
+		target_pos = _raycast.get_collision_point()
+	else:
+		target_pos = camera.global_position + (-camera.global_transform.basis.z) * 10000.0
+	signal_activated.emit(target_pos, _parent_player.global_position)
 
 
 
@@ -563,6 +635,11 @@ func fire_intent(weapon_index: int, weapon_fire_index: int) -> void:
 	_execute_fire(weapon, weapon_fire_index)
 	_play_shoot_sound.rpc(weapon_fire_index)
 
+	# Auto-reload when the magazine runs dry.  Only the server triggers this;
+	# clients receive _notify_reload_started via RPC and stay in sync.
+	if not weapon.has_infinite_ammo and weapon.mag_current <= 0 and not _is_reloading:
+		start_reload()
+
 
 @rpc("any_peer", "call_local")
 func _sync_mag(authoritative_mag: int) -> void:
@@ -578,7 +655,7 @@ func _execute_fire(weapon: Weapon, weapon_fire_index: int) -> void:
 
 	var weapon_fire: WeaponFire = weapon.weapon_fires[weapon_fire_index]
 
-	# Don't apply recoil here for BURST — it handles its own
+	# Don't apply recoil here for BURST Ã¢â‚¬â€ it handles its own
 	if weapon_fire.multishot_mode != WeaponFire.MultishotMode.BURST:
 		var basis: Basis = weapon_model_parent.global_transform.basis
 		var recoil: Vector3 = basis * weapon_fire.recoil_knockback
@@ -683,7 +760,7 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 					var damage := weapon_fire.hitscan_damage * mult
 					if collider.is_head:
 						damage *= weapon_fire.headshot_multiplier
-					# Shield hurtbox — absorb all damage, no overflow to player.
+					# Shield hurtbox Ã¢â‚¬â€ absorb all damage, no overflow to player.
 					if collider.get_parent() is PlayerShield:
 						(collider.get_parent() as PlayerShield).absorb_damage(damage)
 					else:
@@ -691,9 +768,9 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 						if collider.get_parent().team == get_parent().team and collider.get_parent().team != Player.Team.FFA:
 							damage *= Player.FRIENDLY_FIRE_MULTIPLIER
 						if multiplayer.is_server():
-							_apply_damage_direct(player_name, -damage, _parent_player.name)
+							_apply_damage_direct(player_name, -damage, _parent_player.name, collider.is_head, mult)
 						else:
-							_change_health_on_server.rpc_id(1, player_name, -damage, _parent_player.name)
+							_change_health_on_server.rpc_id(1, player_name, -damage, _parent_player.name, collider.is_head, mult)
 		else:
 			if weapon_fire.hitscan_range >= 1000000000.0 / 10.0:
 				var far_pos: Vector3 = origin + world_dir * 10000.0
@@ -717,7 +794,7 @@ func _apply_shape_damage(weapon: Weapon, weapon_fire_index: int, shape_hits: Dic
 		var damage: float = weapon_fire.hitscan_damage * mult
 		if hit["is_head"]:
 			damage *= weapon_fire.headshot_multiplier
-		# Shield hurtbox — absorb all damage, no overflow to player.
+		# Shield hurtbox Ã¢â‚¬â€ absorb all damage, no overflow to player.
 		if collider.get_parent() is PlayerShield:
 			(collider.get_parent() as PlayerShield).absorb_damage(damage)
 			continue
@@ -725,9 +802,9 @@ func _apply_shape_damage(weapon: Weapon, weapon_fire_index: int, shape_hits: Dic
 		if collider.get_parent().team == get_parent().team and collider.get_parent().team != Player.Team.FFA:
 			damage *= Player.FRIENDLY_FIRE_MULTIPLIER
 		if multiplayer.is_server():
-			_apply_damage_direct(player_name, -damage, _parent_player.name)
+			_apply_damage_direct(player_name, -damage, _parent_player.name, hit["is_head"], mult)
 		else:
-			_change_health_on_server.rpc_id(1, player_name, -damage, _parent_player.name)
+			_change_health_on_server.rpc_id(1, player_name, -damage, _parent_player.name, hit["is_head"], mult)
 
 
 @rpc("any_peer", "call_local", "unreliable")
@@ -752,16 +829,17 @@ func _spawn_projectile_on_server(weapon_fire_index, shot_dir, basis, parent_play
 	var speed: float = projectile_scene.linear_velocity.length()
 	projectile_scene.linear_velocity = world_dir * speed
 	projectile_scene.shooter_team = team
+
 	projectile_spawn_parent.add_child(projectile_scene, true)
 
 
-func _apply_damage_direct(collider_name: String, delta: float, parent_player_name: String) -> void:
+func _apply_damage_direct(collider_name: String, delta: float, parent_player_name: String, is_headshot: bool = false, falloff_mult: float = 1.0) -> void:
 	var target: Player = GameManager.find_player(collider_name)
 	if target:
 		# Apply shooter's damage amp.
 		var shooter: Player = GameManager.find_player(parent_player_name)
 		var dmg_mult: float = shooter._character.damage_amp_mult if shooter and shooter._character else 1.0
-		target.change_health(delta * dmg_mult, parent_player_name)
+		target.change_health(delta * dmg_mult, parent_player_name, is_headshot, falloff_mult)
 		# Lifesteal: heal shooter for a percentage of damage dealt.
 		if delta < 0.0 and shooter and shooter._character:
 			var lifesteal: float = abs(delta * dmg_mult) * shooter._character.lifesteal_percent
@@ -769,10 +847,10 @@ func _apply_damage_direct(collider_name: String, delta: float, parent_player_nam
 				shooter.change_health(lifesteal, parent_player_name)
 
 @rpc("any_peer", "call_local", "reliable")
-func _change_health_on_server(collider_name: String, delta, parent_player_name):
+func _change_health_on_server(collider_name: String, delta, parent_player_name, is_headshot: bool = false, falloff_mult: float = 1.0):
 	if not is_multiplayer_authority():
 		return
-	_apply_damage_direct(collider_name, delta, parent_player_name)
+	_apply_damage_direct(collider_name, delta, parent_player_name, is_headshot, falloff_mult)
 
 
 func _compute_falloff_multiplier(weapon: Weapon, weapon_fire_index: int, distance: float) -> float:
@@ -808,7 +886,7 @@ func _on_hitscan_hit(hit_position: Vector3, hit_normal: Vector3, start_position:
 	projectile_spawn_parent.add_child(bullet_hole)
 	bullet_hole.global_position        = hit_position
 	bullet_hole.global_transform.basis = Basis(Quaternion(Vector3.UP, hit_normal))
-	# Timer is a child of bullet_hole — if bullet_hole is freed (parent cleanup),
+	# Timer is a child of bullet_hole Ã¢â‚¬â€ if bullet_hole is freed (parent cleanup),
 	# the timer is freed too, so the timeout never fires with a stale reference.
 	var timer := Timer.new()
 	timer.one_shot = true
@@ -858,6 +936,13 @@ func play_hit_heal_sound() -> void:
 	if not _is_ready():
 		return
 	_play_sound(_hit_heal_sound)
+
+## Played when you land a headshot, called by attribute component
+@rpc("any_peer", "call_local")
+func play_crit_sound() -> void:
+	if not _is_ready():
+		return
+	_play_sound(_crit_sound)
 
 func _align_weapon_to_raycast() -> void:
 	if current_weapon_model == null or not _raycast.is_colliding():

@@ -3,12 +3,12 @@ extends Resource
 class_name WeaponFire
 
 ## ---------------------------------------------------------------------------
-## WeaponFire — a single fire-mode slot on a Weapon resource.
+## WeaponFire â€” a single fire-mode slot on a Weapon resource.
 ##
 ## Action types
-##   SHOOT  – hitscan or projectile weapon
-##   ADS    – aim-down-sights (no bullet; hides bullet props in the inspector)
-##   SHIELD – deployable barrier that absorbs damage (see "Shield" group)
+##   SHOOT  â€“ hitscan or projectile weapon
+##   ADS    â€“ aim-down-sights (no bullet; hides bullet props in the inspector)
+##   SHIELD â€“ deployable barrier that absorbs damage (see "Shield" group)
 ## ---------------------------------------------------------------------------
 
 @export_group("Universal Combat")
@@ -19,6 +19,9 @@ enum ActionType {SHOOT, ADS, SHIELD, SIGNAL}
 	set(value):
 		action_type = value
 		notify_property_list_changed()
+
+## FOV to use when aiming down sights.  (ADS only.)
+@export var zoom_fov: float = 20.0
 
 ## If true, the weapon fires repeatedly while the trigger is held.  (SHOOT only.)
 @export var automatic: bool = false
@@ -50,7 +53,7 @@ enum BulletType {HITSCAN, PROJECTILE}
 @export var hitscan_range: float = 1_000_000_000.0## (HITSCAN, non-PROJECTILE)
 @export var headshot_multiplier: float = 1.0       ## (HITSCAN, non-PROJECTILE)
 
-@export var has_damage_falloff: bool = false:
+@export var has_damage_falloff: bool = true:
 	set(value):
 		has_damage_falloff = value
 		notify_property_list_changed()
@@ -90,7 +93,7 @@ enum MultishotMode {
 
 ## Maximum hit-points of the shield.
 @export var shield_hp: float = 100.0
-## Current shield HP — persists per WeaponFire so switching weapons and
+## Current shield HP â€” persists per WeaponFire so switching weapons and
 ## coming back remembers the shield's remaining strength.
 @export var shield_current_hp: float = 100.0
 
@@ -120,7 +123,7 @@ func _validate_property(property: Dictionary) -> void:
 	const SHOOT_ONLY: Array[String] = [
 		"automatic", "pre_shoot_delay", "post_shoot_delay", "ammo_cost",
 		"recoil_data", "recoil_knockback",
-		"bullet_type", "hitscan_damage", "hitscan_range", "headshot_multiplier",
+		"bullet_type", "hitscan_damage", "hitscan_range", "has_damage_falloff", "headshot_multiplier",
 		"has_damage_falloff", "falloff_start", "falloff_end", "falloff_curve",
 		"projectile_scene", "multishot_data", "multishot_mode",
 		"burst_post_shoot_delay", "burst_fire_has_recoil",
@@ -155,4 +158,9 @@ func _validate_property(property: Dictionary) -> void:
 		"can_shoot_while_shielded",
 	]
 	if property.name in SHIELD_ONLY and action_type != ActionType.SHIELD:
+		property.usage = PROPERTY_USAGE_NO_EDITOR
+
+	# ---- ADS properties hidden unless action_type == ADS ----
+	const ADS_ONLY: Array[String] = ["zoom_fov"]
+	if property.name in ADS_ONLY and action_type != ActionType.ADS:
 		property.usage = PROPERTY_USAGE_NO_EDITOR

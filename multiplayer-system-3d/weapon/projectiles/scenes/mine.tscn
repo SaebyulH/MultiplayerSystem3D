@@ -32,8 +32,7 @@ emission = Color(2.2241454, 0.5043554, 0.41116476, 1)
 [node name="Mine" unique_id=1706686187 instance=ExtResource("1_pq14p")]
 linear_velocity = Vector3(0, 0, -27)
 lifetime = 999.0
-explode_on_signal = true
-hurtbox_hit_mode = 2
+hurtbox_hit_mode = 3
 world_hit_mode = 3
 
 [node name="CollisionShape3D" parent="." index="0" unique_id=1810742212]

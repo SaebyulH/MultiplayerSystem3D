@@ -120,6 +120,7 @@ var _character: Character = null
 
 # Stored at _ready() — the original values from the scene file.
 var _stand_collider_height: float = 0.0
+var _stand_collider_y: float = 0.0
 var _stand_recoil_y: float = 0.0
 var _was_on_floor: bool = false
 var _was_sliding: bool = false
@@ -179,6 +180,7 @@ func _ready() -> void:
 	var shape: CapsuleShape3D = collider.shape as CapsuleShape3D
 	if shape:
 		_stand_collider_height = shape.height
+	_stand_collider_y = collider.position.y
 	_stand_recoil_y = %Recoil.position.y
 
 	despawn()
@@ -375,7 +377,7 @@ func _apply_movement_from_input(delta):
 		shape.height = move_toward(shape.height, target_height, crouch_transition_speed * delta)
 		# Keep the capsule bottom fixed so the body doesn't bob up/down.
 		var half_diff: float = (_stand_collider_height - shape.height) * 0.5
-		collider.position.y = -half_diff
+		collider.position.y = _stand_collider_y - half_diff
 		%Recoil.position.y = _stand_recoil_y - half_diff
 		# Continuous blend factor derived from actual collider height.
 		var denom: float = _stand_collider_height - crouch_height
@@ -500,7 +502,7 @@ func _apply_movement_from_input(delta):
 	const BASE_FOV: float = 90.0
 
 	if ads:
-		camera.fov = 20.0
+		camera.fov = weapon_controller.get_ads_zoom_fov()
 		speed = 2.5
 	else:
 		camera.fov = 90.0
@@ -510,12 +512,11 @@ func _apply_movement_from_input(delta):
 	body.mouse_sens_x = BASE_MOUSE_SENS * fov_ratio
 	body.mouse_sens_y = BASE_MOUSE_SENS * fov_ratio
 
-func change_health(health: float, changer: String):
-	# Negative delta = damage.  Shield absorbs everything, no overflow.
+func change_health(health: float, changer: String, is_headshot: bool = false, falloff_mult: float = 1.0):
 	if health < 0.0 and shield_instance and shield_instance.active:
 		shield_instance.absorb_damage(-health)
 		return
-	attribute_component.apply_health_delta(health, changer, self.name)
+	attribute_component.apply_health_delta(health, changer, self.name, is_headshot, falloff_mult)
 
 
 ## Deploy a shield from a SHIELD-type WeaponFire.  Called by WeaponController.

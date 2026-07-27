@@ -32,7 +32,6 @@ recoil_data = SubResource("Resource_lbqq1")
 recoil_knockback = Vector3(0, 0, 0.4)
 hitscan_damage = 8.0
 headshot_multiplier = 2.0
-has_damage_falloff = true
 falloff_curve = SubResource("CurveTexture_agci3")
 shoot_sound = SubResource("AudioStreamMP3_1h707")
 empty_sound = SubResource("AudioStreamMP3_uowba")

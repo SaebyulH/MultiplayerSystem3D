@@ -19,7 +19,7 @@ script = ExtResource("3_g856l")
 [sub_resource type="Resource" id="Resource_to6rp"]
 script = ExtResource("8_to6rp")
 automatic = true
-post_shoot_delay = 0.8
+post_shoot_delay = 0.9
 recoil_data = SubResource("Resource_2id02")
 bullet_type = 1
 projectile_scene = ExtResource("2_vw4sm")
@@ -57,7 +57,7 @@ metadata/_custom_type_script = "uid://djg0ti1n45f8b"
 script = ExtResource("5_l0ia1")
 display_name = "Rocket Launcher"
 reload_individually = true
-reload_time = 0.4
+reload_time = 0.7
 weapon_fires = Array[ExtResource("8_to6rp")]([SubResource("Resource_to6rp"), SubResource("Resource_qisbw"), SubResource("Resource_cbdh0")])
 weapon_model = ExtResource("7_vw4sm")
 killfeed_icon = ExtResource("1_2id02")

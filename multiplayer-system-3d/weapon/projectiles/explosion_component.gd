@@ -29,7 +29,11 @@ static var _explosion_scene: PackedScene = null
 # ----------------------------------------------------
 # ENTRY POINT (called only once by whoever triggers it)
 # ----------------------------------------------------
-func explode():
+## @param falloff_multiplier — travel-time damage scalar from the projectile
+##   (1.0 = full damage).  Multiplied with the existing distance-based falloff
+##   so rockets that have been in flight longer deal less damage across their
+##   entire blast radius.
+func explode(falloff_multiplier: float = 1.0):
 	if exploded:
 		return
 	exploded = true
@@ -70,10 +74,13 @@ func explode():
 		if not hit.is_empty():
 			continue
 
-		# Damage falloff: 100 % at centre, min_knockback_percent at max range.
+		# Distance falloff: 100 % at centre, min_knockback_percent at max range.
 		var dist_ratio: float = clamp(dist / splash_radius, 0.0, 1.0)
-		var falloff: float = 1.0 - dist_ratio * (1.0 - min_knockback_percent)
-		var damage: float = splash_health_delta * falloff
+		var dist_falloff: float = 1.0 - dist_ratio * (1.0 - min_knockback_percent)
+
+		# Combine distance-based and travel-time-based falloff.
+		var combined_falloff: float = dist_falloff * falloff_multiplier
+		var damage: float = splash_health_delta * combined_falloff
 
 
 		var has_hit_team = player.team == shooter_team
@@ -88,11 +95,11 @@ func explode():
 			else:
 				damage *= enemy_health_delta_multiplier
 
-		attr.apply_health_delta(damage, shooter_name, player.name)
+		attr.apply_health_delta(damage, shooter_name, player.name, false, falloff_multiplier)
 
 		# Knockback (deterministic impulse)
 		var dir: Vector3 = to_player.normalized()
-		var force: Vector3 = dir * knockback_force * falloff
+		var force: Vector3 = dir * knockback_force * combined_falloff
 
 		# self knockback scaling
 		if player.name == shooter_name:

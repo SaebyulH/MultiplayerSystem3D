@@ -2,6 +2,9 @@
 
 [ext_resource type="PackedScene" uid="uid://6mr0d18yn8po" path="res://weapon/projectiles/scenes/simple_projectile.tscn" id="1_xcdij"]
 
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_7ijep"]
+bounce = 1.0
+
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_xcdij"]
 radius = 0.30517578
 height = 1.4238281
@@ -27,12 +30,15 @@ height = 1.078
 albedo_color = Color(0, 0, 0, 1)
 
 [node name="SimpleProjectile" unique_id=1706686187 instance=ExtResource("1_xcdij")]
+physics_material_override = SubResource("PhysicsMaterial_7ijep")
 linear_velocity = Vector3(0, 0, -27)
 lifetime = 2.3
 explode_on_timeout = true
-explode_on_signal = true
 hurtbox_hit_mode = 2
 world_hit_mode = 1
+align_to_velocity = false
+falloff_start = 10.0
+falloff_end = 30.0
 
 [node name="CollisionShape3D" parent="." index="0" unique_id=1810742212]
 shape = SubResource("CapsuleShape3D_xcdij")
