@@ -28,7 +28,9 @@ script = ExtResource("1_6o6y1")
 lifetime = 20.0
 _hitbox_component = NodePath("HitboxComponent")
 _explosion_component = NodePath("ExplosionComponent")
-falloff_enabled = true
+align_to_velocity = null
+falloff_start = 0.0
+falloff_end = 50.0
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1810742212]
 transform = Transform3D(-0.3480795, 3.0430073e-08, 1.3301409e-15, 5.4054674e-23, -1.5215036e-08, 0.3480795, 3.0430073e-08, 0.3480795, 1.5215036e-08, 0, 0, 0)
@@ -49,6 +51,7 @@ shape = SubResource("CapsuleShape3D_cxcuy")
 
 [node name="ExplosionComponent" type="Node3D" parent="." unique_id=473826993]
 script = ExtResource("3_vwtsb")
+splash_health_delta = -100
 knockback_force = 10.0
 
 [connection signal="body_entered" from="." to="." method="_on_body_entered"]

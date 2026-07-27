@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="Weapon" format=4 uid="uid://bew77swqvmi2y"]
+[gd_resource type="Resource" script_class="Weapon" format=4 uid="uid://dldnlgbtrode8"]
 
 [ext_resource type="Texture2D" uid="uid://c4qik3rnc52b0" path="res://killfeed_icons/pistol.png" id="1_hadn0"]
 [ext_resource type="AudioStream" uid="uid://bwfdsxbmx4ko8" path="res://assets/sounds/empty_gun.mp3" id="1_la0ju"]
@@ -15,7 +15,6 @@ script = ExtResource("3_r57kw")
 
 [sub_resource type="Resource" id="Resource_dxxqn"]
 script = ExtResource("8_hadn0")
-zoom_fov = null
 post_shoot_delay = 0.06
 recoil_data = SubResource("Resource_8ac3t")
 hitscan_damage = 15.0

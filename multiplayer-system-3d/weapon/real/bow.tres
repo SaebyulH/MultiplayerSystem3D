@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="Weapon" format=3 uid="uid://dokd1mt5yprcd"]
+[gd_resource type="Resource" script_class="Weapon" format=3 uid="uid://carlfi4iya877"]
 
 [ext_resource type="Texture2D" uid="uid://dnvyhws4iay0y" path="res://killfeed_icons/bow.png" id="1_7ijep"]
 [ext_resource type="AudioStream" uid="uid://cqbknmbhlwhu" path="res://assets/sounds/reload.mp3" id="1_sgsea"]

@@ -22,7 +22,6 @@ post_shoot_delay = 0.05
 recoil_data = SubResource("Resource_ig0ij")
 hitscan_damage = 9.0
 headshot_multiplier = 2.5
-has_damage_falloff = true
 shoot_sound = ExtResource("1_id0kd")
 empty_sound = ExtResource("4_qdvu8")
 metadata/_custom_type_script = "uid://djg0ti1n45f8b"

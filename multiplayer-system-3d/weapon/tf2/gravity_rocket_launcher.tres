@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="Weapon" format=3 uid="uid://dsg7e7xrwasvo"]
+[gd_resource type="Resource" script_class="Weapon" format=3 uid="uid://cqxpeud4viub7"]
 
 [ext_resource type="Texture2D" uid="uid://t02hrau1pxll" path="res://killfeed_icons/gravity_rocket_launcher.png" id="1_86vcw"]
 [ext_resource type="AudioStream" uid="uid://b63r5283kwaa3" path="res://assets/sounds/freesound_community-mag-reload-81594.mp3" id="1_e61e6"]
@@ -45,6 +45,8 @@ metadata/_custom_type_script = "uid://djg0ti1n45f8b"
 [resource]
 script = ExtResource("2_86vcw")
 display_name = "Gravity Rocket Launcher"
+mag_size = 3
+mag_current = 3
 reload_individually = true
 reload_time = 0.4
 weapon_fires = Array[ExtResource("3_ebs2l")]([SubResource("Resource_to6rp"), SubResource("Resource_qisbw")])

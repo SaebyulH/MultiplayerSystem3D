@@ -33,6 +33,7 @@ linear_velocity = Vector3(0, 0, -60)
 script = ExtResource("2_s8rlu")
 hurtbox_hit_mode = 3
 world_hit_mode = 3
+align_to_velocity = true
 falloff_enabled = false
 
 [node name="CollisionShape3D" parent="." index="0" unique_id=1810742212]

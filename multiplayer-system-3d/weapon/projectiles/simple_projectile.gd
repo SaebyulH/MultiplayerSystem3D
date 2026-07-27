@@ -27,7 +27,7 @@ enum WorldHitMode {DISSAPEAR, NOTHING, EXPLODE, STICK}
 
 ## If true, the projectile rotates to face its velocity direction while in flight.
 ## Disabled automatically when stuck to a surface.
-@export var align_to_velocity: bool = true
+@export var align_to_velocity: bool = false
 
 # ── Distance-based damage falloff ────────────────────────────────────
 ## Configured per-projectile scene.  Uses _distance_traveled (metres) as the
@@ -36,8 +36,8 @@ enum WorldHitMode {DISSAPEAR, NOTHING, EXPLODE, STICK}
 	set(value):
 		falloff_enabled = value
 		notify_property_list_changed()
-@export var falloff_start: float = 0.0   ## metres until damage begins to drop
-@export var falloff_end: float = 50.0    ## metres until damage reaches curve minimum
+@export var falloff_start: float = 10.0   ## metres until damage begins to drop
+@export var falloff_end: float = 30.0    ## metres until damage reaches curve minimum
 @export var falloff_curve: CurveTexture = preload("res://defaults/projectile_default_damage_falloff_curve.tres")
 
 ## Original damage values saved at _ready() so we can scale them each frame.

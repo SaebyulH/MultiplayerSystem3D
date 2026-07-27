@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="Weapon" format=3 uid="uid://8ngqvkrhvgpw"]
+[gd_resource type="Resource" script_class="Weapon" format=3 uid="uid://nx6k3ylwck70"]
 
 [ext_resource type="AudioStream" uid="uid://b63r5283kwaa3" path="res://assets/sounds/freesound_community-mag-reload-81594.mp3" id="1_d7axr"]
 [ext_resource type="Texture2D" uid="uid://b6nhtskasist0" path="res://killfeed_icons/machine_pistol.png" id="1_woh1p"]

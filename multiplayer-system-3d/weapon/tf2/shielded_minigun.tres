@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="Weapon" format=4 uid="uid://cockhqy436jwb"]
+[gd_resource type="Resource" script_class="Weapon" format=4 uid="uid://dpg57qjj1oibj"]
 
 [ext_resource type="Texture2D" uid="uid://dohhy1kbv44j8" path="res://killfeed_icons/shielded_minigun.png" id="1_bah37"]
 [ext_resource type="AudioStream" uid="uid://b63r5283kwaa3" path="res://assets/sounds/freesound_community-mag-reload-81594.mp3" id="2_8ygd7"]

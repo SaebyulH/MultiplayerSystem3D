@@ -34,10 +34,10 @@ emission_energy_multiplier = 21.81
 
 [node name="SimpleProjectile" unique_id=1706686187 instance=ExtResource("1_junr8")]
 gravity_scale = 0.0
-linear_velocity = Vector3(0, 0, -25)
+linear_velocity = Vector3(0, 0, -20)
 hurtbox_hit_mode = 2
 world_hit_mode = 2
-align_to_velocity = null
+align_to_velocity = true
 
 [node name="CollisionShape3D" parent="." index="0" unique_id=1810742212]
 shape = SubResource("SphereShape3D_21xcj")

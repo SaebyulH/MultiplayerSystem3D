@@ -36,6 +36,7 @@ bottom_radius = 0.201
 linear_velocity = Vector3(0, 0, -20)
 hurtbox_hit_mode = 3
 world_hit_mode = 3
+align_to_velocity = true
 
 [node name="CollisionShape3D" parent="." index="0" unique_id=1810742212]
 shape = SubResource("CapsuleShape3D_7rxcs")
