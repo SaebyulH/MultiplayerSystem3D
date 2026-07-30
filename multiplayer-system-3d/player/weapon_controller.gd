@@ -34,9 +34,25 @@ var _crit_sound: AudioStream = preload("res://assets/sounds/Crit_received1.wav")
 var _is_reloading: bool     = false
 var _reload_timer: float    = 0.0
 var _pending_fire: bool     = false
+
+# Background reload: timers keyed by weapon index. The server ticks these
+# independently so weapons with reload_in_background keep loading when holstered.
+var _bg_reload_timers: Array[float] = []
+var _bg_reload_active: Array[bool] = []
 var _pending_fire_index: int = 0
 var _queued_interrupt: bool = false
 var _any_fire_was_held: bool = false
+
+## Throttle timer to prevent mouse-wheel double-scroll (multiple input events
+## per notch).  Weapon switches are ignored while this is above zero.
+var _weapon_switch_cooldown: float = 0.0
+const WEAPON_SWITCH_THROTTLE: float = 0.08
+
+## True while the weapon is in any part of the fire cycle (pre-delay, burst, post-delay).
+## Used by get_active_fire_speed_mult().  Managed locally — no RPC needed.
+var _is_firing: bool = false
+var _firing_remaining: float = 0.0
+var _firing_fire_index: int = -1
 
 
 var _pre_fire_timer: float  = 0.0
@@ -67,8 +83,9 @@ signal signal_activated(target: Vector3, player_transform: Vector3)
 	set(value):
 		if value == current_weapon_index:
 			return
+		var prev := current_weapon_index
 		current_weapon_index = clamp(value, 0, _weapons.size() - 1)
-		_on_weapon_index_changed()
+		_on_weapon_index_changed(prev)
 		_emit_weapon_changed()
 
 @export var weapon_model_parent: Node3D
@@ -135,6 +152,13 @@ func _physics_process(delta: float) -> void:
 func _tick_timers(delta: float) -> void:
 	if _fire_cooldown > 0.0:
 		_fire_cooldown -= delta
+	if _weapon_switch_cooldown > 0.0:
+		_weapon_switch_cooldown -= delta
+	if _firing_remaining > 0.0:
+		_firing_remaining -= delta
+		if _firing_remaining <= 0.0:
+			_is_firing = false
+			_firing_remaining = 0.0
 
 	# Spread decay when not actively firing.
 	if _is_ready():
@@ -149,6 +173,24 @@ func _tick_timers(delta: float) -> void:
 		_reload_timer -= delta
 		if multiplayer.is_server() and _reload_timer <= 0.0:
 			_finish_reload()
+
+	# Background reload: server ticks timers for holstered weapons.
+	if multiplayer.is_server():
+		for i in _weapons.size():
+			if i == current_weapon_index:
+				continue
+			if not _bg_reload_active[i]:
+				continue
+			var bg_weapon: Weapon = _weapons[i]
+			if not bg_weapon.reload_in_background:
+				_bg_reload_active[i] = false
+				continue
+			if bg_weapon.mag_current >= bg_weapon.mag_size:
+				_bg_reload_active[i] = false
+				continue
+			_bg_reload_timers[i] -= delta
+			if _bg_reload_timers[i] <= 0.0:
+				_bg_finish_reload(i)
 
 	if _pending_fire:
 		if player_input.primary_fire_held or player_input.secondary_fire_held or player_input.tertiary_fire_held:
@@ -171,6 +213,11 @@ func reset() -> void:
 	_current_spread = 0.0
 	_queued_interrupt = false
 	_any_fire_was_held = false
+	_bg_reload_timers.clear()
+	_bg_reload_active.clear()
+	_ensure_bg_arrays()
+	_is_firing = false
+	_firing_remaining = 0.0
 	current_weapon_index = 0
 	for weapon in _weapons:
 		weapon.reset()
@@ -228,6 +275,9 @@ func set_weapons(new_weapons: Array[Weapon]) -> void:
 	_pending_fire   = false
 	_fire_cooldown  = 0.0
 	_current_spread = 0.0
+	_bg_reload_timers.clear()
+	_bg_reload_active.clear()
+	_ensure_bg_arrays()
 
 	spawn_weapon_model()
 	_emit_weapon_changed()
@@ -235,6 +285,82 @@ func set_weapons(new_weapons: Array[Weapon]) -> void:
 
 func get_weapons() -> Array[Weapon]:
 	return _weapons
+
+## Returns the active fire mode's movement-speed multiplier (1.0 = normal).
+## Stays active while _fire_cooldown > 0 or during burst-firing.
+func get_active_fire_speed_mult() -> float:
+	if not _is_ready() or not _is_firing:
+		return 1.0
+	if _firing_fire_index >= 0 and _firing_fire_index < _weapons[current_weapon_index].weapon_fires.size():
+		return _weapons[current_weapon_index].weapon_fires[_firing_fire_index].move_speed_mult_while_shooting
+	return 1.0
+
+## Total duration of a fire cycle including pre-delay, burst, and post-delay.
+func _fire_cycle_duration(weapon: Weapon, fire_index: int) -> float:
+	var fire: WeaponFire = weapon.weapon_fires[fire_index]
+	var rate_mult: float = _parent_player._character.shoot_delay_mult if _parent_player._character else 1.0
+	var d := fire.pre_shoot_delay + fire.post_shoot_delay * rate_mult
+	if fire.multishot_mode == WeaponFire.MultishotMode.BURST:
+		d += (fire.multishot_data.size() - 1) * fire.burst_post_shoot_delay
+	return d
+
+## Mark the fire cycle as started so speed multipliers stay active.
+func _start_firing(weapon: Weapon, fire_index: int) -> void:
+	_is_firing = true
+	_firing_fire_index = fire_index
+	_firing_remaining = _fire_cycle_duration(weapon, fire_index)
+
+## Total ammo this fire-mode would consume.  For burst weapons with
+## burst_ammo_per_shot > 0, it's per-bullet × bullet-count.
+func _get_fire_ammo_cost(weapon: Weapon, fire_index: int) -> int:
+	if weapon.has_infinite_ammo:
+		return 0
+	var fire: WeaponFire = weapon.weapon_fires[fire_index]
+	if fire.multishot_mode == WeaponFire.MultishotMode.BURST and fire.burst_ammo_per_shot > 0:
+		return fire.burst_ammo_per_shot * fire.multishot_data.size()
+	return fire.ammo_cost
+
+## Returns reload info for UI: {active: bool, progress: float (0-1)}.
+## -1 progress means "not reloading".
+func get_reload_info(weapon_index: int) -> Dictionary:
+	if weapon_index < 0 or weapon_index >= _weapons.size():
+		return {"active": false, "progress": -1.0}
+	var w: Weapon = _weapons[weapon_index]
+	if w.has_infinite_ammo or w.mag_current >= w.mag_size:
+		return {"active": false, "progress": -1.0}
+	var reload_mult: float = _parent_player._character.reload_speed_mult if _parent_player._character else 1.0
+	var total: float = w.reload_time / max(reload_mult, 0.01)
+	# Active weapon check.
+	if weapon_index == current_weapon_index:
+		if _is_reloading and _reload_timer > 0.0:
+			return {"active": true, "progress": 1.0 - (_reload_timer / total)}
+		return {"active": false, "progress": -1.0}
+	# Background weapon check.
+	if _bg_reload_active[weapon_index] and _bg_reload_timers[weapon_index] > 0.0:
+		return {"active": true, "progress": 1.0 - (_bg_reload_timers[weapon_index] / total)}
+	return {"active": false, "progress": -1.0}
+
+func _auto_switch_to_next_loaded() -> void:
+	"""Switch to the first weapon that can shoot. Synced to all peers.
+	Priority: primary (0), secondary (1), melee (2)."""
+	if not multiplayer.is_server():
+		return
+	for i in _weapons.size():
+		if i == current_weapon_index:
+			continue
+		var w: Weapon = _weapons[i]
+		if w.has_infinite_ammo or w.mag_current > 0:
+			_switch_slot.rpc(i)
+			return
+
+@rpc("authority", "call_local", "reliable")
+func _switch_slot(index: int) -> void:
+	current_weapon_index = clamp(index, 0, _weapons.size() - 1)
+
+func _ensure_bg_arrays() -> void:
+	while _bg_reload_timers.size() < _weapons.size():
+		_bg_reload_timers.append(0.0)
+		_bg_reload_active.append(false)
 #endregion
 
 
@@ -269,17 +395,44 @@ func spawn_weapon_model() -> void:
 
 
 #region Weapon switching
-func _on_weapon_index_changed() -> void:
-	_is_reloading   = false
-	_reload_timer   = 0.0
+func _on_weapon_index_changed(previous_index: int = -1) -> void:
+	_ensure_bg_arrays()
+
+	# Save/restore background reload state across weapon switches.
+	if previous_index >= 0 and previous_index < _weapons.size():
+		var old_weapon: Weapon = _weapons[previous_index]
+		if old_weapon.reload_in_background and _is_reloading:
+			_bg_reload_timers[previous_index] = _reload_timer
+			_bg_reload_active[previous_index] = true
+
+	var new_weapon: Weapon = _weapons[current_weapon_index] if not _weapons.is_empty() else null
+	if new_weapon and new_weapon.reload_in_background and _bg_reload_active[current_weapon_index]:
+		# Restore the background reload for this weapon.
+		_is_reloading = true
+		_reload_timer = _bg_reload_timers[current_weapon_index]
+		_bg_reload_active[current_weapon_index] = false
+		# Sync the restored timer to clients so their UI shows correct progress.
+		if multiplayer.is_server():
+			_notify_bg_restore.rpc(current_weapon_index, _reload_timer)
+	else:
+		_is_reloading   = false
+		_reload_timer   = 0.0
+
 	_pending_fire   = false
 	_fire_cooldown  = 0.0
 	_current_spread = 0.0
 	_queued_interrupt = false
 	_any_fire_was_held = false
+	_is_firing = false
+	_firing_remaining = 0.0
 	if not _weapons.is_empty():
 		spawn_weapon_model()
-	if is_multiplayer_authority():
+	# Only broadcast cancel_reload for non-background weapons — background
+	# reloads keep ticking silently and the server syncs mags via _bg_sync_mag.
+	var old_had_bg: bool = false
+	if previous_index >= 0 and previous_index < _weapons.size():
+		old_had_bg = _weapons[previous_index].reload_in_background
+	if is_multiplayer_authority() and not old_had_bg:
 		_cancel_reload.rpc()
 	# Retract shield when switching away from a shield weapon.
 	_parent_player.retract_shield()
@@ -308,27 +461,64 @@ func _cancel_reload() -> void:
 	_queued_interrupt = false
 
 
+## Returns true if this weapon slot cannot be manually selected (e.g. empty
+## auto-switch weapon that hasn't reloaded yet).
+func _is_weapon_locked(index: int) -> bool:
+	if index < 0 or index >= _weapons.size():
+		return true
+	var w: Weapon = _weapons[index]
+	if w.auto_switch_when_empty and not w.has_infinite_ammo and w.mag_current <= 0:
+		return true
+	return false
+
+## Find the next selectable weapon in the given direction, wrapping around.
+## Returns current index if all weapons are locked.
+func _find_next_selectable(direction: int) -> int:
+	var count := _weapons.size()
+	if count <= 1:
+		return 0
+	var start := current_weapon_index
+	for _i in range(1, count):
+		start = (start + direction) % count
+		if start < 0:
+			start += count
+		if not _is_weapon_locked(start):
+			return start
+	return current_weapon_index
+
 func next_weapon() -> void:
+	if _weapon_switch_cooldown > 0.0:
+		return
+	_weapon_switch_cooldown = WEAPON_SWITCH_THROTTLE
 	if multiplayer.is_server():
-		current_weapon_index += 1
+		current_weapon_index = _find_next_selectable(1)
 	else:
 		_next_weapon_server.rpc_id(1)
 
 func previous_weapon() -> void:
+	if _weapon_switch_cooldown > 0.0:
+		return
+	_weapon_switch_cooldown = WEAPON_SWITCH_THROTTLE
 	if multiplayer.is_server():
-		current_weapon_index -= 1
+		current_weapon_index = _find_next_selectable(-1)
 	else:
 		_previous_weapon_server.rpc_id(1)
 
 @rpc("any_peer", "call_local")
 func _next_weapon_server() -> void:
 	if is_multiplayer_authority():
-		current_weapon_index += 1
+		if _weapon_switch_cooldown > 0.0:
+			return
+		_weapon_switch_cooldown = WEAPON_SWITCH_THROTTLE
+		current_weapon_index = _find_next_selectable(1)
 
 @rpc("any_peer", "call_local")
 func _previous_weapon_server() -> void:
 	if is_multiplayer_authority():
-		current_weapon_index -= 1
+		if _weapon_switch_cooldown > 0.0:
+			return
+		_weapon_switch_cooldown = WEAPON_SWITCH_THROTTLE
+		current_weapon_index = _find_next_selectable(-1)
 #endregion
 
 
@@ -405,6 +595,15 @@ func _notify_reload_started(timer_value: float) -> void:
 func _reload_rejected() -> void:
 	_is_reloading = false
 
+@rpc("authority", "call_remote", "reliable")
+func _notify_bg_restore(weapon_index: int, timer_value: float) -> void:
+	"""Client-side: restore background reload state when switching to a weapon
+	that was reloading in the background."""
+	if weapon_index != current_weapon_index:
+		return
+	_is_reloading = true
+	_reload_timer = timer_value
+
 func _finish_reload() -> void:
 	if not _is_ready():
 		_is_reloading = false
@@ -429,6 +628,43 @@ func _finish_reload() -> void:
 		_is_reloading = false
 		_confirm_reload_done.rpc(weapon.mag_size)
 
+
+func _bg_finish_reload(weapon_index: int) -> void:
+	"""Server-only: complete one reload cycle for a background weapon."""
+	if weapon_index < 0 or weapon_index >= _weapons.size():
+		return
+	var bg_weapon: Weapon = _weapons[weapon_index]
+	if bg_weapon.has_infinite_ammo or bg_weapon.mag_current >= bg_weapon.mag_size:
+		_bg_reload_active[weapon_index] = false
+		return
+
+	if bg_weapon.reload_individually:
+		bg_weapon.mag_current = clamp(bg_weapon.mag_current + 1, 0, bg_weapon.mag_size)
+		_bg_sync_mag.rpc(weapon_index, bg_weapon.mag_current)
+		if bg_weapon.mag_current < bg_weapon.mag_size:
+			# Continue loading next shell.
+			var reload_mult: float = _parent_player._character.reload_speed_mult if _parent_player._character else 1.0
+			_bg_reload_timers[weapon_index] = bg_weapon.reload_time / max(reload_mult, 0.01)
+		else:
+			_bg_reload_active[weapon_index] = false
+	else:
+		bg_weapon.mag_current = bg_weapon.mag_size
+		_bg_reload_active[weapon_index] = false
+		_bg_sync_mag.rpc(weapon_index, bg_weapon.mag_current)
+
+	# If this is now the active weapon, emit UI updates.
+	if weapon_index == current_weapon_index:
+		mag_changed.emit(bg_weapon.mag_current, bg_weapon.mag_size)
+
+@rpc("authority", "call_local", "reliable")
+func _bg_sync_mag(weapon_index: int, authoritative_mag: int) -> void:
+	"""Sync a background weapon's mag to all peers."""
+	if weapon_index < 0 or weapon_index >= _weapons.size():
+		return
+	var w: Weapon = _weapons[weapon_index]
+	w.mag_current = clamp(authoritative_mag, 0, w.mag_size)
+	if weapon_index == current_weapon_index:
+		mag_changed.emit(w.mag_current, w.mag_size)
 
 @rpc("call_local")
 func _confirm_reload_done(new_mag: int) -> void:
@@ -476,6 +712,10 @@ func _handle_fire_input(weapon: Weapon, fire_index: int, input_held: bool) -> vo
 	if _fired_this_press.get(fire_index, false):
 		return
 
+	# Stunned players cannot take any actions.
+	if _parent_player.status_effect_manager and _parent_player.status_effect_manager.is_stunned():
+		return
+
 	var fire: WeaponFire = weapon.weapon_fires[fire_index]
 
 	if fire.action_type == WeaponFire.ActionType.ADS:
@@ -505,10 +745,11 @@ func _handle_fire_input(weapon: Weapon, fire_index: int, input_held: bool) -> vo
 		if _is_reloading and weapon.reload_individually and not _any_fire_was_held:
 			_queued_interrupt = true
 
-		if not weapon.has_infinite_ammo and weapon.mag_current < fire.ammo_cost:
+		var required := _get_fire_ammo_cost(weapon, fire_index)
+		if not weapon.has_infinite_ammo and weapon.mag_current < required:
 			_play_empty.rpc(fire_index)
 			_fired_this_press[fire_index] = true
-			# Trigger reload when trying to fire an empty magazine — covers
+			# Trigger reload when trying to fire an empty magazine � covers
 			# weapon-switch cases where auto-reload in fire_intent() never ran.
 			if not _is_reloading:
 				start_reload()
@@ -556,7 +797,7 @@ func _send_signal() -> void:
 func _try_fire(weapon_fire_index: int) -> void:
 	if not _is_ready():
 		return
-	if _fire_cooldown > 0.0 or _is_reloading or _pending_fire:
+	if _fire_cooldown > 0.0 or _is_reloading or _pending_fire or _is_firing:
 		return
 
 	var weapon: Weapon   = _weapons[current_weapon_index]
@@ -564,7 +805,8 @@ func _try_fire(weapon_fire_index: int) -> void:
 
 
 	var fire: WeaponFire = weapon.weapon_fires[weapon_fire_index]
-	if not weapon.has_infinite_ammo and weapon.mag_current < fire.ammo_cost:
+	var required := _get_fire_ammo_cost(weapon, weapon_fire_index)
+	if not weapon.has_infinite_ammo and weapon.mag_current < required:
 		return
 
 	var data: RecoilData = _weapons[current_weapon_index].weapon_fires[weapon_fire_index].recoil_data
@@ -585,6 +827,9 @@ func _try_fire(weapon_fire_index: int) -> void:
 
 	_apply_recoil_rpc.rpc(data_dict, rolled)
 
+
+	# Mark the start of the fire cycle so speed multipliers stay active.
+	_start_firing(weapon, weapon_fire_index)
 
 	if pre_delay > 0.0:
 		_pending_fire   = true
@@ -625,20 +870,51 @@ func fire_intent(weapon_index: int, weapon_fire_index: int) -> void:
 	if not _is_ready():
 		return
 	var weapon: Weapon = _weapons[weapon_index]
+	var fire: WeaponFire = weapon.weapon_fires[weapon_fire_index]
 
-	if not weapon.has_infinite_ammo:
-		_set_mag(weapon.mag_current - (_weapons[weapon_index].weapon_fires[weapon_fire_index].ammo_cost))
-	var rate_mult: float = _parent_player._character.shoot_delay_mult if _parent_player._character else 1.0
-	_fire_cooldown = weapon.weapon_fires[weapon_fire_index].post_shoot_delay * rate_mult
+	# Compute ammo cost. Burst weapons can optionally cost ammo per bullet.
+	var total_cost: int = _get_fire_ammo_cost(weapon, weapon_fire_index)
 
-	_sync_mag.rpc(_weapons[current_weapon_index].mag_current)
-	_execute_fire(weapon, weapon_fire_index)
-	_play_shoot_sound.rpc(weapon_fire_index)
+	# Gate: must have enough ammo to fire.  (Already checked on client,
+	# but re-validated here on the server.)
+	if total_cost > 0 and weapon.mag_current < total_cost:
+		return
 
-	# Auto-reload when the magazine runs dry.  Only the server triggers this;
-	# clients receive _notify_reload_started via RPC and stay in sync.
-	if not weapon.has_infinite_ammo and weapon.mag_current <= 0 and not _is_reloading:
-		start_reload()
+	_fire_cooldown = fire.post_shoot_delay * (_parent_player._character.shoot_delay_mult if _parent_player._character else 1.0)
+	_start_firing(weapon, weapon_fire_index)
+
+	# Self-damage / self-heal on firing (applied once per trigger pull).
+	if fire.self_health_delta_on_shoot != 0.0:
+		_parent_player.change_health(fire.self_health_delta_on_shoot, _parent_player.name)
+
+	var is_burst := fire.multishot_mode == WeaponFire.MultishotMode.BURST
+
+	if is_burst:
+		# Burst fires asynchronously (coroutine).  Deduct the first bullet's
+		# ammo now (or the flat ammo_cost if burst_ammo_per_shot is 0).
+		# _fire_burst will deduct remaining bullets and handle auto-reload /
+		# auto-switch when the burst actually completes.
+		if not weapon.has_infinite_ammo:
+			var first_cost: int = fire.burst_ammo_per_shot if fire.burst_ammo_per_shot > 0 else fire.ammo_cost
+			_set_mag(weapon.mag_current - first_cost)
+		_sync_mag.rpc(_weapons[current_weapon_index].mag_current)
+		_execute_fire(weapon, weapon_fire_index)
+		_play_shoot_sound.rpc(weapon_fire_index)
+	else:
+		# Non-burst: execute synchronously, then deduct ammo.
+		_execute_fire(weapon, weapon_fire_index)
+		_play_shoot_sound.rpc(weapon_fire_index)
+		if total_cost > 0:
+			_set_mag(weapon.mag_current - total_cost)
+		_sync_mag.rpc(_weapons[current_weapon_index].mag_current)
+
+		# Auto-reload when the magazine runs dry.
+		if not weapon.has_infinite_ammo and weapon.mag_current <= 0 and not _is_reloading:
+			start_reload()
+
+		# Auto-switch to another weapon when this one is empty.
+		if weapon.auto_switch_when_empty and weapon.mag_current <= 0 and not weapon.has_infinite_ammo:
+			_auto_switch_to_next_loaded()
 
 
 @rpc("any_peer", "call_local")
@@ -675,33 +951,71 @@ func _execute_fire(weapon: Weapon, weapon_fire_index: int) -> void:
 
 func _fire_burst(weapon: Weapon, weapon_fire_index: int) -> void:
 	var weapon_fire: WeaponFire = weapon.weapon_fires[weapon_fire_index]
+	var is_server := multiplayer.is_server()
 	for i in weapon_fire.multishot_data.size():
 		if i == 0 or weapon_fire.burst_fire_has_recoil:
 			var basis: Basis = weapon_model_parent.global_transform.basis
 			var recoil: Vector3 = basis * weapon_fire.recoil_knockback
-			if multiplayer.is_server():
+			if is_server:
 				get_parent().apply_knockback(recoil)
 			else:
 				_knockback_player_on_server.rpc_id(1, recoil)
 		_fire_single_shot(weapon, weapon_fire_index, weapon_fire.multishot_data[i], null)
+
+		# Per-bullet self-damage / self-heal during burst.
+		if is_server and weapon_fire.self_health_delta_per_burst_bullet != 0.0:
+			_parent_player.change_health(weapon_fire.self_health_delta_per_burst_bullet, _parent_player.name)
+
+		# Deduct ammo for bullets after the first (first was deducted in fire_intent).
+		if i > 0 and is_server and not weapon.has_infinite_ammo and weapon_fire.burst_ammo_per_shot > 0:
+			weapon.mag_current = clamp(weapon.mag_current - weapon_fire.burst_ammo_per_shot, 0, weapon.mag_size)
+			_sync_mag.rpc(weapon.mag_current)
+
 		if i < weapon_fire.multishot_data.size() - 1:
 			await get_tree().create_timer(weapon_fire.burst_post_shoot_delay).timeout
+
+	# Burst complete — handle auto-reload and auto-switch on the server.
+	if is_server and not weapon.has_infinite_ammo:
+		if weapon.mag_current <= 0 and not _is_reloading:
+			start_reload()
+		if weapon.auto_switch_when_empty and weapon.mag_current <= 0:
+			_auto_switch_to_next_loaded()
 
 func _fire_all_shots(weapon: Weapon, weapon_fire_index: int, is_shape: bool) -> void:
 	var weapon_fire: WeaponFire = weapon.weapon_fires[weapon_fire_index]
 	var shape_hits: Dictionary = {}
+	var shotgun_hit_players: Dictionary = {}
 	for shot_dir in weapon_fire.multishot_data:
-		_fire_single_shot(weapon, weapon_fire_index, shot_dir, shape_hits if is_shape else null)
+		if is_shape:
+			_fire_single_shot(weapon, weapon_fire_index, shot_dir, shape_hits)
+		else:
+			var hit_name := _fire_single_shot(weapon, weapon_fire_index, shot_dir, null, false)
+			if hit_name != "":
+				shotgun_hit_players[hit_name] = true
 
 	if is_shape:
 		_apply_shape_damage(weapon, weapon_fire_index, shape_hits)
+	else:
+		for player_name in shotgun_hit_players:
+			_apply_on_hit_effects(weapon_fire, player_name)
 
 
-func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3, shape_hits) -> void:
+func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3, shape_hits, apply_on_hit: bool = true) -> String:
 	var weapon_fire: WeaponFire = weapon.weapon_fires[weapon_fire_index]
+	var _hit_player: String = ""
 	var camera: Camera3D = _raycast.get_parent() as Camera3D
 
 	var world_dir: Vector3 = camera.global_transform.basis * shot_dir.normalized()
+
+	# Movement inaccuracy (CS-style floor).  Your spread can never be *better*
+	# than the movement penalty — even on the first bullet when standing still.
+	if weapon_fire.movement_spread > 0.0:
+		var h_vel: Vector2 = Vector2(_parent_player.velocity.x, _parent_player.velocity.z)
+		var h_speed: float = h_vel.length()
+		var max_speed: float = _parent_player.speed
+		if max_speed > 0.0:
+			var move_floor: float = weapon_fire.movement_spread * (h_speed / max_speed)
+			_current_spread = maxf(_current_spread, move_floor)
 
 	# Apply weapon spread (shared by hitscan and projectile).
 	if weapon.spread_per_shot > 0.0 or weapon.min_spread > 0.0:
@@ -758,8 +1072,10 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 					var distance := origin.distance_to(result.position)
 					var mult := _compute_falloff_multiplier(weapon, weapon_fire_index, distance)
 					var damage := weapon_fire.hitscan_damage * mult
-					if collider.is_head:
+					var is_headshot := false
+					if collider.is_head and not is_equal_approx(weapon_fire.headshot_multiplier, 1.0):
 						damage *= weapon_fire.headshot_multiplier
+						is_headshot = true
 					# Shield hurtbox Ã¢â‚¬â€ absorb all damage, no overflow to player.
 					if collider.get_parent() is PlayerShield:
 						(collider.get_parent() as PlayerShield).absorb_damage(damage)
@@ -768,9 +1084,13 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 						if collider.get_parent().team == get_parent().team and collider.get_parent().team != Player.Team.FFA:
 							damage *= Player.FRIENDLY_FIRE_MULTIPLIER
 						if multiplayer.is_server():
-							_apply_damage_direct(player_name, -damage, _parent_player.name, collider.is_head, mult)
+							_apply_damage_direct(player_name, -damage, _parent_player.name, is_headshot, mult)
+							_hit_player = player_name
+							if apply_on_hit:
+								_apply_on_hit_effects(weapon_fire, _parent_player.name)
+							_apply_status_effects(player_name, weapon_fire.status_effects, _parent_player.name)
 						else:
-							_change_health_on_server.rpc_id(1, player_name, -damage, _parent_player.name, collider.is_head, mult)
+							_change_health_on_server.rpc_id(1, player_name, -damage, _parent_player.name, is_headshot, mult)
 		else:
 			if weapon_fire.hitscan_range >= 1000000000.0 / 10.0:
 				var far_pos: Vector3 = origin + world_dir * 10000.0
@@ -783,6 +1103,7 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 			_parent_player.name, _parent_player.team
 		)
 
+	return _hit_player
 
 func _apply_shape_damage(weapon: Weapon, weapon_fire_index: int, shape_hits: Dictionary) -> void:
 	var weapon_fire: WeaponFire = weapon.weapon_fires[weapon_fire_index]
@@ -792,8 +1113,10 @@ func _apply_shape_damage(weapon: Weapon, weapon_fire_index: int, shape_hits: Dic
 		var distance: float = hit["distance"]
 		var mult: float = _compute_falloff_multiplier(weapon, weapon_fire_index, distance)
 		var damage: float = weapon_fire.hitscan_damage * mult
-		if hit["is_head"]:
+		var is_headshot := false
+		if hit["is_head"] and not is_equal_approx(weapon_fire.headshot_multiplier, 1.0):
 			damage *= weapon_fire.headshot_multiplier
+			is_headshot = true
 		# Shield hurtbox Ã¢â‚¬â€ absorb all damage, no overflow to player.
 		if collider.get_parent() is PlayerShield:
 			(collider.get_parent() as PlayerShield).absorb_damage(damage)
@@ -802,9 +1125,11 @@ func _apply_shape_damage(weapon: Weapon, weapon_fire_index: int, shape_hits: Dic
 		if collider.get_parent().team == get_parent().team and collider.get_parent().team != Player.Team.FFA:
 			damage *= Player.FRIENDLY_FIRE_MULTIPLIER
 		if multiplayer.is_server():
-			_apply_damage_direct(player_name, -damage, _parent_player.name, hit["is_head"], mult)
+			_apply_damage_direct(player_name, -damage, _parent_player.name, is_headshot, mult)
+			_apply_on_hit_effects(weapon_fire, _parent_player.name)
+			_apply_status_effects(player_name, weapon_fire.status_effects, _parent_player.name)
 		else:
-			_change_health_on_server.rpc_id(1, player_name, -damage, _parent_player.name, hit["is_head"], mult)
+			_change_health_on_server.rpc_id(1, player_name, -damage, _parent_player.name, is_headshot, mult)
 
 
 @rpc("any_peer", "call_local", "unreliable")
@@ -830,8 +1155,39 @@ func _spawn_projectile_on_server(weapon_fire_index, shot_dir, basis, parent_play
 	projectile_scene.linear_velocity = world_dir * speed
 	projectile_scene.shooter_team = team
 
+	# Copy status effects from the WeaponFire to the projectile's HitboxComponent.
+	var weapon_fire: WeaponFire = weapon.weapon_fires[weapon_fire_index]
+	if not weapon_fire.status_effects.is_empty():
+		var hb: HitboxComponent = projectile_scene.get_node_or_null("HitboxComponent") as HitboxComponent
+		if hb:
+			hb.status_effects = weapon_fire.status_effects
+
 	projectile_spawn_parent.add_child(projectile_scene, true)
 
+
+## Apply on-hit effects (self-heal / self-damage) from a WeaponFire to the
+## shooter.  Called once per unique opponent for shotgun / shape modes.
+func _apply_on_hit_effects(fire: WeaponFire, shooter_name: String) -> void:
+	if fire.self_health_delta_on_hit != 0.0:
+		var shooter := GameManager.find_player(shooter_name)
+		if shooter:
+			shooter.change_health(fire.self_health_delta_on_hit, shooter_name)
+
+
+## Apply status effects from a WeaponFire to the hit target.
+func _apply_status_effects(target_name: String, effects: Array, shooter_name: String) -> void:
+	if effects.is_empty():
+		return
+	var target: Player = GameManager.find_player(target_name)
+	if not target:
+		push_warning("[StatusEffect] Could not find player '" + target_name + "' to apply effects.")
+		return
+	if not target.status_effect_manager:
+		push_warning("[StatusEffect] Player '" + target_name + "' has no StatusEffectManager node.  Make sure player.tscn was saved and the project was reloaded.")
+		return
+	for effect in effects:
+		if effect:
+			target.status_effect_manager.apply_effect(effect, shooter_name)
 
 func _apply_damage_direct(collider_name: String, delta: float, parent_player_name: String, is_headshot: bool = false, falloff_mult: float = 1.0) -> void:
 	var target: Player = GameManager.find_player(collider_name)

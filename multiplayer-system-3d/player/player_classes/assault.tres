@@ -1,29 +1,31 @@
 [gd_resource type="Resource" script_class="Class" format=3 uid="uid://di6fqvkmt05o6"]
 
 [ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="1_qjte0"]
-[ext_resource type="Resource" uid="uid://d6l12qqornj2" path="res://weapon/tf2/rocket_launcher.tres" id="2_4smbg"]
+[ext_resource type="Resource" uid="uid://d2bb8yhatmquu" path="res://weapon/assault_weapons/rocket_launcher.tres" id="2_4smbg"]
 [ext_resource type="Script" uid="uid://cbg4mqtqfaara" path="res://player/class.gd" id="2_l1baf"]
-[ext_resource type="Resource" uid="uid://b4ydfvfklj5cl" path="res://weapon/tf2/grenade_launcher.tres" id="3_4smbg"]
-[ext_resource type="Resource" uid="uid://bky6y1dbcl48b" path="res://weapon/tf2/minigun.tres" id="4_5au0l"]
-[ext_resource type="Resource" uid="uid://c67at3703hf5k" path="res://weapon/tf2/flamethrower.tres" id="5_4smbg"]
-[ext_resource type="Resource" uid="uid://dsg7e7xrwasvo" path="res://weapon/tf2/gravity_rocket_launcher.tres" id="6_vm0dj"]
-[ext_resource type="Resource" uid="uid://bew77swqvmi2y" path="res://weapon/tf2/pistol.tres" id="8_4smbg"]
-[ext_resource type="Resource" uid="uid://br3itrjvhnrav" path="res://weapon/tf2/explodable_grenade_launcher.tres" id="8_ol1fc"]
-[ext_resource type="Resource" uid="uid://bj4kqmw4u3l4r" path="res://weapon/tf2/revolver.tres" id="9_2cd3m"]
-[ext_resource type="Resource" uid="uid://8ngqvkrhvgpw" path="res://weapon/tf2/machine_pistol.tres" id="9_skpeg"]
+[ext_resource type="Resource" uid="uid://bbju6todsyosn" path="res://weapon/assault_weapons/grenade_launcher.tres" id="3_4smbg"]
+[ext_resource type="Resource" uid="uid://by861gwb7m67t" path="res://weapon/assault_weapons/minigun.tres" id="4_5au0l"]
+[ext_resource type="Resource" uid="uid://dhh8rdws1eixv" path="res://weapon/assault_weapons/flamethrower.tres" id="5_4smbg"]
+[ext_resource type="Resource" uid="uid://cqxpeud4viub7" path="res://weapon/assault_weapons/gravity_rocket_launcher.tres" id="6_vm0dj"]
+[ext_resource type="Resource" uid="uid://dldnlgbtrode8" path="res://weapon/shared/pistol.tres" id="8_4smbg"]
+[ext_resource type="Resource" uid="uid://8xn6jhlrj13c" path="res://weapon/assault_weapons/explodable_grenade_launcher.tres" id="8_ol1fc"]
+[ext_resource type="Resource" uid="uid://nx6k3ylwck70" path="res://weapon/shared/machine_pistol.tres" id="9_skpeg"]
 [ext_resource type="Script" uid="uid://bxv3anwekoggx" path="res://player/character.gd" id="10_char"]
-[ext_resource type="Resource" uid="uid://1xp4mq8uxkgl" path="res://weapon/real/ak.tres" id="10_vm0dj"]
+[ext_resource type="Resource" uid="uid://bmkyqbgc5d8xr" path="res://weapon/assault_weapons/ak.tres" id="10_vm0dj"]
 [ext_resource type="Resource" uid="uid://rqbtee8x1try" path="res://player/characters/juggernaut.tres" id="11_char"]
-[ext_resource type="Resource" uid="uid://0hkmatvlmnfi" path="res://weapon/real/uzi.tres" id="11_moxu8"]
-[ext_resource type="Resource" uid="uid://cockhqy436jwb" path="res://weapon/tf2/shielded_minigun.tres" id="12_60hm4"]
+[ext_resource type="Resource" uid="uid://bscsd8ql8u3ga" path="res://weapon/assault_weapons/uzi.tres" id="11_moxu8"]
+[ext_resource type="Resource" uid="uid://dpg57qjj1oibj" path="res://weapon/assault_weapons/shielded_minigun.tres" id="12_60hm4"]
 [ext_resource type="Resource" uid="uid://cgi1jrf004ttd" path="res://player/characters/breacher.tres" id="12_char"]
-[ext_resource type="Resource" uid="uid://cj03xt8a6fk8l" path="res://weapon/tf2/redirectable_rocket_launcher.tres" id="14_qv5tr"]
-[ext_resource type="Resource" uid="uid://d2b7q22os1jw3" path="res://weapon/tf2/mine_launcher.tres" id="17_ln7a5"]
+[ext_resource type="Resource" uid="uid://cj03xt8a6fk8l" path="res://weapon/assault_weapons/redirectable_rocket_launcher.tres" id="14_qv5tr"]
+[ext_resource type="Resource" uid="uid://c25ioc0vorxqa" path="res://weapon/assault_weapons/mine_launcher.tres" id="17_ln7a5"]
+[ext_resource type="Resource" uid="uid://cyrg4j6rykkrd" path="res://weapon/assistance_weapons/bat.tres" id="18_melee"]
+[ext_resource type="Resource" uid="uid://b76j82ln7pwlm" path="res://weapon/assault_weapons/mre.tres" id="20_0ep13"]
 
 [resource]
 script = ExtResource("2_l1baf")
 class_display_name = "Assault"
-primary_weapons = Array[ExtResource("1_qjte0")]([ExtResource("2_4smbg"), ExtResource("6_vm0dj"), ExtResource("3_4smbg"), ExtResource("8_ol1fc"), ExtResource("4_5au0l"), ExtResource("12_60hm4"), ExtResource("5_4smbg"), ExtResource("10_vm0dj"), ExtResource("11_moxu8"), ExtResource("14_qv5tr")])
-secondary_weapons = Array[ExtResource("1_qjte0")]([ExtResource("9_2cd3m"), ExtResource("8_4smbg"), ExtResource("9_skpeg"), ExtResource("17_ln7a5")])
+primary_weapons = Array[ExtResource("1_qjte0")]([ExtResource("2_4smbg"), ExtResource("14_qv5tr"), ExtResource("6_vm0dj"), ExtResource("3_4smbg"), ExtResource("8_ol1fc"), ExtResource("4_5au0l"), ExtResource("12_60hm4"), ExtResource("5_4smbg"), ExtResource("10_vm0dj")])
+secondary_weapons = Array[ExtResource("1_qjte0")]([ExtResource("8_4smbg"), ExtResource("9_skpeg"), ExtResource("17_ln7a5"), ExtResource("11_moxu8"), ExtResource("20_0ep13")])
+melee_weapons = Array[ExtResource("1_qjte0")]([ExtResource("18_melee")])
 characters = Array[ExtResource("10_char")]([ExtResource("11_char"), ExtResource("12_char")])
 metadata/_custom_type_script = "uid://cbg4mqtqfaara"

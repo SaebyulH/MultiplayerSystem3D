@@ -79,6 +79,7 @@ var queue_velocity := Vector3(0.0, 0.0, 0.0)
 @onready var collider: CollisionShape3D = $CollisionShape3D
 @onready var mesh: MeshInstance3D = $MeshInstance3D
 @onready var damage_number_manager: DamageNumberManager = $DamageNumberManager
+@onready var status_effect_manager: StatusEffectManager = $StatusEffectManager
 
 var is_crouching: bool = false
 
@@ -140,6 +141,7 @@ var spawned := false
 # Stored so late-joining peers can be synced with the correct weapon models.
 var _loadout_primary_path: String = ""
 var _loadout_secondary_path: String = ""
+var _loadout_melee_path: String = ""
 var _loadout_character_path: String = ""
 
 # Used to be _pending_spawn_position / _has_pending_spawn — removed.
@@ -204,15 +206,17 @@ func rpc_reset(pos: Vector3) -> void:
 	velocity = Vector3.ZERO
 	knockback_velocity = Vector3.ZERO
 
-	# Reset health and weapons on every peer so clients stay in sync.
+	# Reset health, weapons, and status effects on every peer.
 	attribute_component.reset()
 	weapon_controller.reset()
+	if status_effect_manager:
+		status_effect_manager.clear_all_effects()
 
 ## Full-state sync for a late-joining peer.  Handles visibility and weapon
 ## loadout in one atomic RPC so the player does not flicker into view with
 ## wrong weapon models.
 @rpc("authority", "call_remote", "reliable")
-func rpc_sync_full_state(pos: Vector3, pp: String, sp: String, cp: String = "") -> void:
+func rpc_sync_full_state(pos: Vector3, pp: String, sp: String, mp: String = "", cp: String = "") -> void:
 	# -- Weapons first (before spawn, so correct model is visible) --
 	if not pp.is_empty() and not sp.is_empty():
 		var ctrl: WeaponController = $WeaponController
@@ -224,6 +228,10 @@ func rpc_sync_full_state(pos: Vector3, pp: String, sp: String, cp: String = "") 
 					primary.duplicate(true) as Weapon,
 					secondary.duplicate(true) as Weapon,
 				]
+				if not mp.is_empty():
+					var melee: Weapon = load(mp) as Weapon
+					if melee:
+						nw.append(melee.duplicate(true) as Weapon)
 				ctrl.set_weapons(nw)
 				ctrl.current_weapon_index = 0
 
@@ -265,6 +273,8 @@ func despawn():
 		shield_instance.reset_hp()
 	if _active_shield_fire:
 		_active_shield_fire.shield_current_hp = _active_shield_fire.shield_hp
+	if status_effect_manager:
+		status_effect_manager.clear_all_effects()
 	hide()
 	spawned = false
 	collider.disabled = true
@@ -400,6 +410,7 @@ func _apply_movement_from_input(delta):
 	var weapons := weapon_controller.get_weapons()
 	if not weapons.is_empty():
 		calc_speed = calc_speed * weapons[weapon_controller.current_weapon_index].player_speed_multiplier
+		calc_speed = calc_speed * weapon_controller.get_active_fire_speed_mult()
 	# Blend speed penalty smoothly with the collider.
 	var eff_crouch_mult: float = crouch_speed_multiplier + (_character.crouch_speed_mult if _character else 1.0)
 	calc_speed *= lerp(1.0, eff_crouch_mult, crouch_factor)
@@ -513,6 +524,9 @@ func _apply_movement_from_input(delta):
 	body.mouse_sens_y = BASE_MOUSE_SENS * fov_ratio
 
 func change_health(health: float, changer: String, is_headshot: bool = false, falloff_mult: float = 1.0):
+	# Invincible players take no damage and are immune to negative effects.
+	if health < 0.0 and status_effect_manager and status_effect_manager.is_invincible():
+		return
 	if health < 0.0 and shield_instance and shield_instance.active:
 		shield_instance.absorb_damage(-health)
 		return

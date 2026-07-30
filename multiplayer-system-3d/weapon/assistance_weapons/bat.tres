@@ -1,0 +1,66 @@
+[gd_resource type="Resource" script_class="Weapon" format=3 uid="uid://cyrg4j6rykkrd"]
+
+[ext_resource type="AudioStream" uid="uid://bwfdsxbmx4ko8" path="res://assets/sounds/empty_gun.mp3" id="1_2ijdx"]
+[ext_resource type="Texture2D" uid="uid://bf6bhwmp5isrs" path="res://killfeed_icons/bat.png" id="1_yfral"]
+[ext_resource type="Texture2D" uid="uid://b6gktr1vfryte" path="res://defaults/default_damage_falloff_curve.tres" id="2_da3ra"]
+[ext_resource type="Script" uid="uid://yvevtn4dsddy" path="res://player/recoil/recoil_data.gd" id="3_ayegb"]
+[ext_resource type="AudioStream" uid="uid://cqbknmbhlwhu" path="res://assets/sounds/reload.mp3" id="4_w4h84"]
+[ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="5_jqwjd"]
+[ext_resource type="PackedScene" uid="uid://0ao8biac1wwu" path="res://weapon/assistance_weapons/bat.tscn" id="7_2ijdx"]
+[ext_resource type="AudioStream" uid="uid://4v1iw33cexcc" path="res://assets/sounds/freesound_community-knife-slice-41231.mp3" id="7_0341t"]
+[ext_resource type="Script" uid="uid://djg0ti1n45f8b" path="res://weapon/weapon_fire.gd" id="8_0341t"]
+[ext_resource type="AudioStream" uid="uid://dmsu80i3l18h1" path="res://assets/sounds/u_dtbxmnju4i-taking-out-knife-217793.mp3" id="8_yfral"]
+
+[sub_resource type="Resource" id="Resource_mey0f"]
+script = ExtResource("3_ayegb")
+
+[sub_resource type="Resource" id="Resource_rx36s"]
+script = ExtResource("8_0341t")
+automatic = true
+post_shoot_delay = 0.25
+recoil_data = SubResource("Resource_mey0f")
+hitscan_damage = 100.0
+hitscan_range = 3.0
+multishot_data = Array[Vector3]([Vector3(-0.4, 0, -1), Vector3(-0.2, 0, -1), Vector3(0, 0, -1), Vector3(0.2, 0, -1), Vector3(0.4, 0, -1)])
+multishot_mode = 2
+shoot_sound = ExtResource("7_0341t")
+empty_sound = ExtResource("1_2ijdx")
+metadata/_custom_type_script = "uid://djg0ti1n45f8b"
+
+[sub_resource type="Resource" id="Resource_da3ra"]
+script = ExtResource("3_ayegb")
+recoil = Vector3(0, 0, 0)
+metadata/_custom_type_script = "uid://yvevtn4dsddy"
+
+[sub_resource type="Resource" id="Resource_0341t"]
+script = ExtResource("8_0341t")
+automatic = true
+post_shoot_delay = 0.01
+recoil_data = SubResource("Resource_da3ra")
+recoil_knockback = Vector3(0, 0, -1)
+hitscan_range = 2.0
+shoot_sound = ExtResource("8_yfral")
+empty_sound = ExtResource("1_2ijdx")
+metadata/_custom_type_script = "uid://djg0ti1n45f8b"
+
+[sub_resource type="Resource" id="Resource_yfral"]
+script = ExtResource("8_0341t")
+automatic = true
+post_shoot_delay = 1.0
+recoil_data = SubResource("Resource_da3ra")
+recoil_knockback = Vector3(0, 0, -333)
+hitscan_range = 2.0
+shoot_sound = ExtResource("8_yfral")
+empty_sound = ExtResource("1_2ijdx")
+metadata/_custom_type_script = "uid://djg0ti1n45f8b"
+
+[resource]
+script = ExtResource("5_jqwjd")
+display_name = "Bat"
+has_infinite_ammo = true
+player_speed_multiplier = 1.2
+weapon_fires = Array[ExtResource("8_0341t")]([SubResource("Resource_rx36s"), SubResource("Resource_0341t"), SubResource("Resource_yfral")])
+weapon_model = ExtResource("7_2ijdx")
+killfeed_icon = ExtResource("1_yfral")
+reload_sound = ExtResource("4_w4h84")
+metadata/_custom_type_script = "uid://qjf4ciit3dqy"

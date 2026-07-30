@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="PoisonEffect" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://components/status_effect/effects/poison_effect.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+effect_id = "poison"
+display_name = "Poison"
+is_negative = true
+base_duration = 13.0
+tick_interval = 0.5

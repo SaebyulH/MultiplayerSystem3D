@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://bndefnuqb0koh"]
+
+[ext_resource type="PackedScene" uid="uid://3vrafas8ntke" path="res://assets/colt/colt_revolver_-_free.glb" id="1_nbojq"]
+
+[node name="Revolver" type="Node3D" unique_id=1503666704]
+
+[node name="Sketchfab_Scene" parent="." unique_id=53020643 instance=ExtResource("1_nbojq")]
+transform = Transform3D(-5.871682e-10, 0, 0.035527073, 0, 0.035527073, 0, -0.013432843, 0, -1.5529377e-09, 0, 0.01352869, -0.069535434)
+
+[node name="Muzzle" type="Node3D" parent="." unique_id=813090975]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.19391619, -0.8668398)

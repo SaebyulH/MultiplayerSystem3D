@@ -1,0 +1,17 @@
+[gd_scene format=3 uid="uid://d3smja8hfgqx1"]
+
+[ext_resource type="PackedScene" uid="uid://dbvire4mf15ag" path="res://assets/models/ImageToStl.com_c_syringegun/c_syringegun.glb" id="1_borxq"]
+
+[node name="Pistol" type="Node3D" unique_id=664585380]
+
+[node name="Muzzle" type="Node3D" parent="." unique_id=2026291909]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.12967256, -0.49123335)
+
+[node name="c_syringegun2" parent="." unique_id=44388376 instance=ExtResource("1_borxq")]
+transform = Transform3D(-0.025264151, 4.4173243e-09, -2.2086626e-09, 2.2086624e-09, -1.1043312e-09, -0.025264151, -4.4173243e-09, -0.025264151, 1.104331e-09, 0, 0.06260094, 0.16602337)
+
+[node name="c_syringegun3" parent="." unique_id=614768424 instance=ExtResource("1_borxq")]
+transform = Transform3D(0.032999996, -1.2154542e-09, 2.8849523e-09, 2.8849518e-09, -6.0772715e-10, -0.033, 2.8849516e-09, 0.0139031755, -1.4424757e-09, 0, 0, 0.35383394)
+
+[node name="c_syringegun4" parent="." unique_id=1747080495 instance=ExtResource("1_borxq")]
+transform = Transform3D(0.032999996, -1.2154542e-09, 2.8849523e-09, 2.8849518e-09, -6.0772715e-10, -0.033, 2.8849516e-09, 0.0139031755, -1.4424757e-09, 0, 0, 0.041847527)

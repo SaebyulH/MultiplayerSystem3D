@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_char")
 character_name = "Stalker"
-description = "Normal Assasin."
+description = "Normal Assassin."
 damage_amp_mult = 0.5
 health_mult = 1.5
 lifesteal_percent = 1.0

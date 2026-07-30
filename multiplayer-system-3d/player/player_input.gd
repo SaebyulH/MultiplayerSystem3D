@@ -44,6 +44,12 @@ func _gather() -> void:
 		input_dir  = Vector2.ZERO
 		jump_input = false
 		return
+	# Stunned players cannot move, jump, or crouch.
+	if get_parent().status_effect_manager and get_parent().status_effect_manager.is_stunned():
+		input_dir  = Vector2.ZERO
+		jump_input = false
+		crouch     = false
+		return
 	input_dir  = Input.get_vector("move_left", "move_right", "move_forward", "move_backward")
 	jump_input = Input.is_action_pressed("ui_accept")
 	crouch     = Input.is_action_pressed("crouch")
@@ -52,6 +58,13 @@ func _input(event: InputEvent) -> void:
 	if get_parent().is_bot:
 		return
 	if not is_multiplayer_authority():
+		return
+
+	# Stunned players cannot take any actions.
+	if get_parent().status_effect_manager and get_parent().status_effect_manager.is_stunned():
+		primary_fire_held   = false
+		secondary_fire_held = false
+		tertiary_fire_held  = false
 		return
 
 	if Input.get_mouse_mode() != Input.MOUSE_MODE_CAPTURED:

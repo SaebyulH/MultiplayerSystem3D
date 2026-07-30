@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="BleedEffect" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://components/status_effect/effects/bleed_effect.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+effect_id = "bleed"
+display_name = "Bleed"
+is_negative = true
+base_duration = 4.0
+tick_interval = 0.5

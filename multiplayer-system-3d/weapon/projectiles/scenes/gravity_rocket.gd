@@ -1,6 +1,5 @@
 extends SimpleProjectile
 
 
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta: float) -> void:
-	super()
+func _on_weapon_signal(target: Vector3, player_transform: Vector3) -> void:
+	gravity_scale *= -1

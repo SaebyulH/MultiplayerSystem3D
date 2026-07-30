@@ -1,0 +1,49 @@
+[gd_resource type="Resource" script_class="Weapon" format=3 uid="uid://ckmmcd08v3adb"]
+
+[ext_resource type="Texture2D" uid="uid://dyyb5ssarrbrk" path="res://killfeed_icons/medpack_launcher.png" id="1_tt23n"]
+[ext_resource type="AudioStream" uid="uid://cqbknmbhlwhu" path="res://assets/sounds/reload.mp3" id="2_t83lx"]
+[ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="3_8e5fk"]
+[ext_resource type="Script" uid="uid://djg0ti1n45f8b" path="res://weapon/weapon_fire.gd" id="4_7x2r3"]
+[ext_resource type="AudioStream" uid="uid://bwfdsxbmx4ko8" path="res://assets/sounds/empty_gun.mp3" id="5_s3d18"]
+[ext_resource type="Texture2D" uid="uid://b6gktr1vfryte" path="res://defaults/default_damage_falloff_curve.tres" id="6_vsmmn"]
+[ext_resource type="PackedScene" uid="uid://dfyafkr18mtuq" path="res://weapon/projectiles/scenes/healthpack.tscn" id="7_1rskr"]
+[ext_resource type="Script" uid="uid://yvevtn4dsddy" path="res://player/recoil/recoil_data.gd" id="8_0lnwl"]
+[ext_resource type="PackedScene" uid="uid://evq31o8nptpq" path="res://weapon/projectiles/scenes/poisoned_healthpack.tscn" id="9_6bu14"]
+[ext_resource type="AudioStream" uid="uid://u24dsvsfmlr2" path="res://assets/sounds/gun_sound.mp3" id="10_eoyy2"]
+[ext_resource type="PackedScene" uid="uid://d3smja8hfgqx1" path="res://weapon/assistance_weapons/medpack_launcher.tscn" id="11_pvunv"]
+
+[sub_resource type="Resource" id="Resource_we44c"]
+script = ExtResource("8_0lnwl")
+
+[sub_resource type="Resource" id="Resource_7ulhg"]
+script = ExtResource("4_7x2r3")
+automatic = true
+recoil_data = SubResource("Resource_we44c")
+bullet_type = 1
+projectile_scene = ExtResource("7_1rskr")
+shoot_sound = ExtResource("5_s3d18")
+empty_sound = ExtResource("5_s3d18")
+metadata/_custom_type_script = "uid://djg0ti1n45f8b"
+
+[sub_resource type="Resource" id="Resource_hwbxp"]
+script = ExtResource("4_7x2r3")
+automatic = true
+recoil_data = SubResource("Resource_we44c")
+bullet_type = 1
+projectile_scene = ExtResource("9_6bu14")
+shoot_sound = ExtResource("10_eoyy2")
+empty_sound = ExtResource("5_s3d18")
+metadata/_custom_type_script = "uid://djg0ti1n45f8b"
+
+[resource]
+script = ExtResource("3_8e5fk")
+display_name = "Medpack Launcher"
+has_infinite_ammo = true
+mag_size = 40
+mag_current = 40
+reload_time = 1.305
+weapon_fires = Array[ExtResource("4_7x2r3")]([SubResource("Resource_7ulhg"), SubResource("Resource_hwbxp")])
+weapon_model = ExtResource("11_pvunv")
+killfeed_icon = ExtResource("1_tt23n")
+reload_sound = ExtResource("2_t83lx")
+metadata/_custom_type_script = "uid://qjf4ciit3dqy"

@@ -17,6 +17,10 @@ signal hit_hurtbox(hurtbox)
 ## Read by HurtComponent to display in damage numbers.
 var current_falloff_multiplier: float = 1.0
 
+## Status effects applied to the target on hit.  Set at runtime by
+## WeaponController when spawning a projectile.  Read by HurtComponent.
+var status_effects: Array = []
+
 func _ready() -> void:
 	area_entered.connect(_on_hurtbox_entered)
 

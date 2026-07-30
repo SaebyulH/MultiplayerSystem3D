@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://c7dssrsml4sfp"]
 
 [ext_resource type="PackedScene" uid="uid://6mr0d18yn8po" path="res://weapon/projectiles/scenes/simple_projectile.tscn" id="1_tsae3"]
+[ext_resource type="Script" uid="uid://blvxr87nax5n0" path="res://weapon/projectiles/scenes/gravity_rocket.gd" id="2_y5gub"]
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_21xcj"]
 radius = 0.36645794
@@ -33,10 +34,13 @@ emission = Color(0.85268945, 0.71366084, 0.3015667, 1)
 emission_energy_multiplier = 21.81
 
 [node name="SimpleProjectile" unique_id=1706686187 instance=ExtResource("1_tsae3")]
-gravity_scale = 2.0
+gravity_scale = 1.5
 linear_velocity = Vector3(0, 0, -20)
-lifetime = 5.0
-align_to_velocity = false
+script = ExtResource("2_y5gub")
+lifetime = 1000.0
+hurtbox_hit_mode = 2
+world_hit_mode = 2
+align_to_velocity = true
 falloff_start = 10.0
 falloff_end = 30.0
 
@@ -63,21 +67,26 @@ mesh = SubResource("CylinderMesh_ht1kx")
 surface_material_override/0 = SubResource("StandardMaterial3D_84p14")
 
 [node name="MeshInstance3D5" type="MeshInstance3D" parent="MeshInstance3D2" index="1" unique_id=1851794290]
-transform = Transform3D(0.7059405, -6.171528e-08, -6.352747e-22, -6.171528e-08, -0.7059405, 6.171528e-08, -5.3953208e-15, -6.171528e-08, -0.7059405, 2.4164586e-07, 5.5282135, 2.4164586e-07)
+transform = Transform3D(-0.16418132, -7.5335755e-08, -1.4611318e-20, 1.4353143e-08, -0.8617433, 7.5336e-08, 1.2547937e-15, -7.5336e-08, -0.8617433, 2.416456e-07, 5.5282135, 2.416457e-07)
 mesh = SubResource("CylinderMesh_21xcj")
 surface_material_override/0 = SubResource("StandardMaterial3D_84p14")
 
-[node name="MeshInstance3D4" type="MeshInstance3D" parent="MeshInstance3D2" index="2" unique_id=967684598]
-transform = Transform3D(1.4835982, -7.1054274e-15, 2.1175824e-22, 7.1054274e-15, 1.4835982, 7.1054274e-15, 2.1175824e-22, -7.1054274e-15, 1.4835982, 8.9924185e-08, 2.0572257, 8.9924185e-08)
+[node name="MeshInstance3D8" type="MeshInstance3D" parent="MeshInstance3D2" index="2" unique_id=563598020]
+transform = Transform3D(7.1765927e-09, -3.766798e-08, 0.8617432, 7.1765496e-09, -0.8617432, -3.7667974e-08, -0.1641813, -3.7667757e-08, 3.7667984e-08, 2.4164552e-07, 5.5282135, 2.4164564e-07)
+mesh = SubResource("CylinderMesh_21xcj")
+surface_material_override/0 = SubResource("StandardMaterial3D_84p14")
+
+[node name="MeshInstance3D4" type="MeshInstance3D" parent="MeshInstance3D2" index="3" unique_id=967684598]
+transform = Transform3D(4.1366434, 0, -2.1175824e-22, 5.684342e-14, 0.7992527, -1.7763568e-15, 0, -3.5527137e-15, -0.49267942, -5.9826945e-08, 0.34427345, 1.5048638e-08)
 mesh = SubResource("CylinderMesh_wx0ko")
 surface_material_override/0 = SubResource("StandardMaterial3D_12le0")
 
-[node name="MeshInstance3D7" type="MeshInstance3D" parent="MeshInstance3D2" index="3" unique_id=107002034]
-transform = Transform3D(1.218203, -2.842171e-14, -2.9646153e-21, 1.4210855e-14, 1.9812043, 7.1054274e-15, 0, -1.4210855e-14, 1.218203, 2.5216013e-07, 3.9129891, 1.7104216e-07)
+[node name="MeshInstance3D7" type="MeshInstance3D" parent="MeshInstance3D2" index="4" unique_id=107002034]
+transform = Transform3D(1.218203, -4.2632564e-14, -3.3881318e-21, 2.1316282e-14, 1.9812043, 1.0658141e-14, 4.2351647e-22, -2.1316282e-14, 1.218203, -2.8074524e-08, 0.70747805, 3.0924827e-08)
 mesh = SubResource("CylinderMesh_wx0ko")
 surface_material_override/0 = SubResource("StandardMaterial3D_84p14")
 
-[node name="MeshInstance3D6" type="MeshInstance3D" parent="MeshInstance3D2" index="4" unique_id=291060083]
-transform = Transform3D(1.0310273, 5.684342e-14, -1.2705494e-21, 1.4210855e-14, -5.661303, 7.1054274e-15, 4.2351647e-22, 2.842171e-14, 1.0310276, 8.9924185e-08, 2.057226, 8.992419e-08)
+[node name="MeshInstance3D6" type="MeshInstance3D" parent="MeshInstance3D2" index="5" unique_id=291060083]
+transform = Transform3D(0.8026351, 5.684342e-14, -1.0587912e-21, 2.842171e-14, -4.4072165, 1.0658141e-14, 6.352747e-22, 2.842171e-14, 0.80263525, 8.992415e-08, 2.057226, 8.992417e-08)
 mesh = SubResource("CylinderMesh_wx0ko")
 surface_material_override/0 = SubResource("StandardMaterial3D_12le0")

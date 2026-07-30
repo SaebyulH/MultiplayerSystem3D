@@ -34,6 +34,7 @@ linear_velocity = Vector3(0, 0, -27)
 lifetime = 999.0
 hurtbox_hit_mode = 3
 world_hit_mode = 3
+align_to_velocity = true
 
 [node name="CollisionShape3D" parent="." index="0" unique_id=1810742212]
 transform = Transform3D(-0.34807953, 3.043008e-08, 1.3301413e-15, -3.043008e-08, -0.34807953, -3.043008e-08, -1.3301407e-15, -3.043008e-08, 0.34807953, 0, 0, 0)

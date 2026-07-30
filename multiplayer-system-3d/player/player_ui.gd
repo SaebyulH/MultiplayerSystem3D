@@ -31,9 +31,15 @@ var _reload_bar_bg: ColorRect
 var _reload_bar_fill: ColorRect
 
 var _weapon_list: VBoxContainer
+var _bg_reload_bars: Array[ProgressBar] = []
+var _bg_reload_labels: Array[Label] = []
 var _crosshair: ColorRect
 var _respawn_label: Label
 var _respawn_label_bg: ColorRect
+
+# Status effect display
+var _effect_container: HBoxContainer
+var _effect_labels: Array[Label] = []
 
 # Health delta tracking
 var _last_health: float = 0.0
@@ -98,6 +104,7 @@ func _build_ui() -> void:
 	_build_shield()
 	_build_weapon_list()
 	_build_respawn_timer()
+	_build_status_effects()
 
 func _build_crosshair() -> void:
 	# Black outline
@@ -335,6 +342,20 @@ func _build_respawn_timer() -> void:
 	_respawn_label.add_theme_font_size_override("font_size", 32)
 	container.add_child(_respawn_label)
 
+func _build_status_effects() -> void:
+	_effect_container = HBoxContainer.new()
+	_effect_container.anchor_left   = 0.5
+	_effect_container.anchor_right  = 0.5
+	_effect_container.anchor_top    = 0.0
+	_effect_container.anchor_bottom = 0.0
+	_effect_container.offset_left   = -200.0
+	_effect_container.offset_top    = 60.0
+	_effect_container.offset_right  = 200.0
+	_effect_container.offset_bottom = 92.0
+	_effect_container.add_theme_constant_override("separation", 8)
+	_effect_container.alignment = BoxContainer.ALIGNMENT_CENTER
+	add_child(_effect_container)
+
 # --------------------------------------------------
 #  Updates (called from _process)
 # --------------------------------------------------
@@ -355,6 +376,8 @@ func _process(_delta: float) -> void:
 	_update_team()
 	_update_character()
 	_update_respawn_timer()
+	_update_bg_reload_bars()
+	_update_status_effects()
 
 func _update_health() -> void:
 	if not attribute_component or not is_inside_tree():
@@ -537,19 +560,76 @@ func _on_ammo_updated(_current = null, _max = null) -> void:
 	_update_ammo()
 	_update_weapon_list()
 
+func _update_bg_reload_bars() -> void:
+	if not weapon_controller:
+		return
+	var weapons := weapon_controller.get_weapons()
+	var current_index := weapon_controller.current_weapon_index
+	for i in _bg_reload_bars.size():
+		if i >= weapons.size():
+			break
+		var info: Dictionary = weapon_controller.get_reload_info(i)
+		if info["active"] and i != current_index:
+			_bg_reload_bars[i].visible = true
+			_bg_reload_bars[i].value = clamp(info["progress"], 0.0, 1.0)
+			_bg_reload_labels[i].modulate = Color(0.3, 0.7, 1.0, 0.9)
+		else:
+			_bg_reload_bars[i].visible = false
+		if i != current_index and not info["active"]:
+			# Reset non-active label color (not gold, not blue — just grey).
+			_bg_reload_labels[i].modulate = Color(0.65, 0.65, 0.65)
+
+func _update_status_effects() -> void:
+	var sem: StatusEffectManager = _owner_player.status_effect_manager if _owner_player else null
+	if not sem:
+		return
+	var times: Dictionary = sem.get_active_effect_times()
+	var ids: Array = times.keys()
+
+	while _effect_labels.size() > ids.size():
+		var lbl: Label = _effect_labels.pop_back()
+		lbl.queue_free()
+
+	for i in ids.size():
+		var id: String = ids[i]
+		var remaining: float = times[id]
+		var state: Dictionary = sem.get_effect_state(id)
+		if state.get("drain_started", true) == false:
+			continue
+
+		var label: Label
+		if i < _effect_labels.size():
+			label = _effect_labels[i]
+		else:
+			label = Label.new()
+			label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+			label.add_theme_constant_override("outline_size", 6)
+			label.add_theme_font_size_override("font_size", 16)
+			label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+			_effect_container.add_child(label)
+			_effect_labels.append(label)
+		label.text = "%s %.1fs" % [id.capitalize(), remaining]
+		label.visible = true
+
 func _on_weapon_changed(_index = null, _weapon = null) -> void:
 	_update_weapon_list()
+	_update_bg_reload_bars()
 
 func _update_weapon_list() -> void:
 	if not weapon_controller:
 		return
 	for child in _weapon_list.get_children():
 		child.queue_free()
+	_bg_reload_bars.clear()
+	_bg_reload_labels.clear()
 
 	var weapons := weapon_controller.get_weapons()
 	var current_index := weapon_controller.current_weapon_index
 
 	for i in weapons.size():
+		var entry := VBoxContainer.new()
+		entry.add_theme_constant_override("separation", 2)
+
 		var label := Label.new()
 		label.text = weapons[i].display_name
 		label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
@@ -560,4 +640,18 @@ func _update_weapon_list() -> void:
 			label.add_theme_font_size_override("font_size", 24)
 		else:
 			label.modulate = Color(0.65, 0.65, 0.65)
-		_weapon_list.add_child(label)
+		entry.add_child(label)
+		_bg_reload_labels.append(label)
+
+		# Progress bar for background reload (hidden by default).
+		var bar := ProgressBar.new()
+		bar.custom_minimum_size = Vector2(0, 8)
+		bar.size_flags_horizontal = Control.SIZE_FILL
+		bar.max_value = 1.0
+		bar.value = 0.0
+		bar.modulate = Color(0.3, 0.7, 1.0, 0.8)
+		bar.visible = false
+		entry.add_child(bar)
+		_bg_reload_bars.append(bar)
+
+		_weapon_list.add_child(entry)

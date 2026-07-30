@@ -1,0 +1,65 @@
+[gd_scene format=3 uid="uid://oeshwpuiijrv"]
+
+[ext_resource type="PackedScene" uid="uid://6mr0d18yn8po" path="res://weapon/projectiles/scenes/simple_projectile.tscn" id="1_0582i"]
+[ext_resource type="Script" uid="uid://bvkx76wgvdc6t" path="res://weapon/projectiles/scenes/arrow.gd" id="2_m0pfo"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_kd01l"]
+radius = 0.48472312
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_xn376"]
+radius = 0.51098806
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_0582i"]
+albedo_color = Color(0.37162217, 0.3716222, 0.37162215, 1)
+metallic = 1.0
+roughness = 0.21
+
+[node name="SimpleProjectile" unique_id=1706686187 instance=ExtResource("1_0582i")]
+mass = 0.458
+linear_velocity = Vector3(0, 0, -20)
+script = ExtResource("2_m0pfo")
+hurtbox_hit_mode = 3
+world_hit_mode = 3
+align_to_velocity = true
+falloff_enabled = false
+
+[node name="CollisionShape3D" parent="." index="0" unique_id=1810742212]
+transform = Transform3D(-0.32970276, 2.8823527e-08, 1.2599165e-15, 5.1200872e-23, -1.4411763e-08, 0.32970276, 2.8823527e-08, 0.32970276, 1.4411763e-08, 0, 0, 0)
+shape = SubResource("SphereShape3D_kd01l")
+
+[node name="HitboxComponent" parent="." index="2" unique_id=1963592485]
+transform = Transform3D(2.2834837, 0, 0, 0, 2.2834837, 0, 0, 0, 2.2834837, 0, 0, 0)
+health_delta = -30.0
+headshot_multiplier = 2.0
+
+[node name="CollisionShape3D" parent="HitboxComponent" index="0" unique_id=1314331169]
+transform = Transform3D(-0.19364831, 1.6929272e-08, 7.40002e-16, -3.0072425e-23, -8.464636e-09, 0.19364831, 1.6929272e-08, 0.19364831, 8.464636e-09, 0, 0, 0)
+shape = SubResource("SphereShape3D_xn376")
+
+[node name="CSGCombiner3D" type="CSGCombiner3D" parent="." index="4" unique_id=1979218151]
+transform = Transform3D(2, 0, 0, 0, -8.742278e-08, 2, 0, -2, -8.742278e-08, 0, 0, 0)
+material_override = SubResource("StandardMaterial3D_0582i")
+
+[node name="CSGBox3D" type="CSGBox3D" parent="CSGCombiner3D" index="0" unique_id=614917507]
+transform = Transform3D(0.08351832, 0.08351832, 0, -0.08351832, 0.08351832, 0, 0, 0, 0.11811274, 0, 0, 0)
+size = Vector3(1, 1, 0.06225586)
+
+[node name="CSGPolygon3D" type="CSGPolygon3D" parent="CSGCombiner3D" index="1" unique_id=2027985027]
+transform = Transform3D(0.083927765, 0, 0, 0, 0.083927765, 0, 0, 0, 0.083927765, 0, 0, 0.05317813)
+operation = 2
+polygon = PackedVector2Array(0.31928393, 0.1818148, -0.0056809857, 1.0114135, 0.69320875, 0.68977773, 1.0881221, 0.0020418845)
+
+[node name="CSGPolygon3D2" type="CSGPolygon3D" parent="CSGCombiner3D" index="2" unique_id=1526859315]
+transform = Transform3D(-3.6685988e-09, 0.08392776, 0, -0.08392776, -3.6685988e-09, 0, 0, 0, 0.08392776, 0, 0, 0.05317813)
+operation = 2
+polygon = PackedVector2Array(0.31928393, 0.1818148, -0.0056809857, 1.0114135, 0.69320875, 0.68977773, 1.0881221, 0.0020418845)
+
+[node name="CSGPolygon3D3" type="CSGPolygon3D" parent="CSGCombiner3D" index="3" unique_id=1045796261]
+transform = Transform3D(-0.083927765, -3.7252903e-09, 0, 3.7252903e-09, -0.083927765, 0, 0, 0, 0.08392776, 0, 0, 0.05317813)
+operation = 2
+polygon = PackedVector2Array(0.31928393, 0.1818148, -0.0056809857, 1.0114135, 0.69320875, 0.68977773, 1.0881221, 0.0020418845)
+
+[node name="CSGPolygon3D4" type="CSGPolygon3D" parent="CSGCombiner3D" index="4" unique_id=1368488507]
+transform = Transform3D(7.393889e-09, -0.08392776, 0, 0.08392776, 7.393889e-09, 0, 0, 0, 0.08392775, 0, 0, 0.05317813)
+operation = 2
+polygon = PackedVector2Array(0.31928393, 0.1818148, -0.0056809857, 1.0114135, 0.69320875, 0.68977773, 1.0881221, 0.0020418845)

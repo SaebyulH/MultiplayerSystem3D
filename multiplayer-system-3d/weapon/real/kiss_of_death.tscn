@@ -1,0 +1,59 @@
+[gd_scene format=3 uid="uid://crc157s1jiaqr"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_57qmd"]
+albedo_color = Color(0, 0, 0, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_twrv3"]
+albedo_color = Color(0.9326807, 0.6227591, 0.16587666, 1)
+metallic = 1.0
+roughness = 0.59
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_yf5fn"]
+albedo_color = Color(0.7310392, 0.18493927, 0.18919033, 1)
+roughness = 0.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_g4v7s"]
+albedo_color = Color(0.11858138, 0.11858138, 0.11858138, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_d0u6y"]
+albedo_color = Color(0.7135178, 0.7135178, 0.71351784, 1)
+metallic = 1.0
+roughness = 0.1
+
+[node name="Revolver" type="Node3D" unique_id=1503666704]
+
+[node name="Muzzle" type="Node3D" parent="." unique_id=813090975]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.19391619, -0.8668398)
+
+[node name="CSGCylinder3D" type="CSGCylinder3D" parent="." unique_id=999251631]
+transform = Transform3D(0.05842402, 0, 0, 0, 0.04131202, 0.04131202, 0, -0.04131202, 0.04131202, 0, 0.010769272, 0.025999324)
+material = SubResource("StandardMaterial3D_57qmd")
+
+[node name="CSGCylinder3D4" type="CSGCylinder3D" parent="." unique_id=1955531071]
+transform = Transform3D(0.0634264, 0, 0, 0, 0.044849236, 0.044849236, 0, -0.044849236, 0.044849236, 0, 0.040634867, -0.00386627)
+height = 0.12695313
+material = SubResource("StandardMaterial3D_twrv3")
+
+[node name="CSGCylinder3D6" type="CSGCylinder3D" parent="." unique_id=1432234232]
+transform = Transform3D(0.046268515, 0, 0, 0, 0.03271678, 0.03271678, 0, -0.03271678, 0.03271678, 0, 0.056150302, -0.019381706)
+height = 0.87402344
+material = SubResource("StandardMaterial3D_twrv3")
+
+[node name="CSGCylinder3D5" type="CSGCylinder3D" parent="." unique_id=1131050076]
+transform = Transform3D(0.0634264, 0, 0, 0, 0.044849236, 0.044849236, 0, -0.044849236, 0.044849236, 0, -0.02289426, 0.059662856)
+height = 0.12695313
+material = SubResource("StandardMaterial3D_twrv3")
+
+[node name="CSGCylinder3D2" type="CSGCylinder3D" parent="." unique_id=1521550247]
+transform = Transform3D(0.042622384, 0, 0, 0, 0.030138576, 0.030138576, 0, -0.030138576, 0.030138576, 0, 0.0524171, -0.015648505)
+material = SubResource("StandardMaterial3D_yf5fn")
+
+[node name="CSGCylinder3D3" type="CSGCylinder3D" parent="." unique_id=1550608633]
+transform = Transform3D(0.009805038, 0, 0, 0, 0.0069332086, 0.0069332086, 0, -0.0069332086, 0.0069332086, 0, 0.08036046, -0.056241397)
+material = SubResource("StandardMaterial3D_g4v7s")
+
+[node name="CSGPolygon3D" type="CSGPolygon3D" parent="." unique_id=1490545051]
+transform = Transform3D(-5.931615e-09, 3.6301463e-16, 0.13569956, -0.09754739, 0.09433387, -4.2639305e-09, -0.09433387, -0.09754739, -4.1234633e-09, 0.0025138855, 0.08630371, -0.023223877)
+polygon = PackedVector2Array(0, 0, 0, 1, 0.10039288, 0.66736037, 0.11699511, -0.0058338046)
+depth = 0.03
+material = SubResource("StandardMaterial3D_d0u6y")

@@ -20,6 +20,11 @@ class_name Weapon
 @export var reload_individually: bool = false
 ## Time in seconds to complete a full reload (or one round if reload_individually is true).
 @export var reload_time: float = 1.0
+## If true, this weapon continues reloading even when not in the active slot.
+@export var reload_in_background: bool = false
+## If true, automatically switch to the next weapon that can shoot when this
+## weapon's magazine is empty (priority: primary → secondary → melee).
+@export var auto_switch_when_empty: bool = false
 ## Multiplier applied to the player's movement speed while this weapon is equipped.
 @export var player_speed_multiplier: float = 1.0
 
@@ -66,4 +71,9 @@ func _validate_property(property: Dictionary) -> void:
 	# Grey out ammo/reload props when infinite ammo is on
 	if property.name in ["mag_size", "mag_current", "reload_individually", "reload_time"]:
 		if has_infinite_ammo:
+			property.usage |= PROPERTY_USAGE_READ_ONLY
+	# Auto-switch only makes sense with background reload (otherwise you
+	# switch away and never get the ammo back).
+	if property.name == "auto_switch_when_empty":
+		if not reload_in_background:
 			property.usage |= PROPERTY_USAGE_READ_ONLY

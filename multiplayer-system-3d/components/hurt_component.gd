@@ -20,10 +20,19 @@ func _on_hurt_or_heal(hitbox_component: HitboxComponent, is_ally_hit: bool) -> v
 
 	var changer := _resolve_changer_name(hitbox_component)
 
-	if hurtbox_component.is_head:
+	var is_headshot := false
+	if hurtbox_component.is_head and not is_equal_approx(hitbox_component.headshot_multiplier, 1.0):
 		health_delta *= hitbox_component.headshot_multiplier
+		is_headshot = true
 
-	attribute_component.apply_health_delta(health_delta, _resolve_changer_name(hitbox_component), get_parent().name, hurtbox_component.is_head, hitbox_component.current_falloff_multiplier)
+	attribute_component.apply_health_delta(health_delta, _resolve_changer_name(hitbox_component), get_parent().name, is_headshot, hitbox_component.current_falloff_multiplier)
+
+	# Apply status effects from the hitbox (e.g. projectile-delivered effects).
+	var parent := get_parent()
+	if parent is Player and parent.status_effect_manager and not hitbox_component.status_effects.is_empty():
+		for effect in hitbox_component.status_effects:
+			if effect:
+				parent.status_effect_manager.apply_effect(effect, changer)
 
 
 func _resolve_changer_name(hitbox_component: HitboxComponent) -> String:

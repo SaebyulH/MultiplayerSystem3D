@@ -15,6 +15,7 @@
 [ext_resource type="PackedScene" uid="uid://em68gvqy1f84" path="res://effects/muzzle_flash.tscn" id="27_5ejfk"]
 [ext_resource type="Script" uid="uid://dmbwmsfd27dhh" path="res://player/player_ui.gd" id="34_ge24q"]
 [ext_resource type="Script" uid="uid://hpdd6uclsu15" path="res://components/damage_number_manager.gd" id="35_dmn"]
+[ext_resource type="Script" path="res://components/status_effect/status_effect_manager.gd" id="36_sem"]
 
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_2ieo8"]
 properties/0/path = NodePath(".:current_weapon_index")
@@ -264,6 +265,9 @@ metadata/_custom_type_script = "uid://cg1glglog46jg"
 [node name="AttributeComponent" type="Node" parent="." unique_id=831078121]
 script = ExtResource("7_1jxqw")
 metadata/_custom_type_script = "uid://cxit1cumphn3q"
+
+[node name="StatusEffectManager" type="Node" parent="." unique_id=2003061514]
+script = ExtResource("36_sem")
 
 [node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=1858913668]
 replication_config = SubResource("SceneReplicationConfig_1s1yo")

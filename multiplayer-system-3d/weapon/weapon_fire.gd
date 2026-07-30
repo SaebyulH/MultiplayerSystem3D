@@ -37,6 +37,12 @@ enum ActionType {SHOOT, ADS, SHIELD, SIGNAL}
 @export var recoil_data: RecoilData = RecoilData.new()
 ## Knockback impulse applied to the shooter.  (SHOOT only.)
 @export var recoil_knockback: Vector3 = Vector3.ZERO
+## Health delta applied to the shooter once per trigger-pull (negative = self-damage).
+## For per-bullet healing in burst mode, see self_health_delta_per_burst_bullet.  (SHOOT only.)
+@export var self_health_delta_on_shoot: float = 0.0
+## Movement-speed multiplier applied while this fire mode is active (shooting).
+## 1.0 = normal speed, 0.5 = half speed.  Lasts for the full firing cycle incl. burst.  (SHOOT only.)
+@export var move_speed_mult_while_shooting: float = 1.0
 
 
 # ------------------------------------------------------------------------ Bullet
@@ -52,6 +58,11 @@ enum BulletType {HITSCAN, PROJECTILE}
 @export var hitscan_damage: float = 10.0          ## (HITSCAN, non-PROJECTILE)
 @export var hitscan_range: float = 1_000_000_000.0## (HITSCAN, non-PROJECTILE)
 @export var headshot_multiplier: float = 1.0       ## (HITSCAN, non-PROJECTILE)
+## Health delta applied to the shooter per unique enemy hit (shotguns/shape once per opponent).
+## Negative = self-damage on hit.  (SHOOT only.)
+@export var self_health_delta_on_hit: float = 0.0
+## Extra spread from player movement (Counter-Strike style).  0 = none.  (SHOOT only.)
+@export var movement_spread: float = 0.0
 
 @export var has_damage_falloff: bool = true:
 	set(value):
@@ -81,6 +92,11 @@ enum MultishotMode {
 
 @export var burst_post_shoot_delay: float = 0.05   ## (BURST only)
 @export var burst_fire_has_recoil: bool = true     ## (BURST only)
+## Ammo consumed per bullet in a burst.  0 = use global ammo_cost once per burst.  (BURST only)
+@export var burst_ammo_per_shot: int = 0
+## Health delta applied per bullet during burst fire (negative = self-damage).
+## Separate from self_health_delta_on_shoot — that fires once per trigger, this fires per bullet.  (BURST only)
+@export var self_health_delta_per_burst_bullet: float = 0.0
 
 
 # ----------------------------------------------------------------------- Shield
@@ -110,6 +126,13 @@ enum MultishotMode {
 @export var can_shoot_while_shielded: bool = false
 
 
+# --------------------------------------------------------------- Status Effects
+@export_group("Status Effects")
+
+## Status effects applied to the target on a successful hitscan hit.
+@export var status_effects: Array[StatusEffect] = []
+
+
 # ------------------------------------------------------------------------ Sound
 @export_group("Sound")
 
@@ -123,10 +146,13 @@ func _validate_property(property: Dictionary) -> void:
 	const SHOOT_ONLY: Array[String] = [
 		"automatic", "pre_shoot_delay", "post_shoot_delay", "ammo_cost",
 		"recoil_data", "recoil_knockback",
+		"self_health_delta_on_shoot", "self_health_delta_per_burst_bullet", "move_speed_mult_while_shooting",
 		"bullet_type", "hitscan_damage", "hitscan_range", "has_damage_falloff", "headshot_multiplier",
+		"self_health_delta_on_hit", "movement_spread",
 		"has_damage_falloff", "falloff_start", "falloff_end", "falloff_curve",
 		"projectile_scene", "multishot_data", "multishot_mode",
 		"burst_post_shoot_delay", "burst_fire_has_recoil",
+		"status_effects",
 		"shoot_sound", "empty_sound",
 	]
 	if property.name in SHOOT_ONLY and action_type != ActionType.SHOOT:
@@ -147,7 +173,7 @@ func _validate_property(property: Dictionary) -> void:
 		if bullet_type == BulletType.HITSCAN:
 			property.usage = PROPERTY_USAGE_NO_EDITOR
 
-	if property.name in ["burst_post_shoot_delay", "burst_fire_has_recoil"]:
+	if property.name in ["burst_post_shoot_delay", "burst_fire_has_recoil", "burst_ammo_per_shot", "self_health_delta_per_burst_bullet"]:
 		if multishot_mode != MultishotMode.BURST:
 			property.usage = PROPERTY_USAGE_NO_EDITOR
 

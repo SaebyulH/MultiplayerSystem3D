@@ -19,15 +19,18 @@ var _team_option: OptionButton
 var _class_option: OptionButton
 var _primary_option: OptionButton
 var _secondary_option: OptionButton
+var _melee_option: OptionButton
 var _character_option: OptionButton
 var _confirm_button: Button
 var _mode_label: Label
 
 var _primary_viewport: SubViewport
 var _secondary_viewport: SubViewport
+var _melee_viewport: SubViewport
 
 var _primary_stats: RichTextLabel
 var _secondary_stats: RichTextLabel
+var _melee_stats: RichTextLabel
 var _character_stats: RichTextLabel
 
 # ─────────────────────────────────────────────
@@ -55,7 +58,7 @@ func _ready() -> void:
 	var loaded_classes: Array[Class] = []
 	for path in [
 		"res://player/player_classes/assault.tres",
-		"res://player/player_classes/assasin.tres",
+		"res://player/player_classes/assassin.tres",
 		"res://player/player_classes/assistance.tres",
 	]:
 		var c := load(path) as Class
@@ -67,6 +70,7 @@ func _ready() -> void:
 	_character_option.item_selected.connect(_on_character_selected)
 	_primary_option.item_selected.connect(_on_primary_selected)
 	_secondary_option.item_selected.connect(_on_secondary_selected)
+	_melee_option.item_selected.connect(_on_melee_selected)
 	_confirm_button.pressed.connect(_on_confirm_pressed)
 
 func _process(_delta: float) -> void:
@@ -101,7 +105,7 @@ func _build_ui_in(cl: CanvasLayer) -> void:
 
 	# Main column  (needs scroll for small windows)
 	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(800, 0)
+	scroll.custom_minimum_size = Vector2(1100, 0)
 	scroll.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	scroll.follow_focus = true
 	master.add_child(scroll)
@@ -187,6 +191,16 @@ func _build_ui_in(cl: CanvasLayer) -> void:
 	s_col.add_child(_secondary_option)
 	s_col.add_child(_secondary_stats)
 	preview_row.add_child(s_col)
+
+	# Melee
+	var m_col := _preview_column("MELEE")
+	_melee_viewport = _vp()
+	_melee_container(m_col).add_child(_melee_viewport)
+	_melee_option = _opt(); _melee_option.visible = false
+	_melee_stats = _stat_label()
+	m_col.add_child(_melee_option)
+	m_col.add_child(_melee_stats)
+	preview_row.add_child(m_col)
 
 	# ── Confirm ──────────────────────────────
 	var btn_row := CenterContainer.new()
@@ -331,6 +345,15 @@ func _secondary_container(parent: VBoxContainer) -> SubViewportContainer:
 	parent.add_child(svc)
 	return svc
 
+func _melee_container(parent: VBoxContainer) -> SubViewportContainer:
+	var svc := SubViewportContainer.new()
+	svc.custom_minimum_size = Vector2(340, 200)
+	svc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	svc.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	svc.stretch = true
+	parent.add_child(svc)
+	return svc
+
 # ─────────────────────────────────────────────
 #  Preview
 # ─────────────────────────────────────────────
@@ -383,9 +406,11 @@ func _on_class_selected(index: int) -> void:
 		selected_class = null
 		_primary_option.visible = false
 		_secondary_option.visible = false
+		_melee_option.visible = false
 		_confirm_button.disabled = true
 		_primary_stats.visible = false
 		_secondary_stats.visible = false
+		_melee_stats.visible = false
 		_character_stats.visible = false
 		return
 
@@ -408,8 +433,13 @@ func _on_class_selected(index: int) -> void:
 	for w in selected_class.secondary_weapons:
 		_secondary_option.add_item(w.display_name)
 
+	_melee_option.clear()
+	for w in selected_class.melee_weapons:
+		_melee_option.add_item(w.display_name)
+
 	_primary_option.visible = true
 	_secondary_option.visible = true
+	_melee_option.visible = true
 	_confirm_button.disabled = false
 
 	if selected_class.primary_weapons.size() > 0:
@@ -418,6 +448,9 @@ func _on_class_selected(index: int) -> void:
 	if selected_class.secondary_weapons.size() > 0:
 		_secondary_option.select(0)
 		_secondary_option.item_selected.emit(0)
+	if selected_class.melee_weapons.size() > 0:
+		_melee_option.select(0)
+		_melee_option.item_selected.emit(0)
 
 func _on_primary_selected(index: int) -> void:
 	if selected_class == null or index < 0 or index >= selected_class.primary_weapons.size():
@@ -429,6 +462,12 @@ func _on_secondary_selected(index: int) -> void:
 	if selected_class == null or index < 0 or index >= selected_class.secondary_weapons.size():
 		return
 	_spawn_weapon_preview(selected_class.secondary_weapons[index], _secondary_viewport)
+	_refresh_stats()
+
+func _on_melee_selected(index: int) -> void:
+	if selected_class == null or index < 0 or index >= selected_class.melee_weapons.size():
+		return
+	_spawn_weapon_preview(selected_class.melee_weapons[index], _melee_viewport)
 	_refresh_stats()
 
 func _on_character_selected(_index: int) -> void:
@@ -455,6 +494,14 @@ func _refresh_stats() -> void:
 		_secondary_stats.visible = true
 	else:
 		_secondary_stats.visible = false
+
+	var mi := _melee_option.selected
+	if mi >= 0 and mi < selected_class.melee_weapons.size():
+		var w := selected_class.melee_weapons[mi]
+		_melee_stats.text = "[b]%s[/b]\n%s" % [w.display_name, _weapon_stats(w)]
+		_melee_stats.visible = true
+	else:
+		_melee_stats.visible = false
 
 func _weapon_stats(weapon: Weapon) -> String:
 	var parts: PackedStringArray = []
@@ -616,11 +663,13 @@ func _on_confirm_pressed() -> void:
 
 	var pi := _primary_option.selected
 	var si := _secondary_option.selected
-	if pi < 0 or si < 0:
+	var mi := _melee_option.selected
+	if pi < 0 or si < 0 or mi < 0:
 		return
 
 	var primary: Weapon = selected_class.primary_weapons[pi]
 	var secondary: Weapon = selected_class.secondary_weapons[si]
+	var melee: Weapon = selected_class.melee_weapons[mi]
 	var ci := _character_option.selected - 1
 	var character_path := ""
 	if ci >= 0 and ci < selected_class.characters.size():
@@ -637,16 +686,16 @@ func _on_confirm_pressed() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 
 	if multiplayer.is_server():
-		_request_loadout(player_id, primary.resource_path, secondary.resource_path, team, character_path)
+		_request_loadout(player_id, primary.resource_path, secondary.resource_path, melee.resource_path, team, character_path)
 	else:
-		_request_loadout.rpc_id(1, player_id, primary.resource_path, secondary.resource_path, team, character_path)
+		_request_loadout.rpc_id(1, player_id, primary.resource_path, secondary.resource_path, melee.resource_path, team, character_path)
 
 # ─────────────────────────────────────────────
 #  RPCs
 # ─────────────────────────────────────────────
 
 @rpc("any_peer", "reliable")
-func _request_loadout(tpid: String, pp: String, sp: String, team: Player.Team, cp: String = "") -> void:
+func _request_loadout(tpid: String, pp: String, sp: String, mp: String, team: Player.Team, cp: String = "") -> void:
 	if not multiplayer.is_server():
 		return
 	var sid := multiplayer.get_remote_sender_id()
@@ -654,7 +703,8 @@ func _request_loadout(tpid: String, pp: String, sp: String, team: Player.Team, c
 		return
 	var primary: Weapon = load(pp) as Weapon
 	var secondary: Weapon = load(sp) as Weapon
-	if primary == null or secondary == null:
+	var melee: Weapon = load(mp) as Weapon
+	if primary == null or secondary == null or melee == null:
 		return
 	var player := GameManager.find_player(tpid)
 	if player == null:
@@ -662,7 +712,7 @@ func _request_loadout(tpid: String, pp: String, sp: String, team: Player.Team, c
 	var ctrl: WeaponController = player.get_node("WeaponController")
 	if ctrl == null:
 		return
-	var nw: Array[Weapon] = [primary.duplicate(true) as Weapon, secondary.duplicate(true) as Weapon]
+	var nw: Array[Weapon] = [primary.duplicate(true) as Weapon, secondary.duplicate(true) as Weapon, melee.duplicate(true) as Weapon]
 	ctrl.set_weapons(nw)
 	ctrl.current_weapon_index = 0
 	player.team = team
@@ -675,14 +725,16 @@ func _request_loadout(tpid: String, pp: String, sp: String, team: Player.Team, c
 	# Store paths so late-joining peers can be synced.
 	player._loadout_primary_path = pp
 	player._loadout_secondary_path = sp
-	_apply_loadout.rpc(tpid, pp, sp, team, cp)
+	player._loadout_melee_path = mp
+	_apply_loadout.rpc(tpid, pp, sp, mp, team, cp)
 	player.rpc_reset.rpc(player._get_spawn_position())
 
 @rpc("authority", "call_remote", "reliable")
-func _apply_loadout(tpid: String, pp: String, sp: String, team: Player.Team, cp: String = "") -> void:
+func _apply_loadout(tpid: String, pp: String, sp: String, mp: String, team: Player.Team, cp: String = "") -> void:
 	var primary: Weapon = load(pp) as Weapon
 	var secondary: Weapon = load(sp) as Weapon
-	if primary == null or secondary == null:
+	var melee: Weapon = load(mp) as Weapon
+	if primary == null or secondary == null or melee == null:
 		return
 	var player := GameManager.find_player(tpid)
 	if player == null:
@@ -690,7 +742,7 @@ func _apply_loadout(tpid: String, pp: String, sp: String, team: Player.Team, cp:
 	var ctrl: WeaponController = player.get_node("WeaponController")
 	if ctrl == null:
 		return
-	var nw: Array[Weapon] = [primary.duplicate(true) as Weapon, secondary.duplicate(true) as Weapon]
+	var nw: Array[Weapon] = [primary.duplicate(true) as Weapon, secondary.duplicate(true) as Weapon, melee.duplicate(true) as Weapon]
 	ctrl.set_weapons(nw)
 	ctrl.current_weapon_index = 0
 	player.team = team
