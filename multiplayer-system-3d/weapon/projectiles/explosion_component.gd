@@ -7,6 +7,10 @@ var exploded := false
 @export var splash_radius := 3.0
 @export var explosion_color := Color.WHITE
 
+## Status effects applied to every player hit by the explosion blast.
+## Set in the scene or copied from WeaponFire.status_effects at spawn time.
+@export var status_effects: Array[StatusEffect] = []
+
 @export var min_knockback_percent := 0.5 ##For distance based knockball falloff
 
 #Technically rather redunant, but useful to avoid confusuion
@@ -111,6 +115,11 @@ func explode(falloff_multiplier: float = 1.0):
 				force *= enemy_knockback_multiplier
 
 		player.apply_knockback(force)
+
+		if not status_effects.is_empty() and player.status_effect_manager:
+			for effect in status_effects:
+				if effect:
+					player.status_effect_manager.apply_effect(effect, shooter_name)
 
 	_explode_visual.rpc()
 

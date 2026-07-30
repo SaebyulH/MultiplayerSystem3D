@@ -1,12 +1,13 @@
-[gd_resource type="Resource" script_class="Weapon" format=4 uid="uid://bj4kqmw4u3l4r"]
+[gd_resource type="Resource" script_class="Weapon" format=4 uid="uid://bff06umbrrcef"]
 
-[ext_resource type="Texture2D" uid="uid://co1t8ndk2iam1" path="res://killfeed_icons/spy_revolver.png" id="1_gpfi3"]
+[ext_resource type="Texture2D" uid="uid://vaod4faf7q0c" path="res://killfeed_icons/revolver.png" id="1_lf21g"]
 [ext_resource type="AudioStream" uid="uid://d4ivmikv3xs2x" path="res://assets/sounds/freesound_community-clean-revolver-reload-6889.mp3" id="1_tlcfn"]
 [ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="2_gpfi3"]
 [ext_resource type="Script" uid="uid://djg0ti1n45f8b" path="res://weapon/weapon_fire.gd" id="3_5d3nm"]
 [ext_resource type="AudioStream" uid="uid://bwfdsxbmx4ko8" path="res://assets/sounds/empty_gun.mp3" id="4_gbadw"]
 [ext_resource type="Texture2D" uid="uid://b6gktr1vfryte" path="res://defaults/default_damage_falloff_curve.tres" id="5_wwgc3"]
 [ext_resource type="Script" uid="uid://yvevtn4dsddy" path="res://player/recoil/recoil_data.gd" id="6_8y6wt"]
+[ext_resource type="Script" uid="uid://bv0g4rnfelqch" path="res://components/status_effect/status_effect.gd" id="6_lf21g"]
 [ext_resource type="AudioStream" uid="uid://u24dsvsfmlr2" path="res://assets/sounds/gun_sound.mp3" id="8_f8w0m"]
 [ext_resource type="PackedScene" uid="uid://dv73bh3gld32d" path="res://weapon/shared/revolver.tscn" id="9_y31mt"]
 
@@ -34,15 +35,9 @@ script = ExtResource("3_5d3nm")
 automatic = true
 post_shoot_delay = 0.25
 recoil_data = SubResource("Resource_5d3nm")
-self_health_delta_on_shoot = null
-move_speed_mult_while_shooting = null
 hitscan_damage = 40.0
 headshot_multiplier = 2.0
-self_health_delta_on_hit = null
-movement_spread = null
 falloff_curve = SubResource("CurveTexture_gpfi3")
-burst_ammo_per_shot = null
-self_health_delta_per_burst_bullet = null
 shoot_sound = SubResource("AudioStreamMP3_gbadw")
 empty_sound = SubResource("AudioStreamMP3_lv7wg")
 metadata/_custom_type_script = "uid://djg0ti1n45f8b"
@@ -55,12 +50,6 @@ script = ExtResource("3_5d3nm")
 action_type = 1
 zoom_fov = 60.0
 recoil_data = SubResource("Resource_ym8lp")
-self_health_delta_on_shoot = null
-move_speed_mult_while_shooting = null
-self_health_delta_on_hit = null
-movement_spread = null
-burst_ammo_per_shot = null
-self_health_delta_per_burst_bullet = null
 shoot_sound = ExtResource("8_f8w0m")
 empty_sound = ExtResource("4_gbadw")
 metadata/_custom_type_script = "uid://djg0ti1n45f8b"
@@ -69,12 +58,10 @@ metadata/_custom_type_script = "uid://djg0ti1n45f8b"
 script = ExtResource("2_gpfi3")
 display_name = "Revolver"
 reload_time = 1.133
-reload_in_background = null
-auto_switch_when_empty = null
 weapon_fires = Array[ExtResource("3_5d3nm")]([SubResource("Resource_wwgc3"), SubResource("Resource_d7axr")])
 spread_per_shot = 0.1
 max_spread = 5.0
 weapon_model = ExtResource("9_y31mt")
-killfeed_icon = ExtResource("1_gpfi3")
+killfeed_icon = ExtResource("1_lf21g")
 reload_sound = ExtResource("1_tlcfn")
 metadata/_custom_type_script = "uid://qjf4ciit3dqy"

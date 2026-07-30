@@ -1155,12 +1155,16 @@ func _spawn_projectile_on_server(weapon_fire_index, shot_dir, basis, parent_play
 	projectile_scene.linear_velocity = world_dir * speed
 	projectile_scene.shooter_team = team
 
-	# Copy status effects from the WeaponFire to the projectile's HitboxComponent.
+	# Copy status effects from the WeaponFire to the projectile's HitboxComponent
+	# and ExplosionComponent (if present).
 	var weapon_fire: WeaponFire = weapon.weapon_fires[weapon_fire_index]
 	if not weapon_fire.status_effects.is_empty():
 		var hb: HitboxComponent = projectile_scene.get_node_or_null("HitboxComponent") as HitboxComponent
 		if hb:
 			hb.status_effects = weapon_fire.status_effects
+		var ec: ExplosionComponent = projectile_scene.get_node_or_null("ExplosionComponent") as ExplosionComponent
+		if ec:
+			ec.status_effects = weapon_fire.status_effects
 
 	projectile_spawn_parent.add_child(projectile_scene, true)
 

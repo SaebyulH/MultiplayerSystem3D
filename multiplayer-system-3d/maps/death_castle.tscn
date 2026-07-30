@@ -47,34 +47,34 @@ despawn_location = NodePath("Despawn")
 environment = SubResource("Environment_yhcpw")
 
 [node name="SCI Spawn Location" type="Marker3D" parent="." unique_id=908470764]
-transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, -20.16065, 1.3490553, -0.30512238)
+transform = Transform3D(-1.0314262, -0.5157132, 0.2977471, 0, 0.59549415, 1.0314263, -0.5954943, 0.8932413, -0.5157131, -24.173878, 2.582209, -0.14930838)
 
 [node name="SCI Spawn Location2" type="Marker3D" parent="." unique_id=2090736136]
-transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, -13.16065, 1.3490553, -6.3051224)
+transform = Transform3D(-1.0314262, -0.5157132, 0.2977471, 0, 0.59549415, 1.0314263, -0.5954943, 0.8932413, -0.5157131, -15.83696, 2.582209, -7.295239)
 
 [node name="SCI Spawn Location3" type="Marker3D" parent="." unique_id=1513930714]
-transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, -11.16065, 3.3490553, 12.694878)
+transform = Transform3D(-1.0314262, -0.5157132, 0.2977471, 0, 0.59549415, 1.0314263, -0.5954943, 0.8932413, -0.5157131, -13.454983, 4.964185, 15.333541)
 
 [node name="SCI Spawn Location4" type="Marker3D" parent="." unique_id=661224801]
-transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, -11.16065, -1.6509447, -18.305122)
+transform = Transform3D(-1.0314262, -0.5157132, 0.2977471, 0, 0.59549415, 1.0314263, -0.5954943, 0.8932413, -0.5157131, -13.454983, -0.99075603, -21.5871)
 
 [node name="SPI Spawn Location" type="Marker3D" parent="." unique_id=235155852]
-transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 19.629866, 1.6476772, 0.028306961)
+transform = Transform3D(-1.0314262, -0.5157132, 0.2977471, 0, 0.59549415, 1.0314263, -0.5954943, 0.8932413, -0.5157131, 23.216166, 2.9378638, 0.24780202)
 
 [node name="SPI Spawn Location2" type="Marker3D" parent="." unique_id=278509489]
-transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 16.629866, 1.6476772, 9.028307)
+transform = Transform3D(-1.0314262, -0.5157132, 0.2977471, 0, 0.59549415, 1.0314263, -0.5954943, 0.8932413, -0.5157131, 19.6432, 2.9378638, 10.966698)
 
 [node name="SPI Spawn Location3" type="Marker3D" parent="." unique_id=1077612493]
-transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 16.629866, 1.6476772, -12.971693)
+transform = Transform3D(-1.0314262, -0.5157132, 0.2977471, 0, 0.59549415, 1.0314263, -0.5954943, 0.8932413, -0.5157131, 19.6432, 2.9378638, -15.235047)
 
 [node name="SPI Spawn Location4" type="Marker3D" parent="." unique_id=1925307648]
-transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 16.629866, 1.6476772, -15.971693)
+transform = Transform3D(-1.0314262, -0.5157132, 0.2977471, 0, 0.59549415, 1.0314263, -0.5954943, 0.8932413, -0.5157131, 19.6432, 2.9378638, -18.808014)
 
 [node name="Despawn" type="Marker3D" parent="." unique_id=1311557604]
-transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, -2.797104, -53.386234, 17.53489)
+transform = Transform3D(-1.0314262, -0.5157132, 0.2977471, 0, 0.59549415, 1.0314263, -0.5954943, 0.8932413, -0.5157131, -3.4940958, -62.606888, 21.097939)
 
 [node name="CSGCombiner3D" type="CSGCombiner3D" parent="." unique_id=1721842706]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -6, 0)
+transform = Transform3D(1.1909884, 0, 0, 0, 1.1909884, 0, 0, 0, 1.1909884, -0.16277742, -6.1704307, 0.2140888)
 material_override = SubResource("StandardMaterial3D_e2o6t")
 use_collision = true
 collision_mask = 0
@@ -111,6 +111,22 @@ size = Vector3(4, 5, 8)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 7, 12)
 size = Vector3(13, 1, 5)
 
+[node name="ground22" type="CSGBox3D" parent="CSGCombiner3D" unique_id=623307876]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 11.863396, 12)
+size = Vector3(13, 1, 5)
+
+[node name="ground23" type="CSGBox3D" parent="CSGCombiner3D" unique_id=514609962]
+transform = Transform3D(-4.371139e-08, 0, 1, -0.41065907, 0.911789, -1.7950477e-08, -0.911789, -0.41065907, -3.985556e-08, 10.473851, 9.441689, 4.3561816)
+size = Vector3(16.968872, 1, 5)
+
+[node name="ground24" type="CSGBox3D" parent="CSGCombiner3D" unique_id=1587715430]
+transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, -1.0069332, 11.863396, -12.257839)
+size = Vector3(13, 1, 5)
+
+[node name="ground25" type="CSGBox3D" parent="CSGCombiner3D" unique_id=1229146049]
+transform = Transform3D(-3.5999737e-08, -3.590096e-08, -1, -0.41065904, 0.91178894, -1.7950477e-08, 0.91178894, 0.41065904, -4.7567212e-08, -9.980785, 9.441689, -4.6140213)
+size = Vector3(16.968872, 1, 5)
+
 [node name="ground21" type="CSGBox3D" parent="CSGCombiner3D" unique_id=1671595955]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5, 7, -13)
 size = Vector3(13, 1, 5)
@@ -136,13 +152,13 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 1.5, 11)
 size = Vector3(4, 4, 2)
 
 [node name="CSGCombiner3D2" type="CSGCombiner3D" parent="." unique_id=1587622579]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -6, 0)
+transform = Transform3D(1.1909884, 0, 0, 0, 1.1909884, 0, 0, 0, 1.1909884, -0.16277742, -6.1704307, 0.2140888)
 material_override = SubResource("StandardMaterial3D_qkls8")
 use_collision = true
 collision_mask = 0
 
 [node name="ground15" type="CSGBox3D" parent="CSGCombiner3D2" unique_id=1573289719]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 5.4990005, 2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.315867, 5.4990005, 2)
 size = Vector3(2, 6, 3)
 
 [node name="ground11" type="CSGBox3D" parent="CSGCombiner3D2" unique_id=1340943575]
@@ -190,8 +206,8 @@ polygon = PackedVector2Array(0, 0, 0, 2, 4, 0, 1, 0)
 depth = 9.0
 
 [node name="CSGPolygon3D5" type="CSGPolygon3D" parent="CSGCombiner3D2" unique_id=543474814]
-transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 17.29152, 2.500002, -16.088703)
-polygon = PackedVector2Array(0, 0, -0.0915041, 2.9880757, 4, 0, 1, 0)
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 13.09046, 2.500002, -16.088703)
+polygon = PackedVector2Array(0, 0, -0.07689667, 3.9961967, 4, 0, 1, 0)
 depth = 9.0
 
 [node name="CSGPolygon3D3" type="CSGPolygon3D" parent="CSGCombiner3D2" unique_id=946072581]
@@ -205,7 +221,7 @@ polygon = PackedVector2Array(0, 0, 0, 2, 4, 0, 1, 0)
 depth = 9.0
 
 [node name="CSGCombiner3D3" type="CSGCombiner3D" parent="." unique_id=1320330278]
-transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 0, -6, 0)
+transform = Transform3D(-1.1909884, 0, 1.04119515e-07, 0, 1.1909884, 0, -1.04119515e-07, 0, -1.1909884, -0.16277742, -6.1704307, 0.2140888)
 material_override = SubResource("StandardMaterial3D_e2o6t")
 use_collision = true
 collision_mask = 0
@@ -238,16 +254,16 @@ transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -20.
 size = Vector3(16, 1, 3)
 
 [node name="ground18" type="CSGBox3D" parent="CSGCombiner3D3" unique_id=257289485]
-transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -18.75, 5, 5.7499995)
-size = Vector3(9, 1, 7)
+transform = Transform3D(-4.371138e-08, 0, -1, 0, 1, 0, 1, 0, -4.371138e-08, -20.001831, 5, 5.7499995)
+size = Vector3(9, 1, 4.496338)
 
 [node name="ground19" type="CSGBox3D" parent="CSGCombiner3D3" unique_id=249369775]
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -11.25, 6, 5.7499995)
 size = Vector3(9, 1, 2)
 
 [node name="ground17" type="CSGBox3D" parent="CSGCombiner3D3" unique_id=1528188957]
-transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -18.75, 4, 2.2499995)
-size = Vector3(16, 1, 7)
+transform = Transform3D(-4.371138e-08, 0, -1, 0, 1, 0, 1, 0, -4.371138e-08, -19.718994, 4, 2.2499993)
+size = Vector3(16, 1, 5.0620117)
 
 [node name="ground10" type="CSGBox3D" parent="CSGCombiner3D3" unique_id=1568506643]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12.5, 3.5, -9)
@@ -265,26 +281,14 @@ size = Vector3(4, 7, 2)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 4.5, 12)
 size = Vector3(4, 4, 8)
 
-[node name="ground13" type="CSGBox3D" parent="CSGCombiner3D3" unique_id=234699733]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 3.5, 15)
-size = Vector3(4, 4, 2)
-
-[node name="ground14" type="CSGBox3D" parent="CSGCombiner3D3" unique_id=802730259]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 2.5, 13)
-size = Vector3(4, 4, 2)
-
-[node name="ground15" type="CSGBox3D" parent="CSGCombiner3D3" unique_id=1982726633]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 1.5, 11)
-size = Vector3(4, 4, 2)
-
 [node name="CSGCombiner3D4" type="CSGCombiner3D" parent="." unique_id=590603478]
-transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 0, -6, 0)
+transform = Transform3D(-1.1909884, 0, 1.04119515e-07, 0, 1.1909884, 0, -1.04119515e-07, 0, -1.1909884, -0.16277742, -6.1704307, 0.2140888)
 material_override = SubResource("StandardMaterial3D_qkls8")
 use_collision = true
 collision_mask = 0
 
 [node name="ground15" type="CSGBox3D" parent="CSGCombiner3D4" unique_id=646540028]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 5.4990005, 2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12.672758, 5.4990005, 2.0000002)
 size = Vector3(2, 6, 3)
 
 [node name="ground11" type="CSGBox3D" parent="CSGCombiner3D4" unique_id=705528607]
@@ -327,13 +331,13 @@ polygon = PackedVector2Array(0, 0, -0.16330528, 3.0641413, 4, 0, 1, 0)
 depth = 9.0
 
 [node name="CSGPolygon3D3" type="CSGPolygon3D" parent="CSGCombiner3D4" unique_id=1080116225]
-transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -14, 2.5, -5.9999995)
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -14, 2.5, -5.7328725)
 polygon = PackedVector2Array(0, 0, 0, 2, 4, 0, 1, 0)
 depth = 9.0
 
 [node name="CSGPolygon3D4" type="CSGPolygon3D" parent="CSGCombiner3D4" unique_id=1037345066]
-transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -15.198785, 3.5, 1.2472092)
-polygon = PackedVector2Array(0, 0, 0, 2, 4, 0, 1, 0)
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -15.198785, 3.5, 1.2074332)
+polygon = PackedVector2Array(0, 0, -0.049421072, 2.0050871, 4, 0, 1, 0)
 depth = 9.0
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=517602722]

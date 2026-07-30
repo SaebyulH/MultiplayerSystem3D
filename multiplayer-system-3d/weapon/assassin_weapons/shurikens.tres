@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="Weapon" format=4 uid="uid://d2rnsmxnw5koc"]
+[gd_resource type="Resource" script_class="Weapon" format=4 uid="uid://0rvg8srdkux6"]
 
-[ext_resource type="Texture2D" uid="uid://dnvyhws4iay0y" path="res://killfeed_icons/bow.png" id="1_be67x"]
+[ext_resource type="Texture2D" uid="uid://bm3qbv3sar175" path="res://killfeed_icons/shurikens.png" id="1_d5mdw"]
 [ext_resource type="AudioStream" uid="uid://cqbknmbhlwhu" path="res://assets/sounds/reload.mp3" id="2_krp3q"]
 [ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="3_60nwv"]
 [ext_resource type="Script" uid="uid://djg0ti1n45f8b" path="res://weapon/weapon_fire.gd" id="4_mxlsn"]
@@ -53,6 +53,6 @@ reload_in_background = true
 auto_switch_when_empty = true
 weapon_fires = Array[ExtResource("4_mxlsn")]([SubResource("Resource_lfe6f")])
 weapon_model = ExtResource("7_tlpaf")
-killfeed_icon = ExtResource("1_be67x")
+killfeed_icon = ExtResource("1_d5mdw")
 reload_sound = ExtResource("2_krp3q")
 metadata/_custom_type_script = "uid://qjf4ciit3dqy"

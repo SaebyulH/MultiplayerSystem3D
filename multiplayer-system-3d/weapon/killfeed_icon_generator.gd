@@ -43,6 +43,12 @@ func _ready() -> void:
 		get_tree().quit(1)
 		return
 
+	# Chicken-and-egg: weapon .tres files reference killfeed_icon PNGs that
+	# may not exist yet.  Godot's ResourceLoader will refuse to load the .tres
+	# if a dependency is missing.  Stub any missing PNG first so the .tres
+	# files load successfully, then the real capture overwrites both.
+	_stub_missing_icons()
+
 	_find_weapon_files("res://weapon", _weapon_files)
 	print("Found %d weapon .tres files." % _weapon_files.size())
 
@@ -77,6 +83,8 @@ func _process_next() -> void:
 
 	var vp := _build_viewport(weapon.weapon_model)
 	add_child(vp)
+	# Defer the capture so the SubViewport gets at least one full render
+	# cycle in the tree before we try to grab its texture.
 	_capture_deferred.call_deferred(vp, weapon, file_path, icon_path)
 
 
@@ -232,38 +240,46 @@ func _aabb_from_vertices(vertices: Array[Vector3]) -> AABB:
 
 
 func _capture_deferred(vp: SubViewport, weapon: Weapon, file_path: String, icon_path: String) -> void:
+	# SubViewport with UPDATE_ONCE renders on the first frame after being
+	# added to the tree.  Two process_frame waits guarantee the render has
+	# completed and the texture buffer is populated before we read it.
+	await get_tree().process_frame
 	await get_tree().process_frame
 
 	var tex := vp.get_texture()
 	if not tex:
-		print("    FAILED (no texture)")
+		print("    FAILED (no texture — viewport may be empty)")
 		_cleanup_and_next(vp)
 		return
 
 	var img := tex.get_image()
 	if not img:
-		print("    FAILED (get_image)")
+		print("    FAILED (get_image returned null)")
 		_cleanup_and_next(vp)
 		return
 
 	remove_child(vp)
 	vp.queue_free()
 
+	# Write the captured frame to disk so the kill-feed UI can load it as
+	# an external texture at runtime.
 	if img.save_png(icon_path) != OK:
-		print("    FAILED (save PNG)")
+		print("    FAILED (save PNG to %s)" % icon_path)
 		_process_next.call_deferred()
 		return
 
-	# Bypass the resource cache so the just-written file is found.
-	var icon_res := ResourceLoader.load(icon_path, "Texture2D", ResourceLoader.CACHE_MODE_IGNORE)
-	if not icon_res:
-		print("    FAILED (reload PNG)")
-		_process_next.call_deferred()
-		return
+	# Build an ImageTexture directly from the image we already have in
+	# memory, then claim the PNG path via take_over_path().  This avoids a
+	# save-then-reload round-trip that fails on Windows when ResourceLoader
+	# tries to open the file before the OS has flushed it.
+	# ResourceSaver will write an ExtResource reference into the .tres so
+	# the kill-feed reloads the PNG properly at runtime.
+	var icon_tex := ImageTexture.create_from_image(img)
+	icon_tex.take_over_path(icon_path)
+	weapon.killfeed_icon = icon_tex
 
-	weapon.killfeed_icon = icon_res
 	if ResourceSaver.save(weapon, file_path) != OK:
-		print("    FAILED (save .tres)")
+		print("    FAILED (save .tres to %s)" % file_path)
 		_process_next.call_deferred()
 		return
 
@@ -308,6 +324,58 @@ func _find_weapon_files(dir: String, out_files: Array[String]) -> void:
 			var res := load(full)
 			if res is Weapon:
 				out_files.append(full)
+		entry = d.get_next()
+	d.list_dir_end()
+
+
+## Scan every .tres under [root_dir] for killfeed_icons/*.png references.
+## For any referenced PNG that doesn't exist on disk, write a 1×1 transparent
+## stub so the .tres can be loaded without a missing-dependency error.
+func _stub_missing_icons() -> void:
+	var tres_paths: Array[String] = []
+	_collect_tres_paths("res://weapon", tres_paths)
+
+	var stubbed := 0
+	for path in tres_paths:
+		var text: String = FileAccess.get_file_as_string(path)
+		if text.is_empty():
+			continue
+		# Lines look like:
+		#   [ext_resource type="Texture2D" path="res://killfeed_icons/foo.png" id="1_xxx"]
+		for line in text.split("\n"):
+			var start := line.find("res://killfeed_icons/")
+			if start == -1:
+				continue
+			var end_quote := line.find("\"", start)
+			if end_quote == -1:
+				continue
+			var png_path := line.substr(start, end_quote - start)
+			if png_path.ends_with(".png") and not FileAccess.file_exists(png_path):
+				var img := Image.create(1, 1, false, Image.FORMAT_RGBA8)
+				img.fill(Color(0, 0, 0, 0))
+				if img.save_png(png_path) == OK:
+					stubbed += 1
+					print("  STUB  %s  (missing dependency)" % png_path)
+
+	if stubbed > 0:
+		print("Stubbed %d missing PNG(s) so .tres files can load." % stubbed)
+
+
+## Recursively collects every .tres file path under [dir] into [out_paths].
+func _collect_tres_paths(dir: String, out_paths: Array[String]) -> void:
+	var d := DirAccess.open(dir)
+	if not d:
+		return
+	d.include_hidden = false
+	d.include_navigational = false
+	d.list_dir_begin()
+	var entry := d.get_next()
+	while entry != "":
+		var full := dir + "/" + entry
+		if d.current_is_dir():
+			_collect_tres_paths(full, out_paths)
+		elif entry.ends_with(".tres"):
+			out_paths.append(full)
 		entry = d.get_next()
 	d.list_dir_end()
 

@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="Weapon" format=4 uid="uid://dldnlgbtrode8"]
+[gd_resource type="Resource" script_class="Weapon" format=4 uid="uid://cwkxdou2gpa1u"]
 
-[ext_resource type="Texture2D" uid="uid://c4qik3rnc52b0" path="res://killfeed_icons/pistol.png" id="1_hadn0"]
+[ext_resource type="Texture2D" uid="uid://b2hfnd7bvwmgi" path="res://killfeed_icons/pistol.png" id="1_hadn0"]
 [ext_resource type="AudioStream" uid="uid://bwfdsxbmx4ko8" path="res://assets/sounds/empty_gun.mp3" id="1_la0ju"]
 [ext_resource type="Texture2D" uid="uid://b6gktr1vfryte" path="res://defaults/default_damage_falloff_curve.tres" id="2_dxxqn"]
 [ext_resource type="Script" uid="uid://yvevtn4dsddy" path="res://player/recoil/recoil_data.gd" id="3_r57kw"]

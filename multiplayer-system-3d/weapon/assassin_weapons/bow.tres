@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="Weapon" format=3 uid="uid://carlfi4iya877"]
+[gd_resource type="Resource" script_class="Weapon" format=3 uid="uid://dngitmfspeu7j"]
 
-[ext_resource type="Texture2D" uid="uid://dnvyhws4iay0y" path="res://killfeed_icons/bow.png" id="1_7ijep"]
+[ext_resource type="Texture2D" uid="uid://rq3h5n1ho7bn" path="res://killfeed_icons/bow.png" id="1_7ijep"]
 [ext_resource type="AudioStream" uid="uid://cqbknmbhlwhu" path="res://assets/sounds/reload.mp3" id="1_sgsea"]
 [ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="2_2cfp8"]
 [ext_resource type="Script" uid="uid://djg0ti1n45f8b" path="res://weapon/weapon_fire.gd" id="3_7ijep"]
@@ -10,6 +10,7 @@
 [ext_resource type="Script" uid="uid://yvevtn4dsddy" path="res://player/recoil/recoil_data.gd" id="6_5flnv"]
 [ext_resource type="AudioStream" uid="uid://u24dsvsfmlr2" path="res://assets/sounds/gun_sound.mp3" id="7_iwiee"]
 [ext_resource type="PackedScene" uid="uid://bcjdh8tk3q5p5" path="res://weapon/assassin_weapons/bow.tscn" id="9_7ijep"]
+[ext_resource type="Script" uid="uid://bv0g4rnfelqch" path="res://components/status_effect/status_effect.gd" id="10_je3v4"]
 
 [sub_resource type="Resource" id="Resource_0iqug"]
 script = ExtResource("6_5flnv")

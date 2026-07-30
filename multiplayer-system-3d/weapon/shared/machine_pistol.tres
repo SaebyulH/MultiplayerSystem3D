@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="Weapon" format=3 uid="uid://nx6k3ylwck70"]
+[gd_resource type="Resource" script_class="Weapon" format=3 uid="uid://2u21rpetmhhp"]
 
 [ext_resource type="AudioStream" uid="uid://b63r5283kwaa3" path="res://assets/sounds/freesound_community-mag-reload-81594.mp3" id="1_d7axr"]
-[ext_resource type="Texture2D" uid="uid://b6nhtskasist0" path="res://killfeed_icons/machine_pistol.png" id="1_woh1p"]
+[ext_resource type="Texture2D" uid="uid://4shytaon7q2u" path="res://killfeed_icons/machine_pistol.png" id="1_woh1p"]
 [ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="2_woh1p"]
 [ext_resource type="Script" uid="uid://djg0ti1n45f8b" path="res://weapon/weapon_fire.gd" id="3_doit5"]
 [ext_resource type="AudioStream" uid="uid://bwfdsxbmx4ko8" path="res://assets/sounds/empty_gun.mp3" id="4_tol5j"]

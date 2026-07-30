@@ -2,12 +2,19 @@
 
 [ext_resource type="PackedScene" uid="uid://6mr0d18yn8po" path="res://weapon/projectiles/scenes/simple_projectile.tscn" id="1_tsae3"]
 [ext_resource type="Script" uid="uid://blvxr87nax5n0" path="res://weapon/projectiles/scenes/gravity_rocket.gd" id="2_y5gub"]
+[ext_resource type="Script" uid="uid://bv0g4rnfelqch" path="res://components/status_effect/status_effect.gd" id="3_sj25q"]
+[ext_resource type="Script" uid="uid://dsjkcwmnchp14" path="res://components/status_effect/effects/stun_effect.gd" id="4_e818h"]
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_21xcj"]
 radius = 0.36645794
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_84p14"]
 radius = 0.35911286
+
+[sub_resource type="Resource" id="Resource_p1w0v"]
+script = ExtResource("4_e818h")
+base_duration = 0.5
+metadata/_custom_type_script = "uid://dsjkcwmnchp14"
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_21xcj"]
 bottom_radius = 0.949
@@ -55,6 +62,7 @@ shape = SubResource("SphereShape3D_84p14")
 
 [node name="ExplosionComponent" parent="." index="3" unique_id=473826993]
 splash_health_delta = -125
+status_effects = Array[ExtResource("3_sj25q")]([SubResource("Resource_p1w0v")])
 
 [node name="MeshInstance3D2" type="MeshInstance3D" parent="." index="4" unique_id=251685809]
 transform = Transform3D(-0.12494474, 1.0923015e-08, 4.7746024e-16, 0, -5.4615077e-09, 0.12494474, 1.0923015e-08, 0.12494474, 5.4615077e-09, 0, 0, 0.11489868)

@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="Weapon" format=4 uid="uid://d1lmmsmm3f4qx"]
+[gd_resource type="Resource" script_class="Weapon" format=4 uid="uid://l37eax83ieeg"]
 
-[ext_resource type="Texture2D" uid="uid://bfhwyt6yvnox5" path="res://killfeed_icons/grenade_launcher.png" id="1_64mro"]
+[ext_resource type="Texture2D" uid="uid://en3uqs6i0e3r" path="res://killfeed_icons/heal_grenade_launcher.png" id="1_7l1rf"]
 [ext_resource type="AudioStream" uid="uid://b63r5283kwaa3" path="res://assets/sounds/freesound_community-mag-reload-81594.mp3" id="2_y3mxk"]
 [ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="3_546ns"]
 [ext_resource type="Script" uid="uid://djg0ti1n45f8b" path="res://weapon/weapon_fire.gd" id="4_ba1k6"]
@@ -48,6 +48,6 @@ reload_individually = true
 reload_time = 0.2
 weapon_fires = Array[ExtResource("4_ba1k6")]([SubResource("Resource_kg2jm")])
 weapon_model = ExtResource("8_8t5ml")
-killfeed_icon = ExtResource("1_64mro")
+killfeed_icon = ExtResource("1_7l1rf")
 reload_sound = ExtResource("2_y3mxk")
 metadata/_custom_type_script = "uid://qjf4ciit3dqy"

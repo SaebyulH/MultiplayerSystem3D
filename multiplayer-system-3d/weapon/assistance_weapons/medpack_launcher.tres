@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="Weapon" format=3 uid="uid://ckmmcd08v3adb"]
+[gd_resource type="Resource" script_class="Weapon" format=3 uid="uid://biw1g5axom0xb"]
 
-[ext_resource type="Texture2D" uid="uid://dyyb5ssarrbrk" path="res://killfeed_icons/medpack_launcher.png" id="1_tt23n"]
+[ext_resource type="Texture2D" uid="uid://cblatthnlchmq" path="res://killfeed_icons/medpack_launcher.png" id="1_tt23n"]
 [ext_resource type="AudioStream" uid="uid://cqbknmbhlwhu" path="res://assets/sounds/reload.mp3" id="2_t83lx"]
 [ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="3_8e5fk"]
 [ext_resource type="Script" uid="uid://djg0ti1n45f8b" path="res://weapon/weapon_fire.gd" id="4_7x2r3"]

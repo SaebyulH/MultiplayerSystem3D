@@ -12,13 +12,13 @@ albedo_color = Color(0.601223, 0.601223, 0.60122293, 0.11372549)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.12967256, -0.49123335)
 
 [node name="c_syringegun2" parent="." unique_id=44388376 instance=ExtResource("1_i5af1")]
-transform = Transform3D(-0.033, 0, -2.8849518e-09, 2.8849518e-09, -1.4424758e-09, -0.033, -1.2610525e-16, -0.033, 1.4424758e-09, 0, 0, 0)
+transform = Transform3D(-0.02228916, 0, -1.9485804e-09, 1.9485804e-09, -9.742901e-10, -0.02228916, -8.517515e-17, -0.02228916, 9.742901e-10, 0.038242653, -0.0965028, -0.022097658)
 
 [node name="Node7" parent="c_syringegun2/Node0/c_syringegun_qc_skeleton/c_syringegun" parent_id_path=PackedInt32Array(44388376, 350100048) index="0" unique_id=1633057393]
 transform = Transform3D(0.8660254, -1.610462e-08, -0.5, 2.185569e-08, 0.73686165, -5.856222e-09, 0.5, -4.315215e-09, 0.8660254, -1.4496789, 1.33546045e-08, 0.3055175)
 surface_material_override/1 = SubResource("StandardMaterial3D_i5af1")
 
 [node name="c_syringegun3" parent="." unique_id=7169037 instance=ExtResource("1_i5af1")]
-transform = Transform3D(0.012030178, -4.3915444e-10, -0.020836882, -0.020836877, 2.8995334e-10, -0.012030181, 2.1034225e-09, 0.005384, -1.0517118e-09, -0.22318846, 0.10865386, -0.13616538)
+transform = Transform3D(0.008125532, -2.9661767e-10, -0.014073837, -0.014073833, 1.9584293e-10, -0.008125534, 1.4207128e-09, 0.0036365103, -7.103568e-10, -0.11250533, -0.023114823, -0.11406772)
 
 [editable path="c_syringegun2"]

@@ -1,9 +1,10 @@
-[gd_resource type="Resource" script_class="Weapon" format=4 uid="uid://by861gwb7m67t"]
+[gd_resource type="Resource" script_class="Weapon" format=4 uid="uid://d2xsrer8w63f2"]
 
-[ext_resource type="Texture2D" uid="uid://bchisp55pexl3" path="res://killfeed_icons/minigun.png" id="1_1h707"]
+[ext_resource type="Texture2D" uid="uid://cfbvc6m4b1xaq" path="res://killfeed_icons/minigun.png" id="1_1h707"]
 [ext_resource type="Script" uid="uid://yvevtn4dsddy" path="res://player/recoil/recoil_data.gd" id="3_58sk7"]
 [ext_resource type="AudioStream" uid="uid://b63r5283kwaa3" path="res://assets/sounds/freesound_community-mag-reload-81594.mp3" id="4_ecjoq"]
 [ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="5_r4gvk"]
+[ext_resource type="Script" uid="uid://bv0g4rnfelqch" path="res://components/status_effect/status_effect.gd" id="6_xtbie"]
 [ext_resource type="PackedScene" uid="uid://dcup71m4ndxch" path="res://weapon/assault_weapons/minigun.tscn" id="7_012nf"]
 [ext_resource type="Script" uid="uid://djg0ti1n45f8b" path="res://weapon/weapon_fire.gd" id="8_1h707"]
 

@@ -1,9 +1,10 @@
-[gd_resource type="Resource" script_class="Weapon" format=4 uid="uid://bchuht30thea3"]
+[gd_resource type="Resource" script_class="Weapon" format=4 uid="uid://cbfs668dm602c"]
 
-[ext_resource type="Texture2D" uid="uid://dlsarwlv45y1x" path="res://killfeed_icons/shotgun.png" id="1_c6obb"]
+[ext_resource type="Texture2D" uid="uid://dmjxate44it85" path="res://killfeed_icons/fowling_piece.png" id="1_4fpbe"]
 [ext_resource type="AudioStream" uid="uid://b0m2w0v8mtmwa" path="res://assets/sounds/freesound_community-rifle-or-shotgun-reload-6787.mp3" id="2_ggtkl"]
 [ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="3_fik5w"]
 [ext_resource type="Script" uid="uid://djg0ti1n45f8b" path="res://weapon/weapon_fire.gd" id="4_pyxex"]
+[ext_resource type="Script" uid="uid://bv0g4rnfelqch" path="res://components/status_effect/status_effect.gd" id="6_4fpbe"]
 [ext_resource type="PackedScene" uid="uid://884wdu1fnmxp" path="res://weapon/assassin_weapons/fowling_piece.tscn" id="6_mtuf4"]
 [ext_resource type="Script" uid="uid://yvevtn4dsddy" path="res://player/recoil/recoil_data.gd" id="7_k6xf5"]
 
@@ -48,6 +49,6 @@ reload_individually = true
 reload_time = 0.6
 weapon_fires = Array[ExtResource("4_pyxex")]([SubResource("Resource_vkg1j")])
 weapon_model = ExtResource("6_mtuf4")
-killfeed_icon = ExtResource("1_c6obb")
+killfeed_icon = ExtResource("1_4fpbe")
 reload_sound = ExtResource("2_ggtkl")
 metadata/_custom_type_script = "uid://qjf4ciit3dqy"

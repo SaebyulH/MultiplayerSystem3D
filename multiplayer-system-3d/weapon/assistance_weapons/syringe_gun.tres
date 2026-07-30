@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="Weapon" format=4 uid="uid://dxtql15w6yxg7"]
+[gd_resource type="Resource" script_class="Weapon" format=4 uid="uid://bgk78k64o4erc"]
 
-[ext_resource type="Texture2D" uid="uid://cpxsh71w1u770" path="res://killfeed_icons/syringe_gun.png" id="1_r1gru"]
+[ext_resource type="Texture2D" uid="uid://dtiupmrdutbo6" path="res://killfeed_icons/syringe_gun.png" id="1_r1gru"]
 [ext_resource type="Script" uid="uid://yvevtn4dsddy" path="res://player/recoil/recoil_data.gd" id="3_q3l56"]
 [ext_resource type="PackedScene" uid="uid://6mr0d18yn8po" path="res://weapon/projectiles/scenes/simple_projectile.tscn" id="4_lip7a"]
 [ext_resource type="AudioStream" uid="uid://cqbknmbhlwhu" path="res://assets/sounds/reload.mp3" id="4_lrpyt"]
