@@ -2,6 +2,8 @@
 
 [ext_resource type="PackedScene" uid="uid://6mr0d18yn8po" path="res://weapon/projectiles/scenes/simple_projectile.tscn" id="1_ntydc"]
 [ext_resource type="Script" uid="uid://dkl6nib1xlsbd" path="res://weapon/projectiles/scenes/redirectable_rocket.gd" id="2_yfogt"]
+[ext_resource type="Script" uid="uid://bv0g4rnfelqch" path="res://components/status_effect/status_effect.gd" id="3_qgb83"]
+[ext_resource type="Script" uid="uid://dsjkcwmnchp14" path="res://components/status_effect/effects/stun_effect.gd" id="4_8hqlo"]
 
 [sub_resource type="Curve" id="Curve_yfogt"]
 _data = [Vector2(0, 0.25), 0.0, 0.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
@@ -12,6 +14,10 @@ curve = SubResource("Curve_yfogt")
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_21xcj"]
 radius = 0.36645794
+
+[sub_resource type="Resource" id="Resource_68stf"]
+script = ExtResource("4_8hqlo")
+metadata/_custom_type_script = "uid://dsjkcwmnchp14"
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_84p14"]
 radius = 0.35911286
@@ -54,6 +60,7 @@ shape = SubResource("SphereShape3D_21xcj")
 
 [node name="HitboxComponent" parent="." index="2" unique_id=1963592485]
 health_delta = 0.0
+status_effects = Array[ExtResource("3_qgb83")]([SubResource("Resource_68stf")])
 
 [node name="CollisionShape3D" parent="HitboxComponent" index="0" unique_id=1314331169]
 shape = SubResource("SphereShape3D_84p14")

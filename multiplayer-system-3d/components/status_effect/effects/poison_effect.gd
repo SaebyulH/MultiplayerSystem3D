@@ -9,6 +9,12 @@ class_name PoisonEffect
 ##   3 s … 13 s  — 30 DPS drain (visible in UI)
 
 
+func _init() -> void:
+	effect_id = "poison"
+	display_name = "Poison"
+	base_duration = 13.0
+
+
 func _on_tick(player: Player, applier: String, state: Dictionary) -> void:
 	if not is_instance_valid(player):
 		return

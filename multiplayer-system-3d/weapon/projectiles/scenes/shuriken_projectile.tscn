@@ -2,9 +2,16 @@
 
 [ext_resource type="PackedScene" uid="uid://6mr0d18yn8po" path="res://weapon/projectiles/scenes/simple_projectile.tscn" id="1_0582i"]
 [ext_resource type="Script" uid="uid://bvkx76wgvdc6t" path="res://weapon/projectiles/scenes/arrow.gd" id="2_m0pfo"]
+[ext_resource type="Script" uid="uid://bv0g4rnfelqch" path="res://components/status_effect/status_effect.gd" id="3_rs17u"]
+[ext_resource type="Script" uid="uid://biuhljky25e3s" path="res://components/status_effect/effects/bleed_effect.gd" id="4_umrmm"]
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_kd01l"]
 radius = 0.48472312
+
+[sub_resource type="Resource" id="Resource_t04qq"]
+script = ExtResource("4_umrmm")
+base_duration = 8.0
+metadata/_custom_type_script = "uid://biuhljky25e3s"
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_xn376"]
 radius = 0.51098806
@@ -31,6 +38,7 @@ shape = SubResource("SphereShape3D_kd01l")
 transform = Transform3D(2.2834837, 0, 0, 0, 2.2834837, 0, 0, 0, 2.2834837, 0, 0, 0)
 health_delta = -30.0
 headshot_multiplier = 2.0
+status_effects = Array[ExtResource("3_rs17u")]([SubResource("Resource_t04qq")])
 
 [node name="CollisionShape3D" parent="HitboxComponent" index="0" unique_id=1314331169]
 transform = Transform3D(-0.19364831, 1.6929272e-08, 7.40002e-16, -3.0072425e-23, -8.464636e-09, 0.19364831, 1.6929272e-08, 0.19364831, 8.464636e-09, 0, 0, 0)

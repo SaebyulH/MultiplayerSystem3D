@@ -27,7 +27,7 @@ class_name StatusEffect
 @export var base_duration: float = 4.0
 
 ## Interval in seconds between _on_tick calls.  0 = no automatic ticking.
-@export var tick_interval: float = 0.0
+@export var tick_interval: float = 0.5
 
 
 # ------------------------------------------------------------------ virtuals

@@ -2,7 +2,14 @@
 
 [ext_resource type="PackedScene" uid="uid://6mr0d18yn8po" path="res://weapon/projectiles/scenes/simple_projectile.tscn" id="1_3xfof"]
 [ext_resource type="Texture2D" uid="uid://7liph1bkabn2" path="res://effects/smoke2.png" id="2_3g12b"]
+[ext_resource type="Script" uid="uid://bv0g4rnfelqch" path="res://components/status_effect/status_effect.gd" id="2_68stf"]
 [ext_resource type="Texture2D" uid="uid://o36viwa6s4g6" path="res://effects/cloud.png" id="3_luqgv"]
+[ext_resource type="Script" uid="uid://rkd4beux51mg" path="res://components/status_effect/effects/burn_effect.gd" id="3_mwbof"]
+
+[sub_resource type="Resource" id="Resource_gbiy0"]
+script = ExtResource("3_mwbof")
+base_duration = 1.0
+metadata/_custom_type_script = "uid://rkd4beux51mg"
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_bmawj"]
 
@@ -29,9 +36,11 @@ linear_damp = 3.0
 angular_velocity = Vector3(0.017453292, 0.017453292, 0.017453292)
 lifetime = 4.0
 world_hit_mode = 3
+align_to_velocity = false
 
 [node name="HitboxComponent" parent="." index="2" unique_id=1963592485]
 health_delta = -4.0
+status_effects = Array[ExtResource("2_68stf")]([SubResource("Resource_gbiy0")])
 
 [node name="CollisionShape3D" parent="HitboxComponent" index="0" unique_id=1314331169]
 transform = Transform3D(-8.9304926e-08, -2.0430586, -8.930491e-08, 0, -8.930491e-08, 2.0430586, -2.0430586, 8.9304926e-08, 3.9036424e-15, 0, 0, 0)

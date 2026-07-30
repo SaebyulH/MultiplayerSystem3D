@@ -11,9 +11,18 @@
 [ext_resource type="PackedScene" uid="uid://evq31o8nptpq" path="res://weapon/projectiles/scenes/poisoned_healthpack.tscn" id="9_6bu14"]
 [ext_resource type="AudioStream" uid="uid://u24dsvsfmlr2" path="res://assets/sounds/gun_sound.mp3" id="10_eoyy2"]
 [ext_resource type="PackedScene" uid="uid://d3smja8hfgqx1" path="res://weapon/assistance_weapons/medpack_launcher.tscn" id="11_pvunv"]
+[ext_resource type="Script" uid="uid://bv0g4rnfelqch" path="res://components/status_effect/status_effect.gd" id="12_status"]
+[ext_resource type="Script" uid="uid://crig03jm0e8ha" path="res://components/status_effect/effects/poison_effect.gd" id="13_poison"]
 
 [sub_resource type="Resource" id="Resource_we44c"]
 script = ExtResource("8_0lnwl")
+
+[sub_resource type="Resource" id="Resource_poison"]
+script = ExtResource("13_poison")
+effect_id = "poison"
+display_name = "Poison"
+is_negative = true
+base_duration = 13.0
 
 [sub_resource type="Resource" id="Resource_7ulhg"]
 script = ExtResource("4_7x2r3")
@@ -31,6 +40,7 @@ automatic = true
 recoil_data = SubResource("Resource_we44c")
 bullet_type = 1
 projectile_scene = ExtResource("9_6bu14")
+status_effects = Array[ExtResource("12_status")]([SubResource("Resource_poison")])
 shoot_sound = ExtResource("10_eoyy2")
 empty_sound = ExtResource("5_s3d18")
 metadata/_custom_type_script = "uid://djg0ti1n45f8b"

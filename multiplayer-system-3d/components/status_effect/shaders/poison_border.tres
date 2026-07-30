@@ -1,0 +1,11 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://bwy42t86m8k3v"]
+
+[ext_resource type="Shader" uid="uid://bvlik4v84om05" path="res://components/status_effect/shaders/status_border.gdshader" id="1"]
+
+[resource]
+shader = ExtResource("1")
+shader_parameter/effect_color = Color(0.55, 0.15, 0.75, 0.7)
+shader_parameter/pulse_speed = 1.5
+shader_parameter/noise_intensity = 0.35
+shader_parameter/noise_scale = 30.0
+shader_parameter/u_time = 0.0

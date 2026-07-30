@@ -41,6 +41,26 @@ var _respawn_label_bg: ColorRect
 var _effect_container: HBoxContainer
 var _effect_labels: Array[Label] = []
 
+# Border overlays — one ColorRect per active effect, full-screen with a shader.
+var _border_container: Control
+var _border_overlays: Dictionary = {}  # effect_id -> ColorRect
+
+# Side-panel list of active effects (right side, below weapon list).
+var _effect_list: VBoxContainer
+var _effect_list_labels: Dictionary = {}  # effect_id -> Label
+
+const BLEED_MATERIAL := preload("res://components/status_effect/shaders/bleed_border.tres")
+const POISON_MATERIAL := preload("res://components/status_effect/shaders/poison_border.tres")
+const STUN_MATERIAL := preload("res://components/status_effect/shaders/stun_border.tres")
+const FLAME_SHADER_PATH := "res://components/status_effect/shaders/flame_border.gdshader"
+const FALLBACK_BORDER_COLOR := Color(0.7, 0.7, 0.7, 0.5)
+
+# Built in _build_status_effects after the shader file has been loaded.
+var _effect_materials: Dictionary = {}
+
+# Accumulated time for driving shader border animations.
+var _border_time: float = 0.0
+
 # Health delta tracking
 var _last_health: float = 0.0
 var _last_change: float = 0.0
@@ -343,6 +363,19 @@ func _build_respawn_timer() -> void:
 	container.add_child(_respawn_label)
 
 func _build_status_effects() -> void:
+	# Build material map (flame is created in code to avoid UID issues).
+	_effect_materials = {
+		"bleed": BLEED_MATERIAL,
+		"poison": POISON_MATERIAL,
+		"stun": STUN_MATERIAL,
+	}
+	var flame_shader := load(FLAME_SHADER_PATH) as Shader
+	if flame_shader:
+		var flame_mat := ShaderMaterial.new()
+		flame_mat.shader = flame_shader
+		_effect_materials["burn"] = flame_mat
+
+	# -- Top-center labels (existing) --
 	_effect_container = HBoxContainer.new()
 	_effect_container.anchor_left   = 0.5
 	_effect_container.anchor_right  = 0.5
@@ -356,11 +389,35 @@ func _build_status_effects() -> void:
 	_effect_container.alignment = BoxContainer.ALIGNMENT_CENTER
 	add_child(_effect_container)
 
+	# -- Full-screen container for shader border overlays --
+	# Render behind everything else (first child = lowest z-order).
+	_border_container = Control.new()
+	_border_container.anchor_left   = 0.0
+	_border_container.anchor_right  = 1.0
+	_border_container.anchor_top    = 0.0
+	_border_container.anchor_bottom = 1.0
+	_border_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_border_container)
+	move_child(_border_container, 0)
+
+	# -- Side-panel effect list (right edge, below weapon list) --
+	_effect_list = VBoxContainer.new()
+	_effect_list.anchor_left   = 1.0
+	_effect_list.anchor_right  = 1.0
+	_effect_list.anchor_top    = 0.5
+	_effect_list.anchor_bottom = 0.5
+	_effect_list.offset_left   = -210.0
+	_effect_list.offset_top    = 100.0
+	_effect_list.offset_right  = -20.0
+	_effect_list.offset_bottom = 280.0
+	_effect_list.add_theme_constant_override("separation", 4)
+	add_child(_effect_list)
+
 # --------------------------------------------------
 #  Updates (called from _process)
 # --------------------------------------------------
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	# Enforce ownership visibility every frame -- parent's show()/hide() overrides
 	# our visible flag, so we must re-assert it.
 	var should_show := is_multiplayer_authority() and not _owner_player.is_bot
@@ -368,6 +425,8 @@ func _process(_delta: float) -> void:
 		visible = should_show
 		if not should_show:
 			return  # skip all updates when hidden
+
+	_border_time += delta
 
 	_update_health()
 	_update_health_delta()
@@ -582,24 +641,25 @@ func _update_bg_reload_bars() -> void:
 func _update_status_effects() -> void:
 	var sem: StatusEffectManager = _owner_player.status_effect_manager if _owner_player else null
 	if not sem:
+		_clear_all_borders()
+		_clear_effect_list()
 		return
 	var times: Dictionary = sem.get_active_effect_times()
 	var ids: Array = times.keys()
 
+	# ---- Top-center labels (existing) ----
 	while _effect_labels.size() > ids.size():
 		var lbl: Label = _effect_labels.pop_back()
 		lbl.queue_free()
 
+	var visible_index := 0
 	for i in ids.size():
 		var id: String = ids[i]
 		var remaining: float = times[id]
-		var state: Dictionary = sem.get_effect_state(id)
-		if state.get("drain_started", true) == false:
-			continue
 
 		var label: Label
-		if i < _effect_labels.size():
-			label = _effect_labels[i]
+		if visible_index < _effect_labels.size():
+			label = _effect_labels[visible_index]
 		else:
 			label = Label.new()
 			label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
@@ -610,6 +670,103 @@ func _update_status_effects() -> void:
 			_effect_labels.append(label)
 		label.text = "%s %.1fs" % [id.capitalize(), remaining]
 		label.visible = true
+		visible_index += 1
+
+	# ---- Shader border overlays ----
+	# Remove borders for effects that are no longer active.
+	var stale_borders: Array[String] = []
+	for border_id: String in _border_overlays:
+		if not times.has(border_id):
+			stale_borders.append(border_id)
+	for border_id: String in stale_borders:
+		var cr: Control = _border_overlays[border_id]
+		cr.queue_free()
+		_border_overlays.erase(border_id)
+
+	# Add / update borders for currently active effects.
+	for id in ids:
+		var mat = _effect_materials.get(id, null)
+		if not mat:
+			# Fallback: if we don't have a custom shader, still show a plain border.
+			var cr: ColorRect
+			if _border_overlays.has(id):
+				cr = _border_overlays[id]
+			else:
+				cr = _create_border_overlay(FALLBACK_BORDER_COLOR)
+				_border_overlays[id] = cr
+			cr.material = null
+			cr.color = FALLBACK_BORDER_COLOR
+			cr.visible = true
+			continue
+
+		var cr: ColorRect
+		if _border_overlays.has(id):
+			cr = _border_overlays[id]
+		else:
+			cr = _create_border_overlay()
+			cr.material = mat.duplicate()  # unique instance so multiple effects don't share uniforms
+			_border_overlays[id] = cr
+			cr.visible = true
+		# Push elapsed time to every visible border shader.
+		for bcr: ColorRect in _border_overlays.values():
+			if bcr.visible and bcr.material is ShaderMaterial:
+				(bcr.material as ShaderMaterial).set_shader_parameter("u_time", _border_time)
+
+	# ---- Side-panel effect list ----
+	# Remove stale entries.
+	for list_id in _effect_list_labels.keys():
+		if not list_id in times:
+			var lbl: Label = _effect_list_labels[list_id]
+			lbl.queue_free()
+			_effect_list_labels.erase(list_id)
+
+	# Add / update entries.
+	for id in ids:
+		var remaining: float = times[id]
+		var lbl: Label
+		if _effect_list_labels.has(id):
+			lbl = _effect_list_labels[id]
+		else:
+			lbl = Label.new()
+			lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+			lbl.add_theme_constant_override("outline_size", 4)
+			lbl.add_theme_font_size_override("font_size", 14)
+			_effect_list.add_child(lbl)
+			_effect_list_labels[id] = lbl
+		lbl.text = "■ %s  %.1fs" % [id.capitalize(), remaining]
+		# Color the label to match the effect.
+		match id:
+			"bleed":   lbl.modulate = Color(1.0, 0.3, 0.3)
+			"burn":    lbl.modulate = Color(1.0, 0.55, 0.1)
+			"poison":  lbl.modulate = Color(0.7, 0.4, 1.0)
+			"stun":    lbl.modulate = Color(1.0, 0.9, 0.2)
+			_:         lbl.modulate = Color(0.8, 0.8, 0.8)
+		lbl.visible = true
+
+
+func _create_border_overlay(col := Color.WHITE) -> ColorRect:
+	"""Create a full-screen ColorRect inside _border_container for a border effect."""
+	var cr := ColorRect.new()
+	cr.anchor_left   = 0.0
+	cr.anchor_right  = 1.0
+	cr.anchor_top    = 0.0
+	cr.anchor_bottom = 1.0
+	cr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cr.color = col
+	_border_container.add_child(cr)
+	return cr
+
+
+func _clear_all_borders() -> void:
+	for cr: ColorRect in _border_overlays.values():
+		cr.queue_free()
+	_border_overlays.clear()
+
+
+func _clear_effect_list() -> void:
+	for lbl: Label in _effect_list_labels.values():
+		lbl.queue_free()
+	_effect_list_labels.clear()
 
 func _on_weapon_changed(_index = null, _weapon = null) -> void:
 	_update_weapon_list()

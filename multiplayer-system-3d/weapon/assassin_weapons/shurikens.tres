@@ -7,6 +7,7 @@
 [ext_resource type="PackedScene" uid="uid://oeshwpuiijrv" path="res://weapon/projectiles/scenes/shuriken_projectile.tscn" id="5_tlpaf"]
 [ext_resource type="AudioStream" uid="uid://dmsu80i3l18h1" path="res://assets/sounds/u_dtbxmnju4i-taking-out-knife-217793.mp3" id="7_dfmpo"]
 [ext_resource type="PackedScene" uid="uid://cydv6x3pwgewf" path="res://weapon/assassin_weapons/shurikens_model.tscn" id="7_tlpaf"]
+[ext_resource type="Script" uid="uid://bv0g4rnfelqch" path="res://components/status_effect/status_effect.gd" id="8_d5mdw"]
 [ext_resource type="Script" uid="uid://yvevtn4dsddy" path="res://player/recoil/recoil_data.gd" id="8_fcyhs"]
 
 [sub_resource type="AudioStreamMP3" id="AudioStreamMP3_dfmpo"]
@@ -29,20 +30,15 @@ automatic = true
 post_shoot_delay = 1.5
 ammo_cost = 0
 recoil_data = SubResource("Resource_kt4aa")
-self_health_delta_on_shoot = null
-move_speed_mult_while_shooting = null
 bullet_type = 1
 hitscan_damage = 15.0
 headshot_multiplier = 15.0
-self_health_delta_on_hit = null
-movement_spread = null
 falloff_curve = SubResource("CurveTexture_jx16a")
 projectile_scene = ExtResource("5_tlpaf")
 multishot_data = Array[Vector3]([Vector3(-0.02, 0, -1), Vector3(0, 0, -1), Vector3(0.02, 0, -1)])
 multishot_mode = 1
 burst_post_shoot_delay = 0.15
 burst_ammo_per_shot = 1
-self_health_delta_per_burst_bullet = null
 shoot_sound = ExtResource("7_dfmpo")
 empty_sound = SubResource("AudioStreamMP3_dfmpo")
 metadata/_custom_type_script = "uid://djg0ti1n45f8b"

@@ -7,13 +7,21 @@ class_name StatusEffectManager
 ## Add this node as a child of Player.  It ticks all active effects in
 ## _process, handles negative-effect stacking (extends duration), and
 ## exposes query methods (is_invincible, is_stunned) for other systems.
+##
+## Networking: effects are applied and ticked entirely on the server.
+## Remaining times are pushed to clients every frame while effects are active.
+## Clients do NO local ticking — the server is the sole timing authority.
 ## ---------------------------------------------------------------------------
 
 signal effect_applied(effect_id: String)
 signal effect_removed(effect_id: String)
 
-## { effect_id : { effect, remaining, applier, state } }
+## { effect_id : { effect, remaining, applier, state } } — server only.
 var _active_effects: Dictionary = {}
+
+## { effect_id : remaining } — mirror kept in sync by the server and pushed
+## to clients via RPC.  This is the single source read by UI on all peers.
+var _client_effects: Dictionary = {}
 
 var _player: Player = null
 
@@ -26,7 +34,15 @@ func _process(delta: float) -> void:
 	if not _player or not _player.spawned:
 		return
 
-	# Iterate over keys so we can safely erase expired effects.
+	if not multiplayer.is_server():
+		return  # Only the server ticks — clients receive times via RPC.
+
+	_tick_server(delta)
+
+
+func _tick_server(delta: float) -> void:
+	var expired: Array[String] = []
+
 	var ids: Array = _active_effects.keys()
 	for id in ids:
 		var data: Dictionary = _active_effects[id]
@@ -38,8 +54,7 @@ func _process(delta: float) -> void:
 
 		if remaining <= 0.0:
 			effect._on_remove(_player, data.get("state", {}))
-			_active_effects.erase(id)
-			effect_removed.emit(id)
+			expired.append(id)
 			continue
 
 		# Tick at configured interval.
@@ -51,14 +66,36 @@ func _process(delta: float) -> void:
 				effect._on_tick(_player, data["applier"], data.get("state", {}))
 			data["tick_timer"] = tick_timer
 
+	for id in expired:
+		_active_effects.erase(id)
+		_client_effects.erase(id)
+		effect_removed.emit(id)
 
+	# Mirror remaining times into _client_effects so UI reads consistent data
+	# on the server too.  Poison is hidden from UI until the 3 s drain delay
+	# elapses (drain_started == true).
+	for id in _active_effects:
+		var data: Dictionary = _active_effects[id]
+		if id == "poison" and not data.get("state", {}).get("drain_started", false):
+			_client_effects.erase(id)
+			continue
+		_client_effects[id] = data["remaining"]
+
+	# Push authoritative times to clients.  Sync whenever there is any change
+	# -- including the frame where the last effect expires (empty snapshot).
+	var had_effects := not _client_effects.is_empty()
+	if had_effects or not expired.is_empty():
+		_sync_to_clients()
 # ------------------------------------------------------------------ public API
 
-## Apply a status effect to the owning player.
+## Apply a status effect to the owning player (server-authoritative).
 ## Negative effects stack duration on top of an existing instance instead of
 ## creating a second copy.
 func apply_effect(effect: StatusEffect, applier: String) -> void:
 	if not effect or effect.effect_id.is_empty():
+		return
+
+	if not multiplayer.is_server():
 		return
 
 	# Negative effects extend duration when already active.
@@ -80,23 +117,29 @@ func apply_effect(effect: StatusEffect, applier: String) -> void:
 	effect_applied.emit(effect.effect_id)
 
 
-## Force-remove an effect by id.
+## Force-remove an effect by id (server-authoritative).
 func remove_effect(effect_id: String) -> void:
+	if not multiplayer.is_server():
+		return
 	if not _active_effects.has(effect_id):
 		return
 	var data: Dictionary = _active_effects[effect_id]
 	data["effect"]._on_remove(_player, data.get("state", {}))
 	_active_effects.erase(effect_id)
+	_client_effects.erase(effect_id)
 	effect_removed.emit(effect_id)
+	_sync_to_clients()
 
 
 ## Returns true if an effect with the given id is currently active.
 func has_effect(effect_id: String) -> bool:
-	return _active_effects.has(effect_id)
+	return _client_effects.has(effect_id)
 
 
 ## Remove all effects marked is_negative.
 func clear_negative_effects() -> void:
+	if not multiplayer.is_server():
+		return
 	var to_remove: Array[String] = []
 	for id in _active_effects:
 		var data: Dictionary = _active_effects[id]
@@ -108,6 +151,8 @@ func clear_negative_effects() -> void:
 
 ## Remove every active effect (used on death / respawn).
 func clear_all_effects() -> void:
+	if not multiplayer.is_server():
+		return
 	var ids: Array = _active_effects.keys()
 	for id in ids:
 		remove_effect(id)
@@ -115,16 +160,16 @@ func clear_all_effects() -> void:
 
 ## Whether the player is currently invincible.
 func is_invincible() -> bool:
-	return _active_effects.has("invincible")
+	return _client_effects.has("invincible")
 
 
 ## Whether the player is currently stunned.
 func is_stunned() -> bool:
-	return _active_effects.has("stun")
+	return _client_effects.has("stun")
 
 
 ## Returns the per-instance state dictionary for an effect, if it's active.
-## Useful for UI to inspect poison's drain_started flag, etc.
+## Only available on the authority.
 func get_effect_state(effect_id: String) -> Dictionary:
 	if _active_effects.has(effect_id):
 		return _active_effects[effect_id].get("state", {})
@@ -134,6 +179,27 @@ func get_effect_state(effect_id: String) -> Dictionary:
 ## Returns a dictionary of {effect_id: remaining_time} for all active effects.
 func get_active_effect_times() -> Dictionary:
 	var result: Dictionary = {}
-	for id in _active_effects:
-		result[id] = _active_effects[id]["remaining"]
+	for id in _client_effects:
+		result[id] = _client_effects[id]
 	return result
+
+
+# ----------------------------------------------------------------- networking
+
+func _sync_to_clients() -> void:
+	"""Push the authoritative remaining-time snapshot to all peers."""
+	if not multiplayer.is_server():
+		return
+	var ids: Array = []
+	var times: Array = []
+	for id in _client_effects:
+		ids.append(id)
+		times.append(_client_effects[id])
+	_rpc_sync_effects.rpc(ids, times)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_sync_effects(effect_ids: Array, remaining_times: Array) -> void:
+	_client_effects.clear()
+	for i in effect_ids.size():
+		_client_effects[effect_ids[i]] = remaining_times[i]
