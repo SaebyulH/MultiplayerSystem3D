@@ -1044,7 +1044,7 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 		)
 		var exclude_rids := [_parent_player.get_rid(), $"../HeadHurtbox".get_rid(), $"../BodyHurtbox".get_rid()]
 		# Also exclude the player's own shield so they can't damage it.
-		if _parent_player.shield_instance:
+		if _parent_player.shield_instance and is_instance_valid(_parent_player.shield_instance):
 			var shield_area := _parent_player.shield_instance.get_node_or_null("ShieldArea") as Area3D
 			if shield_area:
 				exclude_rids.append(shield_area.get_rid())

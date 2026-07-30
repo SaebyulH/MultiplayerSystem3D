@@ -22,6 +22,8 @@ var _secondary_option: OptionButton
 var _melee_option: OptionButton
 var _character_option: OptionButton
 var _confirm_button: Button
+var _randomize_once_button: Button
+var _randomize_on_death_check: CheckBox
 var _mode_label: Label
 
 var _primary_viewport: SubViewport
@@ -202,6 +204,29 @@ func _build_ui_in(cl: CanvasLayer) -> void:
 	m_col.add_child(_melee_stats)
 	preview_row.add_child(m_col)
 
+	col.add_child(_sep())
+
+	# ── Randomize buttons ────────────────────
+	var rand_row := CenterContainer.new()
+	col.add_child(rand_row)
+	var rand_hbox := HBoxContainer.new()
+	rand_hbox.add_theme_constant_override("separation", 20)
+	rand_row.add_child(rand_hbox)
+
+	_randomize_once_button = Button.new()
+	_randomize_once_button.text = "  RANDOMIZE LOADOUT  "
+	_randomize_once_button.add_theme_font_size_override("font_size", 16)
+	_randomize_once_button.pressed.connect(_on_randomize_once_pressed)
+	rand_hbox.add_child(_randomize_once_button)
+
+	_randomize_on_death_check = CheckBox.new()
+	_randomize_on_death_check.text = "Randomize on every death"
+	_randomize_on_death_check.add_theme_font_size_override("font_size", 16)
+	_randomize_on_death_check.add_theme_color_override("font_color", Color(0.75, 0.75, 0.75))
+	rand_hbox.add_child(_randomize_on_death_check)
+
+	col.add_child(_sep())
+
 	# ── Confirm ──────────────────────────────
 	var btn_row := CenterContainer.new()
 	col.add_child(btn_row)
@@ -378,6 +403,10 @@ func _spawn_weapon_preview(weapon: Weapon, vp: SubViewport) -> void:
 		return
 	pr.add_child(model)
 	await get_tree().process_frame
+	# Guard against re-entrant calls: a second _spawn_weapon_preview may have
+	# freed `model` while we were awaiting the frame.
+	if not is_instance_valid(model):
+		return
 	var camera := vp.get_node_or_null("Node3D/Camera3D") as Camera3D
 	if not camera:
 		return
@@ -396,6 +425,10 @@ func load_classes(classes: Array[Class]) -> void:
 	for c in classes:
 		if c:
 			_class_option.add_item(c.class_display_name)
+	# Default to the first class so the user doesn't have to click it.
+	if _class_option.item_count > 1:
+		_class_option.select(1)
+		_on_class_selected(1)
 
 # ─────────────────────────────────────────────
 #  Selection handlers
@@ -657,6 +690,26 @@ func _get_selected_team() -> Player.Team:
 		2:  return Player.Team.SCI
 	return Player.Team.FFA
 
+func _on_randomize_once_pressed() -> void:
+	# Randomize class first.
+	if _class_option.item_count > 1:
+		var class_idx := randi() % (_class_option.item_count - 1) + 1
+		_class_option.select(class_idx)
+		_on_class_selected(class_idx)
+
+	if selected_class == null:
+		return
+	if selected_class.primary_weapons.size() > 0:
+		_primary_option.select(randi() % selected_class.primary_weapons.size())
+		_primary_option.item_selected.emit(_primary_option.selected)
+	if selected_class.secondary_weapons.size() > 0:
+		_secondary_option.select(randi() % selected_class.secondary_weapons.size())
+		_secondary_option.item_selected.emit(_secondary_option.selected)
+	if selected_class.melee_weapons.size() > 0:
+		_melee_option.select(randi() % selected_class.melee_weapons.size())
+		_melee_option.item_selected.emit(_melee_option.selected)
+
+
 func _on_confirm_pressed() -> void:
 	if selected_class == null:
 		return
@@ -677,6 +730,7 @@ func _on_confirm_pressed() -> void:
 		if char:
 			character_path = char.resource_path
 	var team := _get_selected_team()
+	var rand_on_death := _randomize_on_death_check.button_pressed
 
 	# Hide our canvas (don't free — user can re-open with E later)
 	visible = false  # triggers _process() → _canvas.visible = false
@@ -686,16 +740,16 @@ func _on_confirm_pressed() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 
 	if multiplayer.is_server():
-		_request_loadout(player_id, primary.resource_path, secondary.resource_path, melee.resource_path, team, character_path)
+		_request_loadout(player_id, primary.resource_path, secondary.resource_path, melee.resource_path, team, character_path, selected_class.resource_path, rand_on_death)
 	else:
-		_request_loadout.rpc_id(1, player_id, primary.resource_path, secondary.resource_path, melee.resource_path, team, character_path)
+		_request_loadout.rpc_id(1, player_id, primary.resource_path, secondary.resource_path, melee.resource_path, team, character_path, selected_class.resource_path, rand_on_death)
 
 # ─────────────────────────────────────────────
 #  RPCs
 # ─────────────────────────────────────────────
 
 @rpc("any_peer", "reliable")
-func _request_loadout(tpid: String, pp: String, sp: String, mp: String, team: Player.Team, cp: String = "") -> void:
+func _request_loadout(tpid: String, pp: String, sp: String, mp: String, team: Player.Team, cp: String = "", class_path := "", rand_on_death := false) -> void:
 	if not multiplayer.is_server():
 		return
 	var sid := multiplayer.get_remote_sender_id()
@@ -726,6 +780,8 @@ func _request_loadout(tpid: String, pp: String, sp: String, mp: String, team: Pl
 	player._loadout_primary_path = pp
 	player._loadout_secondary_path = sp
 	player._loadout_melee_path = mp
+	player._loadout_class_path = class_path
+	player.set_randomize_on_death(rand_on_death)
 	_apply_loadout.rpc(tpid, pp, sp, mp, team, cp)
 	player.rpc_reset.rpc(player._get_spawn_position())
 

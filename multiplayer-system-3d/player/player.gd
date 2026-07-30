@@ -143,6 +143,10 @@ var _loadout_primary_path: String = ""
 var _loadout_secondary_path: String = ""
 var _loadout_melee_path: String = ""
 var _loadout_character_path: String = ""
+var _loadout_class_path: String = ""
+
+# Randomize-on-death — when true, weapons are re-randomized from the class on each respawn.
+var _randomize_on_death: bool = false
 
 # Used to be _pending_spawn_position / _has_pending_spawn — removed.
 
@@ -211,6 +215,10 @@ func rpc_reset(pos: Vector3) -> void:
 	weapon_controller.reset()
 	if status_effect_manager:
 		status_effect_manager.clear_all_effects()
+
+	# Randomize weapons on death if the option is enabled.
+	if multiplayer.is_server() and _randomize_on_death and not _loadout_class_path.is_empty():
+		_randomize_weapons_from_class()
 
 ## Full-state sync for a late-joining peer.  Handles visibility and weapon
 ## loadout in one atomic RPC so the player does not flicker into view with
@@ -303,6 +311,41 @@ func spawn():
 	else:
 		camera.current = false
 		camera.visible = false
+
+
+func set_randomize_on_death(enabled: bool) -> void:
+	_randomize_on_death = enabled
+
+
+func _randomize_weapons_from_class() -> void:
+	"""Pick random weapons from the stored class and apply them."""
+	var cls: Class = load(_loadout_class_path) as Class
+	if not cls:
+		return
+	if cls.primary_weapons.is_empty() or cls.secondary_weapons.is_empty() or cls.melee_weapons.is_empty():
+		return
+	var primary: Weapon = cls.primary_weapons.pick_random().duplicate(true) as Weapon
+	var secondary: Weapon = cls.secondary_weapons.pick_random().duplicate(true) as Weapon
+	var melee: Weapon = cls.melee_weapons.pick_random().duplicate(true) as Weapon
+	var nw: Array[Weapon] = [primary, secondary, melee]
+	weapon_controller.set_weapons(nw)
+	weapon_controller.current_weapon_index = 0
+	_loadout_primary_path = primary.resource_path
+	_loadout_secondary_path = secondary.resource_path
+	_loadout_melee_path = melee.resource_path
+	_rpc_sync_randomized_loadout.rpc(name, _loadout_primary_path, _loadout_secondary_path, _loadout_melee_path)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_sync_randomized_loadout(tpid: String, pp: String, sp: String, mp: String) -> void:
+	var primary: Weapon = load(pp) as Weapon
+	var secondary: Weapon = load(sp) as Weapon
+	var melee: Weapon = load(mp) as Weapon
+	if not primary or not secondary or not melee:
+		return
+	var nw: Array[Weapon] = [primary.duplicate(true) as Weapon, secondary.duplicate(true) as Weapon, melee.duplicate(true) as Weapon]
+	weapon_controller.set_weapons(nw)
+	weapon_controller.current_weapon_index = 0
 
 
 func _physics_process(delta: float) -> void:
