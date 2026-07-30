@@ -70,8 +70,8 @@ enum BulletType {HITSCAN, PROJECTILE}
 		notify_property_list_changed()
 		emit_changed()
 
-@export var falloff_start: float = 10.0            ## (HITSCAN, has_falloff)
-@export var falloff_end: float = 30.0              ## (HITSCAN, has_falloff)
+@export var falloff_start: float = 5.0            ## (HITSCAN, has_falloff)
+@export var falloff_end: float = 20.0          ## (HITSCAN, has_falloff)
 @export var falloff_curve: CurveTexture = preload("res://defaults/default_damage_falloff_curve.tres")
 
 @export var projectile_scene: PackedScene          ## (PROJECTILE only)

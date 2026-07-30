@@ -5,7 +5,7 @@ var exploded := false
 
 @export var splash_health_delta := -75
 @export var splash_radius := 3.0
-
+@export var explosion_color := Color.WHITE
 
 @export var min_knockback_percent := 0.5 ##For distance based knockball falloff
 
@@ -124,8 +124,9 @@ func _explode_visual():
 
 	if _explosion_scene == null:
 		_explosion_scene = load("res://effects/explosion.tscn")
-
+	
 	var explosion := _explosion_scene.instantiate()
+	explosion.effect_color = explosion_color
 	var parent := get_parent()
 	if not parent:
 		return

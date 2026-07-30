@@ -9,6 +9,7 @@
 [ext_resource type="AudioStream" uid="uid://cgtklyqabb5ar" path="res://assets/sounds/freesound_community-single-gunshot-54-40780.mp3" id="6_banbv"]
 [ext_resource type="PackedScene" uid="uid://ux8ogr6fmr5y" path="res://weapon/shared/pistol.tscn" id="7_la0ju"]
 [ext_resource type="Script" uid="uid://djg0ti1n45f8b" path="res://weapon/weapon_fire.gd" id="8_hadn0"]
+[ext_resource type="Script" uid="uid://bv0g4rnfelqch" path="res://components/status_effect/status_effect.gd" id="9_cdrcm"]
 
 [sub_resource type="Resource" id="Resource_8ac3t"]
 script = ExtResource("3_r57kw")
@@ -18,7 +19,7 @@ script = ExtResource("8_hadn0")
 post_shoot_delay = 0.18
 recoil_data = SubResource("Resource_8ac3t")
 hitscan_damage = 25.0
-headshot_multiplier = 1.5
+headshot_multiplier = 3.0
 burst_fire_has_recoil = false
 shoot_sound = ExtResource("6_banbv")
 empty_sound = ExtResource("1_la0ju")
@@ -47,7 +48,7 @@ post_shoot_delay = 0.51
 ammo_cost = 3
 recoil_data = SubResource("Resource_gdyfw")
 hitscan_damage = 25.0
-headshot_multiplier = 1.5
+headshot_multiplier = 3.0
 falloff_curve = SubResource("CurveTexture_6wnjc")
 multishot_data = Array[Vector3]([Vector3(0, 0, -1), Vector3(0, 0, -1), Vector3(0, 0, -1)])
 multishot_mode = 1

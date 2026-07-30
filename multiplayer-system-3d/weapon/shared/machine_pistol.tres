@@ -9,6 +9,7 @@
 [ext_resource type="Script" uid="uid://yvevtn4dsddy" path="res://player/recoil/recoil_data.gd" id="6_4hrkm"]
 [ext_resource type="AudioStream" uid="uid://bvpt8qhaass4w" path="res://assets/sounds/freesound_community-submachine-gun.mp3" id="7_it6ri"]
 [ext_resource type="PackedScene" uid="uid://cyhde3bbrrrv" path="res://weapon/shared/machine_pistol.tscn" id="8_5plhj"]
+[ext_resource type="Script" uid="uid://bv0g4rnfelqch" path="res://components/status_effect/status_effect.gd" id="9_l2ti6"]
 
 [sub_resource type="Resource" id="Resource_8ac3t"]
 script = ExtResource("6_4hrkm")

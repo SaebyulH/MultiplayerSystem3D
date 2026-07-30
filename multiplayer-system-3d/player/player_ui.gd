@@ -714,7 +714,7 @@ func _update_status_effects() -> void:
 
 	# ---- Side-panel effect list ----
 	# Remove stale entries.
-	for list_id in _effect_list_labels.keys():
+	for list_id in _effect_list_labels:
 		if not list_id in times:
 			var lbl: Label = _effect_list_labels[list_id]
 			lbl.queue_free()

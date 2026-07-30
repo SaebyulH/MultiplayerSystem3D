@@ -178,7 +178,7 @@ func _receive_scores(kills: Dictionary,
 	_self_heal = self_heal.duplicate()
 	_heal_others = heal_others.duplicate()
 
-	for player_name in killstreak.keys():
+	for player_name in killstreak:
 		var new_streak: int = killstreak[player_name]
 		if _killstreak.get(player_name, 0) != new_streak:
 			killstreak_changed.emit(player_name, new_streak)

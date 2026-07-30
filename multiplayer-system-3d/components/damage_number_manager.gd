@@ -32,7 +32,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	# Tick accum timers — flush when expired.
 	var to_flush: Array[String] = []
-	for key in _accum_timers.keys():
+	for key in _accum_timers:
 		_accum_timers[key] -= delta
 		if _accum_timers[key] <= 0.0:
 			to_flush.append(key)

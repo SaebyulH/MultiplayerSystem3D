@@ -613,8 +613,9 @@ alpha_curve = SubResource("CurveTexture_3tyj0")
 [sub_resource type="TorusMesh" id="TorusMesh_yc3gs"]
 inner_radius = 0.9
 
-[node name="Explosion" type="Node3D" unique_id=1946821248]
+[node name="Explosion" type="Node3D" unique_id=1946821248 node_paths=PackedStringArray("particles")]
 script = ExtResource("1_m0j43")
+particles = [NodePath("Debris"), NodePath("Cloud"), NodePath("Smoke"), NodePath("Boom"), NodePath("Ring"), NodePath("SmokeRings")]
 
 [node name="Debris" type="GPUParticles3D" parent="." unique_id=14220078]
 material_override = SubResource("ShaderMaterial_i4ulv")

@@ -4,19 +4,20 @@
 [ext_resource type="Resource" uid="uid://dldnlgbtrode8" path="res://weapon/shared/pistol.tres" id="3_otbgs"]
 [ext_resource type="Resource" uid="uid://ckmmcd08v3adb" path="res://weapon/assistance_weapons/medpack_launcher.tres" id="5_704ol"]
 [ext_resource type="Script" uid="uid://cbg4mqtqfaara" path="res://player/class.gd" id="5_i8pk4"]
+[ext_resource type="Resource" uid="uid://b8xglf74vmqei" path="res://weapon/tf2/syringe.tres" id="5_rqw2m"]
 [ext_resource type="Resource" uid="uid://dxtql15w6yxg7" path="res://weapon/assistance_weapons/syringe_gun.tres" id="6_i8pk4"]
 [ext_resource type="Resource" uid="uid://nx6k3ylwck70" path="res://weapon/shared/machine_pistol.tres" id="7_pw5jr"]
 [ext_resource type="Resource" uid="uid://8pjowecfgxv1" path="res://weapon/assistance_weapons/shotgun.tres" id="8_i8pk4"]
+[ext_resource type="Resource" uid="uid://d1lmmsmm3f4qx" path="res://weapon/assault_weapons/heal_grenade_launcher.tres" id="8_rqw2m"]
 [ext_resource type="Script" uid="uid://bxv3anwekoggx" path="res://player/character.gd" id="10_char"]
 [ext_resource type="Resource" uid="uid://bvuyr21fdqjfj" path="res://player/characters/guardian.tres" id="11_char"]
 [ext_resource type="Resource" uid="uid://bo5mmptgi1bud" path="res://player/characters/field_medic.tres" id="12_char"]
-[ext_resource type="Resource" path="res://weapon/assistance_weapons/bat.tres" id="13_melee"]
 
 [resource]
 script = ExtResource("5_i8pk4")
 class_display_name = "Assistance"
-primary_weapons = Array[ExtResource("1_pw5jr")]([ExtResource("5_704ol"), ExtResource("6_i8pk4")])
+primary_weapons = Array[ExtResource("1_pw5jr")]([ExtResource("5_704ol"), ExtResource("6_i8pk4"), ExtResource("8_rqw2m")])
 secondary_weapons = Array[ExtResource("1_pw5jr")]([ExtResource("8_i8pk4"), ExtResource("3_otbgs"), ExtResource("7_pw5jr")])
-melee_weapons = Array[ExtResource("1_pw5jr")]([ExtResource("13_melee")])
+melee_weapons = Array[ExtResource("1_pw5jr")]([ExtResource("5_rqw2m")])
 characters = Array[ExtResource("10_char")]([ExtResource("11_char"), ExtResource("12_char")])
 metadata/_custom_type_script = "uid://cbg4mqtqfaara"

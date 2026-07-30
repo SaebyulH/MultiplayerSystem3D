@@ -9,6 +9,7 @@
 [ext_resource type="AudioStream" uid="uid://bvog00etgf8vt" path="res://assets/sounds/universfield-shotgun-blast-352038.mp3" id="6_katwm"]
 [ext_resource type="Script" uid="uid://djg0ti1n45f8b" path="res://weapon/weapon_fire.gd" id="8_8gsuj"]
 [ext_resource type="PackedScene" uid="uid://sa4wv6avtccw" path="res://weapon/assistance_weapons/shotgun.tscn" id="8_ycje2"]
+[ext_resource type="Script" uid="uid://bv0g4rnfelqch" path="res://components/status_effect/status_effect.gd" id="9_vw1n1"]
 
 [sub_resource type="Resource" id="Resource_v75b2"]
 script = ExtResource("3_hvbk3")

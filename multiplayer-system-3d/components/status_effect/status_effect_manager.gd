@@ -43,8 +43,7 @@ func _process(delta: float) -> void:
 func _tick_server(delta: float) -> void:
 	var expired: Array[String] = []
 
-	var ids: Array = _active_effects.keys()
-	for id in ids:
+	for id in _active_effects:
 		var data: Dictionary = _active_effects[id]
 		var effect: StatusEffect = data["effect"]
 		var remaining: float = data["remaining"]
@@ -153,8 +152,7 @@ func clear_negative_effects() -> void:
 func clear_all_effects() -> void:
 	if not multiplayer.is_server():
 		return
-	var ids: Array = _active_effects.keys()
-	for id in ids:
+	for id in _active_effects:
 		remove_effect(id)
 
 

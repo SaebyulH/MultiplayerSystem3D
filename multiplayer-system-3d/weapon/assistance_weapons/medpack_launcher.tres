@@ -17,13 +17,6 @@
 [sub_resource type="Resource" id="Resource_we44c"]
 script = ExtResource("8_0lnwl")
 
-[sub_resource type="Resource" id="Resource_poison"]
-script = ExtResource("13_poison")
-effect_id = "poison"
-display_name = "Poison"
-is_negative = true
-base_duration = 13.0
-
 [sub_resource type="Resource" id="Resource_7ulhg"]
 script = ExtResource("4_7x2r3")
 automatic = true
@@ -33,6 +26,12 @@ projectile_scene = ExtResource("7_1rskr")
 shoot_sound = ExtResource("5_s3d18")
 empty_sound = ExtResource("5_s3d18")
 metadata/_custom_type_script = "uid://djg0ti1n45f8b"
+
+[sub_resource type="Resource" id="Resource_poison"]
+script = ExtResource("13_poison")
+effect_id = "poison"
+display_name = "Poison"
+base_duration = 13.0
 
 [sub_resource type="Resource" id="Resource_hwbxp"]
 script = ExtResource("4_7x2r3")

@@ -9,6 +9,7 @@
 [ext_resource type="AudioStream" uid="uid://4v1iw33cexcc" path="res://assets/sounds/freesound_community-knife-slice-41231.mp3" id="6_2metf"]
 [ext_resource type="PackedScene" uid="uid://dv3kpihd8amww" path="res://weapon/tf2/knife.tscn" id="7_usffl"]
 [ext_resource type="Script" uid="uid://djg0ti1n45f8b" path="res://weapon/weapon_fire.gd" id="8_s81mx"]
+[ext_resource type="Script" uid="uid://bv0g4rnfelqch" path="res://components/status_effect/status_effect.gd" id="9_mey0f"]
 
 [sub_resource type="Resource" id="Resource_mey0f"]
 script = ExtResource("3_0yaxy")
