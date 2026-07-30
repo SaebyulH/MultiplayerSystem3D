@@ -1,0 +1,57 @@
+[gd_scene format=3 uid="uid://u5t27ip2osrn"]
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_milg7"]
+radius = 0.14355469
+height = 1.1235352
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wfag8"]
+transparency = 1
+albedo_color = Color(0.35686275, 0.7137255, 0, 0.83137256)
+roughness = 0.03
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_3tw7n"]
+height = 2.602539
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_0hhy8"]
+transparency = 1
+albedo_color = Color(0.47285253, 0.36455855, 0.19816971, 0.8039216)
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_trh6b"]
+radius = 0.14355469
+height = 1.7476196
+
+[sub_resource type="PrismMesh" id="PrismMesh_eky8v"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tgqsv"]
+albedo_color = Color(0.92791486, 0.8480008, 0.56934804, 1)
+roughness = 0.03
+
+[node name="Scattergun" type="Node3D" unique_id=664585380]
+
+[node name="Muzzle" type="Node3D" parent="." unique_id=2026291909]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.0054234713, 0.20029949, -0.63066256)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=785107483]
+transform = Transform3D(-2.1170417e-15, -7.2127504e-09, -0.40753546, 3.3446413e-15, 0.1650085, -1.7813942e-08, 0.40753555, -3.054718e-30, -6.6918504e-16, -0.003989369, 0.0069283396, 0.0065018684)
+mesh = SubResource("CapsuleMesh_milg7")
+surface_material_override/0 = SubResource("StandardMaterial3D_wfag8")
+
+[node name="MeshInstance3D3" type="MeshInstance3D" parent="." unique_id=234865790]
+transform = Transform3D(-4.736664e-16, -1.613779e-09, -0.09118188, 7.4832926e-16, 0.036918964, -3.9856873e-09, 0.091181904, -6.8346185e-31, -1.497233e-16, -0.003989368, -0.012598053, 0.0065018684)
+mesh = SubResource("CylinderMesh_3tw7n")
+surface_material_override/0 = SubResource("StandardMaterial3D_0hhy8")
+
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="." unique_id=2003219880]
+transform = Transform3D(-9.069169e-16, -3.0898613e-09, -0.17458361, 1.4328067e-15, 0.070687786, -7.631293e-09, 0.17458366, -1.3086069e-30, -2.8667137e-16, -0.0039893743, 0.14290257, 0.0065018684)
+mesh = SubResource("CapsuleMesh_trh6b")
+surface_material_override/0 = SubResource("StandardMaterial3D_wfag8")
+
+[node name="MeshInstance3D4" type="MeshInstance3D" parent="." unique_id=753472072]
+transform = Transform3D(2.690222e-16, 0.016137982, -0.033404376, 2.988178e-16, 0.004527451, 0.119069025, 0.041396156, -3.8786061e-31, -2.0306322e-16, 0.04127477, 0.14483377, 0.0065018684)
+mesh = SubResource("PrismMesh_eky8v")
+surface_material_override/0 = SubResource("StandardMaterial3D_tgqsv")
+
+[node name="MeshInstance3D5" type="MeshInstance3D" parent="." unique_id=1462032154]
+transform = Transform3D(-1.6611876e-16, 0.0009843723, -0.038818747, 3.04834e-16, 0.015041595, 0.0025404282, 0.035742108, 4.6939224e-26, -6.387787e-17, 0.0071915183, 0.20803063, 0.0065018684)
+mesh = SubResource("PrismMesh_eky8v")
+surface_material_override/0 = SubResource("StandardMaterial3D_tgqsv")

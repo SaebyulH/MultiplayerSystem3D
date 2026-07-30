@@ -1,0 +1,96 @@
+[gd_scene format=3 uid="uid://glimbb6t0bbe"]
+
+[ext_resource type="PackedScene" uid="uid://6mr0d18yn8po" path="res://weapon/projectiles/scenes/simple_projectile.tscn" id="1_vwv4c"]
+[ext_resource type="Script" uid="uid://bv0g4rnfelqch" path="res://components/status_effect/status_effect.gd" id="2_7idox"]
+[ext_resource type="Script" uid="uid://rkd4beux51mg" path="res://components/status_effect/effects/burn_effect.gd" id="3_vwv4c"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_h41pr"]
+height = 0.4248047
+radius = 0.11816406
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_kbhll"]
+height = 0.5576172
+radius = 0.12695313
+
+[sub_resource type="Resource" id="Resource_vwv4c"]
+script = ExtResource("3_vwv4c")
+metadata/_custom_type_script = "uid://rkd4beux51mg"
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_milg7"]
+radius = 0.14355469
+height = 1.1235352
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fflv3"]
+transparency = 1
+albedo_color = Color(0.35686275, 0.7137255, 0, 0.83137256)
+roughness = 0.03
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_wfag8"]
+height = 2.602539
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vwv4c"]
+transparency = 1
+albedo_color = Color(0.47285253, 0.36455855, 0.19816971, 0.8039216)
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_7idox"]
+radius = 0.14355469
+height = 1.7476196
+
+[sub_resource type="PrismMesh" id="PrismMesh_trh6b"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cxowd"]
+albedo_color = Color(0.92791486, 0.8480008, 0.56934804, 1)
+roughness = 0.03
+
+[node name="SimpleProjectile" unique_id=1706686187 instance=ExtResource("1_vwv4c")]
+linear_velocity = Vector3(0, 0, -27)
+lifetime = 2.3
+explode_on_timeout = true
+hurtbox_hit_mode = 2
+world_hit_mode = 1
+align_to_velocity = false
+falloff_start = 10.0
+falloff_end = 30.0
+
+[node name="CollisionShape3D" parent="." index="0" unique_id=1810742212]
+transform = Transform3D(-0.70883524, 6.196834e-08, 2.7087226e-15, 6.196834e-08, 0.70883524, 0, -2.708722e-15, 0, -0.70883524, 7.519108e-09, 0.08600857, 0)
+shape = SubResource("CylinderShape3D_h41pr")
+
+[node name="HitboxComponent" parent="." index="2" unique_id=1963592485]
+health_delta = 0.0
+
+[node name="CollisionShape3D" parent="HitboxComponent" index="0" unique_id=1314331169]
+transform = Transform3D(-0.5297595, 4.631305e-08, 2.0244077e-15, -4.631305e-08, -0.5297595, -4.631305e-08, -2.024408e-15, -4.631305e-08, 0.5297595, -7.281642e-09, 0.08329226, 7.281642e-09)
+shape = SubResource("CylinderShape3D_kbhll")
+
+[node name="ExplosionComponent" parent="." index="3" unique_id=473826993]
+splash_health_delta = -20
+explosion_color = Color(2.0954168, 0.92764384, 0.7422831, 1)
+status_effects = Array[ExtResource("2_7idox")]([SubResource("Resource_vwv4c")])
+knockback_force = 0.0
+tick_count = 10
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." index="4" unique_id=706373036]
+transform = Transform3D(-2.1170417e-15, -7.2127504e-09, -0.40753546, 3.3446413e-15, 0.1650085, -1.7813942e-08, 0.40753555, -3.054718e-30, -6.6918504e-16, -0.003989369, 0.037009344, 0.0065018684)
+mesh = SubResource("CapsuleMesh_milg7")
+surface_material_override/0 = SubResource("StandardMaterial3D_fflv3")
+
+[node name="MeshInstance3D3" type="MeshInstance3D" parent="." index="5" unique_id=1933058334]
+transform = Transform3D(-4.736664e-16, -1.613779e-09, -0.09118188, 7.4832926e-16, 0.036918964, -3.9856873e-09, 0.091181904, -6.8346185e-31, -1.497233e-16, -0.003989368, 0.017482951, 0.0065018684)
+mesh = SubResource("CylinderMesh_wfag8")
+surface_material_override/0 = SubResource("StandardMaterial3D_vwv4c")
+
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="." index="6" unique_id=254834855]
+transform = Transform3D(-9.069169e-16, -3.0898613e-09, -0.17458361, 1.4328067e-15, 0.070687786, -7.631293e-09, 0.17458366, -1.3086069e-30, -2.8667137e-16, -0.0039893743, 0.17298357, 0.0065018684)
+mesh = SubResource("CapsuleMesh_7idox")
+surface_material_override/0 = SubResource("StandardMaterial3D_fflv3")
+
+[node name="MeshInstance3D4" type="MeshInstance3D" parent="." index="7" unique_id=832180888]
+transform = Transform3D(2.690222e-16, 0.016137982, -0.033404376, 2.988178e-16, 0.004527451, 0.119069025, 0.041396156, -3.8786061e-31, -2.0306322e-16, 0.04127477, 0.17491478, 0.0065018684)
+mesh = SubResource("PrismMesh_trh6b")
+surface_material_override/0 = SubResource("StandardMaterial3D_cxowd")
+
+[node name="MeshInstance3D5" type="MeshInstance3D" parent="." index="8" unique_id=1015958166]
+transform = Transform3D(-1.6611876e-16, 0.0009843723, -0.038818747, 3.04834e-16, 0.015041595, 0.0025404282, 0.035742108, 4.6939224e-26, -6.387787e-17, 0.0071915183, 0.23811163, 0.0065018684)
+mesh = SubResource("PrismMesh_trh6b")
+surface_material_override/0 = SubResource("StandardMaterial3D_cxowd")

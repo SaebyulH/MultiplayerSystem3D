@@ -25,6 +25,14 @@ var exploded := false
 
 @export var knockback_force := 5.0
 
+## Number of damage ticks this explosion applies.  1 = single blast
+## (default, backward-compatible).  Values > 1 create pulsing AoE effects
+## (gas clouds, napalm, etc.).
+@export var tick_count: int = 1
+
+## Seconds to wait between ticks.  Ignored when tick_count is 1.
+@export var time_between_ticks: float = 0.5
+
 ## Preloaded explosion scene — spawned on-demand instead of sitting
 ## idle as a child on every projectile.
 static var _explosion_scene: PackedScene = null
@@ -45,6 +53,26 @@ func explode(falloff_multiplier: float = 1.0):
 	var shooter_name: String = get_parent().shooter_name if ("shooter_name" in get_parent()) else "NONE"
 	var shooter_team: Player.Team = get_parent().shooter_team if ("shooter_name" in get_parent()) else "NONE"
 
+	for i in range(tick_count):
+		if i > 0:
+			await get_tree().create_timer(time_between_ticks).timeout
+
+		# Guard against the parent projectile being freed mid-tick
+		# (e.g. the projectile collided with geometry and auto-deleted).
+		if not is_instance_valid(self) or not is_inside_tree():
+			return
+
+		_apply_explosion_tick(shooter_name, shooter_team, falloff_multiplier)
+		_explode_visual.rpc()
+
+
+# ----------------------------------------------------
+# PER-TICK LOGIC
+# ----------------------------------------------------
+## Scans all players in range (re-evaluated each tick so players who
+## enter / leave the radius between ticks are handled correctly).
+func _apply_explosion_tick(shooter_name: String, shooter_team: Player.Team, falloff_multiplier: float) -> void:
+	var explosion_origin := global_position
 
 	var space := get_world_3d().direct_space_state
 	var players := get_tree().get_nodes_in_group("players")
@@ -53,7 +81,6 @@ func explode(falloff_multiplier: float = 1.0):
 		if OS.is_debug_build():
 			print('NO PLAYERS in group "players"')
 
-	var explosion_origin = global_position
 	for player in players:
 
 		if not player is Player:
@@ -121,7 +148,6 @@ func explode(falloff_multiplier: float = 1.0):
 				if effect:
 					player.status_effect_manager.apply_effect(effect, shooter_name)
 
-	_explode_visual.rpc()
 
 # ----------------------------------------------------
 # VISUAL EFFECT (replicated locally)
@@ -133,7 +159,7 @@ func _explode_visual():
 
 	if _explosion_scene == null:
 		_explosion_scene = load("res://effects/explosion.tscn")
-	
+
 	var explosion := _explosion_scene.instantiate()
 	explosion.effect_color = explosion_color
 	var parent := get_parent()
