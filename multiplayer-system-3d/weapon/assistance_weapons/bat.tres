@@ -42,6 +42,7 @@ post_shoot_delay = 0.01
 ammo_cost = 50
 recoil_data = SubResource("Resource_da3ra")
 recoil_knockback = Vector3(0, 0, -1)
+self_health_delta_on_shoot = -1.0
 hitscan_range = 2.0
 shoot_sound = ExtResource("8_yfral")
 empty_sound = ExtResource("1_2ijdx")

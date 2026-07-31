@@ -1042,7 +1042,7 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 			origin,
 			origin + world_dir * weapon_fire.hitscan_range
 		)
-		var exclude_rids := [_parent_player.get_rid(), $"../HeadHurtbox".get_rid(), $"../BodyHurtbox".get_rid()]
+		var exclude_rids := [_parent_player.get_rid(), $"../HeadHurtbox".get_rid(), $"../BodyHurtbox".get_rid(), $"../BodyHurtbox2".get_rid(), $"../BodyHurtbox3".get_rid()]
 		# Also exclude the player's own shield so they can't damage it.
 		if _parent_player.shield_instance and is_instance_valid(_parent_player.shield_instance):
 			var shield_area := _parent_player.shield_instance.get_node_or_null("ShieldArea") as Area3D

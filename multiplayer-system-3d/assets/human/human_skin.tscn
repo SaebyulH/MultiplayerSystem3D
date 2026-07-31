@@ -1,0 +1,25 @@
+[gd_scene format=3 uid="uid://cr0ss6xtltv3h"]
+
+[ext_resource type="PackedScene" uid="uid://cj8eohi81qohq" path="res://assets/human/Human_Ultimate_Fixed_Rig_2026.glb" id="1_dhaxr"]
+[ext_resource type="AnimationLibrary" uid="uid://ct8c4qs0yx4o3" path="res://assets/human/crouch.glb" id="2_nm4eo"]
+[ext_resource type="AnimationLibrary" uid="uid://cl3hr20wvwixe" path="res://assets/human/sprint.glb" id="3_opd8e"]
+[ext_resource type="AnimationLibrary" uid="uid://ch1fkaujvdl85" path="res://assets/human/walk.glb" id="4_5arww"]
+
+[sub_resource type="AnimationNodeBlendSpace2D" id="AnimationNodeBlendSpace2D_g4jwk"]
+
+[sub_resource type="AnimationNodeBlendTree" id="AnimationNodeBlendTree_g4v7s"]
+graph_offset = Vector2(-376.25876, 80.20158)
+nodes/BlendSpace2D/node = SubResource("AnimationNodeBlendSpace2D_g4jwk")
+nodes/BlendSpace2D/position = Vector2(-86.901886, 178.97113)
+node_connections = [&"output", 0, &"BlendSpace2D"]
+
+[node name="Human_Ultimate_Fixed_Rig_2026" unique_id=365216177 instance=ExtResource("1_dhaxr")]
+
+[node name="AnimationTree" type="AnimationTree" parent="." index="1" unique_id=919580429]
+tree_root = SubResource("AnimationNodeBlendTree_g4v7s")
+parameters/BlendSpace2D/blend_position = Vector2(0, 0)
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." index="2" unique_id=306145171]
+libraries/crouch = ExtResource("2_nm4eo")
+libraries/sprint = ExtResource("3_opd8e")
+libraries/walk = ExtResource("4_5arww")

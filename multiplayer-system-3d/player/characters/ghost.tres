@@ -6,7 +6,7 @@
 script = ExtResource("1_char")
 character_name = "Ghost"
 description = "Lightning-fast assassin. High fire rate and lifesteal but low health."
-speed_mult = 1.6
+speed_mult = 1.7
 acceleration_mult = 1.1
 friction_mult = 0.7
 crouch_speed_mult = 1.3

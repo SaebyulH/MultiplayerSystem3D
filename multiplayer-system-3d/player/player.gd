@@ -2,7 +2,10 @@ extends CharacterBody3D
 class_name Player
 
 
-@export var acceleration: float = 100.0
+const NORMAL_SPEED: float = 4.0
+const ADS_SPEED: float = 3.0
+
+@export var acceleration: float = 25.0
 @export var friction: float = 30.0
 @export var air_acceleration: float = 25
 #accell
@@ -37,15 +40,15 @@ signal team_changed()
 var skins: Array[MeshInstance3D] = []
 
 const TEAM_COLORS: Dictionary = {
-	Team.SCI: Color.WHITE,
-	Team.SPI: Color.BLACK,
+	Team.SCI: Color.SKY_BLUE,
+	Team.SPI: Color.DARK_RED,
 }
 
 var team: Team = Team.SPI:
 	set(value):
 		team = value
 		if is_inside_tree():
-			var color: Color = TEAM_COLORS.get(value, Color.PURPLE)
+			var color: Color = TEAM_COLORS.get(value, Color.DIM_GRAY)
 			var mat := StandardMaterial3D.new()
 			mat.albedo_color = color
 			for skin in skins:
@@ -63,7 +66,7 @@ func get_gmc_team() -> Player.Team:
 
 var knockback_velocity := Vector3.ZERO
 
-var speed = 5.0
+var speed = 1.0
 const JUMP_VELOCITY = 5.0
 
 var queue_velocity := Vector3(0.0, 0.0, 0.0)
@@ -94,7 +97,7 @@ var _character: Character = null
 
 # Crouch acceleration is low regardless of speed — you can't gain much speed
 # while crouched, you can only preserve what you already have.
-@export var crouch_ground_acceleration: float = 15.0
+@export var crouch_ground_acceleration: float = 1.0
 
 # Crouch / slide friction scales with current speed.
 # Slow/stopped → normal friction (regular crouch).
@@ -303,7 +306,7 @@ func spawn():
 		var player_id := name.to_int()
 		if my_id == player_id:
 			camera.make_current()
-			$BodyHurtbox/MeshInstance3D2.hide()
+			#$BodyHurtbox/MeshInstance3D2.hide()
 			$BodyHurtbox/CollisionShape3D.hide()
 		else:
 			camera.current = false
@@ -449,6 +452,12 @@ func _apply_movement_from_input(delta):
 	var right   := Vector3(cam_basis.x.x, 0, cam_basis.x.z).normalized()
 	var direction := (forward * input_dir.y + right * input_dir.x).normalized()
 
+	# Apply ADS speed modifier before computing final speed.
+	if ads:
+		speed = ADS_SPEED
+	else:
+		speed = NORMAL_SPEED
+
 	var calc_speed: float = _cmult(speed, _character.speed_mult if _character else 1.0)
 	var weapons := weapon_controller.get_weapons()
 	if not weapons.is_empty():
@@ -557,10 +566,8 @@ func _apply_movement_from_input(delta):
 
 	if ads:
 		camera.fov = weapon_controller.get_ads_zoom_fov()
-		speed = 2.5
 	else:
 		camera.fov = 90.0
-		speed = 5.0
 
 	var fov_ratio: float = camera.fov / BASE_FOV
 	body.mouse_sens_x = BASE_MOUSE_SENS * fov_ratio

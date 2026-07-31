@@ -1,15 +1,16 @@
 extends Node
 class_name HurtComponent
 
-@export var hurtbox_component: HurtboxComponent
+@export var hurtbox_components: Array[HurtboxComponent] = []
 @export var attribute_component: AttributeComponent
 
 
 func _ready() -> void:
-	hurtbox_component.hurt_or_heal.connect(_on_hurt_or_heal)
+	for hb in hurtbox_components:
+		hb.hurt_or_heal.connect(_on_hurt_or_heal.bind(hb))
 
 
-func _on_hurt_or_heal(hitbox_component: HitboxComponent, is_ally_hit: bool) -> void:
+func _on_hurt_or_heal(hitbox_component: HitboxComponent, is_ally_hit: bool, hurtbox: HurtboxComponent) -> void:
 	if not is_multiplayer_authority():
 		return
 
@@ -21,7 +22,7 @@ func _on_hurt_or_heal(hitbox_component: HitboxComponent, is_ally_hit: bool) -> v
 	var changer := _resolve_changer_name(hitbox_component)
 
 	var is_headshot := false
-	if hurtbox_component.is_head and not is_equal_approx(hitbox_component.headshot_multiplier, 1.0):
+	if hurtbox.is_head and not is_equal_approx(hitbox_component.headshot_multiplier, 1.0):
 		health_delta *= hitbox_component.headshot_multiplier
 		is_headshot = true
 
