@@ -48,7 +48,7 @@ var team: Team = Team.SPI:
 	set(value):
 		team = value
 		if is_inside_tree():
-			var color: Color = TEAM_COLORS.get(value, Color.DIM_GRAY)
+			var color: Color = TEAM_COLORS.get(value, Color.YELLOW)
 			var mat := StandardMaterial3D.new()
 			mat.albedo_color = color
 			for skin in skins:
@@ -174,6 +174,9 @@ func _ready() -> void:
 		$Body/Recoil/Head/WeaponParent/LeftForearm,
 		$Body/Recoil/Head/WeaponParent/LeftArm,
 		$Body/Recoil/Head/Helmet,
+		$Body/LeftLeg3, $Body/LeftLeg9, $Body/LeftLeg10, $Body/LeftLeg5, $Body/LeftLeg4, $Body/LeftLeg6, $Body/LeftLeg7, $Body/LeftLeg8,
+		
+		
 		$Body/Torso,
 		$Body/LeftLeg,
 		$Body/RighLeg,
@@ -308,6 +311,14 @@ func spawn():
 			camera.make_current()
 			#$BodyHurtbox/MeshInstance3D2.hide()
 			$BodyHurtbox/CollisionShape3D.hide()
+			$Body/LeftLeg3.hide()
+			$Body/LeftLeg4.hide()
+			$Body/LeftLeg5.hide()
+			$Body/LeftLeg6.hide()
+			$Body/LeftLeg7.hide()
+			$Body/LeftLeg8.hide()
+			$Body/LeftLeg9.hide()
+			$Body/LeftLeg10.hide()
 		else:
 			camera.current = false
 			camera.visible = false
