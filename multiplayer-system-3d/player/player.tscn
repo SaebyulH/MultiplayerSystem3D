@@ -23,7 +23,7 @@ properties/0/spawn = true
 properties/0/replication_mode = 1
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_kb6p2"]
-radius = 0.26611328
+radius = 0.3173828
 
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_wodsf"]
 
@@ -32,7 +32,7 @@ transparency = 1
 albedo_color = Color(0.046625316, 0, 0.7632794, 0.42352942)
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_kb6p2"]
-radius = 0.19132733
+radius = 0.24673888
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wodsf"]
 transparency = 1
@@ -41,11 +41,11 @@ albedo_color = Color(0.75686276, 0, 0, 0.7019608)
 [sub_resource type="SphereMesh" id="SphereMesh_32hag"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_32hag"]
-radius = 0.28955078
-height = 0.801178
+radius = 0.32080078
+height = 0.9532242
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_tqiix"]
-size = Vector3(0.48535156, 0.5644531, 0.1640625)
+size = Vector3(0.48535156, 0.75439453, 0.1640625)
 
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_1s1yo"]
 properties/0/path = NodePath("AttributeComponent:health")
@@ -250,7 +250,7 @@ script = ExtResource("5_2hs0m")
 metadata/_custom_type_script = "uid://c4uv27n00ycfc"
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="BodyHurtbox" unique_id=194134934]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1446381, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.97564316, 0)
 shape = SubResource("CapsuleShape3D_32hag")
 
 [node name="BodyHurtbox2" type="Area3D" parent="." unique_id=918843975]
@@ -261,7 +261,7 @@ script = ExtResource("5_2hs0m")
 metadata/_custom_type_script = "uid://c4uv27n00ycfc"
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="BodyHurtbox2" unique_id=1617769712]
-transform = Transform3D(1, 0, 0, 0, 0.99636173, -0.08522499, 0, 0.08522499, 0.99636173, 0, 0.32608286, 0.015846392)
+transform = Transform3D(1, 0, 0, 0, 0.99636173, -0.08522499, 0, 0.08522499, 0.99636173, 0, 0.23145768, 0.0077525144)
 shape = SubResource("BoxShape3D_tqiix")
 
 [node name="BodyHurtbox3" type="Area3D" parent="." unique_id=1542589060]

@@ -26,7 +26,6 @@ mass = 0.458
 linear_velocity = Vector3(0, 0, -20)
 script = ExtResource("2_m0pfo")
 hurtbox_hit_mode = 3
-world_hit_mode = 3
 align_to_velocity = true
 falloff_enabled = false
 
