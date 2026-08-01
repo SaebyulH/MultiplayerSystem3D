@@ -59,7 +59,8 @@ health_delta = 0.0
 shape = SubResource("SphereShape3D_84p14")
 
 [node name="ExplosionComponent" parent="." index="3" unique_id=473826993]
-splash_health_delta = -90
+splash_health_delta = -300
+splash_radius = 6.0
 
 [node name="MeshInstance3D2" type="MeshInstance3D" parent="." index="4" unique_id=251685809]
 transform = Transform3D(-0.12494474, 1.0923015e-08, 4.7746024e-16, 0, -5.4615077e-09, 0.12494474, 1.0923015e-08, 0.12494474, 5.4615077e-09, 0, 0, 0.11489868)
