@@ -28,6 +28,13 @@ func _on_hurt_or_heal(hitbox_component: HitboxComponent, is_ally_hit: bool, hurt
 
 	attribute_component.apply_health_delta(health_delta, _resolve_changer_name(hitbox_component), get_parent().name, is_headshot, hitbox_component.current_falloff_multiplier)
 
+	# Apply knockback from the hitbox (e.g. projectile-delivered knockback).
+	if hitbox_component.hit_knockback > 0.0:
+		var kb_parent: Node = get_parent()
+		if kb_parent is Player:
+			var kb_dir: Vector3 = (kb_parent.global_position - hitbox_component.global_position).normalized()
+			kb_parent.apply_knockback(kb_dir * hitbox_component.hit_knockback)
+
 	# Apply status effects from the hitbox (e.g. projectile-delivered effects).
 	var parent := get_parent()
 	if parent is Player and parent.status_effect_manager and not hitbox_component.status_effects.is_empty():

@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="SlowEffect" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://components/status_effect/effects/slow_effect.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+effect_id = "slow"
+display_name = "Slow"
+is_negative = true
+base_duration = 0.5
+tick_interval = 0.0
+slow_percent = 0.5

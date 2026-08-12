@@ -37,6 +37,8 @@ enum ActionType {SHOOT, ADS, SHIELD, SIGNAL}
 @export var recoil_data: RecoilData = RecoilData.new()
 ## Knockback impulse applied to the shooter.  (SHOOT only.)
 @export var recoil_knockback: Vector3 = Vector3.ZERO
+## Knockback force applied to the target on hit.  0 = no knockback.  (SHOOT only.)
+@export var hit_knockback: float = 1.5
 ## Health delta applied to the shooter once per trigger-pull (negative = self-damage).
 ## For per-bullet healing in burst mode, see self_health_delta_per_burst_bullet.  (SHOOT only.)
 @export var self_health_delta_on_shoot: float = 0.0
@@ -145,7 +147,7 @@ func _validate_property(property: Dictionary) -> void:
 	# ---- everything that only makes sense for SHOOT ----
 	const SHOOT_ONLY: Array[String] = [
 		"automatic", "pre_shoot_delay", "post_shoot_delay", "ammo_cost",
-		"recoil_data", "recoil_knockback",
+		"recoil_data", "recoil_knockback", "hit_knockback",
 		"self_health_delta_on_shoot", "self_health_delta_per_burst_bullet", "move_speed_mult_while_shooting",
 		"bullet_type", "hitscan_damage", "hitscan_range", "has_damage_falloff", "headshot_multiplier",
 		"self_health_delta_on_hit", "movement_spread",

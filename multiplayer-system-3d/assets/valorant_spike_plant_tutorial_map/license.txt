@@ -1,0 +1,11 @@
+Model Information:
+* title:	VALORANT: Spike Plant Tutorial Map
+* source:	https://sketchfab.com/3d-models/valorant-spike-plant-tutorial-map-ea7f728e2a4a498e8d1aa9c3f1e9adba
+* author:	tranb95 (https://sketchfab.com/tranb95)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "VALORANT: Spike Plant Tutorial Map" (https://sketchfab.com/3d-models/valorant-spike-plant-tutorial-map-ea7f728e2a4a498e8d1aa9c3f1e9adba) by tranb95 (https://sketchfab.com/tranb95) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

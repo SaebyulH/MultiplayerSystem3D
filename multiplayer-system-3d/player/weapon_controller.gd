@@ -1034,7 +1034,8 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 	if weapon_fire.bullet_type == WeaponFire.BulletType.HITSCAN:
 		var muzzle_node: Node3D = current_weapon_model.get_node("Muzzle") as Node3D
 		var muzzle_pos: Vector3 = muzzle_node.global_position
-		_flash_muzzle_flash.rpc(muzzle_pos)
+		var flash_color: Color = MuzzleFlash.SCI_COLOR if _parent_player.team == Player.Team.SCI else MuzzleFlash.DEFAULT_COLOR
+		_flash_muzzle_flash.rpc(muzzle_pos, flash_color)
 
 		var space_state: PhysicsDirectSpaceState3D = _parent_player.get_world_3d().direct_space_state
 		var origin: Vector3 = camera.global_position
@@ -1054,7 +1055,7 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 		var result: Dictionary = space_state.intersect_ray(query)
 
 		if not result.is_empty():
-			_on_hitscan_hit.rpc(result.position, result.normal, muzzle_pos)
+			_on_hitscan_hit.rpc(result.position, result.normal, muzzle_pos, flash_color)
 			var collider: Node3D = result.collider
 			if collider is HurtboxComponent:
 				if shape_hits != null:
@@ -1089,13 +1090,17 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 							if apply_on_hit:
 								_apply_on_hit_effects(weapon_fire, _parent_player.name)
 							_apply_status_effects(player_name, weapon_fire.status_effects, _parent_player.name)
+							if weapon_fire.hit_knockback > 0.0:
+								_apply_hit_knockback(player_name, world_dir, weapon_fire.hit_knockback)
 						else:
 							_change_health_on_server.rpc_id(1, player_name, -damage, _parent_player.name, is_headshot, mult)
+							if weapon_fire.hit_knockback > 0.0:
+								_apply_hit_knockback_on_server.rpc_id(1, player_name, world_dir, weapon_fire.hit_knockback)
 		else:
 			if weapon_fire.hitscan_range >= 1000000000.0 / 10.0:
 				var far_pos: Vector3 = origin + world_dir * 10000.0
 				var fake_normal: Vector3 = -world_dir
-				_on_hitscan_hit.rpc(far_pos, fake_normal, muzzle_pos)
+				_on_hitscan_hit.rpc(far_pos, fake_normal, muzzle_pos, flash_color)
 
 	elif weapon_fire.bullet_type == WeaponFire.BulletType.PROJECTILE:
 		_spawn_projectile_on_server.rpc_id(
@@ -1128,13 +1133,38 @@ func _apply_shape_damage(weapon: Weapon, weapon_fire_index: int, shape_hits: Dic
 			_apply_damage_direct(player_name, -damage, _parent_player.name, is_headshot, mult)
 			_apply_on_hit_effects(weapon_fire, _parent_player.name)
 			_apply_status_effects(player_name, weapon_fire.status_effects, _parent_player.name)
+			if weapon_fire.hit_knockback > 0.0:
+				var target_p: Player = GameManager.find_player(player_name)
+				if target_p:
+					var kb_dir: Vector3 = (target_p.global_position - _parent_player.global_position).normalized()
+					_apply_hit_knockback(player_name, kb_dir, weapon_fire.hit_knockback)
 		else:
 			_change_health_on_server.rpc_id(1, player_name, -damage, _parent_player.name, is_headshot, mult)
+			if weapon_fire.hit_knockback > 0.0:
+				var target_p: Player = GameManager.find_player(player_name)
+				if target_p:
+					var kb_dir: Vector3 = (target_p.global_position - _parent_player.global_position).normalized()
+					_apply_hit_knockback_on_server.rpc_id(1, player_name, kb_dir, weapon_fire.hit_knockback)
 
 
 @rpc("any_peer", "call_local", "unreliable")
 func _knockback_player_on_server(vector: Vector3):
 	get_parent().apply_knockback(vector)
+
+
+## Apply knockback to a player by name.  Server-only.
+func _apply_hit_knockback(target_name: String, shot_dir: Vector3, force: float) -> void:
+	var target: Player = GameManager.find_player(target_name)
+	if not target:
+		return
+	target.apply_knockback(shot_dir * force)
+
+
+@rpc("any_peer", "call_local", "reliable")
+func _apply_hit_knockback_on_server(target_name: String, shot_dir: Vector3, force: float) -> void:
+	if not is_multiplayer_authority():
+		return
+	_apply_hit_knockback(target_name, shot_dir, force)
 
 
 @rpc("any_peer", "call_local", "reliable")
@@ -1148,24 +1178,22 @@ func _spawn_projectile_on_server(weapon_fire_index, shot_dir, basis, parent_play
 	if not weapon_fire_index < weapon.weapon_fires.size() or not weapon.weapon_fires[weapon_fire_index].projectile_scene:
 		return
 	var projectile_scene: Node3D  = weapon.weapon_fires[weapon_fire_index].projectile_scene.instantiate() as Node3D
-	projectile_scene.global_transform = weapon_model_parent.global_transform
+	projectile_scene.global_transform = %Head.global_transform#weapon_model_parent.global_transform
 	projectile_scene.shooter_name     = parent_player_name
 
 	var speed: float = projectile_scene.linear_velocity.length()
 	projectile_scene.linear_velocity = world_dir * speed
 	projectile_scene.shooter_team = team
-
-	# Copy status effects from the WeaponFire to the projectile's HitboxComponent
-	# and ExplosionComponent (if present).
+	# Copy status effects and knockback from the WeaponFire to the projectile.
 	var weapon_fire: WeaponFire = weapon.weapon_fires[weapon_fire_index]
-	if not weapon_fire.status_effects.is_empty():
-		var hb: HitboxComponent = projectile_scene.get_node_or_null("HitboxComponent") as HitboxComponent
-		if hb:
+	var hb: HitboxComponent = projectile_scene.get_node_or_null("HitboxComponent") as HitboxComponent
+	if hb:
+		hb.hit_knockback = weapon_fire.hit_knockback
+		if not weapon_fire.status_effects.is_empty():
 			hb.status_effects = weapon_fire.status_effects
-		var ec: ExplosionComponent = projectile_scene.get_node_or_null("ExplosionComponent") as ExplosionComponent
-		if ec:
-			ec.status_effects = weapon_fire.status_effects
-
+	var ec: ExplosionComponent = projectile_scene.get_node_or_null("ExplosionComponent") as ExplosionComponent
+	if ec and not weapon_fire.status_effects.is_empty():
+		ec.status_effects = weapon_fire.status_effects
 	projectile_spawn_parent.add_child(projectile_scene, true)
 
 
@@ -1232,16 +1260,16 @@ func _compute_falloff_multiplier(weapon: Weapon, weapon_fire_index: int, distanc
 
 
 @rpc("any_peer", "call_local")
-func _flash_muzzle_flash(start_position: Vector3) -> void:
+func _flash_muzzle_flash(start_position: Vector3, flash_color: Color) -> void:
 	if not _is_ready():
 		return
 	var muzzle_flash = $MuzzleFlash
 	muzzle_flash.global_rotation = current_weapon_model.global_rotation
 	muzzle_flash.global_position = start_position
-	muzzle_flash.fire()
+	muzzle_flash.fire(flash_color)
 
 @rpc("any_peer", "call_local")
-func _on_hitscan_hit(hit_position: Vector3, hit_normal: Vector3, start_position: Vector3) -> void:
+func _on_hitscan_hit(hit_position: Vector3, hit_normal: Vector3, start_position: Vector3, flash_color: Color) -> void:
 	var bullet_hole: Node3D = _bullet_hole_scene.instantiate() as Node3D
 	projectile_spawn_parent.add_child(bullet_hole)
 	bullet_hole.global_position        = hit_position
@@ -1257,7 +1285,7 @@ func _on_hitscan_hit(hit_position: Vector3, hit_normal: Vector3, start_position:
 
 	var tracer: Tracer = _tracer_scene.instantiate() as Tracer
 	projectile_spawn_parent.add_child(tracer)
-	tracer.fire(start_position, hit_position)
+	tracer.fire(start_position, hit_position, flash_color)
 
 
 @rpc("any_peer", "call_local")

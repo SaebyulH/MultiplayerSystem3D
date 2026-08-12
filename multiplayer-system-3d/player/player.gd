@@ -66,6 +66,10 @@ func get_gmc_team() -> Player.Team:
 
 var knockback_velocity := Vector3.ZERO
 
+## Speed modifiers set by status effects.  { effect_id: multiplier }
+## The most severe slow (lowest multiplier) wins.
+var _speed_modifiers: Dictionary = {}
+
 var speed = 1.0
 const JUMP_VELOCITY = 5.0
 
@@ -177,6 +181,8 @@ func _ready() -> void:
 		$Body/LeftLeg3, $Body/LeftLeg9, $Body/LeftLeg10, $Body/LeftLeg5, $Body/LeftLeg4, $Body/LeftLeg6, $Body/LeftLeg7, $Body/LeftLeg8,
 		
 		
+		$Body/Human_Ultimate_Fixed_Rig_MODEL/Skeleton3D/ultimate_human_mesh,
+		
 		$Body/Torso,
 		$Body/LeftLeg,
 		$Body/RighLeg,
@@ -215,6 +221,7 @@ func rpc_reset(pos: Vector3) -> void:
 	_spawn_pending_position = pos
 	velocity = Vector3.ZERO
 	knockback_velocity = Vector3.ZERO
+	_speed_modifiers.clear()
 
 	# Reset health, weapons, and status effects on every peer.
 	attribute_component.reset()
@@ -311,6 +318,10 @@ func spawn():
 			camera.make_current()
 			#$BodyHurtbox/MeshInstance3D2.hide()
 			$BodyHurtbox/CollisionShape3D.hide()
+			
+			$Body/Human_Ultimate_Fixed_Rig_MODEL.hide()
+			
+			
 			$Body/LeftLeg3.hide()
 			$Body/LeftLeg4.hide()
 			$Body/LeftLeg5.hide()
@@ -409,6 +420,29 @@ func apply_knockback(force: Vector3) -> void:
 	knockback_velocity += force
 
 
+## Register a speed modifier from a status effect.
+## [param effect_id] -- unique effect identifier (e.g. "slow").
+## [param mult] -- speed multiplier (1.0 = normal, 0.5 = half speed).
+func add_speed_modifier(effect_id: String, mult: float) -> void:
+	_speed_modifiers[effect_id] = mult
+
+
+## Remove a speed modifier when its status effect expires.
+func remove_speed_modifier(effect_id: String) -> void:
+	_speed_modifiers.erase(effect_id)
+
+
+## Returns the most severe speed multiplier from active status effects.
+## 1.0 = normal speed, < 1.0 = slowed.
+func get_status_speed_mult() -> float:
+	if _speed_modifiers.is_empty():
+		return 1.0
+	var min_mult := 1.0
+	for mult in _speed_modifiers.values():
+		min_mult = minf(min_mult, mult)
+	return min_mult
+
+
 
 ## Source-style air acceleration.
 ## [param wish_dir] – normalized input direction.
@@ -477,6 +511,9 @@ func _apply_movement_from_input(delta):
 	# Blend speed penalty smoothly with the collider.
 	var eff_crouch_mult: float = crouch_speed_multiplier + (_character.crouch_speed_mult if _character else 1.0)
 	calc_speed *= lerp(1.0, eff_crouch_mult, crouch_factor)
+
+	# Apply status-effect speed modifiers (e.g. slow/tag on hit).
+	calc_speed *= get_status_speed_mult()
 
 	if on_floor:
 		var h_speed: float = Vector2(velocity.x, velocity.z).length()

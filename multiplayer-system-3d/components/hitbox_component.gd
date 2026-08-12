@@ -20,6 +20,9 @@ var current_falloff_multiplier: float = 1.0
 ## Status effects applied to the target on hit.  Set in the scene or at
 ## runtime by WeaponController when spawning a projectile.  Read by HurtComponent.
 @export var status_effects: Array[StatusEffect] = []
+## Knockback force applied to the target on hit.  Set by WeaponController
+## when spawning a projectile.  Read by HurtComponent.
+@export var hit_knockback: float = 0.0
 
 func _ready() -> void:
 	area_entered.connect(_on_hurtbox_entered)

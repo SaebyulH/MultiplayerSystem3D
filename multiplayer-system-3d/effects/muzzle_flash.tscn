@@ -13,6 +13,7 @@ cull_mode = 2
 shading_mode = 0
 vertex_color_use_as_albedo = true
 vertex_color_is_srgb = true
+albedo_color = Color(1.3310949, 0.7350607, 0, 1)
 albedo_texture = ExtResource("1_8xeqa")
 
 [sub_resource type="Curve" id="Curve_8xeqa"]
@@ -34,7 +35,7 @@ gravity = Vector3(0, 0, 0)
 scale_min = 0.29999998
 scale_max = 0.59999996
 scale_curve = SubResource("CurveTexture_carfq")
-color = Color(1.6411257, 1.3911107, 1.1382641, 1)
+color = Color(1.6410002, 1.6410002, 1.6410002, 1)
 alpha_curve = SubResource("CurveTexture_w0kxa")
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_carfq"]
@@ -45,6 +46,14 @@ shading_mode = 0
 vertex_color_use_as_albedo = true
 vertex_color_is_srgb = true
 albedo_texture = ExtResource("3_768gm")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_7h41p"]
+gravity = Vector3(0, 0, 0)
+scale_min = 0.29999998
+scale_max = 0.59999996
+scale_curve = SubResource("CurveTexture_carfq")
+color = Color(1.6410002, 1.6410002, 1.6410002, 1)
+alpha_curve = SubResource("CurveTexture_w0kxa")
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_5a2ty"]
 transparency = 1
@@ -73,7 +82,7 @@ damping_min = 0.5
 damping_max = 0.8
 scale_min = 0.049999997
 scale_max = 0.29999998
-color = Color(3.2944162, 2.7458801, 1.8465506, 1)
+color = Color(3.294, 3.294, 3.294, 1)
 alpha_curve = SubResource("CurveTexture_chc2o")
 
 [sub_resource type="QuadMesh" id="QuadMesh_nf5fu"]
@@ -103,7 +112,7 @@ lifetime = 0.03
 one_shot = true
 randomness = 1.0
 fixed_fps = 60
-process_material = SubResource("ParticleProcessMaterial_carfq")
+process_material = SubResource("ParticleProcessMaterial_7h41p")
 draw_pass_1 = ExtResource("4_w0kxa")
 
 [node name="Sparks" type="GPUParticles3D" parent="." unique_id=905139697]

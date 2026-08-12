@@ -8,5 +8,5 @@ character_name = "Vampire Medic"
 description = "A medic with negative health regen but with lifesteal"
 health_mult = 1.5
 lifesteal_percent = 0.4
-regen_per_sec = -7.0
+regen_per_sec = -5.0
 heal_on_kill = 15.0
