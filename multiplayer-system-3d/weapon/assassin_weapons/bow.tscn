@@ -62,3 +62,9 @@ mesh = SubResource("CylinderMesh_dudhg")
 transform = Transform3D(-0.084504955, -0.0006165907, -2.542572e-09, 7.48743e-09, 1.6564865e-10, -0.027231168, 0.013935159, -0.0037391013, -7.871087e-10, -0.0032854713, 0, 0.49493605)
 material_override = SubResource("StandardMaterial3D_g0718")
 mesh = SubResource("CylinderMesh_dudhg")
+
+[node name="LeftHand" type="Node3D" parent="." unique_id=342479636]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.097717285, -0.026000977)
+
+[node name="RightHand" type="Node3D" parent="." unique_id=2124492665]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.0028686523, 0.5517578)

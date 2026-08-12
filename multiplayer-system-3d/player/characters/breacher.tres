@@ -6,8 +6,7 @@
 script = ExtResource("1_char")
 character_name = "Breacher"
 description = "A fast assault class with high air control, ideal for explosion jumping."
-speed_mult = 1.3
-acceleration_mult = 1.2
+speed_mult = 1.2
 air_accel_mult = 1.4
 air_speed_cap_mult = 1.8
-health_mult = 2.5
+health_mult = 2.0

@@ -28,7 +28,7 @@ data = PackedByteArray("//vURAAAA7hTR70kYAqVRzkCp6QAWdlxI9nHgANHMqS3OvABACQDCAiA
 [sub_resource type="Resource" id="Resource_kg2jm"]
 script = ExtResource("4_ba1k6")
 automatic = true
-post_shoot_delay = 0.3
+post_shoot_delay = 1.0
 recoil_data = SubResource("Resource_546ns")
 bullet_type = 1
 falloff_start = 10.0
@@ -42,8 +42,8 @@ metadata/_custom_type_script = "uid://djg0ti1n45f8b"
 [resource]
 script = ExtResource("3_546ns")
 display_name = "Heal Grenade Launcher"
-mag_size = 9
-mag_current = 9
+mag_size = 4
+mag_current = 4
 reload_individually = true
 reload_time = 0.2
 weapon_fires = Array[ExtResource("4_ba1k6")]([SubResource("Resource_kg2jm")])

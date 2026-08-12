@@ -10,8 +10,13 @@ var target_rotation : Vector3
 @export var return_speed : float
 
 func _process(delta):
+	global_position = $"../Human_Ultimate_Fixed_Rig_MODEL/Skeleton3D/BoneAttachment3D".global_position
+	
 	target_rotation = lerp(target_rotation, Vector3.ZERO, return_speed * delta)
 	current_rotation = lerp(current_rotation, target_rotation, snappiness * delta)
+	
+	
+	
 	rotation = current_rotation
 
 	if recoil.z == 0 and aim_recoil.z == 0:

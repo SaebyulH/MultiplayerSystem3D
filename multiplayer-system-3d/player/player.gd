@@ -40,21 +40,25 @@ signal team_changed()
 var skins: Array[MeshInstance3D] = []
 
 const TEAM_COLORS: Dictionary = {
-	Team.SCI: Color.SKY_BLUE,
-	Team.SPI: Color.DARK_RED,
+	Team.SCI: Color.DODGER_BLUE,
+	Team.SPI: Color.RED,
 }
 
 var team: Team = Team.SPI:
 	set(value):
 		team = value
 		if is_inside_tree():
-			var color: Color = TEAM_COLORS.get(value, Color.YELLOW)
+			var color: Color = TEAM_COLORS.get(value, Color.LIME_GREEN)
 			var mat := StandardMaterial3D.new()
 			mat.albedo_color = color
 			for skin in skins:
 				if skin == null:
 					continue
 				skin.set_surface_override_material(0, mat)
+				#skin.set_surface_override_material(1, mat)
+				#skin.set_surface_override_material(2, mat)
+				
+				
 		team_changed.emit()
 
 func get_gmc_team() -> Player.Team:
@@ -173,19 +177,19 @@ func _enter_tree() -> void:
 
 func _ready() -> void:
 	skins = [
-		$Body/Recoil/Head/WeaponParent/RightArm,
-		$Body/Recoil/Head/WeaponParent/RightForearm,
-		$Body/Recoil/Head/WeaponParent/LeftForearm,
-		$Body/Recoil/Head/WeaponParent/LeftArm,
-		$Body/Recoil/Head/Helmet,
-		$Body/LeftLeg3, $Body/LeftLeg9, $Body/LeftLeg10, $Body/LeftLeg5, $Body/LeftLeg4, $Body/LeftLeg6, $Body/LeftLeg7, $Body/LeftLeg8,
-		
-		
+		#$Body/Recoil/Head/WeaponParent/RightArm,
+		#$Body/Recoil/Head/WeaponParent/RightForearm,
+		#$Body/Recoil/Head/WeaponParent/LeftForearm,
+		#$Body/Recoil/Head/WeaponParent/LeftArm,
+		#$Body/Recoil/Head/Helmet,
+		#$Body/LeftLeg3, $Body/LeftLeg9, $Body/LeftLeg10, $Body/LeftLeg5, $Body/LeftLeg4, $Body/LeftLeg6, $Body/LeftLeg7, $Body/LeftLeg8,
+		#
+		#
 		$Body/Human_Ultimate_Fixed_Rig_MODEL/Skeleton3D/ultimate_human_mesh,
 		
-		$Body/Torso,
-		$Body/LeftLeg,
-		$Body/RighLeg,
+		#$Body/Torso,
+		#$Body/LeftLeg,
+		#$Body/RighLeg,
 	]
 	team = team
 
@@ -319,7 +323,22 @@ func spawn():
 			#$BodyHurtbox/MeshInstance3D2.hide()
 			$BodyHurtbox/CollisionShape3D.hide()
 			
-			$Body/Human_Ultimate_Fixed_Rig_MODEL.hide()
+			#$Body/Human_Ultimate_Fixed_Rig_MODEL.hide()
+			
+			$Body/Human_Ultimate_Fixed_Rig_MODEL/Skeleton3D/ultimate_human_eye_left.hide()
+			$Body/Human_Ultimate_Fixed_Rig_MODEL/Skeleton3D/ultimate_human_eye_right.hide()
+			$Body/Human_Ultimate_Fixed_Rig_MODEL/Skeleton3D/ultimate_human_teeth_lower.hide()
+			$Body/Human_Ultimate_Fixed_Rig_MODEL/Skeleton3D/ultimate_human_teeth_upper.hide()
+			$Body/Human_Ultimate_Fixed_Rig_MODEL/Skeleton3D/ultimate_human_tongue.hide()
+			var head_mat :Material= $Body/Human_Ultimate_Fixed_Rig_MODEL/Skeleton3D/ultimate_human_mesh.get_surface_override_material(2).duplicate()
+			$Body/Human_Ultimate_Fixed_Rig_MODEL/Skeleton3D/ultimate_human_mesh.set_surface_override_material(2, head_mat)
+			head_mat.albedo_color = Color(0.0, 0.0, 0.0, 0.0)
+			
+			
+			
+			
+			
+			
 			
 			
 			$Body/LeftLeg3.hide()
@@ -479,7 +498,7 @@ func _apply_movement_from_input(delta):
 		# Keep the capsule bottom fixed so the body doesn't bob up/down.
 		var half_diff: float = (_stand_collider_height - shape.height) * 0.5
 		collider.position.y = _stand_collider_y - half_diff
-		%Recoil.position.y = _stand_recoil_y - half_diff
+		#%Recoil.position.y = _stand_recoil_y - half_diff
 		# Continuous blend factor derived from actual collider height.
 		var denom: float = _stand_collider_height - crouch_height
 		if denom > 0.0:
@@ -509,7 +528,7 @@ func _apply_movement_from_input(delta):
 		calc_speed = calc_speed * weapons[weapon_controller.current_weapon_index].player_speed_multiplier
 		calc_speed = calc_speed * weapon_controller.get_active_fire_speed_mult()
 	# Blend speed penalty smoothly with the collider.
-	var eff_crouch_mult: float = crouch_speed_multiplier + (_character.crouch_speed_mult if _character else 1.0)
+	var eff_crouch_mult: float = crouch_speed_multiplier * (_character.crouch_speed_mult if _character else 1.0)
 	calc_speed *= lerp(1.0, eff_crouch_mult, crouch_factor)
 
 	# Apply status-effect speed modifiers (e.g. slow/tag on hit).
@@ -526,18 +545,8 @@ func _apply_movement_from_input(delta):
 		# True slide (not just crouching while slow): requires either speed
 		# or pushing downhill on a slope.
 		var slide_active: bool = crouch_factor > 0.5 \
-			and (h_speed > min_slide_speed or (on_slope and direction.length() > 0.0))
+			and h_speed > min_slide_speed
 
-		# Entry boost — one burst when you first hit a real slide.
-		if slide_active and not _was_sliding:
-			var boost_dir: Vector2 = Vector2(velocity.x, velocity.z)
-			var boost_len: float = boost_dir.length()
-			if boost_len > 0.0:
-				boost_dir /= boost_len
-				var eff_boost: float = _cmult(slide_entry_boost, _character.slide_entry_boost_mult if _character else 1.0)
-				velocity.x += boost_dir.x * eff_boost
-				velocity.z += boost_dir.y * eff_boost
-				h_speed = Vector2(velocity.x, velocity.z).length()
 		_was_sliding = slide_active
 
 		# Acceleration: low while crouching, boosted on slopes.
@@ -568,8 +577,8 @@ func _apply_movement_from_input(delta):
 		if direction:
 			var target_x := direction.x * calc_speed
 			var target_z := direction.z * calc_speed
-			# When sliding, don't cap downhill speed — let slope gravity build it.
-			if crouch_factor > 0.0:
+			# When sliding, don't cap speed — let momentum carry.
+			if slide_active:
 				var vel_dot_dir: float = velocity.x * direction.x + velocity.z * direction.z
 				if vel_dot_dir > calc_speed:
 					target_x = direction.x * vel_dot_dir
