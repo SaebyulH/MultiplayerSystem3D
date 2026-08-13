@@ -1,6 +1,24 @@
 [gd_scene format=3 uid="uid://bcjdh8tk3q5p5"]
 
+[ext_resource type="Texture2D" uid="uid://uqsm3lsre04l" path="res://maps/dust/de_dust2_-_cs_map_26.png" id="1_jwp7q"]
+[ext_resource type="Texture2D" uid="uid://cdhiuh83o55j8" path="res://maps/dust/de_dust2_-_cs_map_15.png" id="2_tdmjm"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tdmjm"]
+albedo_texture = ExtResource("1_jwp7q")
+
 [sub_resource type="CylinderMesh" id="CylinderMesh_po3mv"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_3thd5"]
+albedo_texture = ExtResource("2_tdmjm")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sm4hn"]
+albedo_texture = ExtResource("2_tdmjm")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dhvh2"]
+albedo_texture = ExtResource("1_jwp7q")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_81rm0"]
+albedo_texture = ExtResource("1_jwp7q")
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_1tiyg"]
 height = 26.752
@@ -18,53 +36,60 @@ height = 26.752
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_g0718"]
 
-[node name="Pistol" type="Node3D" unique_id=664585380]
+[node name="Bow" type="Node3D" unique_id=664585380]
 
 [node name="Muzzle" type="Node3D" parent="." unique_id=2026291909]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.12967256, -0.49123335)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.12967256, -0.5641246)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=985122975]
-transform = Transform3D(0.12547445, 0, 0, 0, 0.44192812, 0, 0, 0, -0.050854888, 0, 0, 0)
+transform = Transform3D(0.025641706, 0, 0, 0, 0.30820394, 0, 0, 0, -0.035466574, -0.002436967, 0.0021300428, -0.07423447)
+material_override = SubResource("StandardMaterial3D_tdmjm")
 mesh = SubResource("CylinderMesh_po3mv")
 
 [node name="MeshInstance3D4" type="MeshInstance3D" parent="." unique_id=833781324]
-transform = Transform3D(0.009797977, 0, 0, 0, 0.3497822, 0.0050485646, 0, -0.1596114, 0.011063733, 0, 0.36983594, 0.37553853)
+transform = Transform3D(0.0068331817, 0, 0, 0, 0.24394068, 0.0035209062, 0, -0.11131417, 0.007715929, -0.002436967, 0.26005635, 0.18766886)
+material_override = SubResource("StandardMaterial3D_3thd5")
 mesh = SubResource("CylinderMesh_po3mv")
 
 [node name="MeshInstance3D9" type="MeshInstance3D" parent="." unique_id=1111705950]
-transform = Transform3D(0.009797977, 0, 0, 0, 0.34108886, -0.005612205, 0, 0.17743103, 0.01078876, 0, -0.32032898, 0.36022907)
+transform = Transform3D(0.0068331817, 0, 0, 0, 0.23787789, -0.003913993, 0, 0.12374171, 0.0075241607, -0.002436967, -0.22126974, 0.17699194)
+material_override = SubResource("StandardMaterial3D_sm4hn")
 mesh = SubResource("CylinderMesh_po3mv")
 
 [node name="MeshInstance3D2" type="MeshInstance3D" parent="." unique_id=77942454]
-transform = Transform3D(0.06735915, 0, 0, 0, 0.20311318, -0.014107441, 0, -0.12259342, -0.023373254, 0, -0.543699, 0.10754746)
+transform = Transform3D(0.020568142, 0, 0, 0, 0.14165263, -0.009838633, 0, -0.08549755, -0.01630068, -0.002436967, -0.41627094, 0.0059306026)
+material_override = SubResource("StandardMaterial3D_dhvh2")
 mesh = SubResource("CylinderMesh_po3mv")
 
 [node name="MeshInstance3D3" type="MeshInstance3D" parent="." unique_id=963945243]
-transform = Transform3D(0.06735914, 0, 0, 0, 0.19430697, 0.015664116, 0, 0.13612092, -0.022359878, 0, 0.5738256, 0.10754746)
+transform = Transform3D(0.015071786, 0, 0, 0, 0.13551112, 0.010924269, 0, 0.09493173, -0.015593943, -0.002436967, 0.4301879, 0.016252026)
+material_override = SubResource("StandardMaterial3D_81rm0")
 mesh = SubResource("CylinderMesh_po3mv")
 
 [node name="MeshInstance3D5" type="MeshInstance3D" parent="." unique_id=167875754]
-transform = Transform3D(0.026868304, -0.004430676, -1.93671e-10, 0, -1.1903122e-09, 0.02723117, -0.004430676, -0.026868304, -1.1744508e-09, -0.053969074, 0, 0.18758288)
+transform = Transform3D(0.016814098, -0.0009081185, -3.9695115e-11, -7.378196e-18, -7.360387e-10, 0.016838603, -0.0009081185, -0.016814098, -7.349675e-10, -0.016847972, 0.0021300428, 0.07627651)
 mesh = SubResource("CylinderMesh_1tiyg")
 surface_material_override/0 = SubResource("StandardMaterial3D_s8rlu")
 
 [node name="MeshInstance3D6" type="MeshInstance3D" parent="." unique_id=1107296079]
-transform = Transform3D(-3.6938288e-09, -0.0006165909, 0.026868302, -0.08564623, 7.240731e-18, -1.1903121e-09, 6.091251e-10, -0.0037391013, -0.0044306773, -0.120724395, 0, -0.21723168)
+transform = Transform3D(-2.3115863e-09, -0.0001263776, 0.016814098, -0.05296001, 2.0960262e-18, -7.360386e-10, 1.248474e-10, -0.0023399177, -0.0009081198, -0.030530263, 0.0021300428, -0.1770551)
 material_override = SubResource("StandardMaterial3D_whu4q")
 mesh = SubResource("CylinderMesh_dudhg")
 
 [node name="MeshInstance3D7" type="MeshInstance3D" parent="." unique_id=423785365]
-transform = Transform3D(-3.6938288e-09, -0.0006165909, 0.026868302, -0.08564623, 7.240731e-18, -1.1903121e-09, 6.091251e-10, -0.0037391013, -0.0044306773, -0.0032854713, 0, 0.49493605)
+transform = Transform3D(-2.3115863e-09, -0.0001263776, 0.016814098, -0.05296001, 2.0960262e-18, -7.360386e-10, 1.248474e-10, -0.0023399177, -0.0009081198, -0.006459772, 0.0021300428, 0.26861715)
 material_override = SubResource("StandardMaterial3D_g0718")
 mesh = SubResource("CylinderMesh_dudhg")
 
 [node name="MeshInstance3D8" type="MeshInstance3D" parent="." unique_id=2101678932]
-transform = Transform3D(-0.084504955, -0.0006165907, -2.542572e-09, 7.48743e-09, 1.6564865e-10, -0.027231168, 0.013935159, -0.0037391013, -7.871087e-10, -0.0032854713, 0, 0.49493605)
+transform = Transform3D(-0.05288293, -0.00012637753, -1.5096294e-09, 4.6299102e-09, 1.024301e-10, -0.016838599, 0.0028561743, -0.0023399177, -6.5557715e-10, -0.006459772, 0.0021300428, 0.26861715)
 material_override = SubResource("StandardMaterial3D_g0718")
 mesh = SubResource("CylinderMesh_dudhg")
 
-[node name="LeftHand" type="Node3D" parent="." unique_id=342479636]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.097717285, -0.026000977)
+[node name="LeftHandTarget" type="Marker3D" parent="." unique_id=1855921396]
+unique_name_in_owner = true
+transform = Transform3D(0.9398286, 0.34004813, -0.03301458, 0.10302915, -0.18995973, 0.97637075, 0.32574126, -0.9210229, -0.21356468, -0.05660905, -0.067459226, 0.0018371642)
 
-[node name="RightHand" type="Node3D" parent="." unique_id=2124492665]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.0028686523, 0.5517578)
+[node name="RightHandTarget" type="Marker3D" parent="." unique_id=957482057]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, -0.24740261, 0.9689127, 0, -0.9689127, -0.24740261, 0.013573408, -0.0008947849, 0.35062385)

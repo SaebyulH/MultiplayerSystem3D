@@ -48,7 +48,7 @@ var team: Team = Team.SPI:
 	set(value):
 		team = value
 		if is_inside_tree():
-			var color: Color = TEAM_COLORS.get(value, Color.LIME_GREEN)
+			var color: Color = TEAM_COLORS.get(value, Color.WHITE)
 			var mat := StandardMaterial3D.new()
 			mat.albedo_color = color
 			for skin in skins:
@@ -141,6 +141,20 @@ var _was_sliding: bool = false
 var spawn_manager: SpawnManager
 
 var pitch := 0.0
+
+# ── Footsteps ──────────────────────────────────────
+## Time between footstep sounds while walking.
+const FOOTSTEP_INTERVAL: float = 0.53335
+## Random pitch variation applied to footstep sounds (matches WeaponController.PITCH_RANGE).
+const FOOTSTEP_PITCH_RANGE: float = 0.05
+## Footstep sound pool — one is picked at random per step.
+var _footstep_sounds: Array[AudioStream] = [
+	#preload("res://assets/sounds/footsteps/data_pion-st1-footstep-sfx-323053.mp3"),
+	preload("res://assets/sounds/footsteps/data_pion-st2-footstep-sfx-323055.mp3"),
+	preload("res://assets/sounds/footsteps/data_pion-st3-footstep-sfx-323056.mp3"),
+]
+## Primed to the interval so the first step fires as soon as walking starts.
+var _footstep_timer: float = FOOTSTEP_INTERVAL
 
 # ── Respawn state ─────────────────────────────────
 # Persistent across rollback: _spawn_pending_position is NOT consumed inside
@@ -334,12 +348,13 @@ func spawn():
 			$Body/Human_Ultimate_Fixed_Rig_MODEL/Skeleton3D/ultimate_human_mesh.set_surface_override_material(2, head_mat)
 			head_mat.albedo_color = Color(0.0, 0.0, 0.0, 0.0)
 			
-			
-			
-			
-			
-			
-			
+			$Body/flier/Skeleton3D/ultimate_human_eye_left.hide()
+			$Body/flier/Skeleton3D/ultimate_human_eye_right.hide()
+			$Body/flier/Skeleton3D/ultimate_human_teeth_lower.hide()
+			$Body/flier/Skeleton3D/ultimate_human_teeth_upper.hide()
+			$Body/flier/Skeleton3D/ultimate_human_tongue.hide()
+			$Body/flier/Skeleton3D/FLIER.hide()
+			$Body/flier/Skeleton3D/FLIER_HELMET.hide()
 			
 			$Body/LeftLeg3.hide()
 			$Body/LeftLeg4.hide()
@@ -408,6 +423,39 @@ func _physics_process(delta: float) -> void:
 
 	# Passive shield regen — runs even when retracted.
 	_shield_regen(delta)
+
+	# Footsteps play on real frames only (never inside the rollback tick,
+	# which re-simulates and would double-play sounds).
+	_update_footsteps(delta)
+
+func _update_footsteps(delta: float) -> void:
+	if not spawned:
+		_footstep_timer = FOOTSTEP_INTERVAL
+		return
+	var h_speed := Vector2(velocity.x, velocity.z).length()
+	if is_on_floor() and h_speed > 0.1:
+		_footstep_timer += delta
+		if _footstep_timer >= FOOTSTEP_INTERVAL:
+			_footstep_timer = 0.0
+			_play_footstep()
+	else:
+		# Reset while stopped so the first step fires immediately on walking.
+		_footstep_timer = FOOTSTEP_INTERVAL
+
+func _play_footstep() -> void:
+	if _footstep_sounds.is_empty():
+		return
+	# Same overlapping-sound pattern as WeaponController._play_sound: a fresh
+	# AudioStreamPlayer3D per step, freed when it finishes.
+	var player := AudioStreamPlayer3D.new()
+	player.stream = _footstep_sounds.pick_random()
+	add_child(player)
+	# Parent is this CharacterBody3D, so set the world position AFTER adding
+	# the node — otherwise the parent transform would be applied twice.
+	player.global_position = global_position
+	player.pitch_scale = 1.0 + randf_range(-FOOTSTEP_PITCH_RANGE, FOOTSTEP_PITCH_RANGE)
+	player.play()
+	player.finished.connect(player.queue_free)
 
 func _rollback_tick(delta, tick, is_fresh):
 	# ── Respawn / teleport handling ────────────────

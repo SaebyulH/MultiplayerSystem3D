@@ -5,7 +5,15 @@
 [node name="Scattergun" type="Node3D" unique_id=664585380]
 
 [node name="Muzzle" type="Node3D" parent="." unique_id=2026291909]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.09410755, -1.9498727)
+transform = Transform3D(0.76072145, 0, 0, 0, 0.76072145, 0, 0, 0, 0.76072145, 0, 0.035484437, -0.67127794)
 
 [node name="Sketchfab_Scene2" parent="." unique_id=343259006 instance=ExtResource("1_74ctf")]
-transform = Transform3D(-2.5352605e-08, 0, 0.58, 0, 0.58, 0, -0.58, 0, -2.5352605e-08, 0, 0.005813241, -0.5691732)
+transform = Transform3D(-9.7728075e-09, 0, 0.22357574, 0, 0.22357574, 0, -0.22357574, 0, -9.7728075e-09, 0, -0.0063111093, -0.12745228)
+
+[node name="LeftHandTarget" type="Marker3D" parent="." unique_id=780501569]
+unique_name_in_owner = true
+transform = Transform3D(0.60975796, 0.7879477, -0.08564138, 0.51268905, -0.30971307, 0.8007667, 0.6044378, -0.53218144, -0.59282225, -0.061598495, -0.03838861, 0.023475468)
+
+[node name="RightHandTarget" type="Marker3D" parent="." unique_id=1414137381]
+unique_name_in_owner = true
+transform = Transform3D(0.9991895, -0.029251352, 0.027649932, -0.03403608, -0.2472996, 0.9683412, -0.021487385, -0.9684977, -0.24809478, 0.026540413, -0.046614528, 0.21473676)

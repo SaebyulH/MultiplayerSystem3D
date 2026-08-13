@@ -8,4 +8,10 @@
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.04024015, -0.2523659)
 
 [node name="Sketchfab_Scene2" parent="." unique_id=224226306 instance=ExtResource("1_ga110")]
-transform = Transform3D(-4.371139e-11, 0, 0.001, 0, 0.001, 0, -0.001, 0, -4.371139e-11, 0, 0.031951807, 0.039622307)
+transform = Transform3D(-4.371139e-11, 0, 0.001, 0, 0.001, 0, -0.001, 0, -4.371139e-11, 0, -0.0052797496, 0.11197001)
+
+[node name="LeftHandTarget" type="Marker3D" parent="." unique_id=2111584348]
+transform = Transform3D(0.9398286, 0.34004813, -0.03301458, 0.10302915, -0.18995973, 0.97637075, 0.32574126, -0.9210229, -0.21356468, -0.05660905, 0.005732417, 0.032107115)
+
+[node name="RightHandTarget" type="Marker3D" parent="." unique_id=610811537]
+transform = Transform3D(1, 0, 0, 0, -0.24740261, 0.9689127, 0, -0.9689127, -0.24740261, 0.013573408, -0.024879456, 0.13078311)

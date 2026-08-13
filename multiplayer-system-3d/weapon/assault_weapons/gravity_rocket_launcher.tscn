@@ -11,7 +11,7 @@ albedo_color = Color(0.12716985, 0.09314748, 0.0545512, 1)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.13750175, -0.969345)
 
 [node name="Sketchfab_Scene" parent="." unique_id=1500390495 instance=ExtResource("1_gui7w")]
-transform = Transform3D(9.51, 0, 0, 0, 9.51, 0, 0, 0, 9.51, 0, 0.16788453, -0.03289795)
+transform = Transform3D(5.2718477, 0, 0, 0, 5.2718477, 0, 0, 0, 5.2718477, 0, 0.091402784, 0.1017099)
 
 [node name="Tube_RPG_26_mat_0" parent="Sketchfab_Scene/Sketchfab_model/a9959c42edde47c68df149a614ec524c_fbx/RootNode/RPG_26/Tube" parent_id_path=PackedInt32Array(1500390495, 1645524418) index="0" unique_id=1088507060]
 surface_material_override/0 = SubResource("StandardMaterial3D_s7s8q")
@@ -24,5 +24,13 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.84689146, 0)
 
 [node name="Rear_Sight_RPG_26_mat_0" parent="Sketchfab_Scene/Sketchfab_model/a9959c42edde47c68df149a614ec524c_fbx/RootNode/RPG_26/Tube/Rear_Sight_Housing/Rear_Sight" parent_id_path=PackedInt32Array(1500390495, 1241384250) index="0" unique_id=1574649510]
 transform = Transform3D(1, 0, 0, 0, 0.57566273, 0.8176872, 0, -0.8176872, 0.57566273, 0, 1.0686339, 0)
+
+[node name="LeftHandTarget" type="Marker3D" parent="." unique_id=1456491943]
+unique_name_in_owner = true
+transform = Transform3D(0.60975796, 0.78794736, -0.08564125, 0.09216857, 0.036827117, 0.99506235, 0.7872102, -0.6146409, -0.050168335, -0.061598495, -0.03838861, -0.048696607)
+
+[node name="RightHandTarget" type="Marker3D" parent="." unique_id=1277727900]
+unique_name_in_owner = true
+transform = Transform3D(0.9991895, -0.029251486, 0.027649986, -0.03403607, -0.24729936, 0.9683412, -0.021487592, -0.96849775, -0.24809448, 0.026540413, 0.012569547, 0.19226669)
 
 [editable path="Sketchfab_Scene"]

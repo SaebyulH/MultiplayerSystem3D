@@ -4,6 +4,7 @@ class_name WeaponController extends Node
 ## 0.0 = all sounds play at their original pitch.
 ## 0.05 = pitch varies Ã‚Â±5 % (0.95 Ã¢â‚¬â€œ 1.05).  Higher values sound more chaotic.
 const PITCH_RANGE: float = 0.05
+const RIM_LAYER := 1 << 9  # render layer 10, the shared rim-light layer
 
 var _bullet_hole_scene: PackedScene = preload("res://effects/bullet_hole.tscn")
 var _tracer_scene: PackedScene = preload("res://weapon/tracer.tscn")
@@ -98,6 +99,44 @@ signal signal_activated(target: Vector3, player_transform: Vector3)
 
 var current_weapon_model: Node3D = null
 
+#region Reload animation – save/restore hand targets
+# The reload animation moves WeaponHandle, LeftHandTarget, and RightHandTarget
+# to baked values. Since different weapon models place hand targets at different
+# positions, we snapshot the live values before the animation plays and restore
+# them when the animation finishes (or is cancelled).
+var _reload_anim_saved: bool = false
+var _saved_weapon_handle_pos: Vector3
+var _saved_weapon_handle_rot: Vector3
+var _saved_left_hand_pos: Vector3
+var _saved_left_hand_rot: Vector3
+var _saved_right_hand_pos: Vector3
+var _saved_right_hand_rot: Vector3
+
+func _save_transform_for_reload() -> void:
+	_saved_weapon_handle_pos = weapon_model_parent.position
+	_saved_weapon_handle_rot = weapon_model_parent.rotation
+	_saved_left_hand_pos   = %LeftHandTarget.position
+	_saved_left_hand_rot   = %LeftHandTarget.rotation
+	_saved_right_hand_pos  = %RightHandTarget.position
+	_saved_right_hand_rot  = %RightHandTarget.rotation
+	_reload_anim_saved = true
+
+func _restore_transform_after_reload() -> void:
+	if not _reload_anim_saved:
+		return
+	weapon_model_parent.position = _saved_weapon_handle_pos
+	weapon_model_parent.rotation = _saved_weapon_handle_rot
+	%LeftHandTarget.position  = _saved_left_hand_pos
+	%LeftHandTarget.rotation  = _saved_left_hand_rot
+	%RightHandTarget.position = _saved_right_hand_pos
+	%RightHandTarget.rotation = _saved_right_hand_rot
+	_reload_anim_saved = false
+
+func _on_reload_anim_finished(anim_name: StringName) -> void:
+	if anim_name == &"reload":
+		_restore_transform_after_reload()
+#endregion
+
 #region Readiness
 # Central invariant check. Every RPC and fire path that touches _weapons or
 # current_weapon_model calls this first. One place to fix, one place to read.
@@ -136,6 +175,8 @@ func _ready() -> void:
 	player_input.previous_weapon.connect(previous_weapon)
 	player_input.next_weapon.connect(next_weapon)
 	player_input.reload.connect(start_reload)
+	if shoot_animation:
+		shoot_animation.animation_finished.connect(_on_reload_anim_finished)
 
 func _physics_process(delta: float) -> void:
 	_align_weapon_to_raycast()
@@ -365,13 +406,13 @@ func _ensure_bg_arrays() -> void:
 
 
 #region Helpers
-func _play_sound(stream: AudioStream) -> void:
+func _play_sound(stream: AudioStream, speed: float = 1.0) -> void:
 	if stream == null:
 		return
 	var player: AudioStreamPlayer3D = AudioStreamPlayer3D.new()
 	player.stream           = stream
 	player.global_transform = weapon_model_parent.global_transform
-	player.pitch_scale      = 1.0 + randf_range(-PITCH_RANGE, PITCH_RANGE)
+	player.pitch_scale      = speed * (1.0 + randf_range(-PITCH_RANGE, PITCH_RANGE))
 	add_child(player)
 	player.play()
 	player.finished.connect(player.queue_free)
@@ -388,9 +429,26 @@ func spawn_weapon_model() -> void:
 		return
 	current_weapon_model          = weapon.weapon_model.instantiate() as Node3D
 	current_weapon_model.position = weapon.weapon_offset
+	
+	
+	
 	current_weapon_model.rotation = weapon.weapon_rotation
 	current_weapon_model.scale    = weapon.weapon_scale
 	weapon_model_parent.add_child(current_weapon_model)
+
+	# Rim-light the weapon too (render layer 10), unless it's our own
+	# first-person weapon which should never be rim-lit.
+	var own_weapon := _parent_player.body.is_multiplayer_authority() and not _parent_player.is_bot
+	if not own_weapon:
+		for mesh in current_weapon_model.find_children("*", "MeshInstance3D", true, false):
+			mesh.layers |= RIM_LAYER
+	
+	#HAND IK
+	if current_weapon_model.has_node("LeftHandTarget"):
+		%LeftHandTarget.global_position = current_weapon_model.get_node("LeftHandTarget").global_position
+	if current_weapon_model.has_node("RightHandTarget"):
+		%RightHandTarget.global_position = current_weapon_model.get_node("RightHandTarget").global_position
+
 #endregion
 
 
@@ -425,6 +483,9 @@ func _on_weapon_index_changed(previous_index: int = -1) -> void:
 	_any_fire_was_held = false
 	_is_firing = false
 	_firing_remaining = 0.0
+	if shoot_animation:
+		shoot_animation.stop()
+	_restore_transform_after_reload()
 	if not _weapons.is_empty():
 		spawn_weapon_model()
 	# Only broadcast cancel_reload for non-background weapons — background
@@ -459,6 +520,9 @@ func _cancel_reload() -> void:
 	_is_reloading = false
 	_reload_timer = 0.0
 	_queued_interrupt = false
+	if shoot_animation and shoot_animation.has_animation("reload"):
+		shoot_animation.stop()
+		_restore_transform_after_reload()
 
 
 ## Returns true if this weapon slot cannot be manually selected (e.g. empty
@@ -585,7 +649,13 @@ func _notify_reload_started(timer_value: float) -> void:
 		return
 	_is_reloading = true
 	_reload_timer = timer_value
-	_play_sound(_weapons[current_weapon_index].reload_sound)
+	var reload_stream := _weapons[current_weapon_index].reload_sound
+	var sound_len := reload_stream.get_length() if reload_stream else 1.0
+	_play_sound(reload_stream, sound_len / max(timer_value, 0.01))
+	if shoot_animation and shoot_animation.has_animation("reload"):
+		_save_transform_for_reload()
+		shoot_animation.stop()
+		shoot_animation.play("reload", -1, 2.0 / max(timer_value, 0.01))
 	mag_changed.emit(
 		_weapons[current_weapon_index].mag_current,
 		_weapons[current_weapon_index].mag_size
@@ -603,6 +673,10 @@ func _notify_bg_restore(weapon_index: int, timer_value: float) -> void:
 		return
 	_is_reloading = true
 	_reload_timer = timer_value
+	if shoot_animation and shoot_animation.has_animation("reload"):
+		_save_transform_for_reload()
+		shoot_animation.stop()
+		shoot_animation.play("reload", -1, 2.0 / max(timer_value, 0.01))
 
 func _finish_reload() -> void:
 	if not _is_ready():

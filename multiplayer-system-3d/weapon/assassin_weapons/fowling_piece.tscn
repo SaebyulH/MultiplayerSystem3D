@@ -13,4 +13,15 @@ transform = Transform3D(-2.1855694e-08, 0, 0.5, 0, 0.5, 0, -0.5, 0, -2.1855694e-
 visible = false
 
 [node name="c_scattergun2" parent="." unique_id=2054837750 instance=ExtResource("2_dw0ov")]
-transform = Transform3D(-0.016267976, 0, -1.4221914e-09, 1.4221915e-09, -1.7013305e-09, -0.016267974, -6.216597e-17, -0.038921908, 7.1109574e-10, 0, -0.024047852, 0.30355453)
+transform = Transform3D(-0.009403215, 0, -8.22055e-10, 8.220551e-10, -6.593434e-10, -0.009403214, -3.5933172e-17, -0.015084019, 4.1102755e-10, 0, -0.022764996, 0.2060564)
+
+[node name="c_scattergun3" parent="." unique_id=901761478 instance=ExtResource("2_dw0ov")]
+transform = Transform3D(-0.013680781, 0, -5.11337e-10, 1.1960118e-09, -8.951168e-10, -0.0058490136, -5.227934e-17, -0.020477885, 2.5566851e-10, 0, -0.008620761, 0.123077005)
+
+[node name="LeftHandTarget" type="Marker3D" parent="." unique_id=786730903]
+unique_name_in_owner = true
+transform = Transform3D(-0.010785133, 0.9627173, -0.27029514, 0.8203884, 0.16306669, 0.5480618, 0.5717048, -0.21583624, -0.79156065, -0.07392774, -0.04328227, 0.0030625165)
+
+[node name="RightHandTarget" type="Marker3D" parent="." unique_id=91148697]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, -0.24740261, 0.9689127, 0, -0.9689127, -0.24740261, 0.013573408, -0.024947286, 0.26573277)

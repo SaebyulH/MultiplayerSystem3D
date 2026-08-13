@@ -105,9 +105,21 @@ size = Vector3(4.7529297, 2.9394531, 11.279297)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.2046344, 22.378286, 1.1087273)
 size = Vector3(9.317383, 23.819214, 14.0383)
 
+[node name="ground11" type="CSGBox3D" parent="CSGCombiner3D3" unique_id=1260134248]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17.957056, 2.2592375, 1.0187219)
+size = Vector3(11.699722, 3, 24.960815)
+
+[node name="ground22" type="CSGBox3D" parent="CSGCombiner3D3" unique_id=946145162]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.29754, 5.199849, -8.961689)
+size = Vector3(6, 2, 5)
+
 [node name="ground12" type="CSGBox3D" parent="CSGCombiner3D3" unique_id=945014262]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.13667421, 7.8791265, 0.17975725)
 size = Vector3(4, 5, 4)
+
+[node name="ground4" type="CSGBox3D" parent="CSGCombiner3D3/ground12" unique_id=260887868]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20.632412, -5.1981936, 5.358553)
+size = Vector3(8, 3, 34)
 
 [node name="CSGCombiner3D4" type="CSGCombiner3D" parent="." unique_id=1387683707]
 transform = Transform3D(-1.1909884, 0, 1.04119515e-07, 0, 1.1909884, 0, -1.04119515e-07, 0, -1.1909884, 0, 0, 0)
@@ -149,17 +161,9 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.434219, -1.9491298, 19.311
 operation = 2
 size = Vector3(11, 4.920288, 4)
 
-[node name="ground4" type="CSGBox3D" parent="CSGCombiner3D4" unique_id=260887868]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20.632412, -2.5, 5.358553)
-size = Vector3(8, 3, 34)
-
 [node name="ground20" type="CSGBox3D" parent="CSGCombiner3D4" unique_id=833433106]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.934215, -2.4999998, -9.141446)
 size = Vector3(15, 3, 5)
-
-[node name="ground22" type="CSGBox3D" parent="CSGCombiner3D4" unique_id=946145162]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.434214, 0.018916326, -9.141446)
-size = Vector3(6, 2, 5)
 
 [node name="ground21" type="CSGBox3D" parent="CSGCombiner3D4" unique_id=1076067290]
 transform = Transform3D(0.8660253, 0.5, 1.171243e-08, -0.5, 0.8660253, 4.371139e-08, 1.171243e-08, -4.371139e-08, 1, 12.736431, -1.4691602, -9.141447)
@@ -173,10 +177,6 @@ size = Vector3(5, 3, 5)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19.792747, 0.85855484, 10.858553)
 operation = 2
 size = Vector3(4, 3, 5)
-
-[node name="ground11" type="CSGBox3D" parent="CSGCombiner3D4" unique_id=1260134248]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17.820381, -2.921695, 0.8389647)
-size = Vector3(11.699722, 3, 24.960815)
 
 [node name="ground12" type="CSGBox3D" parent="CSGCombiner3D4" unique_id=1399935048]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16.813713, -2.8874905, -14.924342)
@@ -242,7 +242,7 @@ transform = Transform3D(0.7733656, 0, 0, 0, 0.7733656, 0, 0, 0, 0.7733656, -12.9
 size = Vector3(1.805481, 2.9833374, 2.036621)
 
 [node name="ground43" type="CSGBox3D" parent="CSGCombiner3D4" unique_id=1008240463]
-transform = Transform3D(0.6276703, 0, 0.45180115, 0, 0.7733656, 0, -0.45180115, 0, 0.6276703, -12.984826, 0.03675005, 3.2600825)
+transform = Transform3D(0.6276703, 0, 0.45180115, 0, 0.7733656, 0, -0.45180115, 0, 0.6276703, -12.984826, -1.0370415, 3.2600825)
 size = Vector3(1.805481, 2.9833374, 2.036621)
 
 [node name="ground54" type="CSGBox3D" parent="CSGCombiner3D4" unique_id=1290450762]
@@ -254,8 +254,8 @@ transform = Transform3D(-0.60218585, 0, 0.40162602, 0, 0.72383094, 0, -0.4016260
 size = Vector3(1.805481, 2.9833374, 2.036621)
 
 [node name="ground44" type="CSGBox3D" parent="CSGCombiner3D4" unique_id=487888447]
-transform = Transform3D(0.2743487, 0, 0.7230678, 0, 0.7733656, 0, -0.7230678, 0, 0.2743487, -14.378044, -0.038584147, 2.0481946)
-size = Vector3(1.805481, 5.6894226, 2.036621)
+transform = Transform3D(0.2743487, 0, 0.7230678, 0, 0.7733656, 0, -0.7230678, 0, 0.2743487, -14.378044, -0.43512633, 2.0481946)
+size = Vector3(1.805481, 4.663925, 2.036621)
 
 [node name="ground62" type="CSGBox3D" parent="CSGCombiner3D4" unique_id=2077059708]
 transform = Transform3D(0.39442065, 0, 0.66522694, 0, 0.7733657, 0, -0.66522694, 0, 0.39442065, -21.38508, -0.74697584, -1.396177)

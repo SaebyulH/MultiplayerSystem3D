@@ -8,4 +8,12 @@
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.09097624, -1.5931834)
 
 [node name="Sketchfab_Scene" parent="." unique_id=1723389482 instance=ExtResource("1_nv0uw")]
-transform = Transform3D(-2.1855694e-08, 0, 0.5, 0, 0.5, 0, -0.5, 0, -2.1855694e-08, 0, 0, -0.488)
+transform = Transform3D(-9.221161e-09, 0, 0.21095556, 0, 0.21095556, 0, -0.21095556, 0, -9.221161e-09, 0, 0, -0.121756315)
+
+[node name="LeftHandTarget" type="Marker3D" parent="." unique_id=943534951]
+unique_name_in_owner = true
+transform = Transform3D(-0.14616054, 0.98643607, -0.074710235, 0.8203885, 0.1630667, 0.54806185, 0.55281085, 0.01881358, -0.83309436, -0.07985383, -0.053115726, -0.052642137)
+
+[node name="RightHandTarget" type="Marker3D" parent="." unique_id=559535522]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, -0.24740261, 0.9689127, 0, -0.9689127, -0.24740261, 0.013573408, -0.032610893, 0.122694016)

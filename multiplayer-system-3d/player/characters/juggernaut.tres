@@ -6,8 +6,8 @@
 script = ExtResource("1_char")
 character_name = "Juggernaut"
 description = "Heavily armored assault unit. Slow but durable. High regen"
-acceleration_mult = 0.9
-friction_mult = 1.3
-air_accel_mult = 0.8
+speed_mult = 0.75
+acceleration_mult = 0.75
+air_accel_mult = 0.75
 health_mult = 3.0
 regen_delay = 1.0
