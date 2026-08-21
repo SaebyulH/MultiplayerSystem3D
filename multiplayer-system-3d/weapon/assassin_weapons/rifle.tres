@@ -45,9 +45,9 @@ metadata/_custom_type_script = "uid://djg0ti1n45f8b"
 [resource]
 script = ExtResource("2_2mafd")
 display_name = "Rifle"
-mag_size = 55
-mag_current = 55
-reload_time = 2.0
+mag_size = 50
+mag_current = 50
+reload_time = 2.5
 weapon_fires = Array[ExtResource("3_2fnnu")]([SubResource("Resource_6ginj"), SubResource("Resource_fe2cc")])
 spread_per_shot = 0.2
 weapon_model = ExtResource("8_whadi")

@@ -1,15 +1,15 @@
 [remap]
 
-importer="animation_library"
+importer="scene"
 importer_version=1
-type="AnimationLibrary"
-uid="uid://c26svehxaccha"
-path="res://.godot/imported/walk_anims.glb-c492222de368b91ee2d4a4d666d260a1.res"
+type="PackedScene"
+uid="uid://k4aftbnsp4fv"
+path="res://.godot/imported/ninja.glb-9a9fb90e03c09189cd15bea5affbeca2.scn"
 
 [deps]
 
-source_file="res://assets/human/walk_anims.glb"
-dest_files=["res://.godot/imported/walk_anims.glb-c492222de368b91ee2d4a4d666d260a1.res"]
+source_file="res://assets/flier/ninja.glb"
+dest_files=["res://.godot/imported/ninja.glb-9a9fb90e03c09189cd15bea5affbeca2.scn"]
 
 [params]
 

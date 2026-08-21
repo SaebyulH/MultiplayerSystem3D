@@ -9,18 +9,20 @@ extends AnimationTree
 #   Blend3 blend_amount:  -1 = crouch   0 = walk   1 = sprint
 #   air    blend_amount:   0 = ground   1 = air
 
-const BLEND_TRANSITION_SPEED: float = 40.0
+const BLEND_TRANSITION_SPEED: float = 10.0
 
 
 func _process(delta: float) -> void:
-	# This tree lives under Body, which holds the mouse-look yaw. Express the
-	# player's velocity in Body-local space so the directional animations
-	# are picked relative to where the body is actually facing (the rig's
-	# 180° flip cancels out).  forward = Body -Z  →  (0, -1)  = walk_w, etc.
 	var body: Node3D = $".."
 	var player: CharacterBody3D = $"../.."
 	var local_vel: Vector3 = body.global_transform.basis.inverse() * player.velocity
-	var blend_vec := Vector2(local_vel.x, local_vel.z).normalized()
+
+	var blend_vec := Vector2(local_vel.x, local_vel.z)
+
+	if blend_vec.length_squared() > 0.0:
+		blend_vec /= max(abs(blend_vec.x), abs(blend_vec.y))
+	
+	#print(blend_vec)
 
 	# Push the same directional input to all three blend spaces so whichever
 	# one is active already has the correct blend position.

@@ -9,8 +9,13 @@ var target_rotation : Vector3
 @export var snappiness : float
 @export var return_speed : float
 
+## The head-bone attachment the camera/weapon assembly follows.
+## Assigned by Player._spawn_character_model when the character model spawns.
+@export var bone_attachment: Node3D
+
 func _process(delta):
-	global_position = $"../flier/Skeleton3D/BoneAttachment3D".global_position
+	#if bone_attachment:
+		#global_position = bone_attachment.global_position
 	
 	target_rotation = lerp(target_rotation, Vector3.ZERO, return_speed * delta)
 	current_rotation = lerp(current_rotation, target_rotation, snappiness * delta)

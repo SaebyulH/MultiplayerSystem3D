@@ -37,6 +37,14 @@ window/stretch/mode="canvas_items"
 
 enabled=PackedStringArray("res://addons/console/plugin.cfg", "res://addons/netfox.internals/plugin.cfg", "res://addons/netfox/plugin.cfg")
 
+[file_customization]
+
+folder_colors={
+"res://assets/": "red",
+"res://components/": "orange",
+"res://defaults/": "yellow"
+}
+
 [global_group]
 
 players=""

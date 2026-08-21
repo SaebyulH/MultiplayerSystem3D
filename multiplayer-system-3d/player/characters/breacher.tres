@@ -1,11 +1,14 @@
 [gd_resource type="Resource" script_class="Character" format=3 uid="uid://cgi1jrf004ttd"]
 
+[ext_resource type="PackedScene" uid="uid://cinsq1lv1jv" path="res://assets/characters/flier.tscn" id="1_1m2t5"]
 [ext_resource type="Script" uid="uid://bxv3anwekoggx" path="res://player/character.gd" id="1_char"]
 
 [resource]
 script = ExtResource("1_char")
-character_name = "Breacher"
+character_name = "Flier"
 description = "A fast assault class with high air control, ideal for explosion jumping."
+character_scene = ExtResource("1_1m2t5")
 speed_mult = 1.2
 air_accel_mult = 1.5
+jump_mult = 1.4
 health_mult = 2.0

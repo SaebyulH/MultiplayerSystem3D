@@ -39,6 +39,11 @@ signal team_changed()
 
 var skins: Array[MeshInstance3D] = []
 
+## Original surface-0 material for each entry in [member skins], captured when
+## the character model is built.  Team tinting duplicates these so the model's
+## own textures survive instead of being flattened to a single solid colour.
+var _skin_original_materials: Array[Material] = []
+
 const TEAM_COLORS: Dictionary = {
 	Team.SCI: Color.DODGER_BLUE,
 	Team.SPI: Color.RED,
@@ -48,17 +53,7 @@ var team: Team = Team.SPI:
 	set(value):
 		team = value
 		if is_inside_tree():
-			var color: Color = TEAM_COLORS.get(value, Color.WHITE)
-			var mat := StandardMaterial3D.new()
-			mat.albedo_color = color
-			for skin in skins:
-				if skin == null:
-					continue
-				skin.set_surface_override_material(0, mat)
-				#skin.set_surface_override_material(1, mat)
-				#skin.set_surface_override_material(2, mat)
-				
-				
+			_apply_team_color()
 		team_changed.emit()
 
 func get_gmc_team() -> Player.Team:
@@ -96,6 +91,44 @@ var is_crouching: bool = false
 
 # Character selection
 var _character: Character = null
+
+## The currently-active third-person model (what other players see): the
+## built-in mannequin, or a spawned character model.
+var model: Node3D = null
+
+## The [PlayerModel] component attached to [member model] (null until a model
+## that carries the script is active).
+var model_script: PlayerModel = null
+
+## The currently-active first-person viewmodel (what the local player sees):
+## the built-in viewmodel mannequin, or a spawned character viewmodel.
+var viewmodel: Node3D = null
+
+## The [PlayerModel] component attached to [member viewmodel].
+var viewmodel_script: PlayerModel = null
+
+## The built-in mannequin (always present under Body) drives the world model's
+## animation via the AnimationTree; a spawned character model copies its pose.
+@onready var mannequin: Node3D = $Body/Mannequin
+var mannequin_skeleton: Skeleton3D = null
+
+## The built-in viewmodel mannequin under the camera/head drives the first-person
+## viewmodel animation; a spawned character viewmodel copies its pose.
+@onready var viewmodel_mannequin: Node3D = $Body/Recoil/Head/Mannequin_VIEWMODEL
+var viewmodel_skeleton: Skeleton3D = null
+
+## Skeleton of a spawned character model that mirrors the mannequin's pose.
+var _pose_target: Skeleton3D = null
+## Destination bone index (into _pose_target) per mannequin bone index, -1 if missing.
+var _pose_map: PackedInt32Array = PackedInt32Array()
+
+## Skeleton of a spawned character viewmodel that mirrors the viewmodel's pose.
+var _viewmodel_target: Skeleton3D = null
+## Destination bone index (into _viewmodel_target) per viewmodel bone index.
+var _viewmodel_map: PackedInt32Array = PackedInt32Array()
+
+@onready var animation_tree: AnimationTree = $Body/AnimationTree
+@onready var viewmodel_camera: Camera3D = %ViewModelCamera
 
 @export var crouch_height: float = 1.0
 @export var stand_height: float = 2.0
@@ -136,6 +169,8 @@ var _stand_collider_y: float = 0.0
 var _stand_recoil_y: float = 0.0
 var _was_on_floor: bool = false
 var _was_sliding: bool = false
+## Seconds spent grounded; gates jumping until a minimum contact time is met.
+var _ground_contact_time: float = 0.0
 
 
 var spawn_manager: SpawnManager
@@ -190,6 +225,10 @@ func _enter_tree() -> void:
 
 
 func _ready() -> void:
+	# Run _process last (after Recoil / AnimationTree / TickInterpolator) so the
+	# viewmodel camera sync and pose copying read this frame's final state.
+	process_priority = 100
+
 	skins = [
 		#$Body/Recoil/Head/WeaponParent/RightArm,
 		#$Body/Recoil/Head/WeaponParent/RightForearm,
@@ -199,13 +238,20 @@ func _ready() -> void:
 		#$Body/LeftLeg3, $Body/LeftLeg9, $Body/LeftLeg10, $Body/LeftLeg5, $Body/LeftLeg4, $Body/LeftLeg6, $Body/LeftLeg7, $Body/LeftLeg8,
 		#
 		#
-		$Body/Human_Ultimate_Fixed_Rig_MODEL/Skeleton3D/ultimate_human_mesh,
+		# Character skin meshes are collected dynamically in _rebuild_skins().
 		
 		#$Body/Torso,
 		#$Body/LeftLeg,
 		#$Body/RighLeg,
 	]
 	team = team
+
+	# Resolve the built-in mannequins — they always drive the animations.
+	mannequin_skeleton = mannequin.find_child("Skeleton3D", true, false) as Skeleton3D
+	viewmodel_skeleton = viewmodel_mannequin.find_child("Skeleton3D", true, false) as Skeleton3D
+	animation_tree.active = true
+	($Body/Recoil/Head/AnimationTreeViewmodel as AnimationTree).active = true
+	_setup_viewmodel_viewport()
 
 	add_to_group("players")
 	attribute_component.health_changed.connect(_health_changed)
@@ -334,36 +380,7 @@ func spawn():
 		var player_id := name.to_int()
 		if my_id == player_id:
 			camera.make_current()
-			#$BodyHurtbox/MeshInstance3D2.hide()
 			$BodyHurtbox/CollisionShape3D.hide()
-			
-			#$Body/Human_Ultimate_Fixed_Rig_MODEL.hide()
-			
-			$Body/Human_Ultimate_Fixed_Rig_MODEL/Skeleton3D/ultimate_human_eye_left.hide()
-			$Body/Human_Ultimate_Fixed_Rig_MODEL/Skeleton3D/ultimate_human_eye_right.hide()
-			$Body/Human_Ultimate_Fixed_Rig_MODEL/Skeleton3D/ultimate_human_teeth_lower.hide()
-			$Body/Human_Ultimate_Fixed_Rig_MODEL/Skeleton3D/ultimate_human_teeth_upper.hide()
-			$Body/Human_Ultimate_Fixed_Rig_MODEL/Skeleton3D/ultimate_human_tongue.hide()
-			var head_mat :Material= $Body/Human_Ultimate_Fixed_Rig_MODEL/Skeleton3D/ultimate_human_mesh.get_surface_override_material(2).duplicate()
-			$Body/Human_Ultimate_Fixed_Rig_MODEL/Skeleton3D/ultimate_human_mesh.set_surface_override_material(2, head_mat)
-			head_mat.albedo_color = Color(0.0, 0.0, 0.0, 0.0)
-			
-			$Body/flier/Skeleton3D/ultimate_human_eye_left.hide()
-			$Body/flier/Skeleton3D/ultimate_human_eye_right.hide()
-			$Body/flier/Skeleton3D/ultimate_human_teeth_lower.hide()
-			$Body/flier/Skeleton3D/ultimate_human_teeth_upper.hide()
-			$Body/flier/Skeleton3D/ultimate_human_tongue.hide()
-			$Body/flier/Skeleton3D/FLIER.hide()
-			$Body/flier/Skeleton3D/FLIER_HELMET.hide()
-			
-			$Body/LeftLeg3.hide()
-			$Body/LeftLeg4.hide()
-			$Body/LeftLeg5.hide()
-			$Body/LeftLeg6.hide()
-			$Body/LeftLeg7.hide()
-			$Body/LeftLeg8.hide()
-			$Body/LeftLeg9.hide()
-			$Body/LeftLeg10.hide()
 		else:
 			camera.current = false
 			camera.visible = false
@@ -405,6 +422,46 @@ func _rpc_sync_randomized_loadout(tpid: String, pp: String, sp: String, mp: Stri
 	var nw: Array[Weapon] = [primary.duplicate(true) as Weapon, secondary.duplicate(true) as Weapon, melee.duplicate(true) as Weapon]
 	weapon_controller.set_weapons(nw)
 	weapon_controller.current_weapon_index = 0
+
+
+## Mirror the mannequin's animated pose onto a spawned character model every
+## frame so any skin rigged to the same humanoid skeleton follows along.
+func _process(_delta: float) -> void:
+	_copy_mannequin_pose()
+	_copy_viewmodel_pose()
+	_sync_viewmodel_camera()
+
+
+func _copy_mannequin_pose() -> void:
+	if _pose_target == null or mannequin_skeleton == null:
+		return
+	for src_idx in mannequin_skeleton.get_bone_count():
+		var dst_idx := _pose_map[src_idx]
+		if dst_idx < 0:
+			continue
+		_pose_target.set_bone_pose_position(dst_idx, mannequin_skeleton.get_bone_pose_position(src_idx))
+		_pose_target.set_bone_pose_rotation(dst_idx, mannequin_skeleton.get_bone_pose_rotation(src_idx))
+		_pose_target.set_bone_pose_scale(dst_idx, mannequin_skeleton.get_bone_pose_scale(src_idx))
+
+
+func _copy_viewmodel_pose() -> void:
+	if _viewmodel_target == null or viewmodel_skeleton == null:
+		return
+	for src_idx in viewmodel_skeleton.get_bone_count():
+		var dst_idx := _viewmodel_map[src_idx]
+		if dst_idx < 0:
+			continue
+		_viewmodel_target.set_bone_pose_position(dst_idx, viewmodel_skeleton.get_bone_pose_position(src_idx))
+		_viewmodel_target.set_bone_pose_rotation(dst_idx, viewmodel_skeleton.get_bone_pose_rotation(src_idx))
+		_viewmodel_target.set_bone_pose_scale(dst_idx, viewmodel_skeleton.get_bone_pose_scale(src_idx))
+
+
+## Keep the viewmodel camera aligned with the main camera (position + rotation),
+## leaving FOV alone so it can be tuned manually in the inspector.
+func _sync_viewmodel_camera() -> void:
+	if viewmodel_camera == null:
+		return
+	viewmodel_camera.global_transform = camera.global_transform
 
 
 func _physics_process(delta: float) -> void:
@@ -552,16 +609,26 @@ func _apply_movement_from_input(delta):
 		if denom > 0.0:
 			crouch_factor = clamp((_stand_collider_height - shape.height) / denom, 0.0, 1.0)
 
+	# Track grounded time so a minimum contact time can gate re-jumping.
+	if on_floor:
+		_ground_contact_time += delta
+	else:
+		_ground_contact_time = 0.0
+
 	if not on_floor:
 		velocity += get_gravity() * delta
 	elif player_input.jump_input:
-		knockback_velocity = Vector3.ZERO
-		velocity.y = _cmult(JUMP_VELOCITY, _character.jump_mult if _character else 1.0)
+		var min_contact: float = _character.min_ground_contact_time if _character else 0.1
+		if _ground_contact_time >= min_contact:
+			knockback_velocity = Vector3.ZERO
+			velocity.y = _cmult(JUMP_VELOCITY, _character.jump_mult if _character else 1.0)
 
 	var input_dir := player_input.input_dir
 	var cam_basis: Basis = camera.global_transform.basis
-	var forward := Vector3(cam_basis.z.x, 0, cam_basis.z.z).normalized()
+	# Derive forward from the camera's (always-horizontal) right vector so pitch
+	# never inverts inputs when looking straight up or down.
 	var right   := Vector3(cam_basis.x.x, 0, cam_basis.x.z).normalized()
+	var forward := right.cross(Vector3.UP)
 	var direction := (forward * input_dir.y + right * input_dir.x).normalized()
 
 	# Apply ADS speed modifier before computing final speed.
@@ -768,6 +835,197 @@ func set_character(char: Character) -> void:
 	if char:
 		attribute_component.starting_health = 100.0 * char.health_mult
 		attribute_component.reset_health()
+	_spawn_character_model()
+
+
+## Show the built-in mannequin or spawn the selected character's world model,
+## and do the same for the first-person viewmodel under the head.  Each spawned
+## model mirrors its mannequin's animated pose.
+func _spawn_character_model() -> void:
+	var own := _is_own_model()
+
+	# Free any previously spawned character world model (the mannequin is permanent).
+	if model != null and model != mannequin:
+		model.queue_free()
+	model = null
+	_pose_target = null
+	_pose_map = PackedInt32Array()
+
+	# Free any previously spawned character viewmodel (the viewmodel mannequin is permanent).
+	if viewmodel != null and viewmodel != viewmodel_mannequin:
+		viewmodel.queue_free()
+	viewmodel = null
+	_viewmodel_target = null
+	_viewmodel_map = PackedInt32Array()
+
+	var scene: PackedScene = _character.character_scene if _character and _character.character_scene else null
+	var world_instance: Node3D = null
+	var viewmodel_instance: Node3D = null
+	if scene != null:
+		world_instance = scene.instantiate() as Node3D
+		viewmodel_instance = scene.instantiate() as Node3D
+
+	# --- Third-person world model (visible to other players) ---
+	if world_instance == null:
+		model = mannequin
+	else:
+		#mannequin.visible = false
+		
+		
+		world_instance.name = "Model"
+		$Body.add_child(world_instance)
+		model = world_instance
+		_setup_pose_copy(world_instance)
+	model.visible = not own
+	
+	$Body/MannequinLEGS.visible = own
+	
+	# --- First-person viewmodel (visible only to the local player) ---
+	if viewmodel_instance == null:
+		viewmodel = viewmodel_mannequin
+	else:
+		viewmodel_mannequin.visible = false
+		viewmodel_instance.name = "ViewModel"
+		viewmodel_instance.transform = viewmodel_mannequin.transform
+		$Body/Recoil/Head.add_child(viewmodel_instance)
+		viewmodel = viewmodel_instance
+		_setup_viewmodel_pose_copy(viewmodel_instance)
+		
+	viewmodel.visible = own
+
+	model_script = model as PlayerModel
+	viewmodel_script = viewmodel as PlayerModel
+
+	# Rebuild the team-colour skin list and re-apply the current team (world model only).
+	_rebuild_skins()
+	team = team
+
+	# Our own first-person model: strip the world model's rim light, hide the
+	# viewmodel's head, and make the viewmodel render over the world.
+	if own:
+		if model_script != null:
+			model_script.disable_rim_layer()
+		if viewmodel_script != null:
+			viewmodel_script.hide_head_meshes()
+		PlayerModel.move_to_viewmodel_layer(viewmodel)
+
+
+## Prepare the spawned model's skeleton to mirror the mannequin's pose.  Bones
+## are matched by name; both rigs share the same humanoid "DEF-…" naming.
+func _setup_pose_copy(model_node: Node3D) -> void:
+	var skeleton_nodes := model_node.find_children("*", "Skeleton3D", true, false)
+	_pose_target = skeleton_nodes[0] as Skeleton3D if not skeleton_nodes.is_empty() else null
+	if _pose_target == null or mannequin_skeleton == null:
+		_pose_target = null
+		return
+	_pose_map = PackedInt32Array()
+	_pose_map.resize(mannequin_skeleton.get_bone_count())
+	for src_idx in mannequin_skeleton.get_bone_count():
+		_pose_map[src_idx] = _pose_target.find_bone(mannequin_skeleton.get_bone_name(src_idx))
+
+
+## Prepare the spawned viewmodel's skeleton to mirror the viewmodel mannequin's
+## pose.  Same bone-name matching as _setup_pose_copy.
+func _setup_viewmodel_pose_copy(model_node: Node3D) -> void:
+	var skeleton_nodes := model_node.find_children("*", "Skeleton3D", true, false)
+	_viewmodel_target = skeleton_nodes[0] as Skeleton3D if not skeleton_nodes.is_empty() else null
+	if _viewmodel_target == null or viewmodel_skeleton == null:
+		_viewmodel_target = null
+		return
+	_viewmodel_map = PackedInt32Array()
+	_viewmodel_map.resize(viewmodel_skeleton.get_bone_count())
+	for src_idx in viewmodel_skeleton.get_bone_count():
+		_viewmodel_map[src_idx] = _viewmodel_target.find_bone(viewmodel_skeleton.get_bone_name(src_idx))
+
+
+## Render the viewmodel in its own viewport, layered over the main view.  The
+## viewmodel camera sees only the viewmodel layer, and the main camera sees
+## everything else.  This gives the viewmodel its own depth buffer (no clipping,
+## no see-through) while the viewmodel camera's FOV stays manually adjustable.
+func _setup_viewmodel_viewport() -> void:
+	if not _is_own_model():
+		return
+
+	# Main camera renders everything except the viewmodel layer.
+	camera.cull_mask = camera.cull_mask & ~PlayerModel.VIEWMODEL_LAYER
+	# Viewmodel camera renders only the viewmodel layer.
+	viewmodel_camera.cull_mask = PlayerModel.VIEWMODEL_LAYER
+
+	var canvas := CanvasLayer.new()
+	canvas.name = "ViewmodelCanvas"
+	canvas.layer = -1  # above the 3D world, below the root canvas (PlayerUI) and all CanvasLayer UI
+	add_child(canvas)
+
+	var container := SubViewportContainer.new()
+	container.name = "ViewmodelOverlay"
+	container.stretch = true
+	container.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	container.mouse_filter = Control.MOUSE_FILTER_IGNORE  # let clicks pass through to menus
+	canvas.add_child(container)
+
+	var vp := SubViewport.new()
+	vp.name = "ViewmodelViewport"
+	vp.transparent_bg = true
+	vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	vp.world_3d = get_viewport().world_3d  # share main world so it sees the viewmodel meshes
+	container.add_child(vp)
+
+	# A camera renders to the viewport it lives in, so move it into the viewport.
+	viewmodel_camera.reparent(vp, true)
+
+
+## Re-tint every skin mesh to the current team colour while keeping its own
+## texture.  FFA (no team) resolves to white — the identity tint — so the model
+## renders with its authored materials instead of a flat colour.
+func _apply_team_color() -> void:
+	var color: Color = TEAM_COLORS.get(team, Color.WHITE)
+	for i in skins.size():
+		var skin: MeshInstance3D = skins[i]
+		if skin == null:
+			continue
+		var original: Material = _skin_original_materials[i] if i < _skin_original_materials.size() else null
+		if original == null:
+			continue
+		# Identity tint (FFA) or an untintable shader — show the authored material.
+		if color.is_equal_approx(Color.WHITE) or not (original is BaseMaterial3D):
+			skin.set_surface_override_material(0, null)
+			continue
+		var tinted: Material = original.duplicate() as Material
+		(tinted as BaseMaterial3D).albedo_color = color
+		skin.set_surface_override_material(0, tinted)
+
+
+## Return the material a mesh uses for surface 0 before any team-tint override,
+## falling back to a fresh material when the model ships none.
+func _original_surface_material(mesh: MeshInstance3D) -> Material:
+	if mesh.mesh != null:
+		if mesh.mesh.get_surface_count() > 0:
+			var mat := mesh.mesh.surface_get_material(0)
+			if mat != null:
+				return mat
+		if mesh.mesh.material != null:
+			return mesh.mesh.material
+	if mesh.material_override != null:
+		return mesh.material_override
+	return StandardMaterial3D.new()
+
+
+## True when this Player is the local peer's own first-person model.
+func _is_own_model() -> bool:
+	return body.is_multiplayer_authority() and not is_bot
+
+
+## Collect the meshes that should receive team colouring (everything except
+## the head meshes, which are marked on the model's PlayerModel).
+func _rebuild_skins() -> void:
+	skins.clear()
+	_skin_original_materials.clear()
+	if model_script == null:
+		return
+	for mesh in model_script.get_skin_meshes():
+		skins.append(mesh)
+		_skin_original_materials.append(_original_surface_material(mesh))
+
 
 ## Read a base stat with an optional character offset applied.
 func _cmult(base: float, mult: float) -> float:

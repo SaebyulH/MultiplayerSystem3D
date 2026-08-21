@@ -10,6 +10,7 @@ speed_mult = 1.7
 friction_mult = 0.7
 air_accel_mult = 4.0
 air_speed_cap_mult = 2.0
+min_ground_contact_time = 0.0
 slide_friction_mult = 0.5
 slide_entry_boost_mult = 1.5
 slope_gravity_mult = 1.3

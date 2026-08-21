@@ -13,11 +13,12 @@
 
 [sub_resource type="Resource" id="Resource_8ac3t"]
 script = ExtResource("3_r57kw")
+recoil = Vector3(0.7, 0.3, 0)
+snappiness = 4.0
 
 [sub_resource type="Resource" id="Resource_cdrcm"]
 script = ExtResource("8_hadn0")
-automatic = true
-post_shoot_delay = 0.148
+post_shoot_delay = 0.15
 recoil_data = SubResource("Resource_8ac3t")
 hitscan_damage = 30.0
 headshot_multiplier = 2.0

@@ -1,10 +1,8 @@
 extends Node3D
+class_name RimPivot
 
 
 var _own_model := false
-
-
-const RIM_LAYER := 1 << 9  # render layer 10, the shared rim-light layer
 
 
 func _ready() -> void:
@@ -19,16 +17,7 @@ func _ready() -> void:
 		
 		$AreaLight3D.visible = false
 		$AreaLight3D2.visible = false
-		_disable_rim_layer()
 		
-
-
-# Our own model is first-person, so it shouldn't catch rim light from any
-# light (our own or a teammate's). Strip render layer 10 off its meshes.
-func _disable_rim_layer() -> void:
-	var flier := get_parent().get_node("Body/flier")
-	for mesh in flier.find_children("*", "MeshInstance3D", true, false):
-		mesh.layers &= ~RIM_LAYER
 
 
 # Keep the rim light on the far side of the player relative to the camera.

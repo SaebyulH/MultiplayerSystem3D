@@ -439,15 +439,18 @@ func spawn_weapon_model() -> void:
 	# Rim-light the weapon too (render layer 10), unless it's our own
 	# first-person weapon which should never be rim-lit.
 	var own_weapon := _parent_player.body.is_multiplayer_authority() and not _parent_player.is_bot
-	if not own_weapon:
+	if own_weapon:
+		# First-person weapon renders in the viewmodel layer, over the world.
+		PlayerModel.move_to_viewmodel_layer(current_weapon_model)
+	else:
 		for mesh in current_weapon_model.find_children("*", "MeshInstance3D", true, false):
 			mesh.layers |= RIM_LAYER
 	
-	#HAND IK
-	if current_weapon_model.has_node("LeftHandTarget"):
-		%LeftHandTarget.global_position = current_weapon_model.get_node("LeftHandTarget").global_position
-	if current_weapon_model.has_node("RightHandTarget"):
-		%RightHandTarget.global_position = current_weapon_model.get_node("RightHandTarget").global_position
+	##HAND IK
+	#if current_weapon_model.has_node("LeftHandTarget"):
+		#%LeftHandTarget.global_position = current_weapon_model.get_node("LeftHandTarget").global_position
+	#if current_weapon_model.has_node("RightHandTarget"):
+		#%RightHandTarget.global_position = current_weapon_model.get_node("RightHandTarget").global_position
 
 #endregion
 
@@ -1117,7 +1120,7 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 			origin,
 			origin + world_dir * weapon_fire.hitscan_range
 		)
-		var exclude_rids := [_parent_player.get_rid(), $"../HeadHurtbox".get_rid(), $"../BodyHurtbox".get_rid(), $"../BodyHurtbox2".get_rid(), $"../BodyHurtbox3".get_rid()]
+		var exclude_rids := [_parent_player.get_rid(), $"../HeadHurtbox".get_rid(), $"../BodyHurtbox".get_rid(), $"../BodyHurtbox2".get_rid()]
 		# Also exclude the player's own shield so they can't damage it.
 		if _parent_player.shield_instance and is_instance_valid(_parent_player.shield_instance):
 			var shield_area := _parent_player.shield_instance.get_node_or_null("ShieldArea") as Area3D
