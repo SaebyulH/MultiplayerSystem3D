@@ -1,0 +1,25 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" uid="uid://bmalo8aynrk85" path="res://world/preview_root.gd" id="1_preview"]
+
+[node name="Node3D" type="Node3D"]
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 0, -4)
+fov = 30.0
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.8660254, -0.35355338, 0.35355338, -0.50000006, -0.6123725, 0.6123725, 0, -0.7071068, -0.7071068, 0, 1.6, 0)
+light_energy = 1.3
+
+[node name="OmniLight3D" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 1.2, -2)
+light_energy = 2.0
+
+[node name="OmniLight3D2" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 1.0, -1)
+light_color = Color(0.6, 0.7, 1, 1)
+light_energy = 1.5
+
+[node name="PreviewRoot" type="Node3D" parent="."]
+script = ExtResource("1_preview")

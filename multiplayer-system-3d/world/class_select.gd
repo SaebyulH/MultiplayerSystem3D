@@ -29,6 +29,7 @@ var _mode_label: Label
 var _primary_viewport: SubViewport
 var _secondary_viewport: SubViewport
 var _melee_viewport: SubViewport
+var _character_viewport: SubViewport
 
 var _primary_stats: RichTextLabel
 var _secondary_stats: RichTextLabel
@@ -115,6 +116,9 @@ func _build_ui_in(cl: CanvasLayer) -> void:
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 10)
 	scroll.add_child(col)
+
+	# Right-hand tall character preview panel.
+	master.add_child(_build_character_preview_panel())
 
 	master.add_child(_spacer_h())
 
@@ -352,6 +356,47 @@ func _vp() -> SubViewport:
 		vp.add_child(preview_scene.instantiate())
 	return vp
 
+
+func _character_vp() -> SubViewport:
+	var vp := SubViewport.new()
+	vp.own_world_3d = true
+	vp.handle_input_locally = false
+	vp.size = Vector2i(320, 600)
+	vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	var preview_scene := load("res://world/character_subviewport_preview.tscn") as PackedScene
+	if preview_scene:
+		vp.add_child(preview_scene.instantiate())
+	return vp
+
+
+## Build the tall character preview column shown on the right side of the UI.
+func _build_character_preview_panel() -> Control:
+	var center := CenterContainer.new()
+	center.custom_minimum_size = Vector2(320, 0)
+	center.size_flags_vertical = Control.SIZE_EXPAND_FILL
+
+	var panel := VBoxContainer.new()
+	panel.add_theme_constant_override("separation", 8)
+	center.add_child(panel)
+
+	var title := Label.new()
+	title.text = "CHARACTER"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 16)
+	title.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
+	panel.add_child(title)
+
+	var svc := SubViewportContainer.new()
+	svc.custom_minimum_size = Vector2(320, 600)
+	svc.stretch = true
+	panel.add_child(svc)
+
+	_character_viewport = _character_vp()
+	svc.add_child(_character_viewport)
+
+	return center
+
+
 func _primary_container(parent: VBoxContainer) -> SubViewportContainer:
 	var svc := SubViewportContainer.new()
 	svc.custom_minimum_size = Vector2(340, 200)
@@ -414,6 +459,89 @@ func _spawn_weapon_preview(weapon: Weapon, vp: SubViewport) -> void:
 	if muzzle_node is Node3D:
 		camera.position.x = maxf((muzzle_node as Node3D).position.length() * 2.7 + 0.4, 2.0)
 
+
+# ─────────────────────────────────────────────
+#  Character preview
+# ─────────────────────────────────────────────
+
+func _refresh_character_preview() -> void:
+	var char: Character = null
+	if selected_class != null:
+		var ci := _character_option.selected - 1
+		if ci >= 0 and ci < selected_class.characters.size():
+			char = selected_class.characters[ci]
+	_spawn_character_preview(char)
+
+
+## Spawn the selected character's model into the right-hand viewport, centered on
+## the rotating PreviewRoot and playing its idle/walk animation.
+func _spawn_character_preview(char: Character) -> void:
+	if _character_viewport == null:
+		return
+	_clear_viewport(_character_viewport)
+	if char == null or char.character_scene == null:
+		return
+	var pr := _character_viewport.get_node_or_null("Node3D/PreviewRoot") as Node3D
+	if pr == null:
+		return
+	var model := char.character_scene.instantiate() as Node3D
+	pr.add_child(model)
+
+	# Center the model on the rotating PreviewRoot so it spins in place.
+	var box := _visual_aabb(model)
+	if box.size.length_squared() <= 0.0001:
+		box = AABB(Vector3(-0.5, -0.9, -0.5), Vector3(1.0, 1.8, 1.0))
+	model.position = -box.get_center()
+
+	# Play the idle/walk animation if this rig has one.
+	var anims := model.find_children("*", "AnimationPlayer", true, false)
+	var anim: AnimationPlayer = anims[0] if not anims.is_empty() else null
+	if anim:
+		if anim.has_animation("walk/idle"):
+			anim.play("walk/idle")
+		elif anim.has_animation("walk/walk_w"):
+			anim.play("walk/walk_w")
+
+	# Frame the camera to the model's bounding sphere.
+	var camera := _character_viewport.get_node_or_null("Node3D/Camera3D") as Camera3D
+	if camera:
+		var radius := box.size.length() * 0.5
+		var fov := deg_to_rad(camera.fov)
+		var distance := radius / tan(fov * 0.5)
+		distance = maxf(distance * 1.15, radius + 0.5)
+		camera.position = Vector3(0, 0, -distance)
+		camera.look_at(Vector3.ZERO)
+
+
+## Combined visual AABB of [param root]'s subtree in [param root]'s local space,
+## taking nested transforms into account.
+func _visual_aabb(root: Node3D) -> AABB:
+	var box := AABB()
+	if root is VisualInstance3D:
+		var aabb := (root as VisualInstance3D).get_aabb()
+		if aabb.size.length_squared() > 0.0:
+			box = box.merge(aabb)
+	for child in root.get_children():
+		if not child is Node3D:
+			continue
+		var child_box := _visual_aabb(child as Node3D)
+		if child_box.size.length_squared() > 0.0:
+			box = box.merge(_aabb_transformed(child_box, (child as Node3D).transform))
+	return box
+
+
+func _aabb_transformed(aabb: AABB, xform: Transform3D) -> AABB:
+	var out := AABB()
+	out = out.expand(xform * aabb.position)
+	out = out.expand(xform * (aabb.position + Vector3(aabb.size.x, 0, 0)))
+	out = out.expand(xform * (aabb.position + Vector3(0, aabb.size.y, 0)))
+	out = out.expand(xform * (aabb.position + Vector3(0, 0, aabb.size.z)))
+	out = out.expand(xform * (aabb.position + Vector3(aabb.size.x, aabb.size.y, 0)))
+	out = out.expand(xform * (aabb.position + Vector3(aabb.size.x, 0, aabb.size.z)))
+	out = out.expand(xform * (aabb.position + Vector3(0, aabb.size.y, aabb.size.z)))
+	out = out.expand(xform * (aabb.position + aabb.size))
+	return out
+
 # ─────────────────────────────────────────────
 #  Classes
 # ─────────────────────────────────────────────
@@ -445,6 +573,7 @@ func _on_class_selected(index: int) -> void:
 		_secondary_stats.visible = false
 		_melee_stats.visible = false
 		_character_stats.visible = false
+		_refresh_character_preview()
 		return
 
 	selected_class = available_classes[index - 1]
@@ -457,6 +586,7 @@ func _on_class_selected(index: int) -> void:
 				_character_option.add_item(char.character_name)
 		_character_option.select(1)
 	_refresh_character_stats()
+	_refresh_character_preview()
 
 	_primary_option.clear()
 	for w in selected_class.primary_weapons:
@@ -505,6 +635,7 @@ func _on_melee_selected(index: int) -> void:
 
 func _on_character_selected(_index: int) -> void:
 	_refresh_character_stats()
+	_refresh_character_preview()
 
 # ─────────────────────────────────────────────
 #  Stats
