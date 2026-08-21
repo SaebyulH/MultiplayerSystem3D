@@ -351,9 +351,9 @@ func _vp() -> SubViewport:
 	vp.own_world_3d = true
 	vp.handle_input_locally = false
 	vp.size = Vector2i(340, 200)
-	vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	vp.render_target_update_mode = SubViewport.UPDATE_WHEN_PARENT_VISIBLE
 	# Instantiate the exact preview scene that worked in the old .tscn setup.
-	var preview_scene := load("res://world/weapon_subviewport_preview.tscn") as PackedScene
+	var preview_scene := preload("res://world/weapon_subviewport_preview.tscn")
 	if preview_scene:
 		vp.add_child(preview_scene.instantiate())
 	return vp
@@ -364,8 +364,8 @@ func _character_vp() -> SubViewport:
 	vp.own_world_3d = true
 	vp.handle_input_locally = false
 	vp.size = Vector2i(320, 600)
-	vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
-	var preview_scene := load("res://world/character_subviewport_preview.tscn") as PackedScene
+	vp.render_target_update_mode = SubViewport.UPDATE_WHEN_PARENT_VISIBLE
+	var preview_scene := preload("res://world/character_subviewport_preview.tscn")
 	if preview_scene:
 		vp.add_child(preview_scene.instantiate())
 	return vp
