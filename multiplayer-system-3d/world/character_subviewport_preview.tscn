@@ -1,7 +1,5 @@
 [gd_scene format=3]
 
-[ext_resource type="Script" uid="uid://bmalo8aynrk85" path="res://world/preview_root.gd" id="1_preview"]
-
 [node name="Node3D" type="Node3D"]
 
 [node name="Camera3D" type="Camera3D" parent="."]
@@ -22,4 +20,3 @@ light_color = Color(0.6, 0.7, 1, 1)
 light_energy = 1.5
 
 [node name="PreviewRoot" type="Node3D" parent="."]
-script = ExtResource("1_preview")

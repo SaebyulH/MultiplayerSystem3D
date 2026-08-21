@@ -10,7 +10,7 @@
 
 [node name="Juggernaut" type="Node3D" unique_id=1833866528 node_paths=PackedStringArray("head_meshes")]
 script = ExtResource("1_lhyae")
-head_meshes = [NodePath("nerd3/Skeleton3D/NERD_HAIR"), NodePath("nerd3/Skeleton3D/NERD_HAIR_001"), NodePath("nerd3/Skeleton3D/nerd_head"), NodePath("nerd3/Skeleton3D/ultimate_human_eye_left"), NodePath("nerd3/Skeleton3D/ultimate_human_eye_right"), NodePath("nerd3/Skeleton3D/ultimate_human_teeth_lower"), NodePath("nerd3/Skeleton3D/ultimate_human_teeth_upper"), NodePath("nerd3/Skeleton3D/ultimate_human_tongue")]
+head_meshes = [NodePath("nerd3/Skeleton3D/NERD_HAIR"), NodePath("nerd3/Skeleton3D/nerd_head"), NodePath("nerd3/Skeleton3D/ultimate_human_eye_left"), NodePath("nerd3/Skeleton3D/ultimate_human_eye_right"), NodePath("nerd3/Skeleton3D/ultimate_human_teeth_lower"), NodePath("nerd3/Skeleton3D/ultimate_human_teeth_upper"), NodePath("nerd3/Skeleton3D/ultimate_human_tongue"), NodePath("nerd3/Skeleton3D/NERD_HAIR_001")]
 
 [node name="nerd3" parent="." unique_id=557324963 instance=ExtResource("8_xl2fu")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0, 0)

@@ -30,6 +30,8 @@ var _primary_viewport: SubViewport
 var _secondary_viewport: SubViewport
 var _melee_viewport: SubViewport
 var _character_viewport: SubViewport
+var _character_preview_root: Node3D = null
+var _character_dragging: bool = false
 
 var _primary_stats: RichTextLabel
 var _secondary_stats: RichTextLabel
@@ -389,6 +391,7 @@ func _build_character_preview_panel() -> Control:
 	var svc := SubViewportContainer.new()
 	svc.custom_minimum_size = Vector2(320, 600)
 	svc.stretch = true
+	svc.gui_input.connect(_on_character_preview_gui_input)
 	panel.add_child(svc)
 
 	_character_viewport = _character_vp()
@@ -473,8 +476,17 @@ func _refresh_character_preview() -> void:
 	_spawn_character_preview(char)
 
 
+## Drag horizontally on the preview to spin the character around.
+func _on_character_preview_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		_character_dragging = event.pressed
+	elif event is InputEventMouseMotion and _character_dragging:
+		if _character_preview_root:
+			_character_preview_root.rotation.y += event.relative.x * 0.01
+
+
 ## Spawn the selected character's model into the right-hand viewport, centered on
-## the rotating PreviewRoot and playing its idle/walk animation.
+## the preview root and playing its idle/walk animation.
 func _spawn_character_preview(char: Character) -> void:
 	if _character_viewport == null:
 		return
@@ -484,6 +496,7 @@ func _spawn_character_preview(char: Character) -> void:
 	var pr := _character_viewport.get_node_or_null("Node3D/PreviewRoot") as Node3D
 	if pr == null:
 		return
+	_character_preview_root = pr
 	var model := char.character_scene.instantiate() as Node3D
 	pr.add_child(model)
 
