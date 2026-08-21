@@ -107,6 +107,13 @@ var viewmodel: Node3D = null
 ## The [PlayerModel] component attached to [member viewmodel].
 var viewmodel_script: PlayerModel = null
 
+## The currently-active first-person legs model (what the local player sees
+## when looking down): the built-in legs mannequin, or a spawned copy.
+var legs: Node3D = null
+
+## The [PlayerModel] component attached to [member legs].
+var legs_script: PlayerModel = null
+
 ## The built-in mannequin (always present under Body) drives the world model's
 ## animation via the AnimationTree; a spawned character model copies its pose.
 @onready var mannequin: Node3D = $Body/Mannequin
@@ -117,6 +124,11 @@ var mannequin_skeleton: Skeleton3D = null
 @onready var viewmodel_mannequin: Node3D = $Body/Recoil/Head/Mannequin_VIEWMODEL
 var viewmodel_skeleton: Skeleton3D = null
 
+## The built-in legs mannequin under Body drives the first-person legs; a
+## spawned character legs model copies its pose.
+@onready var legs_mannequin: Node3D = $Body/MannequinLEGS
+var legs_skeleton: Skeleton3D = null
+
 ## Skeleton of a spawned character model that mirrors the mannequin's pose.
 var _pose_target: Skeleton3D = null
 ## Destination bone index (into _pose_target) per mannequin bone index, -1 if missing.
@@ -126,6 +138,11 @@ var _pose_map: PackedInt32Array = PackedInt32Array()
 var _viewmodel_target: Skeleton3D = null
 ## Destination bone index (into _viewmodel_target) per viewmodel bone index.
 var _viewmodel_map: PackedInt32Array = PackedInt32Array()
+
+## Skeleton of a spawned character legs model that mirrors the legs mannequin's pose.
+var _legs_target: Skeleton3D = null
+## Destination bone index (into _legs_target) per legs mannequin bone index.
+var _legs_map: PackedInt32Array = PackedInt32Array()
 
 @onready var animation_tree: AnimationTree = $Body/AnimationTree
 @onready var viewmodel_camera: Camera3D = %ViewModelCamera
@@ -249,6 +266,14 @@ func _ready() -> void:
 	# Resolve the built-in mannequins — they always drive the animations.
 	mannequin_skeleton = mannequin.find_child("Skeleton3D", true, false) as Skeleton3D
 	viewmodel_skeleton = viewmodel_mannequin.find_child("Skeleton3D", true, false) as Skeleton3D
+	legs_skeleton = legs_mannequin.find_child("Skeleton3D", true, false) as Skeleton3D
+	# SkeletonModifier3D (CCDIK/Aim/CopyTransform) results are rolled back after
+	# the skeleton update, so copy the pose inside skeleton_updated — not in
+	# _process, where get_bone_pose_* already returns the un-modified pose.
+	if mannequin_skeleton:
+		mannequin_skeleton.skeleton_updated.connect(_copy_mannequin_pose)
+	if legs_skeleton:
+		legs_skeleton.skeleton_updated.connect(_copy_legs_pose)
 	animation_tree.active = true
 	($Body/Recoil/Head/AnimationTreeViewmodel as AnimationTree).active = true
 	_setup_viewmodel_viewport()
@@ -427,7 +452,6 @@ func _rpc_sync_randomized_loadout(tpid: String, pp: String, sp: String, mp: Stri
 ## Mirror the mannequin's animated pose onto a spawned character model every
 ## frame so any skin rigged to the same humanoid skeleton follows along.
 func _process(_delta: float) -> void:
-	_copy_mannequin_pose()
 	_copy_viewmodel_pose()
 	_sync_viewmodel_camera()
 
@@ -454,6 +478,18 @@ func _copy_viewmodel_pose() -> void:
 		_viewmodel_target.set_bone_pose_position(dst_idx, viewmodel_skeleton.get_bone_pose_position(src_idx))
 		_viewmodel_target.set_bone_pose_rotation(dst_idx, viewmodel_skeleton.get_bone_pose_rotation(src_idx))
 		_viewmodel_target.set_bone_pose_scale(dst_idx, viewmodel_skeleton.get_bone_pose_scale(src_idx))
+
+
+func _copy_legs_pose() -> void:
+	if _legs_target == null or legs_skeleton == null:
+		return
+	for src_idx in legs_skeleton.get_bone_count():
+		var dst_idx := _legs_map[src_idx]
+		if dst_idx < 0:
+			continue
+		_legs_target.set_bone_pose_position(dst_idx, legs_skeleton.get_bone_pose_position(src_idx))
+		_legs_target.set_bone_pose_rotation(dst_idx, legs_skeleton.get_bone_pose_rotation(src_idx))
+		_legs_target.set_bone_pose_scale(dst_idx, legs_skeleton.get_bone_pose_scale(src_idx))
 
 
 ## Keep the viewmodel camera aligned with the main camera (position + rotation),
@@ -858,18 +894,27 @@ func _spawn_character_model() -> void:
 	_viewmodel_target = null
 	_viewmodel_map = PackedInt32Array()
 
+	# Free any previously spawned character legs model (the legs mannequin is permanent).
+	if legs != null and legs != legs_mannequin:
+		legs.queue_free()
+	legs = null
+	_legs_target = null
+	_legs_map = PackedInt32Array()
+
 	var scene: PackedScene = _character.character_scene if _character and _character.character_scene else null
 	var world_instance: Node3D = null
 	var viewmodel_instance: Node3D = null
+	var legs_instance: Node3D = null
 	if scene != null:
 		world_instance = scene.instantiate() as Node3D
 		viewmodel_instance = scene.instantiate() as Node3D
+		legs_instance = scene.instantiate() as Node3D
 
 	# --- Third-person world model (visible to other players) ---
 	if world_instance == null:
 		model = mannequin
 	else:
-		#mannequin.visible = false
+		mannequin.visible = false
 		
 		
 		world_instance.name = "Model"
@@ -877,9 +922,7 @@ func _spawn_character_model() -> void:
 		model = world_instance
 		_setup_pose_copy(world_instance)
 	model.visible = not own
-	
-	$Body/MannequinLEGS.visible = own
-	
+
 	# --- First-person viewmodel (visible only to the local player) ---
 	if viewmodel_instance == null:
 		viewmodel = viewmodel_mannequin
@@ -893,8 +936,21 @@ func _spawn_character_model() -> void:
 		
 	viewmodel.visible = own
 
+	# --- First-person legs (visible only to the local player) ---
+	if legs_instance == null:
+		legs = legs_mannequin
+	else:
+		legs_mannequin.visible = false
+		legs_instance.name = "Legs"
+		legs_instance.transform = legs_mannequin.transform
+		$Body.add_child(legs_instance)
+		legs = legs_instance
+		_setup_legs_pose_copy(legs_instance)
+	legs.visible = own
+
 	model_script = model as PlayerModel
 	viewmodel_script = viewmodel as PlayerModel
+	legs_script = legs as PlayerModel
 
 	# Rebuild the team-colour skin list and re-apply the current team (world model only).
 	_rebuild_skins()
@@ -907,7 +963,10 @@ func _spawn_character_model() -> void:
 			model_script.disable_rim_layer()
 		if viewmodel_script != null:
 			viewmodel_script.hide_head_meshes()
+		if legs_script != null:
+			legs_script.hide_head_meshes()
 		PlayerModel.move_to_viewmodel_layer(viewmodel)
+		PlayerModel.move_to_viewmodel_layer(legs)
 
 
 ## Prepare the spawned model's skeleton to mirror the mannequin's pose.  Bones
@@ -936,6 +995,20 @@ func _setup_viewmodel_pose_copy(model_node: Node3D) -> void:
 	_viewmodel_map.resize(viewmodel_skeleton.get_bone_count())
 	for src_idx in viewmodel_skeleton.get_bone_count():
 		_viewmodel_map[src_idx] = _viewmodel_target.find_bone(viewmodel_skeleton.get_bone_name(src_idx))
+
+
+## Prepare the spawned legs model's skeleton to mirror the legs mannequin's
+## pose.  Same bone-name matching as _setup_pose_copy.
+func _setup_legs_pose_copy(model_node: Node3D) -> void:
+	var skeleton_nodes := model_node.find_children("*", "Skeleton3D", true, false)
+	_legs_target = skeleton_nodes[0] as Skeleton3D if not skeleton_nodes.is_empty() else null
+	if _legs_target == null or legs_skeleton == null:
+		_legs_target = null
+		return
+	_legs_map = PackedInt32Array()
+	_legs_map.resize(legs_skeleton.get_bone_count())
+	for src_idx in legs_skeleton.get_bone_count():
+		_legs_map[src_idx] = _legs_target.find_bone(legs_skeleton.get_bone_name(src_idx))
 
 
 ## Render the viewmodel in its own viewport, layered over the main view.  The
