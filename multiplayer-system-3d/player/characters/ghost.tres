@@ -1,11 +1,13 @@
 [gd_resource type="Resource" script_class="Character" format=3 uid="uid://b8wpr5hk3etay"]
 
+[ext_resource type="PackedScene" uid="uid://ckqx4woyqsg2o" path="res://assets/characters/ghost.tscn" id="1_ab3mq"]
 [ext_resource type="Script" uid="uid://bxv3anwekoggx" path="res://player/character.gd" id="1_char"]
 
 [resource]
 script = ExtResource("1_char")
 character_name = "Ghost"
 description = "Lightning-fast assassin. High fire rate and lifesteal but low health."
+character_scene = ExtResource("1_ab3mq")
 speed_mult = 1.7
 friction_mult = 0.7
 air_accel_mult = 4.0

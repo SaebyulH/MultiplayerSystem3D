@@ -966,7 +966,7 @@ func _spawn_character_model() -> void:
 		if legs_script != null:
 			legs_script.hide_head_meshes()
 		PlayerModel.move_to_viewmodel_layer(viewmodel)
-		PlayerModel.move_to_viewmodel_layer(legs)
+		#PlayerModel.move_to_viewmodel_layer(legs)
 
 
 ## Prepare the spawned model's skeleton to mirror the mannequin's pose.  Bones

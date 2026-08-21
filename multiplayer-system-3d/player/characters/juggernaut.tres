@@ -1,11 +1,13 @@
 [gd_resource type="Resource" script_class="Character" format=3 uid="uid://rqbtee8x1try"]
 
+[ext_resource type="PackedScene" uid="uid://dhjvq4a6i2do" path="res://assets/characters/juggernaut.tscn" id="1_3mk60"]
 [ext_resource type="Script" uid="uid://bxv3anwekoggx" path="res://player/character.gd" id="1_char"]
 
 [resource]
 script = ExtResource("1_char")
 character_name = "Juggernaut"
 description = "Heavily armored assault unit. Slow but durable. High regen"
+character_scene = ExtResource("1_3mk60")
 speed_mult = 0.75
 acceleration_mult = 0.75
 air_accel_mult = 0.75
