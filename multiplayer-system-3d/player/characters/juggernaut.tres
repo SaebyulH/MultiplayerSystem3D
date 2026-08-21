@@ -13,3 +13,4 @@ acceleration_mult = 0.75
 air_accel_mult = 0.75
 health_mult = 3.0
 regen_delay = 1.0
+heal_on_kill = 999.0

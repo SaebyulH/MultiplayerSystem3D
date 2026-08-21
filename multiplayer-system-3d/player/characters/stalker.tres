@@ -1,8 +1,18 @@
 [gd_resource type="Resource" script_class="Character" format=3 uid="uid://c4ubuepwbpmej"]
 
+[ext_resource type="PackedScene" uid="uid://btdcls63jy1a3" path="res://assets/characters/stalker.tscn" id="1_6rdoh"]
 [ext_resource type="Script" uid="uid://bxv3anwekoggx" path="res://player/character.gd" id="1_char"]
 
 [resource]
 script = ExtResource("1_char")
 character_name = "Stalker"
-description = "Normal Assassin."
+description = "Fast shooter"
+character_scene = ExtResource("1_6rdoh")
+damage_amp_mult = 0.17
+reload_speed_mult = 5.0
+shoot_delay_mult = 0.08
+health_mult = 1.25
+lifesteal_percent = 0.3
+regen_per_sec = 0.0
+regen_delay = 0.0
+heal_on_kill = 999.0

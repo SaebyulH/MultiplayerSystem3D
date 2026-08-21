@@ -865,6 +865,10 @@ func _shield_regen(delta: float) -> void:
 	if f.shield_current_hp < f.shield_hp:
 		f.shield_current_hp = minf(f.shield_current_hp + f.shield_regen_per_sec * delta, f.shield_hp)
 
+## The character resource currently applied to this player (null if none).
+func get_character() -> Character:
+	return _character
+
 ## Apply character stat offsets on top of base values.
 func set_character(char: Character) -> void:
 	_character = char

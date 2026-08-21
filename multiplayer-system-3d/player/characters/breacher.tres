@@ -12,3 +12,4 @@ speed_mult = 1.2
 air_accel_mult = 1.5
 jump_mult = 1.4
 health_mult = 2.0
+heal_on_kill = 999.0

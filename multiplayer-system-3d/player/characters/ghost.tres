@@ -18,4 +18,4 @@ slide_entry_boost_mult = 1.5
 slope_gravity_mult = 1.3
 lifesteal_percent = 0.6
 regen_per_sec = 2.0
-heal_on_kill = 25.0
+heal_on_kill = 999.0

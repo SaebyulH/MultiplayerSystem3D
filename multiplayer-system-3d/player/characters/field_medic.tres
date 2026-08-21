@@ -1,12 +1,14 @@
 [gd_resource type="Resource" script_class="Character" format=3 uid="uid://bo5mmptgi1bud"]
 
 [ext_resource type="Script" uid="uid://bxv3anwekoggx" path="res://player/character.gd" id="1_char"]
+[ext_resource type="PackedScene" uid="uid://d2he4ism8ghgs" path="res://assets/characters/scientist.tscn" id="1_oowlt"]
 
 [resource]
 script = ExtResource("1_char")
-character_name = "Vampire Medic"
+character_name = "Evil Doctor"
 description = "A medic with negative health regen but with lifesteal"
+character_scene = ExtResource("1_oowlt")
 health_mult = 1.5
 lifesteal_percent = 0.4
 regen_per_sec = -5.0
-heal_on_kill = 15.0
+heal_on_kill = 999.0

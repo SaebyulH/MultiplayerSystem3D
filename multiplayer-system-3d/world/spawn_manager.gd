@@ -89,11 +89,17 @@ func add_bot(team: Player.Team) -> void:
 	_apply_bot_loadout(entity_id)
 
 func _apply_bot_loadout(entity_id: String) -> void:
-	# Pick a random class
-	var class_path := BOT_CLASSES[randi() % BOT_CLASSES.size()]
-	var bot_class := load(class_path) as Class
+	var player := GameManager.find_player(entity_id)
+	if player == null:
+		push_error("Bot not found: " + entity_id)
+		return
+
+	# Pick a character no other bot on this team is already using.
+	var pick := _choose_character(player.team)
+	var bot_class := pick.get("class", null) as Class
+	var character := pick.get("character", null) as Character
 	if bot_class == null:
-		push_error("Failed to load bot class: " + class_path)
+		push_error("No bot classes available")
 		return
 
 	var primary := bot_class.primary_weapons[randi() % bot_class.primary_weapons.size()]
@@ -101,11 +107,6 @@ func _apply_bot_loadout(entity_id: String) -> void:
 	var melee: Weapon = null
 	if not bot_class.melee_weapons.is_empty():
 		melee = bot_class.melee_weapons[randi() % bot_class.melee_weapons.size()]
-
-	var player := GameManager.find_player(entity_id)
-	if player == null:
-		push_error("Bot not found: " + entity_id)
-		return
 
 	var controller: WeaponController = player.get_node("WeaponController")
 	if controller == null:
@@ -119,11 +120,64 @@ func _apply_bot_loadout(entity_id: String) -> void:
 	controller.set_weapons(new_weapons)
 	controller.current_weapon_index = 0
 
-	# Pick a random character within the class.
-	if not bot_class.characters.is_empty():
-		var char: Character = bot_class.characters[randi() % bot_class.characters.size()]
-		player.set_character(char)
+	if character:
+		player.set_character(character)
 
 	#player.team = team
 	var spawn_pos :Vector3= player._get_spawn_position()
 	player.rpc_reset.rpc(spawn_pos)
+
+
+## Pick the rarest character across all classes for a bot joining [param team].
+## Characters already in use by other bots on the team are skipped while a free
+## one exists; once every character is represented, the least-used one is chosen
+## (ties broken at random).  Returns { "class": Class, "character": Character }.
+func _choose_character(team: Player.Team) -> Dictionary:
+	var characters: Array[Character] = []
+	var class_of: Dictionary = {}
+	for path in BOT_CLASSES:
+		var bot_class := load(path) as Class
+		if bot_class == null:
+			continue
+		for ch in bot_class.characters:
+			if ch == null:
+				continue
+			var key := _char_key(ch)
+			if class_of.has(key):
+				continue
+			characters.append(ch)
+			class_of[key] = bot_class
+
+	# Count how many bots on this team already use each character.  Human players
+	# are ignored so their picks never influence the bot roster.
+	var used: Dictionary = {}
+	for child in spawn_parent.get_children():
+		if not child is Player:
+			continue
+		var p := child as Player
+		if not p.is_bot or p.team != team:
+			continue
+		var ch := p.get_character()
+		if ch:
+			var key := _char_key(ch)
+			used[key] = used.get(key, 0) + 1
+
+	var candidates: Array[Character] = []
+	var rarest := 0x7fffffff
+	for ch in characters:
+		var count: int = used.get(_char_key(ch), 0)
+		if count < rarest:
+			rarest = count
+			candidates.clear()
+			candidates.append(ch)
+		elif count == rarest:
+			candidates.append(ch)
+
+	if candidates.is_empty():
+		return {}
+	var chosen: Character = candidates[randi() % candidates.size()]
+	return { "class": class_of[_char_key(chosen)], "character": chosen }
+
+
+func _char_key(ch: Character) -> String:
+	return ch.resource_path if ch.resource_path != "" else ch.character_name
