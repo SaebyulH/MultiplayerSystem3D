@@ -4,6 +4,8 @@ class_name Player
 
 const NORMAL_SPEED: float = 4.0
 const ADS_SPEED: float = 3.0
+const FALL_GRAVITY: float = 9.8
+const FALL_DAMAGE_SOUND: AudioStream = preload("res://assets/sounds/universfield-fast-body-fall-impact-352725.mp3")
 
 @export var acceleration: float = 25.0
 @export var friction: float = 30.0
@@ -13,6 +15,14 @@ const ADS_SPEED: float = 3.0
 @export var tick_interpolator: TickInterpolator
 
 @export var respawn_time: float = 1.5
+## Kill and respawn the player when they fall below this Y position (out of world).
+@export var fall_kill_y: float = -200.0
+## Fall damage: maximum damage dealt at/above [member fall_damage_max_distance].
+@export var fall_damage_max: float = 80.0
+## Fall damage: fall distance (metres) below which no fall damage is taken.
+@export var fall_damage_min_distance: float = 20.0
+## Fall damage: fall distance (metres) at/above which full [member fall_damage_max] is dealt.
+@export var fall_damage_max_distance: float = 60.0
 var respawn_timer: float = 0.0
 
 var is_bot: bool = false  # set by SpawnManager before add_child
@@ -25,6 +35,9 @@ var entity_id: String :
 
 
 var ads: bool = false
+
+## When true, gravity pulls the player upward instead of downward (gravity-flip effect).
+var gravity_flipped := false
 
 ## Active shield instance — spawned when a SHIELD fire-mode is toggled on.
 var shield_instance: PlayerShield = null
@@ -186,6 +199,8 @@ var _stand_collider_y: float = 0.0
 var _stand_recoil_y: float = 0.0
 var _was_on_floor: bool = false
 var _was_sliding: bool = false
+var _max_fall_speed: float = 0.0
+var _was_airborne: bool = false
 ## Seconds spent grounded; gates jumping until a minimum contact time is met.
 var _ground_contact_time: float = 0.0
 
@@ -373,6 +388,16 @@ func rpc_sync_full_state(pos: Vector3, pp: String, sp: String, mp: String = "", 
 
 
 func no_health() -> void:
+	# Play the character's death sound at the death location, delayed 0.5s.
+	if _character and _character.death_sound:
+		var death_sound := _character.death_sound
+		var death_pos := global_position
+		var parent := get_parent()
+		get_tree().create_timer(0.16).timeout.connect(func() -> void:
+			if is_instance_valid(parent):
+				AudioPool.play(parent, death_sound, Transform3D(Basis(), death_pos), 1.0, 10.0, 20.0)
+		)
+
 	if OS.is_debug_build():
 		print(name + " KILLED BY " + attribute_component.last_attacker)
 
@@ -529,12 +554,57 @@ func _physics_process(delta: float) -> void:
 		knockback_velocity = Vector3.ZERO
 		spawn()
 
+	# Fall out of the world - kill and respawn (server-authoritative), crediting
+	# the last enemy who damaged the player.
+	if multiplayer.is_server() and spawned and global_position.y < fall_kill_y:
+		attribute_component.apply_environmental_damage(attribute_component.starting_health)
+
+	_track_fall_damage()
+
 	# Passive shield regen — runs even when retracted.
 	_shield_regen(delta)
 
 	# Footsteps play on real frames only (never inside the rollback tick,
 	# which re-simulates and would double-play sounds).
 	_update_footsteps(delta)
+
+
+## Track the player's maximum downward speed and apply fall damage on landing.
+## Server-only and real-frames-only (never inside the rollback tick).
+func _track_fall_damage() -> void:
+	if not multiplayer.is_server():
+		return
+	if not spawned:
+		_max_fall_speed = 0.0
+		_was_airborne = false
+		return
+	if not is_on_floor():
+		_was_airborne = true
+		_max_fall_speed = maxf(_max_fall_speed, -velocity.y)
+	else:
+		if _was_airborne:
+			_apply_fall_damage(_max_fall_speed)
+		_was_airborne = false
+		_max_fall_speed = 0.0
+
+
+## Convert a downward impact speed into fall damage and apply it as
+## environmental damage (crediting the last enemy attacker).
+func _apply_fall_damage(fall_speed: float) -> void:
+	var min_vel := sqrt(2.0 * FALL_GRAVITY * fall_damage_min_distance)
+	var max_vel := sqrt(2.0 * FALL_GRAVITY * fall_damage_max_distance)
+	if max_vel <= min_vel or fall_speed <= min_vel:
+		return
+	var t := clampf((fall_speed - min_vel) / (max_vel - min_vel), 0.0, 1.0)
+	attribute_component.apply_environmental_damage(t * fall_damage_max)
+	_play_fall_damage_sound.rpc(global_position)
+
+
+## Plays the fall-impact sound on every peer.
+@rpc("any_peer", "call_local", "reliable")
+func _play_fall_damage_sound(pos: Vector3) -> void:
+	AudioPool.play(get_parent(), FALL_DAMAGE_SOUND, Transform3D(Basis(), pos))
+
 
 func _update_footsteps(delta: float) -> void:
 	if not spawned:
@@ -604,6 +674,11 @@ func remove_speed_modifier(effect_id: String) -> void:
 	_speed_modifiers.erase(effect_id)
 
 
+## Flip the gravity direction (used by the gravity-flip status effect).
+func set_gravity_flipped(flipped: bool) -> void:
+	gravity_flipped = flipped
+
+
 ## Returns the most severe speed multiplier from active status effects.
 ## 1.0 = normal speed, < 1.0 = slowed.
 func get_status_speed_mult() -> float:
@@ -664,7 +739,7 @@ func _apply_movement_from_input(delta):
 		_ground_contact_time = 0.0
 
 	if not on_floor:
-		velocity += get_gravity() * delta
+		velocity += get_gravity() * delta * (-1.0 if gravity_flipped else 1.0)
 	elif player_input.jump_input:
 		var min_contact: float = _character.min_ground_contact_time if _character else 0.1
 		if _ground_contact_time >= min_contact:
@@ -793,14 +868,14 @@ func _apply_movement_from_input(delta):
 	body.mouse_sens_x = BASE_MOUSE_SENS * fov_ratio
 	body.mouse_sens_y = BASE_MOUSE_SENS * fov_ratio
 
-func change_health(health: float, changer: String, is_headshot: bool = false, falloff_mult: float = 1.0):
+func change_health(health: float, changer: String, is_headshot: bool = false, falloff_mult: float = 1.0, is_backshot: bool = false):
 	# Invincible players take no damage and are immune to negative effects.
 	if health < 0.0 and status_effect_manager and status_effect_manager.is_invincible():
 		return
 	if health < 0.0 and shield_instance and shield_instance.active:
 		shield_instance.absorb_damage(-health)
 		return
-	attribute_component.apply_health_delta(health, changer, self.name, is_headshot, falloff_mult)
+	attribute_component.apply_health_delta(health, changer, self.name, is_headshot, falloff_mult, is_backshot)
 
 
 ## Deploy a shield from a SHIELD-type WeaponFire.  Called by WeaponController.

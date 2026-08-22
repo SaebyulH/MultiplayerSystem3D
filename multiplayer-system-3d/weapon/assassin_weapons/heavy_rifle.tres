@@ -28,6 +28,7 @@ post_shoot_delay = 1.2
 recoil_data = SubResource("Resource_so61o")
 hitscan_damage = 300.0
 headshot_multiplier = 5.0
+has_damage_falloff = false
 falloff_curve = SubResource("CurveTexture_b7nwq")
 shoot_sound = ExtResource("6_378ei")
 empty_sound = ExtResource("4_tjmpd")

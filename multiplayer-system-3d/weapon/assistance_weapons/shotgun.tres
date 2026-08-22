@@ -22,6 +22,7 @@ recoil_knockback = Vector3(0, 0, 2.5)
 hit_knockback = 10.0
 hitscan_damage = 8.0
 headshot_multiplier = 1.5
+backshot_multiplier = 2.0
 falloff_start = 0.0
 multishot_data = Array[Vector3]([Vector3(0, 0, -3), Vector3(0, 0.2, -3), Vector3(0, -0.2, -3), Vector3(0.2, 0, -3), Vector3(-0.2, 0, -3), Vector3(-0.14, -0.14, -3), Vector3(0.14, -0.14, -3), Vector3(-0.14, 0.14, -3), Vector3(0.14, 0.14, -3)])
 shoot_sound = ExtResource("6_katwm")

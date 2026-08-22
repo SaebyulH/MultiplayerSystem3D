@@ -11,6 +11,7 @@ radius = 0.48472312
 [sub_resource type="Resource" id="Resource_t04qq"]
 script = ExtResource("4_umrmm")
 base_duration = 8.0
+headshot_condition = 1
 metadata/_custom_type_script = "uid://biuhljky25e3s"
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_xn376"]

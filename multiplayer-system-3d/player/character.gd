@@ -6,6 +6,7 @@ class_name Character
 
 @export var character_name: String = ""
 @export var description: String = ""
+
 @export var character_scene: PackedScene
 
 # -- Ground Movement --
@@ -46,3 +47,7 @@ class_name Character
 ## 30 Hz rollback tickrate (movement simulates half as often, so knockback
 ## impulses must be doubled to feel identical to 60 Hz).
 @export var knockback_multiplier: float = 2.0
+
+# --
+@export_group("Sound")
+@export var death_sound: AudioStream

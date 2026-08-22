@@ -11,6 +11,7 @@ var _tracer_scene: PackedScene = preload("res://weapon/tracer.tscn")
 var _hit_sound: AudioStream = preload("res://assets/sounds/Hitsound.wav")
 var _hit_heal_sound: AudioStream = preload("res://assets/sounds/medkit_sound.mp3")
 var _crit_sound: AudioStream = preload("res://assets/sounds/Crit_received1.wav")
+var _backshot_sound: AudioStream = preload("res://assets/sounds/backshot.mp3")
 
 
 # ---------------------------------------------------------------------------
@@ -1158,22 +1159,25 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 						(collider.get_parent() as PlayerShield).absorb_damage(damage)
 					else:
 						var victim := collider.get_parent() as Player
+						var is_backshot := _is_backshot(victim)
 						# Backshot: shooter is behind the victim - apply bonus.
-						if not is_equal_approx(weapon_fire.backshot_multiplier, 1.0) and _is_backshot(victim):
+						if not is_equal_approx(weapon_fire.backshot_multiplier, 1.0) and is_backshot:
 							damage *= weapon_fire.backshot_multiplier
+							if not _parent_player.is_bot:
+								play_backshot_sound.rpc_id(_parent_player.name.to_int())
 						var player_name = victim.name
 						if victim.team == get_parent().team and victim.team != Player.Team.FFA:
 							damage *= Player.FRIENDLY_FIRE_MULTIPLIER
 						if multiplayer.is_server():
-							_apply_damage_direct(player_name, -damage, _parent_player.name, is_headshot, mult)
+							_apply_damage_direct(player_name, -damage, _parent_player.name, is_headshot, mult, is_backshot)
 							_hit_player = player_name
 							if apply_on_hit:
 								_apply_on_hit_effects(weapon_fire, _parent_player.name)
-							_apply_status_effects(player_name, weapon_fire.status_effects, _parent_player.name)
+							_apply_status_effects(player_name, weapon_fire.status_effects, _parent_player.name, is_headshot, is_backshot)
 							if weapon_fire.hit_knockback > 0.0:
 								_apply_hit_knockback(player_name, world_dir, weapon_fire.hit_knockback)
 						else:
-							_change_health_on_server.rpc_id(1, player_name, -damage, _parent_player.name, is_headshot, mult)
+							_change_health_on_server.rpc_id(1, player_name, -damage, _parent_player.name, is_headshot, mult, is_backshot)
 							if weapon_fire.hit_knockback > 0.0:
 								_apply_hit_knockback_on_server.rpc_id(1, player_name, world_dir, weapon_fire.hit_knockback)
 		else:
@@ -1208,21 +1212,24 @@ func _apply_shape_damage(weapon: Weapon, weapon_fire_index: int, shape_hits: Dic
 			continue
 		var player_name: String = key
 		var victim := collider.get_parent() as Player
-		if not is_equal_approx(weapon_fire.backshot_multiplier, 1.0) and _is_backshot(victim):
+		var is_backshot := _is_backshot(victim)
+		if not is_equal_approx(weapon_fire.backshot_multiplier, 1.0) and is_backshot:
 			damage *= weapon_fire.backshot_multiplier
+			if not _parent_player.is_bot:
+				play_backshot_sound.rpc_id(_parent_player.name.to_int())
 		if victim.team == get_parent().team and victim.team != Player.Team.FFA:
 			damage *= Player.FRIENDLY_FIRE_MULTIPLIER
 		if multiplayer.is_server():
-			_apply_damage_direct(player_name, -damage, _parent_player.name, is_headshot, mult)
+			_apply_damage_direct(player_name, -damage, _parent_player.name, is_headshot, mult, is_backshot)
 			_apply_on_hit_effects(weapon_fire, _parent_player.name)
-			_apply_status_effects(player_name, weapon_fire.status_effects, _parent_player.name)
+			_apply_status_effects(player_name, weapon_fire.status_effects, _parent_player.name, is_headshot, is_backshot)
 			if weapon_fire.hit_knockback > 0.0:
 				var target_p: Player = GameManager.find_player(player_name)
 				if target_p:
 					var kb_dir: Vector3 = (target_p.global_position - _parent_player.global_position).normalized()
 					_apply_hit_knockback(player_name, kb_dir, weapon_fire.hit_knockback)
 		else:
-			_change_health_on_server.rpc_id(1, player_name, -damage, _parent_player.name, is_headshot, mult)
+			_change_health_on_server.rpc_id(1, player_name, -damage, _parent_player.name, is_headshot, mult, is_backshot)
 			if weapon_fire.hit_knockback > 0.0:
 				var target_p: Player = GameManager.find_player(player_name)
 				if target_p:
@@ -1290,7 +1297,7 @@ func _apply_on_hit_effects(fire: WeaponFire, shooter_name: String) -> void:
 
 
 ## Apply status effects from a WeaponFire to the hit target.
-func _apply_status_effects(target_name: String, effects: Array, shooter_name: String) -> void:
+func _apply_status_effects(target_name: String, effects: Array, shooter_name: String, is_headshot: bool = false, is_backshot: bool = false) -> void:
 	if effects.is_empty():
 		return
 	var target: Player = GameManager.find_player(target_name)
@@ -1301,16 +1308,16 @@ func _apply_status_effects(target_name: String, effects: Array, shooter_name: St
 		push_warning("[StatusEffect] Player '" + target_name + "' has no StatusEffectManager node.  Make sure player.tscn was saved and the project was reloaded.")
 		return
 	for effect in effects:
-		if effect:
+		if effect and effect.should_trigger(is_headshot, is_backshot):
 			target.status_effect_manager.apply_effect(effect, shooter_name)
 
-func _apply_damage_direct(collider_name: String, delta: float, parent_player_name: String, is_headshot: bool = false, falloff_mult: float = 1.0) -> void:
+func _apply_damage_direct(collider_name: String, delta: float, parent_player_name: String, is_headshot: bool = false, falloff_mult: float = 1.0, is_backshot: bool = false) -> void:
 	var target: Player = GameManager.find_player(collider_name)
 	if target:
 		# Apply shooter's damage amp.
 		var shooter: Player = GameManager.find_player(parent_player_name)
 		var dmg_mult: float = shooter._character.damage_amp_mult if shooter and shooter._character else 1.0
-		target.change_health(delta * dmg_mult, parent_player_name, is_headshot, falloff_mult)
+		target.change_health(delta * dmg_mult, parent_player_name, is_headshot, falloff_mult, is_backshot)
 		# Lifesteal: heal shooter for a percentage of damage dealt.
 		if delta < 0.0 and shooter and shooter._character:
 			var lifesteal: float = abs(delta * dmg_mult) * shooter._character.lifesteal_percent
@@ -1318,10 +1325,10 @@ func _apply_damage_direct(collider_name: String, delta: float, parent_player_nam
 				shooter.change_health(lifesteal, parent_player_name)
 
 @rpc("any_peer", "call_local", "reliable")
-func _change_health_on_server(collider_name: String, delta, parent_player_name, is_headshot: bool = false, falloff_mult: float = 1.0):
+func _change_health_on_server(collider_name: String, delta, parent_player_name, is_headshot: bool = false, falloff_mult: float = 1.0, is_backshot: bool = false):
 	if not is_multiplayer_authority():
 		return
-	_apply_damage_direct(collider_name, delta, parent_player_name, is_headshot, falloff_mult)
+	_apply_damage_direct(collider_name, delta, parent_player_name, is_headshot, falloff_mult, is_backshot)
 
 
 func _compute_falloff_multiplier(weapon: Weapon, weapon_fire_index: int, distance: float) -> float:
@@ -1427,6 +1434,14 @@ func play_crit_sound() -> void:
 	if not _is_ready():
 		return
 	_play_sound(_crit_sound)
+
+
+## Played when you land a backshot, called by the weapon / hurt component.
+@rpc("any_peer", "call_local")
+func play_backshot_sound() -> void:
+	if not _is_ready():
+		return
+	_play_sound(_backshot_sound)
 
 func _align_weapon_to_raycast() -> void:
 	if current_weapon_model == null or not _raycast.is_colliding():

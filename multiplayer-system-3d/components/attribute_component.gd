@@ -7,11 +7,17 @@ signal no_health
 var last_attacker = "NONE"
 var killstreak := 0
 
+## Last *enemy* who damaged this player, credited for environmental kills
+## (fall damage, hazards).  Expires after ENEMY_ATTACKER_EXPIRY seconds.
+var last_enemy_attacker = "NONE"
+var _enemy_attacker_timer: float = 0.0
+
 @export var passive_heal_per_sec: float = 10.0
 var _heal_timer: float = 0.0
 
 var _time_since_last_damage: float = 0.0
 const HEAL_DELAY := 5.0
+const ENEMY_ATTACKER_EXPIRY := 30.0
 
 @export var starting_health := 100.0
 
@@ -27,7 +33,7 @@ func reset_health():
 	health = starting_health
 
 
-func apply_health_delta(delta: float, changer: String, changee: String, is_headshot: bool = false, falloff_mult: float = 1.0):
+func apply_health_delta(delta: float, changer: String, changee: String, is_headshot: bool = false, falloff_mult: float = 1.0, is_backshot: bool = false):
 
 	var old_health := health
 	var new_health :float = clamp(old_health + delta, 0.0, starting_health)
@@ -53,8 +59,11 @@ func apply_health_delta(delta: float, changer: String, changee: String, is_heads
 					changer_node.weapon_controller.play_crit_sound.rpc_id(changer.to_int())
 				else:
 					changer_node.weapon_controller.play_hit_sound.rpc_id(changer.to_int())
-				changer_node.damage_number_manager._receive_damage_number.rpc_id(changer.to_int(), changee, applied_delta, is_headshot, falloff_mult)
+				changer_node.damage_number_manager._receive_damage_number.rpc_id(changer.to_int(), changee, applied_delta, is_headshot, falloff_mult, is_backshot)
 		last_attacker = changer
+		if _is_enemy_attacker(changer):
+			last_enemy_attacker = changer
+			_enemy_attacker_timer = ENEMY_ATTACKER_EXPIRY
 	else:
 		if changee == changer:
 			Leaderboard.request_add_self_heal(changer, applied_delta)
@@ -97,13 +106,45 @@ func apply_health_delta(delta: float, changer: String, changee: String, is_heads
 		health = new_health
 
 
+## True when [param changer] is on an opposing team (or everyone, in FFA).
+func _is_enemy_attacker(changer: String) -> bool:
+	if changer == get_parent().name:
+		return false
+	var changer_p: Player = GameManager.find_player(changer)
+	var self_p: Player = get_parent() as Player
+	if changer_p == null or self_p == null:
+		return false
+	if self_p.team == Player.Team.FFA:
+		return true
+	return changer_p.team != self_p.team
+
+
+## Apply damage from the environment (fall, hazards, etc.).  Credits the last
+## enemy who damaged this player (if not expired) for the kill.
+func apply_environmental_damage(damage: float) -> void:
+	if damage <= 0.0:
+		return
+	var changer: String = get_parent().name
+	if last_enemy_attacker != "NONE" and GameManager.find_player(last_enemy_attacker) != null:
+		changer = last_enemy_attacker
+	apply_health_delta(-damage, changer, get_parent().name)
+
+
 func reset():
 	reset_health()
 	last_attacker = "NONE"
+	last_enemy_attacker = "NONE"
+	_enemy_attacker_timer = 0.0
 	_time_since_last_damage = 0.0
 	_heal_timer = 0.0  # ← add this
 
 func _process(delta: float) -> void:
+	# Expire the "last enemy attacker" credit after the timeout.
+	if _enemy_attacker_timer > 0.0:
+		_enemy_attacker_timer -= delta
+		if _enemy_attacker_timer <= 0.0:
+			last_enemy_attacker = "NONE"
+
 	# Character regen overrides base values when set (non-null character).
 	var heal_rate: float = passive_heal_per_sec
 	var heal_delay: float = HEAL_DELAY

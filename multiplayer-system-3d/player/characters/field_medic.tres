@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://bxv3anwekoggx" path="res://player/character.gd" id="1_char"]
 [ext_resource type="PackedScene" uid="uid://d2he4ism8ghgs" path="res://assets/characters/scientist.tscn" id="1_oowlt"]
+[ext_resource type="AudioStream" uid="uid://cdvd2hnuk6uxs" path="res://assets/sounds/vinodadora-male-death-sound-128357.mp3" id="2_tjccu"]
 
 [resource]
 script = ExtResource("1_char")
@@ -12,3 +13,4 @@ health_mult = 1.5
 lifesteal_percent = 0.4
 regen_per_sec = -5.0
 heal_on_kill = 999.0
+death_sound = ExtResource("2_tjccu")

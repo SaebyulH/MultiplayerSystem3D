@@ -52,7 +52,7 @@ func _key(target_name: String, is_heal: bool) -> String:
 	return target_name + ("|heal" if is_heal else "|dmg")
 
 
-func on_damage_dealt(target_name: String, amount: float, is_headshot: bool = false, falloff_mult: float = 1.0) -> void:
+func on_damage_dealt(target_name: String, amount: float, is_headshot: bool = false, falloff_mult: float = 1.0, is_backshot: bool = false) -> void:
 	if not is_multiplayer_authority():
 		return
 
@@ -79,16 +79,16 @@ func on_damage_dealt(target_name: String, amount: float, is_headshot: bool = fal
 	# If there's already a matching popup for this target + type, add to it.
 	for p in _popups:
 		if is_instance_valid(p) and p._target_node == target and p._is_heal == is_heal:
-			p.add_value(abs_amount, is_headshot, falloff_mult)
+			p.add_value(abs_amount, is_headshot, falloff_mult, is_backshot)
 			return
 
 	# Otherwise spawn a new popup.
 	var popup: DamageNumberPopup = POPUP_SCENE.instantiate() as DamageNumberPopup
-	popup.setup(target, abs_amount, is_heal, is_headshot, falloff_mult)
+	popup.setup(target, abs_amount, is_heal, is_headshot, falloff_mult, is_backshot)
 	_canvas.add_child(popup)
 	_popups.append(popup)
 
 
 @rpc("any_peer", "call_local", "reliable")
-func _receive_damage_number(target_name: String, amount: float, is_headshot: bool = false, falloff_mult: float = 1.0) -> void:
-	on_damage_dealt(target_name, amount, is_headshot, falloff_mult)
+func _receive_damage_number(target_name: String, amount: float, is_headshot: bool = false, falloff_mult: float = 1.0, is_backshot: bool = false) -> void:
+	on_damage_dealt(target_name, amount, is_headshot, falloff_mult, is_backshot)

@@ -30,6 +30,40 @@ class_name StatusEffect
 @export var tick_interval: float = 0.5
 
 
+# ----------------------------------------------------------- trigger condition
+## Controls *when* this effect is applied, based on how the hit landed.
+## Each condition is Any / Match / Negate; they combine with And or Or.
+## Defaults (Any + Any + And) mean the effect always applies.
+
+@export_group("Trigger Condition")
+## Headshot requirement.  "Any" applies regardless of headshot state.
+@export_enum("Any", "Headshot", "Non-Headshot") var headshot_condition: int = 0
+## Backshot requirement.  "Any" applies regardless of backshot state.
+@export_enum("Any", "Backshot", "Non-Backshot") var backshot_condition: int = 0
+## How the two conditions combine.  "And" = both must match, "Or" = either may match.
+@export_enum("And", "Or") var condition_combine: int = 0
+
+
+## Whether this effect should be applied for a hit with the given properties.
+func should_trigger(is_headshot: bool, is_backshot: bool) -> bool:
+	var headshot_ok := _condition_matches(headshot_condition, is_headshot)
+	var backshot_ok := _condition_matches(backshot_condition, is_backshot)
+	if condition_combine == 0:  # And
+		return headshot_ok and backshot_ok
+	return headshot_ok or backshot_ok  # Or
+
+
+## Resolve a single Any / Match / Negate condition against a bool value.
+func _condition_matches(condition: int, value: bool) -> bool:
+	match condition:
+		1:  # Headshot / Backshot
+			return value
+		2:  # Non-Headshot / Non-Backshot
+			return not value
+		_:  # Any
+			return true
+
+
 # ------------------------------------------------------------------ virtuals
 # Each receives the player, the name of whoever applied the effect, and a
 # mutable Dictionary (state) that the manager persists per-instance so

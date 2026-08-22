@@ -14,7 +14,7 @@ const MAX_POOL: int = 32
 static var _pool: Array[AudioStreamPlayer3D] = []
 
 
-static func play(parent: Node, stream: AudioStream, at: Transform3D, pitch: float = 1.0) -> void:
+static func play(parent: Node, stream: AudioStream, at: Transform3D, pitch: float = 1.0, volume_db: float = 0.0, unit_size: float = 1.0) -> void:
 	if stream == null or parent == null:
 		return
 
@@ -35,6 +35,8 @@ static func play(parent: Node, stream: AudioStream, at: Transform3D, pitch: floa
 	# when the parent is a Node3D (avoids the transform being applied twice).
 	player.global_transform = at
 	player.pitch_scale = pitch
+	player.volume_db = volume_db
+	player.unit_size = unit_size
 	player.play()
 
 

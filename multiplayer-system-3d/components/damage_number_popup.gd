@@ -10,6 +10,7 @@ var _offset: Vector3
 var _value: float = 0.0
 var _is_heal: bool = false
 var _is_headshot: bool = false
+var _is_backshot: bool = false
 var _falloff_mult: float = 1.0
 var _age: float = 0.0
 var _lifetime: float = 4.0
@@ -19,12 +20,13 @@ var _max_float: float = 0.6   # max Y drift before freezing
 const FALLOFF_VISIBLE_THRESHOLD := 0.995
 
 
-func setup(target: Node3D, value: float, is_heal: bool, is_headshot: bool = false, falloff_mult: float = 1.0) -> void:
+func setup(target: Node3D, value: float, is_heal: bool, is_headshot: bool = false, falloff_mult: float = 1.0, is_backshot: bool = false) -> void:
 	_target_node = target
 	_world_pos = target.global_position
 	_value = value
 	_is_heal = is_heal
 	_is_headshot = is_headshot
+	_is_backshot = is_backshot
 	_falloff_mult = falloff_mult
 	_age = 0.0
 	modulate = Color(1, 1, 1, 1)
@@ -33,10 +35,11 @@ func setup(target: Node3D, value: float, is_heal: bool, is_headshot: bool = fals
 	_refresh_falloff_label()
 
 
-func add_value(value: float, is_headshot: bool = false, falloff_mult: float = 1.0) -> void:
+func add_value(value: float, is_headshot: bool = false, falloff_mult: float = 1.0, is_backshot: bool = false) -> void:
 	_value += value
 	_age = 0.0
 	_is_headshot = is_headshot
+	_is_backshot = is_backshot
 	_falloff_mult = falloff_mult
 	if _target_node and is_instance_valid(_target_node) and _target_node.spawned:
 		_world_pos = _target_node.global_position
@@ -60,8 +63,8 @@ func _refresh_label() -> void:
 	var color: Color
 	if _is_heal:
 		color = Color(0.25, 0.95, 0.25)
-	elif _is_headshot:
-		color = Color(1.0, 0.85, 0.0)  # yellow for headshot crits
+	elif _is_headshot or _is_backshot:
+		color = Color(1.0, 0.85, 0.0)  # yellow for headshot/backshot crits
 	else:
 		color = Color(1.0, 0.2, 0.2)
 

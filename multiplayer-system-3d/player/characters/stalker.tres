@@ -2,6 +2,7 @@
 
 [ext_resource type="PackedScene" uid="uid://btdcls63jy1a3" path="res://assets/characters/stalker.tscn" id="1_6rdoh"]
 [ext_resource type="Script" uid="uid://bxv3anwekoggx" path="res://player/character.gd" id="1_char"]
+[ext_resource type="AudioStream" uid="uid://bhhlf5datutds" path="res://assets/sounds/stalker_death.mp3" id="2_4vwll"]
 
 [resource]
 script = ExtResource("1_char")
@@ -16,3 +17,4 @@ lifesteal_percent = 0.3
 regen_per_sec = 0.0
 regen_delay = 0.0
 heal_on_kill = 999.0
+death_sound = ExtResource("2_4vwll")

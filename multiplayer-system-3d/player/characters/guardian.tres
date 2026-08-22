@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://bxv3anwekoggx" path="res://player/character.gd" id="1_char"]
 [ext_resource type="PackedScene" uid="uid://c25ral6vey0g" path="res://assets/characters/nerd.tscn" id="1_lls2m"]
+[ext_resource type="AudioStream" uid="uid://cj8jpcm1bfpio" path="res://assets/sounds/nerd_death.mp3" id="2_slv88"]
 
 [resource]
 script = ExtResource("1_char")
@@ -22,3 +23,4 @@ health_mult = 1.25
 regen_per_sec = 3.0
 regen_delay = 0.0
 heal_on_kill = 999.0
+death_sound = ExtResource("2_slv88")

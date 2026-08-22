@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="GravityFlipEffect" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://components/status_effect/effects/gravity_flip_effect.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+effect_id = "gravity_flip"
+display_name = "Gravity Flip"
+is_negative = true
+base_duration = 10.0
+tick_interval = 0.0

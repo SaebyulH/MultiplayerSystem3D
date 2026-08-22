@@ -4,6 +4,9 @@ class_name HitboxComponent
 signal hit_hurtbox(hurtbox)
 @export var health_delta: float = -10.0
 @export var headshot_multiplier: float = 1.0
+## Extra damage when the projectile hits the victim from behind (rear 180°,
+## relative to the victim's body yaw).  1.0 = no bonus.
+@export var backshot_multiplier: float = 1.0
 @export var can_hit_shooter: bool = false
 
 @export var can_hit_other_teamates: bool = false ##DOES NOT INCLUDE YOU

@@ -2,6 +2,7 @@
 
 [ext_resource type="PackedScene" uid="uid://ckqx4woyqsg2o" path="res://assets/characters/ghost.tscn" id="1_ab3mq"]
 [ext_resource type="Script" uid="uid://bxv3anwekoggx" path="res://player/character.gd" id="1_char"]
+[ext_resource type="AudioStream" uid="uid://b201yyyuo4tan" path="res://assets/sounds/female_pain.mp3" id="2_85qva"]
 
 [resource]
 script = ExtResource("1_char")
@@ -19,3 +20,4 @@ slope_gravity_mult = 1.3
 lifesteal_percent = 0.6
 regen_per_sec = 2.0
 heal_on_kill = 999.0
+death_sound = ExtResource("2_85qva")

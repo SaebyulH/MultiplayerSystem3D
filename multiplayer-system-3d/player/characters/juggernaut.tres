@@ -2,6 +2,7 @@
 
 [ext_resource type="PackedScene" uid="uid://dhjvq4a6i2do" path="res://assets/characters/juggernaut.tscn" id="1_3mk60"]
 [ext_resource type="Script" uid="uid://bxv3anwekoggx" path="res://player/character.gd" id="1_char"]
+[ext_resource type="AudioStream" uid="uid://bnrnae70a3isv" path="res://assets/sounds/jugger_death.mp3" id="2_655ax"]
 
 [resource]
 script = ExtResource("1_char")
@@ -14,3 +15,4 @@ air_accel_mult = 0.75
 health_mult = 3.0
 regen_delay = 1.0
 heal_on_kill = 999.0
+death_sound = ExtResource("2_655ax")

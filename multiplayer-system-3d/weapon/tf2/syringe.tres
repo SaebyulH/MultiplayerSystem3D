@@ -19,15 +19,19 @@ script = ExtResource("7_e4adi")
 script = ExtResource("10_mp48r")
 effect_id = "poison"
 display_name = "Poison"
+base_duration = 15.0
+backshot_condition = 1
 metadata/_custom_type_script = "uid://crig03jm0e8ha"
 
 [sub_resource type="Resource" id="Resource_rx36s"]
 script = ExtResource("4_b27cl")
 automatic = true
 recoil_data = SubResource("Resource_mey0f")
+hitscan_damage = 40.0
 hitscan_range = 3.0
-backshot_multiplier = 10000.0
+backshot_multiplier = 0.0
 self_health_delta_on_hit = 100.0
+has_damage_falloff = false
 multishot_mode = 2
 status_effects = Array[ExtResource("9_sm773")]([SubResource("Resource_fil77")])
 shoot_sound = ExtResource("8_8vfpi")

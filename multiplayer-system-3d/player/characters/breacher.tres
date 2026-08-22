@@ -2,6 +2,7 @@
 
 [ext_resource type="PackedScene" uid="uid://cinsq1lv1jv" path="res://assets/characters/flier.tscn" id="1_1m2t5"]
 [ext_resource type="Script" uid="uid://bxv3anwekoggx" path="res://player/character.gd" id="1_char"]
+[ext_resource type="AudioStream" uid="uid://c4hcib02wpb8t" path="res://assets/sounds/flier_death.mp3" id="2_kaefc"]
 
 [resource]
 script = ExtResource("1_char")
@@ -13,3 +14,4 @@ air_accel_mult = 1.5
 jump_mult = 1.4
 health_mult = 2.0
 heal_on_kill = 999.0
+death_sound = ExtResource("2_kaefc")
