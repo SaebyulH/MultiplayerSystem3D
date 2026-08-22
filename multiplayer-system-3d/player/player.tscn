@@ -423,7 +423,7 @@ unique_name_in_owner = true
 fov = 90.0
 
 [node name="Raycast" type="RayCast3D" parent="Body/Recoil/Head/Camera3D" unique_id=330718818]
-target_position = Vector3(0, 0, -100000)
+target_position = Vector3(0, 0, -1000)
 
 [node name="ViewModelCamera" type="Camera3D" parent="Body/Recoil/Head" unique_id=586005730]
 unique_name_in_owner = true

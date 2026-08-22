@@ -275,7 +275,18 @@ func _ready() -> void:
 	if legs_skeleton:
 		legs_skeleton.skeleton_updated.connect(_copy_legs_pose)
 	animation_tree.active = true
-	($Body/Recoil/Head/AnimationTreeViewmodel as AnimationTree).active = true
+	if _is_own_model():
+		($Body/Recoil/Head/AnimationTreeViewmodel as AnimationTree).active = true
+	else:
+		# Bots and remote players never render the first-person viewmodel or legs.
+		# Stop their skeletons and animation trees so they don't animate every frame
+		# (two ~250-bone skeletons per player that were pure waste).
+		($Body/Recoil/Head/AnimationTreeViewmodel as AnimationTree).active = false
+		var legs_tree := $Body/AnimationTreeLegs as AnimationTree
+		legs_tree.active = false
+		legs_tree.set_process(false)
+		viewmodel_mannequin.visible = false
+		legs_mannequin.visible = false
 	_setup_viewmodel_viewport()
 
 	add_to_group("players")
@@ -542,17 +553,13 @@ func _update_footsteps(delta: float) -> void:
 func _play_footstep() -> void:
 	if _footstep_sounds.is_empty():
 		return
-	# Same overlapping-sound pattern as WeaponController._play_sound: a fresh
-	# AudioStreamPlayer3D per step, freed when it finishes.
-	var player := AudioStreamPlayer3D.new()
-	player.stream = _footstep_sounds.pick_random()
-	add_child(player)
-	# Parent is this CharacterBody3D, so set the world position AFTER adding
-	# the node — otherwise the parent transform would be applied twice.
-	player.global_position = global_position
-	player.pitch_scale = 1.0 + randf_range(-FOOTSTEP_PITCH_RANGE, FOOTSTEP_PITCH_RANGE)
-	player.play()
-	player.finished.connect(player.queue_free)
+	# Pooled one-shot audio player (see AudioPool) instead of a fresh node per step.
+	AudioPool.play(
+		self,
+		_footstep_sounds.pick_random(),
+		Transform3D(Basis(), global_position),
+		1.0 + randf_range(-FOOTSTEP_PITCH_RANGE, FOOTSTEP_PITCH_RANGE)
+	)
 
 func _rollback_tick(delta, tick, is_fresh):
 	# ── Respawn / teleport handling ────────────────

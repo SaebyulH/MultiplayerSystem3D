@@ -166,7 +166,8 @@ add_bot_ffa={
 
 [netfox]
 
-time/sync_to_physics=true
+time/sync_to_physics=false
+time/tickrate=30
 
 [physics]
 

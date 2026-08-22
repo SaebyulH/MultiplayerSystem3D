@@ -409,13 +409,12 @@ func _ensure_bg_arrays() -> void:
 func _play_sound(stream: AudioStream, speed: float = 1.0) -> void:
 	if stream == null:
 		return
-	var player: AudioStreamPlayer3D = AudioStreamPlayer3D.new()
-	player.stream           = stream
-	player.global_transform = weapon_model_parent.global_transform
-	player.pitch_scale      = speed * (1.0 + randf_range(-PITCH_RANGE, PITCH_RANGE))
-	add_child(player)
-	player.play()
-	player.finished.connect(player.queue_free)
+	AudioPool.play(
+		self,
+		stream,
+		weapon_model_parent.global_transform,
+		speed * (1.0 + randf_range(-PITCH_RANGE, PITCH_RANGE))
+	)
 
 
 func spawn_weapon_model() -> void:

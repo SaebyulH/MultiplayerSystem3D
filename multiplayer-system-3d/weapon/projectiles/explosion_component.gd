@@ -154,9 +154,6 @@ func _apply_explosion_tick(shooter_name: String, shooter_team: Player.Team, fall
 # ----------------------------------------------------
 @rpc("call_local", "reliable")
 func _explode_visual():
-	if OS.is_debug_build():
-		print("visual explode on: ", multiplayer.get_unique_id())
-
 	if _explosion_scene == null:
 		_explosion_scene = load("res://effects/explosion.tscn")
 

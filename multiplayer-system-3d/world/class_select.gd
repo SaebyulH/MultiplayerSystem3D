@@ -351,7 +351,7 @@ func _vp() -> SubViewport:
 	vp.own_world_3d = true
 	vp.handle_input_locally = false
 	vp.size = Vector2i(340, 200)
-	vp.render_target_update_mode = SubViewport.UPDATE_WHEN_PARENT_VISIBLE
+	vp.render_target_update_mode = SubViewport.UPDATE_ONCE
 	# Instantiate the exact preview scene that worked in the old .tscn setup.
 	var preview_scene := preload("res://world/weapon_subviewport_preview.tscn")
 	if preview_scene:
@@ -364,7 +364,7 @@ func _character_vp() -> SubViewport:
 	vp.own_world_3d = true
 	vp.handle_input_locally = false
 	vp.size = Vector2i(320, 600)
-	vp.render_target_update_mode = SubViewport.UPDATE_WHEN_PARENT_VISIBLE
+	vp.render_target_update_mode = SubViewport.UPDATE_ONCE
 	var preview_scene := preload("res://world/character_subviewport_preview.tscn")
 	if preview_scene:
 		vp.add_child(preview_scene.instantiate())
@@ -461,6 +461,8 @@ func _spawn_weapon_preview(weapon: Weapon, vp: SubViewport) -> void:
 	var muzzle_node: Node = model.get_node_or_null("Muzzle")
 	if muzzle_node is Node3D:
 		camera.position.x = maxf((muzzle_node as Node3D).position.length() * 2.7 + 0.4, 2.0)
+	# Render this preview once now that model + camera are final (static preview).
+	vp.render_target_update_mode = SubViewport.UPDATE_ONCE
 
 
 # ─────────────────────────────────────────────
@@ -483,6 +485,7 @@ func _on_character_preview_gui_input(event: InputEvent) -> void:
 	elif event is InputEventMouseMotion and _character_dragging:
 		if _character_preview_root:
 			_character_preview_root.rotation.y += event.relative.x * 0.01
+			_character_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 
 
 ## Spawn the selected character's model into the right-hand viewport, centered on
@@ -524,6 +527,8 @@ func _spawn_character_preview(char: Character) -> void:
 		distance = maxf(distance * 1.15, radius + 0.5)
 		camera.position = Vector3(0, 0, -distance)
 		camera.look_at(Vector3.ZERO)
+	# Render this preview once now that model + camera are final.
+	_character_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 
 
 ## Combined visual AABB of [param root]'s subtree in [param root]'s local space,
