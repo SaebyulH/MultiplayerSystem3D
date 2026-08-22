@@ -452,6 +452,10 @@ func _rpc_sync_randomized_loadout(tpid: String, pp: String, sp: String, mp: Stri
 ## Mirror the mannequin's animated pose onto a spawned character model every
 ## frame so any skin rigged to the same humanoid skeleton follows along.
 func _process(_delta: float) -> void:
+	# First-person pose copy and camera sync are only needed for the local player.
+	# For bots and remote players this is wasted work that runs every render frame.
+	if not _is_own_model():
+		return
 	_copy_viewmodel_pose()
 	_sync_viewmodel_camera()
 
@@ -911,8 +915,12 @@ func _spawn_character_model() -> void:
 	var legs_instance: Node3D = null
 	if scene != null:
 		world_instance = scene.instantiate() as Node3D
-		viewmodel_instance = scene.instantiate() as Node3D
-		legs_instance = scene.instantiate() as Node3D
+		# First-person viewmodel + legs only exist for the local player.  Bots and
+		# remote players never render them, so spawning them wastes memory and
+		# per-frame pose-copy work — a cost that scales with player count.
+		if own:
+			viewmodel_instance = scene.instantiate() as Node3D
+			legs_instance = scene.instantiate() as Node3D
 
 	# --- Third-person world model (visible to other players) ---
 	if world_instance == null:

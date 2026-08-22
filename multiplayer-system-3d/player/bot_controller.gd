@@ -5,29 +5,77 @@ class_name BotController
 ## around them with raycasts and steer toward the clearest path.
 ## Also seeks objectives (control points, payload) when no enemy is visible.
 ## Works on any map geometry automatically.
+##
+## Target priority:
+##   1. Heal an injured teammate when holding a heal weapon (or when a teammate
+##      is critically hurt and a heal weapon is available in the loadout).
+##   2. Engage the nearest visible enemy.
+##   3. Pursue the last-seen enemy position.
+##   4. Seek the objective or wander.
 
 @export var player: Player
+
+## Cached head node.  `get_node("%Head")` resolves the unique-name lookup on every
+## call; the bot does this once per physics frame per lookup, so cache it instead.
+@onready var _head_node: Node3D = player.get_node("%Head") as Node3D
+
+## Reused raycast queries — avoids allocating a fresh PhysicsRayQueryParameters3D
+## for every ray (thousands/sec when many bots are fighting).
+var _steer_query: PhysicsRayQueryParameters3D
+var _los_query: PhysicsRayQueryParameters3D
+
+## Cache of projectile-scene introspection: resource_path -> {
+##   "speed": float, "heals_allies": bool }.
+## Avoids instantiating a projectile every think just to read its HitboxComponent.
+var _proj_cache: Dictionary = {}
+
+
+func _ready() -> void:
+	# Stagger each bot's think phase so N bots don't all cast their steering and
+	# line-of-sight raycasts on the same physics frame (spikes the frame time).
+	_timer = randf_range(0.0, PROCESS_INTERVAL)
+
+	_steer_query = PhysicsRayQueryParameters3D.new()
+	_steer_query.exclude = [player.get_rid()]
+	_steer_query.collision_mask = 1 << 0
+	_steer_query.collide_with_bodies = true
+	_steer_query.collide_with_areas = false
+
+	_los_query = PhysicsRayQueryParameters3D.new()
+	_los_query.exclude = [player.get_rid()]
+	_los_query.collision_mask = 1 << 0
+	_los_query.collide_with_bodies = true
+	_los_query.collide_with_areas = false
 
 # Tuning constants
 
 const SHOOT_RANGE: float          = 100.0
+const HEAL_RANGE: float           = 60.0
 const WANDER_RANGE: float         = 15.0
 const CLOSE_ENOUGH: float         = 5.0
 const PROCESS_INTERVAL: float     = 0.05
+## How often the bot does a full re-scan for a new target.  Between scans it only
+## re-verifies its current target's line-of-sight (1 raycast instead of N).
+const RETARGET_INTERVAL: float    = 0.25
+## A teammate below this HP fraction makes the bot switch to a heal weapon.
+const MEDIC_HEAL_THRESHOLD: float = 0.5
 const AIM_SMOOTH: float           = 8.0
 const RECOIL_THRESHOLD: float     = 0.17
 const NOISE_INTERVAL: float       = 0.4
 const AIM_NOISE: float            = 0.08
 const FIRE_CHOICE_INTERVAL: float = 2.0
+## Max projectile-lead time so prediction never overshoots on slow projectiles.
+const LEAD_TIME_MAX: float        = 0.6
 
 # Stuck detection
 const STUCK_CHECK_INTERVAL: float    = 0.5
 const STUCK_DISTANCE_THRESHOLD: float = 0.3
 const STUCK_JUMP_ATTEMPTS: int        = 2
 
-# Steering
+# Steering — a reduced fan (7 rays instead of 11) keeps wall-following smooth
+# while cutting the steering raycast cost by ~40%.
 const STEER_DISTANCE: float       = 8.0
-const STEER_ANGLES: Array[float]  = [-75, -55, -35, -20, -10, 0, 10, 20, 35, 55, 75]
+const STEER_ANGLES: Array[float]  = [-55, -35, -20, 0, 20, 35, 55]
 const STEER_RAY_HEIGHT: float     = 0.5
 const WALL_FOLLOW_DISTANCE: float = 3.0
 
@@ -55,7 +103,11 @@ var _fire_pulse_held:  bool  = false
 var _timer: float              = 0.0
 var _wander_target: Vector3    = Vector3.ZERO
 var _current_target: Player    = null
+var _heal_target: Player       = null
 var _last_seen_position: Vector3 = Vector3.INF
+
+var _retarget_timer: float        = 0.0
+var _weapon_switch_guard: float   = 0.0
 
 var _aim_noise_y: float  = 0.0
 var _aim_noise_x: float  = 0.0
@@ -83,6 +135,9 @@ func _physics_process(delta: float) -> void:
 
 	_apply_smooth_aim(delta)
 	_tick_fire_pulse(delta)
+
+	if _weapon_switch_guard > 0.0:
+		_weapon_switch_guard -= delta
 
 	if _force_wander_timer > 0.0:
 		_force_wander_timer -= delta
@@ -124,11 +179,14 @@ func _steer_toward(target_pos: Vector3) -> Vector2:
 
 	var best_dir := flat_desired
 	var best_score := -9999.0
+	var center_score := -9999.0
 
 	for angle in STEER_ANGLES:
 		var rad := deg_to_rad(angle)
 		var test_dir := flat_desired.rotated(rad)
 		var score := _score_direction(origin, test_dir)
+		if angle == 0.0:
+			center_score = score
 		score += (1.0 - abs(angle) / 90.0) * 2.0
 		if score > best_score:
 			best_score = score
@@ -136,7 +194,6 @@ func _steer_toward(target_pos: Vector3) -> Vector2:
 
 	_last_steer_dir = best_dir
 
-	var center_score := _score_direction(origin, flat_desired)
 	if center_score < STEER_DISTANCE * 0.3:
 		if _wall_hug_timer <= 0.0:
 			_wall_hug_side = 1 if randf() > 0.5 else -1
@@ -154,12 +211,9 @@ func _steer_toward(target_pos: Vector3) -> Vector2:
 
 func _score_direction(origin: Vector3, dir: Vector2) -> float:
 	var end := origin + Vector3(dir.x, 0.0, dir.y) * STEER_DISTANCE
-	var query := PhysicsRayQueryParameters3D.create(origin, end)
-	query.exclude = [player.get_rid()]
-	query.collision_mask = (1 << 0)
-	query.collide_with_bodies = true
-	query.collide_with_areas = false
-	var hit := player.get_world_3d().direct_space_state.intersect_ray(query)
+	_steer_query.from = origin
+	_steer_query.to = end
+	var hit := player.get_world_3d().direct_space_state.intersect_ray(_steer_query)
 	if hit.is_empty():
 		return STEER_DISTANCE
 	return -hit.position.distance_to(origin)
@@ -204,7 +258,7 @@ func _apply_smooth_aim(delta: float) -> void:
 	player.body.rotation.y = lerp_angle(
 		player.body.rotation.y, _current_body_y, AIM_SMOOTH * delta
 	)
-	var head_node: Node3D = player.get_node("%Head") as Node3D
+	var head_node: Node3D = _head_node
 	head_node.rotation.x = lerp_angle(
 		head_node.rotation.x, _current_head_x, AIM_SMOOTH * delta
 	)
@@ -243,41 +297,183 @@ func _start_fire_pulse() -> void:
 # Think
 
 func _think() -> void:
-	_current_target = null
 	var wc: WeaponController = player.weapon_controller
 	if not wc._is_ready():
+		_current_target = null
+		_heal_target = null
 		return
+
 	var weapon := wc._weapons[wc.current_weapon_index]
-	var safe_idx := clampi(_chosen_fire_index, 0, weapon.weapon_fires.size() - 1)
-	var range_limit := SHOOT_RANGE
-	if safe_idx < weapon.weapon_fires.size():
-		range_limit = minf(SHOOT_RANGE, weapon.weapon_fires[safe_idx].hitscan_range)
-	var closest_dist := range_limit
-	for p in get_tree().get_nodes_in_group("players"):
-		if p == player or not p.spawned:
+	var holding_heal := _weapon_heals_allies(weapon)
+	var heal_index := _find_heal_weapon_index(wc)  # -1 if none in loadout
+
+	# Target lock: between full re-scans, only re-verify the current target (one
+	# LOS raycast) instead of the O(N) scan.  A human doesn't re-evaluate every
+	# enemy 20x/sec, and this cuts the raycast load dramatically in big fights.
+	var need_rescan := _retarget_timer <= 0.0
+	if not need_rescan and not _targets_valid():
+		need_rescan = true
+
+	if not need_rescan:
+		_retarget_timer -= PROCESS_INTERVAL
+		if _current_target != null:
+			_last_seen_position = _current_target.global_position
+		return
+
+	_retarget_timer = RETARGET_INTERVAL
+	_current_target = null
+	_heal_target = null
+
+	var closest_dist_sq := SHOOT_RANGE * SHOOT_RANGE
+	var heal_dist_sq := HEAL_RANGE * HEAL_RANGE
+	var heal_best_ratio := 2.0
+
+	for node in get_tree().get_nodes_in_group("players"):
+		var p := node as Player
+		if p == null or p == player or not p.spawned:
 			continue
-		if player.team != Player.Team.FFA and p.team == player.team:
-			continue
-		var dist := player.global_position.distance_to(p.global_position)
-		if dist < closest_dist and _has_line_of_sight_to_player(p):
-			closest_dist = dist
-			_current_target = p
+		var is_enemy := player.team == Player.Team.FFA or p.team != player.team
+		var dist_sq := player.global_position.distance_squared_to(p.global_position)
+
+		if is_enemy:
+			# A heal weapon can't damage enemies — skip the wasted LOS raycast.
+			if holding_heal:
+				continue
+			if dist_sq < closest_dist_sq and _has_line_of_sight_to_player(p):
+				closest_dist_sq = dist_sq
+				_current_target = p
+		elif holding_heal or heal_index >= 0:
+			# Friendly heal candidate — only teammates who actually need HP.
+			var ac := p.attribute_component
+			if ac == null or ac.health >= ac.starting_health:
+				continue
+			var ratio := ac.health / ac.starting_health
+			if dist_sq < heal_dist_sq and ratio < heal_best_ratio and _has_line_of_sight_to_player(p):
+				heal_best_ratio = ratio
+				_heal_target = p
+
+	# Medic behaviour: put the heal gun away when nobody needs healing, and pull
+	# it out when a teammate is critically hurt.
+	if holding_heal and _heal_target == null and heal_index >= 0:
+		_switch_weapon(wc, _first_damage_weapon_index(wc))
+	elif not holding_heal and heal_index >= 0 and _heal_target != null:
+		var ac := _heal_target.attribute_component
+		if ac != null and ac.health / ac.starting_health < MEDIC_HEAL_THRESHOLD:
+			if _switch_weapon(wc, heal_index):
+				_current_target = null  # don't fight while healing
+
 	if _current_target != null:
 		_last_seen_position = _current_target.global_position
 
 # Line-of-sight
 
 func _has_line_of_sight_to_player(target: Player) -> bool:
-	var head: Node3D = player.get_node("%Head") as Node3D
 	var space := player.get_world_3d().direct_space_state
-	var origin := head.global_position
+	var origin := _head_node.global_position
 	var target_pos := target.global_position + Vector3(0, 0.5, 0)
-	var query := PhysicsRayQueryParameters3D.create(origin, target_pos)
-	query.exclude = [player.get_rid()]
-	query.collision_mask = (1 << 0)
-	query.collide_with_bodies = true
-	query.collide_with_areas = false
-	return space.intersect_ray(query).is_empty()
+	_los_query.from = origin
+	_los_query.to = target_pos
+	return space.intersect_ray(_los_query).is_empty()
+
+
+## True while the current combat/heal targets are still worth tracking.
+func _targets_valid() -> bool:
+	if _current_target != null:
+		if not is_instance_valid(_current_target) or not _current_target.spawned:
+			return false
+		if not _is_enemy_of(_current_target):
+			return false
+		return _has_line_of_sight_to_player(_current_target)
+	if _heal_target != null:
+		if not is_instance_valid(_heal_target) or not _heal_target.spawned:
+			return false
+		var ac := _heal_target.attribute_component
+		if ac == null or ac.health >= ac.starting_health:
+			return false
+		return _has_line_of_sight_to_player(_heal_target)
+	return false
+
+
+## Whether [param target] is on an opposing team (or everyone, in FFA).
+func _is_enemy_of(target: Player) -> bool:
+	return player.team == Player.Team.FFA or target.team != player.team
+
+
+## True if any fire mode on [param weapon] fires a projectile that heals allies.
+func _weapon_heals_allies(weapon: Weapon) -> bool:
+	if weapon == null:
+		return false
+	for fire in weapon.weapon_fires:
+		if _fire_heals_allies(fire):
+			return true
+	return false
+
+
+func _fire_heals_allies(fire: WeaponFire) -> bool:
+	if fire == null or fire.action_type != WeaponFire.ActionType.SHOOT or fire.bullet_type != WeaponFire.BulletType.PROJECTILE:
+		return false
+	return bool(_get_proj_info(fire).get("heals_allies", false))
+
+
+func _find_heal_weapon_index(wc: WeaponController) -> int:
+	for i in wc._weapons.size():
+		if _weapon_heals_allies(wc._weapons[i]):
+			return i
+	return -1
+
+
+func _first_damage_weapon_index(wc: WeaponController) -> int:
+	for i in wc._weapons.size():
+		if not _weapon_heals_allies(wc._weapons[i]):
+			return i
+	return wc.current_weapon_index
+
+
+## Introspect a projectile scene once (cached) for its muzzle speed and whether
+## its hitbox heals allies.  Never instantiates the same scene twice.
+func _get_proj_info(fire: WeaponFire) -> Dictionary:
+	if fire == null or fire.projectile_scene == null:
+		return {}
+	var path := fire.projectile_scene.resource_path
+	if _proj_cache.has(path):
+		return _proj_cache[path]
+
+	var info := {"speed": 0.0, "heals_allies": false}
+	var proj := fire.projectile_scene.instantiate() as Node3D
+	if proj != null:
+		var lv = proj.get("linear_velocity")
+		if lv is Vector3:
+			info["speed"] = (lv as Vector3).length()
+		var hb := proj.get_node_or_null("HitboxComponent") as HitboxComponent
+		if hb != null:
+			info["heals_allies"] = hb.health_delta > 0.0 and hb.can_hit_other_teamates
+		proj.free()
+	_proj_cache[path] = info
+	return info
+
+
+## Aim at a predicted position: lead moving targets by their velocity so the bot
+## actually hits a strafing player (projectiles only — hitscan is instantaneous).
+func _predict_target_pos(target: Player, fire: WeaponFire, flat_dist: float) -> Vector3:
+	var pos := target.global_position
+	if fire != null and fire.bullet_type == WeaponFire.BulletType.PROJECTILE:
+		var speed: float = _get_proj_info(fire).get("speed", 0.0)
+		if speed > 1.0:
+			var t := clampf(flat_dist / speed, 0.0, LEAD_TIME_MAX)
+			pos += target.velocity * t
+	return pos + Vector3(0, 0.3, 0)
+
+
+func _switch_weapon(wc: WeaponController, index: int) -> bool:
+	if index < 0 or index >= wc._weapons.size() or index == wc.current_weapon_index:
+		return false
+	if _weapon_switch_guard > 0.0:
+		return false
+	_weapon_switch_guard = 1.0
+	wc.current_weapon_index = index
+	_chosen_fire_index = 0
+	_fire_choice_timer = 0.0
+	return true
 
 # Objective seeking
 
@@ -331,7 +527,14 @@ func _get_payload_node(gmc: GameModeComponent) -> PayloadNode:
 # Act
 
 func _act() -> void:
-	if _current_target != null:
+	var wc: WeaponController = player.weapon_controller
+	if not wc._is_ready():
+		return
+	var weapon := wc._weapons[wc.current_weapon_index]
+
+	if _heal_target != null and _weapon_heals_allies(weapon):
+		_act_heal()
+	elif _current_target != null:
 		_act_combat()
 	elif _last_seen_position != Vector3.INF:
 		_act_pursue_last_seen()
@@ -366,20 +569,27 @@ func _act_combat() -> void:
 	if not wc._is_ready():
 		return
 
+	var weapon := wc._weapons[wc.current_weapon_index]
+	if weapon.weapon_fires.is_empty():
+		return
+	var fire_index := clampi(_chosen_fire_index, 0, weapon.weapon_fires.size() - 1)
+	var fire: WeaponFire = weapon.weapon_fires[fire_index]
+
 	var to_target := _current_target.global_position - player.global_position
 	var flat := Vector3(to_target.x, 0, to_target.z)
 	var dist := flat.length()
 
 	_current_body_y = atan2(-flat.x, -flat.z) + _aim_noise_y
 
-	var head_pos: Vector3 = (player.get_node("%Head") as Node3D).global_position
-	var weapon := wc._weapons[wc.current_weapon_index]
-	var safe_idx := clampi(_chosen_fire_index, 0, weapon.weapon_fires.size() - 1)
-	var aims_for_head := weapon.weapon_fires[safe_idx].headshot_multiplier > 1.0
-	var aim_offset := Vector3(0, 0.7, 0) if aims_for_head else Vector3(0, 0.2, 0)
-	var target_pos := _current_target.global_position + aim_offset
-	var to_aim := target_pos - head_pos
-	_current_head_x = atan2(to_aim.y, flat.length()) + _aim_noise_x
+	# Aim: lead moving targets for projectiles, head/body offset for hitscan.
+	var aim_pos := _current_target.global_position
+	if fire.bullet_type == WeaponFire.BulletType.PROJECTILE:
+		aim_pos = _predict_target_pos(_current_target, fire, dist)
+	else:
+		aim_pos += (Vector3(0, 0.7, 0) if fire.headshot_multiplier > 1.0 else Vector3(0, 0.2, 0))
+	var to_aim := aim_pos - _head_node.global_position
+	var flat_to_aim := Vector3(to_aim.x, 0, to_aim.z).length()
+	_current_head_x = atan2(to_aim.y, maxf(flat_to_aim, 0.001)) + _aim_noise_x
 
 	var sd := _steer_toward(_current_target.global_position)
 	if dist > 8.0:
@@ -390,37 +600,44 @@ func _act_combat() -> void:
 		sd = Vector2(_strafe_dir * 0.4, 1.0).normalized()
 	_apply_movement(sd)
 
-	var r: Vector3 = wc.recoil.rotation
-	var recoil_magnitude: float = abs(r.x) * 1.5 + abs(r.y) + abs(r.z) * 0.5
-	if recoil_magnitude > RECOIL_THRESHOLD:
-		_recoil_block_timer = 0.05
-		_clear_fire_inputs()
+	_try_fire_current_weapon(wc)
+
+func _act_heal() -> void:
+	var wc: WeaponController = player.weapon_controller
+	if not wc._is_ready():
 		return
 
-	if _recoil_block_timer > 0.0:
-		_recoil_block_timer -= PROCESS_INTERVAL
-		_clear_fire_inputs()
+	var weapon := wc._weapons[wc.current_weapon_index]
+	if weapon.weapon_fires.is_empty():
 		return
+	var fire_index := clampi(_chosen_fire_index, 0, weapon.weapon_fires.size() - 1)
+	var fire: WeaponFire = weapon.weapon_fires[fire_index]
 
-	var current_weapon: Weapon = wc._weapons[wc.current_weapon_index]
-	if current_weapon.mag_current <= 0 and not current_weapon.has_infinite_ammo:
-		_clear_fire_inputs()
-		_bot_find_ammo_or_reload(wc)
-		return
+	var to_target := _heal_target.global_position - player.global_position
+	var flat := Vector3(to_target.x, 0, to_target.z)
+	var dist := flat.length()
 
-	var is_auto := false
-	if _chosen_fire_index < current_weapon.weapon_fires.size():
-		is_auto = current_weapon.weapon_fires[_chosen_fire_index].automatic
+	_current_body_y = atan2(-flat.x, -flat.z) + _aim_noise_y
+	var aim_pos := _predict_target_pos(_heal_target, fire, dist)
+	var to_aim := aim_pos - _head_node.global_position
+	var flat_to_aim := Vector3(to_aim.x, 0, to_aim.z).length()
+	_current_head_x = atan2(to_aim.y, maxf(flat_to_aim, 0.001)) + _aim_noise_x
 
-	if is_auto:
-		_clear_fire_inputs()
-		match _chosen_fire_index:
-			0: player.player_input.primary_fire_held = true
-			1: player.player_input.secondary_fire_held = true
-			2: player.player_input.tertiary_fire_held = true
+	# Move to a comfortable heal distance; back off if hugging the target.
+	var flat2 := Vector2(flat.x, flat.z)
+	var sd: Vector2
+	if dist > HEAL_RANGE * 0.7:
+		sd = _steer_toward(_heal_target.global_position)
+	elif dist < 3.0:
+		var back_off := -flat2.normalized() if flat2.length() > 0.001 else Vector2.ZERO
+		sd = _steer_toward(_heal_target.global_position) * 0.3 + back_off * 0.7
+		if sd.length() > 0.001:
+			sd = sd.normalized()
 	else:
-		_clear_fire_inputs()
-		_start_fire_pulse()
+		sd = Vector2(_strafe_dir * 0.6, 0.0).normalized()
+	_apply_movement(sd)
+
+	_try_fire_current_weapon(wc)
 
 func _act_pursue_last_seen() -> void:
 	_clear_fire_inputs()
@@ -462,6 +679,43 @@ func _act_wander() -> void:
 
 	var sd := _steer_toward(_wander_target)
 	_apply_movement(sd)
+
+
+## Fire the current weapon at the current aim, with recoil + reload gating.
+## Shared by combat and heal paths.
+func _try_fire_current_weapon(wc: WeaponController) -> void:
+	var weapon := wc._weapons[wc.current_weapon_index]
+
+	var r: Vector3 = wc.recoil.rotation
+	var recoil_magnitude: float = abs(r.x) * 1.5 + abs(r.y) + abs(r.z) * 0.5
+	if recoil_magnitude > RECOIL_THRESHOLD:
+		_recoil_block_timer = 0.05
+		_clear_fire_inputs()
+		return
+
+	if _recoil_block_timer > 0.0:
+		_recoil_block_timer -= PROCESS_INTERVAL
+		_clear_fire_inputs()
+		return
+
+	if weapon.mag_current <= 0 and not weapon.has_infinite_ammo:
+		_clear_fire_inputs()
+		_bot_find_ammo_or_reload(wc)
+		return
+
+	var is_auto := false
+	if _chosen_fire_index < weapon.weapon_fires.size():
+		is_auto = weapon.weapon_fires[_chosen_fire_index].automatic
+
+	if is_auto:
+		_clear_fire_inputs()
+		match _chosen_fire_index:
+			0: player.player_input.primary_fire_held = true
+			1: player.player_input.secondary_fire_held = true
+			2: player.player_input.tertiary_fire_held = true
+	else:
+		_clear_fire_inputs()
+		_start_fire_pulse()
 
 # Helpers
 
