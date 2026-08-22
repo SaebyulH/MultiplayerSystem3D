@@ -60,6 +60,9 @@ enum BulletType {HITSCAN, PROJECTILE}
 @export var hitscan_damage: float = 10.0          ## (HITSCAN, non-PROJECTILE)
 @export var hitscan_range: float = 1_000_000_000.0## (HITSCAN, non-PROJECTILE)
 @export var headshot_multiplier: float = 1.0       ## (HITSCAN, non-PROJECTILE)
+## Extra damage multiplier when the shooter is behind the victim (rear 180°
+## hemisphere, using the victim's body yaw only).  1.0 = no bonus.  (HITSCAN)
+@export var backshot_multiplier: float = 1.0
 ## Health delta applied to the shooter per unique enemy hit (shotguns/shape once per opponent).
 ## Negative = self-damage on hit.  (SHOOT only.)
 @export var self_health_delta_on_hit: float = 0.0
@@ -149,7 +152,7 @@ func _validate_property(property: Dictionary) -> void:
 		"automatic", "pre_shoot_delay", "post_shoot_delay", "ammo_cost",
 		"recoil_data", "recoil_knockback", "hit_knockback",
 		"self_health_delta_on_shoot", "self_health_delta_per_burst_bullet", "move_speed_mult_while_shooting",
-		"bullet_type", "hitscan_damage", "hitscan_range", "has_damage_falloff", "headshot_multiplier",
+		"bullet_type", "hitscan_damage", "hitscan_range", "has_damage_falloff", "headshot_multiplier", "backshot_multiplier",
 		"self_health_delta_on_hit", "movement_spread",
 		"has_damage_falloff", "falloff_start", "falloff_end", "falloff_curve",
 		"projectile_scene", "multishot_data", "multishot_mode",
@@ -163,7 +166,7 @@ func _validate_property(property: Dictionary) -> void:
 
 	# ---- bullet sub-visibility based on bullet_type ----
 	if property.name in ["hitscan_damage", "hitscan_range", "has_damage_falloff",
-			"headshot_multiplier"]:
+			"headshot_multiplier", "backshot_multiplier"]:
 		if bullet_type == BulletType.PROJECTILE:
 			property.usage = PROPERTY_USAGE_NO_EDITOR
 

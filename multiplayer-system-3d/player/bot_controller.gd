@@ -47,6 +47,8 @@ func _ready() -> void:
 	_los_query.collide_with_bodies = true
 	_los_query.collide_with_areas = false
 
+	_fov_dot_threshold = cos(deg_to_rad(FOV_DEGREES * 0.5))
+
 # Tuning constants
 
 const SHOOT_RANGE: float          = 100.0
@@ -59,6 +61,9 @@ const PROCESS_INTERVAL: float     = 0.05
 const RETARGET_INTERVAL: float    = 0.25
 ## A teammate below this HP fraction makes the bot switch to a heal weapon.
 const MEDIC_HEAL_THRESHOLD: float = 0.5
+## Bots only detect enemies within this horizontal field-of-view cone (degrees),
+## centred on their facing direction.  Matches a human's ~120° peripheral vision.
+const FOV_DEGREES: float = 120.0
 const AIM_SMOOTH: float           = 8.0
 const RECOIL_THRESHOLD: float     = 0.17
 const NOISE_INTERVAL: float       = 0.4
@@ -108,6 +113,7 @@ var _last_seen_position: Vector3 = Vector3.INF
 
 var _retarget_timer: float        = 0.0
 var _weapon_switch_guard: float   = 0.0
+var _fov_dot_threshold: float     = 0.5  # cos(FOV_DEGREES / 2), set in _ready
 
 var _aim_noise_y: float  = 0.0
 var _aim_noise_x: float  = 0.0
@@ -339,7 +345,7 @@ func _think() -> void:
 			# A heal weapon can't damage enemies — skip the wasted LOS raycast.
 			if holding_heal:
 				continue
-			if dist_sq < closest_dist_sq and _has_line_of_sight_to_player(p):
+			if dist_sq < closest_dist_sq and _is_in_view_cone(p) and _has_line_of_sight_to_player(p):
 				closest_dist_sq = dist_sq
 				_current_target = p
 		elif holding_heal or heal_index >= 0:
@@ -397,6 +403,18 @@ func _targets_valid() -> bool:
 ## Whether [param target] is on an opposing team (or everyone, in FFA).
 func _is_enemy_of(target: Player) -> bool:
 	return player.team == Player.Team.FFA or target.team != player.team
+
+
+## True when [param target] is inside the bot's forward field-of-view cone
+## (horizontal only — pitch is ignored so bots still notice enemies on ledges).
+func _is_in_view_cone(target: Player) -> bool:
+	var forward := -player.body.global_transform.basis.z
+	forward.y = 0.0
+	var to_target := target.global_position - player.global_position
+	to_target.y = 0.0
+	if to_target.length_squared() < 0.01:
+		return true  # directly overhead/underfoot — don't reject
+	return forward.normalized().dot(to_target.normalized()) >= _fov_dot_threshold
 
 
 ## True if any fire mode on [param weapon] fires a projectile that heals allies.

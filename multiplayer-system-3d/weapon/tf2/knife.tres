@@ -17,10 +17,12 @@ script = ExtResource("3_0yaxy")
 [sub_resource type="Resource" id="Resource_rx36s"]
 script = ExtResource("8_s81mx")
 automatic = true
+post_shoot_delay = 0.8
 recoil_data = SubResource("Resource_mey0f")
-hitscan_damage = 10000.0
+hitscan_damage = 20.0
 hitscan_range = 2.0
-multishot_data = Array[Vector3]([Vector3(-0.4, 0, -1), Vector3(-0.2, 0, -1), Vector3(0, 0, -1), Vector3(0.2, 0, -1), Vector3(0.4, 0, -1)])
+backshot_multiplier = 1000.0
+multishot_data = Array[Vector3]([Vector3(-0.4, 0, -1.5), Vector3(-0.2, 0, -1.5), Vector3(0, 0, -1.5), Vector3(0.2, 0, -1.5), Vector3(0.4, 0, -1.5)])
 multishot_mode = 2
 shoot_sound = ExtResource("6_2metf")
 empty_sound = ExtResource("1_usffl")

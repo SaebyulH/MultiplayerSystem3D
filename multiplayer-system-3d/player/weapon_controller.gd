@@ -1157,8 +1157,12 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 					if collider.get_parent() is PlayerShield:
 						(collider.get_parent() as PlayerShield).absorb_damage(damage)
 					else:
-						var player_name = collider.get_parent().name
-						if collider.get_parent().team == get_parent().team and collider.get_parent().team != Player.Team.FFA:
+						var victim := collider.get_parent() as Player
+						# Backshot: shooter is behind the victim - apply bonus.
+						if not is_equal_approx(weapon_fire.backshot_multiplier, 1.0) and _is_backshot(victim):
+							damage *= weapon_fire.backshot_multiplier
+						var player_name = victim.name
+						if victim.team == get_parent().team and victim.team != Player.Team.FFA:
 							damage *= Player.FRIENDLY_FIRE_MULTIPLIER
 						if multiplayer.is_server():
 							_apply_damage_direct(player_name, -damage, _parent_player.name, is_headshot, mult)
@@ -1203,7 +1207,10 @@ func _apply_shape_damage(weapon: Weapon, weapon_fire_index: int, shape_hits: Dic
 			(collider.get_parent() as PlayerShield).absorb_damage(damage)
 			continue
 		var player_name: String = key
-		if collider.get_parent().team == get_parent().team and collider.get_parent().team != Player.Team.FFA:
+		var victim := collider.get_parent() as Player
+		if not is_equal_approx(weapon_fire.backshot_multiplier, 1.0) and _is_backshot(victim):
+			damage *= weapon_fire.backshot_multiplier
+		if victim.team == get_parent().team and victim.team != Player.Team.FFA:
 			damage *= Player.FRIENDLY_FIRE_MULTIPLIER
 		if multiplayer.is_server():
 			_apply_damage_direct(player_name, -damage, _parent_player.name, is_headshot, mult)
@@ -1333,6 +1340,19 @@ func _compute_falloff_multiplier(weapon: Weapon, weapon_fire_index: int, distanc
 	if curve == null:
 		return 1.0
 	return curve.sample(t)
+
+
+## True when the shooter (_parent_player) is behind [param victim] — inside the
+## victim's rear 180° hemisphere, using the victim's body yaw only (no head pitch
+## or head rotation).
+func _is_backshot(victim: Player) -> bool:
+	var forward := -victim.body.global_transform.basis.z
+	forward.y = 0.0
+	var to_shooter := _parent_player.global_position - victim.global_position
+	to_shooter.y = 0.0
+	if to_shooter.length_squared() < 0.01:
+		return false  # same spot — direction is undefined, don't count as a backshot
+	return forward.normalized().dot(to_shooter.normalized()) < 0.0
 
 
 @rpc("any_peer", "call_local")

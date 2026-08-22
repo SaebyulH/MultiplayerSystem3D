@@ -588,7 +588,8 @@ func _force_update_is_on_floor():
 func apply_knockback(force: Vector3) -> void:
 	if force.length() < 0.01:
 		return
-	knockback_velocity += force
+	var mult: float = _character.knockback_multiplier if _character else 2.0
+	knockback_velocity += force * mult
 
 
 ## Register a speed modifier from a status effect.
