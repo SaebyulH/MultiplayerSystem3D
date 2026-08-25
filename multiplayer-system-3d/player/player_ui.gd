@@ -37,6 +37,11 @@ var _crosshair: ColorRect
 var _respawn_label: Label
 var _respawn_label_bg: ColorRect
 
+# Stamina / dash indicator
+var _stamina_container: HBoxContainer
+var _stamina_fills: Array[ColorRect] = []
+var _stamina_feedback: Label
+
 # Status effect display
 var _effect_container: HBoxContainer
 var _effect_labels: Array[Label] = []
@@ -74,6 +79,12 @@ const MARGIN: float = 20.0
 const BAR_WIDTH: float = 260.0
 const BAR_HEIGHT: float = 28.0
 const HEALTH_TOP: float = 120.0  # distance from bottom
+
+# Stamina / dash indicator layout
+const DASH_CELL_WIDTH: float = 28.0
+const DASH_CELL_HEIGHT: float = 12.0
+const DASH_CELL_GAP: float = 6.0
+const DASH_BAR_TOP: float = 48.0  # distance from bottom
 
 # --------------------------------------------------
 #  Lifecycle
@@ -122,6 +133,7 @@ func _build_ui() -> void:
 	_build_health()
 	_build_ammo()
 	_build_shield()
+	_build_stamina()
 	_build_weapon_list()
 	_build_respawn_timer()
 	_build_status_effects()
@@ -314,6 +326,67 @@ func _build_shield() -> void:
 	add_child(_shield_label)
 
 
+func _build_stamina() -> void:
+	# -- Stamina indicator (bottom-center) --
+	var slots: int = Player.MAX_STAMINA
+	var total_w: float = slots * DASH_CELL_WIDTH + (slots - 1) * DASH_CELL_GAP
+
+	# Timing feedback text (above the bars).
+	_stamina_feedback = Label.new()
+	_stamina_feedback.anchor_left   = 0.5
+	_stamina_feedback.anchor_right  = 0.5
+	_stamina_feedback.anchor_top    = 1.0
+	_stamina_feedback.anchor_bottom = 1.0
+	_stamina_feedback.offset_left   = -150.0
+	_stamina_feedback.offset_right  = 150.0
+	_stamina_feedback.offset_top    = -(DASH_BAR_TOP + DASH_CELL_HEIGHT + 26.0)
+	_stamina_feedback.offset_bottom = -(DASH_BAR_TOP + DASH_CELL_HEIGHT + 4.0)
+	_stamina_feedback.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_stamina_feedback.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
+	_stamina_feedback.add_theme_color_override("font_color", Color(0.6, 0.85, 1.0))
+	_stamina_feedback.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+	_stamina_feedback.add_theme_constant_override("outline_size", 6)
+	_stamina_feedback.add_theme_font_size_override("font_size", 20)
+	_stamina_feedback.text = ""
+	add_child(_stamina_feedback)
+
+	_stamina_container = HBoxContainer.new()
+	_stamina_container.anchor_left   = 0.5
+	_stamina_container.anchor_right  = 0.5
+	_stamina_container.anchor_top    = 1.0
+	_stamina_container.anchor_bottom = 1.0
+	_stamina_container.offset_left   = -total_w * 0.5
+	_stamina_container.offset_right  = total_w * 0.5
+	_stamina_container.offset_top    = -(DASH_BAR_TOP + DASH_CELL_HEIGHT)
+	_stamina_container.offset_bottom = -DASH_BAR_TOP
+	_stamina_container.add_theme_constant_override("separation", int(DASH_CELL_GAP))
+	_stamina_container.alignment = BoxContainer.ALIGNMENT_CENTER
+	add_child(_stamina_container)
+
+	for i in slots:
+		var cell := Control.new()
+		cell.custom_minimum_size = Vector2(DASH_CELL_WIDTH, DASH_CELL_HEIGHT)
+		cell.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		_stamina_container.add_child(cell)
+
+		# Empty slot background.
+		var bg := ColorRect.new()
+		bg.color = Color(0.08, 0.08, 0.08, 0.80)
+		bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		cell.add_child(bg)
+
+		# Fill - anchor_right is driven by the current charge fraction, so a
+		# recovering charge renders as a partially filled rectangle.
+		var fill := ColorRect.new()
+		fill.color = Color(0.30, 0.85, 0.95)
+		fill.anchor_left   = 0.0
+		fill.anchor_right  = 0.0
+		fill.anchor_top    = 0.0
+		fill.anchor_bottom = 1.0
+		cell.add_child(fill)
+		_stamina_fills.append(fill)
+
+
 func _build_weapon_list() -> void:
 	_weapon_list = VBoxContainer.new()
 	_weapon_list.anchor_left   = 1.0
@@ -432,6 +505,7 @@ func _process(delta: float) -> void:
 	_update_health_delta()
 	_update_ammo()
 	_update_shield()
+	_update_stamina()
 	_update_team()
 	_update_character()
 	_update_respawn_timer()
@@ -571,6 +645,34 @@ func _update_shield() -> void:
 				_shield_label.add_theme_color_override("font_color", Color(0.95, 0.3, 0.3))
 	else:
 		_shield_label.visible = false
+
+
+func _update_stamina() -> void:
+	if not _owner_player or _stamina_fills.is_empty():
+		return
+	var player := _owner_player
+	var charges: float = player.stamina
+	for i in _stamina_fills.size():
+		# Slot i is full when charges >= i + 1, partial while charges is in
+		# (i, i + 1), and empty when charges <= i.
+		_stamina_fills[i].anchor_right = clampf(charges - float(i), 0.0, 1.0)
+
+	# Flash blue while the dash-jump window is open.
+	var in_window: bool = player.dash_time > 0.0 \
+		and player.dash_time >= player.dash_jump_window_start \
+		and player.dash_time <= player.dash_jump_window_end
+	var fill_color := Color(0.30, 0.85, 0.95)
+	if in_window and fmod(_border_time, 0.25) < 0.125:
+		fill_color = Color(0.4, 0.7, 1.0)
+	for i in _stamina_fills.size():
+		_stamina_fills[i].color = fill_color
+
+	# Timing feedback text.
+	if _stamina_feedback:
+		if player._dash_jump_feedback_timer > 0.0:
+			_stamina_feedback.text = player._dash_jump_feedback
+		else:
+			_stamina_feedback.text = ""
 
 
 func _update_team() -> void:

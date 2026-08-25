@@ -440,8 +440,10 @@ func spawn_weapon_model() -> void:
 	# first-person weapon which should never be rim-lit.
 	var own_weapon := _parent_player.body.is_multiplayer_authority() and not _parent_player.is_bot
 	if own_weapon:
-		# First-person weapon renders in the viewmodel layer, over the world.
-		PlayerModel.move_to_viewmodel_layer(current_weapon_model)
+		if _parent_player.use_viewmodel_layer:
+			# First-person weapon renders in the viewmodel layer, over the world.
+			PlayerModel.move_to_viewmodel_layer(current_weapon_model)
+		# else: own weapon stays on the body model (feature disabled) — never rim-lit.
 	else:
 		for mesh in current_weapon_model.find_children("*", "MeshInstance3D", true, false):
 			mesh.layers |= RIM_LAYER

@@ -4,6 +4,7 @@
 [ext_resource type="Resource" uid="uid://d2bb8yhatmquu" path="res://weapon/assault_weapons/rocket_launcher.tres" id="2_4smbg"]
 [ext_resource type="Script" uid="uid://cbg4mqtqfaara" path="res://player/class.gd" id="2_l1baf"]
 [ext_resource type="Resource" uid="uid://bbju6todsyosn" path="res://weapon/assault_weapons/grenade_launcher.tres" id="3_4smbg"]
+[ext_resource type="Resource" uid="uid://bejego77v8rp2" path="res://player/characters/mannequin.tres" id="4_4o53n"]
 [ext_resource type="Resource" uid="uid://d2xsrer8w63f2" path="res://weapon/assault_weapons/minigun.tres" id="4_5au0l"]
 [ext_resource type="Resource" uid="uid://d0kbgelmoy3ge" path="res://weapon/tf2/knife.tres" id="5_0ep13"]
 [ext_resource type="Resource" uid="uid://dhh8rdws1eixv" path="res://weapon/assault_weapons/flamethrower.tres" id="5_4smbg"]
@@ -28,5 +29,5 @@ class_display_name = "Assault"
 primary_weapons = Array[ExtResource("1_qjte0")]([ExtResource("2_4smbg"), ExtResource("14_qv5tr"), ExtResource("6_vm0dj"), ExtResource("3_4smbg"), ExtResource("8_ol1fc"), ExtResource("4_5au0l"), ExtResource("12_60hm4"), ExtResource("10_vm0dj")])
 secondary_weapons = Array[ExtResource("1_qjte0")]([ExtResource("8_4smbg"), ExtResource("9_skpeg"), ExtResource("17_ln7a5"), ExtResource("11_moxu8"), ExtResource("20_0ep13"), ExtResource("5_4smbg")])
 melee_weapons = Array[ExtResource("1_qjte0")]([ExtResource("5_0ep13"), ExtResource("6_7sldb")])
-characters = Array[ExtResource("10_char")]([ExtResource("11_char"), ExtResource("12_char")])
+characters = Array[ExtResource("10_char")]([ExtResource("11_char"), ExtResource("12_char"), ExtResource("4_4o53n")])
 metadata/_custom_type_script = "uid://cbg4mqtqfaara"

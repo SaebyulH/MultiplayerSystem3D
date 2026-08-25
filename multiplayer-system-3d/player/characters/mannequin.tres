@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="Character" format=3 uid="uid://bejego77v8rp2"]
+
+[ext_resource type="AudioStream" uid="uid://c4hcib02wpb8t" path="res://assets/sounds/flier_death.mp3" id="2_kdivi"]
+[ext_resource type="Script" uid="uid://bxv3anwekoggx" path="res://player/character.gd" id="3_lfwul"]
+
+[resource]
+script = ExtResource("3_lfwul")
+character_name = "DEFAULT"
+description = "DEFAULT"
+death_sound = ExtResource("2_kdivi")

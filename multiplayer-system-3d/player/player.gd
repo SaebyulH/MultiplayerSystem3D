@@ -2,7 +2,7 @@ extends CharacterBody3D
 class_name Player
 
 
-const NORMAL_SPEED: float = 4.0
+const NORMAL_SPEED: float = 5
 const ADS_SPEED: float = 3.0
 const FALL_GRAVITY: float = 9.8
 const FALL_DAMAGE_SOUND: AudioStream = preload("res://assets/sounds/universfield-fast-body-fall-impact-352725.mp3")
@@ -18,11 +18,11 @@ const FALL_DAMAGE_SOUND: AudioStream = preload("res://assets/sounds/universfield
 ## Kill and respawn the player when they fall below this Y position (out of world).
 @export var fall_kill_y: float = -200.0
 ## Fall damage: maximum damage dealt at/above [member fall_damage_max_distance].
-@export var fall_damage_max: float = 80.0
+@export var fall_damage_max: float = 99.0
 ## Fall damage: fall distance (metres) below which no fall damage is taken.
-@export var fall_damage_min_distance: float = 20.0
+@export var fall_damage_min_distance: float = 15.0
 ## Fall damage: fall distance (metres) at/above which full [member fall_damage_max] is dealt.
-@export var fall_damage_max_distance: float = 60.0
+@export var fall_damage_max_distance: float = 35.0
 var respawn_timer: float = 0.0
 
 var is_bot: bool = false  # set by SpawnManager before add_child
@@ -77,6 +77,58 @@ func get_gmc_team() -> Player.Team:
 
 
 var knockback_velocity := Vector3.ZERO
+
+# -- Stamina & movement tech --
+## Maximum number of stamina bars the player can hold.
+const MAX_STAMINA: int = 40
+## Seconds to recover a single stamina bar.
+@export var stamina_recovery_time: float = 3.0
+## Horizontal speed of a grounded dash (fixed; overrides prior momentum).
+@export var dash_speed: float = 11.0
+## Horizontal impulse added by an air dash (stacks with prior momentum).
+@export var air_dash_impulse: float = 5.0
+## Vertical impulse added by a down dash (air dash toward the ground).
+@export var down_dash_impulse: float = 14.0
+## Horizontal speed of a dash jump. Deadlock sets this to 611 u/s; this project
+## walks at ~4 u/s and dashes at ~11 u/s, so the default is scaled accordingly.
+@export var dash_jump_speed: float = 4.0
+## Vertical launch speed of a dash jump.
+@export var dash_jump_upward: float = 3.0
+## How long a grounded dash lasts (seconds).
+@export var dash_duration: float = 0.25
+## Seconds into the dash when the dash-jump window opens.
+@export var dash_jump_window_start: float = 0.01
+## Seconds into the dash when the dash-jump window closes.
+@export var dash_jump_window_end: float = 0.3
+## Window (seconds) to press crouch again for a down dash.
+const DOWN_DASH_WINDOW: float = 0.44
+
+## Current stamina (fractional - the fractional part is a bar recovering).
+var stamina: float = float(MAX_STAMINA)
+
+# Input edge-detection memory (rolled back so presses replay deterministically).
+var dash_held_prev: bool = false
+var jump_held_prev: bool = false
+var crouch_held_prev: bool = false
+
+# Air action limits - one double jump and one air dash per airtime.
+var air_jump_used: bool = false
+var air_dash_used: bool = false
+
+# Active grounded-dash state.
+var dash_time: float = 0.0             # > 0 while a grounded dash is running
+var active_dash_dir: Vector3 = Vector3.ZERO
+var dash_grounded: bool = false        # dash began grounded (enables coyote dash jump)
+
+# Dash-jump timing.
+var dash_jump_locked: bool = false     # timing failed; locked out this dash
+
+# Down-dash double-tap timer.
+var crouch_tap_timer: float = 0.0
+
+# Dash-jump timing feedback (cosmetic; read by the HUD each frame).
+var _dash_jump_feedback: String = ""
+var _dash_jump_feedback_timer: float = 0.0
 
 ## Speed modifiers set by status effects.  { effect_id: multiplier }
 ## The most severe slow (lowest multiplier) wins.
@@ -156,6 +208,17 @@ var _viewmodel_map: PackedInt32Array = PackedInt32Array()
 var _legs_target: Skeleton3D = null
 ## Destination bone index (into _legs_target) per legs mannequin bone index.
 var _legs_map: PackedInt32Array = PackedInt32Array()
+
+## When true, the first-person viewmodel (arms) renders in its own separate
+## render layer, layered over the world by a dedicated viewmodel camera.  When
+## false, the local player's full body model is shown instead (arms included),
+## and the separate viewmodel arms and legs are hidden.
+@export var use_viewmodel_layer: bool = true
+
+## Debug: when a character model replaces the mannequin, show BOTH at once (the
+## mannequin AND the spawned character skin) so their alignment can be compared,
+## instead of hiding the mannequin.
+@export var debug_show_both_models: bool = false
 
 @onready var animation_tree: AnimationTree = $Body/AnimationTree
 @onready var viewmodel_camera: Camera3D = %ViewModelCamera
@@ -309,6 +372,11 @@ func _ready() -> void:
 	attribute_component.no_health.connect(no_health)
 	rollback_sync.process_settings()
 
+	# Give each player its own collider shape.  Shape3D resources are shared across
+	# scene instances by default, so crouching one player would resize every other
+	# player's collider (and they'd fight over the same height — the jitter).
+	collider.shape = collider.shape.duplicate()
+
 	# Store reference values for crouch transitions.
 	var shape: CapsuleShape3D = collider.shape as CapsuleShape3D
 	if shape:
@@ -336,6 +404,7 @@ func rpc_reset(pos: Vector3) -> void:
 	_spawn_pending_position = pos
 	velocity = Vector3.ZERO
 	knockback_velocity = Vector3.ZERO
+	_reset_movement_tech()
 	_speed_modifiers.clear()
 
 	# Reset health, weapons, and status effects on every peer.
@@ -384,6 +453,7 @@ func rpc_sync_full_state(pos: Vector3, pp: String, sp: String, mp: String = "", 
 	global_position = pos
 	velocity = Vector3.ZERO
 	knockback_velocity = Vector3.ZERO
+	_reset_movement_tech()
 	spawn()
 
 
@@ -552,6 +622,7 @@ func _physics_process(delta: float) -> void:
 		global_position = pos
 		velocity = Vector3.ZERO
 		knockback_velocity = Vector3.ZERO
+		_reset_movement_tech()
 		spawn()
 
 	# Fall out of the world - kill and respawn (server-authoritative), crediting
@@ -563,6 +634,11 @@ func _physics_process(delta: float) -> void:
 
 	# Passive shield regen — runs even when retracted.
 	_shield_regen(delta)
+
+	if _dash_jump_feedback_timer > 0.0:
+		_dash_jump_feedback_timer -= delta
+		if _dash_jump_feedback_timer <= 0.0:
+			_dash_jump_feedback = ""
 
 	# Footsteps play on real frames only (never inside the rollback tick,
 	# which re-simulates and would double-play sounds).
@@ -661,6 +737,51 @@ func apply_knockback(force: Vector3) -> void:
 	var mult: float = _character.knockback_multiplier if _character else 2.0
 	knockback_velocity += force * mult
 
+## Reset all stamina / dash / air-action state on respawn.
+func _reset_movement_tech() -> void:
+	stamina = float(MAX_STAMINA)
+	dash_held_prev = false
+	jump_held_prev = false
+	crouch_held_prev = false
+	air_jump_used = false
+	air_dash_used = false
+	dash_time = 0.0
+	active_dash_dir = Vector3.ZERO
+	dash_grounded = false
+	dash_jump_locked = false
+	crouch_tap_timer = 0.0
+	_dash_jump_feedback = ""
+	_dash_jump_feedback_timer = 0.0
+
+
+## Perform a dash jump: a fixed velocity burst that disregards prior momentum.
+func _do_dash_jump() -> void:
+	stamina -= 2.0
+	velocity.x = active_dash_dir.x * dash_jump_speed
+	velocity.z = active_dash_dir.z * dash_jump_speed
+	velocity.y = dash_jump_upward
+	# Ends the dash and does not consume an air jump or air dash.
+	dash_time = 0.0
+	active_dash_dir = Vector3.ZERO
+	dash_grounded = false
+	dash_jump_locked = false
+	_dash_jump_feedback = ""
+	_dash_jump_feedback_timer = 0.0
+
+
+## Jump from the ground, gated by the character's minimum ground-contact time.
+func _grounded_jump() -> void:
+	var min_contact: float = _character.min_ground_contact_time if _character else 0.1
+	if _ground_contact_time >= min_contact:
+		knockback_velocity = Vector3.ZERO
+		velocity.y = _cmult(JUMP_VELOCITY, _character.jump_mult if _character else 1.0)
+
+
+## Set the "too early" / "too late" feedback for the HUD.
+func _set_dash_jump_feedback(text: String) -> void:
+	_dash_jump_feedback = text
+	_dash_jump_feedback_timer = 1.5
+
 
 ## Register a speed modifier from a status effect.
 ## [param effect_id] -- unique effect identifier (e.g. "slow").
@@ -714,37 +835,26 @@ func _apply_movement_from_input(delta):
 	_force_update_is_on_floor()
 	var on_floor := is_on_floor()
 
-	# ── Crouch: smooth collider, camera, and physics blend ──
-	# All crouch effects share one continuous factor (0 = stand, 1 = crouch)
-	# so nothing snaps instantly while the collider is still animating.
+	# ── Crouch: snap the collider straight to the crouch/stand height ──
+	# Smoothly interpolating the height every tick made the capsule float and
+	# jitter (the integration fought netfox's rollback).  Crouch height is now a
+	# pure function of the crouch input, so every peer derives the same shape.
 	is_crouching = player_input.crouch
-	var target_height: float = crouch_height if player_input.crouch else _stand_collider_height
 	var shape: CapsuleShape3D = collider.shape as CapsuleShape3D
 	var crouch_factor: float = 0.0
 	if shape and _stand_collider_height > 0.0:
-		shape.height = move_toward(shape.height, target_height, crouch_transition_speed * delta)
+		var target_height: float = crouch_height if is_crouching else _stand_collider_height
+		shape.height = target_height
 		# Keep the capsule bottom fixed so the body doesn't bob up/down.
-		var half_diff: float = (_stand_collider_height - shape.height) * 0.5
-		collider.position.y = _stand_collider_y - half_diff
-		#%Recoil.position.y = _stand_recoil_y - half_diff
-		# Continuous blend factor derived from actual collider height.
-		var denom: float = _stand_collider_height - crouch_height
-		if denom > 0.0:
-			crouch_factor = clamp((_stand_collider_height - shape.height) / denom, 0.0, 1.0)
+		collider.position.y = _stand_collider_y - (_stand_collider_height - target_height) * 0.5
+		#%Recoil.position.y = _stand_recoil_y - (_stand_collider_height - target_height) * 0.5
+		crouch_factor = 1.0 if is_crouching else 0.0
 
 	# Track grounded time so a minimum contact time can gate re-jumping.
 	if on_floor:
 		_ground_contact_time += delta
 	else:
 		_ground_contact_time = 0.0
-
-	if not on_floor:
-		velocity += get_gravity() * delta * (-1.0 if gravity_flipped else 1.0)
-	elif player_input.jump_input:
-		var min_contact: float = _character.min_ground_contact_time if _character else 0.1
-		if _ground_contact_time >= min_contact:
-			knockback_velocity = Vector3.ZERO
-			velocity.y = _cmult(JUMP_VELOCITY, _character.jump_mult if _character else 1.0)
 
 	var input_dir := player_input.input_dir
 	var cam_basis: Basis = camera.global_transform.basis
@@ -753,6 +863,107 @@ func _apply_movement_from_input(delta):
 	var right   := Vector3(cam_basis.x.x, 0, cam_basis.x.z).normalized()
 	var forward := right.cross(Vector3.UP)
 	var direction := (forward * input_dir.y + right * input_dir.x).normalized()
+
+	# -- Input edges --
+	# Rising-edge detection so presses replay deterministically under rollback.
+	var jump_pressed: bool = player_input.jump_input and not jump_held_prev
+	jump_held_prev = player_input.jump_input
+	var dash_pressed: bool = player_input.dash_input and not dash_held_prev
+	dash_held_prev = player_input.dash_input
+	var crouch_pressed: bool = player_input.crouch and not crouch_held_prev
+	crouch_held_prev = player_input.crouch
+
+	# While grounded, air actions are available (reset each grounded tick).
+	if on_floor:
+		air_jump_used = false
+		air_dash_used = false
+
+	# Advance the grounded dash and end it once its duration elapses.
+	if dash_time > 0.0:
+		dash_time += delta
+		if dash_time >= dash_duration:
+			dash_time = 0.0
+			active_dash_dir = Vector3.ZERO
+			dash_grounded = false
+			dash_jump_locked = false
+
+	# Gravity (skipped while grounded).
+	if not on_floor:
+		velocity += get_gravity() * delta * (-1.0 if gravity_flipped else 1.0)
+
+	# -- Down dash --
+	# Airborne double-tap of crouch: press crouch twice within DOWN_DASH_WINDOW.
+	if crouch_pressed:
+		if not on_floor:
+			if crouch_tap_timer > 0.0:
+				crouch_tap_timer = 0.0
+				if dash_time <= 0.0 and not air_dash_used and stamina >= 1.0:
+					stamina -= 1.0
+					air_dash_used = true
+					velocity.y = -down_dash_impulse
+			else:
+				crouch_tap_timer = DOWN_DASH_WINDOW
+	crouch_tap_timer = maxf(0.0, crouch_tap_timer - delta)
+
+	# -- Jump / double jump / dash jump --
+	if jump_pressed:
+		if dash_time > 0.0 and dash_grounded and not dash_jump_locked:
+			# Jumping during a grounded dash is a dash-jump attempt.
+			if dash_time < dash_jump_window_start:
+				dash_jump_locked = true
+				_set_dash_jump_feedback("too early")
+			elif dash_time > dash_jump_window_end:
+				dash_jump_locked = true
+				_set_dash_jump_feedback("too late")
+			elif stamina >= 2.0:
+				_do_dash_jump()
+		elif on_floor:
+			# Normal jump.
+			_grounded_jump()
+		elif not air_jump_used and stamina >= 1.0:
+			# Double jump.
+			stamina -= 1.0
+			air_jump_used = true
+			velocity.y = _cmult(JUMP_VELOCITY, _character.jump_mult if _character else 1.0)
+	elif on_floor and player_input.jump_input and dash_time <= 0.0:
+		# Auto bunny hop: holding jump re-jumps the moment the player lands.
+		_grounded_jump()
+
+	# -- Dash (grounded = fixed velocity, air = impulse) --
+	if dash_pressed and dash_time <= 0.0:
+		# Grounded dashes snap to the four cardinal directions; air dashes keep
+		# the full eight-way input.
+		var dd := input_dir
+		if on_floor:
+			if absf(dd.x) >= absf(dd.y):
+				dd = Vector2(sign(dd.x), 0.0)
+			else:
+				dd = Vector2(0.0, sign(dd.y))
+		var dash_dir := forward * dd.y + right * dd.x
+		if dash_dir.length_squared() > 0.0001:
+			dash_dir = dash_dir.normalized()
+			if on_floor and stamina >= 1.0:
+				# Grounded dash: fixed speed, opens the dash-jump window.
+				stamina -= 1.0
+				dash_time = delta
+				active_dash_dir = dash_dir
+				dash_grounded = true
+				dash_jump_locked = false
+			elif not on_floor and not air_dash_used and stamina >= 1.0:
+				# Air dash: impulse stacked onto current velocity.
+				stamina -= 1.0
+				air_dash_used = true
+				velocity.x += dash_dir.x * air_dash_impulse
+				velocity.z += dash_dir.z * air_dash_impulse
+
+	# -- Grounded dash: lock horizontal velocity to the dash speed --
+	if dash_time > 0.0:
+		velocity.x = active_dash_dir.x * dash_speed
+		velocity.z = active_dash_dir.z * dash_speed
+
+	# Recover a stamina bar once every stamina_recovery_time seconds.
+	if stamina < MAX_STAMINA:
+		stamina = minf(stamina + delta / stamina_recovery_time, float(MAX_STAMINA))
 
 	# Apply ADS speed modifier before computing final speed.
 	if ads:
@@ -970,6 +1181,10 @@ func set_character(char: Character) -> void:
 ## model mirrors its mannequin's animated pose.
 func _spawn_character_model() -> void:
 	var own := _is_own_model()
+	# Show the first-person viewmodel/legs only for the local player, and only
+	# while the separate-viewmodel-layer feature is enabled.  When it is off the
+	# local player sees their own body model (arms included) instead.
+	var show_first_person := own and use_viewmodel_layer
 
 	# Free any previously spawned character world model (the mannequin is permanent).
 	if model != null and model != mannequin:
@@ -1009,14 +1224,22 @@ func _spawn_character_model() -> void:
 	if world_instance == null:
 		model = mannequin
 	else:
-		mannequin.visible = false
-		
-		
+		# Debug: keep the mannequin visible alongside the spawned character model
+		# so their alignment can be compared directly.
+		_set_mannequin_meshes_visible(debug_show_both_models)
+
+
+		world_instance.transform = mannequin.transform
 		world_instance.name = "Model"
 		$Body.add_child(world_instance)
 		model = world_instance
 		_setup_pose_copy(world_instance)
-	model.visible = not own
+	if model == mannequin:
+		# Hide/show the built-in model's meshes rather than the whole node, so the
+		# weapon (parented to the mannequin skeleton's hand bone) stays visible.
+		_set_mannequin_meshes_visible(not show_first_person)
+	else:
+		model.visible = not show_first_person
 
 	# --- First-person viewmodel (visible only to the local player) ---
 	if viewmodel_instance == null:
@@ -1029,7 +1252,7 @@ func _spawn_character_model() -> void:
 		viewmodel = viewmodel_instance
 		_setup_viewmodel_pose_copy(viewmodel_instance)
 		
-	viewmodel.visible = own
+	viewmodel.visible = show_first_person
 
 	# --- First-person legs (visible only to the local player) ---
 	if legs_instance == null:
@@ -1041,7 +1264,7 @@ func _spawn_character_model() -> void:
 		$Body.add_child(legs_instance)
 		legs = legs_instance
 		_setup_legs_pose_copy(legs_instance)
-	legs.visible = own
+	legs.visible = show_first_person
 
 	model_script = model as PlayerModel
 	viewmodel_script = viewmodel as PlayerModel
@@ -1056,12 +1279,29 @@ func _spawn_character_model() -> void:
 	if own:
 		if model_script != null:
 			model_script.disable_rim_layer()
+			if not use_viewmodel_layer:
+				# Feature disabled: the local player sees their own body model, so
+				# hide its head so it doesn't clip the first-person camera.
+				model_script.hide_head_meshes()
 		if viewmodel_script != null:
 			viewmodel_script.hide_head_meshes()
 		if legs_script != null:
 			legs_script.hide_head_meshes()
-		PlayerModel.move_to_viewmodel_layer(viewmodel)
+		if use_viewmodel_layer:
+			PlayerModel.move_to_viewmodel_layer(viewmodel)
 		#PlayerModel.move_to_viewmodel_layer(legs)
+
+
+## Show or hide the mannequin's body/head meshes without hiding the node itself.
+## The first-person weapon is parented to the mannequin skeleton's hand bone, so
+## hiding the whole node would hide the weapon too — hide the meshes instead.
+func _set_mannequin_meshes_visible(visible: bool) -> void:
+	mannequin.visible = true
+	if mannequin_skeleton == null:
+		return
+	for node in mannequin_skeleton.find_children("*", "MeshInstance3D", false, false):
+		if node is MeshInstance3D:
+			(node as MeshInstance3D).visible = visible
 
 
 ## Prepare the spawned model's skeleton to mirror the mannequin's pose.  Bones
@@ -1112,6 +1352,8 @@ func _setup_legs_pose_copy(model_node: Node3D) -> void:
 ## no see-through) while the viewmodel camera's FOV stays manually adjustable.
 func _setup_viewmodel_viewport() -> void:
 	if not _is_own_model():
+		return
+	if not use_viewmodel_layer:
 		return
 
 	# Main camera renders everything except the viewmodel layer.

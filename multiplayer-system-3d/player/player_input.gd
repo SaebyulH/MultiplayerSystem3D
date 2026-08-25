@@ -16,6 +16,7 @@ class_name PlayerInput extends Node
 var input_dir: Vector2 = Vector2.ZERO
 var jump_input: bool   = false
 var crouch: bool       = false
+var dash_input: bool   = false
 
 # Not rolled back — polled each physics frame by WeaponController
 var primary_fire_held: bool   = false
@@ -43,16 +44,19 @@ func _gather() -> void:
 	if ui_open:
 		input_dir  = Vector2.ZERO
 		jump_input = false
+		dash_input = false
 		return
-	# Stunned players cannot move, jump, or crouch.
+	# Stunned players cannot move, jump, crouch, or dash.
 	if get_parent().status_effect_manager and get_parent().status_effect_manager.is_stunned():
 		input_dir  = Vector2.ZERO
 		jump_input = false
 		crouch     = false
+		dash_input = false
 		return
 	input_dir  = Input.get_vector("move_left", "move_right", "move_forward", "move_backward")
 	jump_input = Input.is_action_pressed("ui_accept")
 	crouch     = Input.is_action_pressed("crouch")
+	dash_input = Input.is_action_pressed("dash")
 
 func _input(event: InputEvent) -> void:
 	if get_parent().is_bot:
