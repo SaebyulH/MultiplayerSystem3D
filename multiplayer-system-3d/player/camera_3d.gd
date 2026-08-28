@@ -6,5 +6,5 @@ extends Camera3D
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
-	if bone_attachment and not $"../../../..".use_viewmodel_layer:
+	if bone_attachment:
 		global_position = bone_attachment.global_position

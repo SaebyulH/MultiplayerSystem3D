@@ -1,11 +1,38 @@
 [gd_scene format=3 uid="uid://de2x1mcwubja7"]
 
-[ext_resource type="PackedScene" uid="uid://bg154jsjyar8l" path="res://assets/ak47/ak-47.glb" id="1_0ghsj"]
+[ext_resource type="PackedScene" uid="uid://cdyvtxpvcjv7m" path="res://assets/ak_test/Ak.glb" id="1_8mf50"]
+[ext_resource type="Script" uid="uid://c0ut5ljnvunfk" path="res://weapon/weapon_model.gd" id="1_r4bbn"]
+[ext_resource type="AnimationLibrary" uid="uid://cv55yvfohsp02" path="res://assets/ak_test/Human Ak.glb" id="2_ndd21"]
+[ext_resource type="Script" uid="uid://cutc4qk6eibrf" path="res://weapon/weapon_anim_group.gd" id="3_a603s"]
 
-[node name="Ak" type="Node3D" unique_id=1233250200]
+[sub_resource type="Resource" id="Resource_f0yui"]
+script = ExtResource("3_a603s")
+gun_anim = &"Ak Human Hold"
+human_anim = &"Human Ak Shoot"
 
-[node name="Sketchfab_Scene" parent="." unique_id=1495898099 instance=ExtResource("1_0ghsj")]
-transform = Transform3D(-2.3319965e-08, 0, 0.5334986, 0, 0.5334986, 0, -0.5334986, 0, -2.3319965e-08, -0.20542061, -0.06877071, 2.3672304)
+[node name="Ak" type="Node3D" unique_id=1233250200 node_paths=PackedStringArray("anim_player")]
+script = ExtResource("1_r4bbn")
+anim_player = NodePath("Ak2/AnimationPlayer")
+human_anims = ExtResource("2_ndd21")
+anim_groups = Array[ExtResource("3_a603s")]([SubResource("Resource_f0yui")])
 
-[node name="Muzzle" type="Node3D" parent="." unique_id=1897615840]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.112377554, -1.1715906)
+[node name="Ak2" parent="." unique_id=2097840124 instance=ExtResource("1_8mf50")]
+
+[node name="Ak" parent="Ak2" index="0" unique_id=1418960111]
+transform = Transform3D(1, -5.5562923e-09, 5.335288e-08, 6.9689934e-09, 0.9996482, -0.026515035, -5.318681e-08, 0.026515035, 0.9996482, 0.045003302, 0.14403753, 0.08255616)
+
+[node name="Skeleton3D" parent="Ak2/Ak" index="0" unique_id=1961717685]
+bones/0/position = Vector3(-0.14729519, 1.3657956, 0.18803316)
+bones/0/rotation = Quaternion(-0.003985786, 0.9999467, -0.007099796, 0.0063456777)
+bones/1/position = Vector3(-4.0163326e-09, 0.09451036, -0.116281606)
+bones/4/rotation = Quaternion(0.98491, 4.0515914e-08, -1.6694987e-07, -0.17306727)
+
+[node name="BoneAttachment3D" type="BoneAttachment3D" parent="Ak2/Ak/Skeleton3D" index="5" unique_id=1431857578]
+transform = Transform3D(-0.9998877, -0.00788104, 0.012747275, -0.0080612535, 0.9998674, -0.01414825, -0.012634083, -0.01424942, -0.9998186, -0.14729519, 1.3657956, 0.18803316)
+bone_name = "Root"
+bone_idx = 0
+
+[node name="Muzzle" type="Node3D" parent="Ak2/Ak/Skeleton3D/BoneAttachment3D" unique_id=1897615840]
+transform = Transform3D(-0.9998877, -0.0077234283, -0.012843333, -0.007881047, 0.99989384, 0.01226712, 0.012747226, 0.012366958, -0.9998424, -0.00044605136, 0.08738756, -0.6046115)
+
+[editable path="Ak2"]

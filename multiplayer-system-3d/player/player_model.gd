@@ -49,17 +49,3 @@ func get_skin_meshes() -> Array[MeshInstance3D]:
 		if not head_meshes.has(mesh):
 			result.append(mesh)
 	return result
-
-
-## Render layer for the first-person viewmodel.  The viewmodel camera renders
-## only this layer into its own viewport, and the main camera excludes it.
-const VIEWMODEL_LAYER := 1 << 1  # render layer 2
-
-
-## Move every visual child under [param root] (meshes, particles, sprites, …)
-## onto the viewmodel render layer.
-static func move_to_viewmodel_layer(root: Node) -> void:
-	if root is VisualInstance3D:
-		(root as VisualInstance3D).layers = VIEWMODEL_LAYER
-	for node in root.find_children("*", "VisualInstance3D", true, false):
-		(node as VisualInstance3D).layers = VIEWMODEL_LAYER

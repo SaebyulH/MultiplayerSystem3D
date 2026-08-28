@@ -1,0 +1,11 @@
+Model Information:
+* title:	Bind Full Map
+* source:	https://sketchfab.com/3d-models/bind-full-map-bcbe551dfd3f49b58fd871664efc5e03
+* author:	SmrutiRanjan (https://sketchfab.com/SmrutiRanjan)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Bind Full Map" (https://sketchfab.com/3d-models/bind-full-map-bcbe551dfd3f49b58fd871664efc5e03) by SmrutiRanjan (https://sketchfab.com/SmrutiRanjan) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

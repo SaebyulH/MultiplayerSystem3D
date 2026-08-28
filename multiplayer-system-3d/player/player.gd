@@ -165,55 +165,15 @@ var model: Node3D = null
 ## that carries the script is active).
 var model_script: PlayerModel = null
 
-## The currently-active first-person viewmodel (what the local player sees):
-## the built-in viewmodel mannequin, or a spawned character viewmodel.
-var viewmodel: Node3D = null
-
-## The [PlayerModel] component attached to [member viewmodel].
-var viewmodel_script: PlayerModel = null
-
-## The currently-active first-person legs model (what the local player sees
-## when looking down): the built-in legs mannequin, or a spawned copy.
-var legs: Node3D = null
-
-## The [PlayerModel] component attached to [member legs].
-var legs_script: PlayerModel = null
-
 ## The built-in mannequin (always present under Body) drives the world model's
 ## animation via the AnimationTree; a spawned character model copies its pose.
 @onready var mannequin: Node3D = $Body/Mannequin
 var mannequin_skeleton: Skeleton3D = null
 
-## The built-in viewmodel mannequin under the camera/head drives the first-person
-## viewmodel animation; a spawned character viewmodel copies its pose.
-@onready var viewmodel_mannequin: Node3D = $Body/Recoil/Head/Mannequin_VIEWMODEL
-var viewmodel_skeleton: Skeleton3D = null
-
-## The built-in legs mannequin under Body drives the first-person legs; a
-## spawned character legs model copies its pose.
-@onready var legs_mannequin: Node3D = $Body/MannequinLEGS
-var legs_skeleton: Skeleton3D = null
-
 ## Skeleton of a spawned character model that mirrors the mannequin's pose.
 var _pose_target: Skeleton3D = null
 ## Destination bone index (into _pose_target) per mannequin bone index, -1 if missing.
 var _pose_map: PackedInt32Array = PackedInt32Array()
-
-## Skeleton of a spawned character viewmodel that mirrors the viewmodel's pose.
-var _viewmodel_target: Skeleton3D = null
-## Destination bone index (into _viewmodel_target) per viewmodel bone index.
-var _viewmodel_map: PackedInt32Array = PackedInt32Array()
-
-## Skeleton of a spawned character legs model that mirrors the legs mannequin's pose.
-var _legs_target: Skeleton3D = null
-## Destination bone index (into _legs_target) per legs mannequin bone index.
-var _legs_map: PackedInt32Array = PackedInt32Array()
-
-## When true, the first-person viewmodel (arms) renders in its own separate
-## render layer, layered over the world by a dedicated viewmodel camera.  When
-## false, the local player's full body model is shown instead (arms included),
-## and the separate viewmodel arms and legs are hidden.
-@export var use_viewmodel_layer: bool = true
 
 ## Debug: when a character model replaces the mannequin, show BOTH at once (the
 ## mannequin AND the spawned character skin) so their alignment can be compared,
@@ -221,7 +181,6 @@ var _legs_map: PackedInt32Array = PackedInt32Array()
 @export var debug_show_both_models: bool = false
 
 @onready var animation_tree: AnimationTree = $Body/AnimationTree
-@onready var viewmodel_camera: Camera3D = %ViewModelCamera
 
 @export var crouch_height: float = 1.0
 @export var stand_height: float = 2.0
@@ -320,10 +279,6 @@ func _enter_tree() -> void:
 
 
 func _ready() -> void:
-	# Run _process last (after Recoil / AnimationTree / TickInterpolator) so the
-	# viewmodel camera sync and pose copying read this frame's final state.
-	process_priority = 100
-
 	skins = [
 		#$Body/Recoil/Head/WeaponParent/RightArm,
 		#$Body/Recoil/Head/WeaponParent/RightForearm,
@@ -341,31 +296,18 @@ func _ready() -> void:
 	]
 	team = team
 
-	# Resolve the built-in mannequins — they always drive the animations.
+	# Resolve the built-in mannequin — it always drives the animation.
 	mannequin_skeleton = mannequin.find_child("Skeleton3D", true, false) as Skeleton3D
-	viewmodel_skeleton = viewmodel_mannequin.find_child("Skeleton3D", true, false) as Skeleton3D
-	legs_skeleton = legs_mannequin.find_child("Skeleton3D", true, false) as Skeleton3D
 	# SkeletonModifier3D (CCDIK/Aim/CopyTransform) results are rolled back after
 	# the skeleton update, so copy the pose inside skeleton_updated — not in
 	# _process, where get_bone_pose_* already returns the un-modified pose.
 	if mannequin_skeleton:
 		mannequin_skeleton.skeleton_updated.connect(_copy_mannequin_pose)
-	if legs_skeleton:
-		legs_skeleton.skeleton_updated.connect(_copy_legs_pose)
+	# Give each player its own animation tree.  tree_root (and its nested nodes,
+	# e.g. the ArmsAnim hold node) is a shared SubResource across scene instances,
+	# so changing one player's weapon hold would change every player's.
+	animation_tree.tree_root = animation_tree.tree_root.duplicate(true) as AnimationNodeBlendTree
 	animation_tree.active = true
-	if _is_own_model():
-		($Body/Recoil/Head/AnimationTreeViewmodel as AnimationTree).active = true
-	else:
-		# Bots and remote players never render the first-person viewmodel or legs.
-		# Stop their skeletons and animation trees so they don't animate every frame
-		# (two ~250-bone skeletons per player that were pure waste).
-		($Body/Recoil/Head/AnimationTreeViewmodel as AnimationTree).active = false
-		var legs_tree := $Body/AnimationTreeLegs as AnimationTree
-		legs_tree.active = false
-		legs_tree.set_process(false)
-		viewmodel_mannequin.visible = false
-		legs_mannequin.visible = false
-	_setup_viewmodel_viewport()
 
 	add_to_group("players")
 	attribute_component.health_changed.connect(_health_changed)
@@ -555,17 +497,6 @@ func _rpc_sync_randomized_loadout(tpid: String, pp: String, sp: String, mp: Stri
 	weapon_controller.current_weapon_index = 0
 
 
-## Mirror the mannequin's animated pose onto a spawned character model every
-## frame so any skin rigged to the same humanoid skeleton follows along.
-func _process(_delta: float) -> void:
-	# First-person pose copy and camera sync are only needed for the local player.
-	# For bots and remote players this is wasted work that runs every render frame.
-	if not _is_own_model():
-		return
-	_copy_viewmodel_pose()
-	_sync_viewmodel_camera()
-
-
 func _copy_mannequin_pose() -> void:
 	if _pose_target == null or mannequin_skeleton == null:
 		return
@@ -576,38 +507,6 @@ func _copy_mannequin_pose() -> void:
 		_pose_target.set_bone_pose_position(dst_idx, mannequin_skeleton.get_bone_pose_position(src_idx))
 		_pose_target.set_bone_pose_rotation(dst_idx, mannequin_skeleton.get_bone_pose_rotation(src_idx))
 		_pose_target.set_bone_pose_scale(dst_idx, mannequin_skeleton.get_bone_pose_scale(src_idx))
-
-
-func _copy_viewmodel_pose() -> void:
-	if _viewmodel_target == null or viewmodel_skeleton == null:
-		return
-	for src_idx in viewmodel_skeleton.get_bone_count():
-		var dst_idx := _viewmodel_map[src_idx]
-		if dst_idx < 0:
-			continue
-		_viewmodel_target.set_bone_pose_position(dst_idx, viewmodel_skeleton.get_bone_pose_position(src_idx))
-		_viewmodel_target.set_bone_pose_rotation(dst_idx, viewmodel_skeleton.get_bone_pose_rotation(src_idx))
-		_viewmodel_target.set_bone_pose_scale(dst_idx, viewmodel_skeleton.get_bone_pose_scale(src_idx))
-
-
-func _copy_legs_pose() -> void:
-	if _legs_target == null or legs_skeleton == null:
-		return
-	for src_idx in legs_skeleton.get_bone_count():
-		var dst_idx := _legs_map[src_idx]
-		if dst_idx < 0:
-			continue
-		_legs_target.set_bone_pose_position(dst_idx, legs_skeleton.get_bone_pose_position(src_idx))
-		_legs_target.set_bone_pose_rotation(dst_idx, legs_skeleton.get_bone_pose_rotation(src_idx))
-		_legs_target.set_bone_pose_scale(dst_idx, legs_skeleton.get_bone_pose_scale(src_idx))
-
-
-## Keep the viewmodel camera aligned with the main camera (position + rotation),
-## leaving FOV alone so it can be tuned manually in the inspector.
-func _sync_viewmodel_camera() -> void:
-	if viewmodel_camera == null:
-		return
-	viewmodel_camera.global_transform = camera.global_transform
 
 
 func _physics_process(delta: float) -> void:
@@ -1176,15 +1075,10 @@ func set_character(char: Character) -> void:
 	_spawn_character_model()
 
 
-## Show the built-in mannequin or spawn the selected character's world model,
-## and do the same for the first-person viewmodel under the head.  Each spawned
-## model mirrors its mannequin's animated pose.
+## Show the built-in mannequin or spawn the selected character's world model.
+## A spawned model mirrors the mannequin's animated pose.
 func _spawn_character_model() -> void:
 	var own := _is_own_model()
-	# Show the first-person viewmodel/legs only for the local player, and only
-	# while the separate-viewmodel-layer feature is enabled.  When it is off the
-	# local player sees their own body model (arms included) instead.
-	var show_first_person := own and use_viewmodel_layer
 
 	# Free any previously spawned character world model (the mannequin is permanent).
 	if model != null and model != mannequin:
@@ -1193,103 +1087,39 @@ func _spawn_character_model() -> void:
 	_pose_target = null
 	_pose_map = PackedInt32Array()
 
-	# Free any previously spawned character viewmodel (the viewmodel mannequin is permanent).
-	if viewmodel != null and viewmodel != viewmodel_mannequin:
-		viewmodel.queue_free()
-	viewmodel = null
-	_viewmodel_target = null
-	_viewmodel_map = PackedInt32Array()
-
-	# Free any previously spawned character legs model (the legs mannequin is permanent).
-	if legs != null and legs != legs_mannequin:
-		legs.queue_free()
-	legs = null
-	_legs_target = null
-	_legs_map = PackedInt32Array()
-
 	var scene: PackedScene = _character.character_scene if _character and _character.character_scene else null
 	var world_instance: Node3D = null
-	var viewmodel_instance: Node3D = null
-	var legs_instance: Node3D = null
 	if scene != null:
 		world_instance = scene.instantiate() as Node3D
-		# First-person viewmodel + legs only exist for the local player.  Bots and
-		# remote players never render them, so spawning them wastes memory and
-		# per-frame pose-copy work — a cost that scales with player count.
-		if own:
-			viewmodel_instance = scene.instantiate() as Node3D
-			legs_instance = scene.instantiate() as Node3D
 
 	# --- Third-person world model (visible to other players) ---
 	if world_instance == null:
 		model = mannequin
+		# Hide/show the built-in model's meshes rather than the whole node, so the
+		# weapon (parented under Body) stays visible.
+		_set_mannequin_meshes_visible(true)
 	else:
 		# Debug: keep the mannequin visible alongside the spawned character model
 		# so their alignment can be compared directly.
 		_set_mannequin_meshes_visible(debug_show_both_models)
-
 
 		world_instance.transform = mannequin.transform
 		world_instance.name = "Model"
 		$Body.add_child(world_instance)
 		model = world_instance
 		_setup_pose_copy(world_instance)
-	if model == mannequin:
-		# Hide/show the built-in model's meshes rather than the whole node, so the
-		# weapon (parented to the mannequin skeleton's hand bone) stays visible.
-		_set_mannequin_meshes_visible(not show_first_person)
-	else:
-		model.visible = not show_first_person
-
-	# --- First-person viewmodel (visible only to the local player) ---
-	if viewmodel_instance == null:
-		viewmodel = viewmodel_mannequin
-	else:
-		viewmodel_mannequin.visible = false
-		viewmodel_instance.name = "ViewModel"
-		viewmodel_instance.transform = viewmodel_mannequin.transform
-		$Body/Recoil/Head.add_child(viewmodel_instance)
-		viewmodel = viewmodel_instance
-		_setup_viewmodel_pose_copy(viewmodel_instance)
-		
-	viewmodel.visible = show_first_person
-
-	# --- First-person legs (visible only to the local player) ---
-	if legs_instance == null:
-		legs = legs_mannequin
-	else:
-		legs_mannequin.visible = false
-		legs_instance.name = "Legs"
-		legs_instance.transform = legs_mannequin.transform
-		$Body.add_child(legs_instance)
-		legs = legs_instance
-		_setup_legs_pose_copy(legs_instance)
-	legs.visible = show_first_person
 
 	model_script = model as PlayerModel
-	viewmodel_script = viewmodel as PlayerModel
-	legs_script = legs as PlayerModel
 
-	# Rebuild the team-colour skin list and re-apply the current team (world model only).
+	# Rebuild the team-colour skin list and re-apply the current team.
 	_rebuild_skins()
 	team = team
 
-	# Our own first-person model: strip the world model's rim light, hide the
-	# viewmodel's head, and make the viewmodel render over the world.
-	if own:
-		if model_script != null:
-			model_script.disable_rim_layer()
-			if not use_viewmodel_layer:
-				# Feature disabled: the local player sees their own body model, so
-				# hide its head so it doesn't clip the first-person camera.
-				model_script.hide_head_meshes()
-		if viewmodel_script != null:
-			viewmodel_script.hide_head_meshes()
-		if legs_script != null:
-			legs_script.hide_head_meshes()
-		if use_viewmodel_layer:
-			PlayerModel.move_to_viewmodel_layer(viewmodel)
-		#PlayerModel.move_to_viewmodel_layer(legs)
+	# Our own model: strip the rim light and hide the head so it doesn't clip the
+	# first-person camera.
+	if own and model_script != null:
+		model_script.disable_rim_layer()
+		model_script.hide_head_meshes()
 
 
 ## Show or hide the mannequin's body/head meshes without hiding the node itself.
@@ -1316,72 +1146,6 @@ func _setup_pose_copy(model_node: Node3D) -> void:
 	_pose_map.resize(mannequin_skeleton.get_bone_count())
 	for src_idx in mannequin_skeleton.get_bone_count():
 		_pose_map[src_idx] = _pose_target.find_bone(mannequin_skeleton.get_bone_name(src_idx))
-
-
-## Prepare the spawned viewmodel's skeleton to mirror the viewmodel mannequin's
-## pose.  Same bone-name matching as _setup_pose_copy.
-func _setup_viewmodel_pose_copy(model_node: Node3D) -> void:
-	var skeleton_nodes := model_node.find_children("*", "Skeleton3D", true, false)
-	_viewmodel_target = skeleton_nodes[0] as Skeleton3D if not skeleton_nodes.is_empty() else null
-	if _viewmodel_target == null or viewmodel_skeleton == null:
-		_viewmodel_target = null
-		return
-	_viewmodel_map = PackedInt32Array()
-	_viewmodel_map.resize(viewmodel_skeleton.get_bone_count())
-	for src_idx in viewmodel_skeleton.get_bone_count():
-		_viewmodel_map[src_idx] = _viewmodel_target.find_bone(viewmodel_skeleton.get_bone_name(src_idx))
-
-
-## Prepare the spawned legs model's skeleton to mirror the legs mannequin's
-## pose.  Same bone-name matching as _setup_pose_copy.
-func _setup_legs_pose_copy(model_node: Node3D) -> void:
-	var skeleton_nodes := model_node.find_children("*", "Skeleton3D", true, false)
-	_legs_target = skeleton_nodes[0] as Skeleton3D if not skeleton_nodes.is_empty() else null
-	if _legs_target == null or legs_skeleton == null:
-		_legs_target = null
-		return
-	_legs_map = PackedInt32Array()
-	_legs_map.resize(legs_skeleton.get_bone_count())
-	for src_idx in legs_skeleton.get_bone_count():
-		_legs_map[src_idx] = _legs_target.find_bone(legs_skeleton.get_bone_name(src_idx))
-
-
-## Render the viewmodel in its own viewport, layered over the main view.  The
-## viewmodel camera sees only the viewmodel layer, and the main camera sees
-## everything else.  This gives the viewmodel its own depth buffer (no clipping,
-## no see-through) while the viewmodel camera's FOV stays manually adjustable.
-func _setup_viewmodel_viewport() -> void:
-	if not _is_own_model():
-		return
-	if not use_viewmodel_layer:
-		return
-
-	# Main camera renders everything except the viewmodel layer.
-	camera.cull_mask = camera.cull_mask & ~PlayerModel.VIEWMODEL_LAYER
-	# Viewmodel camera renders only the viewmodel layer.
-	viewmodel_camera.cull_mask = PlayerModel.VIEWMODEL_LAYER
-
-	var canvas := CanvasLayer.new()
-	canvas.name = "ViewmodelCanvas"
-	canvas.layer = -1  # above the 3D world, below the root canvas (PlayerUI) and all CanvasLayer UI
-	add_child(canvas)
-
-	var container := SubViewportContainer.new()
-	container.name = "ViewmodelOverlay"
-	container.stretch = true
-	container.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	container.mouse_filter = Control.MOUSE_FILTER_IGNORE  # let clicks pass through to menus
-	canvas.add_child(container)
-
-	var vp := SubViewport.new()
-	vp.name = "ViewmodelViewport"
-	vp.transparent_bg = true
-	vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
-	vp.world_3d = get_viewport().world_3d  # share main world so it sees the viewmodel meshes
-	container.add_child(vp)
-
-	# A camera renders to the viewport it lives in, so move it into the viewport.
-	viewmodel_camera.reparent(vp, true)
 
 
 ## Re-tint every skin mesh to the current team colour while keeping its own

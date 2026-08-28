@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="Character" format=3 uid="uid://b8wpr5hk3etay"]
 
-[ext_resource type="PackedScene" uid="uid://d3vungg2lenmx" path="res://assets/characters/jett.tscn" id="1_85qva"]
+[ext_resource type="PackedScene" uid="uid://ckqx4woyqsg2o" path="res://assets/characters/ghost.tscn" id="1_85qva"]
 [ext_resource type="Script" uid="uid://bxv3anwekoggx" path="res://player/character.gd" id="1_char"]
 [ext_resource type="AudioStream" uid="uid://b201yyyuo4tan" path="res://assets/sounds/female_pain.mp3" id="2_85qva"]
 

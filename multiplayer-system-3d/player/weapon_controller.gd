@@ -5,6 +5,10 @@ class_name WeaponController extends Node
 ## 0.05 = pitch varies Ã‚Â±5 % (0.95 Ã¢â‚¬â€œ 1.05).  Higher values sound more chaotic.
 const PITCH_RANGE: float = 0.05
 const RIM_LAYER := 1 << 9  # render layer 10, the shared rim-light layer
+## Name of the AnimationTree blend node that holds the weapon's hold (arm) animation.
+const ARMS_ANIM_NODE := &"ArmsAnim"
+## Fallback arm animation when the weapon has no hold animation (or isn't a WeaponModel).
+const ARMS_ANIM_RESET := &"other_movement/a_pose"
 
 var _bullet_hole_scene: PackedScene = preload("res://effects/bullet_hole.tscn")
 var _tracer_scene: PackedScene = preload("res://weapon/tracer.tscn")
@@ -12,6 +16,7 @@ var _hit_sound: AudioStream = preload("res://assets/sounds/Hitsound.wav")
 var _hit_heal_sound: AudioStream = preload("res://assets/sounds/medkit_sound.mp3")
 var _crit_sound: AudioStream = preload("res://assets/sounds/Crit_received1.wav")
 var _backshot_sound: AudioStream = preload("res://assets/sounds/backshot.mp3")
+
 
 
 # ---------------------------------------------------------------------------
@@ -100,6 +105,15 @@ signal signal_activated(target: Vector3, player_transform: Vector3)
 
 var current_weapon_model: Node3D = null
 
+# Muzzle nodes on the current weapon model, discovered recursively by name.
+# Weapons with multiple muzzles (twin barrels, etc.) fire them alternately.
+var _muzzle_nodes: Array[Node3D] = []
+var _muzzle_index: int = 0
+
+# Weapon indices whose human anims have already been injected into the mannequin's
+# AnimationPlayer.  Prevents re-adding a library on every weapon switch.
+var _added_human_anims: Dictionary = {}
+
 #region Reload animation – save/restore hand targets
 # The reload animation moves WeaponHandle, LeftHandTarget, and RightHandTarget
 # to baked values. Since different weapon models place hand targets at different
@@ -180,7 +194,6 @@ func _ready() -> void:
 		shoot_animation.animation_finished.connect(_on_reload_anim_finished)
 
 func _physics_process(delta: float) -> void:
-	_align_weapon_to_raycast()
 	_tick_timers(delta)
 
 	if _parent_player.is_bot:
@@ -308,6 +321,7 @@ func set_weapons(new_weapons: Array[Weapon]) -> void:
 	var deep_weapons: Array[Weapon] = []
 	for w: Weapon in new_weapons:
 		deep_weapons.append(w.duplicate(true) as Weapon)
+	_added_human_anims.clear()
 	_weapons = deep_weapons
 
 	# Reset all firing state so stale cooldowns/reload flags from the previous
@@ -436,15 +450,12 @@ func spawn_weapon_model() -> void:
 	current_weapon_model.scale    = weapon.weapon_scale
 	weapon_model_parent.add_child(current_weapon_model)
 
+	_refresh_muzzles()
+
 	# Rim-light the weapon too (render layer 10), unless it's our own
 	# first-person weapon which should never be rim-lit.
 	var own_weapon := _parent_player.body.is_multiplayer_authority() and not _parent_player.is_bot
-	if own_weapon:
-		if _parent_player.use_viewmodel_layer:
-			# First-person weapon renders in the viewmodel layer, over the world.
-			PlayerModel.move_to_viewmodel_layer(current_weapon_model)
-		# else: own weapon stays on the body model (feature disabled) — never rim-lit.
-	else:
+	if not own_weapon:
 		for mesh in current_weapon_model.find_children("*", "MeshInstance3D", true, false):
 			mesh.layers |= RIM_LAYER
 	
@@ -454,6 +465,89 @@ func spawn_weapon_model() -> void:
 	#if current_weapon_model.has_node("RightHandTarget"):
 		#%RightHandTarget.global_position = current_weapon_model.get_node("RightHandTarget").global_position
 
+
+## Discover every node under the weapon model whose name contains "Muzzle".
+## Replaces the old single `get_node("Muzzle")` lookup so muzzles work whether
+## they are direct children or buried under bones / sub-scenes, and so weapons
+## with multiple muzzles are all found.  Called after each model (re)spawn.
+func _refresh_muzzles() -> void:
+	_muzzle_nodes.clear()
+	_muzzle_index = 0
+	if current_weapon_model == null:
+		return
+	for node in current_weapon_model.find_children("*", "Node3D", true, false):
+		if node.name.to_lower().contains("muzzle"):
+			_muzzle_nodes.append(node as Node3D)
+	# Deterministic alternation order (e.g. Muzzle, Muzzle2, Muzzle3).
+	_muzzle_nodes.sort_custom(func(a: Node3D, b: Node3D) -> bool:
+		return a.name.naturalnocasecmp_to(b.name) < 0)
+
+
+## Return the next muzzle to fire from, cycling through _muzzle_nodes so
+## multi-muzzle weapons alternate barrels on successive shots.  Returns null
+## if the model has no muzzle node.
+func _next_muzzle() -> Node3D:
+	if _muzzle_nodes.is_empty():
+		return null
+	var muzzle: Node3D = _muzzle_nodes[_muzzle_index % _muzzle_nodes.size()]
+	_muzzle_index += 1
+	return muzzle
+
+#endregion
+
+
+#region Weapon model anims
+# Weapons that use the WeaponModel script carry their own first-person anims (on
+# the model's AnimationPlayer) plus a matching human AnimationLibrary.  We inject
+# that human library into the mannequin's AnimationPlayer (once per weapon) and
+# point the AnimationTree's arm node at the current weapon's hold animation.
+# Legacy weapons (no WeaponModel script) are left untouched for backwards
+# compatibility.
+
+## Resolve the mannequin's AnimationPlayer via the player's AnimationTree.
+func _get_mannequin_anim_player() -> AnimationPlayer:
+	if _parent_player == null or _parent_player.animation_tree == null:
+		return null
+	return _parent_player.animation_tree.get_node_or_null(_parent_player.animation_tree.anim_player) as AnimationPlayer
+
+
+## Inject the current weapon's human anims (once per weapon) and point the arm
+## node at the weapon's hold animation.  Falls back to the a_pose reset when the
+## current model is not a WeaponModel, or when its hold animation is missing.
+func _apply_weapon_model_anims() -> void:
+	# Default to the reset pose; replaced by the weapon's hold when available.
+	var arms_anim := ARMS_ANIM_RESET
+
+	if current_weapon_model is WeaponModel:
+		var model := current_weapon_model as WeaponModel
+
+		# Add the weapon's human library to the mannequin once per weapon.  Skipped
+		# while the mannequin isn't ready yet (it gets retried on the next change).
+		if not _added_human_anims.get(current_weapon_index, false):
+			var anim_player := _get_mannequin_anim_player()
+			if anim_player != null:
+				if model.human_anims != null:
+					var lib_name := model.get_human_library_name()
+					# The library may already be present (baked into the mannequin
+					# scene, or added on a previous loadout that cleared the cache
+					# above) — never add the same library twice.
+					if lib_name != &"" and not anim_player.has_animation_library(lib_name):
+						anim_player.add_animation_library(lib_name, model.human_anims)
+				_added_human_anims[current_weapon_index] = true
+
+		var hold := model.get_human_anim_path(WeaponAnimGroup.AnimSlot.HOLD)
+		if hold != &"":
+			arms_anim = hold
+
+	if _parent_player == null or _parent_player.animation_tree == null:
+		return
+	var root := _parent_player.animation_tree.tree_root as AnimationNodeBlendTree
+	if root == null:
+		return
+	var arms_node := root.get_node(ARMS_ANIM_NODE) as AnimationNodeAnimation
+	if arms_node == null:
+		return
+	arms_node.animation = arms_anim
 #endregion
 
 
@@ -493,6 +587,7 @@ func _on_weapon_index_changed(previous_index: int = -1) -> void:
 	_restore_transform_after_reload()
 	if not _weapons.is_empty():
 		spawn_weapon_model()
+		_apply_weapon_model_anims()
 	# Only broadcast cancel_reload for non-background weapons — background
 	# reloads keep ticking silently and the server syncs mags via _bg_sync_mag.
 	var old_had_bg: bool = false
@@ -1111,10 +1206,10 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 		world_dir = world_dir.normalized()
 
 	if weapon_fire.bullet_type == WeaponFire.BulletType.HITSCAN:
-		var muzzle_node: Node3D = current_weapon_model.get_node("Muzzle") as Node3D
-		var muzzle_pos: Vector3 = muzzle_node.global_position
+		var muzzle_node: Node3D = _next_muzzle()
+		var muzzle_pos: Vector3 = muzzle_node.global_position if muzzle_node else current_weapon_model.global_position
 		var flash_color: Color = MuzzleFlash.SCI_COLOR if _parent_player.team == Player.Team.SCI else MuzzleFlash.DEFAULT_COLOR
-		_flash_muzzle_flash.rpc(muzzle_pos, flash_color)
+		_flash_muzzle_flash.rpc(muzzle_pos, flash_color, world_dir)
 
 		var space_state: PhysicsDirectSpaceState3D = _parent_player.get_world_3d().direct_space_state
 		var origin: Vector3 = camera.global_position
@@ -1365,11 +1460,14 @@ func _is_backshot(victim: Player) -> bool:
 
 
 @rpc("any_peer", "call_local")
-func _flash_muzzle_flash(start_position: Vector3, flash_color: Color) -> void:
+func _flash_muzzle_flash(start_position: Vector3, flash_color: Color, direction: Vector3) -> void:
 	if not _is_ready():
 		return
 	var muzzle_flash = $MuzzleFlash
-	muzzle_flash.global_rotation = current_weapon_model.global_rotation
+	# Aim the flash along the shot direction instead of copying the weapon
+	# model's rotation (the model is now skeleton-oriented, not raycast-aligned).
+	if direction.length_squared() > 0.0001:
+		muzzle_flash.global_transform.basis = Basis.looking_at(direction.normalized(), Vector3.UP)
 	muzzle_flash.global_position = start_position
 	muzzle_flash.fire(flash_color)
 
@@ -1445,12 +1543,4 @@ func play_backshot_sound() -> void:
 		return
 	_play_sound(_backshot_sound)
 
-func _align_weapon_to_raycast() -> void:
-	if current_weapon_model == null or not _raycast.is_colliding():
-		return
-	var from: Vector3 = current_weapon_model.global_transform.origin
-	var to: Vector3   = _raycast.get_collision_point()
-	var dir: Vector3  = (to - from).normalized()
-	if dir.length_squared() > 0.0:
-		current_weapon_model.global_transform.basis = Basis.looking_at(dir, Vector3.UP)
 #endregion

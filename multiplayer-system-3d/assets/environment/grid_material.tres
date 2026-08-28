@@ -1,14 +1,14 @@
 [gd_resource type="ShaderMaterial" format=3 uid="uid://b6l23ihtcguc1"]
 
-[ext_resource type="Shader" uid="uid://c27khwu6mxn41" path="res://assets/environment/grid_shader.gdshader" id="1"]
+[ext_resource type="Shader" uid="uid://bp4ttwkoy6jus" path="res://assets/greybox/greybox_tiled.gdshader" id="1_ao4fd"]
+[ext_resource type="Texture2D" uid="uid://bawen40eodg2a" path="res://assets/greybox/greybox_light_grid.png" id="2_lnkgs"]
+[ext_resource type="Texture2D" uid="uid://b41rnikyq4teg" path="res://assets/greybox/greybox_orange_grid.png" id="3_awsgq"]
 
 [resource]
 render_priority = 0
-shader = ExtResource("1")
-shader_parameter/grid_color = Color(0.38, 0.38, 0.38, 1)
-shader_parameter/line_color = Color(1, 1, 1, 1)
-shader_parameter/grid_scale = 1.0
-shader_parameter/line_width = 0.05
-shader_parameter/roughness = 0.8
-shader_parameter/metallic = 0.0
-shader_parameter/depth_offset = 0.002
+shader = ExtResource("1_ao4fd")
+shader_parameter/texture_a = ExtResource("2_lnkgs")
+shader_parameter/texture_b = ExtResource("3_awsgq")
+shader_parameter/grid_size = 1.0
+shader_parameter/flat_threshold = 0.7
+shader_parameter/roughness_value = 0.9
