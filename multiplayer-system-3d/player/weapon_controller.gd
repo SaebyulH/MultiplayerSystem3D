@@ -6,7 +6,13 @@ class_name WeaponController extends Node
 const PITCH_RANGE: float = 0.05
 const RIM_LAYER := 1 << 9  # render layer 10, the shared rim-light layer
 ## Name of the AnimationTree blend node that holds the weapon's hold (arm) animation.
-const ARMS_ANIM_NODE := &"ArmsAnim"
+const HOLD_ANIM_NODE := &"Hold"
+## Name of the AnimationTree one-shot node that plays the reload over the hold.
+const RELOAD_ONESHOT_NODE := &"Reload"
+## Name of the AnimationNodeAnimation feeding the Reload one-shot (its input 1).
+const RELOAD_ANIM_NODE := &"Animation 2"
+## Name of the AnimationNodeTimeScale that wraps the reload clip (Reload one-shot input 1).
+const RELOAD_TIMESCALE_NODE := &"ReloadTimeScale"
 ## Fallback arm animation when the weapon has no hold animation (or isn't a WeaponModel).
 const ARMS_ANIM_RESET := &"other_movement/a_pose"
 
@@ -351,6 +357,20 @@ func get_active_fire_speed_mult() -> float:
 		return _weapons[current_weapon_index].weapon_fires[_firing_fire_index].move_speed_mult_while_shooting
 	return 1.0
 
+## True while the weapon is in any part of its fire cycle (pre-delay, burst,
+## or post-delay).  Read by the weapon-tilt shake so it can stop the instant
+## firing ends.
+func is_firing() -> bool:
+	return _is_firing
+
+
+## Current accumulated spread in degrees (0 = no spread).  Grows while firing
+## and decays toward [member Weapon.min_spread] when not firing.  Read by the
+## weapon-tilt sway so it can wobble harder as spread builds up.
+func get_current_spread() -> float:
+	return _current_spread
+
+
 ## Total duration of a fire cycle including pre-delay, burst, and post-delay.
 func _fire_cycle_duration(weapon: Weapon, fire_index: int) -> float:
 	var fire: WeaponFire = weapon.weapon_fires[fire_index]
@@ -511,6 +531,21 @@ func _get_mannequin_anim_player() -> AnimationPlayer:
 	return _parent_player.animation_tree.get_node_or_null(_parent_player.animation_tree.anim_player) as AnimationPlayer
 
 
+## Point the AnimationTree's "Hold" node at [param anim].  Returns false when the
+## tree / node isn't ready yet (the caller can retry later).
+func _set_hold_anim(anim: StringName) -> bool:
+	if _parent_player == null or _parent_player.animation_tree == null:
+		return false
+	var root := _parent_player.animation_tree.tree_root as AnimationNodeBlendTree
+	if root == null:
+		return false
+	var hold_node := root.get_node(HOLD_ANIM_NODE) as AnimationNodeAnimation
+	if hold_node == null:
+		return false
+	hold_node.animation = anim
+	return true
+
+
 ## Inject the current weapon's human anims (once per weapon) and point the arm
 ## node at the weapon's hold animation.  Falls back to the a_pose reset when the
 ## current model is not a WeaponModel, or when its hold animation is missing.
@@ -539,15 +574,55 @@ func _apply_weapon_model_anims() -> void:
 		if hold != &"":
 			arms_anim = hold
 
+	_set_hold_anim(arms_anim)
+
+
+## Play the current weapon model's reload animation (if it has one), stretched to
+## the actual reload duration [param duration].  No-ops for legacy weapons.
+func _play_weapon_reload_anim(duration: float) -> void:
+	if current_weapon_model is WeaponModel:
+		(current_weapon_model as WeaponModel).play_anim_scaled(WeaponAnimGroup.AnimSlot.RELOAD, duration)
+
+
+## Fire the AnimationTree's "Reload" one-shot with the current weapon's human
+## reload animation, time-scaled to last [param duration] seconds via the
+## "ReloadTimeScale" node.  No-ops for legacy weapons or when the tree isn't ready.
+func _play_weapon_human_reload_anim(duration: float) -> void:
+	if not (current_weapon_model is WeaponModel):
+		return
+	var model := current_weapon_model as WeaponModel
+	var reload_path := model.get_human_anim_path(WeaponAnimGroup.AnimSlot.RELOAD)
+	if reload_path == &"":
+		print("[reload-debug] no human reload anim for weapon index ", current_weapon_index)
+		return
 	if _parent_player == null or _parent_player.animation_tree == null:
+		print("[reload-debug] no animation_tree; can't fire reload one-shot")
 		return
 	var root := _parent_player.animation_tree.tree_root as AnimationNodeBlendTree
 	if root == null:
+		print("[reload-debug] animation_tree has no blend tree root")
 		return
-	var arms_node := root.get_node(ARMS_ANIM_NODE) as AnimationNodeAnimation
-	if arms_node == null:
+	var reload_anim_node := root.get_node(RELOAD_ANIM_NODE) as AnimationNodeAnimation
+	if reload_anim_node == null:
+		print("[reload-debug] '", RELOAD_ANIM_NODE, "' node not found in blend tree")
 		return
-	arms_node.animation = arms_anim
+	reload_anim_node.animation = reload_path
+
+	# Playback speed is set via the ReloadTimeScale node's `scale` parameter (there's
+	# no per-node speed in code).  Stretch the clip to the reload duration.
+	var scale := 1.0
+	var anim_player := _get_mannequin_anim_player()
+	if anim_player != null and duration > 0.0:
+		var anim := anim_player.get_animation(reload_path)
+		if anim != null and anim.length > 0.0:
+			scale = anim.length / duration
+	_parent_player.animation_tree.set("parameters/" + str(RELOAD_TIMESCALE_NODE) + "/scale", scale)
+
+	_parent_player.animation_tree.set(
+		"parameters/" + str(RELOAD_ONESHOT_NODE) + "/request",
+		AnimationNodeOneShot.ONE_SHOT_REQUEST_FIRE
+	)
+	print("[reload-debug] fired '", RELOAD_ONESHOT_NODE, "' one-shot with ", reload_path, " (scale=", scale, ")")
 #endregion
 
 
@@ -749,6 +824,8 @@ func _notify_reload_started(timer_value: float) -> void:
 		return
 	_is_reloading = true
 	_reload_timer = timer_value
+	print("[reload-debug] _notify_reload_started | shoot_animation(legacy path)=", shoot_animation,
+		" | current model is WeaponModel=", current_weapon_model is WeaponModel)
 	var reload_stream := _weapons[current_weapon_index].reload_sound
 	var sound_len := reload_stream.get_length() if reload_stream else 1.0
 	_play_sound(reload_stream, sound_len / max(timer_value, 0.01))
@@ -756,6 +833,8 @@ func _notify_reload_started(timer_value: float) -> void:
 		_save_transform_for_reload()
 		shoot_animation.stop()
 		shoot_animation.play("reload", -1, 2.0 / max(timer_value, 0.01))
+	_play_weapon_reload_anim(timer_value)
+	_play_weapon_human_reload_anim(timer_value)
 	mag_changed.emit(
 		_weapons[current_weapon_index].mag_current,
 		_weapons[current_weapon_index].mag_size
@@ -777,6 +856,8 @@ func _notify_bg_restore(weapon_index: int, timer_value: float) -> void:
 		_save_transform_for_reload()
 		shoot_animation.stop()
 		shoot_animation.play("reload", -1, 2.0 / max(timer_value, 0.01))
+	_play_weapon_reload_anim(timer_value)
+	_play_weapon_human_reload_anim(timer_value)
 
 func _finish_reload() -> void:
 	if not _is_ready():

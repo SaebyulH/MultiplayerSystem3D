@@ -1,19 +1,98 @@
 [gd_scene format=3 uid="uid://ccapjs1b2aucy"]
 
-[ext_resource type="PackedScene" uid="uid://bcd8pe06a8u1q" path="res://weapon/tf2/low-poly_haenel_rs9.glb" id="1_74ctf"]
+[ext_resource type="Script" uid="uid://c0ut5ljnvunfk" path="res://weapon/weapon_model.gd" id="1_1upqi"]
+[ext_resource type="AnimationLibrary" uid="uid://cv55yvfohsp02" path="res://assets/ak_test/Human Ak.glb" id="2_6ascw"]
+[ext_resource type="PackedScene" uid="uid://cdyvtxpvcjv7m" path="res://assets/ak_test/Ak.glb" id="2_bwsua"]
+[ext_resource type="Material" uid="uid://ilfyvcnruqii" path="res://assets/ak_test/ak.tres" id="3_foqhv"]
+[ext_resource type="Script" uid="uid://cutc4qk6eibrf" path="res://weapon/weapon_anim_group.gd" id="3_x7rho"]
+[ext_resource type="PackedScene" uid="uid://butpcai3lpusg" path="res://assets/models/ImageToStl.com_c_sniperrifle/c_sniperrifle.glb" id="6_1upqi"]
 
-[node name="Scattergun" type="Node3D" unique_id=664585380]
+[sub_resource type="Resource" id="Resource_iberb"]
+script = ExtResource("3_x7rho")
+gun_anim = &"Ak Human Shoot"
+human_anim = &"Human Ak Shoot"
+metadata/_custom_type_script = "uid://cutc4qk6eibrf"
 
-[node name="Muzzle" type="Node3D" parent="." unique_id=2026291909]
-transform = Transform3D(0.76072145, 0, 0, 0, 0.76072145, 0, 0, 0, 0.76072145, 0, 0.035484437, -0.67127794)
+[sub_resource type="Resource" id="Resource_5aw8s"]
+script = ExtResource("3_x7rho")
+slot = 2
+gun_anim = &"Ak Human Reload"
+human_anim = &"Human Ak Reload Export"
+metadata/_custom_type_script = "uid://cutc4qk6eibrf"
 
-[node name="Sketchfab_Scene2" parent="." unique_id=343259006 instance=ExtResource("1_74ctf")]
-transform = Transform3D(-9.7728075e-09, 0, 0.22357574, 0, 0.22357574, 0, -0.22357574, 0, -9.7728075e-09, 0, -0.0063111093, -0.12745228)
+[sub_resource type="BoxMesh" id="BoxMesh_g4v7s"]
+size = Vector3(0.20117188, 0.79052734, 0.8066406)
 
-[node name="LeftHandTarget" type="Marker3D" parent="." unique_id=780501569]
-unique_name_in_owner = true
-transform = Transform3D(0.60975796, 0.7879477, -0.08564138, 0.51268905, -0.30971307, 0.8007667, 0.6044378, -0.53218144, -0.59282225, -0.061598495, -0.03838861, 0.023475468)
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_yf5fn"]
+albedo_color = Color(0.24313726, 0.13333334, 0.07450981, 1)
 
-[node name="RightHandTarget" type="Marker3D" parent="." unique_id=1414137381]
-unique_name_in_owner = true
-transform = Transform3D(0.9991895, -0.029251352, 0.027649932, -0.03403608, -0.2472996, 0.9683412, -0.021487385, -0.9684977, -0.24809478, 0.026540413, -0.046614528, 0.21473676)
+[sub_resource type="BoxMesh" id="BoxMesh_1upqi"]
+size = Vector3(0.20117188, 0.18139648, 0.8066406)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6ascw"]
+albedo_color = Color(0, 0, 0, 1)
+
+[node name="Scattergun" type="Node3D" unique_id=664585380 node_paths=PackedStringArray("anim_player")]
+script = ExtResource("1_1upqi")
+anim_player = NodePath("Ak2/AnimationPlayer")
+human_anims = ExtResource("2_6ascw")
+anim_groups = Array[ExtResource("3_x7rho")]([SubResource("Resource_iberb"), SubResource("Resource_5aw8s")])
+
+[node name="Ak2" parent="." unique_id=1499969963 instance=ExtResource("2_bwsua")]
+
+[node name="Ak" parent="Ak2" index="0" unique_id=1376722646]
+transform = Transform3D(1, 0, 0, 0, 0.9996481, -0.026515031, 0, 0.026515031, 0.9996481, 0.045003302, 0.14403753, 0.08255616)
+
+[node name="Skeleton3D" parent="Ak2/Ak" index="0" unique_id=975710804]
+bones/0/position = Vector3(-0.10229178, 1.4148824, 0.19054195)
+bones/0/rotation = Quaternion(-0.003985791, 0.9999467, -0.007099882, 0.0063456506)
+bones/1/position = Vector3(-8.905776e-09, 0.0945103, -0.11628162)
+bones/2/position = Vector3(-3.0882696e-08, -0.050684873, -0.15147686)
+bones/2/rotation = Quaternion(-4.602043e-10, -4.5294263e-10, 2.2191671e-10, 1)
+bones/4/rotation = Quaternion(0.96373206, 0.0059782807, 0.0023869262, 0.26679406)
+
+[node name="AK_47" parent="Ak2/Ak/Skeleton3D" index="0" unique_id=557907170]
+visible = false
+surface_material_override/0 = ExtResource("3_foqhv")
+
+[node name="Ejection_Port" parent="Ak2/Ak/Skeleton3D" index="1" unique_id=1230596799]
+visible = false
+surface_material_override/0 = ExtResource("3_foqhv")
+
+[node name="Magazine" parent="Ak2/Ak/Skeleton3D" index="2" unique_id=1404761133]
+visible = false
+surface_material_override/0 = ExtResource("3_foqhv")
+
+[node name="Selector_Switch" parent="Ak2/Ak/Skeleton3D" index="3" unique_id=1668270277]
+visible = false
+
+[node name="Trigger" parent="Ak2/Ak/Skeleton3D" index="4" unique_id=1938663927]
+visible = false
+
+[node name="BoneAttachment3D" type="BoneAttachment3D" parent="Ak2/Ak/Skeleton3D" index="5" unique_id=267950337]
+transform = Transform3D(-0.9998877, -0.007881051, 0.012747223, -0.008061264, 0.99986744, -0.0141484225, -0.012634028, -0.014249592, -0.9998187, -0.10229178, 1.4148824, 0.19054195)
+bone_name = "Root"
+bone_idx = 0
+
+[node name="Muzzle" type="Node3D" parent="Ak2/Ak/Skeleton3D/BoneAttachment3D" unique_id=489113787]
+transform = Transform3D(-0.9998877, -0.007723429, -0.01284333, -0.007881047, 0.999894, 0.012267123, 0.012747226, 0.012366962, -0.9998424, -0.005887013, 0.10460913, -0.6600628)
+
+[node name="c_sniperrifle2" parent="Ak2/Ak/Skeleton3D/BoneAttachment3D" unique_id=1040062717 instance=ExtResource("6_1upqi")]
+transform = Transform3D(-0.013350959, -0.00023909708, -0.003288272, 0.0032815814, 0.00035917337, -0.013349913, 0.00031798927, -0.0137452455, -0.00029164372, -0.00062113255, 0.035803318, -0.026585937)
+
+[node name="BoneAttachment3D2" type="BoneAttachment3D" parent="Ak2/Ak/Skeleton3D" index="6" unique_id=1915326671]
+transform = Transform3D(-0.9998877, -0.007881051, 0.0127472235, -0.008061264, 0.99986744, -0.014148422, -0.012634029, -0.014249591, -0.9998187, -0.10382321, 1.3663474, 0.3427136)
+bone_name = "Mag"
+bone_idx = 2
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Ak2/Ak/Skeleton3D/BoneAttachment3D2" unique_id=124428193]
+transform = Transform3D(0.08186866, -4.6065907e-09, -2.3283064e-10, -2.3355824e-09, 0.08186925, -1.0011718e-08, -3.0267984e-09, 9.313226e-10, 0.081869856, -0.0005598329, 0.08417857, 0.00089645386)
+mesh = SubResource("BoxMesh_g4v7s")
+surface_material_override/0 = SubResource("StandardMaterial3D_yf5fn")
+
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="Ak2/Ak/Skeleton3D/BoneAttachment3D2" unique_id=246768002]
+transform = Transform3D(0.086426005, -9.890755e-09, 9.313226e-10, -4.702997e-09, 0.086427234, -2.2468157e-08, -8.1490725e-10, 1.6298145e-09, 0.08642849, -0.0005986653, 0.05517471, 0.0009586811)
+mesh = SubResource("BoxMesh_1upqi")
+surface_material_override/0 = SubResource("StandardMaterial3D_6ascw")
+
+[editable path="Ak2"]

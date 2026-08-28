@@ -35,6 +35,7 @@ script = ExtResource("5_08nox")
 display_name = "AK-47"
 mag_size = 30
 mag_current = 30
+reload_time = 3.0
 weapon_fires = Array[ExtResource("8_ubq16")]([SubResource("Resource_xmg4c")])
 spread_per_shot = 0.45
 weapon_model = ExtResource("7_avw46")

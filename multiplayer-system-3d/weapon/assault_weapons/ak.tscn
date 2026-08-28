@@ -4,6 +4,13 @@
 [ext_resource type="Script" uid="uid://c0ut5ljnvunfk" path="res://weapon/weapon_model.gd" id="1_r4bbn"]
 [ext_resource type="AnimationLibrary" uid="uid://cv55yvfohsp02" path="res://assets/ak_test/Human Ak.glb" id="2_ndd21"]
 [ext_resource type="Script" uid="uid://cutc4qk6eibrf" path="res://weapon/weapon_anim_group.gd" id="3_a603s"]
+[ext_resource type="Material" uid="uid://ilfyvcnruqii" path="res://assets/ak_test/ak.tres" id="5_a603s"]
+
+[sub_resource type="Resource" id="Resource_65viv"]
+script = ExtResource("3_a603s")
+slot = 2
+gun_anim = &"Ak Human Reload"
+human_anim = &"Human Ak Reload Export"
 
 [sub_resource type="Resource" id="Resource_f0yui"]
 script = ExtResource("3_a603s")
@@ -14,21 +21,32 @@ human_anim = &"Human Ak Shoot"
 script = ExtResource("1_r4bbn")
 anim_player = NodePath("Ak2/AnimationPlayer")
 human_anims = ExtResource("2_ndd21")
-anim_groups = Array[ExtResource("3_a603s")]([SubResource("Resource_f0yui")])
+anim_groups = Array[ExtResource("3_a603s")]([SubResource("Resource_65viv"), SubResource("Resource_f0yui")])
 
 [node name="Ak2" parent="." unique_id=2097840124 instance=ExtResource("1_8mf50")]
 
-[node name="Ak" parent="Ak2" index="0" unique_id=1418960111]
-transform = Transform3D(1, -5.5562923e-09, 5.335288e-08, 6.9689934e-09, 0.9996482, -0.026515035, -5.318681e-08, 0.026515035, 0.9996482, 0.045003302, 0.14403753, 0.08255616)
+[node name="Ak" parent="Ak2" index="0" unique_id=1376722646]
+transform = Transform3D(1, 0, 0, 0, 0.9996481, -0.026515031, 0, 0.026515031, 0.9996481, 0.045003302, 0.14403753, 0.08255616)
 
-[node name="Skeleton3D" parent="Ak2/Ak" index="0" unique_id=1961717685]
-bones/0/position = Vector3(-0.14729519, 1.3657956, 0.18803316)
-bones/0/rotation = Quaternion(-0.003985786, 0.9999467, -0.007099796, 0.0063456777)
-bones/1/position = Vector3(-4.0163326e-09, 0.09451036, -0.116281606)
-bones/4/rotation = Quaternion(0.98491, 4.0515914e-08, -1.6694987e-07, -0.17306727)
+[node name="Skeleton3D" parent="Ak2/Ak" index="0" unique_id=975710804]
+bones/0/position = Vector3(-0.10229178, 1.4148824, 0.19054195)
+bones/0/rotation = Quaternion(-0.003985791, 0.9999467, -0.007099882, 0.0063456506)
+bones/1/position = Vector3(-8.905776e-09, 0.0945103, -0.11628162)
+bones/2/position = Vector3(-3.0882696e-08, -0.050684873, -0.15147686)
+bones/2/rotation = Quaternion(-4.602043e-10, -4.5294263e-10, 2.2191671e-10, 1)
+bones/4/rotation = Quaternion(0.96373206, 0.0059782807, 0.0023869262, 0.26679406)
+
+[node name="AK_47" parent="Ak2/Ak/Skeleton3D" index="0" unique_id=557907170]
+surface_material_override/0 = ExtResource("5_a603s")
+
+[node name="Ejection_Port" parent="Ak2/Ak/Skeleton3D" index="1" unique_id=1230596799]
+surface_material_override/0 = ExtResource("5_a603s")
+
+[node name="Magazine" parent="Ak2/Ak/Skeleton3D" index="2" unique_id=1404761133]
+surface_material_override/0 = ExtResource("5_a603s")
 
 [node name="BoneAttachment3D" type="BoneAttachment3D" parent="Ak2/Ak/Skeleton3D" index="5" unique_id=1431857578]
-transform = Transform3D(-0.9998877, -0.00788104, 0.012747275, -0.0080612535, 0.9998674, -0.01414825, -0.012634083, -0.01424942, -0.9998186, -0.14729519, 1.3657956, 0.18803316)
+transform = Transform3D(-0.9998877, -0.007881051, 0.012747223, -0.008061264, 0.99986744, -0.0141484225, -0.012634028, -0.014249592, -0.9998187, -0.10229178, 1.4148824, 0.19054195)
 bone_name = "Root"
 bone_idx = 0
 

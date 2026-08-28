@@ -60,11 +60,34 @@ func get_human_anim_path(slot: WeaponAnimGroup.AnimSlot) -> StringName:
 
 
 ## Play this weapon's animation for [param slot] on its own AnimationPlayer.
-## No-ops when the weapon has no anim_player or no animation for that slot.
+## No-ops when the weapon has no anim_player, no group for that slot, or the
+## anim_player is missing the referenced animation.
 func play_anim(slot: WeaponAnimGroup.AnimSlot) -> void:
 	if anim_player == null:
 		return
 	var group := get_anim_group(slot)
 	if group == null or group.gun_anim == &"":
 		return
+	if not anim_player.has_animation(group.gun_anim):
+		return
 	anim_player.play(group.gun_anim)
+
+
+## Play this weapon's animation for [param slot], stretched to last [param duration]
+## seconds.  The playback speed is derived from the animation's own length, so the
+## anim always matches the requested duration regardless of how it was authored.
+## No-ops when the weapon has no anim_player, no group for that slot, or the
+## anim_player is missing the referenced animation.
+func play_anim_scaled(slot: WeaponAnimGroup.AnimSlot, duration: float) -> void:
+	if anim_player == null:
+		return
+	var group := get_anim_group(slot)
+	if group == null or group.gun_anim == &"":
+		return
+	if not anim_player.has_animation(group.gun_anim):
+		return
+	var anim := anim_player.get_animation(group.gun_anim)
+	var speed := 1.0
+	if anim != null and anim.length > 0.0 and duration > 0.0:
+		speed = anim.length / duration
+	anim_player.play(group.gun_anim, -1, speed)
