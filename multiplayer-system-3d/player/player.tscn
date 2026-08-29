@@ -15,7 +15,6 @@
 [ext_resource type="Script" uid="uid://3wscq7m2f1x7" path="res://player/camera_3d.gd" id="16_65viv"]
 [ext_resource type="Script" uid="uid://b8qygy7q520a8" path="res://player/animation_tree.gd" id="17_c35mf"]
 [ext_resource type="PackedScene" uid="uid://bpiaawoevyijs" path="res://assets/mannequin/mannequin.tscn" id="18_c35mf"]
-[ext_resource type="PackedScene" uid="uid://de2x1mcwubja7" path="res://weapon/assault_weapons/ak.tscn" id="20_bjvpn"]
 [ext_resource type="PackedScene" uid="uid://em68gvqy1f84" path="res://effects/muzzle_flash.tscn" id="27_5ejfk"]
 [ext_resource type="Script" uid="uid://dmbwmsfd27dhh" path="res://player/player_ui.gd" id="34_ge24q"]
 [ext_resource type="Script" uid="uid://hpdd6uclsu15" path="res://components/damage_number_manager.gd" id="35_dmn"]
@@ -78,6 +77,12 @@ animation = &"other_movement/a_pose"
 [sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_bjvpn"]
 animation = &"Human Ak/Human Ak Pullout"
 
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_s7qer"]
+animation = &"Human Ak/Human Ak Putaway"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_g4c7l"]
+animation = &"Human Ak/Human Ak Inspect"
+
 [sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_q28gw"]
 animation = &"other_movement/jump"
 
@@ -90,9 +95,17 @@ animation = &"Human Ak/Human Ak Hold"
 filter_enabled = true
 filters = ["Skeleton3D:DEF-foot.L", "Skeleton3D:DEF-foot.R", "Skeleton3D:DEF-pelvis.L", "Skeleton3D:DEF-shin.L", "Skeleton3D:DEF-shin.L.001", "Skeleton3D:DEF-shin.R", "Skeleton3D:DEF-shin.R.001", "Skeleton3D:DEF-spine", "Skeleton3D:DEF-spine.001", "Skeleton3D:DEF-spine.002", "Skeleton3D:DEF-thigh.L", "Skeleton3D:DEF-thigh.L.001", "Skeleton3D:DEF-thigh.R", "Skeleton3D:DEF-thigh.R.001", "Skeleton3D:DEF-toe.L", "Skeleton3D:DEF-toe.R"]
 
+[sub_resource type="AnimationNodeOneShot" id="AnimationNodeOneShot_knn7v"]
+
+[sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_7pqkx"]
+
 [sub_resource type="AnimationNodeOneShot" id="AnimationNodeOneShot_s7qer"]
 
 [sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_pullout"]
+
+[sub_resource type="AnimationNodeOneShot" id="AnimationNodeOneShot_g4c7l"]
+
+[sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_knn7v"]
 
 [sub_resource type="AnimationNodeOneShot" id="AnimationNodeOneShot_x7c3f"]
 fadein_time = 0.1
@@ -266,7 +279,7 @@ blend_point_8/pos = Vector2(1, -1)
 blend_point_8/name = &"walk_walk_wd"
 
 [sub_resource type="AnimationNodeBlendTree" id="AnimationNodeBlendTree_g4v7s"]
-graph_offset = Vector2(193.8346, -858.3102)
+graph_offset = Vector2(417.01392, -653.9072)
 nodes/output/position = Vector2(1760, -220)
 nodes/walk/node = SubResource("AnimationNodeBlendSpace2D_7pqkx")
 nodes/walk/position = Vector2(-93.333336, 226.66667)
@@ -293,12 +306,24 @@ nodes/Reload/position = Vector2(900, -580)
 nodes/ReloadTimeScale/node = SubResource("AnimationNodeTimeScale_65viv")
 nodes/ReloadTimeScale/position = Vector2(720, -420)
 nodes/Pullout/node = SubResource("AnimationNodeOneShot_s7qer")
-nodes/Pullout/position = Vector2(1320, -620)
+nodes/Pullout/position = Vector2(1120, -700)
 "nodes/Animation 4/node" = SubResource("AnimationNodeAnimation_bjvpn")
 "nodes/Animation 4/position" = Vector2(580, -780)
 nodes/PulloutTimeScale/node = SubResource("AnimationNodeTimeScale_pullout")
 nodes/PulloutTimeScale/position = Vector2(880, -780)
-node_connections = [&"output", 0, &"HoldBlend", &"Blend3", 0, &"crouch", &"Blend3", 1, &"walk", &"Blend3", 2, &"sprint", &"air", 0, &"Blend3", &"air", 1, &"Animation", &"HoldBlend", 0, &"Pullout", &"HoldBlend", 1, &"Animation 3", &"Reload", 0, &"Hold", &"Reload", 1, &"ReloadTimeScale", &"ReloadTimeScale", 0, &"Animation 2", &"Pullout", 0, &"Reload", &"Pullout", 1, &"PulloutTimeScale", &"PulloutTimeScale", 0, &"Animation 4"]
+nodes/Putaway/node = SubResource("AnimationNodeOneShot_g4c7l")
+nodes/Putaway/position = Vector2(1360, -780)
+"nodes/Animation 5/node" = SubResource("AnimationNodeAnimation_s7qer")
+"nodes/Animation 5/position" = Vector2(800, -960)
+nodes/PutawayTimeScale/node = SubResource("AnimationNodeTimeScale_knn7v")
+nodes/PutawayTimeScale/position = Vector2(1120, -960)
+"nodes/Animation 6/node" = SubResource("AnimationNodeAnimation_g4c7l")
+"nodes/Animation 6/position" = Vector2(1000, -1140)
+nodes/InspectTimeScale/node = SubResource("AnimationNodeTimeScale_7pqkx")
+nodes/InspectTimeScale/position = Vector2(1360, -1060)
+nodes/Inspect/node = SubResource("AnimationNodeOneShot_knn7v")
+nodes/Inspect/position = Vector2(1640, -920)
+node_connections = [&"output", 0, &"HoldBlend", &"Blend3", 0, &"crouch", &"Blend3", 1, &"walk", &"Blend3", 2, &"sprint", &"air", 0, &"Blend3", &"air", 1, &"Animation", &"HoldBlend", 0, &"Inspect", &"HoldBlend", 1, &"Animation 3", &"Reload", 0, &"Hold", &"Reload", 1, &"ReloadTimeScale", &"ReloadTimeScale", 0, &"Animation 2", &"Pullout", 0, &"Reload", &"Pullout", 1, &"PulloutTimeScale", &"PulloutTimeScale", 0, &"Animation 4", &"Putaway", 0, &"Pullout", &"Putaway", 1, &"PutawayTimeScale", &"PutawayTimeScale", 0, &"Animation 5", &"InspectTimeScale", 0, &"Animation 6", &"Inspect", 0, &"Putaway", &"Inspect", 1, &"InspectTimeScale"]
 
 [node name="Player" type="CharacterBody3D" unique_id=51620469 node_paths=PackedStringArray("tick_interpolator", "player_input", "rollback_sync", "attribute_component", "body", "weapon_controller")]
 collision_layer = 2
@@ -613,6 +638,14 @@ parameters/Pullout/active = false
 parameters/Pullout/internal_active = false
 parameters/Pullout/request = 0
 parameters/PulloutTimeScale/scale = 1.0
+parameters/Putaway/active = false
+parameters/Putaway/internal_active = false
+parameters/Putaway/request = 0
+parameters/PutawayTimeScale/scale = 1.0
+parameters/InspectTimeScale/scale = 1.0
+parameters/Inspect/active = false
+parameters/Inspect/internal_active = false
+parameters/Inspect/request = 0
 script = ExtResource("17_c35mf")
 
 [node name="RotationDir" type="Node3D" parent="Body" unique_id=612581907]
@@ -635,11 +668,11 @@ bones/8/rotation = Quaternion(-1.183374e-07, 0.6969363, 0.71713305, 5.2617214e-0
 bones/9/position = Vector3(-0.116525814, -0.01207269, 0.027289439)
 bones/9/rotation = Quaternion(-1.1833735e-07, 0.6969363, 0.71713305, 5.261722e-08)
 bones/10/position = Vector3(0.034612503, 0.15384077, 0.054011025)
-bones/11/rotation = Quaternion(0.006366748, 0.06841286, -0.94108266, 0.3311232)
+bones/11/rotation = Quaternion(0.006117246, 0.068698645, -0.94105935, 0.3311352)
 bones/11/scale = Vector3(0.9982073, 1.003596, 0.99820715)
-bones/12/rotation = Quaternion(0.14177477, 0.055657715, -0.008012308, 0.98830056)
+bones/12/rotation = Quaternion(0.14212522, 0.055711016, -0.008040136, 0.988247)
 bones/12/scale = Vector3(0.9998889, 1.0006036, 0.99951184)
-bones/13/rotation = Quaternion(-0.013203915, -0.6022888, -0.2075015, 0.77072495)
+bones/13/rotation = Quaternion(-0.013224516, -0.60221696, -0.20748557, 0.77078503)
 bones/13/scale = Vector3(1.0013808, 0.997148, 1.0014874)
 bones/15/position = Vector3(0.0016621968, 0.07434712, 0.0010531268)
 bones/15/rotation = Quaternion(0.37347278, -0.071094, -0.028903507, 0.9244611)
@@ -683,12 +716,12 @@ bones/31/scale = Vector3(0.9999077, 0.947426, 0.99982756)
 bones/32/rotation = Quaternion(0.22000109, -0.0064973207, -0.019674003, 0.97527957)
 bones/32/scale = Vector3(1.0000757, 1.036188, 1.0082778)
 bones/33/position = Vector3(-0.034612525, 0.15384077, 0.05401101)
-bones/34/rotation = Quaternion(-0.045434773, 0.43150097, -0.73215353, -0.5250656)
+bones/34/rotation = Quaternion(-0.046358168, 0.43097535, -0.73220235, -0.52534854)
 bones/34/scale = Vector3(1.0129256, 0.9746416, 1.0129256)
-bones/35/rotation = Quaternion(0.90226305, 0.009386144, -0.019922296, 0.4306233)
+bones/35/rotation = Quaternion(0.9023513, 0.009280671, -0.01970609, 0.43045047)
 bones/35/scale = Vector3(1.0022354, 0.9726467, 1.0265516)
-bones/36/rotation = Quaternion(-0.7845675, 0.17611153, -0.07240534, 0.5900814)
-bones/36/scale = Vector3(0.99103326, 0.98790693, 1.022084)
+bones/36/rotation = Quaternion(-0.784356, 0.17581794, -0.07249193, 0.59043944)
+bones/36/scale = Vector3(0.9911414, 0.98803574, 1.0218532)
 bones/38/position = Vector3(-0.0012002233, 0.07557268, 0.00030090046)
 bones/38/rotation = Quaternion(0.34918913, 0.07349789, 0.019952167, 0.93395233)
 bones/39/rotation = Quaternion(0.22907813, 0.024690086, -0.015946792, 0.9729643)
@@ -874,36 +907,20 @@ settings/0/invert = 0
 settings/0/additive = false
 
 [node name="BoneAttachment3D" type="BoneAttachment3D" parent="Body/Mannequin/mannequin/Skeleton3D" index="3" unique_id=2048178543]
-transform = Transform3D(0.9988424, 0.00012681294, -2.2528622e-05, -0.0001134558, 0.99620116, 0.1920437, 4.589131e-05, -0.18382461, 0.96983194, 4.4754986e-05, 1.5977379, 0.008519554)
+transform = Transform3D(0.99884266, 4.4607496e-08, -2.3502068e-07, 6.4803507e-10, 0.99610376, 0.1925494, 2.3641579e-07, -0.1842619, 0.9697524, -9.0220015e-10, 1.5977286, 0.008718627)
 bone_name = "DEF-spine.006"
 bone_idx = 58
 
 [node name="CameraPosition" type="Node3D" parent="Body/Mannequin/mannequin/Skeleton3D/BoneAttachment3D" unique_id=299153247]
-transform = Transform3D(1.0000001, 2.4088704e-05, 4.3187047e-06, -2.40468e-05, 1.0000002, 6.610155e-05, -4.339441e-06, -6.608665e-05, 1, 0, 0.055, 0.029)
+transform = Transform3D(1.0000001, 2.4088704e-05, 4.3187047e-06, -2.40468e-05, 1.0000002, 6.610155e-05, -4.339441e-06, -6.608665e-05, 1, 1.6562637e-08, 0.10163334, 0.14793478)
 
 [node name="GunAttach" type="BoneAttachment3D" parent="Body/Mannequin/mannequin/Skeleton3D" index="4" unique_id=479500366]
-transform = Transform3D(0.9988424, 8.55361e-06, 6.856708e-07, 8.978418e-11, 1.014538, 0.0031646937, 1.036824e-09, -1.1175871e-08, 0.9870997, 4.301869e-05, 1.3073205, 0.008514152)
+transform = Transform3D(0.99884266, -1.663508e-10, -1.0358491e-09, -2.0218202e-15, 1.014538, 0.0032228678, 1.0344626e-09, -2.2351742e-08, 0.98710304, -8.4603113e-10, 1.307311, 0.008677705)
 bone_name = "DEF-spine.003"
 bone_idx = 7
 
 [node name="GunAttach" type="Node3D" parent="Body/Mannequin/mannequin/Skeleton3D/GunAttach" unique_id=927033303]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.307, 0.009)
-
-[node name="Ak" parent="Body/Mannequin/mannequin/Skeleton3D/GunAttach/GunAttach" unique_id=1233250200 instance=ExtResource("20_bjvpn")]
-
-[node name="Ak" parent="Body/Mannequin/mannequin/Skeleton3D/GunAttach/GunAttach/Ak/Ak2" parent_id_path=PackedInt32Array(1233250200, 2097840124) index="0" unique_id=1719648902]
-transform = Transform3D(1, 0, 0, 0, 0.99999964, 0, 0, 0, 0.99999964, 0, 0, 0)
-
-[node name="Skeleton3D" parent="Body/Mannequin/mannequin/Skeleton3D/GunAttach/GunAttach/Ak/Ak2/Ak" index="0" unique_id=1161087777]
-bones/0/position = Vector3(-0.10229178, 1.5043666, 0.30673718)
-bones/0/rotation = Quaternion(-0.003901305, 0.99995303, 0.0061588297, 0.0063979407)
-bones/1/position = Vector3(-6.6007635e-09, 0.09451035, -0.11628167)
-bones/2/position = Vector3(-2.7187752e-08, -0.050684985, -0.15147687)
-bones/2/rotation = Quaternion(-1.6507511e-07, -3.5466818e-10, 4.362205e-11, 1)
-bones/4/rotation = Quaternion(0.96373206, 0.005978279, 0.0023869204, 0.26679412)
-
-[node name="BoneAttachment3D" parent="Body/Mannequin/mannequin/Skeleton3D/GunAttach/GunAttach/Ak/Ak2/Ak/Skeleton3D" index="5" unique_id=1431857578]
-transform = Transform3D(-0.9998877, -0.007881046, 0.012747222, -0.007723435, 0.99989325, 0.012366998, -0.012843334, 0.012267153, -0.9998421, -0.10229178, 1.5043666, 0.30673718)
 
 [node name="CCDIK3D" type="CCDIK3D" parent="Body/Mannequin/mannequin/Skeleton3D" index="5" unique_id=1243284966]
 transform = Transform3D(0.9988426, 4.3960485e-05, 1.2171956e-06, -4.3275635e-05, 1.0128797, 0.05641101, 1.2293206e-06, -0.057984333, 0.98539656, -4.3957425e-05, -0.0068199397, -0.13318233)
@@ -968,5 +985,3 @@ spot_range = 1.0390363
 
 [editable path="Body/Mannequin"]
 [editable path="Body/Mannequin/mannequin"]
-[editable path="Body/Mannequin/mannequin/Skeleton3D/GunAttach/GunAttach/Ak"]
-[editable path="Body/Mannequin/mannequin/Skeleton3D/GunAttach/GunAttach/Ak/Ak2"]

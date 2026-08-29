@@ -26,7 +26,7 @@
 script = ExtResource("2_l1baf")
 class_display_name = "Assault"
 primary_weapons = Array[ExtResource("1_qjte0")]([ExtResource("10_vm0dj"), ExtResource("2_4smbg"), ExtResource("14_qv5tr"), ExtResource("6_vm0dj"), ExtResource("3_4smbg"), ExtResource("4_5au0l"), ExtResource("12_60hm4")])
-secondary_weapons = Array[ExtResource("1_qjte0")]([ExtResource("8_4smbg"), ExtResource("9_skpeg"), ExtResource("17_ln7a5"), ExtResource("11_moxu8"), ExtResource("20_0ep13"), ExtResource("5_4smbg")])
-melee_weapons = Array[ExtResource("1_qjte0")]([ExtResource("5_0ep13"), ExtResource("6_7sldb")])
+secondary_weapons = Array[ExtResource("1_qjte0")]([ExtResource("10_vm0dj"), ExtResource("8_4smbg"), ExtResource("9_skpeg"), ExtResource("17_ln7a5"), ExtResource("11_moxu8"), ExtResource("20_0ep13"), ExtResource("5_4smbg")])
+melee_weapons = Array[ExtResource("1_qjte0")]([ExtResource("10_vm0dj"), ExtResource("5_0ep13"), ExtResource("6_7sldb")])
 characters = Array[ExtResource("10_char")]([ExtResource("11_char"), ExtResource("12_char"), ExtResource("4_4o53n")])
 metadata/_custom_type_script = "uid://cbg4mqtqfaara"

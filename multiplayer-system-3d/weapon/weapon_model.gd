@@ -91,3 +91,21 @@ func play_anim_scaled(slot: WeaponAnimGroup.AnimSlot, duration: float) -> void:
 	if anim != null and anim.length > 0.0 and duration > 0.0:
 		speed = anim.length / duration
 	anim_player.play(group.gun_anim, -1, speed)
+
+
+## Play this weapon's animation for [param slot] and loop it (used for the hold
+## anim).  Sets the clip to loop before playing so the weapon rests in this pose
+## indefinitely.  No-ops when the weapon has no anim_player, no group for that
+## slot, or the anim_player is missing the referenced animation.
+func play_anim_loop(slot: WeaponAnimGroup.AnimSlot) -> void:
+	if anim_player == null:
+		return
+	var group := get_anim_group(slot)
+	if group == null or group.gun_anim == &"":
+		return
+	if not anim_player.has_animation(group.gun_anim):
+		return
+	var anim := anim_player.get_animation(group.gun_anim)
+	if anim != null:
+		anim.loop_mode = Animation.LOOP_LINEAR
+	anim_player.play(group.gun_anim)

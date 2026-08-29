@@ -462,6 +462,10 @@ func spawn():
 		camera.current = false
 		camera.visible = false
 
+	# Weapon is briefly unusable on every (re)spawn — plays the pull-out anim and
+	# locks it for the weapon's pullout_time.
+	weapon_controller.trigger_pullout()
+
 
 func set_randomize_on_death(enabled: bool) -> void:
 	_randomize_on_death = enabled

@@ -26,6 +26,7 @@ var tertiary_fire_held: bool  = false
 signal previous_weapon
 signal next_weapon
 signal reload
+signal inspect
 
 static var ui_open: bool = false
 
@@ -92,6 +93,8 @@ func _input(event: InputEvent) -> void:
 		next_weapon.emit()
 	if Input.is_action_just_pressed("reload"):
 		reload.emit()
+	if Input.is_action_just_pressed("inspect"):
+		inspect.emit()
 	if event.is_action_pressed("ui_cancel"):
 		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 		primary_fire_held   = false

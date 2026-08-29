@@ -19,6 +19,19 @@ const PULLOUT_ONESHOT_NODE := &"Pullout"
 const PULLOUT_ANIM_NODE := &"Animation 4"
 ## Name of the AnimationNodeTimeScale that wraps the pull-out clip (Pull-out one-shot input 1).
 const PULLOUT_TIMESCALE_NODE := &"PulloutTimeScale"
+## Name of the AnimationTree one-shot node that plays the put-away over the hold.
+const PUTAWAY_ONESHOT_NODE := &"Putaway"
+## Name of the AnimationNodeAnimation feeding the Put-away one-shot (its input 1).
+const PUTAWAY_ANIM_NODE := &"Animation 5"
+## Name of the AnimationNodeTimeScale that wraps the put-away clip (Put-away one-shot input 1).
+const PUTAWAY_TIMESCALE_NODE := &"PutawayTimeScale"
+## Name of the AnimationTree one-shot node that plays the inspect over the hold.
+const INSPECT_ONESHOT_NODE := &"Inspect"
+## Name of the AnimationNodeAnimation feeding the Inspect one-shot (its input 1).
+const INSPECT_ANIM_NODE := &"Animation 6"
+## Name of the AnimationNodeTimeScale that wraps the inspect clip (Inspect one-shot input 1).
+## Left at scale 1.0 — inspect isn't gameplay-impacting, so it isn't time-scaled.
+const INSPECT_TIMESCALE_NODE := &"InspectTimeScale"
 ## Fallback arm animation when the weapon has no hold animation (or isn't a WeaponModel).
 const ARMS_ANIM_RESET := &"other_movement/a_pose"
 
@@ -86,6 +99,10 @@ var _pre_fire_timer: float  = 0.0
 var _fire_cooldown: float   = 0.0
 var _current_spread: float  = 0.0
 var _fired_this_press: Dictionary[int, bool] = {}
+
+## True while the inspect animation is playing.  Aborted as soon as the player
+## fires or performs any other action.
+var _is_inspecting: bool = false
 
 signal mag_changed(current: int, mag_max: int)
 signal weapon_changed(index: int, weapon: Weapon)
@@ -210,6 +227,7 @@ func _ready() -> void:
 	player_input.previous_weapon.connect(previous_weapon)
 	player_input.next_weapon.connect(next_weapon)
 	player_input.reload.connect(start_reload)
+	player_input.inspect.connect(_on_inspect_input)
 	if shoot_animation:
 		shoot_animation.animation_finished.connect(_on_reload_anim_finished)
 
@@ -297,6 +315,7 @@ func reset() -> void:
 	_ensure_bg_arrays()
 	_is_firing = false
 	_firing_remaining = 0.0
+	_is_inspecting = false
 	_switch_phase = SwitchPhase.IDLE
 	_switch_timer = 0.0
 	_switch_pullout_time = 0.0
@@ -604,6 +623,7 @@ func _apply_weapon_model_anims() -> void:
 			arms_anim = hold
 
 	_set_hold_anim(arms_anim)
+	_play_weapon_hold_anim()
 
 
 ## Play the current weapon model's reload animation (if it has one), stretched to
@@ -618,6 +638,28 @@ func _play_weapon_reload_anim(duration: float) -> void:
 func _play_weapon_pullout_anim(duration: float) -> void:
 	if current_weapon_model is WeaponModel:
 		(current_weapon_model as WeaponModel).play_anim_scaled(WeaponAnimGroup.AnimSlot.PULLOUT, duration)
+
+
+## Play the current weapon model's put-away animation (first-person gun anim, if
+## it has one), stretched to [param duration].  Mirrors _play_weapon_reload_anim.
+func _play_weapon_put_away_anim(duration: float) -> void:
+	if current_weapon_model is WeaponModel:
+		(current_weapon_model as WeaponModel).play_anim_scaled(WeaponAnimGroup.AnimSlot.PUTAWAY, duration)
+
+
+## Play the current weapon model's inspect animation (first-person gun anim, if
+## it has one) at normal speed — inspect isn't time-scaled.
+func _play_weapon_inspect_anim() -> void:
+	if current_weapon_model is WeaponModel:
+		(current_weapon_model as WeaponModel).play_anim(WeaponAnimGroup.AnimSlot.INSPECT)
+
+
+## Play the current weapon model's looping hold animation (first-person gun anim,
+## if it has one).  This is the gun's resting pose and should be re-applied after
+## any one-shot anim (reload / pull-out / inspect) finishes.
+func _play_weapon_hold_anim() -> void:
+	if current_weapon_model is WeaponModel:
+		(current_weapon_model as WeaponModel).play_anim_loop(WeaponAnimGroup.AnimSlot.HOLD)
 
 
 ## Fire the AnimationTree's "Reload" one-shot with the current weapon's human
@@ -696,6 +738,113 @@ func _play_weapon_human_pullout_anim(duration: float) -> void:
 		"parameters/" + str(PULLOUT_ONESHOT_NODE) + "/request",
 		AnimationNodeOneShot.ONE_SHOT_REQUEST_FIRE
 	)
+
+
+## Fire the AnimationTree's "Putaway" one-shot with the current weapon's human
+## put-away animation, time-scaled to last [param duration] seconds.  Mirrors
+## _play_weapon_human_pullout_anim; no-ops when there is no put-away anim.
+func _play_weapon_human_put_away_anim(duration: float) -> void:
+	if not (current_weapon_model is WeaponModel):
+		return
+	var model := current_weapon_model as WeaponModel
+	var putaway_path := model.get_human_anim_path(WeaponAnimGroup.AnimSlot.PUTAWAY)
+	if putaway_path == &"":
+		return
+	if _parent_player == null or _parent_player.animation_tree == null:
+		return
+	var root := _parent_player.animation_tree.tree_root as AnimationNodeBlendTree
+	if root == null:
+		return
+	var putaway_anim_node := root.get_node(PUTAWAY_ANIM_NODE) as AnimationNodeAnimation
+	if putaway_anim_node == null:
+		return
+	putaway_anim_node.animation = putaway_path
+
+	var scale := 1.0
+	var anim_player := _get_mannequin_anim_player()
+	if anim_player != null and duration > 0.0:
+		var anim := anim_player.get_animation(putaway_path)
+		if anim != null and anim.length > 0.0:
+			scale = anim.length / duration
+	_parent_player.animation_tree.set("parameters/" + str(PUTAWAY_TIMESCALE_NODE) + "/scale", scale)
+
+	_parent_player.animation_tree.set(
+		"parameters/" + str(PUTAWAY_ONESHOT_NODE) + "/request",
+		AnimationNodeOneShot.ONE_SHOT_REQUEST_FIRE
+	)
+
+
+## Fire the AnimationTree's "Inspect" one-shot with the current weapon's human
+## inspect animation at normal speed (no time-scaling — inspect isn't gameplay
+## impacting).  No-ops when there is no inspect anim or the tree isn't ready.
+func _play_weapon_human_inspect_anim() -> void:
+	if not (current_weapon_model is WeaponModel):
+		return
+	var model := current_weapon_model as WeaponModel
+	var inspect_path := model.get_human_anim_path(WeaponAnimGroup.AnimSlot.INSPECT)
+	if inspect_path == &"":
+		return
+	if _parent_player == null or _parent_player.animation_tree == null:
+		return
+	var root := _parent_player.animation_tree.tree_root as AnimationNodeBlendTree
+	if root == null:
+		return
+	var inspect_anim_node := root.get_node(INSPECT_ANIM_NODE) as AnimationNodeAnimation
+	if inspect_anim_node == null:
+		return
+	inspect_anim_node.animation = inspect_path
+	_parent_player.animation_tree.set(
+		"parameters/" + str(INSPECT_ONESHOT_NODE) + "/request",
+		AnimationNodeOneShot.ONE_SHOT_REQUEST_FIRE
+	)
+
+
+## Player pressed the inspect input.  Play the inspect animation (gun + human)
+## unless one is already playing.
+func _on_inspect_input() -> void:
+	if not _is_ready() or _is_inspecting or is_switching():
+		return
+	_is_inspecting = true
+	_play_weapon_inspect_anim()
+	_play_weapon_human_inspect_anim()
+	# Reset the flag once the inspect animation finishes on its own.
+	var duration := _inspect_duration()
+	if duration > 0.0:
+		get_tree().create_timer(duration).timeout.connect(_on_inspect_finished)
+
+
+## Length (seconds) of the current weapon's inspect animation, used to know when
+## the inspect finishes so the flag can be reset.
+func _inspect_duration() -> float:
+	if current_weapon_model is WeaponModel:
+		var model := current_weapon_model as WeaponModel
+		if model.anim_player != null:
+			var group := model.get_anim_group(WeaponAnimGroup.AnimSlot.INSPECT)
+			if group != null and group.gun_anim != &"" and model.anim_player.has_animation(group.gun_anim):
+				var anim := model.anim_player.get_animation(group.gun_anim)
+				if anim != null:
+					return anim.length
+	return 0.0
+
+
+func _on_inspect_finished() -> void:
+	_is_inspecting = false
+	_play_weapon_hold_anim()
+
+
+## Abort the inspect animation immediately (human one-shot + gun anim).  Called
+## when the player fires or does any other action — we don't care about
+## interrupting it.
+func _stop_inspect() -> void:
+	if not _is_inspecting:
+		return
+	_is_inspecting = false
+	if _parent_player != null and _parent_player.animation_tree != null:
+		_parent_player.animation_tree.set(
+			"parameters/" + str(INSPECT_ONESHOT_NODE) + "/request",
+			AnimationNodeOneShot.ONE_SHOT_REQUEST_ABORT
+		)
+	_play_weapon_hold_anim()
 #endregion
 
 
@@ -732,6 +881,14 @@ func _on_weapon_index_changed(previous_index: int = -1) -> void:
 	_firing_remaining = 0.0
 	if shoot_animation:
 		shoot_animation.stop()
+	# Abort the reload one-shot so the reload anim doesn't bleed over to the next
+	# weapon (the gun's reload anim dies with the freed model, but the mannequin's
+	# reload one-shot is separate and must be cancelled explicitly).
+	if _parent_player != null and _parent_player.animation_tree != null:
+		_parent_player.animation_tree.set(
+			"parameters/" + str(RELOAD_ONESHOT_NODE) + "/request",
+			AnimationNodeOneShot.ONE_SHOT_REQUEST_ABORT
+		)
 	_restore_transform_after_reload()
 
 	# Swap the visible model.  A real switch (previous_index >= 0) animates the
@@ -755,6 +912,8 @@ func _on_weapon_index_changed(previous_index: int = -1) -> void:
 ## incoming weapon immediately when there is no outgoing weapon, i.e. initial
 ## load).  [param previous_index] is -1 for an initial load.
 func _begin_switch(previous_index: int) -> void:
+	_stop_inspect()
+
 	var old_weapon: Weapon = _weapons[previous_index] if previous_index >= 0 and previous_index < _weapons.size() else null
 	var new_weapon: Weapon = _weapons[current_weapon_index] if not _weapons.is_empty() and current_weapon_index < _weapons.size() else null
 
@@ -762,19 +921,17 @@ func _begin_switch(previous_index: int) -> void:
 	var pullout := new_weapon.pullout_time if new_weapon else 0.0
 	_switch_pullout_time = pullout
 
-	# Initial load: no outgoing weapon to put away — just pull out.
+	# Initial load: no outgoing weapon to put away.  The pull-out is triggered
+	# separately when the player spawns (see trigger_pullout), so just spawn the
+	# model here without gating.
 	if old_weapon == null:
 		_do_swap_model()
-		_play_weapon_pullout_anim(pullout)
-		_play_weapon_human_pullout_anim(pullout)
-		if pullout > 0.0:
-			_switch_phase = SwitchPhase.PULLOUT
-			_switch_timer = pullout
-		else:
-			_finish_switch()
+		_finish_switch()
 		return
 
 	if put_away > 0.0:
+		_play_weapon_put_away_anim(put_away)
+		_play_weapon_human_put_away_anim(put_away)
 		_switch_phase = SwitchPhase.PUT_AWAY
 		_switch_timer = put_away
 	elif pullout > 0.0:
@@ -801,6 +958,7 @@ func _advance_switch_phase() -> void:
 			else:
 				_finish_switch()
 		SwitchPhase.PULLOUT:
+			_play_weapon_hold_anim()
 			_finish_switch()
 		_:
 			_finish_switch()
@@ -820,6 +978,25 @@ func _finish_switch() -> void:
 	_switch_phase = SwitchPhase.IDLE
 	_switch_timer = 0.0
 	_switch_pullout_time = 0.0
+	_auto_reload_if_empty()
+
+
+## Force the current weapon into the pull-out state: play its pull-out anims and
+## lock it for pullout_time.  Called when the player spawns so the weapon is
+## briefly unusable.  Runs on every peer; deterministic since it only reads the
+## current weapon's pullout_time.
+func trigger_pullout() -> void:
+	if not _is_ready():
+		return
+	var pullout := _weapons[current_weapon_index].pullout_time
+	_switch_pullout_time = pullout
+	_play_weapon_pullout_anim(pullout)
+	_play_weapon_human_pullout_anim(pullout)
+	if pullout > 0.0:
+		_switch_phase = SwitchPhase.PULLOUT
+		_switch_timer = pullout
+	else:
+		_finish_switch()
 
 
 ## Server-only bookkeeping that must run once the incoming weapon's model is
@@ -829,13 +1006,6 @@ func _finalize_switch_server() -> void:
 		return
 	var switched_weapon: Weapon = _weapons[current_weapon_index]
 
-	# Auto-reload if switching to a weapon that is already empty — covers
-	# weapon-switch and spawn/respawn cases that fire_intent() never sees.
-	# Bypass the is_switching() gate in start_reload(): this reload is the
-	# whole point of the switch, not a manual request.
-	if not switched_weapon.has_infinite_ammo and switched_weapon.mag_current <= 0:
-		_begin_reload_server()
-
 	# Reset ADS when switching to a weapon that has no ADS fire mode.
 	var has_ads: bool = false
 	for fire in switched_weapon.weapon_fires:
@@ -844,6 +1014,17 @@ func _finalize_switch_server() -> void:
 			break
 	if not has_ads and _parent_player.ads:
 		toggle_ads_synced.rpc()
+
+
+## Server-only: if the weapon we just finished switching to is empty, begin a
+## reload.  Called from _finish_switch so it waits for the pull-out to complete —
+## no actions should be initiated during the pull-out.
+func _auto_reload_if_empty() -> void:
+	if not multiplayer.is_server() or _weapons.is_empty() or current_weapon_index >= _weapons.size():
+		return
+	var switched_weapon: Weapon = _weapons[current_weapon_index]
+	if not switched_weapon.has_infinite_ammo and switched_weapon.mag_current <= 0:
+		_begin_reload_server()
 
 
 @rpc("call_local")
@@ -936,6 +1117,7 @@ func start_reload() -> void:
 		return
 	if weapon.mag_current == weapon.mag_size:
 		return
+	_stop_inspect()
 	if multiplayer.is_server():
 		_begin_reload_server()
 	else:
@@ -1086,6 +1268,7 @@ func _confirm_reload_done(new_mag: int) -> void:
 	var weapon: Weapon = _weapons[current_weapon_index]
 	weapon.mag_current = clamp(new_mag, 0, weapon.mag_size)
 	_is_reloading      = false
+	_play_weapon_hold_anim()
 	mag_changed.emit(weapon.mag_current, weapon.mag_size)
 
 	# When the player is still holding fire as reload completes, clear per‑press
@@ -1126,6 +1309,9 @@ func _handle_fire_input(weapon: Weapon, fire_index: int, input_held: bool) -> vo
 		return
 	if _fired_this_press.get(fire_index, false):
 		return
+
+	# Any fresh fire press interrupts the inspect animation.
+	_stop_inspect()
 
 	# Stunned players cannot take any actions.
 	if _parent_player.status_effect_manager and _parent_player.status_effect_manager.is_stunned():
