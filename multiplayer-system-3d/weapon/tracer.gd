@@ -11,7 +11,7 @@ const SCI_COLOR := Color(0.546, 0.979, 2.853, 1.0)
 
 @export_group("Timing")
 ## Scales how fast the tracer shrinks. Lower = faster. Formula: distance * multiplier = lifetime.
-@export var speed_multiplier: float = 0.007
+@export var speed_multiplier: float = 0.017
 ## Minimum time in seconds the tracer is visible, regardless of distance.
 @export var min_duration: float = 0.05
 ## Maximum time in seconds the tracer is visible, regardless of distance.

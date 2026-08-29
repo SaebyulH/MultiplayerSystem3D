@@ -23,13 +23,6 @@ script = ExtResource("3_26y7a")
 gun_anim = &"Glock Human Hold"
 human_anim = &"Human Glock Hold"
 
-[sub_resource type="Resource" id="Resource_705ku"]
-script = ExtResource("3_26y7a")
-slot = 1
-gun_anim = &"Glock Human Shoot"
-human_anim = &"Human Glock Shoot"
-metadata/_custom_type_script = "uid://cutc4qk6eibrf"
-
 [sub_resource type="Resource" id="Resource_xv0hg"]
 script = ExtResource("3_26y7a")
 slot = 3
@@ -49,6 +42,13 @@ script = ExtResource("3_26y7a")
 slot = 5
 gun_anim = &"Glock Human Putaway"
 human_anim = &"Human Glock Putaway"
+metadata/_custom_type_script = "uid://cutc4qk6eibrf"
+
+[sub_resource type="Resource" id="Resource_gif7i"]
+script = ExtResource("3_26y7a")
+slot = 1
+gun_anim = &"Glock Human Shoot"
+human_anim = &"Human Glock Shoot"
 metadata/_custom_type_script = "uid://cutc4qk6eibrf"
 
 [sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_gswnw"]
@@ -154,11 +154,11 @@ script = ExtResource("1_q6gph")
 anim_player = NodePath("Glock2/AnimationPlayer")
 anim_tree = NodePath("AnimationTree")
 human_anims = ExtResource("2_gif7i")
-anim_groups = Array[ExtResource("3_26y7a")]([SubResource("Resource_65viv"), SubResource("Resource_q6gph"), SubResource("Resource_f0yui"), SubResource("Resource_705ku"), SubResource("Resource_xv0hg"), SubResource("Resource_a603s"), SubResource("Resource_x7c3f")])
+anim_groups = Array[ExtResource("3_26y7a")]([SubResource("Resource_65viv"), SubResource("Resource_q6gph"), SubResource("Resource_f0yui"), SubResource("Resource_xv0hg"), SubResource("Resource_a603s"), SubResource("Resource_x7c3f"), SubResource("Resource_gif7i")])
 
 [node name="Glock2" parent="." unique_id=6138456 instance=ExtResource("6_rucvb")]
 
-[node name="Skeleton3D" parent="Glock2/Glock" parent_id_path=PackedInt32Array(6138456, 2008715940) index="0" unique_id=451680251]
+[node name="Skeleton3D" parent="Glock2/Glock" parent_id_path=PackedInt32Array(6138456, 99730119) index="0" unique_id=2091781079]
 bones/0/position = Vector3(-0.13018252, 1.4303176, 0.40542355)
 bones/0/rotation = Quaternion(0.16908748, 0.0026178043, 0.0008250514, 0.9855973)
 bones/1/position = Vector3(1.164522e-08, 0.044544417, 0.028335825)
