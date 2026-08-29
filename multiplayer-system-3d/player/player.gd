@@ -452,6 +452,7 @@ func spawn():
 		var my_id := multiplayer.get_unique_id()
 		var player_id := name.to_int()
 		if my_id == player_id:
+			camera.visible = true
 			camera.make_current()
 			$BodyHurtbox/CollisionShape3D.hide()
 		else:

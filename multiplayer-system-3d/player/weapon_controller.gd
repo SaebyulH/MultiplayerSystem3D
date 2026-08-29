@@ -13,6 +13,12 @@ const RELOAD_ONESHOT_NODE := &"Reload"
 const RELOAD_ANIM_NODE := &"Animation 2"
 ## Name of the AnimationNodeTimeScale that wraps the reload clip (Reload one-shot input 1).
 const RELOAD_TIMESCALE_NODE := &"ReloadTimeScale"
+## Name of the AnimationTree one-shot node that plays the pull-out over the hold.
+const PULLOUT_ONESHOT_NODE := &"Pullout"
+## Name of the AnimationNodeAnimation feeding the Pull-out one-shot (its input 1).
+const PULLOUT_ANIM_NODE := &"Animation 4"
+## Name of the AnimationNodeTimeScale that wraps the pull-out clip (Pull-out one-shot input 1).
+const PULLOUT_TIMESCALE_NODE := &"PulloutTimeScale"
 ## Fallback arm animation when the weapon has no hold animation (or isn't a WeaponModel).
 const ARMS_ANIM_RESET := &"other_movement/a_pose"
 
@@ -60,6 +66,14 @@ var _any_fire_was_held: bool = false
 ## per notch).  Weapon switches are ignored while this is above zero.
 var _weapon_switch_cooldown: float = 0.0
 const WEAPON_SWITCH_THROTTLE: float = 0.08
+
+## Weapon-switch transition state machine.  While != IDLE the active weapon is
+## locked (can't fire/reload/ADS/shield) and new switches are ignored.
+enum SwitchPhase { IDLE, PUT_AWAY, PULLOUT }
+var _switch_phase: SwitchPhase = SwitchPhase.IDLE
+var _switch_timer: float = 0.0
+## pullout_time of the incoming weapon, applied once put-away finishes.
+var _switch_pullout_time: float = 0.0
 
 ## True while the weapon is in any part of the fire cycle (pre-delay, burst, post-delay).
 ## Used by get_active_fire_speed_mult().  Managed locally — no RPC needed.
@@ -215,6 +229,10 @@ func _tick_timers(delta: float) -> void:
 		_fire_cooldown -= delta
 	if _weapon_switch_cooldown > 0.0:
 		_weapon_switch_cooldown -= delta
+	if _switch_phase != SwitchPhase.IDLE:
+		_switch_timer -= delta
+		if _switch_timer <= 0.0:
+			_advance_switch_phase()
 	if _firing_remaining > 0.0:
 		_firing_remaining -= delta
 		if _firing_remaining <= 0.0:
@@ -279,6 +297,9 @@ func reset() -> void:
 	_ensure_bg_arrays()
 	_is_firing = false
 	_firing_remaining = 0.0
+	_switch_phase = SwitchPhase.IDLE
+	_switch_timer = 0.0
+	_switch_pullout_time = 0.0
 	current_weapon_index = 0
 	for weapon in _weapons:
 		weapon.reset()
@@ -341,7 +362,6 @@ func set_weapons(new_weapons: Array[Weapon]) -> void:
 	_bg_reload_active.clear()
 	_ensure_bg_arrays()
 
-	spawn_weapon_model()
 	_emit_weapon_changed()
 
 
@@ -362,6 +382,13 @@ func get_active_fire_speed_mult() -> float:
 ## firing ends.
 func is_firing() -> bool:
 	return _is_firing
+
+
+## True while a weapon-switch transition (put-away or pull-out) is in progress.
+## While true the active weapon is locked and cannot be fired, reloaded, or
+## activated (ADS/shield/signal).
+func is_switching() -> bool:
+	return _switch_phase != SwitchPhase.IDLE
 
 
 ## Current accumulated spread in degrees (0 = no spread).  Grows while firing
@@ -420,6 +447,8 @@ func _auto_switch_to_next_loaded() -> void:
 	"""Switch to the first weapon that can shoot. Synced to all peers.
 	Priority: primary (0), secondary (1), melee (2)."""
 	if not multiplayer.is_server():
+		return
+	if is_switching():
 		return
 	for i in _weapons.size():
 		if i == current_weapon_index:
@@ -584,6 +613,13 @@ func _play_weapon_reload_anim(duration: float) -> void:
 		(current_weapon_model as WeaponModel).play_anim_scaled(WeaponAnimGroup.AnimSlot.RELOAD, duration)
 
 
+## Play the current weapon model's pull-out animation (first-person gun anim, if
+## it has one), stretched to [param duration].  Mirrors _play_weapon_reload_anim.
+func _play_weapon_pullout_anim(duration: float) -> void:
+	if current_weapon_model is WeaponModel:
+		(current_weapon_model as WeaponModel).play_anim_scaled(WeaponAnimGroup.AnimSlot.PULLOUT, duration)
+
+
 ## Fire the AnimationTree's "Reload" one-shot with the current weapon's human
 ## reload animation, time-scaled to last [param duration] seconds via the
 ## "ReloadTimeScale" node.  No-ops for legacy weapons or when the tree isn't ready.
@@ -623,6 +659,43 @@ func _play_weapon_human_reload_anim(duration: float) -> void:
 		AnimationNodeOneShot.ONE_SHOT_REQUEST_FIRE
 	)
 	print("[reload-debug] fired '", RELOAD_ONESHOT_NODE, "' one-shot with ", reload_path, " (scale=", scale, ")")
+
+
+## Fire the AnimationTree's "Pullout" one-shot with the current weapon's human
+## pull-out animation, time-scaled to last [param duration] seconds via the
+## "PulloutTimeScale" node.  Mirrors _play_weapon_human_reload_anim; no-ops for
+## legacy weapons, weapons without a pull-out anim, or when the tree isn't ready.
+func _play_weapon_human_pullout_anim(duration: float) -> void:
+	if not (current_weapon_model is WeaponModel):
+		return
+	var model := current_weapon_model as WeaponModel
+	var pullout_path := model.get_human_anim_path(WeaponAnimGroup.AnimSlot.PULLOUT)
+	if pullout_path == &"":
+		return
+	if _parent_player == null or _parent_player.animation_tree == null:
+		return
+	var root := _parent_player.animation_tree.tree_root as AnimationNodeBlendTree
+	if root == null:
+		return
+	var pullout_anim_node := root.get_node(PULLOUT_ANIM_NODE) as AnimationNodeAnimation
+	if pullout_anim_node == null:
+		return
+	pullout_anim_node.animation = pullout_path
+
+	# Stretch the clip to the pull-out duration via the PulloutTimeScale node,
+	# exactly like reload uses ReloadTimeScale.
+	var scale := 1.0
+	var anim_player := _get_mannequin_anim_player()
+	if anim_player != null and duration > 0.0:
+		var anim := anim_player.get_animation(pullout_path)
+		if anim != null and anim.length > 0.0:
+			scale = anim.length / duration
+	_parent_player.animation_tree.set("parameters/" + str(PULLOUT_TIMESCALE_NODE) + "/scale", scale)
+
+	_parent_player.animation_tree.set(
+		"parameters/" + str(PULLOUT_ONESHOT_NODE) + "/request",
+		AnimationNodeOneShot.ONE_SHOT_REQUEST_FIRE
+	)
 #endregion
 
 
@@ -660,9 +733,13 @@ func _on_weapon_index_changed(previous_index: int = -1) -> void:
 	if shoot_animation:
 		shoot_animation.stop()
 	_restore_transform_after_reload()
+
+	# Swap the visible model.  A real switch (previous_index >= 0) animates the
+	# put-away of the outgoing weapon, then the pull-out of the incoming one;
+	# an initial load spawns the model immediately.
 	if not _weapons.is_empty():
-		spawn_weapon_model()
-		_apply_weapon_model_anims()
+		_begin_switch(previous_index)
+
 	# Only broadcast cancel_reload for non-background weapons — background
 	# reloads keep ticking silently and the server syncs mags via _bg_sync_mag.
 	var old_had_bg: bool = false
@@ -673,21 +750,100 @@ func _on_weapon_index_changed(previous_index: int = -1) -> void:
 	# Retract shield when switching away from a shield weapon.
 	_parent_player.retract_shield()
 
+
+## Begin the put-away → pull-out sequence for a weapon switch (or spawn the
+## incoming weapon immediately when there is no outgoing weapon, i.e. initial
+## load).  [param previous_index] is -1 for an initial load.
+func _begin_switch(previous_index: int) -> void:
+	var old_weapon: Weapon = _weapons[previous_index] if previous_index >= 0 and previous_index < _weapons.size() else null
+	var new_weapon: Weapon = _weapons[current_weapon_index] if not _weapons.is_empty() and current_weapon_index < _weapons.size() else null
+
+	var put_away := old_weapon.put_away_time if old_weapon else 0.0
+	var pullout := new_weapon.pullout_time if new_weapon else 0.0
+	_switch_pullout_time = pullout
+
+	# Initial load: no outgoing weapon to put away — just pull out.
+	if old_weapon == null:
+		_do_swap_model()
+		_play_weapon_pullout_anim(pullout)
+		_play_weapon_human_pullout_anim(pullout)
+		if pullout > 0.0:
+			_switch_phase = SwitchPhase.PULLOUT
+			_switch_timer = pullout
+		else:
+			_finish_switch()
+		return
+
+	if put_away > 0.0:
+		_switch_phase = SwitchPhase.PUT_AWAY
+		_switch_timer = put_away
+	elif pullout > 0.0:
+		_do_swap_model()
+		_play_weapon_pullout_anim(pullout)
+		_play_weapon_human_pullout_anim(pullout)
+		_switch_phase = SwitchPhase.PULLOUT
+		_switch_timer = pullout
+	else:
+		_do_swap_model()
+		_finish_switch()
+
+
+## Advance the switch state machine when a phase timer elapses.
+func _advance_switch_phase() -> void:
+	match _switch_phase:
+		SwitchPhase.PUT_AWAY:
+			_do_swap_model()
+			if _switch_pullout_time > 0.0:
+				_switch_phase = SwitchPhase.PULLOUT
+				_switch_timer = _switch_pullout_time
+				_play_weapon_pullout_anim(_switch_pullout_time)
+				_play_weapon_human_pullout_anim(_switch_pullout_time)
+			else:
+				_finish_switch()
+		SwitchPhase.PULLOUT:
+			_finish_switch()
+		_:
+			_finish_switch()
+
+
+## Spawn the incoming weapon's model and finalize server-side switch logic.
+func _do_swap_model() -> void:
+	if _weapons.is_empty():
+		_finish_switch()
+		return
+	spawn_weapon_model()
+	_apply_weapon_model_anims()
+	_finalize_switch_server()
+
+
+func _finish_switch() -> void:
+	_switch_phase = SwitchPhase.IDLE
+	_switch_timer = 0.0
+	_switch_pullout_time = 0.0
+
+
+## Server-only bookkeeping that must run once the incoming weapon's model is
+## in place (after the swap).
+func _finalize_switch_server() -> void:
+	if not multiplayer.is_server() or _weapons.is_empty() or current_weapon_index >= _weapons.size():
+		return
+	var switched_weapon: Weapon = _weapons[current_weapon_index]
+
 	# Auto-reload if switching to a weapon that is already empty — covers
 	# weapon-switch and spawn/respawn cases that fire_intent() never sees.
-	if multiplayer.is_server() and not _weapons.is_empty():
-		var switched_weapon: Weapon = _weapons[current_weapon_index]
-		if not switched_weapon.has_infinite_ammo and switched_weapon.mag_current <= 0:
-			start_reload()
+	# Bypass the is_switching() gate in start_reload(): this reload is the
+	# whole point of the switch, not a manual request.
+	if not switched_weapon.has_infinite_ammo and switched_weapon.mag_current <= 0:
+		_begin_reload_server()
 
-		# Reset ADS when switching to a weapon that has no ADS fire mode.
-		var has_ads: bool = false
-		for fire in switched_weapon.weapon_fires:
-			if fire.action_type == WeaponFire.ActionType.ADS:
-				has_ads = true
-				break
-		if not has_ads and _parent_player.ads:
-			toggle_ads_synced.rpc()
+	# Reset ADS when switching to a weapon that has no ADS fire mode.
+	var has_ads: bool = false
+	for fire in switched_weapon.weapon_fires:
+		if fire.action_type == WeaponFire.ActionType.ADS:
+			has_ads = true
+			break
+	if not has_ads and _parent_player.ads:
+		toggle_ads_synced.rpc()
 
 
 @rpc("call_local")
@@ -726,7 +882,7 @@ func _find_next_selectable(direction: int) -> int:
 	return current_weapon_index
 
 func next_weapon() -> void:
-	if _weapon_switch_cooldown > 0.0:
+	if _weapon_switch_cooldown > 0.0 or is_switching():
 		return
 	_weapon_switch_cooldown = WEAPON_SWITCH_THROTTLE
 	if multiplayer.is_server():
@@ -735,7 +891,7 @@ func next_weapon() -> void:
 		_next_weapon_server.rpc_id(1)
 
 func previous_weapon() -> void:
-	if _weapon_switch_cooldown > 0.0:
+	if _weapon_switch_cooldown > 0.0 or is_switching():
 		return
 	_weapon_switch_cooldown = WEAPON_SWITCH_THROTTLE
 	if multiplayer.is_server():
@@ -746,7 +902,7 @@ func previous_weapon() -> void:
 @rpc("any_peer", "call_local")
 func _next_weapon_server() -> void:
 	if is_multiplayer_authority():
-		if _weapon_switch_cooldown > 0.0:
+		if _weapon_switch_cooldown > 0.0 or is_switching():
 			return
 		_weapon_switch_cooldown = WEAPON_SWITCH_THROTTLE
 		current_weapon_index = _find_next_selectable(1)
@@ -754,7 +910,7 @@ func _next_weapon_server() -> void:
 @rpc("any_peer", "call_local")
 func _previous_weapon_server() -> void:
 	if is_multiplayer_authority():
-		if _weapon_switch_cooldown > 0.0:
+		if _weapon_switch_cooldown > 0.0 or is_switching():
 			return
 		_weapon_switch_cooldown = WEAPON_SWITCH_THROTTLE
 		current_weapon_index = _find_next_selectable(-1)
@@ -772,6 +928,8 @@ func _previous_weapon_server() -> void:
 
 func start_reload() -> void:
 	if not _is_ready():
+		return
+	if is_switching():
 		return
 	var weapon: Weapon = _weapons[current_weapon_index]
 	if _is_reloading or weapon.has_infinite_ammo:
@@ -942,6 +1100,8 @@ func _confirm_reload_done(new_mag: int) -> void:
 func _process_fire() -> void:
 	if not _is_ready():
 		return
+	if is_switching():
+		return
 
 	var weapon: Weapon = _weapons[current_weapon_index]
 
@@ -1052,7 +1212,7 @@ func _send_signal() -> void:
 func _try_fire(weapon_fire_index: int) -> void:
 	if not _is_ready():
 		return
-	if _fire_cooldown > 0.0 or _is_reloading or _pending_fire or _is_firing:
+	if _fire_cooldown > 0.0 or _is_reloading or _pending_fire or _is_firing or is_switching():
 		return
 
 	var weapon: Weapon   = _weapons[current_weapon_index]
@@ -1123,6 +1283,8 @@ func _play_empty(weapon_fire_index: int) -> void:
 @rpc("any_peer")
 func fire_intent(weapon_index: int, weapon_fire_index: int) -> void:
 	if not _is_ready():
+		return
+	if is_switching():
 		return
 	var weapon: Weapon = _weapons[weapon_index]
 	var fire: WeaponFire = weapon.weapon_fires[weapon_fire_index]

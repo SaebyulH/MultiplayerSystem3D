@@ -11,7 +11,6 @@
 [ext_resource type="Resource" uid="uid://de8vp5uev8831" path="res://weapon/assault_weapons/molotov.tres" id="6_7sldb"]
 [ext_resource type="Resource" uid="uid://cqxpeud4viub7" path="res://weapon/assault_weapons/gravity_rocket_launcher.tres" id="6_vm0dj"]
 [ext_resource type="Resource" uid="uid://cwkxdou2gpa1u" path="res://weapon/shared/pistol.tres" id="8_4smbg"]
-[ext_resource type="Resource" uid="uid://8xn6jhlrj13c" path="res://weapon/assault_weapons/explodable_grenade_launcher.tres" id="8_ol1fc"]
 [ext_resource type="Resource" uid="uid://2u21rpetmhhp" path="res://weapon/shared/machine_pistol.tres" id="9_skpeg"]
 [ext_resource type="Script" uid="uid://bxv3anwekoggx" path="res://player/character.gd" id="10_char"]
 [ext_resource type="Resource" uid="uid://bmkyqbgc5d8xr" path="res://weapon/assault_weapons/ak.tres" id="10_vm0dj"]
@@ -26,7 +25,7 @@
 [resource]
 script = ExtResource("2_l1baf")
 class_display_name = "Assault"
-primary_weapons = Array[ExtResource("1_qjte0")]([ExtResource("2_4smbg"), ExtResource("14_qv5tr"), ExtResource("6_vm0dj"), ExtResource("3_4smbg"), ExtResource("8_ol1fc"), ExtResource("4_5au0l"), ExtResource("12_60hm4"), ExtResource("10_vm0dj")])
+primary_weapons = Array[ExtResource("1_qjte0")]([ExtResource("10_vm0dj"), ExtResource("2_4smbg"), ExtResource("14_qv5tr"), ExtResource("6_vm0dj"), ExtResource("3_4smbg"), ExtResource("4_5au0l"), ExtResource("12_60hm4")])
 secondary_weapons = Array[ExtResource("1_qjte0")]([ExtResource("8_4smbg"), ExtResource("9_skpeg"), ExtResource("17_ln7a5"), ExtResource("11_moxu8"), ExtResource("20_0ep13"), ExtResource("5_4smbg")])
 melee_weapons = Array[ExtResource("1_qjte0")]([ExtResource("5_0ep13"), ExtResource("6_7sldb")])
 characters = Array[ExtResource("10_char")]([ExtResource("11_char"), ExtResource("12_char"), ExtResource("4_4o53n")])

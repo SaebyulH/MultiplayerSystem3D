@@ -7,6 +7,7 @@ enum AnimSlot {
 	SHOOT,
 	RELOAD,
 	INSPECT,
+	PULLOUT
 }
 
 ## Which of the Hold/Shoot/Reload/Inspect slots this group fills.

@@ -28,6 +28,15 @@ class_name Weapon
 ## Multiplier applied to the player's movement speed while this weapon is equipped.
 @export var player_speed_multiplier: float = 1.0
 
+
+@export_group("Switching")
+## Time in seconds to pull this weapon out when it becomes the active weapon.
+## The weapon cannot be used while it is being pulled out.
+@export var pullout_time: float = 1.0
+## Time in seconds to put this weapon away when it is deselected.  The weapon
+## cannot be used while it is being put away.
+@export var put_away_time: float = 0.3
+
 func reset():
 	mag_current = mag_size
 
