@@ -5,7 +5,7 @@ extends Control
 # When true, the 1st kill plays the ENTIRE song (streaks 1-30 back-to-back)
 # instead of just the 1st-kill note. Useful for previewing the full theme
 # without needing to rack up 30 real kills.
-@export var test_mode: bool = true
+@export var test_mode: bool = true 
 
 var player_id: String
 var play_token: int = 0
@@ -344,114 +344,426 @@ func _play_sequence_async(seq: Array[NoteEvent], token: int) -> void:
 # Spy chord: E min-maj9 (E–G–B–D#–F#)
 # Ostinato: driving 5/4 or 4/4 with half‑step tension
 # ============================================================
-
 func _get_pitch_sequence(ks: int) -> Array[NoteEvent]:
 	match ks:
-		# --- ACT I: THE SHADOWS (1-6) ---
-		# Subtle, low, and sparse. Sticking to octaves, 5ths, and simple minor 3rds.
-		
-		# 1. A single, low, ominous octave punch. (The mission begins)
-		1:  return [_c([PITCH_E / 2.0, PITCH_E], 0.5)]
-		
-		# 2. Quick minor 3rd stab resolving to a power chord
-		2:  return [_c([PITCH_E, PITCH_G], 0.15), _c([PITCH_E, PITCH_B], 0.4)]
-		
-		# 3. Sneaky chromatic bass walk-up
-		3:  return [_n(PITCH_A / 2.0, 0.1), _n(PITCH_AS / 2.0, 0.1), _c([PITCH_B / 2.0, PITCH_E], 0.4)]
-		
-		# 4. First full E minor triad, played short and tight
-		4:  return [_c([PITCH_E, PITCH_G, PITCH_B], 0.3)]
-		
-		# 5. The classic suspense interval (5th to flat-6th)
-		5:  return [_c([PITCH_E, PITCH_B], 0.2), _c([PITCH_E, PITCH_C * 2.0], 0.4)]
-		
-		# 6. Introducing the "Bond" minor 6th flavor
-		6:  return [_c([PITCH_E, PITCH_G, PITCH_CS], 0.4)]
+		# ================================================================
+		# MOTIF
+		#
+		# Core melodic cell:
+		#
+		#     E  G  F# D# --- E
+		#     S  S  S  S     L
+		#
+		# It is deliberately NOT always played literally.
+		# Fragments, inversions, octave displacement, and harmonic
+		# transformations recur throughout the sequence.
+		#
+		# The overall trajectory is:
+		#
+		#   low/sparse
+		#        ↓
+		#   melodic
+		#        ↓
+		#   rhythmic
+		#        ↓
+		#   harmonically dense
+		#        ↓
+		#   high/violent
+		#        ↓
+		#   full motif / climax
+		# ================================================================
 
 
-		# --- ACT II: THE DISCOVERY (7-13) ---
-		# Building tension. Introducing the 7th, rhythmic syncopation, and tritone danger.
-		
-		# 7. Subtle shift into the first Minor-Major 7th (Lower register)
-		7:  return [_c([PITCH_E, PITCH_G, PITCH_B], 0.2), _c([PITCH_E, PITCH_G, PITCH_DS], 0.5)]
-		
-		# 8. Syncopated 5/4 action hit (Mission Impossible rhythm)
-		8:  return [_c([PITCH_E, PITCH_B], 0.15), _r(0.1), _c([PITCH_E, PITCH_B], 0.15), _c([PITCH_G, PITCH_E2], 0.3)]
-		
-		# 9. The "Danger" tritone hit (A# against E)
-		9:  return [_c([PITCH_E, PITCH_AS], 0.15), _r(0.05), _c([PITCH_E, PITCH_AS, PITCH_D * 2.0], 0.4)]
-		
-		# 10. Classic V-i cadence (B7 to Em)
-		10: return [_c([PITCH_B / 2.0, PITCH_DS, PITCH_A], 0.15), _c([PITCH_E, PITCH_G, PITCH_B], 0.5)]
-		
-		# 11. Staccato brass-style action hits
-		11: return [_c([PITCH_E, PITCH_G, PITCH_B], 0.1), _r(0.1), _c([PITCH_E, PITCH_G, PITCH_B], 0.1), _c([PITCH_E, PITCH_G, PITCH_DS], 0.4)]
-		
-		# 12. Heroic Major to Dark Minor twist
-		12: return [_c([PITCH_E, PITCH_GS, PITCH_B], 0.25), _c([PITCH_E, PITCH_G, PITCH_B], 0.5)]
-		
-		# 13. Fast bluesy arpeggio into a Spy Chord
-		13: return [_n(PITCH_G, 0.08), _n(PITCH_A, 0.08), _n(PITCH_AS, 0.08), _c([PITCH_B, PITCH_DS * 2.0, PITCH_E2], 0.5)]
+		# ================================================================
+		# ACT I — SHADOWS
+		# Very sparse. The motif is barely recognizable.
+		# ================================================================
+
+		# 1 — Just the opening E.
+		1: return [
+			_n(PITCH_E / 2.0, 0.18),
+			_r(0.08),
+			_n(PITCH_B / 2.0, 0.35),
+		]
+
+		# 2 — First fragment: E -> G, then a long B.
+		2: return [
+			_n(PITCH_E, 0.08),
+			_n(PITCH_G, 0.08),
+			_n(PITCH_B, 0.32),
+		]
+
+		# 3 — Chromatic approach to the motif's F#.
+		3: return [
+			_n(PITCH_E, 0.07),
+			_n(PITCH_FS, 0.07),
+			_n(PITCH_G, 0.16),
+			_n(PITCH_FS, 0.30),
+		]
+
+		# 4 — Motif fragment, interrupted before resolution.
+		4: return [
+			_n(PITCH_E, 0.07),
+			_n(PITCH_G, 0.07),
+			_n(PITCH_FS, 0.07),
+			_r(0.08),
+			_n(PITCH_DS, 0.32),
+		]
+
+		# 5 — FULL MOTIF, first appearance.
+		# Quiet, low, and relatively simple.
+		5: return [
+			_n(PITCH_E, 0.07),
+			_n(PITCH_G, 0.07),
+			_n(PITCH_FS, 0.07),
+			_n(PITCH_DS, 0.10),
+			_n(PITCH_E, 0.42),
+		]
 
 
-		# --- ACT III: THE FIREFIGHT (14-22) ---
-		# Moving up the octave, wider chords, complex jazz extensions, cinematic brass chords.
-		
-		# 14. Fast chromatic chord slide (D#m to Em)
-		14: return [_c([PITCH_DS, PITCH_FS, PITCH_AS], 0.1), _c([PITCH_E, PITCH_G, PITCH_B, PITCH_DS * 2.0], 0.5)]
-		
-		# 15. Wide-open Minor Add9 (Very atmospheric)
-		15: return [_c([PITCH_E, PITCH_B, PITCH_G * 2.0, PITCH_FS * 2.0], 0.6)]
-		
-		# 16. Thick, dissonant action cluster resolving upward
-		16: return [_c([PITCH_E, PITCH_DS * 2.0, PITCH_F * 2.0], 0.2), _c([PITCH_E, PITCH_G, PITCH_B, PITCH_DS * 2.0], 0.5)]
-		
-		# 17. Augmented V-chord tension (B+) snapping to minor
-		17: return [_c([PITCH_B, PITCH_DS * 2.0, PITCH_G * 2.0], 0.25), _c([PITCH_E2, PITCH_B * 2.0, PITCH_E * 2.0], 0.5)]
-		
-		# 18. Thick Minor 11th chord (E, G, B, D, A)
-		18: return [_c([PITCH_E, PITCH_G, PITCH_B, PITCH_D * 2.0, PITCH_A * 2.0], 0.6)]
-		
-		# 19. Subdominant (Am) to Tonic (Em-Maj7) punch
-		19: return [_c([PITCH_A, PITCH_C * 2.0, PITCH_E2], 0.15), _c([PITCH_E2, PITCH_G * 2.0, PITCH_B * 2.0, PITCH_DS * 2.0], 0.5)]
-		
-		# 20. Half-diminished setup (F#m7b5) into high spy chord
-		20: return [_c([PITCH_FS, PITCH_A, PITCH_C * 2.0, PITCH_E2], 0.25), _c([PITCH_E, PITCH_G, PITCH_B, PITCH_DS * 2.0, PITCH_FS * 2.0], 0.6)]
-		
-		# 21. Syncopated double hit on the Min-Maj 9th
-		21: return [_c([PITCH_E, PITCH_B, PITCH_DS * 2.0], 0.1), _r(0.1), _c([PITCH_E2, PITCH_G * 2.0, PITCH_DS * 2.0, PITCH_FS * 2.0], 0.5)]
-		
-		# 22. Rapid ascending action triad sweep
-		22: return [_c([PITCH_E, PITCH_G, PITCH_B], 0.08), _c([PITCH_G, PITCH_B, PITCH_D * 2.0], 0.08), _c([PITCH_B, PITCH_DS * 2.0, PITCH_FS * 2.0], 0.5)]
+		# ================================================================
+		# ACT II — THE MOTIF STARTS MOVING
+		# More rhythmic variation and harmonic implication.
+		# ================================================================
+
+		# 6 — G-F#-E fragment, then leaps upward.
+		6: return [
+			_n(PITCH_G, 0.09),
+			_n(PITCH_FS, 0.07),
+			_n(PITCH_E, 0.13),
+			_r(0.07),
+			_n(PITCH_B, 0.30),
+		]
+
+		# 7 — Motif disguised as an arpeggiated shape.
+		7: return [
+			_n(PITCH_E, 0.06),
+			_n(PITCH_G, 0.06),
+			_n(PITCH_B, 0.18),
+			_n(PITCH_FS, 0.08),
+			_n(PITCH_DS, 0.08),
+			_n(PITCH_E2, 0.32),
+		]
+
+		# 8 — Short-short-LONG rhythmic idea.
+		# The long note moves upward rather than resolving downward.
+		8: return [
+			_n(PITCH_G, 0.06),
+			_n(PITCH_A, 0.06),
+			_n(PITCH_B, 0.30),
+			_r(0.07),
+			_n(PITCH_DS * 2.0, 0.09),
+			_n(PITCH_E2, 0.34),
+		]
+
+		# 9 — Increasing tension through repetition.
+		9: return [
+			_n(PITCH_E, 0.06),
+			_n(PITCH_G, 0.06),
+			_n(PITCH_FS, 0.06),
+			_n(PITCH_DS, 0.18),
+			_n(PITCH_FS, 0.07),
+			_n(PITCH_G, 0.07),
+			_n(PITCH_B, 0.34),
+		]
+
+		# 10 — FULL MOTIF + dominant tension.
+		# The motif is now harmonized instead of merely stated.
+		10: return [
+			_n(PITCH_E, 0.06),
+			_n(PITCH_G, 0.06),
+			_n(PITCH_FS, 0.06),
+			_n(PITCH_DS, 0.08),
+			_c([PITCH_B, PITCH_DS * 2.0, PITCH_A * 2.0], 0.22),
+			_n(PITCH_B * 2.0, 0.10),
+			_c([
+				PITCH_E2,
+				PITCH_G * 2.0,
+				PITCH_B * 2.0,
+				PITCH_DS * 2.0,
+				PITCH_FS * 2.0
+			], 0.55),
+		]
 
 
-		# --- ACT IV: MISSION CLIMAX (23-30) ---
-		# High octane. Massive multi-octave spreads. Pure cinematic adrenaline.
-		
-		# 23. V7b9 crunch (The "Villain" chord) resolving high
-		23: return [_c([PITCH_B, PITCH_DS * 2.0, PITCH_F * 2.0, PITCH_A * 2.0], 0.3), _c([PITCH_E2, PITCH_G * 2.0, PITCH_B * 2.0, PITCH_DS * 2.0], 0.6)]
-		
-		# 24. Heavy Hendrix/Spy Chord (B7#9) dropping to E
-		24: return [_c([PITCH_B / 2.0, PITCH_DS, PITCH_A, PITCH_D * 2.0], 0.2), _c([PITCH_E, PITCH_G, PITCH_B, PITCH_DS * 2.0, PITCH_FS * 2.0], 0.6)]
-		
-		# 25. High-octave tension cluster (pure dissonance) ringing out
-		25: return [_c([PITCH_DS * 2.0, PITCH_E2, PITCH_G * 2.0, PITCH_A * 2.0], 0.15), _r(0.05), _c([PITCH_E2, PITCH_B * 2.0, PITCH_DS * 2.0 * 2.0], 0.6)]
-		
-		# 26. Fast triplet sweep up to the Major 7th
-		26: return [_n(PITCH_E, 0.06), _n(PITCH_G, 0.06), _n(PITCH_B, 0.06), _c([PITCH_E2, PITCH_G * 2.0, PITCH_B * 2.0, PITCH_DS * 2.0], 0.6)]
-		
-		# 27. The deep bass drop to high-register climax
-		27: return [_c([PITCH_E / 2.0, PITCH_B / 2.0], 0.15), _c([PITCH_E2, PITCH_G * 2.0, PITCH_B * 2.0, PITCH_DS * 2.0, PITCH_FS * 2.0], 0.7)]
-		
-		# 28. Block chords ascending directly up the melodic minor scale
-		28: return [_c([PITCH_E, PITCH_G, PITCH_B], 0.1), _c([PITCH_FS, PITCH_A, PITCH_C * 2.0], 0.1), _c([PITCH_G, PITCH_B, PITCH_DS * 2.0], 0.1), _c([PITCH_E2, PITCH_G * 2.0, PITCH_B * 2.0, PITCH_DS * 2.0], 0.6)]
-		
-		# 29. The pre-finale Dominant roar (Huge B7 suspended)
-		29: return [_c([PITCH_B / 2.0, PITCH_B, PITCH_E2, PITCH_A * 2.0], 0.4), _c([PITCH_E2, PITCH_G * 2.0, PITCH_B * 2.0, PITCH_DS * 2.0, PITCH_FS * 2.0], 0.8)]
-		
-		# 30. THE ULTIMATE SPY CHORD - A massive, 3-octave spanning E Minor-Major 9
-		# Root(E), Min3(G), 5(B), Maj7(D#), Maj9(F#), plus soaring high B and E.
-		30: return [_c([PITCH_E / 2.0, PITCH_E, PITCH_G, PITCH_B, PITCH_DS * 2.0, PITCH_FS * 2.0, PITCH_B * 2.0, PITCH_E2 * 2.0], 2.5)]
-		
-		# Fallback
-		_:  return [_c([PITCH_E, PITCH_G, PITCH_B, PITCH_DS * 2.0], 0.5)]
+		# ================================================================
+		# ACT III — DISCOVERY / MOMENTUM
+		# Higher register, more syncopation, motif fragments become
+		# increasingly obvious.
+		# ================================================================
+
+		# 11 — Motif starts on G instead of E.
+		11: return [
+			_n(PITCH_G, 0.06),
+			_n(PITCH_FS, 0.06),
+			_n(PITCH_DS, 0.06),
+			_n(PITCH_E, 0.18),
+			_n(PITCH_G, 0.08),
+			_n(PITCH_B, 0.30),
+		]
+
+		# 12 — Ascending sequence with a displaced long note.
+		12: return [
+			_n(PITCH_E, 0.07),
+			_n(PITCH_FS, 0.07),
+			_n(PITCH_G, 0.18),
+			_n(PITCH_B, 0.07),
+			_n(PITCH_A, 0.07),
+			_n(PITCH_B, 0.34),
+		]
+
+		# 13 — Motif fragment hidden inside a larger contour.
+		13: return [
+			_n(PITCH_B, 0.06),
+			_n(PITCH_DS * 2.0, 0.06),
+			_n(PITCH_E2, 0.18),
+			_r(0.06),
+			_n(PITCH_FS * 2.0, 0.07),
+			_n(PITCH_G * 2.0, 0.07),
+			_n(PITCH_B * 2.0, 0.35),
+		]
+
+		# 14 — Rising broken figure, with D# acting as tension.
+		14: return [
+			_n(PITCH_E, 0.06),
+			_n(PITCH_G, 0.06),
+			_n(PITCH_B, 0.12),
+			_n(PITCH_DS * 2.0, 0.07),
+			_n(PITCH_FS * 2.0, 0.07),
+			_n(PITCH_G * 2.0, 0.34),
+		]
+
+		# 15 — FULL MOTIF, now high and harmonically expanded.
+		# EmMaj9.
+		15: return [
+			_n(PITCH_E2, 0.06),
+			_n(PITCH_G * 2.0, 0.06),
+			_n(PITCH_FS * 2.0, 0.06),
+			_n(PITCH_DS * 2.0, 0.08),
+			_c([
+				PITCH_E2,
+				PITCH_G * 2.0,
+				PITCH_B * 2.0,
+				PITCH_DS * 2.0,
+				PITCH_FS * 2.0
+			], 0.65),
+		]
+
+
+		# ================================================================
+		# ACT IV — FIREFIGHT
+		# The motif is now being fragmented rhythmically.
+		# Wider leaps, faster notes, higher register.
+		# ================================================================
+
+		# 16 — Three-note motif fragment, repeated at a higher level.
+		16: return [
+			_n(PITCH_E2, 0.05),
+			_n(PITCH_G * 2.0, 0.05),
+			_n(PITCH_FS * 2.0, 0.15),
+			_n(PITCH_B * 2.0, 0.05),
+			_n(PITCH_DS * 2.0, 0.05),
+			_n(PITCH_E2 * 2.0, 0.30),
+		]
+
+		# 17 — Wide leap followed by compressed motif.
+		17: return [
+			_n(PITCH_E, 0.07),
+			_n(PITCH_B, 0.07),
+			_n(PITCH_DS * 2.0, 0.07),
+			_n(PITCH_FS * 2.0, 0.07),
+			_n(PITCH_G * 2.0, 0.07),
+			_n(PITCH_B * 2.0, 0.34),
+		]
+
+		# 18 — Rising minor-11 color, but not as a constant chord.
+		18: return [
+			_n(PITCH_E, 0.06),
+			_n(PITCH_G, 0.06),
+			_n(PITCH_B, 0.06),
+			_n(PITCH_D * 2.0, 0.06),
+			_n(PITCH_FS * 2.0, 0.08),
+			_n(PITCH_A * 2.0, 0.32),
+		]
+
+		# 19 — Rapid motif fragment interrupted by a high D#.
+		19: return [
+			_n(PITCH_E2, 0.05),
+			_n(PITCH_G * 2.0, 0.05),
+			_n(PITCH_FS * 2.0, 0.05),
+			_n(PITCH_DS * 2.0, 0.05),
+			_r(0.05),
+			_n(PITCH_FS * 2.0, 0.06),
+			_n(PITCH_G * 2.0, 0.06),
+			_n(PITCH_B * 2.0, 0.36),
+		]
+
+		# 20 — FULL MOTIF over iiø-V7-i.
+		# Much more overtly cinematic.
+		20: return [
+			_c([PITCH_FS, PITCH_A, PITCH_C * 2.0, PITCH_E2], 0.16),
+			_n(PITCH_E2, 0.06),
+			_n(PITCH_G * 2.0, 0.06),
+			_n(PITCH_FS * 2.0, 0.06),
+			_n(PITCH_DS * 2.0, 0.08),
+			_c([PITCH_B, PITCH_DS * 2.0, PITCH_FS * 2.0, PITCH_A * 2.0], 0.20),
+			_c([
+				PITCH_E2,
+				PITCH_G * 2.0,
+				PITCH_B * 2.0,
+				PITCH_DS * 2.0,
+				PITCH_FS * 2.0
+			], 0.7),
+		]
+
+
+		# ================================================================
+		# ACT V — CLIMAX
+		# Very high register, aggressive rhythm, wider harmonic structures.
+		# ================================================================
+
+		# 21 — Motif chopped into very short attacks.
+		21: return [
+			_n(PITCH_E2, 0.045),
+			_n(PITCH_G * 2.0, 0.045),
+			_n(PITCH_FS * 2.0, 0.045),
+			_n(PITCH_DS * 2.0, 0.045),
+			_n(PITCH_FS * 2.0, 0.07),
+			_n(PITCH_G * 2.0, 0.07),
+			_n(PITCH_B * 2.0, 0.32),
+		]
+
+		# 22 — Wider melodic jumps.
+		22: return [
+			_n(PITCH_B, 0.06),
+			_n(PITCH_DS * 2.0, 0.06),
+			_n(PITCH_FS * 2.0, 0.06),
+			_n(PITCH_A * 2.0, 0.06),
+			_n(PITCH_B * 2.0, 0.08),
+			_n(PITCH_DS * 2.0, 0.08),
+			_n(PITCH_FS * 2.0, 0.34),
+		]
+
+		# 23 — Ascending broken Em9.
+		23: return [
+			_n(PITCH_E2, 0.05),
+			_n(PITCH_G * 2.0, 0.05),
+			_n(PITCH_B * 2.0, 0.05),
+			_n(PITCH_DS * 2.0, 0.05),
+			_n(PITCH_FS * 2.0, 0.10),
+			_n(PITCH_B * 2.0, 0.10),
+			_n(PITCH_E2 * 2.0, 0.35),
+		]
+
+		# 24 — Dominant pressure, then upward release.
+		24: return [
+			_n(PITCH_B, 0.05),
+			_n(PITCH_DS * 2.0, 0.05),
+			_n(PITCH_A * 2.0, 0.05),
+			_r(0.05),
+			_n(PITCH_B * 2.0, 0.07),
+			_n(PITCH_DS * 2.0, 0.07),
+			_n(PITCH_FS * 2.0, 0.07),
+			_n(PITCH_E2 * 2.0, 0.38),
+		]
+
+		# 25 — FULL MOTIF, huge.
+		# This is the first point where the motif is almost a fanfare.
+		25: return [
+			_n(PITCH_E2, 0.05),
+			_n(PITCH_G * 2.0, 0.05),
+			_n(PITCH_FS * 2.0, 0.05),
+			_n(PITCH_DS * 2.0, 0.06),
+			_n(PITCH_E2 * 2.0, 0.12),
+			_c([
+				PITCH_E2,
+				PITCH_G * 2.0,
+				PITCH_B * 2.0,
+				PITCH_DS * 2.0,
+				PITCH_FS * 2.0,
+				PITCH_B * 2.0
+			], 0.85),
+		]
+
+		# 26 — Motif fragmented into ascending triplet-like bursts.
+		26: return [
+			_n(PITCH_E2, 0.045),
+			_n(PITCH_G * 2.0, 0.045),
+			_n(PITCH_B * 2.0, 0.045),
+			_n(PITCH_DS * 2.0, 0.045),
+			_n(PITCH_FS * 2.0, 0.045),
+			_n(PITCH_G * 2.0, 0.045),
+			_n(PITCH_B * 2.0, 0.30),
+		]
+
+		# 27 — Very wide ascending contour.
+		27: return [
+			_n(PITCH_E, 0.05),
+			_n(PITCH_B, 0.05),
+			_n(PITCH_E2, 0.05),
+			_n(PITCH_G * 2.0, 0.05),
+			_n(PITCH_B * 2.0, 0.06),
+			_n(PITCH_DS * 2.0, 0.06),
+			_n(PITCH_FS * 2.0, 0.34),
+		]
+
+		# 28 — RETAINED CORE IDEA.
+		# Ascending harmonic blocks. This now represents the culmination
+		# of the harmonic progression established throughout the sequence.
+		28: return [
+			_c([PITCH_E, PITCH_G, PITCH_B], 0.09),
+			_c([PITCH_FS, PITCH_A, PITCH_C * 2.0], 0.09),
+			_c([PITCH_G, PITCH_B, PITCH_DS * 2.0], 0.09),
+			_c([PITCH_A, PITCH_C * 2.0, PITCH_E2], 0.10),
+			_c([PITCH_B, PITCH_DS * 2.0, PITCH_FS * 2.0, PITCH_A * 2.0], 0.13),
+			_c([
+				PITCH_E2,
+				PITCH_G * 2.0,
+				PITCH_B * 2.0,
+				PITCH_DS * 2.0,
+				PITCH_FS * 2.0
+			], 0.70),
+		]
+
+		# 29 — RETAINED CORE IDEA.
+		# Dominant roar. The motif is implied by B -> D# -> F# -> E.
+		29: return [
+			_c([PITCH_B, PITCH_DS * 2.0, PITCH_A * 2.0], 0.22),
+			_n(PITCH_B * 2.0, 0.06),
+			_n(PITCH_DS * 2.0, 0.06),
+			_n(PITCH_FS * 2.0, 0.08),
+			_c([
+				PITCH_E2,
+				PITCH_G * 2.0,
+				PITCH_B * 2.0,
+				PITCH_DS * 2.0,
+				PITCH_FS * 2.0
+			], 0.90),
+		]
+
+		# 30 — FINAL MOTIF.
+		# The entire identity of the killstreak finally appears at full
+		# register and maximum harmonic weight.
+		30: return [
+			_n(PITCH_E2, 0.05),
+			_n(PITCH_G * 2.0, 0.05),
+			_n(PITCH_FS * 2.0, 0.05),
+			_n(PITCH_DS * 2.0, 0.07),
+			_n(PITCH_E2 * 2.0, 0.12),
+			_c([
+				PITCH_E,
+				PITCH_G,
+				PITCH_B,
+				PITCH_DS * 2.0,
+				PITCH_FS * 2.0,
+				PITCH_B * 2.0,
+				PITCH_E2 * 2.0
+			], 1.8),
+		]
+
+		_: return [
+			_n(PITCH_E, 0.08),
+			_n(PITCH_G, 0.08),
+			_n(PITCH_FS, 0.08),
+			_n(PITCH_E2, 0.30),
+		]

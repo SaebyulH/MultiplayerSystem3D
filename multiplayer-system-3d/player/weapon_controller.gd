@@ -1458,8 +1458,8 @@ func _handle_fire_input(weapon: Weapon, fire_index: int, input_held: bool) -> vo
 			_fired_this_press[fire_index] = true
 			# Trigger reload when trying to fire an empty magazine � covers
 			# weapon-switch cases where auto-reload in fire_intent() never ran.
-			if not _is_reloading:
-				start_reload()
+			#if not _is_reloading:
+				#start_reload()
 			return
 
 	_try_fire(fire_index)
@@ -1792,6 +1792,8 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 					else:
 						var victim := collider.get_parent() as Player
 						var is_backshot := _is_backshot(victim)
+						# Only highlight the number as a crit when the multiplier boosts damage.
+						var is_backshot_crit := is_backshot and weapon_fire.backshot_multiplier > 1.0
 						# Backshot: shooter is behind the victim - apply bonus.
 						if not is_equal_approx(weapon_fire.backshot_multiplier, 1.0) and is_backshot:
 							damage *= weapon_fire.backshot_multiplier
@@ -1801,7 +1803,7 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 						if victim.team == get_parent().team and victim.team != Player.Team.FFA:
 							damage *= Player.FRIENDLY_FIRE_MULTIPLIER
 						if multiplayer.is_server():
-							_apply_damage_direct(player_name, -damage, _parent_player.name, is_headshot, mult, is_backshot)
+							_apply_damage_direct(player_name, -damage, _parent_player.name, is_headshot, mult, is_backshot_crit)
 							_hit_player = player_name
 							if apply_on_hit:
 								_apply_on_hit_effects(weapon_fire, _parent_player.name)
@@ -1809,7 +1811,7 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 							if weapon_fire.hit_knockback > 0.0:
 								_apply_hit_knockback(player_name, world_dir, weapon_fire.hit_knockback)
 						else:
-							_change_health_on_server.rpc_id(1, player_name, -damage, _parent_player.name, is_headshot, mult, is_backshot)
+							_change_health_on_server.rpc_id(1, player_name, -damage, _parent_player.name, is_headshot, mult, is_backshot_crit)
 							if weapon_fire.hit_knockback > 0.0:
 								_apply_hit_knockback_on_server.rpc_id(1, player_name, world_dir, weapon_fire.hit_knockback)
 		else:
@@ -1845,6 +1847,8 @@ func _apply_shape_damage(weapon: Weapon, weapon_fire_index: int, shape_hits: Dic
 		var player_name: String = key
 		var victim := collider.get_parent() as Player
 		var is_backshot := _is_backshot(victim)
+		# Only highlight the number as a crit when the multiplier boosts damage.
+		var is_backshot_crit := is_backshot and weapon_fire.backshot_multiplier > 1.0
 		if not is_equal_approx(weapon_fire.backshot_multiplier, 1.0) and is_backshot:
 			damage *= weapon_fire.backshot_multiplier
 			if not _parent_player.is_bot:
@@ -1852,7 +1856,7 @@ func _apply_shape_damage(weapon: Weapon, weapon_fire_index: int, shape_hits: Dic
 		if victim.team == get_parent().team and victim.team != Player.Team.FFA:
 			damage *= Player.FRIENDLY_FIRE_MULTIPLIER
 		if multiplayer.is_server():
-			_apply_damage_direct(player_name, -damage, _parent_player.name, is_headshot, mult, is_backshot)
+			_apply_damage_direct(player_name, -damage, _parent_player.name, is_headshot, mult, is_backshot_crit)
 			_apply_on_hit_effects(weapon_fire, _parent_player.name)
 			_apply_status_effects(player_name, weapon_fire.status_effects, _parent_player.name, is_headshot, is_backshot)
 			if weapon_fire.hit_knockback > 0.0:
@@ -1861,7 +1865,7 @@ func _apply_shape_damage(weapon: Weapon, weapon_fire_index: int, shape_hits: Dic
 					var kb_dir: Vector3 = (target_p.global_position - _parent_player.global_position).normalized()
 					_apply_hit_knockback(player_name, kb_dir, weapon_fire.hit_knockback)
 		else:
-			_change_health_on_server.rpc_id(1, player_name, -damage, _parent_player.name, is_headshot, mult, is_backshot)
+			_change_health_on_server.rpc_id(1, player_name, -damage, _parent_player.name, is_headshot, mult, is_backshot_crit)
 			if weapon_fire.hit_knockback > 0.0:
 				var target_p: Player = GameManager.find_player(player_name)
 				if target_p:

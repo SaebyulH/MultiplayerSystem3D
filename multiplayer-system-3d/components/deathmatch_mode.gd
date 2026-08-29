@@ -12,6 +12,7 @@ class_name DeathmatchMode
 # ─────────────────────────────────────────────
 
 signal deathmatch_ended(winner_name: String, reason: String)
+signal announce_kills_remaining(remaining: int)
 
 
 # ─────────────────────────────────────────────
@@ -19,7 +20,7 @@ signal deathmatch_ended(winner_name: String, reason: String)
 # ─────────────────────────────────────────────
 
 ## Number of kills required to win the match.
-@export var kills_to_win: int = 20
+@export var kills_to_win: int = 30
 
 ## Duration of the round in seconds (overrides GameModeComponent.round_time).
 @export var round_duration: float = 600.0  # 10 minutes
@@ -32,6 +33,16 @@ signal deathmatch_ended(winner_name: String, reason: String)
 var winner_name: String = ""  # "" = no winner yet
 var end_reason: String  = ""  # "kills" | "time" | ""
 
+## Kill counts (of the leader) that trigger a "N kills remaining" announcement.
+const ANNOUNCE_REMAINING: Array[int] = [10, 5, 1]
+
+## Which "kills remaining" thresholds have already been announced this match.
+var _announced_remaining: Dictionary = {}
+
+## Final player ordering (best first) computed at match end, synced to clients
+## so each can play its own podium/defeat line.
+var standings: Array = []
+
 
 # ─────────────────────────────────────────────
 #  SYNC STATE  (for _rpc_sync_state)
@@ -41,11 +52,13 @@ func get_sync_state() -> Dictionary:
 	return {
 		"winner_name": winner_name,
 		"end_reason": end_reason,
+		"standings": standings,
 	}
 
 func apply_sync_state(state: Dictionary) -> void:
 	winner_name = state.get("winner_name", winner_name)
 	end_reason = state.get("end_reason", end_reason)
+	standings = state.get("standings", standings)
 
 
 # ─────────────────────────────────────────────
@@ -63,7 +76,29 @@ func tick() -> bool:
 			_end_match(p, "kills")
 			return true
 
+	_check_kill_thresholds()
 	return false
+
+
+## Announce when the leader is 10 / 5 / 1 kills away from the kill limit.
+## Kills only ever increase in deathmatch, so each threshold fires at most once.
+func _check_kill_thresholds() -> void:
+	var leader := _max_kills()
+	for remaining in ANNOUNCE_REMAINING:
+		if remaining >= kills_to_win:
+			continue
+		if _announced_remaining.has(remaining):
+			continue
+		if leader >= kills_to_win - remaining:
+			_announced_remaining[remaining] = true
+			announce_kills_remaining.emit(remaining)
+
+
+func _max_kills() -> int:
+	var most := 0
+	for p in Leaderboard.get_players():
+		most = maxi(most, Leaderboard.get_kills(p))
+	return most
 
 
 ## Called when the round timer expires.  Finds the player with
@@ -87,6 +122,8 @@ func determine_timer_winner() -> String:
 func reset() -> void:
 	winner_name = ""
 	end_reason = ""
+	standings = []
+	_announced_remaining.clear()
 
 
 # ─────────────────────────────────────────────
@@ -96,4 +133,12 @@ func reset() -> void:
 func _end_match(player_name: String, reason: String) -> void:
 	winner_name = player_name
 	end_reason = reason
+	standings = _compute_standings()
 	deathmatch_ended.emit(winner_name, end_reason)
+
+
+## Final ordering (best first) computed on the server at match end.
+func _compute_standings() -> Array:
+	var players := Leaderboard.get_players()
+	players.sort_custom(func(a, b): return Leaderboard.get_kills(a) > Leaderboard.get_kills(b))
+	return players

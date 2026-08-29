@@ -80,7 +80,7 @@ var knockback_velocity := Vector3.ZERO
 
 # -- Stamina & movement tech --
 ## Maximum number of stamina bars the player can hold.
-const MAX_STAMINA: int = 40
+const MAX_STAMINA: int = 3
 ## Seconds to recover a single stamina bar.
 @export var stamina_recovery_time: float = 3.0
 ## Horizontal speed of a grounded dash (fixed; overrides prior momentum).

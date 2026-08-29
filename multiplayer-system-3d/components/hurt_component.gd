@@ -28,13 +28,15 @@ func _on_hurt_or_heal(hitbox_component: HitboxComponent, is_ally_hit: bool, hurt
 
 	# Backshot: the projectile hit from behind the victim's body facing.
 	var is_backshot := _is_backshot(hitbox_component)
+	# Only highlight the number as a crit when the multiplier boosts damage.
+	var is_backshot_crit := is_backshot and hitbox_component.backshot_multiplier > 1.0
 	if is_backshot and not is_equal_approx(hitbox_component.backshot_multiplier, 1.0):
 		health_delta *= hitbox_component.backshot_multiplier
 		var shooter := GameManager.find_player(changer)
 		if shooter and not shooter.is_bot:
 			shooter.weapon_controller.play_backshot_sound.rpc_id(changer.to_int())
 
-	attribute_component.apply_health_delta(health_delta, _resolve_changer_name(hitbox_component), get_parent().name, is_headshot, hitbox_component.current_falloff_multiplier, is_backshot)
+	attribute_component.apply_health_delta(health_delta, _resolve_changer_name(hitbox_component), get_parent().name, is_headshot, hitbox_component.current_falloff_multiplier, is_backshot_crit)
 
 	# Apply knockback from the hitbox (e.g. projectile-delivered knockback).
 	if hitbox_component.hit_knockback > 0.0:

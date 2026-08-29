@@ -67,6 +67,7 @@ var hybrid_mode: HybridMode
 var koth_mode: KothMode
 var domination_mode: DominationMode
 var deathmatch_mode: DeathmatchMode
+var deathmatch_announcer: DeathmatchAnnouncer
 
 # ─────────────────────────────────────────────
 #  RUNTIME STATE
@@ -92,6 +93,8 @@ const SYNC_INTERVAL: float = 0.1  # 10 Hz game state sync
 func _ready() -> void:
 	_create_mode_nodes()
 	_connect_mode_signals()
+	if game_mode == GameMode.DEATHMATCH:
+		_create_deathmatch_announcer()
 	if not multiplayer.is_server():
 		return
 	_transition_phase(PhaseState.SETUP)
@@ -108,6 +111,13 @@ func _create_mode_nodes() -> void:
 		domination_mode = DominationMode.new()
 	if not deathmatch_mode:
 		deathmatch_mode = DeathmatchMode.new()
+
+func _create_deathmatch_announcer() -> void:
+	if deathmatch_announcer:
+		return
+	deathmatch_announcer = DeathmatchAnnouncer.new()
+	deathmatch_announcer.name = "DeathmatchAnnouncer"
+	add_child(deathmatch_announcer)
 
 @rpc("authority", "call_local", "reliable")
 func _rpc_sync_state(state: Dictionary) -> void:
@@ -153,6 +163,7 @@ func _connect_mode_signals() -> void:
 		domination_mode.round_won.connect(_end_round)
 	if deathmatch_mode:
 		deathmatch_mode.deathmatch_ended.connect(_on_deathmatch_ended)
+		deathmatch_mode.announce_kills_remaining.connect(_on_dm_kills_remaining)
 
 # ─────────────────────────────────────────────
 #  REGISTRATION  (called by ControlPoint / PayloadNode)
@@ -299,8 +310,12 @@ func _on_deathmatch_ended(winner_name: String, reason: String) -> void:
 	if _round_ended:
 		return
 	_round_ended = true
-	_rpc_deathmatch_ended.rpc(winner_name, reason)
+	_rpc_deathmatch_ended.rpc(winner_name, reason, deathmatch_mode.standings if deathmatch_mode else [])
 	_transition_phase(PhaseState.MATCH_END)
+
+
+func _on_dm_kills_remaining(remaining: int) -> void:
+	_rpc_announce_kills_remaining.rpc(remaining)
 
 func _on_time_expired() -> void:
 	# Deathmatch handles time expiry differently — no teams.
@@ -449,6 +464,10 @@ func _rpc_sync_phase(new_phase: PhaseState, timer: float) -> void:
 	phase_timer = timer
 	phase_changed.emit(new_phase)
 
+	# Announce the match when it goes live (SETUP -> ACTIVE), once per peer.
+	if game_mode == GameMode.DEATHMATCH and new_phase == PhaseState.ACTIVE and deathmatch_announcer:
+		deathmatch_announcer.play_announce()
+
 @rpc("authority", "call_local", "reliable")
 func _rpc_round_won(winning_team: Player.Team, authoritative_wins: Dictionary) -> void:
 	round_wins = authoritative_wins
@@ -467,11 +486,20 @@ func _rpc_notify_hybrid_point_captured() -> void:
 	hybrid_point_captured_signal.emit()
 
 @rpc("authority", "call_local", "reliable")
-func _rpc_deathmatch_ended(winner_name: String, reason: String) -> void:
+func _rpc_deathmatch_ended(winner_name: String, reason: String, standings: Array = []) -> void:
 	if deathmatch_mode:
 		deathmatch_mode.winner_name = winner_name
 		deathmatch_mode.end_reason = reason
+		deathmatch_mode.standings = standings
 		deathmatch_mode.deathmatch_ended.emit(winner_name, reason)
+	if deathmatch_announcer:
+		deathmatch_announcer.play_placement(standings)
+
+
+@rpc("authority", "call_local", "reliable")
+func _rpc_announce_kills_remaining(remaining: int) -> void:
+	if deathmatch_announcer:
+		deathmatch_announcer.play_kills_remaining(remaining)
 
 @rpc("authority", "call_local", "unreliable")
 func _rpc_broadcast_time(remaining: float) -> void:
