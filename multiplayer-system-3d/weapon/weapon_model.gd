@@ -59,6 +59,23 @@ func get_human_anim_path(slot: WeaponAnimGroup.AnimSlot) -> StringName:
 	return StringName(str(lib) + "/" + str(anim))
 
 
+## Resolve [param name] to the actual animation name on this weapon's
+## AnimationPlayer, tolerating leading/trailing whitespace.  Imported GLB/FBX
+## animation names frequently carry a stray trailing space, so the authored
+## gun_anim StringName can drift out of sync with the imported clip.  Matching
+## after trimming both sides keeps them in sync.  Returns &"" when nothing matches.
+func _resolve_animation(name: StringName) -> StringName:
+	if anim_player == null or name == &"":
+		return &""
+	if anim_player.has_animation(name):
+		return name
+	var stripped := String(name).strip_edges()
+	for anim_name in anim_player.get_animation_list():
+		if String(anim_name).strip_edges() == stripped:
+			return StringName(anim_name)
+	return &""
+
+
 ## Play this weapon's animation for [param slot] on its own AnimationPlayer.
 ## No-ops when the weapon has no anim_player, no group for that slot, or the
 ## anim_player is missing the referenced animation.
@@ -68,9 +85,10 @@ func play_anim(slot: WeaponAnimGroup.AnimSlot) -> void:
 	var group := get_anim_group(slot)
 	if group == null or group.gun_anim == &"":
 		return
-	if not anim_player.has_animation(group.gun_anim):
+	var anim_name := _resolve_animation(group.gun_anim)
+	if anim_name == &"":
 		return
-	anim_player.play(group.gun_anim)
+	anim_player.play(anim_name)
 
 
 ## Play this weapon's animation for [param slot], stretched to last [param duration]
@@ -84,13 +102,14 @@ func play_anim_scaled(slot: WeaponAnimGroup.AnimSlot, duration: float) -> void:
 	var group := get_anim_group(slot)
 	if group == null or group.gun_anim == &"":
 		return
-	if not anim_player.has_animation(group.gun_anim):
+	var anim_name := _resolve_animation(group.gun_anim)
+	if anim_name == &"":
 		return
-	var anim := anim_player.get_animation(group.gun_anim)
+	var anim := anim_player.get_animation(anim_name)
 	var speed := 1.0
 	if anim != null and anim.length > 0.0 and duration > 0.0:
 		speed = anim.length / duration
-	anim_player.play(group.gun_anim, -1, speed)
+	anim_player.play(anim_name, -1, speed)
 
 
 ## Play this weapon's animation for [param slot] and loop it (used for the hold
@@ -103,9 +122,10 @@ func play_anim_loop(slot: WeaponAnimGroup.AnimSlot) -> void:
 	var group := get_anim_group(slot)
 	if group == null or group.gun_anim == &"":
 		return
-	if not anim_player.has_animation(group.gun_anim):
+	var anim_name := _resolve_animation(group.gun_anim)
+	if anim_name == &"":
 		return
-	var anim := anim_player.get_animation(group.gun_anim)
+	var anim := anim_player.get_animation(anim_name)
 	if anim != null:
 		anim.loop_mode = Animation.LOOP_LINEAR
-	anim_player.play(group.gun_anim)
+	anim_player.play(anim_name)
