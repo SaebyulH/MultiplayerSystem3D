@@ -9,8 +9,8 @@
 [ext_resource type="Texture2D" uid="uid://b6gktr1vfryte" path="res://defaults/default_damage_falloff_curve.tres" id="5_pcoow"]
 [ext_resource type="Script" uid="uid://yvevtn4dsddy" path="res://player/recoil/recoil_data.gd" id="6_q508k"]
 [ext_resource type="AudioStream" uid="uid://bvpt8qhaass4w" path="res://assets/sounds/freesound_community-submachine-gun.mp3" id="7_ivsv3"]
-[ext_resource type="PackedScene" uid="uid://bmlox6njxbtgb" path="res://weapon/assassin_weapons/rifle.tscn" id="8_whadi"]
 [ext_resource type="Script" uid="uid://bv0g4rnfelqch" path="res://components/status_effect/status_effect.gd" id="9_0x5eu"]
+[ext_resource type="PackedScene" uid="uid://b65rovvxt28cp" path="res://weapon/assault_weapons/m4.tscn" id="11_0x5eu"]
 
 [sub_resource type="Resource" id="Resource_ig0ij"]
 script = ExtResource("6_q508k")
@@ -47,10 +47,10 @@ script = ExtResource("2_2mafd")
 display_name = "Rifle"
 mag_size = 50
 mag_current = 50
-reload_time = 2.5
+reload_time = 3.0
 weapon_fires = Array[ExtResource("3_2fnnu")]([SubResource("Resource_6ginj"), SubResource("Resource_fe2cc")])
 spread_per_shot = 0.2
-weapon_model = ExtResource("8_whadi")
+weapon_model = ExtResource("11_0x5eu")
 killfeed_icon = ExtResource("1_7jb8e")
 reload_sound = ExtResource("1_whadi")
 metadata/_custom_type_script = "uid://qjf4ciit3dqy"

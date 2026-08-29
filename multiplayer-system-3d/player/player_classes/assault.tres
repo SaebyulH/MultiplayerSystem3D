@@ -19,6 +19,7 @@
 [ext_resource type="Resource" uid="uid://dpg57qjj1oibj" path="res://weapon/assault_weapons/shielded_minigun.tres" id="12_60hm4"]
 [ext_resource type="Resource" uid="uid://cgi1jrf004ttd" path="res://player/characters/breacher.tres" id="12_char"]
 [ext_resource type="Resource" uid="uid://6lslay5v6iff" path="res://weapon/assault_weapons/redirectable_rocket_launcher.tres" id="14_qv5tr"]
+[ext_resource type="Resource" uid="uid://b3tknjp4eb7lr" path="res://weapon/assassin_weapons/rifle.tres" id="16_4o53n"]
 [ext_resource type="Resource" uid="uid://c25ioc0vorxqa" path="res://weapon/assault_weapons/mine_launcher.tres" id="17_ln7a5"]
 [ext_resource type="Resource" uid="uid://b76j82ln7pwlm" path="res://weapon/assault_weapons/mre.tres" id="20_0ep13"]
 
@@ -26,7 +27,7 @@
 script = ExtResource("2_l1baf")
 class_display_name = "Assault"
 primary_weapons = Array[ExtResource("1_qjte0")]([ExtResource("10_vm0dj"), ExtResource("2_4smbg"), ExtResource("14_qv5tr"), ExtResource("6_vm0dj"), ExtResource("3_4smbg"), ExtResource("4_5au0l"), ExtResource("12_60hm4")])
-secondary_weapons = Array[ExtResource("1_qjte0")]([ExtResource("10_vm0dj"), ExtResource("8_4smbg"), ExtResource("9_skpeg"), ExtResource("17_ln7a5"), ExtResource("11_moxu8"), ExtResource("20_0ep13"), ExtResource("5_4smbg")])
-melee_weapons = Array[ExtResource("1_qjte0")]([ExtResource("10_vm0dj"), ExtResource("5_0ep13"), ExtResource("6_7sldb")])
+secondary_weapons = Array[ExtResource("1_qjte0")]([ExtResource("8_4smbg"), ExtResource("16_4o53n"), ExtResource("10_vm0dj"), ExtResource("9_skpeg"), ExtResource("17_ln7a5"), ExtResource("11_moxu8"), ExtResource("20_0ep13"), ExtResource("5_4smbg")])
+melee_weapons = Array[ExtResource("1_qjte0")]([ExtResource("16_4o53n"), ExtResource("10_vm0dj"), ExtResource("5_0ep13"), ExtResource("6_7sldb")])
 characters = Array[ExtResource("10_char")]([ExtResource("11_char"), ExtResource("12_char"), ExtResource("4_4o53n")])
 metadata/_custom_type_script = "uid://cbg4mqtqfaara"

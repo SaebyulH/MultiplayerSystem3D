@@ -28,7 +28,7 @@ metadata/_custom_type_script = "uid://cutc4qk6eibrf"
 script = ExtResource("3_a603s")
 slot = 3
 gun_anim = &"Ak Human Inspect"
-human_anim = &"Human Ak Insspect"
+human_anim = &"Human Ak Inspect"
 metadata/_custom_type_script = "uid://cutc4qk6eibrf"
 
 [sub_resource type="Resource" id="Resource_a603s"]
@@ -45,9 +45,108 @@ gun_anim = &"Ak Human Putaway"
 human_anim = &"Human Ak Putaway"
 metadata/_custom_type_script = "uid://cutc4qk6eibrf"
 
-[node name="Ak" type="Node3D" unique_id=1233250200 node_paths=PackedStringArray("anim_player")]
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_gswnw"]
+animation = &"Ak Human Hold"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_g4c7l"]
+animation = &"Ak Human Inspect"
+
+[sub_resource type="AnimationNodeOneShot" id="AnimationNodeOneShot_knn7v"]
+fadein_time = 0.06
+fadeout_time = 0.06
+
+[sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_7pqkx"]
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_bjvpn"]
+animation = &"Ak Human Pullout"
+
+[sub_resource type="AnimationNodeOneShot" id="AnimationNodeOneShot_s7qer"]
+fadein_time = 0.06
+fadeout_time = 0.06
+
+[sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_pullout"]
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_s7qer"]
+animation = &"Ak Human Putaway"
+
+[sub_resource type="AnimationNodeOneShot" id="AnimationNodeOneShot_g4c7l"]
+fadein_time = 0.06
+fadeout_time = 0.06
+
+[sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_knn7v"]
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_xxbhh"]
+animation = &"Ak Human Reload"
+
+[sub_resource type="AnimationNodeOneShot" id="AnimationNodeOneShot_m1dvp"]
+
+[sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_anqxl"]
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_65viv"]
+animation = &"Ak Human Reload"
+
+[sub_resource type="AnimationNodeOneShot" id="AnimationNodeOneShot_x7c3f"]
+fadein_time = 0.06
+fadeout_time = 0.06
+
+[sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_65viv"]
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_jfgyi"]
+animation = &"Ak Human Shoot"
+
+[sub_resource type="AnimationNodeOneShot" id="AnimationNodeOneShot_237xx"]
+fadein_time = 0.02
+fadeout_time = 0.02
+
+[sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_wpyo2"]
+
+[sub_resource type="AnimationNodeBlendTree" id="AnimationNodeBlendTree_h44ov"]
+graph_offset = Vector2(1312.1736, -685.35205)
+nodes/output/position = Vector2(3260, -200)
+nodes/ShootAnim/node = SubResource("AnimationNodeAnimation_jfgyi")
+nodes/ShootAnim/position = Vector2(2420, 0)
+nodes/ShootTimeScale/node = SubResource("AnimationNodeTimeScale_wpyo2")
+nodes/ShootTimeScale/position = Vector2(2680, -80)
+nodes/ReloadEmptyAnim/node = SubResource("AnimationNodeAnimation_xxbhh")
+nodes/ReloadEmptyAnim/position = Vector2(1420, 100)
+nodes/ReloadEmptyTimeScale/node = SubResource("AnimationNodeTimeScale_anqxl")
+nodes/ReloadEmptyTimeScale/position = Vector2(2012.5466, -69.51329)
+nodes/InspectOneShot/node = SubResource("AnimationNodeOneShot_knn7v")
+nodes/InspectOneShot/position = Vector2(1440, -960)
+nodes/ReloadEmptyOneShot/node = SubResource("AnimationNodeOneShot_m1dvp")
+nodes/ReloadEmptyOneShot/position = Vector2(2520, -460)
+nodes/InspectTimeScale/node = SubResource("AnimationNodeTimeScale_7pqkx")
+nodes/InspectTimeScale/position = Vector2(1240, -820)
+nodes/HoldAnim/node = SubResource("AnimationNodeAnimation_gswnw")
+nodes/HoldAnim/position = Vector2(1060, -1020)
+nodes/ShootOneShot/node = SubResource("AnimationNodeOneShot_237xx")
+nodes/ShootOneShot/position = Vector2(3000, -280)
+nodes/ReloadNonemptyOneShot/node = SubResource("AnimationNodeOneShot_x7c3f")
+nodes/ReloadNonemptyOneShot/position = Vector2(2200, -600)
+nodes/ReloadNonemptyAnim/node = SubResource("AnimationNodeAnimation_65viv")
+nodes/ReloadNonemptyAnim/position = Vector2(1240, -60)
+nodes/ReloadNonemptyTimeScale/node = SubResource("AnimationNodeTimeScale_65viv")
+nodes/ReloadNonemptyTimeScale/position = Vector2(1580, -100)
+nodes/PulloutOneShot/node = SubResource("AnimationNodeOneShot_s7qer")
+nodes/PulloutOneShot/position = Vector2(1960, -780)
+nodes/PulloutAnim/node = SubResource("AnimationNodeAnimation_bjvpn")
+nodes/PulloutAnim/position = Vector2(1200, -320)
+nodes/PulloutTimeScale/node = SubResource("AnimationNodeTimeScale_pullout")
+nodes/PulloutTimeScale/position = Vector2(1500, -320)
+nodes/PutawayOneShot/node = SubResource("AnimationNodeOneShot_g4c7l")
+nodes/PutawayOneShot/position = Vector2(1680, -880)
+nodes/PutawayAnim/node = SubResource("AnimationNodeAnimation_s7qer")
+nodes/PutawayAnim/position = Vector2(1040, -520)
+nodes/PutawayTimeScale/node = SubResource("AnimationNodeTimeScale_knn7v")
+nodes/PutawayTimeScale/position = Vector2(1340, -580)
+nodes/InspectAnim/node = SubResource("AnimationNodeAnimation_g4c7l")
+nodes/InspectAnim/position = Vector2(920, -740)
+node_connections = [&"output", 0, &"ShootOneShot", &"ShootTimeScale", 0, &"ShootAnim", &"ReloadEmptyTimeScale", 0, &"ReloadEmptyAnim", &"InspectOneShot", 0, &"HoldAnim", &"InspectOneShot", 1, &"InspectTimeScale", &"ReloadEmptyOneShot", 0, &"ReloadNonemptyOneShot", &"ReloadEmptyOneShot", 1, &"ReloadEmptyTimeScale", &"InspectTimeScale", 0, &"InspectAnim", &"ShootOneShot", 0, &"ReloadEmptyOneShot", &"ShootOneShot", 1, &"ShootTimeScale", &"ReloadNonemptyOneShot", 0, &"PulloutOneShot", &"ReloadNonemptyOneShot", 1, &"ReloadNonemptyTimeScale", &"ReloadNonemptyTimeScale", 0, &"ReloadNonemptyAnim", &"PulloutOneShot", 0, &"PutawayOneShot", &"PulloutOneShot", 1, &"PulloutTimeScale", &"PulloutTimeScale", 0, &"PulloutAnim", &"PutawayOneShot", 0, &"InspectOneShot", &"PutawayOneShot", 1, &"PutawayTimeScale", &"PutawayTimeScale", 0, &"PutawayAnim"]
+
+[node name="Ak" type="Node3D" unique_id=1233250200 node_paths=PackedStringArray("anim_player", "anim_tree")]
 script = ExtResource("1_r4bbn")
 anim_player = NodePath("Ak2/AnimationPlayer")
+anim_tree = NodePath("AnimationTree")
 human_anims = ExtResource("2_ndd21")
 anim_groups = Array[ExtResource("3_a603s")]([SubResource("Resource_65viv"), SubResource("Resource_f0yui"), SubResource("Resource_705ku"), SubResource("Resource_xv0hg"), SubResource("Resource_a603s"), SubResource("Resource_x7c3f")])
 
@@ -56,21 +155,58 @@ anim_groups = Array[ExtResource("3_a603s")]([SubResource("Resource_65viv"), SubR
 [node name="Ak" parent="Ak2" index="0" unique_id=1371385582]
 transform = Transform3D(1, 0, 0, 0, 0.99999964, 0, 0, 0, 0.99999964, 0, 0, 0)
 
-[node name="AK_47" parent="Ak2/Ak/Skeleton3D" parent_id_path=PackedInt32Array(2097840124, 1949791169) index="0" unique_id=1046124939]
+[node name="Skeleton3D" parent="Ak2/Ak" index="0" unique_id=1949791169]
+bones/0/position = Vector3(-0.10229178, 1.5023776, 0.30651617)
+bones/0/rotation = Quaternion(-0.003901305, 0.99995303, 0.0061588297, 0.0063979407)
+bones/1/position = Vector3(-6.600763e-09, 0.09451035, -0.11628167)
+bones/2/position = Vector3(-2.7187752e-08, -0.050684985, -0.15147687)
+bones/2/rotation = Quaternion(-1.6507511e-07, -3.5466818e-10, 4.362205e-11, 1)
+bones/4/rotation = Quaternion(0.96373206, 0.005978279, 0.0023869204, 0.26679412)
+
+[node name="AK_47" parent="Ak2/Ak/Skeleton3D" index="0" unique_id=1046124939]
 surface_material_override/0 = ExtResource("5_a603s")
 
-[node name="Ejection_Port" parent="Ak2/Ak/Skeleton3D" parent_id_path=PackedInt32Array(2097840124, 1949791169) index="1" unique_id=1934362506]
+[node name="Ejection_Port" parent="Ak2/Ak/Skeleton3D" index="1" unique_id=1934362506]
 surface_material_override/0 = ExtResource("5_a603s")
 
-[node name="Magazine" parent="Ak2/Ak/Skeleton3D" parent_id_path=PackedInt32Array(2097840124, 1949791169) index="2" unique_id=590416155]
+[node name="Magazine" parent="Ak2/Ak/Skeleton3D" index="2" unique_id=590416155]
 surface_material_override/0 = ExtResource("5_a603s")
 
-[node name="BoneAttachment3D" type="BoneAttachment3D" parent="Ak2/Ak/Skeleton3D" parent_id_path=PackedInt32Array(2097840124, 1949791169) index="5" unique_id=1431857578]
-transform = Transform3D(-1.0000002, 1.9756986e-10, -3.8921155e-07, -1.0122544e-08, 0.9996479, 0.02651525, 3.8908001e-07, 0.026515242, -0.9996484, 1.2135631e-10, 0.0950346, 0.07874642)
+[node name="BoneAttachment3D" type="BoneAttachment3D" parent="Ak2/Ak/Skeleton3D" index="5" unique_id=1431857578]
+transform = Transform3D(-0.9998877, -0.007881046, 0.012747222, -0.007723435, 0.99989325, 0.012366998, -0.012843334, 0.012267153, -0.9998421, -0.10229178, 1.5023776, 0.30651617)
 bone_name = "Root"
 bone_idx = 0
 
 [node name="Muzzle" type="Node3D" parent="Ak2/Ak/Skeleton3D/BoneAttachment3D" unique_id=1897615840]
 transform = Transform3D(-0.9998877, -0.0077234283, -0.012843333, -0.007881047, 0.99989384, 0.01226712, 0.012747226, 0.012366958, -0.9998424, -0.00044605136, 0.08738756, -0.6046115)
+
+[node name="AnimationTree" type="AnimationTree" parent="." unique_id=754164039]
+root_node = NodePath("../Ak2")
+tree_root = SubResource("AnimationNodeBlendTree_h44ov")
+anim_player = NodePath("../Ak2/AnimationPlayer")
+parameters/ShootTimeScale/scale = 1.0
+parameters/ReloadEmptyTimeScale/scale = 1.0
+parameters/InspectOneShot/active = false
+parameters/InspectOneShot/internal_active = false
+parameters/InspectOneShot/request = 0
+parameters/ReloadEmptyOneShot/active = false
+parameters/ReloadEmptyOneShot/internal_active = false
+parameters/ReloadEmptyOneShot/request = 0
+parameters/InspectTimeScale/scale = 1.0
+parameters/ShootOneShot/active = false
+parameters/ShootOneShot/internal_active = false
+parameters/ShootOneShot/request = 0
+parameters/ReloadNonemptyOneShot/active = false
+parameters/ReloadNonemptyOneShot/internal_active = false
+parameters/ReloadNonemptyOneShot/request = 0
+parameters/ReloadNonemptyTimeScale/scale = 1.0
+parameters/PulloutOneShot/active = false
+parameters/PulloutOneShot/internal_active = false
+parameters/PulloutOneShot/request = 0
+parameters/PulloutTimeScale/scale = 1.0
+parameters/PutawayOneShot/active = false
+parameters/PutawayOneShot/internal_active = false
+parameters/PutawayOneShot/request = 0
+parameters/PutawayTimeScale/scale = 1.0
 
 [editable path="Ak2"]

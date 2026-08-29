@@ -10,11 +10,19 @@ var _lb_canvas: CanvasLayer = null
 var _lb_rows: VBoxContainer = null
 
 # Pitch constants (E-based semitone scaling)
-const PITCH_E  := pow(2.0, 0.0 / 12.0)
-const PITCH_FS := pow(2.0, 2.0 / 12.0)
-const PITCH_G  := pow(2.0, 3.0 / 12.0)
-const PITCH_A  := pow(2.0, 5.0 / 12.0)
-const PITCH_B  := pow(2.0, 7.0 / 12.0)
+const PITCH_E   := pow(2.0, 0.0 / 12.0)
+const PITCH_F   := pow(2.0, 1.0 / 12.0)
+const PITCH_FS  := pow(2.0, 2.0 / 12.0)
+const PITCH_G   := pow(2.0, 3.0 / 12.0)
+const PITCH_GS  := pow(2.0, 4.0 / 12.0)
+const PITCH_A   := pow(2.0, 5.0 / 12.0)
+const PITCH_AS  := pow(2.0, 6.0 / 12.0)
+const PITCH_B   := pow(2.0, 7.0 / 12.0)
+const PITCH_C   := pow(2.0, 8.0 / 12.0)
+const PITCH_CS  := pow(2.0, 9.0 / 12.0)
+const PITCH_D   := pow(2.0, 10.0 / 12.0)
+const PITCH_DS  := pow(2.0, 11.0 / 12.0)
+const PITCH_E2  := pow(2.0, 12.0 / 12.0)
 
 # Column widths
 const COL_RANK := 40
@@ -258,10 +266,10 @@ func _play_sequence_async(seq: Array[float], token: int) -> void:
 func _get_pitch_sequence(ks: int) -> Array[float]:
 	match ks:
 		1:  return [PITCH_E]
-		2:  return [PITCH_G]
-		3:  return [PITCH_A]
-		4:  return [PITCH_B]
-		5:  return [PITCH_E, PITCH_E, PITCH_G, PITCH_A, PITCH_B]
+		2:  return [PITCH_FS]
+		3:  return [PITCH_G]
+		4:  return [PITCH_A]
+		5:  return [PITCH_E, PITCH_E, PITCH_E, PITCH_G]
 		6:  return [PITCH_E, PITCH_G]
 		7:  return [PITCH_G, PITCH_A]
 		8:  return [PITCH_A, PITCH_B]

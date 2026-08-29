@@ -58,7 +58,7 @@ var skins: Array[MeshInstance3D] = []
 var _skin_original_materials: Array[Material] = []
 
 const TEAM_COLORS: Dictionary = {
-	Team.SCI: Color.DODGER_BLUE,
+	Team.SCI: Color.BLUE,
 	Team.SPI: Color.RED,
 }
 
@@ -1156,22 +1156,49 @@ func _setup_pose_copy(model_node: Node3D) -> void:
 ## Re-tint every skin mesh to the current team colour while keeping its own
 ## texture.  FFA (no team) resolves to white — the identity tint — so the model
 ## renders with its authored materials instead of a flat colour.
+#func _apply_team_color() -> void:
+	#var color: Color = TEAM_COLORS.get(team, Color.WHITE)
+	#for i in skins.size():
+		#var skin: MeshInstance3D = skins[i]
+		#if skin == null:
+			#continue
+		#var original: Material = _skin_original_materials[i] if i < _skin_original_materials.size() else null
+		#if original == null:
+			#continue
+		## Identity tint (FFA) or an untintable shader — show the authored material.
+		#if color.is_equal_approx(Color.WHITE) or not (original is BaseMaterial3D):
+			#skin.set_surface_override_material(0, null)
+			#continue
+		#var tinted: Material = original.duplicate() as Material
+		#(tinted as BaseMaterial3D).albedo_color = color
+		#skin.set_surface_override_material(0, tinted)
+
 func _apply_team_color() -> void:
 	var color: Color = TEAM_COLORS.get(team, Color.WHITE)
+
 	for i in skins.size():
 		var skin: MeshInstance3D = skins[i]
 		if skin == null:
 			continue
+
 		var original: Material = _skin_original_materials[i] if i < _skin_original_materials.size() else null
 		if original == null:
 			continue
-		# Identity tint (FFA) or an untintable shader — show the authored material.
+
+		# FFA or materials that cannot be tinted: use the authored material.
 		if color.is_equal_approx(Color.WHITE) or not (original is BaseMaterial3D):
 			skin.set_surface_override_material(0, null)
 			continue
-		var tinted: Material = original.duplicate() as Material
-		(tinted as BaseMaterial3D).albedo_color = color
+
+		var tinted: BaseMaterial3D = original.duplicate() as BaseMaterial3D
+
+		# Stronger tint: blend the team colour into the material's existing
+		# albedo instead of merely multiplying it.
+		var original_color := tinted.albedo_color
+		tinted.albedo_color = original_color.lerp(color, 0.75)
+
 		skin.set_surface_override_material(0, tinted)
+
 
 
 ## Return the material a mesh uses for surface 0 before any team-tint override,

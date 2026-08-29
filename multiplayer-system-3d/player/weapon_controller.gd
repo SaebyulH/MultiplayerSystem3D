@@ -6,32 +6,44 @@ class_name WeaponController extends Node
 const PITCH_RANGE: float = 0.05
 const RIM_LAYER := 1 << 9  # render layer 10, the shared rim-light layer
 ## Name of the AnimationTree blend node that holds the weapon's hold (arm) animation.
-const HOLD_ANIM_NODE := &"Hold"
-## Name of the AnimationTree one-shot node that plays the reload over the hold.
-const RELOAD_ONESHOT_NODE := &"Reload"
-## Name of the AnimationNodeAnimation feeding the Reload one-shot (its input 1).
-const RELOAD_ANIM_NODE := &"Animation 2"
-## Name of the AnimationNodeTimeScale that wraps the reload clip (Reload one-shot input 1).
-const RELOAD_TIMESCALE_NODE := &"ReloadTimeScale"
+const HOLD_ANIM_NODE := &"HoldAnim"
+## Name of the AnimationTree one-shot node that plays the empty-mag reload over the hold.
+const RELOAD_EMPTY_ONESHOT_NODE := &"ReloadEmptyOneShot"
+## Name of the AnimationNodeAnimation feeding the empty reload one-shot (its input 1).
+const RELOAD_EMPTY_ANIM_NODE := &"ReloadEmptyAnim"
+## Name of the AnimationNodeTimeScale that wraps the empty reload clip.
+const RELOAD_EMPTY_TIMESCALE_NODE := &"ReloadEmptyTimeScale"
+## Name of the AnimationTree one-shot node that plays the non-empty reload over the hold.
+const RELOAD_NONEMPTY_ONESHOT_NODE := &"ReloadNonemptyOneShot"
+## Name of the AnimationNodeAnimation feeding the non-empty reload one-shot (its input 1).
+const RELOAD_NONEMPTY_ANIM_NODE := &"ReloadNonemptyAnim"
+## Name of the AnimationNodeTimeScale that wraps the non-empty reload clip.
+const RELOAD_NONEMPTY_TIMESCALE_NODE := &"ReloadNonemptyTimeScale"
 ## Name of the AnimationTree one-shot node that plays the pull-out over the hold.
-const PULLOUT_ONESHOT_NODE := &"Pullout"
+const PULLOUT_ONESHOT_NODE := &"PulloutOneShot"
 ## Name of the AnimationNodeAnimation feeding the Pull-out one-shot (its input 1).
-const PULLOUT_ANIM_NODE := &"Animation 4"
+const PULLOUT_ANIM_NODE := &"PulloutAnim"
 ## Name of the AnimationNodeTimeScale that wraps the pull-out clip (Pull-out one-shot input 1).
 const PULLOUT_TIMESCALE_NODE := &"PulloutTimeScale"
 ## Name of the AnimationTree one-shot node that plays the put-away over the hold.
-const PUTAWAY_ONESHOT_NODE := &"Putaway"
+const PUTAWAY_ONESHOT_NODE := &"PutawayOneShot"
 ## Name of the AnimationNodeAnimation feeding the Put-away one-shot (its input 1).
-const PUTAWAY_ANIM_NODE := &"Animation 5"
+const PUTAWAY_ANIM_NODE := &"PutawayAnim"
 ## Name of the AnimationNodeTimeScale that wraps the put-away clip (Put-away one-shot input 1).
 const PUTAWAY_TIMESCALE_NODE := &"PutawayTimeScale"
 ## Name of the AnimationTree one-shot node that plays the inspect over the hold.
-const INSPECT_ONESHOT_NODE := &"Inspect"
+const INSPECT_ONESHOT_NODE := &"InspectOneShot"
 ## Name of the AnimationNodeAnimation feeding the Inspect one-shot (its input 1).
-const INSPECT_ANIM_NODE := &"Animation 6"
+const INSPECT_ANIM_NODE := &"InspectAnim"
 ## Name of the AnimationNodeTimeScale that wraps the inspect clip (Inspect one-shot input 1).
 ## Left at scale 1.0 — inspect isn't gameplay-impacting, so it isn't time-scaled.
 const INSPECT_TIMESCALE_NODE := &"InspectTimeScale"
+## Name of the AnimationTree one-shot node that plays the shoot over the hold.
+const SHOOT_ONESHOT_NODE := &"OneShot"
+## Name of the AnimationNodeAnimation feeding the Shoot one-shot (its input 1).
+const SHOOT_ANIM_NODE := &"Animation"
+## Name of the AnimationNodeTimeScale that wraps the shoot clip (Shoot one-shot input 1).
+const SHOOT_TIMESCALE_NODE := &"ShootTimeScale"
 ## Fallback arm animation when the weapon has no hold animation (or isn't a WeaponModel).
 const ARMS_ANIM_RESET := &"other_movement/a_pose"
 
@@ -623,14 +635,33 @@ func _apply_weapon_model_anims() -> void:
 			arms_anim = hold
 
 	_set_hold_anim(arms_anim)
-	_play_weapon_hold_anim()
+	_restart_hold_anims()
+
+
+## Play the current weapon model's shoot animation (first-person gun anim, if it
+## has one), stretched to the fire-cycle duration [param duration].  No-ops for
+## legacy weapons.
+func _play_weapon_shoot_anim(duration: float) -> void:
+	if current_weapon_model is WeaponModel:
+		(current_weapon_model as WeaponModel).play_anim_scaled(WeaponAnimGroup.AnimSlot.SHOOT, duration)
+
+
+## True while the current weapon's magazine is fully empty.  An empty-mag reload
+## plays a different (longer, bolt/slide-charging) animation than a partial-mag
+## reload, so the reload one-shot is selected from this flag.
+func _reload_is_empty() -> bool:
+	if not _is_ready():
+		return false
+	return _weapons[current_weapon_index].mag_current <= 0
 
 
 ## Play the current weapon model's reload animation (if it has one), stretched to
-## the actual reload duration [param duration].  No-ops for legacy weapons.
+## the actual reload duration [param duration].  Empty-mag and partial-mag reloads
+## play their own one-shots.  No-ops for legacy weapons.
 func _play_weapon_reload_anim(duration: float) -> void:
 	if current_weapon_model is WeaponModel:
-		(current_weapon_model as WeaponModel).play_anim_scaled(WeaponAnimGroup.AnimSlot.RELOAD, duration)
+		var slot := WeaponAnimGroup.AnimSlot.RELOAD_EMPTY if _reload_is_empty() else WeaponAnimGroup.AnimSlot.RELOAD_NONEMPTY
+		(current_weapon_model as WeaponModel).play_anim_scaled(slot, duration)
 
 
 ## Play the current weapon model's pull-out animation (first-person gun anim, if
@@ -662,14 +693,48 @@ func _play_weapon_hold_anim() -> void:
 		(current_weapon_model as WeaponModel).play_anim_loop(WeaponAnimGroup.AnimSlot.HOLD)
 
 
-## Fire the AnimationTree's "Reload" one-shot with the current weapon's human
-## reload animation, time-scaled to last [param duration] seconds via the
-## "ReloadTimeScale" node.  No-ops for legacy weapons or when the tree isn't ready.
+## Force-restart the human hold anim (third-person arms) so its loop re-syncs with
+## the weapon model's hold.  Clearing then re-assigning the animation restarts it
+## from frame zero.
+func _restart_human_hold_anim() -> void:
+	if _parent_player == null or _parent_player.animation_tree == null:
+		return
+	var root := _parent_player.animation_tree.tree_root as AnimationNodeBlendTree
+	if root == null:
+		return
+	var hold_node := root.get_node(HOLD_ANIM_NODE) as AnimationNodeAnimation
+	if hold_node == null:
+		return
+	var anim := hold_node.animation
+	if anim == &"":
+		return
+	hold_node.animation = &""
+	hold_node.animation = anim
+
+
+## Restart both the human and weapon hold animations together so their loops stay
+## in sync.  Called when the model returns to its idle hold pose (after reload,
+## pull-out, inspect, and on load/switch).
+func _restart_hold_anims() -> void:
+	_restart_human_hold_anim()
+	_play_weapon_hold_anim()
+
+
+## Fire the AnimationTree's reload one-shot with the current weapon's human reload
+## animation, time-scaled to last [param duration] seconds.  Empty-mag and
+## partial-mag reloads fire their own one-shots.  No-ops for legacy weapons or
+## when the tree isn't ready.
 func _play_weapon_human_reload_anim(duration: float) -> void:
 	if not (current_weapon_model is WeaponModel):
 		return
+	var empty := _reload_is_empty()
+	var slot := WeaponAnimGroup.AnimSlot.RELOAD_EMPTY if empty else WeaponAnimGroup.AnimSlot.RELOAD_NONEMPTY
+	var anim_node_name := RELOAD_EMPTY_ANIM_NODE if empty else RELOAD_NONEMPTY_ANIM_NODE
+	var timescale_node := RELOAD_EMPTY_TIMESCALE_NODE if empty else RELOAD_NONEMPTY_TIMESCALE_NODE
+	var oneshot_node := RELOAD_EMPTY_ONESHOT_NODE if empty else RELOAD_NONEMPTY_ONESHOT_NODE
+
 	var model := current_weapon_model as WeaponModel
-	var reload_path := model.get_human_anim_path(WeaponAnimGroup.AnimSlot.RELOAD)
+	var reload_path := model.get_human_anim_path(slot)
 	if reload_path == &"":
 		print("[reload-debug] no human reload anim for weapon index ", current_weapon_index)
 		return
@@ -680,27 +745,27 @@ func _play_weapon_human_reload_anim(duration: float) -> void:
 	if root == null:
 		print("[reload-debug] animation_tree has no blend tree root")
 		return
-	var reload_anim_node := root.get_node(RELOAD_ANIM_NODE) as AnimationNodeAnimation
+	var reload_anim_node := root.get_node(anim_node_name) as AnimationNodeAnimation
 	if reload_anim_node == null:
-		print("[reload-debug] '", RELOAD_ANIM_NODE, "' node not found in blend tree")
+		print("[reload-debug] '", anim_node_name, "' node not found in blend tree")
 		return
 	reload_anim_node.animation = reload_path
 
-	# Playback speed is set via the ReloadTimeScale node's `scale` parameter (there's
-	# no per-node speed in code).  Stretch the clip to the reload duration.
+	# Playback speed is set via the reload TimeScale node's `scale` parameter
+	# (there's no per-node speed in code).  Stretch the clip to the reload duration.
 	var scale := 1.0
 	var anim_player := _get_mannequin_anim_player()
 	if anim_player != null and duration > 0.0:
 		var anim := anim_player.get_animation(reload_path)
 		if anim != null and anim.length > 0.0:
 			scale = anim.length / duration
-	_parent_player.animation_tree.set("parameters/" + str(RELOAD_TIMESCALE_NODE) + "/scale", scale)
+	_parent_player.animation_tree.set("parameters/" + str(timescale_node) + "/scale", scale)
 
 	_parent_player.animation_tree.set(
-		"parameters/" + str(RELOAD_ONESHOT_NODE) + "/request",
+		"parameters/" + str(oneshot_node) + "/request",
 		AnimationNodeOneShot.ONE_SHOT_REQUEST_FIRE
 	)
-	print("[reload-debug] fired '", RELOAD_ONESHOT_NODE, "' one-shot with ", reload_path, " (scale=", scale, ")")
+	print("[reload-debug] fired '", oneshot_node, "' one-shot with ", reload_path, " (scale=", scale, ")")
 
 
 ## Fire the AnimationTree's "Pullout" one-shot with the current weapon's human
@@ -799,6 +864,43 @@ func _play_weapon_human_inspect_anim() -> void:
 	)
 
 
+## Fire the AnimationTree's "OneShot" with the current weapon's human shoot
+## animation, time-scaled to last [param duration] seconds via the
+## "ShootTimeScale" node.  Mirrors _play_weapon_human_reload_anim; no-ops for
+## legacy weapons, weapons without a shoot anim, or when the tree isn't ready.
+func _play_weapon_human_shoot_anim(duration: float) -> void:
+	if not (current_weapon_model is WeaponModel):
+		return
+	var model := current_weapon_model as WeaponModel
+	var shoot_path := model.get_human_anim_path(WeaponAnimGroup.AnimSlot.SHOOT)
+	if shoot_path == &"":
+		return
+	if _parent_player == null or _parent_player.animation_tree == null:
+		return
+	var root := _parent_player.animation_tree.tree_root as AnimationNodeBlendTree
+	if root == null:
+		return
+	var shoot_anim_node := root.get_node(SHOOT_ANIM_NODE) as AnimationNodeAnimation
+	if shoot_anim_node == null:
+		return
+	shoot_anim_node.animation = shoot_path
+
+	# Stretch the clip to the fire-cycle duration via the ShootTimeScale node,
+	# exactly like reload uses ReloadTimeScale.
+	var scale := 1.0
+	var anim_player := _get_mannequin_anim_player()
+	if anim_player != null and duration > 0.0:
+		var anim := anim_player.get_animation(shoot_path)
+		if anim != null and anim.length > 0.0:
+			scale = anim.length / duration
+	_parent_player.animation_tree.set("parameters/" + str(SHOOT_TIMESCALE_NODE) + "/scale", scale)
+
+	_parent_player.animation_tree.set(
+		"parameters/" + str(SHOOT_ONESHOT_NODE) + "/request",
+		AnimationNodeOneShot.ONE_SHOT_REQUEST_FIRE
+	)
+
+
 ## Player pressed the inspect input.  Play the inspect animation (gun + human)
 ## unless one is already playing.
 func _on_inspect_input() -> void:
@@ -829,7 +931,7 @@ func _inspect_duration() -> float:
 
 func _on_inspect_finished() -> void:
 	_is_inspecting = false
-	_play_weapon_hold_anim()
+	_restart_hold_anims()
 
 
 ## Abort the inspect animation immediately (human one-shot + gun anim).  Called
@@ -844,7 +946,7 @@ func _stop_inspect() -> void:
 			"parameters/" + str(INSPECT_ONESHOT_NODE) + "/request",
 			AnimationNodeOneShot.ONE_SHOT_REQUEST_ABORT
 		)
-	_play_weapon_hold_anim()
+	_restart_hold_anims()
 #endregion
 
 
@@ -881,12 +983,16 @@ func _on_weapon_index_changed(previous_index: int = -1) -> void:
 	_firing_remaining = 0.0
 	if shoot_animation:
 		shoot_animation.stop()
-	# Abort the reload one-shot so the reload anim doesn't bleed over to the next
+	# Abort the reload one-shots so the reload anim doesn't bleed over to the next
 	# weapon (the gun's reload anim dies with the freed model, but the mannequin's
-	# reload one-shot is separate and must be cancelled explicitly).
+	# reload one-shots are separate and must be cancelled explicitly).
 	if _parent_player != null and _parent_player.animation_tree != null:
 		_parent_player.animation_tree.set(
-			"parameters/" + str(RELOAD_ONESHOT_NODE) + "/request",
+			"parameters/" + str(RELOAD_EMPTY_ONESHOT_NODE) + "/request",
+			AnimationNodeOneShot.ONE_SHOT_REQUEST_ABORT
+		)
+		_parent_player.animation_tree.set(
+			"parameters/" + str(RELOAD_NONEMPTY_ONESHOT_NODE) + "/request",
 			AnimationNodeOneShot.ONE_SHOT_REQUEST_ABORT
 		)
 	_restore_transform_after_reload()
@@ -958,7 +1064,7 @@ func _advance_switch_phase() -> void:
 			else:
 				_finish_switch()
 		SwitchPhase.PULLOUT:
-			_play_weapon_hold_anim()
+			_restart_hold_anims()
 			_finish_switch()
 		_:
 			_finish_switch()
@@ -1268,7 +1374,7 @@ func _confirm_reload_done(new_mag: int) -> void:
 	var weapon: Weapon = _weapons[current_weapon_index]
 	weapon.mag_current = clamp(new_mag, 0, weapon.mag_size)
 	_is_reloading      = false
-	_play_weapon_hold_anim()
+	_restart_hold_anims()
 	mag_changed.emit(weapon.mag_current, weapon.mag_size)
 
 	# When the player is still holding fire as reload completes, clear per‑press
@@ -1938,10 +2044,16 @@ func _play_shoot_sound(weapon_fire_index: int) -> void:
 		return
 	if weapon_fire_index < 0 or weapon_fire_index >= _weapons[current_weapon_index].weapon_fires.size():
 		return
-	_play_sound(_weapons[current_weapon_index].weapon_fires[weapon_fire_index].shoot_sound)
+	var fire: WeaponFire = _weapons[current_weapon_index].weapon_fires[weapon_fire_index]
+	_play_sound(fire.shoot_sound)
 	if shoot_animation and shoot_animation.has_animation("shoot"):
 		shoot_animation.stop()
 		shoot_animation.play("shoot")
+	# Play both shoot animations (weapon + human), stretched to the weapon's fire
+	# cycle (pre-shoot delay + post-shoot delay) so they line up with the shot rate.
+	var shoot_duration := fire.pre_shoot_delay + fire.post_shoot_delay
+	_play_weapon_shoot_anim(shoot_duration)
+	_play_weapon_human_shoot_anim(shoot_duration)
 
 ## Played when you hit someone, called by attribute component
 @rpc("any_peer", "call_local")

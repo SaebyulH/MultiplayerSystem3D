@@ -1,0 +1,181 @@
+[gd_scene format=3 uid="uid://b65rovvxt28cp"]
+
+[ext_resource type="Script" uid="uid://c0ut5ljnvunfk" path="res://weapon/weapon_model.gd" id="1_2hwsd"]
+[ext_resource type="AnimationLibrary" uid="uid://cv55yvfohsp02" path="res://assets/ak_test/Human Ak.glb" id="2_jpm5s"]
+[ext_resource type="Script" uid="uid://cutc4qk6eibrf" path="res://weapon/weapon_anim_group.gd" id="3_2abny"]
+[ext_resource type="PackedScene" uid="uid://b74hb0rubm5w6" path="res://assets/ak_test/M4.glb" id="4_0qarw"]
+
+[sub_resource type="Resource" id="Resource_65viv"]
+script = ExtResource("3_2abny")
+slot = 2
+gun_anim = &"Ak Human Reload"
+human_anim = &"Human Ak Reload"
+
+[sub_resource type="Resource" id="Resource_f0yui"]
+script = ExtResource("3_2abny")
+gun_anim = &"Ak Human Hold"
+human_anim = &"Human Ak Hold"
+
+[sub_resource type="Resource" id="Resource_705ku"]
+script = ExtResource("3_2abny")
+slot = 1
+gun_anim = &"Ak Human Shoot"
+human_anim = &"Human Ak Shoot"
+metadata/_custom_type_script = "uid://cutc4qk6eibrf"
+
+[sub_resource type="Resource" id="Resource_xv0hg"]
+script = ExtResource("3_2abny")
+slot = 3
+gun_anim = &"Ak Human Inspect"
+human_anim = &"Human Ak Insspect"
+metadata/_custom_type_script = "uid://cutc4qk6eibrf"
+
+[sub_resource type="Resource" id="Resource_a603s"]
+script = ExtResource("3_2abny")
+slot = 4
+gun_anim = &"Ak Human Pullout"
+human_anim = &"Human Ak Pullout"
+metadata/_custom_type_script = "uid://cutc4qk6eibrf"
+
+[sub_resource type="Resource" id="Resource_x7c3f"]
+script = ExtResource("3_2abny")
+slot = 5
+gun_anim = &"Ak Human Putaway"
+human_anim = &"Human Ak Putaway"
+metadata/_custom_type_script = "uid://cutc4qk6eibrf"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_xxbhh"]
+animation = &"Ak Human Shoot"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_gswnw"]
+animation = &"Ak Human Hold"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_g4c7l"]
+animation = &"Ak Human Inspect"
+
+[sub_resource type="AnimationNodeOneShot" id="AnimationNodeOneShot_knn7v"]
+fadein_time = 0.06
+fadeout_time = 0.06
+
+[sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_7pqkx"]
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_bjvpn"]
+animation = &"Ak Human Pullout"
+
+[sub_resource type="AnimationNodeOneShot" id="AnimationNodeOneShot_s7qer"]
+fadein_time = 0.06
+fadeout_time = 0.06
+
+[sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_pullout"]
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_s7qer"]
+animation = &"Ak Human Putaway"
+
+[sub_resource type="AnimationNodeOneShot" id="AnimationNodeOneShot_g4c7l"]
+fadein_time = 0.06
+fadeout_time = 0.06
+
+[sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_knn7v"]
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_65viv"]
+animation = &"Ak Human Reload"
+
+[sub_resource type="AnimationNodeOneShot" id="AnimationNodeOneShot_x7c3f"]
+fadein_time = 0.06
+fadeout_time = 0.06
+
+[sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_65viv"]
+
+[sub_resource type="AnimationNodeOneShot" id="AnimationNodeOneShot_m1dvp"]
+
+[sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_anqxl"]
+
+[sub_resource type="AnimationNodeBlendTree" id="AnimationNodeBlendTree_m1dvp"]
+graph_offset = Vector2(286.99707, -905.0081)
+nodes/output/position = Vector2(2920, -320)
+nodes/PutawayOneShot/node = SubResource("AnimationNodeOneShot_g4c7l")
+nodes/PutawayOneShot/position = Vector2(1680, -880)
+nodes/PutawayAnim/node = SubResource("AnimationNodeAnimation_s7qer")
+nodes/PutawayAnim/position = Vector2(1040, -520)
+nodes/InspectOneShot/node = SubResource("AnimationNodeOneShot_knn7v")
+nodes/InspectOneShot/position = Vector2(1440, -960)
+nodes/InspectTimeScale/node = SubResource("AnimationNodeTimeScale_7pqkx")
+nodes/InspectTimeScale/position = Vector2(1240, -820)
+nodes/PutawayTimeScale/node = SubResource("AnimationNodeTimeScale_knn7v")
+nodes/PutawayTimeScale/position = Vector2(1340, -580)
+nodes/InspectAnim/node = SubResource("AnimationNodeAnimation_g4c7l")
+nodes/InspectAnim/position = Vector2(920, -740)
+nodes/PulloutAnim/node = SubResource("AnimationNodeAnimation_bjvpn")
+nodes/PulloutAnim/position = Vector2(1200, -320)
+nodes/HoldAnim/node = SubResource("AnimationNodeAnimation_gswnw")
+nodes/HoldAnim/position = Vector2(1060, -1020)
+nodes/PulloutTimeScale/node = SubResource("AnimationNodeTimeScale_pullout")
+nodes/PulloutTimeScale/position = Vector2(1500, -320)
+nodes/ReloadOneShot/node = SubResource("AnimationNodeOneShot_x7c3f")
+nodes/ReloadOneShot/position = Vector2(2200, -600)
+nodes/ReloadAnim/node = SubResource("AnimationNodeAnimation_65viv")
+nodes/ReloadAnim/position = Vector2(1280, -60)
+nodes/ReloadTimeScale/node = SubResource("AnimationNodeTimeScale_65viv")
+nodes/ReloadTimeScale/position = Vector2(1580, -120)
+nodes/PulloutOneShot/node = SubResource("AnimationNodeOneShot_s7qer")
+nodes/PulloutOneShot/position = Vector2(1960, -780)
+nodes/ShootOneShot/node = SubResource("AnimationNodeOneShot_m1dvp")
+nodes/ShootOneShot/position = Vector2(2500, -540)
+nodes/Animation/node = SubResource("AnimationNodeAnimation_xxbhh")
+nodes/Animation/position = Vector2(1660, 80)
+nodes/ShootTimeScale/node = SubResource("AnimationNodeTimeScale_anqxl")
+nodes/ShootTimeScale/position = Vector2(1920, -100)
+node_connections = [&"output", 0, &"ShootOneShot", &"PutawayOneShot", 0, &"InspectOneShot", &"PutawayOneShot", 1, &"PutawayTimeScale", &"InspectOneShot", 0, &"HoldAnim", &"InspectOneShot", 1, &"InspectTimeScale", &"InspectTimeScale", 0, &"InspectAnim", &"PutawayTimeScale", 0, &"PutawayAnim", &"PulloutTimeScale", 0, &"PulloutAnim", &"ReloadOneShot", 0, &"PulloutOneShot", &"ReloadOneShot", 1, &"ReloadTimeScale", &"ReloadTimeScale", 0, &"ReloadAnim", &"PulloutOneShot", 0, &"PutawayOneShot", &"PulloutOneShot", 1, &"PulloutTimeScale", &"ShootOneShot", 0, &"ReloadOneShot", &"ShootOneShot", 1, &"ShootTimeScale", &"ShootTimeScale", 0, &"Animation"]
+
+[node name="M4" type="Node3D" unique_id=1233250200 node_paths=PackedStringArray("anim_player", "anim_tree")]
+script = ExtResource("1_2hwsd")
+anim_player = NodePath("M42/AnimationPlayer")
+anim_tree = NodePath("AnimationTree")
+human_anims = ExtResource("2_jpm5s")
+anim_groups = Array[ExtResource("3_2abny")]([SubResource("Resource_65viv"), SubResource("Resource_f0yui"), SubResource("Resource_705ku"), SubResource("Resource_xv0hg"), SubResource("Resource_a603s"), SubResource("Resource_x7c3f")])
+
+[node name="AnimationTree" type="AnimationTree" parent="." unique_id=788952654]
+root_node = NodePath("../M42")
+tree_root = SubResource("AnimationNodeBlendTree_m1dvp")
+anim_player = NodePath("../M42/AnimationPlayer")
+parameters/PutawayOneShot/active = false
+parameters/PutawayOneShot/internal_active = false
+parameters/PutawayOneShot/request = 0
+parameters/InspectOneShot/active = false
+parameters/InspectOneShot/internal_active = false
+parameters/InspectOneShot/request = 0
+parameters/InspectTimeScale/scale = 1.0
+parameters/PutawayTimeScale/scale = 1.0
+parameters/PulloutTimeScale/scale = 1.0
+parameters/ReloadOneShot/active = false
+parameters/ReloadOneShot/internal_active = false
+parameters/ReloadOneShot/request = 0
+parameters/ReloadTimeScale/scale = 1.0
+parameters/PulloutOneShot/active = false
+parameters/PulloutOneShot/internal_active = false
+parameters/PulloutOneShot/request = 0
+parameters/ShootOneShot/active = false
+parameters/ShootOneShot/internal_active = false
+parameters/ShootOneShot/request = 0
+parameters/ShootTimeScale/scale = 1.0
+
+[node name="M42" parent="." unique_id=345288316 instance=ExtResource("4_0qarw")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.005859375, -0.05987549, -0.018188477)
+
+[node name="Skeleton3D" parent="M42/M4" parent_id_path=PackedInt32Array(345288316, 2145389248) index="0" unique_id=1072754238]
+bones/0/position = Vector3(-0.10229178, 1.4969639, 0.3059146)
+bones/0/rotation = Quaternion(-0.003901305, 0.99995303, 0.0061588297, 0.0063979407)
+bones/1/position = Vector3(-6.6007635e-09, 0.09451035, -0.11628167)
+bones/2/position = Vector3(-2.7187752e-08, -0.050684985, -0.15147687)
+bones/2/rotation = Quaternion(-1.6507511e-07, -3.5466818e-10, 4.362205e-11, 1)
+bones/4/rotation = Quaternion(0.96373206, 0.005978279, 0.0023869204, 0.26679412)
+
+[node name="BoneAttachment3D" type="BoneAttachment3D" parent="M42/M4/Skeleton3D" index="1" unique_id=286427976]
+transform = Transform3D(-0.9998877, -0.007881046, 0.012747222, -0.007723435, 0.99989325, 0.012366998, -0.012843334, 0.012267153, -0.9998421, -0.10229178, 1.4969639, 0.3059146)
+bone_name = "Root"
+bone_idx = 0
+
+[node name="Muzzle" type="Node3D" parent="M42/M4/Skeleton3D/BoneAttachment3D" unique_id=1564388886]
+transform = Transform3D(1.0000004, -3.0559022e-10, 1.8626451e-09, 1.4551915e-09, 1.0000004, 0, -2.7939677e-09, -1.8626451e-09, 1.0000004, 0.0040245876, 0.14903247, -0.7252122)
+
+[editable path="M42"]

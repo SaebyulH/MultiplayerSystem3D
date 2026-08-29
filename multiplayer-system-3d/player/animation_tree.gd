@@ -26,9 +26,9 @@ func _process(delta: float) -> void:
 
 	# Push the same directional input to all three blend spaces so whichever
 	# one is active already has the correct blend position.
-	set("parameters/crouch/blend_position", blend_vec)
-	set("parameters/walk/blend_position", blend_vec)
-	set("parameters/sprint/blend_position", blend_vec)
+	set("parameters/CrouchBlendSpace/blend_position", blend_vec)
+	set("parameters/WalkBlendSpace/blend_position", blend_vec)
+	set("parameters/SprintBlendSpace/blend_position", blend_vec)
 
 	# ── Ground-state selection (Blend3) ──────────────────────────────
 	var is_crouching: bool = player.is_crouching
@@ -47,13 +47,13 @@ func _process(delta: float) -> void:
 	elif is_sprinting:
 		target_ground = 1.0            # sprint
 
-	var current_ground: float = get("parameters/Blend3/blend_amount")
-	set("parameters/Blend3/blend_amount", move_toward(current_ground, target_ground, BLEND_TRANSITION_SPEED * delta))
+	var current_ground: float = get("parameters/CrouchWalkSprintBlend3/blend_amount")
+	set("parameters/CrouchWalkSprintBlend3/blend_amount", move_toward(current_ground, target_ground, BLEND_TRANSITION_SPEED * delta))
 
 	# ── Air blend ─────────────────────────────────────────────────────
 	# Only go to air when actually airborne and not crouching — crouch
 	# takes priority so the crouch animation isn't interrupted by brief
 	# floor-state flickers.
 	var target_air: float = 1.0 if (not is_on_floor and not is_crouching) else 0.0
-	var current_air: float = get("parameters/air/blend_amount")
-	set("parameters/air/blend_amount", move_toward(current_air, target_air, BLEND_TRANSITION_SPEED * delta))
+	var current_air: float = get("parameters/JumpBlend/blend_amount")
+	set("parameters/JumpBlend/blend_amount", move_toward(current_air, target_air, BLEND_TRANSITION_SPEED * delta))

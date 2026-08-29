@@ -1,0 +1,205 @@
+[gd_scene format=3 uid="uid://dd5gc4xdpc1as"]
+
+[ext_resource type="Script" uid="uid://c0ut5ljnvunfk" path="res://weapon/weapon_model.gd" id="1_q6gph"]
+[ext_resource type="AnimationLibrary" uid="uid://dfs0oyh312cvc" path="res://assets/glock/Human Glock.glb" id="2_gif7i"]
+[ext_resource type="Script" uid="uid://cutc4qk6eibrf" path="res://weapon/weapon_anim_group.gd" id="3_26y7a"]
+[ext_resource type="PackedScene" uid="uid://c764w7juj8fho" path="res://assets/glock/Glock.glb" id="6_rucvb"]
+
+[sub_resource type="Resource" id="Resource_65viv"]
+script = ExtResource("3_26y7a")
+slot = 6
+gun_anim = &"Glock Human Reload Empty"
+human_anim = &"Human Glock Reload Empty"
+
+[sub_resource type="Resource" id="Resource_q6gph"]
+script = ExtResource("3_26y7a")
+slot = 7
+gun_anim = &"Glock Human Reload NonEmpty"
+human_anim = &"Human Glock Reload NonEmpty"
+metadata/_custom_type_script = "uid://cutc4qk6eibrf"
+
+[sub_resource type="Resource" id="Resource_f0yui"]
+script = ExtResource("3_26y7a")
+gun_anim = &"Glock Human Hold"
+human_anim = &"Human Glock Hold"
+
+[sub_resource type="Resource" id="Resource_705ku"]
+script = ExtResource("3_26y7a")
+slot = 1
+gun_anim = &"Glock Human Shoot"
+human_anim = &"Human Glock Shoot"
+metadata/_custom_type_script = "uid://cutc4qk6eibrf"
+
+[sub_resource type="Resource" id="Resource_xv0hg"]
+script = ExtResource("3_26y7a")
+slot = 3
+gun_anim = &"Glock Human Inspect"
+human_anim = &"Human Glock Inspect"
+metadata/_custom_type_script = "uid://cutc4qk6eibrf"
+
+[sub_resource type="Resource" id="Resource_a603s"]
+script = ExtResource("3_26y7a")
+slot = 4
+gun_anim = &"Glock Human Pullout"
+human_anim = &"Human Glock Pullout"
+metadata/_custom_type_script = "uid://cutc4qk6eibrf"
+
+[sub_resource type="Resource" id="Resource_x7c3f"]
+script = ExtResource("3_26y7a")
+slot = 5
+gun_anim = &"Glock Human Putaway"
+human_anim = &"Human Glock Putaway"
+metadata/_custom_type_script = "uid://cutc4qk6eibrf"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_gswnw"]
+animation = &"Glock Human Hold"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_g4c7l"]
+animation = &"Glock Human Inspect"
+
+[sub_resource type="AnimationNodeOneShot" id="AnimationNodeOneShot_knn7v"]
+fadein_time = 0.06
+fadeout_time = 0.06
+
+[sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_7pqkx"]
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_bjvpn"]
+animation = &"Glock Human Pullout"
+
+[sub_resource type="AnimationNodeOneShot" id="AnimationNodeOneShot_s7qer"]
+fadein_time = 0.06
+fadeout_time = 0.06
+
+[sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_pullout"]
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_s7qer"]
+animation = &"Glock Human Putaway"
+
+[sub_resource type="AnimationNodeOneShot" id="AnimationNodeOneShot_g4c7l"]
+fadein_time = 0.06
+fadeout_time = 0.06
+
+[sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_knn7v"]
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_xxbhh"]
+animation = &"Glock Human Reload Empty"
+
+[sub_resource type="AnimationNodeOneShot" id="AnimationNodeOneShot_m1dvp"]
+
+[sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_anqxl"]
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_65viv"]
+animation = &"Glock Human Reload NonEmpty"
+
+[sub_resource type="AnimationNodeOneShot" id="AnimationNodeOneShot_x7c3f"]
+fadein_time = 0.06
+fadeout_time = 0.06
+
+[sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_65viv"]
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_jfgyi"]
+animation = &"Glock Human Shoot"
+
+[sub_resource type="AnimationNodeOneShot" id="AnimationNodeOneShot_237xx"]
+fadein_time = 0.02
+fadeout_time = 0.02
+
+[sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_wpyo2"]
+
+[sub_resource type="AnimationNodeBlendTree" id="AnimationNodeBlendTree_rucvb"]
+graph_offset = Vector2(1775.4106, -485.34412)
+nodes/output/position = Vector2(3260, -200)
+nodes/ShootAnim/node = SubResource("AnimationNodeAnimation_jfgyi")
+nodes/ShootAnim/position = Vector2(2420, 0)
+nodes/ShootTimeScale/node = SubResource("AnimationNodeTimeScale_wpyo2")
+nodes/ShootTimeScale/position = Vector2(2680, -80)
+nodes/ReloadEmptyAnim/node = SubResource("AnimationNodeAnimation_xxbhh")
+nodes/ReloadEmptyAnim/position = Vector2(1420, 100)
+nodes/ReloadEmptyTimeScale/node = SubResource("AnimationNodeTimeScale_anqxl")
+nodes/ReloadEmptyTimeScale/position = Vector2(2012.5466, -69.51329)
+nodes/InspectOneShot/node = SubResource("AnimationNodeOneShot_knn7v")
+nodes/InspectOneShot/position = Vector2(1440, -960)
+nodes/ReloadEmptyOneShot/node = SubResource("AnimationNodeOneShot_m1dvp")
+nodes/ReloadEmptyOneShot/position = Vector2(2520, -460)
+nodes/InspectTimeScale/node = SubResource("AnimationNodeTimeScale_7pqkx")
+nodes/InspectTimeScale/position = Vector2(1240, -820)
+nodes/HoldAnim/node = SubResource("AnimationNodeAnimation_gswnw")
+nodes/HoldAnim/position = Vector2(1060, -1020)
+nodes/ShootOneShot/node = SubResource("AnimationNodeOneShot_237xx")
+nodes/ShootOneShot/position = Vector2(3000, -280)
+nodes/ReloadNonemptyOneShot/node = SubResource("AnimationNodeOneShot_x7c3f")
+nodes/ReloadNonemptyOneShot/position = Vector2(2200, -600)
+nodes/ReloadNonemptyAnim/node = SubResource("AnimationNodeAnimation_65viv")
+nodes/ReloadNonemptyAnim/position = Vector2(1240, -60)
+nodes/ReloadNonemptyTimeScale/node = SubResource("AnimationNodeTimeScale_65viv")
+nodes/ReloadNonemptyTimeScale/position = Vector2(1580, -100)
+nodes/PulloutOneShot/node = SubResource("AnimationNodeOneShot_s7qer")
+nodes/PulloutOneShot/position = Vector2(1960, -780)
+nodes/PulloutAnim/node = SubResource("AnimationNodeAnimation_bjvpn")
+nodes/PulloutAnim/position = Vector2(1200, -320)
+nodes/PulloutTimeScale/node = SubResource("AnimationNodeTimeScale_pullout")
+nodes/PulloutTimeScale/position = Vector2(1500, -320)
+nodes/PutawayOneShot/node = SubResource("AnimationNodeOneShot_g4c7l")
+nodes/PutawayOneShot/position = Vector2(1680, -880)
+nodes/PutawayAnim/node = SubResource("AnimationNodeAnimation_s7qer")
+nodes/PutawayAnim/position = Vector2(1040, -520)
+nodes/PutawayTimeScale/node = SubResource("AnimationNodeTimeScale_knn7v")
+nodes/PutawayTimeScale/position = Vector2(1340, -580)
+nodes/InspectAnim/node = SubResource("AnimationNodeAnimation_g4c7l")
+nodes/InspectAnim/position = Vector2(920, -740)
+node_connections = [&"output", 0, &"ShootOneShot", &"ShootTimeScale", 0, &"ShootAnim", &"ReloadEmptyTimeScale", 0, &"ReloadEmptyAnim", &"InspectOneShot", 0, &"HoldAnim", &"InspectOneShot", 1, &"InspectTimeScale", &"ReloadEmptyOneShot", 0, &"ReloadNonemptyOneShot", &"ReloadEmptyOneShot", 1, &"ReloadEmptyTimeScale", &"InspectTimeScale", 0, &"InspectAnim", &"ShootOneShot", 0, &"ReloadEmptyOneShot", &"ShootOneShot", 1, &"ShootTimeScale", &"ReloadNonemptyOneShot", 0, &"PulloutOneShot", &"ReloadNonemptyOneShot", 1, &"ReloadNonemptyTimeScale", &"ReloadNonemptyTimeScale", 0, &"ReloadNonemptyAnim", &"PulloutOneShot", 0, &"PutawayOneShot", &"PulloutOneShot", 1, &"PulloutTimeScale", &"PulloutTimeScale", 0, &"PulloutAnim", &"PutawayOneShot", 0, &"InspectOneShot", &"PutawayOneShot", 1, &"PutawayTimeScale", &"PutawayTimeScale", 0, &"PutawayAnim"]
+
+[node name="Glock" type="Node3D" unique_id=1233250200 node_paths=PackedStringArray("anim_player", "anim_tree")]
+script = ExtResource("1_q6gph")
+anim_player = NodePath("Glock2/AnimationPlayer")
+anim_tree = NodePath("AnimationTree")
+human_anims = ExtResource("2_gif7i")
+anim_groups = Array[ExtResource("3_26y7a")]([SubResource("Resource_65viv"), SubResource("Resource_q6gph"), SubResource("Resource_f0yui"), SubResource("Resource_705ku"), SubResource("Resource_xv0hg"), SubResource("Resource_a603s"), SubResource("Resource_x7c3f")])
+
+[node name="Glock2" parent="." unique_id=6138456 instance=ExtResource("6_rucvb")]
+
+[node name="Skeleton3D" parent="Glock2/Glock" parent_id_path=PackedInt32Array(6138456, 2008715940) index="0" unique_id=451680251]
+bones/0/position = Vector3(-0.13018252, 1.4303176, 0.40542355)
+bones/0/rotation = Quaternion(0.16908748, 0.0026178043, 0.0008250514, 0.9855973)
+bones/1/position = Vector3(1.164522e-08, 0.044544417, 0.028335825)
+bones/2/position = Vector3(1.930782e-08, 0.17436892, 0.025318773)
+bones/3/rotation = Quaternion(0.69723135, -0.117764704, -0.6972314, 0.11776453)
+
+[node name="BoneAttachment3D" type="BoneAttachment3D" parent="Glock2/Glock/Skeleton3D" index="1" unique_id=1431857578]
+transform = Transform3D(0.9999849, -0.00074106076, 0.005439213, 0.0025116124, 0.9428175, -0.3333, -0.0048811897, 0.33330864, 0.9428052, -0.13018252, 1.4303176, 0.40542355)
+bone_name = "Root"
+bone_idx = 0
+
+[node name="Muzzle" type="Node3D" parent="Glock2/Glock/Skeleton3D/BoneAttachment3D" unique_id=1897615840]
+transform = Transform3D(1, 0, 0, 0, 0.9999997, 0, 0, 0, 0.9999997, -0.004727587, 0.24099278, 0.20346758)
+
+[node name="AnimationTree" type="AnimationTree" parent="." unique_id=571796923]
+root_node = NodePath("../Glock2")
+tree_root = SubResource("AnimationNodeBlendTree_rucvb")
+anim_player = NodePath("../Glock2/AnimationPlayer")
+parameters/ShootTimeScale/scale = 1.0
+parameters/ReloadEmptyTimeScale/scale = 1.0
+parameters/InspectOneShot/active = false
+parameters/InspectOneShot/internal_active = false
+parameters/InspectOneShot/request = 0
+parameters/ReloadEmptyOneShot/active = false
+parameters/ReloadEmptyOneShot/internal_active = false
+parameters/ReloadEmptyOneShot/request = 0
+parameters/InspectTimeScale/scale = 1.0
+parameters/ShootOneShot/active = false
+parameters/ShootOneShot/internal_active = false
+parameters/ShootOneShot/request = 0
+parameters/ReloadNonemptyOneShot/active = false
+parameters/ReloadNonemptyOneShot/internal_active = false
+parameters/ReloadNonemptyOneShot/request = 0
+parameters/ReloadNonemptyTimeScale/scale = 1.0
+parameters/PulloutOneShot/active = false
+parameters/PulloutOneShot/internal_active = false
+parameters/PulloutOneShot/request = 0
+parameters/PulloutTimeScale/scale = 1.0
+parameters/PutawayOneShot/active = false
+parameters/PutawayOneShot/internal_active = false
+parameters/PutawayOneShot/request = 0
+parameters/PutawayTimeScale/scale = 1.0
+
+[editable path="Glock2"]

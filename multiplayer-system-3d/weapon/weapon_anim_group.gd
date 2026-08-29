@@ -8,7 +8,11 @@ enum AnimSlot {
 	RELOAD,
 	INSPECT,
 	PULLOUT,
-	PUTAWAY
+	PUTAWAY,
+	## Reload of a fully-empty magazine (mag drops + bolt/slide release).
+	RELOAD_EMPTY,
+	## Reload of a partially-full magazine (mag swap only).
+	RELOAD_NONEMPTY
 }
 
 ## Which of the Hold/Shoot/Reload/Inspect slots this group fills.
