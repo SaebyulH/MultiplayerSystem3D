@@ -21,6 +21,8 @@ class_name Character
 @export var air_accel_mult: float = 1.0
 @export var air_speed_cap_mult: float = 1.0
 @export var jump_mult: float = 1.0
+## Multiplier on the player's gravity while airborne.  1.0 = normal gravity.
+@export var gravity_scale: float = 1.0
 ## Minimum time (seconds) spent grounded before a jump is allowed again.
 @export var min_ground_contact_time: float = 0.1
 

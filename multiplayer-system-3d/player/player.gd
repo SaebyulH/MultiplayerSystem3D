@@ -793,7 +793,8 @@ func _apply_movement_from_input(delta):
 
 	# Gravity (skipped while grounded).
 	if not on_floor:
-		velocity += get_gravity() * delta * (-1.0 if gravity_flipped else 1.0)
+		var gravity_scale: float = _character.gravity_scale if _character else 1.0
+		velocity += get_gravity() * gravity_scale * delta * (-1.0 if gravity_flipped else 1.0)
 
 	# -- Down dash --
 	# Airborne double-tap of crouch: press crouch twice within DOWN_DASH_WINDOW.

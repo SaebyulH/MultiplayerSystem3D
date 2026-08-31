@@ -5,7 +5,7 @@ extends Control
 # When true, the 1st kill plays the ENTIRE song (streaks 1-30 back-to-back)
 # instead of just the 1st-kill note. Useful for previewing the full theme
 # without needing to rack up 30 real kills.
-@export var test_mode: bool = true 
+@export var test_mode: bool = false 
 
 var player_id: String
 var play_token: int = 0
@@ -61,13 +61,23 @@ class NoteEvent:
 		duration = d * scale
 
 
+# A single note. Duration controls how long this event lasts before the
+# next event is triggered.
 func _n(pitch: float, duration: float = 0.14) -> NoteEvent:
 	return NoteEvent.new([pitch], duration, TEMPO_SCALE)
 
 func _c(pitches: Array[float], duration: float = 0.14) -> NoteEvent:
 	return NoteEvent.new(pitches, duration, TEMPO_SCALE)
 
-func _r(duration: float = 0.14) -> NoteEvent:
+# Explicit silence. Unlike simply making a note short, this gives the
+# phrase a deliberate rhythmic gap.
+func _r(duration: float = 0.10) -> NoteEvent:
+	return NoteEvent.new([], duration, TEMPO_SCALE)
+
+# Alias for readability when designing rhythmic phrases.
+# _p() means "pause", whereas _r() can still be used anywhere you already
+# have it.
+func _p(duration: float = 0.10) -> NoteEvent:
 	return NoteEvent.new([], duration, TEMPO_SCALE)
 
 # Concatenates two typed NoteEvent arrays. Plain "+" between typed arrays
@@ -347,334 +357,318 @@ func _play_sequence_async(seq: Array[NoteEvent], token: int) -> void:
 func _get_pitch_sequence(ks: int) -> Array[NoteEvent]:
 	match ks:
 		# ================================================================
-		# MOTIF
-		#
-		# Core melodic cell:
-		#
-		#     E  G  F# D# --- E
-		#     S  S  S  S     L
-		#
-		# It is deliberately NOT always played literally.
-		# Fragments, inversions, octave displacement, and harmonic
-		# transformations recur throughout the sequence.
-		#
-		# The overall trajectory is:
-		#
-		#   low/sparse
-		#        ↓
-		#   melodic
-		#        ↓
-		#   rhythmic
-		#        ↓
-		#   harmonically dense
-		#        ↓
-		#   high/violent
-		#        ↓
-		#   full motif / climax
-		# ================================================================
-
-
-		# ================================================================
 		# ACT I — SHADOWS
-		# Very sparse. The motif is barely recognizable.
+		# Deliberate, spacious rhythm.
 		# ================================================================
 
-		# 1 — Just the opening E.
+		# 1 — LONG ... short ... LONG
 		1: return [
-			_n(PITCH_E / 2.0, 0.18),
-			_r(0.08),
-			_n(PITCH_B / 2.0, 0.35),
+			_n(PITCH_E / 2.0, 0.28),
+			_p(0.10),
+			_n(PITCH_B / 2.0, 0.38),
 		]
 
-		# 2 — First fragment: E -> G, then a long B.
+		# 2 — SHORT SHORT — LONG
 		2: return [
-			_n(PITCH_E, 0.08),
-			_n(PITCH_G, 0.08),
+			_n(PITCH_E, 0.09),
+			_n(PITCH_G, 0.09),
+			_p(0.05),
 			_n(PITCH_B, 0.32),
 		]
 
-		# 3 — Chromatic approach to the motif's F#.
+		# 3 — Three quick notes, then a deliberate arrival.
 		3: return [
-			_n(PITCH_E, 0.07),
-			_n(PITCH_FS, 0.07),
-			_n(PITCH_G, 0.16),
-			_n(PITCH_FS, 0.30),
-		]
-
-		# 4 — Motif fragment, interrupted before resolution.
-		4: return [
-			_n(PITCH_E, 0.07),
-			_n(PITCH_G, 0.07),
-			_n(PITCH_FS, 0.07),
-			_r(0.08),
-			_n(PITCH_DS, 0.32),
-		]
-
-		# 5 — FULL MOTIF, first appearance.
-		# Quiet, low, and relatively simple.
-		5: return [
-			_n(PITCH_E, 0.07),
-			_n(PITCH_G, 0.07),
-			_n(PITCH_FS, 0.07),
-			_n(PITCH_DS, 0.10),
-			_n(PITCH_E, 0.42),
-		]
-
-
-		# ================================================================
-		# ACT II — THE MOTIF STARTS MOVING
-		# More rhythmic variation and harmonic implication.
-		# ================================================================
-
-		# 6 — G-F#-E fragment, then leaps upward.
-		6: return [
-			_n(PITCH_G, 0.09),
-			_n(PITCH_FS, 0.07),
-			_n(PITCH_E, 0.13),
-			_r(0.07),
-			_n(PITCH_B, 0.30),
-		]
-
-		# 7 — Motif disguised as an arpeggiated shape.
-		7: return [
-			_n(PITCH_E, 0.06),
-			_n(PITCH_G, 0.06),
-			_n(PITCH_B, 0.18),
+			_n(PITCH_E, 0.08),
 			_n(PITCH_FS, 0.08),
-			_n(PITCH_DS, 0.08),
-			_n(PITCH_E2, 0.32),
+			_n(PITCH_G, 0.13),
+			_p(0.08),
+			_n(PITCH_FS, 0.34),
 		]
 
-		# 8 — Short-short-LONG rhythmic idea.
-		# The long note moves upward rather than resolving downward.
-		8: return [
-			_n(PITCH_G, 0.06),
-			_n(PITCH_A, 0.06),
-			_n(PITCH_B, 0.30),
-			_r(0.07),
-			_n(PITCH_DS * 2.0, 0.09),
-			_n(PITCH_E2, 0.34),
+		# 4 — Motif fragment with a real breath.
+		4: return [
+			_n(PITCH_E, 0.09),
+			_n(PITCH_G, 0.09),
+			_n(PITCH_FS, 0.14),
+			_p(0.10),
+			_n(PITCH_DS, 0.34),
 		]
 
-		# 9 — Increasing tension through repetition.
-		9: return [
-			_n(PITCH_E, 0.06),
-			_n(PITCH_G, 0.06),
-			_n(PITCH_FS, 0.06),
-			_n(PITCH_DS, 0.18),
-			_n(PITCH_FS, 0.07),
-			_n(PITCH_G, 0.07),
+		# 5 — FULL MOTIF
+		# SHORT SHORT / MEDIUM SHORT / LONG
+		5: return [
+			_n(PITCH_E, 0.09),
+			_n(PITCH_G, 0.09),
+			_p(0.04),
+			_n(PITCH_FS, 0.12),
+			_n(PITCH_DS, 0.10),
+			_p(0.08),
+			_n(PITCH_E, 0.48),
+		]
+
+
+		# ================================================================
+		# ACT II
+		# More syncopation, but still readable.
+		# ================================================================
+
+		# 6 — LONG SHORT SHORT — LONG
+		6: return [
+			_n(PITCH_G, 0.22),
+			_n(PITCH_FS, 0.08),
+			_n(PITCH_E, 0.08),
+			_p(0.07),
 			_n(PITCH_B, 0.34),
 		]
 
-		# 10 — FULL MOTIF + dominant tension.
-		# The motif is now harmonized instead of merely stated.
+		# 7 — Broken motif with asymmetric rhythm.
+		7: return [
+			_n(PITCH_E, 0.08),
+			_n(PITCH_G, 0.14),
+			_n(PITCH_B, 0.08),
+			_p(0.06),
+			_n(PITCH_FS, 0.10),
+			_n(PITCH_DS, 0.10),
+			_n(PITCH_E2, 0.36),
+		]
+
+		# 8 — SHORT SHORT — LONG / SHORT — LONG
+		8: return [
+			_n(PITCH_G, 0.07),
+			_n(PITCH_A, 0.07),
+			_n(PITCH_B, 0.28),
+			_p(0.08),
+			_n(PITCH_DS * 2.0, 0.09),
+			_n(PITCH_E2, 0.36),
+		]
+
+		# 9 — Repeated motif fragment, but with staggered accents.
+		9: return [
+			_n(PITCH_E, 0.07),
+			_n(PITCH_G, 0.11),
+			_n(PITCH_FS, 0.07),
+			_p(0.05),
+			_n(PITCH_DS, 0.20),
+			_n(PITCH_FS, 0.08),
+			_n(PITCH_G, 0.08),
+			_p(0.06),
+			_n(PITCH_B, 0.36),
+		]
+
+		# 10 — FULL MOTIF + dominant.
 		10: return [
-			_n(PITCH_E, 0.06),
-			_n(PITCH_G, 0.06),
-			_n(PITCH_FS, 0.06),
-			_n(PITCH_DS, 0.08),
-			_c([PITCH_B, PITCH_DS * 2.0, PITCH_A * 2.0], 0.22),
-			_n(PITCH_B * 2.0, 0.10),
+			_n(PITCH_E, 0.08),
+			_n(PITCH_G, 0.08),
+			_n(PITCH_FS, 0.11),
+			_n(PITCH_DS, 0.10),
+			_p(0.08),
+			_c([PITCH_B, PITCH_DS * 2.0, PITCH_A * 2.0], 0.26),
+			_p(0.06),
+			_n(PITCH_B * 2.0, 0.12),
+			_n(PITCH_DS * 2.0, 0.10),
 			_c([
 				PITCH_E2,
 				PITCH_G * 2.0,
 				PITCH_B * 2.0,
 				PITCH_DS * 2.0,
 				PITCH_FS * 2.0
-			], 0.55),
+			], 0.60),
 		]
 
 
 		# ================================================================
-		# ACT III — DISCOVERY / MOMENTUM
-		# Higher register, more syncopation, motif fragments become
-		# increasingly obvious.
+		# ACT III
+		# Rhythmic identity becomes more pronounced.
 		# ================================================================
 
-		# 11 — Motif starts on G instead of E.
 		11: return [
-			_n(PITCH_G, 0.06),
-			_n(PITCH_FS, 0.06),
-			_n(PITCH_DS, 0.06),
-			_n(PITCH_E, 0.18),
 			_n(PITCH_G, 0.08),
-			_n(PITCH_B, 0.30),
-		]
-
-		# 12 — Ascending sequence with a displaced long note.
-		12: return [
-			_n(PITCH_E, 0.07),
-			_n(PITCH_FS, 0.07),
-			_n(PITCH_G, 0.18),
-			_n(PITCH_B, 0.07),
-			_n(PITCH_A, 0.07),
+			_n(PITCH_FS, 0.08),
+			_p(0.04),
+			_n(PITCH_DS, 0.14),
+			_n(PITCH_E, 0.22),
+			_p(0.06),
+			_n(PITCH_G, 0.08),
 			_n(PITCH_B, 0.34),
 		]
 
-		# 13 — Motif fragment hidden inside a larger contour.
-		13: return [
-			_n(PITCH_B, 0.06),
-			_n(PITCH_DS * 2.0, 0.06),
-			_n(PITCH_E2, 0.18),
-			_r(0.06),
-			_n(PITCH_FS * 2.0, 0.07),
-			_n(PITCH_G * 2.0, 0.07),
-			_n(PITCH_B * 2.0, 0.35),
+		12: return [
+			_n(PITCH_E, 0.09),
+			_n(PITCH_FS, 0.09),
+			_n(PITCH_G, 0.20),
+			_p(0.06),
+			_n(PITCH_B, 0.08),
+			_n(PITCH_A, 0.08),
+			_n(PITCH_B, 0.36),
 		]
 
-		# 14 — Rising broken figure, with D# acting as tension.
+		13: return [
+			_n(PITCH_B, 0.07),
+			_n(PITCH_DS * 2.0, 0.07),
+			_n(PITCH_E2, 0.20),
+			_p(0.08),
+			_n(PITCH_FS * 2.0, 0.08),
+			_n(PITCH_G * 2.0, 0.12),
+			_n(PITCH_B * 2.0, 0.38),
+		]
+
 		14: return [
-			_n(PITCH_E, 0.06),
-			_n(PITCH_G, 0.06),
-			_n(PITCH_B, 0.12),
+			_n(PITCH_E, 0.07),
+			_n(PITCH_G, 0.07),
+			_n(PITCH_B, 0.15),
+			_p(0.05),
+			_n(PITCH_DS * 2.0, 0.08),
+			_n(PITCH_FS * 2.0, 0.08),
+			_n(PITCH_G * 2.0, 0.38),
+		]
+
+		# 15 — FULL MOTIF
+		# A more deliberate rhythm rather than five equally weighted notes.
+		15: return [
+			_n(PITCH_E2, 0.10),
+			_n(PITCH_G * 2.0, 0.10),
+			_p(0.04),
+			_n(PITCH_FS * 2.0, 0.13),
+			_n(PITCH_DS * 2.0, 0.10),
+			_p(0.09),
+			_c([
+				PITCH_E2,
+				PITCH_G * 2.0,
+				PITCH_B * 2.0,
+				PITCH_DS * 2.0,
+				PITCH_FS * 2.0
+			], 0.72),
+		]
+
+
+		# ================================================================
+		# ACT IV
+		# Faster internal rhythm, but with stronger rests.
+		# ================================================================
+
+		16: return [
+			_n(PITCH_E2, 0.06),
+			_n(PITCH_G * 2.0, 0.06),
+			_n(PITCH_FS * 2.0, 0.16),
+			_p(0.05),
+			_n(PITCH_B * 2.0, 0.07),
+			_n(PITCH_DS * 2.0, 0.07),
+			_n(PITCH_E2 * 2.0, 0.34),
+		]
+
+		17: return [
+			_n(PITCH_E, 0.08),
+			_n(PITCH_B, 0.16),
+			_p(0.05),
 			_n(PITCH_DS * 2.0, 0.07),
 			_n(PITCH_FS * 2.0, 0.07),
-			_n(PITCH_G * 2.0, 0.34),
+			_n(PITCH_G * 2.0, 0.11),
+			_p(0.05),
+			_n(PITCH_B * 2.0, 0.38),
 		]
 
-		# 15 — FULL MOTIF, now high and harmonically expanded.
-		# EmMaj9.
-		15: return [
+		18: return [
+			_n(PITCH_E, 0.07),
+			_n(PITCH_G, 0.07),
+			_n(PITCH_B, 0.12),
+			_p(0.05),
+			_n(PITCH_D * 2.0, 0.08),
+			_n(PITCH_FS * 2.0, 0.08),
+			_n(PITCH_A * 2.0, 0.38),
+		]
+
+		19: return [
 			_n(PITCH_E2, 0.06),
 			_n(PITCH_G * 2.0, 0.06),
 			_n(PITCH_FS * 2.0, 0.06),
-			_n(PITCH_DS * 2.0, 0.08),
+			_n(PITCH_DS * 2.0, 0.12),
+			_p(0.07),
+			_n(PITCH_FS * 2.0, 0.06),
+			_n(PITCH_G * 2.0, 0.06),
+			_n(PITCH_B * 2.0, 0.40),
+		]
+
+		# 20 — FULL MOTIF + iiø-V7-i.
+		20: return [
+			_c([PITCH_FS, PITCH_A, PITCH_C * 2.0, PITCH_E2], 0.20),
+			_p(0.07),
+			_n(PITCH_E2, 0.07),
+			_n(PITCH_G * 2.0, 0.07),
+			_n(PITCH_FS * 2.0, 0.11),
+			_n(PITCH_DS * 2.0, 0.10),
+			_p(0.07),
+			_c([PITCH_B, PITCH_DS * 2.0, PITCH_FS * 2.0, PITCH_A * 2.0], 0.24),
+			_p(0.05),
 			_c([
 				PITCH_E2,
 				PITCH_G * 2.0,
 				PITCH_B * 2.0,
 				PITCH_DS * 2.0,
 				PITCH_FS * 2.0
-			], 0.65),
+			], 0.75),
 		]
 
 
 		# ================================================================
-		# ACT IV — FIREFIGHT
-		# The motif is now being fragmented rhythmically.
-		# Wider leaps, faster notes, higher register.
+		# ACT V
+		# Very energetic, but rhythmic rather than simply "more notes".
 		# ================================================================
 
-		# 16 — Three-note motif fragment, repeated at a higher level.
-		16: return [
-			_n(PITCH_E2, 0.05),
-			_n(PITCH_G * 2.0, 0.05),
-			_n(PITCH_FS * 2.0, 0.15),
-			_n(PITCH_B * 2.0, 0.05),
-			_n(PITCH_DS * 2.0, 0.05),
-			_n(PITCH_E2 * 2.0, 0.30),
-		]
-
-		# 17 — Wide leap followed by compressed motif.
-		17: return [
-			_n(PITCH_E, 0.07),
-			_n(PITCH_B, 0.07),
-			_n(PITCH_DS * 2.0, 0.07),
-			_n(PITCH_FS * 2.0, 0.07),
-			_n(PITCH_G * 2.0, 0.07),
-			_n(PITCH_B * 2.0, 0.34),
-		]
-
-		# 18 — Rising minor-11 color, but not as a constant chord.
-		18: return [
-			_n(PITCH_E, 0.06),
-			_n(PITCH_G, 0.06),
-			_n(PITCH_B, 0.06),
-			_n(PITCH_D * 2.0, 0.06),
-			_n(PITCH_FS * 2.0, 0.08),
-			_n(PITCH_A * 2.0, 0.32),
-		]
-
-		# 19 — Rapid motif fragment interrupted by a high D#.
-		19: return [
-			_n(PITCH_E2, 0.05),
-			_n(PITCH_G * 2.0, 0.05),
-			_n(PITCH_FS * 2.0, 0.05),
-			_n(PITCH_DS * 2.0, 0.05),
-			_r(0.05),
-			_n(PITCH_FS * 2.0, 0.06),
-			_n(PITCH_G * 2.0, 0.06),
+		21: return [
+			_n(PITCH_E2, 0.055),
+			_n(PITCH_G * 2.0, 0.055),
+			_n(PITCH_FS * 2.0, 0.10),
+			_p(0.04),
+			_n(PITCH_DS * 2.0, 0.055),
+			_n(PITCH_FS * 2.0, 0.055),
+			_n(PITCH_G * 2.0, 0.10),
 			_n(PITCH_B * 2.0, 0.36),
 		]
 
-		# 20 — FULL MOTIF over iiø-V7-i.
-		# Much more overtly cinematic.
-		20: return [
-			_c([PITCH_FS, PITCH_A, PITCH_C * 2.0, PITCH_E2], 0.16),
+		22: return [
+			_n(PITCH_B, 0.07),
+			_n(PITCH_DS * 2.0, 0.07),
+			_p(0.04),
+			_n(PITCH_FS * 2.0, 0.12),
+			_n(PITCH_A * 2.0, 0.07),
+			_n(PITCH_B * 2.0, 0.14),
+			_p(0.05),
+			_n(PITCH_DS * 2.0, 0.07),
+			_n(PITCH_FS * 2.0, 0.38),
+		]
+
+		23: return [
 			_n(PITCH_E2, 0.06),
 			_n(PITCH_G * 2.0, 0.06),
-			_n(PITCH_FS * 2.0, 0.06),
-			_n(PITCH_DS * 2.0, 0.08),
-			_c([PITCH_B, PITCH_DS * 2.0, PITCH_FS * 2.0, PITCH_A * 2.0], 0.20),
-			_c([
-				PITCH_E2,
-				PITCH_G * 2.0,
-				PITCH_B * 2.0,
-				PITCH_DS * 2.0,
-				PITCH_FS * 2.0
-			], 0.7),
-		]
-
-
-		# ================================================================
-		# ACT V — CLIMAX
-		# Very high register, aggressive rhythm, wider harmonic structures.
-		# ================================================================
-
-		# 21 — Motif chopped into very short attacks.
-		21: return [
-			_n(PITCH_E2, 0.045),
-			_n(PITCH_G * 2.0, 0.045),
-			_n(PITCH_FS * 2.0, 0.045),
-			_n(PITCH_DS * 2.0, 0.045),
-			_n(PITCH_FS * 2.0, 0.07),
-			_n(PITCH_G * 2.0, 0.07),
-			_n(PITCH_B * 2.0, 0.32),
-		]
-
-		# 22 — Wider melodic jumps.
-		22: return [
-			_n(PITCH_B, 0.06),
-			_n(PITCH_DS * 2.0, 0.06),
-			_n(PITCH_FS * 2.0, 0.06),
-			_n(PITCH_A * 2.0, 0.06),
-			_n(PITCH_B * 2.0, 0.08),
-			_n(PITCH_DS * 2.0, 0.08),
-			_n(PITCH_FS * 2.0, 0.34),
-		]
-
-		# 23 — Ascending broken Em9.
-		23: return [
-			_n(PITCH_E2, 0.05),
-			_n(PITCH_G * 2.0, 0.05),
-			_n(PITCH_B * 2.0, 0.05),
-			_n(PITCH_DS * 2.0, 0.05),
-			_n(PITCH_FS * 2.0, 0.10),
 			_n(PITCH_B * 2.0, 0.10),
-			_n(PITCH_E2 * 2.0, 0.35),
+			_p(0.04),
+			_n(PITCH_DS * 2.0, 0.06),
+			_n(PITCH_FS * 2.0, 0.10),
+			_n(PITCH_B * 2.0, 0.12),
+			_n(PITCH_E2 * 2.0, 0.40),
 		]
 
-		# 24 — Dominant pressure, then upward release.
 		24: return [
-			_n(PITCH_B, 0.05),
-			_n(PITCH_DS * 2.0, 0.05),
-			_n(PITCH_A * 2.0, 0.05),
-			_r(0.05),
+			_n(PITCH_B, 0.07),
+			_n(PITCH_DS * 2.0, 0.07),
+			_n(PITCH_A * 2.0, 0.16),
+			_p(0.07),
 			_n(PITCH_B * 2.0, 0.07),
 			_n(PITCH_DS * 2.0, 0.07),
-			_n(PITCH_FS * 2.0, 0.07),
-			_n(PITCH_E2 * 2.0, 0.38),
+			_n(PITCH_FS * 2.0, 0.10),
+			_p(0.04),
+			_n(PITCH_E2 * 2.0, 0.42),
 		]
 
-		# 25 — FULL MOTIF, huge.
-		# This is the first point where the motif is almost a fanfare.
+		# 25 — FULL MOTIF / MAJOR CLIMAX.
 		25: return [
-			_n(PITCH_E2, 0.05),
-			_n(PITCH_G * 2.0, 0.05),
-			_n(PITCH_FS * 2.0, 0.05),
-			_n(PITCH_DS * 2.0, 0.06),
-			_n(PITCH_E2 * 2.0, 0.12),
+			_n(PITCH_E2, 0.07),
+			_n(PITCH_G * 2.0, 0.07),
+			_p(0.035),
+			_n(PITCH_FS * 2.0, 0.09),
+			_n(PITCH_DS * 2.0, 0.08),
+			_p(0.06),
+			_n(PITCH_E2 * 2.0, 0.15),
 			_c([
 				PITCH_E2,
 				PITCH_G * 2.0,
@@ -682,74 +676,82 @@ func _get_pitch_sequence(ks: int) -> Array[NoteEvent]:
 				PITCH_DS * 2.0,
 				PITCH_FS * 2.0,
 				PITCH_B * 2.0
-			], 0.85),
-		]
-
-		# 26 — Motif fragmented into ascending triplet-like bursts.
-		26: return [
-			_n(PITCH_E2, 0.045),
-			_n(PITCH_G * 2.0, 0.045),
-			_n(PITCH_B * 2.0, 0.045),
-			_n(PITCH_DS * 2.0, 0.045),
-			_n(PITCH_FS * 2.0, 0.045),
-			_n(PITCH_G * 2.0, 0.045),
-			_n(PITCH_B * 2.0, 0.30),
-		]
-
-		# 27 — Very wide ascending contour.
-		27: return [
-			_n(PITCH_E, 0.05),
-			_n(PITCH_B, 0.05),
-			_n(PITCH_E2, 0.05),
-			_n(PITCH_G * 2.0, 0.05),
-			_n(PITCH_B * 2.0, 0.06),
-			_n(PITCH_DS * 2.0, 0.06),
-			_n(PITCH_FS * 2.0, 0.34),
-		]
-
-		# 28 — RETAINED CORE IDEA.
-		# Ascending harmonic blocks. This now represents the culmination
-		# of the harmonic progression established throughout the sequence.
-		28: return [
-			_c([PITCH_E, PITCH_G, PITCH_B], 0.09),
-			_c([PITCH_FS, PITCH_A, PITCH_C * 2.0], 0.09),
-			_c([PITCH_G, PITCH_B, PITCH_DS * 2.0], 0.09),
-			_c([PITCH_A, PITCH_C * 2.0, PITCH_E2], 0.10),
-			_c([PITCH_B, PITCH_DS * 2.0, PITCH_FS * 2.0, PITCH_A * 2.0], 0.13),
-			_c([
-				PITCH_E2,
-				PITCH_G * 2.0,
-				PITCH_B * 2.0,
-				PITCH_DS * 2.0,
-				PITCH_FS * 2.0
-			], 0.70),
-		]
-
-		# 29 — RETAINED CORE IDEA.
-		# Dominant roar. The motif is implied by B -> D# -> F# -> E.
-		29: return [
-			_c([PITCH_B, PITCH_DS * 2.0, PITCH_A * 2.0], 0.22),
-			_n(PITCH_B * 2.0, 0.06),
-			_n(PITCH_DS * 2.0, 0.06),
-			_n(PITCH_FS * 2.0, 0.08),
-			_c([
-				PITCH_E2,
-				PITCH_G * 2.0,
-				PITCH_B * 2.0,
-				PITCH_DS * 2.0,
-				PITCH_FS * 2.0
 			], 0.90),
 		]
 
-		# 30 — FINAL MOTIF.
-		# The entire identity of the killstreak finally appears at full
-		# register and maximum harmonic weight.
-		30: return [
+		26: return [
 			_n(PITCH_E2, 0.05),
 			_n(PITCH_G * 2.0, 0.05),
+			_n(PITCH_B * 2.0, 0.08),
+			_p(0.035),
+			_n(PITCH_DS * 2.0, 0.05),
 			_n(PITCH_FS * 2.0, 0.05),
+			_n(PITCH_G * 2.0, 0.08),
+			_n(PITCH_B * 2.0, 0.12),
+			_p(0.04),
+			_n(PITCH_E2 * 2.0, 0.38),
+		]
+
+		27: return [
+			_n(PITCH_E, 0.07),
+			_n(PITCH_B, 0.07),
+			_p(0.04),
+			_n(PITCH_E2, 0.08),
+			_n(PITCH_G * 2.0, 0.08),
+			_n(PITCH_B * 2.0, 0.11),
+			_p(0.04),
+			_n(PITCH_DS * 2.0, 0.08),
+			_n(PITCH_FS * 2.0, 0.42),
+		]
+
+		# 28 — Ascending chord rhythm.
+		# Notice that the final chord gets substantially more space.
+		28: return [
+			_c([PITCH_E, PITCH_G, PITCH_B], 0.11),
+			_p(0.045),
+			_c([PITCH_FS, PITCH_A, PITCH_C * 2.0], 0.11),
+			_p(0.045),
+			_c([PITCH_G, PITCH_B, PITCH_DS * 2.0], 0.12),
+			_p(0.04),
+			_c([PITCH_A, PITCH_C * 2.0, PITCH_E2], 0.13),
+			_c([PITCH_B, PITCH_DS * 2.0, PITCH_FS * 2.0, PITCH_A * 2.0], 0.17),
+			_p(0.06),
+			_c([
+				PITCH_E2,
+				PITCH_G * 2.0,
+				PITCH_B * 2.0,
+				PITCH_DS * 2.0,
+				PITCH_FS * 2.0
+			], 0.78),
+		]
+
+		# 29 — Dominant hit, pause, then the payoff.
+		29: return [
+			_c([PITCH_B, PITCH_DS * 2.0, PITCH_A * 2.0], 0.25),
+			_p(0.09),
+			_n(PITCH_B * 2.0, 0.07),
 			_n(PITCH_DS * 2.0, 0.07),
-			_n(PITCH_E2 * 2.0, 0.12),
+			_n(PITCH_FS * 2.0, 0.11),
+			_p(0.05),
+			_c([
+				PITCH_E2,
+				PITCH_G * 2.0,
+				PITCH_B * 2.0,
+				PITCH_DS * 2.0,
+				PITCH_FS * 2.0
+			], 0.95),
+		]
+
+		# 30 — Final statement.
+		# Notice the hesitation before the final chord.
+		30: return [
+			_n(PITCH_E2, 0.07),
+			_n(PITCH_G * 2.0, 0.07),
+			_n(PITCH_FS * 2.0, 0.09),
+			_n(PITCH_DS * 2.0, 0.08),
+			_p(0.10),
+			_n(PITCH_E2 * 2.0, 0.18),
+			_p(0.08),
 			_c([
 				PITCH_E,
 				PITCH_G,
@@ -758,12 +760,13 @@ func _get_pitch_sequence(ks: int) -> Array[NoteEvent]:
 				PITCH_FS * 2.0,
 				PITCH_B * 2.0,
 				PITCH_E2 * 2.0
-			], 1.8),
+			], 2.0),
 		]
 
 		_: return [
-			_n(PITCH_E, 0.08),
-			_n(PITCH_G, 0.08),
-			_n(PITCH_FS, 0.08),
-			_n(PITCH_E2, 0.30),
+			_n(PITCH_E, 0.10),
+			_n(PITCH_G, 0.10),
+			_p(0.05),
+			_n(PITCH_FS, 0.12),
+			_n(PITCH_E2, 0.34),
 		]
