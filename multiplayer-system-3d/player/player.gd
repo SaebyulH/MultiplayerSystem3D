@@ -271,6 +271,16 @@ var spawned := false
 # pinned_charger_name is set, the player follows that charger every tick.
 var pinned_charger_name: String = ""
 var pinned_offset: Vector3 = Vector3.ZERO
+## True while pinned and being pushed against a wall (prevents noclip and ends
+## the charger's charge).  Rollback state so the charger reads it deterministically.
+var pinned_at_wall: bool = false
+
+# ── Enlarge (Rampage) state ────────────────────────
+# Persistent across rollback: set via RPC by EnlargeEffect and read inside
+# _rollback_tick (like _spawn_pending_position, it persists across re-simulation).
+# Scaling the root node directly would be overwritten by netfox's rollback state
+# (global_transform), so the scale is re-derived from this multiplier every tick.
+var _enlarge_scale: float = 1.0
 
 # Stored so late-joining peers can be synced with the correct weapon models.
 var _loadout_primary_path: String = ""
@@ -372,6 +382,7 @@ func rpc_reset(pos: Vector3) -> void:
 	# Clear pinned-by-charge state (this player is no longer being carried).
 	pinned_charger_name = ""
 	pinned_offset = Vector3.ZERO
+	pinned_at_wall = false
 	_wall_slam_pending = false
 
 	# If this player was carrying enemies, release them (server only).
@@ -644,6 +655,11 @@ func _play_footstep() -> void:
 	)
 
 func _rollback_tick(delta, tick, is_fresh):
+	# Re-derive the player scale from the enlarge multiplier every tick.  This is
+	# the only reliable place to set it: netfox re-applies global_transform from
+	# its rollback history each tick, so a one-off scale write elsewhere is lost.
+	scale = Vector3.ONE * _enlarge_scale
+
 	# ── Respawn / teleport handling ────────────────
 	# _spawn_pending_position persists across re-simulation because it is
 	# consumed only in _physics_process (real frames only).  Every rollback
@@ -654,12 +670,6 @@ func _rollback_tick(delta, tick, is_fresh):
 		tick_interpolator.teleport()
 		return
 
-	# Ability teleport (deterministic, input-driven — see PlayerInput.teleport_offset).
-	if player_input.teleport_offset != Vector3.ZERO:
-		global_position += player_input.teleport_offset
-		velocity = Vector3.ZERO
-		tick_interpolator.teleport()
-
 	# Don't simulate movement while dead (no respawn queued yet).
 	if not spawned:
 		return
@@ -669,20 +679,36 @@ func _rollback_tick(delta, tick, is_fresh):
 		_start_charge(player_input.charge_trigger_dir)
 
 	# Pinned by a shoulder charge — follow the charger every tick.  The pin is
-	# set via RPC and persists across re-simulation (see _rpc_pin).
+	# set via RPC and persists across re-simulation (see _rpc_pin).  The carry
+	# respects walls: if it would push us into geometry, we hold position and
+	# flag the wall contact instead of noclipping through.
 	if pinned_charger_name != "":
 		var charger := GameManager.find_player(pinned_charger_name)
 		if charger != null and charger.spawned:
-			global_position = charger.global_position + pinned_offset
+			var target := charger.global_position + pinned_offset
+			var motion := target - global_position
+			if motion.length_squared() > 0.0001 and test_move(global_transform, motion):
+				pinned_at_wall = true
+			else:
+				global_position = target
+				pinned_at_wall = false
 			velocity = Vector3.ZERO
 			return
 		pinned_charger_name = ""
 
 	_apply_movement_from_input(delta)
 
-	# Shoulder charge wall impact — end the charge deterministically.  The release
+	# Shoulder charge wall impact — end the charge deterministically when either
+	# the charger hits a wall or any pinned player is pushed into one.  The release
 	# + stun response is server-only; it's latched here and handled next frame.
-	if charge_time > 0.0 and is_on_wall():
+	var charge_hit_wall := charge_time > 0.0 and is_on_wall()
+	if charge_time > 0.0 and not charge_hit_wall:
+		for node in get_tree().get_nodes_in_group("players"):
+			var other := node as Player
+			if other != null and other != self and other.pinned_charger_name == name and other.pinned_at_wall:
+				charge_hit_wall = true
+				break
+	if charge_hit_wall:
 		charge_time = 0.0
 		charge_dir = Vector3.ZERO
 		if multiplayer.is_server():
@@ -791,6 +817,7 @@ func _apply_wall_slam(victim: Player) -> void:
 func _rpc_pin(charger_name: String, offset: Vector3) -> void:
 	pinned_charger_name = charger_name
 	pinned_offset = offset
+	pinned_at_wall = false
 
 
 ## RPC: clear this player's pinned state.
@@ -798,6 +825,24 @@ func _rpc_pin(charger_name: String, offset: Vector3) -> void:
 func _rpc_unpin() -> void:
 	pinned_charger_name = ""
 	pinned_offset = Vector3.ZERO
+	pinned_at_wall = false
+
+
+## RPC: apply the enlarged player scale and max health on every peer.
+## Called by EnlargeEffect (server-side) to sync the buff's visual/attribute
+## changes, which are otherwise not replicated.
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_enlarge(scale_mult: float, max_health: float) -> void:
+	set_enlarge_scale(scale_mult)
+	if attribute_component:
+		attribute_component.starting_health = max_health
+
+## Set the enlarge scale multiplier (Rampage).  1.0 = normal size, 2.0 = doubled.
+## The multiplier is stored persistently so _rollback_tick re-applies it every
+## tick; `scale` is also set immediately for the current frame.
+func set_enlarge_scale(mult: float) -> void:
+	_enlarge_scale = mult
+	scale = Vector3.ONE * mult
 
 ## Reset all stamina / dash / air-action state on respawn.
 func _reset_movement_tech() -> void:

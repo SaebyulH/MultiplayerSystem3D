@@ -3,7 +3,7 @@ extends Resource
 
 ## Base class for all abilities.  A concrete ability is a .tres resource whose
 ## script is a subclass of Ability (see heal_ability.gd, weapon_fire_ability.gd,
-## teleport_ability.gd).  Each ability holds a name, description, cooldown, and a
+## shoulder_charge_ability.gd).  Each ability holds a name, description, cooldown, and a
 ## cast type.  The actual effect lives in the subclass's activate*() hooks, which
 ## run on the server; the owning client sends input via the AbilityManager.
 

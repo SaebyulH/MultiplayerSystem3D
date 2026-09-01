@@ -6,8 +6,8 @@
 [ext_resource type="Script" uid="uid://nwsvfqljwb2b" path="res://player/abilities/ability.gd" id="2_abil"]
 [ext_resource type="Resource" path="res://player/abilities/heal.tres" id="3_abil"]
 [ext_resource type="Resource" uid="uid://df5ob7dqaxjgc" path="res://player/abilities/weapon_fire.tres" id="4_abil"]
-[ext_resource type="Resource" path="res://player/abilities/teleport.tres" id="5_abil"]
-[ext_resource type="Resource" path="res://player/abilities/shoulder_charge.tres" id="6_abil"]
+[ext_resource type="Resource" uid="uid://bkofte7pvpmh5" path="res://player/abilities/shoulder_charge.tres" id="6_abil"]
+[ext_resource type="Resource" path="res://player/abilities/rampage.tres" id="7_abil"]
 
 [resource]
 script = ExtResource("1_char")
@@ -23,4 +23,4 @@ health_mult = 3.0
 regen_delay = 1.0
 heal_on_kill = 999.0
 death_sound = ExtResource("2_655ax")
-abilities = Array[ExtResource("2_abil")]([ExtResource("3_abil"), ExtResource("4_abil"), ExtResource("5_abil"), ExtResource("6_abil")])
+abilities = Array[ExtResource("2_abil")]([ExtResource("3_abil"), ExtResource("4_abil"), ExtResource("6_abil"), ExtResource("7_abil")])

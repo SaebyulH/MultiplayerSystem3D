@@ -8,8 +8,7 @@ extends Ability
 ## velocity write, and never an RPC), which Player._rollback_tick consumes and
 ## replays deterministically on every peer.
 ##
-## See teleport_ability.gd (instant offset) and shoulder_charge_ability.gd
-## (sustained velocity) for concrete examples.
+## See shoulder_charge_ability.gd (sustained velocity) for a concrete example.
 
 func _init() -> void:
 	cast_mode = CastMode.CLIENT

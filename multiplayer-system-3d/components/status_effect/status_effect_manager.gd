@@ -23,6 +23,10 @@ var _active_effects: Dictionary = {}
 ## to clients via RPC.  This is the single source read by UI on all peers.
 var _client_effects: Dictionary = {}
 
+## { effect_id : display_name } — mirrored alongside _client_effects so clients
+## can show human-readable effect names without holding the effect resources.
+var _client_effect_names: Dictionary = {}
+
 var _player: Player = null
 
 
@@ -68,6 +72,7 @@ func _tick_server(delta: float) -> void:
 	for id in expired:
 		_active_effects.erase(id)
 		_client_effects.erase(id)
+		_client_effect_names.erase(id)
 		effect_removed.emit(id)
 
 	# Mirror remaining times into _client_effects so UI reads consistent data
@@ -77,8 +82,10 @@ func _tick_server(delta: float) -> void:
 		var data: Dictionary = _active_effects[id]
 		if id == "poison" and not data.get("state", {}).get("drain_started", false):
 			_client_effects.erase(id)
+			_client_effect_names.erase(id)
 			continue
 		_client_effects[id] = data["remaining"]
+		_client_effect_names[id] = data["effect"].display_name
 
 	# Push authoritative times to clients.  Sync whenever there is any change
 	# -- including the frame where the last effect expires (empty snapshot).
@@ -126,6 +133,7 @@ func remove_effect(effect_id: String) -> void:
 	data["effect"]._on_remove(_player, data.get("state", {}))
 	_active_effects.erase(effect_id)
 	_client_effects.erase(effect_id)
+	_client_effect_names.erase(effect_id)
 	effect_removed.emit(effect_id)
 	_sync_to_clients()
 
@@ -187,6 +195,14 @@ func get_active_effect_times() -> Dictionary:
 	return result
 
 
+## Returns a dictionary of {effect_id: display_name} for all active effects.
+func get_active_effect_names() -> Dictionary:
+	var result: Dictionary = {}
+	for id in _client_effect_names:
+		result[id] = _client_effect_names[id]
+	return result
+
+
 # ----------------------------------------------------------------- networking
 
 func _sync_to_clients() -> void:
@@ -194,15 +210,19 @@ func _sync_to_clients() -> void:
 	if not multiplayer.is_server():
 		return
 	var ids: Array = []
+	var names: Array = []
 	var times: Array = []
 	for id in _client_effects:
 		ids.append(id)
+		names.append(_client_effect_names.get(id, id))
 		times.append(_client_effects[id])
-	_rpc_sync_effects.rpc(ids, times)
+	_rpc_sync_effects.rpc(ids, names, times)
 
 
 @rpc("authority", "call_remote", "reliable")
-func _rpc_sync_effects(effect_ids: Array, remaining_times: Array) -> void:
+func _rpc_sync_effects(effect_ids: Array, effect_names: Array, remaining_times: Array) -> void:
 	_client_effects.clear()
+	_client_effect_names.clear()
 	for i in effect_ids.size():
 		_client_effects[effect_ids[i]] = remaining_times[i]
+		_client_effect_names[effect_ids[i]] = effect_names[i]

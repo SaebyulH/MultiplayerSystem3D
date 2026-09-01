@@ -17,13 +17,6 @@ var input_dir: Vector2 = Vector2.ZERO
 var jump_input: bool   = false
 var crouch: bool       = false
 var dash_input: bool   = false
-## One-shot teleport offset (world space) queued by abilities.  ZERO = none.
-## This is an input property: gathered here, broadcast, and applied in _rollback_tick.
-var teleport_offset: Vector3 = Vector3.ZERO
-
-## Local staging for the next gathered tick.  Abilities set this; _gather() copies
-## it into [member teleport_offset] and clears it.  Not rolled back.
-var queued_teleport_offset: Vector3 = Vector3.ZERO
 
 ## One-shot shoulder-charge direction (world space) queued by abilities.
 ## ZERO = no trigger.  Input property: gathered here, broadcast, and consumed in
@@ -62,8 +55,6 @@ func _gather() -> void:
 		input_dir  = Vector2.ZERO
 		jump_input = false
 		dash_input = false
-		teleport_offset = Vector3.ZERO
-		queued_teleport_offset = Vector3.ZERO
 		charge_trigger_dir = Vector3.ZERO
 		queued_charge_trigger_dir = Vector3.ZERO
 		return
@@ -74,8 +65,6 @@ func _gather() -> void:
 		jump_input = false
 		crouch     = false
 		dash_input = false
-		teleport_offset = Vector3.ZERO
-		queued_teleport_offset = Vector3.ZERO
 		charge_trigger_dir = Vector3.ZERO
 		queued_charge_trigger_dir = Vector3.ZERO
 		return
@@ -83,8 +72,6 @@ func _gather() -> void:
 	jump_input = Input.is_action_pressed("ui_accept")
 	crouch     = Input.is_action_pressed("crouch")
 	dash_input = Input.is_action_pressed("dash")
-	teleport_offset = queued_teleport_offset
-	queued_teleport_offset = Vector3.ZERO
 	charge_trigger_dir = queued_charge_trigger_dir
 	queued_charge_trigger_dir = Vector3.ZERO
 

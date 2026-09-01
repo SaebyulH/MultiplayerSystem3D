@@ -13,6 +13,7 @@ class_name PlayerBodyUI
 @onready var _ammo_bar_public: Label3D = $"../AmmoBarPublic"
 @onready var _health_bar_public: Label3D = $"../HealthBarPublic"
 @onready var _health_delta_bar_public: Label3D = $"../HealthDeltaBarPublic"
+@onready var _status_bar_public: Label3D = $"../StatusBarPublic"
 @onready var _name_public: Label3D = %NamePublic
 
 # -- Built UI nodes --
@@ -920,6 +921,15 @@ func _update_status_effects() -> void:
 			"stun":    lbl.modulate = Color(1.0, 0.9, 0.2)
 			_:         lbl.modulate = Color(0.8, 0.8, 0.8)
 		lbl.visible = true
+
+	# ---- Public world-space status bar (above the player model) ----
+	if _status_bar_public:
+		var names: Dictionary = sem.get_active_effect_names()
+		var parts := PackedStringArray()
+		for id in ids:
+			parts.append(str(names.get(id, id.capitalize())))
+		_status_bar_public.text = ", ".join(parts)
+		_status_bar_public.visible = not parts.is_empty()
 
 
 func _create_border_overlay(col := Color.WHITE) -> ColorRect:

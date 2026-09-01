@@ -1,9 +1,0 @@
-[gd_resource type="Resource" script_class="TeleportAbility" format=3 uid="uid://bujsuxq0ji03u"]
-
-[ext_resource type="Script" uid="uid://dq5nce2wkousi" path="res://player/abilities/teleport_ability.gd" id="1"]
-
-[resource]
-script = ExtResource("1")
-ability_name = "Teleport"
-description = "Equip, then fire to teleport forward 10 meters."
-cast_mode = 1
