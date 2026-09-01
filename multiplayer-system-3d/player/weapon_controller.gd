@@ -116,6 +116,14 @@ var _fired_this_press: Dictionary[int, bool] = {}
 ## fires or performs any other action.
 var _is_inspecting: bool = false
 
+## True while an ability-triggered burst is mid-fire; suppresses normal weapon
+## fire while set (see WeaponFireAbility.interrupt_shooting_weapon).
+var _ability_fire_interrupt: bool = false
+
+## Name of the ability currently mid-burst/volley (empty when none).  Read by
+## the HUD to show the "USING ..." prompt while a burst is firing.
+var _active_ability_name: String = ""
+
 signal mag_changed(current: int, mag_max: int)
 signal weapon_changed(index: int, weapon: Weapon)
 ## Emitted when a SIGNAL-type fire mode is activated.  Projectiles can
@@ -328,6 +336,8 @@ func reset() -> void:
 	_is_firing = false
 	_firing_remaining = 0.0
 	_is_inspecting = false
+	_ability_fire_interrupt = false
+	_active_ability_name = ""
 	_switch_phase = SwitchPhase.IDLE
 	_switch_timer = 0.0
 	_switch_pullout_time = 0.0
@@ -1391,6 +1401,17 @@ func _process_fire() -> void:
 		return
 	if is_switching():
 		return
+	# While a shoulder charge is active, weapons cannot be fired.
+	if _parent_player.is_charging():
+		return
+	# While an ability is equipped (EQUIP-cast), fire buttons cast the ability
+	# instead of firing the weapon.
+	if _parent_player.ability_manager and _parent_player.ability_manager.is_equipped():
+		return
+	# While an ability-triggered fire is ongoing (e.g. a burst), suppress normal
+	# fire unless the ability opted out (interrupt_shooting_weapon = false).
+	if _ability_fire_interrupt:
+		return
 
 	var weapon: Weapon = _weapons[current_weapon_index]
 
@@ -1559,7 +1580,114 @@ func _do_fire_client() -> void:
 		return
 	_fire_cooldown = _weapons[current_weapon_index].post_shoot_delay * (_parent_player._character.shoot_delay_mult if _parent_player._character else 1.0)
 	fire_intent.rpc_id(1, current_weapon_index, _pending_fire_index)
+
+
+## Fire a standalone WeaponFire resource on demand.  Used by abilities (e.g.
+## WeaponFireAbility) to fire a WeaponFire outside the normal weapon pipeline.
+## Runs on the server; the ability's activate() hook is already server-side.
+func fire_weapon_fire(fire: WeaponFire, interrupt_shooting: bool = true, ability_name: String = "") -> void:
+	if not fire:
+		return
+	if not _is_ready():
+		return
+	if is_switching():
+		return
+
+	if fire.bullet_type == WeaponFire.BulletType.PROJECTILE:
+		if fire.multishot_mode == WeaponFire.MultishotMode.BURST and fire.multishot_data.size() > 1:
+			# Volley — fire the projectiles over time (burst).
+			if interrupt_shooting:
+				_ability_fire_interrupt = true
+			_active_ability_name = ability_name
+			_ability_projectile_volley(fire, 0)
+		else:
+			# Fire every projectile at once (single or shotgun-style spread).
+			for shot_dir in fire.multishot_data:
+				_fire_projectile(fire, shot_dir)
+		_play_sound(fire.shoot_sound)
+		return
+
+	# HITSCAN (single / shotgun / burst / shape) — reuse the fire pipeline by
+	# wrapping the standalone fire in a temporary Weapon.  Spread is zero so the
+	# fire's own settings (not a weapon's) drive the shot.
+	var weapon := Weapon.new()
+	weapon.weapon_fires = [fire]
+	weapon.min_spread = 0.0
+	weapon.spread_per_shot = 0.0
+	weapon.max_spread = 0.0
+
+	# Bursts are fired over time.  The normal _fire_burst path uses `await`, which
+	# is unreliable when called fire-and-forget from an ability (its continuation
+	# can be collected before the later shots fire).  Fire bursts with explicit
+	# timer connections instead so every shot fires.
+	if fire.multishot_mode == WeaponFire.MultishotMode.BURST and fire.multishot_data.size() > 1:
+		if interrupt_shooting:
+			_ability_fire_interrupt = true
+		_active_ability_name = ability_name
+		_ability_burst_shot(weapon, 0)
+	else:
+		_execute_fire(weapon, 0)
+
+	_play_sound(fire.shoot_sound)
+
+
+## Name of the ability currently mid-burst/volley (empty when none).
+func get_active_ability_name() -> String:
+	return _active_ability_name
+
+
+## Clear the ability-fire state when a burst/volley finishes (or is aborted).
+func _finish_ability_fire() -> void:
+	_ability_fire_interrupt = false
+	_active_ability_name = ""
+
+
+## Fire one shot of an ability-triggered burst, then schedule the next via an
+## explicit timer connection.  The closure holds [param weapon] so it survives
+## until the burst finishes.
+func _ability_burst_shot(weapon: Weapon, index: int) -> void:
+	if not _is_ready():
+		_finish_ability_fire()
+		return
+	var fire: WeaponFire = weapon.weapon_fires[0]
+	if index >= fire.multishot_data.size():
+		_finish_ability_fire()
+		return
+	_fire_single_shot(weapon, 0, fire.multishot_data[index], null)
+	if index < fire.multishot_data.size() - 1:
+		get_tree().create_timer(fire.burst_post_shoot_delay).timeout.connect(
+			func(): _ability_burst_shot(weapon, index + 1)
+		)
+	else:
+		_finish_ability_fire()
 #endregion
+
+
+## Spawn one projectile of an ability-triggered WeaponFire along [param shot_dir]
+## (a local, muzzle-relative direction).
+func _fire_projectile(fire: WeaponFire, shot_dir: Vector3) -> void:
+	if not multiplayer.is_server():
+		return
+	var camera: Camera3D = _raycast.get_parent() as Camera3D
+	var world_dir: Vector3 = camera.global_transform.basis * shot_dir.normalized()
+	_spawn_projectile(fire, world_dir, _parent_player.name, _parent_player.team)
+
+
+## Fire an ability-triggered projectile volley (burst) one shot at a time.
+func _ability_projectile_volley(fire: WeaponFire, index: int) -> void:
+	if not _is_ready():
+		_finish_ability_fire()
+		return
+	if index >= fire.multishot_data.size():
+		_finish_ability_fire()
+		return
+	_fire_projectile(fire, fire.multishot_data[index])
+	if index < fire.multishot_data.size() - 1:
+		get_tree().create_timer(fire.burst_post_shoot_delay).timeout.connect(
+			func(): _ability_projectile_volley(fire, index + 1)
+		)
+	else:
+		_finish_ability_fire()
 
 
 #region RPCs
@@ -1901,25 +2029,32 @@ func _spawn_projectile_on_server(weapon_fire_index, shot_dir, basis, parent_play
 	var shot_dir_v3: Vector3 = shot_dir as Vector3
 	var world_dir: Vector3   = basis * shot_dir_v3.normalized()
 
-	if not weapon_fire_index < weapon.weapon_fires.size() or not weapon.weapon_fires[weapon_fire_index].projectile_scene:
+	if not weapon_fire_index < weapon.weapon_fires.size():
 		return
-	var projectile_scene: Node3D  = weapon.weapon_fires[weapon_fire_index].projectile_scene.instantiate() as Node3D
+	_spawn_projectile(weapon.weapon_fires[weapon_fire_index], world_dir, parent_player_name, team)
+
+
+## Spawn a projectile from [param fire] along [param world_dir].  Shared by the
+## normal fire pipeline and the ability fire path (see fire_weapon_fire).
+func _spawn_projectile(fire: WeaponFire, world_dir: Vector3, shooter_name: String, shooter_team) -> void:
+	if not fire or not fire.projectile_scene:
+		return
+	var projectile_scene: Node3D = fire.projectile_scene.instantiate() as Node3D
 	projectile_scene.global_transform = %Head.global_transform#weapon_model_parent.global_transform
-	projectile_scene.shooter_name     = parent_player_name
+	projectile_scene.shooter_name     = shooter_name
 
 	var speed: float = projectile_scene.linear_velocity.length()
 	projectile_scene.linear_velocity = world_dir * speed
-	projectile_scene.shooter_team = team
+	projectile_scene.shooter_team = shooter_team
 	# Copy status effects and knockback from the WeaponFire to the projectile.
-	var weapon_fire: WeaponFire = weapon.weapon_fires[weapon_fire_index]
 	var hb: HitboxComponent = projectile_scene.get_node_or_null("HitboxComponent") as HitboxComponent
 	if hb:
-		hb.hit_knockback = weapon_fire.hit_knockback
-		if not weapon_fire.status_effects.is_empty():
-			hb.status_effects = weapon_fire.status_effects
+		hb.hit_knockback = fire.hit_knockback
+		if not fire.status_effects.is_empty():
+			hb.status_effects = fire.status_effects
 	var ec: ExplosionComponent = projectile_scene.get_node_or_null("ExplosionComponent") as ExplosionComponent
-	if ec and not weapon_fire.status_effects.is_empty():
-		ec.status_effects = weapon_fire.status_effects
+	if ec and not fire.status_effects.is_empty():
+		ec.status_effects = fire.status_effects
 	projectile_spawn_parent.add_child(projectile_scene, true)
 
 

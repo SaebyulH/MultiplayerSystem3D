@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="HealAbility" format=3]
+
+[ext_resource type="Script" path="res://player/abilities/heal_ability.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+ability_name = "Heal"
+description = "Instantly restores 40 health."
+cast_type = 0
+cooldown = 0.1
+heal_amount = 40.0

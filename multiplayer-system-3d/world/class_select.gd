@@ -760,6 +760,12 @@ func _refresh_character_stats() -> void:
 	if stat_lines.size() > 0:
 		parts.append("")
 		parts.append_array(stat_lines)
+	if char.abilities.size() > 0:
+		parts.append("")
+		parts.append("[b]Abilities[/b]")
+		for a in char.abilities:
+			if a:
+				parts.append("  %s — %s" % [a.ability_name, a.description])
 	_character_stats.text = "\n".join(parts)
 	_character_stats.visible = true
 

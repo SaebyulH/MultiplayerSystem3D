@@ -53,3 +53,8 @@ class_name Character
 # --
 @export_group("Sound")
 @export var death_sound: AudioStream
+
+# -- Abilities --
+@export_group("Abilities")
+## Abilities this character can use (max 4).  See player/abilities/ability.gd.
+@export var abilities: Array[Ability] = []

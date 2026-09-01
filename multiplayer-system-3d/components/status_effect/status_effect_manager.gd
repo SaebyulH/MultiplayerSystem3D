@@ -166,6 +166,11 @@ func is_stunned() -> bool:
 	return _client_effects.has("stun")
 
 
+## Whether the player is currently pinned (carried by a shoulder charge).
+func is_pinned() -> bool:
+	return _client_effects.has("pinned")
+
+
 ## Returns the per-instance state dictionary for an effect, if it's active.
 ## Only available on the authority.
 func get_effect_state(effect_id: String) -> Dictionary:

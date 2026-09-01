@@ -120,6 +120,10 @@ var dash_time: float = 0.0             # > 0 while a grounded dash is running
 var active_dash_dir: Vector3 = Vector3.ZERO
 var dash_grounded: bool = false        # dash began grounded (enables coyote dash jump)
 
+# Active shoulder-charge state (rolled back).
+var charge_time: float = 0.0           # > 0 while a charge is running
+var charge_dir: Vector3 = Vector3.ZERO # unit direction the charge travels along
+
 # Dash-jump timing.
 var dash_jump_locked: bool = false     # timing failed; locked out this dash
 
@@ -151,11 +155,20 @@ var queue_velocity := Vector3(0.0, 0.0, 0.0)
 @onready var mesh: MeshInstance3D = $MeshInstance3D
 @onready var damage_number_manager: DamageNumberManager = $DamageNumberManager
 @onready var status_effect_manager: StatusEffectManager = $StatusEffectManager
+@onready var ability_manager: AbilityManager = $AbilityManager
 
 var is_crouching: bool = false
 
 # Character selection
 var _character: Character = null
+
+## Cached ShoulderChargeAbility (read for its tunables inside the rollback tick).
+var _charge_ability: ShoulderChargeAbility = null
+
+## Server-side list of players currently pinned to this charger (by name).
+var _pinned_players: Array[String] = []
+## Server-side latch: set when the charge hits a wall, processed next frame.
+var _wall_slam_pending: bool = false
 
 ## The currently-active third-person model (what other players see): the
 ## built-in mannequin, or a spawned character model.
@@ -251,6 +264,13 @@ var _footstep_timer: float = FOOTSTEP_INTERVAL
 # It is consumed only in _physics_process (real frames only).
 var _spawn_pending_position: Vector3 = Vector3.ZERO
 var spawned := false
+
+# ── Pinned-by-charge state ────────────────────────
+# Set via RPC by the charger and read inside _rollback_tick (like
+# _spawn_pending_position, it persists across re-simulation).  While
+# pinned_charger_name is set, the player follows that charger every tick.
+var pinned_charger_name: String = ""
+var pinned_offset: Vector3 = Vector3.ZERO
 
 # Stored so late-joining peers can be synced with the correct weapon models.
 var _loadout_primary_path: String = ""
@@ -348,6 +368,15 @@ func rpc_reset(pos: Vector3) -> void:
 	knockback_velocity = Vector3.ZERO
 	_reset_movement_tech()
 	_speed_modifiers.clear()
+
+	# Clear pinned-by-charge state (this player is no longer being carried).
+	pinned_charger_name = ""
+	pinned_offset = Vector3.ZERO
+	_wall_slam_pending = false
+
+	# If this player was carrying enemies, release them (server only).
+	if multiplayer.is_server():
+		_release_all_pinned(false)
 
 	# Reset health, weapons, and status effects on every peer.
 	attribute_component.reset()
@@ -536,6 +565,9 @@ func _physics_process(delta: float) -> void:
 
 	_track_fall_damage()
 
+	# Shoulder charge carry/stun (server-authoritative, real frames only).
+	_update_shoulder_charge()
+
 	# Passive shield regen — runs even when retracted.
 	_shield_regen(delta)
 
@@ -622,11 +654,39 @@ func _rollback_tick(delta, tick, is_fresh):
 		tick_interpolator.teleport()
 		return
 
+	# Ability teleport (deterministic, input-driven — see PlayerInput.teleport_offset).
+	if player_input.teleport_offset != Vector3.ZERO:
+		global_position += player_input.teleport_offset
+		velocity = Vector3.ZERO
+		tick_interpolator.teleport()
+
 	# Don't simulate movement while dead (no respawn queued yet).
 	if not spawned:
 		return
 
+	# Shoulder charge trigger (deterministic — see PlayerInput.charge_trigger_dir).
+	if player_input.charge_trigger_dir != Vector3.ZERO:
+		_start_charge(player_input.charge_trigger_dir)
+
+	# Pinned by a shoulder charge — follow the charger every tick.  The pin is
+	# set via RPC and persists across re-simulation (see _rpc_pin).
+	if pinned_charger_name != "":
+		var charger := GameManager.find_player(pinned_charger_name)
+		if charger != null and charger.spawned:
+			global_position = charger.global_position + pinned_offset
+			velocity = Vector3.ZERO
+			return
+		pinned_charger_name = ""
+
 	_apply_movement_from_input(delta)
+
+	# Shoulder charge wall impact — end the charge deterministically.  The release
+	# + stun response is server-only; it's latched here and handled next frame.
+	if charge_time > 0.0 and is_on_wall():
+		charge_time = 0.0
+		charge_dir = Vector3.ZERO
+		if multiplayer.is_server():
+			_wall_slam_pending = true
 
 func _force_update_is_on_floor():
 	var old_velocity = velocity
@@ -641,6 +701,104 @@ func apply_knockback(force: Vector3) -> void:
 	var mult: float = _character.knockback_multiplier if _character else 2.0
 	knockback_velocity += force * mult
 
+# ── Shoulder charge (server-authoritative carry/stun) ──────────────────
+
+## Begin a shoulder charge deterministically from a queued trigger direction.
+func _start_charge(dir: Vector3) -> void:
+	var duration: float = _charge_ability.charge_duration if _charge_ability else 4.0
+	charge_time = duration
+	charge_dir = dir.normalized()
+
+
+## Server-side per-frame driver: grab nearby enemies while charging, and release
+## any pinned players once the charge ends.
+func _update_shoulder_charge() -> void:
+	if not multiplayer.is_server() or not spawned:
+		return
+	if _wall_slam_pending:
+		_wall_slam_pending = false
+		_release_all_pinned(true)
+	if charge_time > 0.0:
+		_grab_nearby_enemies()
+	elif not _pinned_players.is_empty():
+		_release_all_pinned(false)
+
+
+## Grab enemy players within grab radius and roughly in front of the charger.
+func _grab_nearby_enemies() -> void:
+	var radius: float = _charge_ability.grab_radius if _charge_ability else 1.5
+	for node in get_tree().get_nodes_in_group("players"):
+		var other := node as Player
+		if other == null or other == self or not other.spawned:
+			continue
+		if not _is_enemy_of(other):
+			continue
+		if _pinned_players.has(other.name) or other.pinned_charger_name != "":
+			continue
+		var to := other.global_position - global_position
+		to.y = 0.0
+		var dist := to.length()
+		if dist > radius:
+			continue
+		if dist > 0.001 and to.normalized().dot(charge_dir) < 0.3:
+			continue
+		_pin_player(other)
+
+
+## Pin [param other] to this charger: deal impact damage, then carry them and
+## mark them with the pinned status effect.  Server only.
+func _pin_player(other: Player) -> void:
+	# Impact damage first — if it kills, don't pin the corpse.
+	other.change_health(-_charge_impact_damage(), name)
+	if not other.spawned:
+		return
+	_pinned_players.append(other.name)
+	other._rpc_pin.rpc(name, other.global_position - global_position)
+	var pinned := PinnedEffect.new()
+	pinned.base_duration = charge_time + 0.5
+	if other.status_effect_manager:
+		other.status_effect_manager.apply_effect(pinned, name)
+
+
+## Release every pinned player, slamming them (stun + wall damage) if they were
+## slammed into a wall.  Server only.
+func _release_all_pinned(stun: bool) -> void:
+	if not multiplayer.is_server():
+		return
+	for victim_name in _pinned_players:
+		var victim := GameManager.find_player(victim_name)
+		if victim:
+			victim._rpc_unpin.rpc()
+			if victim.status_effect_manager:
+				victim.status_effect_manager.remove_effect("pinned")
+			if stun:
+				_apply_wall_slam(victim)
+	_pinned_players.clear()
+
+
+## Wall-slam a released victim: stun them and deal wall damage.  Server only.
+## Stun is applied before damage so a lethal slam is cleared on respawn.
+func _apply_wall_slam(victim: Player) -> void:
+	if victim.status_effect_manager:
+		var stun := StunEffect.new()
+		stun.base_duration = _charge_stun_duration()
+		victim.status_effect_manager.apply_effect(stun, name)
+	victim.change_health(-_charge_wall_damage(), name)
+
+
+## RPC: mark this player as pinned to [param charger_name] at [param offset].
+@rpc("any_peer", "call_local", "reliable")
+func _rpc_pin(charger_name: String, offset: Vector3) -> void:
+	pinned_charger_name = charger_name
+	pinned_offset = offset
+
+
+## RPC: clear this player's pinned state.
+@rpc("any_peer", "call_local", "reliable")
+func _rpc_unpin() -> void:
+	pinned_charger_name = ""
+	pinned_offset = Vector3.ZERO
+
 ## Reset all stamina / dash / air-action state on respawn.
 func _reset_movement_tech() -> void:
 	stamina = float(MAX_STAMINA)
@@ -654,6 +812,8 @@ func _reset_movement_tech() -> void:
 	dash_grounded = false
 	dash_jump_locked = false
 	crouch_tap_timer = 0.0
+	charge_time = 0.0
+	charge_dir = Vector3.ZERO
 	_dash_jump_feedback = ""
 	_dash_jump_feedback_timer = 0.0
 
@@ -743,7 +903,7 @@ func _apply_movement_from_input(delta):
 	# Smoothly interpolating the height every tick made the capsule float and
 	# jitter (the integration fought netfox's rollback).  Crouch height is now a
 	# pure function of the crouch input, so every peer derives the same shape.
-	is_crouching = player_input.crouch
+	is_crouching = player_input.crouch and charge_time <= 0.0
 	var shape: CapsuleShape3D = collider.shape as CapsuleShape3D
 	var crouch_factor: float = 0.0
 	if shape and _stand_collider_height > 0.0:
@@ -798,7 +958,7 @@ func _apply_movement_from_input(delta):
 
 	# -- Down dash --
 	# Airborne double-tap of crouch: press crouch twice within DOWN_DASH_WINDOW.
-	if crouch_pressed:
+	if crouch_pressed and charge_time <= 0.0:
 		if not on_floor:
 			if crouch_tap_timer > 0.0:
 				crouch_tap_timer = 0.0
@@ -811,7 +971,7 @@ func _apply_movement_from_input(delta):
 	crouch_tap_timer = maxf(0.0, crouch_tap_timer - delta)
 
 	# -- Jump / double jump / dash jump --
-	if jump_pressed:
+	if jump_pressed and charge_time <= 0.0:
 		if dash_time > 0.0 and dash_grounded and not dash_jump_locked:
 			# Jumping during a grounded dash is a dash-jump attempt.
 			if dash_time < dash_jump_window_start:
@@ -830,12 +990,12 @@ func _apply_movement_from_input(delta):
 			stamina -= 1.0
 			air_jump_used = true
 			velocity.y = _cmult(JUMP_VELOCITY, _character.jump_mult if _character else 1.0)
-	elif on_floor and player_input.jump_input and dash_time <= 0.0:
+	elif on_floor and player_input.jump_input and dash_time <= 0.0 and charge_time <= 0.0:
 		# Auto bunny hop: holding jump re-jumps the moment the player lands.
 		_grounded_jump()
 
 	# -- Dash (grounded = fixed velocity, air = impulse) --
-	if dash_pressed and dash_time <= 0.0:
+	if dash_pressed and dash_time <= 0.0 and charge_time <= 0.0:
 		# Grounded dashes snap to the four cardinal directions; air dashes keep
 		# the full eight-way input.
 		var dd := input_dir
@@ -964,6 +1124,15 @@ func _apply_movement_from_input(delta):
 
 	_was_on_floor = on_floor
 
+	# -- Shoulder charge: push forward along the current look direction --
+	if charge_time > 0.0:
+		charge_time = maxf(charge_time - delta, 0.0)
+		# Follow the look direction dynamically (yaw only).  `right` is the
+		# camera's horizontal right vector computed above.
+		charge_dir = Vector3.UP.cross(right)
+		velocity.x = charge_dir.x * _charge_speed()
+		velocity.z = charge_dir.z * _charge_speed()
+
 	velocity *= NetworkTime.physics_factor
 	velocity += knockback_velocity
 	move_and_slide()
@@ -983,6 +1152,8 @@ func _apply_movement_from_input(delta):
 	var fov_ratio: float = camera.fov / BASE_FOV
 	body.mouse_sens_x = BASE_MOUSE_SENS * fov_ratio
 	body.mouse_sens_y = BASE_MOUSE_SENS * fov_ratio
+	# Cap head turn speed while charging (0 = unlimited).
+	body.max_turn_speed = (_charge_ability.turn_speed if _charge_ability else 1.5) if charge_time > 0.0 else 0.0
 
 func change_health(health: float, changer: String, is_headshot: bool = false, falloff_mult: float = 1.0, is_backshot: bool = false):
 	# Invincible players take no damage and are immune to negative effects.
@@ -1078,7 +1249,59 @@ func set_character(char: Character) -> void:
 	if char:
 		attribute_component.starting_health = 100.0 * char.health_mult
 		attribute_component.reset_health()
+		if ability_manager:
+			ability_manager.set_abilities(char.abilities)
+	_refresh_charge_ability()
 	_spawn_character_model()
+
+
+## The camera's forward vector flattened to the XZ plane (never points up/down).
+## The camera faces -Z, so forward = up × right (not right × up, which is backward).
+func horizontal_forward() -> Vector3:
+	var cam_basis: Basis = camera.global_transform.basis
+	var right := Vector3(cam_basis.x.x, 0.0, cam_basis.x.z).normalized()
+	return Vector3.UP.cross(right)
+
+
+## Cache the character's shoulder-charge ability (if any) for reading its
+## tunables inside the rollback tick.
+func _refresh_charge_ability() -> void:
+	_charge_ability = null
+	if ability_manager:
+		for a in ability_manager.abilities:
+			if a is ShoulderChargeAbility:
+				_charge_ability = a
+				return
+
+
+## Whether a shoulder charge is currently active.
+func is_charging() -> bool:
+	return charge_time > 0.0
+
+
+## Whether [param other] is on an opposing team (or everyone, in FFA).
+func _is_enemy_of(other: Player) -> bool:
+	return team == Team.FFA or other.team != team
+
+
+## The charge speed from the ability resource, or a sensible fallback.
+func _charge_speed() -> float:
+	return _charge_ability.charge_speed if _charge_ability else 14.0
+
+
+## The wall-slam stun duration from the ability resource, or a fallback.
+func _charge_stun_duration() -> float:
+	return _charge_ability.wall_stun_duration if _charge_ability else 3.0
+
+
+## The impact damage from the ability resource, or a fallback.
+func _charge_impact_damage() -> float:
+	return _charge_ability.impact_damage if _charge_ability else 30.0
+
+
+## The wall-slam damage from the ability resource, or a fallback.
+func _charge_wall_damage() -> float:
+	return _charge_ability.wall_damage if _charge_ability else 40.0
 
 
 ## Show the built-in mannequin or spawn the selected character's world model.

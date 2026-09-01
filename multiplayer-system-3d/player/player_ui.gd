@@ -37,6 +37,10 @@ var _crosshair: ColorRect
 var _respawn_label: Label
 var _respawn_label_bg: ColorRect
 
+# Ability display (left-side list) and "USING" prompt under the crosshair.
+var _ability_list: VBoxContainer
+var _ability_use_label: Label
+
 # Stamina / dash indicator
 var _stamina_container: HBoxContainer
 var _stamina_fills: Array[ColorRect] = []
@@ -135,6 +139,7 @@ func _build_ui() -> void:
 	_build_shield()
 	_build_stamina()
 	_build_weapon_list()
+	_build_abilities()
 	_build_respawn_timer()
 	_build_status_effects()
 
@@ -400,6 +405,38 @@ func _build_weapon_list() -> void:
 	_weapon_list.add_theme_constant_override("separation", 4)
 	add_child(_weapon_list)
 
+func _build_abilities() -> void:
+	# Left-side ability list (name + cooldown).
+	_ability_list = VBoxContainer.new()
+	_ability_list.anchor_left   = 0.0
+	_ability_list.anchor_right  = 0.0
+	_ability_list.anchor_top    = 0.5
+	_ability_list.anchor_bottom = 0.5
+	_ability_list.offset_left   = MARGIN
+	_ability_list.offset_top    = -160.0
+	_ability_list.offset_right  = MARGIN + 220.0
+	_ability_list.offset_bottom = 160.0
+	_ability_list.add_theme_constant_override("separation", 4)
+	add_child(_ability_list)
+
+	# "USING X" prompt, shown under the crosshair while an ability is equipped.
+	_ability_use_label = Label.new()
+	_ability_use_label.anchor_left   = 0.5
+	_ability_use_label.anchor_right  = 0.5
+	_ability_use_label.anchor_top    = 0.5
+	_ability_use_label.anchor_bottom = 0.5
+	_ability_use_label.offset_left   = -200.0
+	_ability_use_label.offset_top    = 14.0
+	_ability_use_label.offset_right  = 200.0
+	_ability_use_label.offset_bottom = 44.0
+	_ability_use_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_ability_use_label.add_theme_color_override("font_color", Color(0.85, 0.85, 0.3))
+	_ability_use_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+	_ability_use_label.add_theme_constant_override("outline_size", 6)
+	_ability_use_label.add_theme_font_size_override("font_size", 20)
+	_ability_use_label.text = ""
+	add_child(_ability_use_label)
+
 func _build_respawn_timer() -> void:
 	# -- Respawn countdown (center of screen) --
 	var container := Control.new()
@@ -508,6 +545,7 @@ func _process(delta: float) -> void:
 	_update_stamina()
 	_update_team()
 	_update_character()
+	_update_abilities()
 	_update_respawn_timer()
 	_update_bg_reload_bars()
 	_update_status_effects()
@@ -700,6 +738,44 @@ func _update_character() -> void:
 		_character_label.modulate = Color(0.7, 0.7, 0.7)
 	else:
 		_character_label.text = ""
+
+func _update_abilities() -> void:
+	var am: AbilityManager = _owner_player.ability_manager if _owner_player else null
+	if not am:
+		_ability_use_label.text = ""
+		return
+
+	# Rebuild the left-side list (name + cooldown).
+	for child in _ability_list.get_children():
+		child.queue_free()
+	var abilities: Array[Ability] = am.get_abilities()
+	for i in abilities.size():
+		var ability: Ability = abilities[i]
+		if ability == null:
+			continue
+		var label := Label.new()
+		label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+		label.add_theme_constant_override("outline_size", 4)
+		label.add_theme_font_size_override("font_size", 16)
+		var remaining := am.get_cooldown_remaining(i)
+		var cd_text := "Ready" if remaining <= 0.0 else "%.1fs" % remaining
+		label.text = "%d  %s   (%s)" % [i + 1, ability.ability_name, cd_text]
+		label.modulate = Color(0.6, 0.6, 0.6) if remaining > 0.0 else Color(0.9, 0.9, 0.9)
+		_ability_list.add_child(label)
+
+	# "USING X" prompt while an ability is in progress — either an equipped
+	# (non-instant) ability, or a burst fire that is still firing its shots.
+	if am.is_equipped() and am.equipped_index >= 0 and am.equipped_index < abilities.size():
+		var equipped: Ability = abilities[am.equipped_index]
+		if equipped:
+			_ability_use_label.text = "USING %s" % equipped.ability_name.to_upper()
+			return
+	if weapon_controller:
+		var active_name: String = weapon_controller.get_active_ability_name()
+		if not active_name.is_empty():
+			_ability_use_label.text = "USING %s" % active_name.to_upper()
+			return
+	_ability_use_label.text = ""
 
 func _update_respawn_timer() -> void:
 	var container := _respawn_label.get_parent() as Control

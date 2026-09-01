@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ShoulderChargeAbility" format=3 uid="uid://bkofte7pvpmh5"]
+
+[ext_resource type="Script" uid="uid://bawdsghsibs4c" path="res://player/abilities/shoulder_charge_ability.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+ability_name = "Shoulder Charge"
+description = "Charge forward, pinning enemies and slamming them into walls."
+cast_mode = 1
+cooldown = 4.0

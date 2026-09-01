@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="WeaponFireAbility" format=3 uid="uid://df5ob7dqaxjgc"]
+
+[ext_resource type="Script" uid="uid://lrht2lh1enw5" path="res://player/abilities/weapon_fire_ability.gd" id="1"]
+[ext_resource type="Resource" path="res://player/abilities/test_weapon_fire.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+weapon_fire = ExtResource("2")
+ability_name = "Weapon Fire"
+description = "Fires the assigned WeaponFire."

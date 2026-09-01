@@ -17,6 +17,22 @@ var input_dir: Vector2 = Vector2.ZERO
 var jump_input: bool   = false
 var crouch: bool       = false
 var dash_input: bool   = false
+## One-shot teleport offset (world space) queued by abilities.  ZERO = none.
+## This is an input property: gathered here, broadcast, and applied in _rollback_tick.
+var teleport_offset: Vector3 = Vector3.ZERO
+
+## Local staging for the next gathered tick.  Abilities set this; _gather() copies
+## it into [member teleport_offset] and clears it.  Not rolled back.
+var queued_teleport_offset: Vector3 = Vector3.ZERO
+
+## One-shot shoulder-charge direction (world space) queued by abilities.
+## ZERO = no trigger.  Input property: gathered here, broadcast, and consumed in
+## _rollback_tick to start a charge.  Local staging is [member queued_charge_trigger_dir].
+var charge_trigger_dir: Vector3 = Vector3.ZERO
+
+## Local staging for the next gathered tick.  Abilities set this; _gather()
+## copies it into [member charge_trigger_dir] and clears it.  Not rolled back.
+var queued_charge_trigger_dir: Vector3 = Vector3.ZERO
 
 # Not rolled back — polled each physics frame by WeaponController
 var primary_fire_held: bool   = false
@@ -46,18 +62,31 @@ func _gather() -> void:
 		input_dir  = Vector2.ZERO
 		jump_input = false
 		dash_input = false
+		teleport_offset = Vector3.ZERO
+		queued_teleport_offset = Vector3.ZERO
+		charge_trigger_dir = Vector3.ZERO
+		queued_charge_trigger_dir = Vector3.ZERO
 		return
-	# Stunned players cannot move, jump, crouch, or dash.
-	if get_parent().status_effect_manager and get_parent().status_effect_manager.is_stunned():
+	# Stunned or pinned players cannot move, jump, crouch, dash, or cast.
+	var status_manager := get_parent().status_effect_manager as StatusEffectManager
+	if status_manager and (status_manager.is_stunned() or status_manager.is_pinned()):
 		input_dir  = Vector2.ZERO
 		jump_input = false
 		crouch     = false
 		dash_input = false
+		teleport_offset = Vector3.ZERO
+		queued_teleport_offset = Vector3.ZERO
+		charge_trigger_dir = Vector3.ZERO
+		queued_charge_trigger_dir = Vector3.ZERO
 		return
 	input_dir  = Input.get_vector("move_left", "move_right", "move_forward", "move_backward")
 	jump_input = Input.is_action_pressed("ui_accept")
 	crouch     = Input.is_action_pressed("crouch")
 	dash_input = Input.is_action_pressed("dash")
+	teleport_offset = queued_teleport_offset
+	queued_teleport_offset = Vector3.ZERO
+	charge_trigger_dir = queued_charge_trigger_dir
+	queued_charge_trigger_dir = Vector3.ZERO
 
 func _input(event: InputEvent) -> void:
 	if get_parent().is_bot:
@@ -65,8 +94,9 @@ func _input(event: InputEvent) -> void:
 	if not is_multiplayer_authority():
 		return
 
-	# Stunned players cannot take any actions.
-	if get_parent().status_effect_manager and get_parent().status_effect_manager.is_stunned():
+	# Stunned or pinned players cannot take any actions.
+	var status_manager := get_parent().status_effect_manager as StatusEffectManager
+	if status_manager and (status_manager.is_stunned() or status_manager.is_pinned()):
 		primary_fire_held   = false
 		secondary_fire_held = false
 		tertiary_fire_held  = false

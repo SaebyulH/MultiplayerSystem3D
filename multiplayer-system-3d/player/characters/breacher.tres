@@ -2,7 +2,49 @@
 
 [ext_resource type="PackedScene" uid="uid://cinsq1lv1jv" path="res://assets/characters/flier.tscn" id="1_1m2t5"]
 [ext_resource type="Script" uid="uid://bxv3anwekoggx" path="res://player/character.gd" id="1_char"]
+[ext_resource type="Script" uid="uid://nwsvfqljwb2b" path="res://player/abilities/ability.gd" id="1_ckkow"]
 [ext_resource type="AudioStream" uid="uid://c4hcib02wpb8t" path="res://assets/sounds/flier_death.mp3" id="2_kaefc"]
+[ext_resource type="Script" uid="uid://cqveqjaj5p1jv" path="res://player/abilities/heal_ability.gd" id="2_moh7u"]
+[ext_resource type="Script" uid="uid://lrht2lh1enw5" path="res://player/abilities/weapon_fire_ability.gd" id="3_a2xb3"]
+[ext_resource type="AudioStream" uid="uid://bwfdsxbmx4ko8" path="res://assets/sounds/empty_gun.mp3" id="4_ow7rt"]
+[ext_resource type="Texture2D" uid="uid://b6gktr1vfryte" path="res://defaults/default_damage_falloff_curve.tres" id="5_eak8f"]
+[ext_resource type="PackedScene" uid="uid://bo0edtxgakruc" path="res://weapon/projectiles/scenes/rocket.tscn" id="6_e4ysp"]
+[ext_resource type="Script" uid="uid://yvevtn4dsddy" path="res://player/recoil/recoil_data.gd" id="7_1o6mg"]
+[ext_resource type="Script" uid="uid://djg0ti1n45f8b" path="res://weapon/weapon_fire.gd" id="8_at1ad"]
+[ext_resource type="AudioStream" uid="uid://h5oipa516ci8" path="res://assets/sounds/kalsstockmedia-thunderous-sci-fi-gunshot-sound-341615.mp3" id="9_5qela"]
+[ext_resource type="Script" uid="uid://bv0g4rnfelqch" path="res://components/status_effect/status_effect.gd" id="10_trpmt"]
+
+[sub_resource type="Resource" id="Resource_x7c3f"]
+script = ExtResource("2_moh7u")
+heal_amount = 20.0
+ability_name = "Heal 40 Health"
+cooldown = 3.0
+
+[sub_resource type="Resource" id="Resource_ur13p"]
+script = ExtResource("7_1o6mg")
+recoil = Vector3(0, 0, 0)
+aim_recoil = Vector3(0, 0, 0)
+
+[sub_resource type="Resource" id="Resource_qisbw"]
+script = ExtResource("8_at1ad")
+automatic = true
+ammo_cost = 4
+recoil_data = SubResource("Resource_ur13p")
+bullet_type = 1
+projectile_scene = ExtResource("6_e4ysp")
+multishot_data = Array[Vector3]([Vector3(0, 0.1, -1), Vector3(0, 0, -1), Vector3(0, 0, -1), Vector3(0, 0, -1), Vector3(0, 0, -1), Vector3(0, 0, -1), Vector3(0, 0, -1), Vector3(0, 0, -1), Vector3(0, 0, -1), Vector3(0, 0, -1), Vector3(0, 0, -1), Vector3(0, 0, -1), Vector3(0, 0, -1), Vector3(0, 0, -1), Vector3(0, 0, -1)])
+multishot_mode = 1
+burst_post_shoot_delay = 0.1
+burst_fire_has_recoil = false
+shoot_sound = ExtResource("9_5qela")
+empty_sound = ExtResource("4_ow7rt")
+metadata/_custom_type_script = "uid://djg0ti1n45f8b"
+
+[sub_resource type="Resource" id="Resource_bjvpn"]
+script = ExtResource("3_a2xb3")
+weapon_fire = SubResource("Resource_qisbw")
+ability_name = "Carpet Bomb"
+cooldown = 10.0
 
 [resource]
 script = ExtResource("1_char")
@@ -19,3 +61,4 @@ slope_gravity_mult = 1.4
 health_mult = 2.0
 heal_on_kill = 999.0
 death_sound = ExtResource("2_kaefc")
+abilities = Array[ExtResource("1_ckkow")]([SubResource("Resource_x7c3f"), SubResource("Resource_bjvpn")])
