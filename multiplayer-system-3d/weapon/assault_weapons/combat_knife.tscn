@@ -1,0 +1,162 @@
+[gd_scene format=3 uid="uid://34eeant5qeu2"]
+
+[ext_resource type="Script" uid="uid://c0ut5ljnvunfk" path="res://weapon/weapon_model.gd" id="1_hxd4e"]
+[ext_resource type="AnimationLibrary" uid="uid://blkowmq6y8gqs" path="res://assets/combat_knife/Human_combat_knife.glb" id="2_hxwus"]
+[ext_resource type="Script" uid="uid://cutc4qk6eibrf" path="res://weapon/weapon_anim_group.gd" id="3_qlblj"]
+[ext_resource type="PackedScene" uid="uid://cnb0cgxekajmm" path="res://assets/combat_knife/combat_knife.glb" id="6_hxwus"]
+
+[sub_resource type="Resource" id="Resource_f0yui"]
+script = ExtResource("3_qlblj")
+gun_anim = &"Knife Human Hold"
+human_anim = &"Human Knife Hold"
+
+[sub_resource type="Resource" id="Resource_705ku"]
+script = ExtResource("3_qlblj")
+slot = 1
+gun_anim = &"Knife Human Shoot"
+human_anim = &"Human Knife Shoot"
+metadata/_custom_type_script = "uid://cutc4qk6eibrf"
+
+[sub_resource type="Resource" id="Resource_xv0hg"]
+script = ExtResource("3_qlblj")
+slot = 3
+gun_anim = &"Knife Human Inspect"
+human_anim = &"Human Knife Insspect"
+metadata/_custom_type_script = "uid://cutc4qk6eibrf"
+
+[sub_resource type="Resource" id="Resource_a603s"]
+script = ExtResource("3_qlblj")
+slot = 4
+gun_anim = &"Knife Human Pullout"
+human_anim = &"Human Knife Pullout"
+metadata/_custom_type_script = "uid://cutc4qk6eibrf"
+
+[sub_resource type="Resource" id="Resource_x7c3f"]
+script = ExtResource("3_qlblj")
+slot = 5
+gun_anim = &"Knife Human Putaway"
+human_anim = &"Human Knife Putaway"
+metadata/_custom_type_script = "uid://cutc4qk6eibrf"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_xxbhh"]
+animation = &"Knife Human Shoot"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_gswnw"]
+animation = &"Knife Human Hold"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_g4c7l"]
+animation = &"Knife Human Inspect"
+
+[sub_resource type="AnimationNodeOneShot" id="AnimationNodeOneShot_knn7v"]
+fadein_time = 0.06
+fadeout_time = 0.06
+
+[sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_7pqkx"]
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_bjvpn"]
+animation = &"Knife Human Pullout"
+
+[sub_resource type="AnimationNodeOneShot" id="AnimationNodeOneShot_s7qer"]
+fadein_time = 0.06
+fadeout_time = 0.06
+
+[sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_pullout"]
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_s7qer"]
+animation = &"Knife Human Putaway"
+
+[sub_resource type="AnimationNodeOneShot" id="AnimationNodeOneShot_g4c7l"]
+fadein_time = 0.06
+fadeout_time = 0.06
+
+[sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_knn7v"]
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_65viv"]
+animation = &"Knife Human Hold"
+
+[sub_resource type="AnimationNodeOneShot" id="AnimationNodeOneShot_x7c3f"]
+fadein_time = 0.06
+fadeout_time = 0.06
+
+[sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_65viv"]
+
+[sub_resource type="AnimationNodeOneShot" id="AnimationNodeOneShot_m1dvp"]
+
+[sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_anqxl"]
+
+[sub_resource type="AnimationNodeBlendTree" id="AnimationNodeBlendTree_m1dvp"]
+graph_offset = Vector2(1228.3304, -633.0081)
+nodes/output/position = Vector2(2920, -320)
+nodes/PutawayOneShot/node = SubResource("AnimationNodeOneShot_g4c7l")
+nodes/PutawayOneShot/position = Vector2(1680, -880)
+nodes/PutawayAnim/node = SubResource("AnimationNodeAnimation_s7qer")
+nodes/PutawayAnim/position = Vector2(1040, -520)
+nodes/InspectOneShot/node = SubResource("AnimationNodeOneShot_knn7v")
+nodes/InspectOneShot/position = Vector2(1440, -960)
+nodes/InspectTimeScale/node = SubResource("AnimationNodeTimeScale_7pqkx")
+nodes/InspectTimeScale/position = Vector2(1240, -820)
+nodes/PutawayTimeScale/node = SubResource("AnimationNodeTimeScale_knn7v")
+nodes/PutawayTimeScale/position = Vector2(1340, -580)
+nodes/InspectAnim/node = SubResource("AnimationNodeAnimation_g4c7l")
+nodes/InspectAnim/position = Vector2(920, -740)
+nodes/PulloutAnim/node = SubResource("AnimationNodeAnimation_bjvpn")
+nodes/PulloutAnim/position = Vector2(1200, -320)
+nodes/HoldAnim/node = SubResource("AnimationNodeAnimation_gswnw")
+nodes/HoldAnim/position = Vector2(1060, -1020)
+nodes/PulloutTimeScale/node = SubResource("AnimationNodeTimeScale_pullout")
+nodes/PulloutTimeScale/position = Vector2(1500, -320)
+nodes/ReloadOneShot/node = SubResource("AnimationNodeOneShot_x7c3f")
+nodes/ReloadOneShot/position = Vector2(2200, -600)
+nodes/ReloadAnim/node = SubResource("AnimationNodeAnimation_65viv")
+nodes/ReloadAnim/position = Vector2(1280, -60)
+nodes/ReloadTimeScale/node = SubResource("AnimationNodeTimeScale_65viv")
+nodes/ReloadTimeScale/position = Vector2(1580, -120)
+nodes/PulloutOneShot/node = SubResource("AnimationNodeOneShot_s7qer")
+nodes/PulloutOneShot/position = Vector2(1960, -780)
+nodes/ShootOneShot/node = SubResource("AnimationNodeOneShot_m1dvp")
+nodes/ShootOneShot/position = Vector2(2500, -540)
+nodes/Animation/node = SubResource("AnimationNodeAnimation_xxbhh")
+nodes/Animation/position = Vector2(1660, 80)
+nodes/ShootTimeScale/node = SubResource("AnimationNodeTimeScale_anqxl")
+nodes/ShootTimeScale/position = Vector2(1920, -100)
+node_connections = [&"output", 0, &"ShootOneShot", &"PutawayOneShot", 0, &"InspectOneShot", &"PutawayOneShot", 1, &"PutawayTimeScale", &"InspectOneShot", 0, &"HoldAnim", &"InspectOneShot", 1, &"InspectTimeScale", &"InspectTimeScale", 0, &"InspectAnim", &"PutawayTimeScale", 0, &"PutawayAnim", &"PulloutTimeScale", 0, &"PulloutAnim", &"ReloadOneShot", 0, &"PulloutOneShot", &"ReloadOneShot", 1, &"ReloadTimeScale", &"ReloadTimeScale", 0, &"ReloadAnim", &"PulloutOneShot", 0, &"PutawayOneShot", &"PulloutOneShot", 1, &"PulloutTimeScale", &"ShootOneShot", 0, &"ReloadOneShot", &"ShootOneShot", 1, &"ShootTimeScale", &"ShootTimeScale", 0, &"Animation"]
+
+[node name="CombattKnife" type="Node3D" unique_id=1233250200 node_paths=PackedStringArray("anim_player", "anim_tree")]
+script = ExtResource("1_hxd4e")
+anim_player = NodePath("combat_knife/AnimationPlayer")
+anim_tree = NodePath("AnimationTree")
+human_anims = ExtResource("2_hxwus")
+anim_groups = Array[ExtResource("3_qlblj")]([SubResource("Resource_f0yui"), SubResource("Resource_705ku"), SubResource("Resource_xv0hg"), SubResource("Resource_a603s"), SubResource("Resource_x7c3f")])
+
+[node name="AnimationTree" type="AnimationTree" parent="." unique_id=788952654]
+root_node = NodePath("../combat_knife")
+tree_root = SubResource("AnimationNodeBlendTree_m1dvp")
+anim_player = NodePath("../combat_knife/AnimationPlayer")
+parameters/PutawayOneShot/active = false
+parameters/PutawayOneShot/internal_active = false
+parameters/PutawayOneShot/request = 0
+parameters/InspectOneShot/active = false
+parameters/InspectOneShot/internal_active = false
+parameters/InspectOneShot/request = 0
+parameters/InspectTimeScale/scale = 1.0
+parameters/PutawayTimeScale/scale = 1.0
+parameters/PulloutTimeScale/scale = 1.0
+parameters/ReloadOneShot/active = false
+parameters/ReloadOneShot/internal_active = false
+parameters/ReloadOneShot/request = 0
+parameters/ReloadTimeScale/scale = 1.0
+parameters/PulloutOneShot/active = false
+parameters/PulloutOneShot/internal_active = false
+parameters/PulloutOneShot/request = 0
+parameters/ShootOneShot/active = false
+parameters/ShootOneShot/internal_active = false
+parameters/ShootOneShot/request = 0
+parameters/ShootTimeScale/scale = 1.0
+
+[node name="combat_knife" parent="." unique_id=545651624 instance=ExtResource("6_hxwus")]
+
+[node name="Skeleton3D" parent="combat_knife/Knife" parent_id_path=PackedInt32Array(545651624, 1083160410) index="0" unique_id=1617875219]
+bones/0/position = Vector3(-0.18730554, 1.5600106, 0.3906611)
+bones/0/rotation = Quaternion(-0.016130755, -0.12348807, -0.6359203, 0.76164025)
+
+[editable path="combat_knife"]

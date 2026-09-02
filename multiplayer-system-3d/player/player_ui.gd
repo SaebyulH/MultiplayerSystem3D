@@ -38,6 +38,13 @@ var _crosshair: ColorRect
 var _respawn_label: Label
 var _respawn_label_bg: ColorRect
 
+# Full-screen scope overlay shown over the HUD while ADS is active.
+var _ads_overlay: TextureRect
+
+# Scoped damage-amp charge UI (progress bar + multiplier), right of the crosshair.
+var _scope_charge_bar: ProgressBar
+var _scope_charge_label: Label
+
 # Ability display (left-side list) and "USING" prompt under the crosshair.
 var _ability_list: VBoxContainer
 var _ability_use_label: Label
@@ -143,6 +150,8 @@ func _build_ui() -> void:
 	_build_abilities()
 	_build_respawn_timer()
 	_build_status_effects()
+	_build_ads_overlay()
+	_build_scope_charge_ui()
 
 func _build_crosshair() -> void:
 	# Black outline
@@ -170,6 +179,57 @@ func _build_crosshair() -> void:
 	_crosshair.offset_bottom = 2.0
 	_crosshair.color = Color.LIME_GREEN # or Color.GREEN
 	add_child(_crosshair)
+
+func _build_ads_overlay() -> void:
+	# Full-screen texture shown over the HUD while scoped in.  Hidden by default;
+	# driven by the current weapon's ADS image in _update_ads_overlay().
+	_ads_overlay = TextureRect.new()
+	_ads_overlay.anchor_left   = 0.0
+	_ads_overlay.anchor_right  = 1.0
+	_ads_overlay.anchor_top    = 0.0
+	_ads_overlay.anchor_bottom = 1.0
+	_ads_overlay.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_ads_overlay.stretch_mode = TextureRect.STRETCH_SCALE
+	_ads_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_ads_overlay.visible = false
+	add_child(_ads_overlay)
+
+func _build_scope_charge_ui() -> void:
+	# Progress bar just right of the crosshair, showing the damage-amp charge.
+	_scope_charge_bar = ProgressBar.new()
+	_scope_charge_bar.anchor_left   = 0.5
+	_scope_charge_bar.anchor_right  = 0.5
+	_scope_charge_bar.anchor_top    = 0.5
+	_scope_charge_bar.anchor_bottom = 0.5
+	_scope_charge_bar.offset_left   = 14.0
+	_scope_charge_bar.offset_top    = -5.0
+	_scope_charge_bar.offset_right  = 114.0
+	_scope_charge_bar.offset_bottom = 5.0
+	_scope_charge_bar.min_value = 0.0
+	_scope_charge_bar.max_value = 1.0
+	_scope_charge_bar.value = 0.0
+	_scope_charge_bar.show_percentage = false
+	_scope_charge_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_scope_charge_bar.visible = false
+	add_child(_scope_charge_bar)
+
+	# Multiplier readout to the right of the bar (e.g. "3.0").
+	_scope_charge_label = Label.new()
+	_scope_charge_label.anchor_left   = 0.5
+	_scope_charge_label.anchor_right  = 0.5
+	_scope_charge_label.anchor_top    = 0.5
+	_scope_charge_label.anchor_bottom = 0.5
+	_scope_charge_label.offset_left   = 122.0
+	_scope_charge_label.offset_top    = -14.0
+	_scope_charge_label.offset_right  = 192.0
+	_scope_charge_label.offset_bottom = 14.0
+	_scope_charge_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_scope_charge_label.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
+	_scope_charge_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+	_scope_charge_label.add_theme_constant_override("outline_size", 6)
+	_scope_charge_label.add_theme_font_size_override("font_size", 22)
+	_scope_charge_label.visible = false
+	add_child(_scope_charge_label)
 
 func _build_health() -> void:
 	# -- Container (bottom-left, fixed size) --
@@ -550,6 +610,31 @@ func _process(delta: float) -> void:
 	_update_respawn_timer()
 	_update_bg_reload_bars()
 	_update_status_effects()
+	_update_ads_overlay()
+	_update_scope_charge_ui()
+
+func _update_ads_overlay() -> void:
+	if not _owner_player or not weapon_controller:
+		_ads_overlay.visible = false
+		return
+	if weapon_controller.is_scoped_in():
+		var tex: Texture2D = weapon_controller.get_ads_image()
+		_ads_overlay.texture = tex
+		_ads_overlay.visible = tex != null
+	else:
+		_ads_overlay.visible = false
+
+func _update_scope_charge_ui() -> void:
+	if not weapon_controller:
+		_scope_charge_bar.visible = false
+		_scope_charge_label.visible = false
+		return
+	var show := weapon_controller.is_scoped_in() and weapon_controller.has_scoped_amp()
+	_scope_charge_bar.visible = show
+	_scope_charge_label.visible = show
+	if show:
+		_scope_charge_bar.value = weapon_controller.get_scoped_charge_progress()
+		_scope_charge_label.text = "%.1f" % weapon_controller.get_scoped_damage_multiplier()
 
 func _update_health() -> void:
 	if not attribute_component or not is_inside_tree():

@@ -263,3 +263,60 @@ func _play_legacy(slot: WeaponAnimGroup.AnimSlot, duration: float, loop: bool) -
 	if duration > 0.0 and anim != null and anim.length > 0.0:
 		speed = anim.length / duration
 	anim_player.play(anim_name, -1, speed)
+
+
+## Play a scope transition (SCOPE_IN / SCOPE_OUT) directly on the raw
+## AnimationPlayer, bypassing the AnimationTree.  The tree is disabled for the
+## duration of the transition so we don't have to add scope one-shot nodes to
+## every weapon's tree.  The clip is scaled to last [param duration] seconds
+## (duration <= 0 plays at authored speed).  Returns true only when a scope anim
+## was actually started (and the tree was disabled); otherwise returns false.
+func play_scope_anim(slot: WeaponAnimGroup.AnimSlot, duration: float) -> bool:
+	var group := get_anim_group(slot)
+	if group == null or group.gun_anim == &"":
+		return false
+	if anim_player == null:
+		return false
+	var anim_name := _resolve_animation(group.gun_anim)
+	if anim_name == &"":
+		return false
+	if anim_tree != null:
+		anim_tree.active = false
+	var anim := anim_player.get_animation(anim_name)
+	var speed := 1.0
+	if duration > 0.0 and anim != null and anim.length > 0.0:
+		speed = anim.length / duration
+	anim_player.play(anim_name, -1, speed)
+	return true
+
+
+## Re-enable the weapon's AnimationTree and restore the looping hold animation
+## after a scope transition finishes.  No-ops for legacy weapons (no tree).
+func finish_scope_anim() -> void:
+	if anim_tree != null:
+		anim_tree.active = true
+	play_anim_loop(WeaponAnimGroup.AnimSlot.HOLD)
+
+
+## Stop an in-progress one-shot animation for [param slot] and return to the
+## looping hold pose.  Used when a hold-required shot is released early so the
+## shoot anim snaps back instead of completing.
+func stop_anim(slot: WeaponAnimGroup.AnimSlot) -> void:
+	var tree := _blend_tree()
+	if tree != null:
+		var nodes := _slot_nodes(slot)
+		if not nodes.is_empty() and nodes.has("oneshot"):
+			var oneshot_path := str(nodes["oneshot"])
+			# Force the one-shot inactive immediately so it can't linger through
+			# its fade-out, then abort any pending transition.
+			anim_tree.set("parameters/" + oneshot_path + "/active", false)
+			anim_tree.set("parameters/" + oneshot_path + "/internal_active", false)
+			anim_tree.set(
+				"parameters/" + oneshot_path + "/request",
+				AnimationNodeOneShot.ONE_SHOT_REQUEST_ABORT
+			)
+	# Stop the raw AnimationPlayer too, covering the legacy fallback path where the
+	# slot was played directly on anim_player rather than through the tree.
+	if anim_player != null:
+		anim_player.stop()
+	play_anim_loop(WeaponAnimGroup.AnimSlot.HOLD)

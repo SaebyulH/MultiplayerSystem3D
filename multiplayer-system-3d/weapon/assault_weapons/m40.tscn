@@ -1,0 +1,202 @@
+[gd_scene format=3 uid="uid://cwn7dbtmqcw2l"]
+
+[ext_resource type="Script" uid="uid://c0ut5ljnvunfk" path="res://weapon/weapon_model.gd" id="1_m8m70"]
+[ext_resource type="AnimationLibrary" uid="uid://bfqgf2icle12n" path="res://assets/sniper/Human M40.glb" id="2_dchj1"]
+[ext_resource type="Script" uid="uid://cutc4qk6eibrf" path="res://weapon/weapon_anim_group.gd" id="3_v58i5"]
+[ext_resource type="PackedScene" uid="uid://br8i2wym3pawk" path="res://assets/sniper/M40.glb" id="4_dchj1"]
+
+[sub_resource type="Resource" id="Resource_65viv"]
+script = ExtResource("3_v58i5")
+slot = 2
+gun_anim = &"Sniper Human Reload"
+human_anim = &"Human Sniper Reload"
+
+[sub_resource type="Resource" id="Resource_f0yui"]
+script = ExtResource("3_v58i5")
+gun_anim = &"Sniper Human Hold"
+human_anim = &"Human Sniper Hold"
+
+[sub_resource type="Resource" id="Resource_705ku"]
+script = ExtResource("3_v58i5")
+slot = 1
+gun_anim = &"Sniper Human Shoot"
+human_anim = &"Human Sniper Shoot"
+metadata/_custom_type_script = "uid://cutc4qk6eibrf"
+
+[sub_resource type="Resource" id="Resource_xv0hg"]
+script = ExtResource("3_v58i5")
+slot = 3
+gun_anim = &"Sniper Human Inspect"
+human_anim = &"Sniper Ak Inspect"
+metadata/_custom_type_script = "uid://cutc4qk6eibrf"
+
+[sub_resource type="Resource" id="Resource_a603s"]
+script = ExtResource("3_v58i5")
+slot = 4
+gun_anim = &"Sniper Human Hold"
+human_anim = &"Human Sniper Pullout"
+metadata/_custom_type_script = "uid://cutc4qk6eibrf"
+
+[sub_resource type="Resource" id="Resource_x7c3f"]
+script = ExtResource("3_v58i5")
+slot = 5
+gun_anim = &"Sniper Human Putaway"
+human_anim = &"Human Sniper Putaway"
+metadata/_custom_type_script = "uid://cutc4qk6eibrf"
+
+[sub_resource type="Resource" id="Resource_bjvpn"]
+script = ExtResource("3_v58i5")
+slot = 8
+gun_anim = &"Sniper Human Scopein"
+human_anim = &"Human Sniper Scopein"
+metadata/_custom_type_script = "uid://cutc4qk6eibrf"
+
+[sub_resource type="Resource" id="Resource_s7qer"]
+script = ExtResource("3_v58i5")
+slot = 9
+gun_anim = &"Sniper Human Scopeout"
+human_anim = &"Human Sniper Scopeout"
+metadata/_custom_type_script = "uid://cutc4qk6eibrf"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_gswnw"]
+animation = &"Sniper Human Hold"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_g4c7l"]
+animation = &"Sniper Human Inspect"
+
+[sub_resource type="AnimationNodeOneShot" id="AnimationNodeOneShot_knn7v"]
+fadein_time = 0.06
+fadeout_time = 0.06
+
+[sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_7pqkx"]
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_bjvpn"]
+animation = &"Sniper Human Hold"
+
+[sub_resource type="AnimationNodeOneShot" id="AnimationNodeOneShot_s7qer"]
+fadein_time = 0.06
+fadeout_time = 0.06
+
+[sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_pullout"]
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_s7qer"]
+animation = &"Sniper Human Hold"
+
+[sub_resource type="AnimationNodeOneShot" id="AnimationNodeOneShot_g4c7l"]
+fadein_time = 0.06
+fadeout_time = 0.06
+
+[sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_knn7v"]
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_xxbhh"]
+animation = &"Sniper Human Reload"
+
+[sub_resource type="AnimationNodeOneShot" id="AnimationNodeOneShot_m1dvp"]
+
+[sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_anqxl"]
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_65viv"]
+animation = &"Sniper Human Reload"
+
+[sub_resource type="AnimationNodeOneShot" id="AnimationNodeOneShot_x7c3f"]
+fadein_time = 0.06
+fadeout_time = 0.06
+
+[sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_65viv"]
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_jfgyi"]
+animation = &"Sniper Human Shoot"
+
+[sub_resource type="AnimationNodeOneShot" id="AnimationNodeOneShot_237xx"]
+fadein_time = 0.02
+fadeout_time = 0.02
+
+[sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_wpyo2"]
+
+[sub_resource type="AnimationNodeBlendTree" id="AnimationNodeBlendTree_h44ov"]
+graph_offset = Vector2(841.81604, -542.34674)
+nodes/output/position = Vector2(3260, -200)
+nodes/ShootAnim/node = SubResource("AnimationNodeAnimation_jfgyi")
+nodes/ShootAnim/position = Vector2(2420, 0)
+nodes/ShootTimeScale/node = SubResource("AnimationNodeTimeScale_wpyo2")
+nodes/ShootTimeScale/position = Vector2(2680, -80)
+nodes/ReloadEmptyAnim/node = SubResource("AnimationNodeAnimation_xxbhh")
+nodes/ReloadEmptyAnim/position = Vector2(1420, 100)
+nodes/ReloadEmptyTimeScale/node = SubResource("AnimationNodeTimeScale_anqxl")
+nodes/ReloadEmptyTimeScale/position = Vector2(2012.5466, -69.51329)
+nodes/InspectOneShot/node = SubResource("AnimationNodeOneShot_knn7v")
+nodes/InspectOneShot/position = Vector2(1440, -960)
+nodes/ReloadEmptyOneShot/node = SubResource("AnimationNodeOneShot_m1dvp")
+nodes/ReloadEmptyOneShot/position = Vector2(2520, -460)
+nodes/InspectTimeScale/node = SubResource("AnimationNodeTimeScale_7pqkx")
+nodes/InspectTimeScale/position = Vector2(1240, -820)
+nodes/HoldAnim/node = SubResource("AnimationNodeAnimation_gswnw")
+nodes/HoldAnim/position = Vector2(1060, -1020)
+nodes/ShootOneShot/node = SubResource("AnimationNodeOneShot_237xx")
+nodes/ShootOneShot/position = Vector2(3000, -280)
+nodes/ReloadNonemptyOneShot/node = SubResource("AnimationNodeOneShot_x7c3f")
+nodes/ReloadNonemptyOneShot/position = Vector2(2200, -600)
+nodes/ReloadNonemptyAnim/node = SubResource("AnimationNodeAnimation_65viv")
+nodes/ReloadNonemptyAnim/position = Vector2(1240, -60)
+nodes/ReloadNonemptyTimeScale/node = SubResource("AnimationNodeTimeScale_65viv")
+nodes/ReloadNonemptyTimeScale/position = Vector2(1580, -100)
+nodes/PulloutOneShot/node = SubResource("AnimationNodeOneShot_s7qer")
+nodes/PulloutOneShot/position = Vector2(1960, -780)
+nodes/PulloutAnim/node = SubResource("AnimationNodeAnimation_bjvpn")
+nodes/PulloutAnim/position = Vector2(1200, -320)
+nodes/PulloutTimeScale/node = SubResource("AnimationNodeTimeScale_pullout")
+nodes/PulloutTimeScale/position = Vector2(1500, -320)
+nodes/PutawayOneShot/node = SubResource("AnimationNodeOneShot_g4c7l")
+nodes/PutawayOneShot/position = Vector2(1680, -880)
+nodes/PutawayAnim/node = SubResource("AnimationNodeAnimation_s7qer")
+nodes/PutawayAnim/position = Vector2(1040, -520)
+nodes/PutawayTimeScale/node = SubResource("AnimationNodeTimeScale_knn7v")
+nodes/PutawayTimeScale/position = Vector2(1340, -580)
+nodes/InspectAnim/node = SubResource("AnimationNodeAnimation_g4c7l")
+nodes/InspectAnim/position = Vector2(920, -740)
+node_connections = [&"output", 0, &"ShootOneShot", &"ShootTimeScale", 0, &"ShootAnim", &"ReloadEmptyTimeScale", 0, &"ReloadEmptyAnim", &"InspectOneShot", 0, &"HoldAnim", &"InspectOneShot", 1, &"InspectTimeScale", &"ReloadEmptyOneShot", 0, &"ReloadNonemptyOneShot", &"ReloadEmptyOneShot", 1, &"ReloadEmptyTimeScale", &"InspectTimeScale", 0, &"InspectAnim", &"ShootOneShot", 0, &"ReloadEmptyOneShot", &"ShootOneShot", 1, &"ShootTimeScale", &"ReloadNonemptyOneShot", 0, &"PulloutOneShot", &"ReloadNonemptyOneShot", 1, &"ReloadNonemptyTimeScale", &"ReloadNonemptyTimeScale", 0, &"ReloadNonemptyAnim", &"PulloutOneShot", 0, &"PutawayOneShot", &"PulloutOneShot", 1, &"PulloutTimeScale", &"PulloutTimeScale", 0, &"PulloutAnim", &"PutawayOneShot", 0, &"InspectOneShot", &"PutawayOneShot", 1, &"PutawayTimeScale", &"PutawayTimeScale", 0, &"PutawayAnim"]
+
+[node name="M40" type="Node3D" unique_id=1233250200 node_paths=PackedStringArray("anim_player", "anim_tree")]
+script = ExtResource("1_m8m70")
+anim_player = NodePath("M402/AnimationPlayer")
+anim_tree = NodePath("AnimationTree")
+human_anims = ExtResource("2_dchj1")
+anim_groups = Array[ExtResource("3_v58i5")]([SubResource("Resource_65viv"), SubResource("Resource_f0yui"), SubResource("Resource_705ku"), SubResource("Resource_xv0hg"), SubResource("Resource_a603s"), SubResource("Resource_x7c3f"), SubResource("Resource_bjvpn"), SubResource("Resource_s7qer")])
+
+[node name="AnimationTree" type="AnimationTree" parent="." unique_id=754164039]
+root_node = NodePath("../M402")
+tree_root = SubResource("AnimationNodeBlendTree_h44ov")
+anim_player = NodePath("../M402/AnimationPlayer")
+parameters/ShootTimeScale/scale = 1.0
+parameters/ReloadEmptyTimeScale/scale = 1.0
+parameters/InspectOneShot/active = false
+parameters/InspectOneShot/internal_active = false
+parameters/InspectOneShot/request = 0
+parameters/ReloadEmptyOneShot/active = false
+parameters/ReloadEmptyOneShot/internal_active = false
+parameters/ReloadEmptyOneShot/request = 0
+parameters/InspectTimeScale/scale = 1.0
+parameters/ShootOneShot/active = false
+parameters/ShootOneShot/internal_active = false
+parameters/ShootOneShot/request = 0
+parameters/ReloadNonemptyOneShot/active = false
+parameters/ReloadNonemptyOneShot/internal_active = false
+parameters/ReloadNonemptyOneShot/request = 0
+parameters/ReloadNonemptyTimeScale/scale = 1.0
+parameters/PulloutOneShot/active = false
+parameters/PulloutOneShot/internal_active = false
+parameters/PulloutOneShot/request = 0
+parameters/PulloutTimeScale/scale = 1.0
+parameters/PutawayOneShot/active = false
+parameters/PutawayOneShot/internal_active = false
+parameters/PutawayOneShot/request = 0
+parameters/PutawayTimeScale/scale = 1.0
+
+[node name="M402" parent="." unique_id=1698511860 instance=ExtResource("4_dchj1")]
+
+[node name="Skeleton3D" parent="M402/M40" parent_id_path=PackedInt32Array(1698511860, 724157813) index="0" unique_id=1192464230]
+bones/0/position = Vector3(-0.15359534, 1.4361622, 0.29275334)
+bones/1/position = Vector3(-8.313212e-09, 0.1009775, 0.070872776)
+bones/1/rotation = Quaternion(0.7071068, -3.0908627e-08, 1.3767878e-07, 0.7071068)
+
+[editable path="M402"]

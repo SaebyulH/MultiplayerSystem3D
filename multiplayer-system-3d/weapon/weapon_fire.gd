@@ -22,11 +22,37 @@ enum ActionType {SHOOT, ADS, SHIELD, SIGNAL}
 
 ## FOV to use when aiming down sights.  (ADS only.)
 @export var zoom_fov: float = 20.0
+## Optional full-screen overlay texture shown over the HUD while scoped in.
+## Leave empty for no overlay.  (ADS only.)
+@export var ads_image: Texture2D
+## Time in seconds to scope in when ADS is toggled on.  Also scales the length
+## of the SCOPE_IN viewmodel animation.  (ADS only.)
+@export var scope_in_time: float = 0.1
+## Time in seconds to scope out when ADS is toggled off.  Also scales the length
+## of the SCOPE_OUT viewmodel animation.  (ADS only.)
+@export var scope_out_time: float = 0.3
+## If true, the FOV changes instantly when toggling ADS.  If false, the FOV
+## interpolates over scope_in_time / scope_out_time.  (ADS only.)
+@export var fov_change_instant: bool = false
+## If true, the player cannot scope in while in the post-shoot delay after
+## firing, and is forced out of scope the moment a shot is fired.  (ADS only.)
+@export var force_unscope_during_post_shoot_delay: bool = false
+## While scoped, damage ramps from 1.0x up to this multiplier over
+## scoped_damage_amp_time.  Values <= 1.0 disable the amp.  (ADS only.)
+@export var scoped_damage_amp_max: float = 1.0
+## Seconds spent scoped before the damage amp reaches scoped_damage_amp_max.
+## 0.0 = instant max.  (ADS only.)
+@export var scoped_damage_amp_time: float = 0.0
 
 ## If true, the weapon fires repeatedly while the trigger is held.  (SHOOT only.)
 @export var automatic: bool = false
 ## Delay in seconds before the shot is fired after pulling the trigger.  (SHOOT only.)
 @export var pre_shoot_delay: float = 0.0
+## If true, the player must keep holding the fire button for the full
+## [member pre_shoot_delay] for the shot to fire (releasing cancels it).
+## If false, the shot fires automatically once the delay elapses, even if
+## the button was only tapped.  (SHOOT only.)
+@export var hold_required_for_pre_shoot_delay: bool = false
 ## Minimum time in seconds between shots.  (SHOOT only.)
 @export var post_shoot_delay: float = 0.5
 
@@ -149,7 +175,7 @@ enum MultishotMode {
 func _validate_property(property: Dictionary) -> void:
 	# ---- everything that only makes sense for SHOOT ----
 	const SHOOT_ONLY: Array[String] = [
-		"automatic", "pre_shoot_delay", "post_shoot_delay", "ammo_cost",
+		"automatic", "pre_shoot_delay", "hold_required_for_pre_shoot_delay", "post_shoot_delay", "ammo_cost",
 		"recoil_data", "recoil_knockback", "hit_knockback",
 		"self_health_delta_on_shoot", "self_health_delta_per_burst_bullet", "move_speed_mult_while_shooting",
 		"bullet_type", "hitscan_damage", "hitscan_range", "has_damage_falloff", "headshot_multiplier", "backshot_multiplier",
@@ -192,6 +218,9 @@ func _validate_property(property: Dictionary) -> void:
 		property.usage = PROPERTY_USAGE_NO_EDITOR
 
 	# ---- ADS properties hidden unless action_type == ADS ----
-	const ADS_ONLY: Array[String] = ["zoom_fov"]
+	const ADS_ONLY: Array[String] = [
+		"zoom_fov", "ads_image", "scope_in_time", "scope_out_time", "fov_change_instant",
+		"force_unscope_during_post_shoot_delay", "scoped_damage_amp_max", "scoped_damage_amp_time",
+	]
 	if property.name in ADS_ONLY and action_type != ActionType.ADS:
 		property.usage = PROPERTY_USAGE_NO_EDITOR

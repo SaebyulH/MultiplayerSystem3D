@@ -1,0 +1,9 @@
+[gd_scene format=3 uid="uid://o5bvda56g5cy"]
+
+[ext_resource type="Texture2D" uid="uid://dx5rm16lk8bam" path="res://assets/scratch.png" id="1_xt7f7"]
+
+[node name="BulletHole" type="Node3D" unique_id=295837499]
+
+[node name="Sprite3D" type="Sprite3D" parent="." unique_id=949850643]
+transform = Transform3D(0.08838369, 3.8633736e-09, 3.863374e-09, -3.863374e-09, -3.863374e-09, 0.08838369, 3.8633736e-09, -0.08838369, -3.863374e-09, 0, 0.0052168965, 0)
+texture = ExtResource("1_xt7f7")

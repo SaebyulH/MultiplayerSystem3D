@@ -1,12 +1,9 @@
-[gd_resource type="Resource" script_class="RampageAbility" format=3]
+[gd_resource type="Resource" script_class="RampageAbility" format=3 uid="uid://d3yv8ta033nvs"]
 
-[ext_resource type="Script" path="res://player/abilities/rampage_ability.gd" id="1"]
+[ext_resource type="Script" uid="uid://w2inrkhum22o" path="res://player/abilities/rampage_ability.gd" id="1"]
 
 [resource]
 script = ExtResource("1")
 ability_name = "Rampage"
 description = "Double your size and max health for 10 seconds."
-cast_type = 0
-cast_mode = 0
 cooldown = 20.0
-duration = 10.0

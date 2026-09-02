@@ -31,6 +31,7 @@ data = PackedByteArray("//PkZAAbgfteG6ekAKBSipQBRkgACLISnNMt5BydoXCOQgguAasNWJuQ
 script = ExtResource("4_0f68w")
 automatic = true
 pre_shoot_delay = 0.1
+hold_required_for_pre_shoot_delay = true
 post_shoot_delay = 0.4
 recoil_data = SubResource("Resource_34npm")
 hitscan_damage = 80.0

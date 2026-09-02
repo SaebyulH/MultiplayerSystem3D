@@ -12,7 +12,11 @@ enum AnimSlot {
 	## Reload of a fully-empty magazine (mag drops + bolt/slide release).
 	RELOAD_EMPTY,
 	## Reload of a partially-full magazine (mag swap only).
-	RELOAD_NONEMPTY
+	RELOAD_NONEMPTY,
+	## Aim-down-sights transition into the scope (viewmodel/gun anim only).
+	SCOPE_IN,
+	## Aim-down-sights transition out of the scope (viewmodel/gun anim only).
+	SCOPE_OUT
 }
 
 ## Which of the Hold/Shoot/Reload/Inspect slots this group fills.

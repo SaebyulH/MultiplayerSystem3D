@@ -48,6 +48,7 @@ const SHOOT_TIMESCALE_NODE := &"ShootTimeScale"
 const ARMS_ANIM_RESET := &"other_movement/a_pose"
 
 var _bullet_hole_scene: PackedScene = preload("res://effects/bullet_hole.tscn")
+var _scratch_scene: PackedScene = preload("res://effects/scratch.tscn")
 var _tracer_scene: PackedScene = preload("res://weapon/tracer.tscn")
 var _hit_sound: AudioStream = preload("res://assets/sounds/Hitsound.wav")
 var _hit_heal_sound: AudioStream = preload("res://assets/sounds/medkit_sound.mp3")
@@ -123,6 +124,25 @@ var _ability_fire_interrupt: bool = false
 ## Name of the ability currently mid-burst/volley (empty when none).  Read by
 ## the HUD to show the "USING ..." prompt while a burst is firing.
 var _active_ability_name: String = ""
+
+# Scope (ADS) transition state — drives both the viewmodel scope animation and
+# the FOV interpolation.  NONE while idle; SCOPING_IN/OUT during a transition.
+enum ScopePhase { NONE, SCOPING_IN, SCOPING_OUT }
+var _scope_phase: ScopePhase = ScopePhase.NONE
+var _scope_elapsed: float = 0.0
+var _scope_duration: float = 0.0
+var _scope_start_fov: float = 90.0
+var _scope_target_fov: float = 90.0
+## True while a scope transition actually started a viewmodel anim (tree disabled).
+var _scope_anim_playing: bool = false
+## Accumulated seconds spent scoped-in — drives the scoped damage amp.
+var _scoped_charge_time: float = 0.0
+## Damage-amp multiplier captured for the current shot (1.0 = no amp).  Reset to
+## 1.0 for ability-fired shots so they never inherit the scoped amp.
+var _current_shot_amp_mult: float = 1.0
+## Whether the player was scoped in when the current shot's trigger was pulled.
+## Captured before any force-unscope, so the shot keeps scoped accuracy/damage.
+var _shot_was_scoped: bool = false
 
 signal mag_changed(current: int, mag_max: int)
 signal weapon_changed(index: int, weapon: Weapon)
@@ -218,16 +238,142 @@ func _is_ready() -> bool:
 		and current_weapon_model != null \
 		and is_instance_valid(current_weapon_model)
 
+## Returns the current weapon's ADS WeaponFire, or null if it has none.
+func _get_ads_fire() -> WeaponFire:
+	if _weapons.is_empty() or current_weapon_index >= _weapons.size():
+		return null
+	for fire in _weapons[current_weapon_index].weapon_fires:
+		if fire.action_type == WeaponFire.ActionType.ADS:
+			return fire
+	return null
+
 ## Returns the FOV to use when ADS is active for the current weapon.
 ## Falls back to 20.0 if the weapon has no ADS fire mode.
 func get_ads_zoom_fov() -> float:
-	if _weapons.is_empty() or current_weapon_index >= _weapons.size():
-		return 20.0
-	var weapon: Weapon = _weapons[current_weapon_index]
-	for fire in weapon.weapon_fires:
-		if fire.action_type == WeaponFire.ActionType.ADS:
-			return fire.zoom_fov
-	return 20.0
+	var fire := _get_ads_fire()
+	return fire.zoom_fov if fire != null else 20.0
+
+## Returns the scope overlay texture to show while ADS is active for the current
+## weapon, or null if none is specified.
+func get_ads_image() -> Texture2D:
+	var fire := _get_ads_fire()
+	return fire.ads_image if fire != null else null
+
+## True once ADS is active and the scope-in transition has fully completed.
+## Used by the HUD to show the scope overlay only when fully scoped in.
+func is_scoped_in() -> bool:
+	return _parent_player != null and _parent_player.ads and _scope_phase == ScopePhase.NONE
+
+## True while in the post-shoot delay (or any part of the fire cycle).
+func _is_in_post_shoot_delay() -> bool:
+	return _fire_cooldown > 0.0 or _is_firing
+
+## True when the current weapon's ADS fire forces an unscope while firing.
+func _ads_forces_unscope() -> bool:
+	var fire := _get_ads_fire()
+	return fire != null and fire.force_unscope_during_post_shoot_delay
+
+## Charge progress (0..1) of the scoped damage amp; 0 when not scoped/charging.
+func get_scoped_charge_progress() -> float:
+	var fire := _get_ads_fire()
+	if not is_scoped_in() or fire == null or fire.scoped_damage_amp_max <= 1.0:
+		return 0.0
+	if fire.scoped_damage_amp_time <= 0.0:
+		return 1.0
+	return clampf(_scoped_charge_time / fire.scoped_damage_amp_time, 0.0, 1.0)
+
+## Current scoped damage-amp multiplier (1.0 = no amp).
+func get_scoped_damage_multiplier() -> float:
+	var fire := _get_ads_fire()
+	if not is_scoped_in() or fire == null or fire.scoped_damage_amp_max <= 1.0:
+		return 1.0
+	return lerpf(1.0, fire.scoped_damage_amp_max, get_scoped_charge_progress())
+
+## True when the current weapon's ADS fire has a scoped damage amp configured.
+func has_scoped_amp() -> bool:
+	var fire := _get_ads_fire()
+	return fire != null and fire.scoped_damage_amp_max > 1.0
+
+## Current camera FOV, accounting for an in-progress scope transition.  While
+## idle this is the steady-state FOV (zoom_fov when ADS, 90.0 otherwise); during
+## a transition it interpolates from the start FOV to the target FOV.  The
+## interpolation is a no-op when fov_change_instant is true (start == target).
+func get_scope_fov() -> float:
+	match _scope_phase:
+		ScopePhase.SCOPING_IN, ScopePhase.SCOPING_OUT:
+			return _lerp_scope_fov()
+		_:
+			if _parent_player != null and _parent_player.ads:
+				var fire := _get_ads_fire()
+				return fire.zoom_fov if fire != null else 20.0
+			return 90.0
+
+func _lerp_scope_fov() -> float:
+	if _scope_duration <= 0.0:
+		return _scope_target_fov
+	var t := clampf(_scope_elapsed / _scope_duration, 0.0, 1.0)
+	return lerpf(_scope_start_fov, _scope_target_fov, t)
+
+
+## Current camera FOV (reads the player's live camera FOV).
+func _current_fov() -> float:
+	if _parent_player != null and _parent_player.camera != null:
+		return _parent_player.camera.fov
+	return 90.0
+
+
+## Start the scope-in transition (ADS toggled on).  Plays the SCOPE_IN viewmodel
+## anim scaled to the ADS fire's scope_in_time and begins the FOV interpolation.
+func _begin_scope_in() -> void:
+	var fire := _get_ads_fire()
+	var duration: float = fire.scope_in_time if fire != null else 0.0
+	var target_fov: float = fire.zoom_fov if fire != null else 20.0
+	var start_fov: float = _current_fov()
+	if fire != null and fire.fov_change_instant:
+		start_fov = target_fov  # snap: the lerp becomes a no-op
+	_scope_phase = ScopePhase.SCOPING_IN
+	_scope_elapsed = 0.0
+	_scope_duration = duration
+	_scope_start_fov = start_fov
+	_scope_target_fov = target_fov
+	_scope_anim_playing = false
+	if duration > 0.0 and current_weapon_model is WeaponModel:
+		_scope_anim_playing = (current_weapon_model as WeaponModel).play_scope_anim(
+			WeaponAnimGroup.AnimSlot.SCOPE_IN, duration
+		)
+
+
+## Start the scope-out transition (ADS toggled off).  Plays the SCOPE_OUT
+## viewmodel anim scaled to the ADS fire's scope_out_time and begins the FOV
+## interpolation back to 90.0.
+func _begin_scope_out() -> void:
+	var fire := _get_ads_fire()
+	var duration: float = fire.scope_out_time if fire != null else 0.0
+	var start_fov: float = _current_fov()
+	var target_fov: float = 90.0
+	if fire != null and fire.fov_change_instant:
+		start_fov = target_fov  # snap: the lerp becomes a no-op
+	_scope_phase = ScopePhase.SCOPING_OUT
+	_scope_elapsed = 0.0
+	_scope_duration = duration
+	_scope_start_fov = start_fov
+	_scope_target_fov = target_fov
+	_scope_anim_playing = false
+	if duration > 0.0 and current_weapon_model is WeaponModel:
+		_scope_anim_playing = (current_weapon_model as WeaponModel).play_scope_anim(
+			WeaponAnimGroup.AnimSlot.SCOPE_OUT, duration
+		)
+
+
+## Abort an in-progress scope transition: reset the state and, if the viewmodel
+## tree was disabled for a scope anim, restore it.
+func _cancel_scope() -> void:
+	if _scope_anim_playing and current_weapon_model is WeaponModel:
+		(current_weapon_model as WeaponModel).finish_scope_anim()
+	_scope_phase = ScopePhase.NONE
+	_scope_elapsed = 0.0
+	_scope_duration = 0.0
+	_scope_anim_playing = false
 #endregion
 
 #region Lifecycle
@@ -277,6 +423,25 @@ func _tick_timers(delta: float) -> void:
 			_is_firing = false
 			_firing_remaining = 0.0
 
+	# Scope transition tick (viewmodel anim + FOV lerp).
+	if _scope_phase != ScopePhase.NONE:
+		_scope_elapsed += delta
+		if _scope_elapsed >= _scope_duration:
+			_scope_phase = ScopePhase.NONE
+			_scope_elapsed = 0.0
+			_scope_duration = 0.0
+			if _scope_anim_playing:
+				_scope_anim_playing = false
+				if current_weapon_model is WeaponModel:
+					(current_weapon_model as WeaponModel).finish_scope_anim()
+
+	# Scoped damage-amp charge — accumulates while fully scoped, resets otherwise.
+	var ads_fire := _get_ads_fire()
+	if is_scoped_in() and ads_fire != null and ads_fire.scoped_damage_amp_max > 1.0:
+		_scoped_charge_time += delta
+	else:
+		_scoped_charge_time = 0.0
+
 	# Spread decay when not actively firing.
 	if _is_ready():
 		var weapon: Weapon = _weapons[current_weapon_index]
@@ -310,17 +475,23 @@ func _tick_timers(delta: float) -> void:
 				_bg_finish_reload(i)
 
 	if _pending_fire:
-		if player_input.primary_fire_held or player_input.secondary_fire_held or player_input.tertiary_fire_held:
-			_pre_fire_timer -= delta
+		var hold_required: bool = false
+		if _is_ready() and _pending_fire_index < _weapons[current_weapon_index].weapon_fires.size():
+			hold_required = _weapons[current_weapon_index].weapon_fires[_pending_fire_index].hold_required_for_pre_shoot_delay
+		var fire_held := player_input.primary_fire_held or player_input.secondary_fire_held or player_input.tertiary_fire_held
+		# Only cancel the pending shot on release when holding is required;
+		# otherwise the shot fires automatically once the delay elapses.
+		if hold_required and not fire_held:
+			_pending_fire = false
+			_stop_shoot_anims()
 		else:
-			_pending_fire = false
-
-		if _pre_fire_timer <= 0.0:
-			_pending_fire = false
-			if multiplayer.is_server():
-				fire_intent(current_weapon_index, _pending_fire_index)
-			else:
-				_do_fire_client()
+			_pre_fire_timer -= delta
+			if _pre_fire_timer <= 0.0:
+				_pending_fire = false
+				if multiplayer.is_server():
+					fire_intent(current_weapon_index, _pending_fire_index)
+				else:
+					_do_fire_client()
 
 func reset() -> void:
 	_is_reloading = false
@@ -338,6 +509,9 @@ func reset() -> void:
 	_is_inspecting = false
 	_ability_fire_interrupt = false
 	_active_ability_name = ""
+	_cancel_scope()
+	_scoped_charge_time = 0.0
+	_current_shot_amp_mult = 1.0
 	_switch_phase = SwitchPhase.IDLE
 	_switch_timer = 0.0
 	_switch_pullout_time = 0.0
@@ -911,6 +1085,32 @@ func _play_weapon_human_shoot_anim(duration: float) -> void:
 	)
 
 
+## Play both shoot animations (first-person weapon + third-person human),
+## stretched to the weapon's full fire cycle (pre-shoot delay + post-shoot delay)
+## so they line up with the shot rate.  Called the moment the trigger is pulled so
+## the visual starts immediately, even when a pre-shoot delay is in effect.
+func _play_shoot_anims(fire: WeaponFire) -> void:
+	var shoot_duration := fire.pre_shoot_delay + fire.post_shoot_delay
+	_play_weapon_shoot_anim(shoot_duration)
+	_play_weapon_human_shoot_anim(shoot_duration)
+
+
+## Stop an in-progress shoot animation and return to the hold pose.  Called when a
+## hold-required shot is released before the pre-shoot delay elapses, so the player
+## sees the shoot anim snap back instead of completing without firing.
+func _stop_shoot_anims() -> void:
+	# Abort the human (third-person) shoot one-shot.
+	if _parent_player != null and _parent_player.animation_tree != null:
+		_parent_player.animation_tree.set(
+			"parameters/" + str(SHOOT_ONESHOT_NODE) + "/request",
+			AnimationNodeOneShot.ONE_SHOT_REQUEST_ABORT
+		)
+	# Abort the weapon's (first-person) shoot one-shot and restore its hold.
+	if current_weapon_model is WeaponModel:
+		(current_weapon_model as WeaponModel).stop_anim(WeaponAnimGroup.AnimSlot.SHOOT)
+	_restart_hold_anims()
+
+
 ## Player pressed the inspect input.  Play the inspect animation (gun + human)
 ## unless one is already playing.
 func _on_inspect_input() -> void:
@@ -1029,6 +1229,7 @@ func _on_weapon_index_changed(previous_index: int = -1) -> void:
 ## load).  [param previous_index] is -1 for an initial load.
 func _begin_switch(previous_index: int) -> void:
 	_stop_inspect()
+	_cancel_scope()
 
 	var old_weapon: Weapon = _weapons[previous_index] if previous_index >= 0 and previous_index < _weapons.size() else null
 	var new_weapon: Weapon = _weapons[current_weapon_index] if not _weapons.is_empty() and current_weapon_index < _weapons.size() else null
@@ -1447,6 +1648,9 @@ func _handle_fire_input(weapon: Weapon, fire_index: int, input_held: bool) -> vo
 	var fire: WeaponFire = weapon.weapon_fires[fire_index]
 
 	if fire.action_type == WeaponFire.ActionType.ADS:
+		# Force-unscope weapons can't re-scope during the post-shoot delay.
+		if _ads_forces_unscope() and _is_in_post_shoot_delay():
+			return
 		toggle_ads_synced.rpc()
 		_fired_this_press[fire_index] = true
 		return
@@ -1494,6 +1698,15 @@ func _handle_fire_input(weapon: Weapon, fire_index: int, input_held: bool) -> vo
 @rpc("any_peer", "call_local")
 func toggle_ads_synced():
 	_parent_player.ads = not _parent_player.ads
+	# Scope transition + viewmodel anim only matter for the local player's own
+	# first-person model.  The `ads` flag itself is still synced to all peers so
+	# third-person models animate correctly.
+	if not _parent_player._is_own_model():
+		return
+	if _parent_player.ads:
+		_begin_scope_in()
+	else:
+		_begin_scope_out()
 
 
 @rpc("any_peer", "call_local")
@@ -1559,6 +1772,16 @@ func _try_fire(weapon_fire_index: int) -> void:
 	# Mark the start of the fire cycle so speed multipliers stay active.
 	_start_firing(weapon, weapon_fire_index)
 
+	# Start the shoot animation the moment the trigger is pulled, so the visual
+	# feedback begins immediately even when a pre-shoot delay is in effect.
+	_play_shoot_anims(fire)
+
+	# Shooting resets the scoped damage amp.  On a pure client this clears the HUD
+	# charge immediately; on the host, fire_intent (called just below) captures
+	# the amp from the charge first and resets it itself.
+	if not multiplayer.is_server():
+		_scoped_charge_time = 0.0
+
 	if pre_delay > 0.0:
 		_pending_fire   = true
 		_pending_fire_index = weapon_fire_index
@@ -1592,6 +1815,10 @@ func fire_weapon_fire(fire: WeaponFire, interrupt_shooting: bool = true, ability
 		return
 	if is_switching():
 		return
+
+	# Ability-fired shots never inherit the scoped damage amp.
+	_current_shot_amp_mult = 1.0
+	_shot_was_scoped = _parent_player.ads
 
 	if fire.bullet_type == WeaponFire.BulletType.PROJECTILE:
 		if fire.multishot_mode == WeaponFire.MultishotMode.BURST and fire.multishot_data.size() > 1:
@@ -1719,6 +1946,15 @@ func fire_intent(weapon_index: int, weapon_fire_index: int) -> void:
 
 	_fire_cooldown = fire.post_shoot_delay * (_parent_player._character.shoot_delay_mult if _parent_player._character else 1.0)
 	_start_firing(weapon, weapon_fire_index)
+
+	# Capture the scoped damage amp + scoped state for this shot before the
+	# force-unscope, then reset the charge so it re-ramps from zero next shot.
+	_current_shot_amp_mult = get_scoped_damage_multiplier()
+	_shot_was_scoped = _parent_player.ads
+	_scoped_charge_time = 0.0
+	# Force-unscope weapons drop out of ADS the moment a shot is fired.
+	if _parent_player.ads and _ads_forces_unscope():
+		toggle_ads_synced.rpc()
 
 	# Self-damage / self-heal on firing (applied once per trigger pull).
 	if fire.self_health_delta_on_shoot != 0.0:
@@ -1854,9 +2090,13 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 			var move_floor: float = weapon_fire.movement_spread * (h_speed / max_speed)
 			_current_spread = maxf(_current_spread, move_floor)
 
-	# Apply weapon spread (shared by hitscan and projectile).
-	if weapon.spread_per_shot > 0.0 or weapon.min_spread > 0.0:
-		_current_spread = minf(maxf(_current_spread, weapon.min_spread) + weapon.spread_per_shot, weapon.max_spread)
+	# Apply weapon spread (shared by hitscan and projectile).  When unscoped, the
+	# minimum-spread floor also includes the weapon's unscoped_spread penalty.
+	var eff_min_spread: float = weapon.min_spread
+	if not _shot_was_scoped:
+		eff_min_spread = maxf(weapon.min_spread, weapon.unscoped_spread)
+	if weapon.spread_per_shot > 0.0 or eff_min_spread > 0.0:
+		_current_spread = minf(maxf(_current_spread, eff_min_spread) + weapon.spread_per_shot, weapon.max_spread)
 		var spread_rad: float = deg_to_rad(_current_spread)
 		var angle: float = randf() * TAU
 		var radius: float = randf() * spread_rad
@@ -1869,10 +2109,13 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 		world_dir = world_dir.normalized()
 
 	if weapon_fire.bullet_type == WeaponFire.BulletType.HITSCAN:
+		# Very short range reads as a melee weapon — no muzzle flash or tracer.
+		var is_melee: bool = weapon_fire.hitscan_range < 10.0
 		var muzzle_node: Node3D = _next_muzzle()
 		var muzzle_pos: Vector3 = muzzle_node.global_position if muzzle_node else current_weapon_model.global_position
 		var flash_color: Color = MuzzleFlash.SCI_COLOR if _parent_player.team == Player.Team.SCI else MuzzleFlash.DEFAULT_COLOR
-		_flash_muzzle_flash.rpc(muzzle_pos, flash_color, world_dir)
+		if not is_melee:
+			_flash_muzzle_flash.rpc(muzzle_pos, flash_color, world_dir)
 
 		var space_state: PhysicsDirectSpaceState3D = _parent_player.get_world_3d().direct_space_state
 		var origin: Vector3 = camera.global_position
@@ -1892,7 +2135,7 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 		var result: Dictionary = space_state.intersect_ray(query)
 
 		if not result.is_empty():
-			_on_hitscan_hit.rpc(result.position, result.normal, muzzle_pos, flash_color)
+			_on_hitscan_hit.rpc(result.position, result.normal, muzzle_pos, flash_color, is_melee)
 			var collider: Node3D = result.collider
 			if collider is HurtboxComponent:
 				if shape_hits != null:
@@ -1909,7 +2152,7 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 				else:
 					var distance := origin.distance_to(result.position)
 					var mult := _compute_falloff_multiplier(weapon, weapon_fire_index, distance)
-					var damage := weapon_fire.hitscan_damage * mult
+					var damage := weapon_fire.hitscan_damage * mult * _current_shot_amp_mult
 					var is_headshot := false
 					if collider.is_head and not is_equal_approx(weapon_fire.headshot_multiplier, 1.0):
 						damage *= weapon_fire.headshot_multiplier
@@ -1946,7 +2189,7 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 			if weapon_fire.hitscan_range >= 1000000000.0 / 10.0:
 				var far_pos: Vector3 = origin + world_dir * 10000.0
 				var fake_normal: Vector3 = -world_dir
-				_on_hitscan_hit.rpc(far_pos, fake_normal, muzzle_pos, flash_color)
+				_on_hitscan_hit.rpc(far_pos, fake_normal, muzzle_pos, flash_color, false)
 
 	elif weapon_fire.bullet_type == WeaponFire.BulletType.PROJECTILE:
 		_spawn_projectile_on_server.rpc_id(
@@ -1963,7 +2206,7 @@ func _apply_shape_damage(weapon: Weapon, weapon_fire_index: int, shape_hits: Dic
 		var collider: HurtboxComponent = hit["collider"]
 		var distance: float = hit["distance"]
 		var mult: float = _compute_falloff_multiplier(weapon, weapon_fire_index, distance)
-		var damage: float = weapon_fire.hitscan_damage * mult
+		var damage: float = weapon_fire.hitscan_damage * mult * _current_shot_amp_mult
 		var is_headshot := false
 		if hit["is_head"] and not is_equal_approx(weapon_fire.headshot_multiplier, 1.0):
 			damage *= weapon_fire.headshot_multiplier
@@ -2146,23 +2389,26 @@ func _flash_muzzle_flash(start_position: Vector3, flash_color: Color, direction:
 	muzzle_flash.fire(flash_color)
 
 @rpc("any_peer", "call_local")
-func _on_hitscan_hit(hit_position: Vector3, hit_normal: Vector3, start_position: Vector3, flash_color: Color) -> void:
-	var bullet_hole: Node3D = _bullet_hole_scene.instantiate() as Node3D
-	projectile_spawn_parent.add_child(bullet_hole)
-	bullet_hole.global_position        = hit_position
-	bullet_hole.global_transform.basis = Basis(Quaternion(Vector3.UP, hit_normal))
-	# Timer is a child of bullet_hole Ã¢â‚¬â€ if bullet_hole is freed (parent cleanup),
+func _on_hitscan_hit(hit_position: Vector3, hit_normal: Vector3, start_position: Vector3, flash_color: Color, melee: bool = false) -> void:
+	# Melee hits leave a scratch decal instead of a bullet hole, and no tracer.
+	var decal_scene: PackedScene = _scratch_scene if melee else _bullet_hole_scene
+	var decal: Node3D = decal_scene.instantiate() as Node3D
+	projectile_spawn_parent.add_child(decal)
+	decal.global_position        = hit_position
+	decal.global_transform.basis = Basis(Quaternion(Vector3.UP, hit_normal))
+	# Timer is a child of the decal Ã¢â‚¬â€ if the decal is freed (parent cleanup),
 	# the timer is freed too, so the timeout never fires with a stale reference.
 	var timer := Timer.new()
 	timer.one_shot = true
 	timer.wait_time = 7.0
-	timer.timeout.connect(bullet_hole.queue_free)
-	bullet_hole.add_child(timer)
+	timer.timeout.connect(decal.queue_free)
+	decal.add_child(timer)
 	timer.start()
 
-	var tracer: Tracer = _tracer_scene.instantiate() as Tracer
-	projectile_spawn_parent.add_child(tracer)
-	tracer.fire(start_position, hit_position, flash_color)
+	if not melee:
+		var tracer: Tracer = _tracer_scene.instantiate() as Tracer
+		projectile_spawn_parent.add_child(tracer)
+		tracer.fire(start_position, hit_position, flash_color)
 
 
 @rpc("any_peer", "call_local")
@@ -2188,11 +2434,11 @@ func _play_shoot_sound(weapon_fire_index: int) -> void:
 	if shoot_animation and shoot_animation.has_animation("shoot"):
 		shoot_animation.stop()
 		shoot_animation.play("shoot")
-	# Play both shoot animations (weapon + human), stretched to the weapon's fire
-	# cycle (pre-shoot delay + post-shoot delay) so they line up with the shot rate.
-	var shoot_duration := fire.pre_shoot_delay + fire.post_shoot_delay
-	_play_weapon_shoot_anim(shoot_duration)
-	_play_weapon_human_shoot_anim(shoot_duration)
+	# The shoot animation already started on trigger pull for the player who owns
+	# this view (see _try_fire); replay it only for remote viewers, who first learn
+	# about the shot here.
+	if not _parent_player._is_own_model():
+		_play_shoot_anims(fire)
 
 ## Played when you hit someone, called by attribute component
 @rpc("any_peer", "call_local")

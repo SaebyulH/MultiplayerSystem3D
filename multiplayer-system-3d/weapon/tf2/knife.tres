@@ -7,9 +7,9 @@
 [ext_resource type="AudioStream" uid="uid://cqbknmbhlwhu" path="res://assets/sounds/reload.mp3" id="4_2myur"]
 [ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="5_r200w"]
 [ext_resource type="AudioStream" uid="uid://4v1iw33cexcc" path="res://assets/sounds/freesound_community-knife-slice-41231.mp3" id="6_2metf"]
-[ext_resource type="PackedScene" uid="uid://dv3kpihd8amww" path="res://weapon/tf2/knife.tscn" id="7_usffl"]
 [ext_resource type="Script" uid="uid://djg0ti1n45f8b" path="res://weapon/weapon_fire.gd" id="8_s81mx"]
 [ext_resource type="Script" uid="uid://bv0g4rnfelqch" path="res://components/status_effect/status_effect.gd" id="9_mey0f"]
+[ext_resource type="PackedScene" uid="uid://34eeant5qeu2" path="res://weapon/assault_weapons/combat_knife.tscn" id="10_mey0f"]
 
 [sub_resource type="Resource" id="Resource_mey0f"]
 script = ExtResource("3_0yaxy")
@@ -17,11 +17,13 @@ script = ExtResource("3_0yaxy")
 [sub_resource type="Resource" id="Resource_rx36s"]
 script = ExtResource("8_s81mx")
 automatic = true
-post_shoot_delay = 0.8
+pre_shoot_delay = 0.33
+hold_required_for_pre_shoot_delay = true
+post_shoot_delay = 0.6
 recoil_data = SubResource("Resource_mey0f")
-hitscan_damage = 20.0
+hitscan_damage = 50.0
 hitscan_range = 2.0
-backshot_multiplier = 1000.0
+backshot_multiplier = 1.5
 multishot_data = Array[Vector3]([Vector3(-0.4, 0, -1.5), Vector3(-0.2, 0, -1.5), Vector3(0, 0, -1.5), Vector3(0.2, 0, -1.5), Vector3(0.4, 0, -1.5)])
 multishot_mode = 2
 shoot_sound = ExtResource("6_2metf")
@@ -34,8 +36,7 @@ display_name = "Knife"
 has_infinite_ammo = true
 player_speed_multiplier = 1.1
 weapon_fires = Array[ExtResource("8_s81mx")]([SubResource("Resource_rx36s")])
-weapon_model = ExtResource("7_usffl")
-weapon_offset = Vector3(0.2, -0.4, -0.55)
+weapon_model = ExtResource("10_mey0f")
 killfeed_icon = ExtResource("1_s81mx")
 reload_sound = ExtResource("4_2myur")
 metadata/_custom_type_script = "uid://qjf4ciit3dqy"

@@ -47,6 +47,9 @@ func reset():
 @export_group("Spread")
 ## Minimum spread in degrees — always applied, even on the first shot.
 @export var min_spread: float = 0.0
+## Extra minimum spread (degrees) applied only when firing unscoped (not ADS).
+## 0.0 = no penalty.  Added on top of min_spread.
+@export var unscoped_spread: float = 0.0
 ## Degrees of spread added per shot.
 @export var spread_per_shot: float = 0.0
 ## Maximum accumulated spread in degrees (cone half-angle).

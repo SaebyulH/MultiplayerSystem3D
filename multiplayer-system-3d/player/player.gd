@@ -217,7 +217,7 @@ var _pose_map: PackedInt32Array = PackedInt32Array()
 
 # Slope acceleration — lets gravity build real speed downhill.
 @export var slope_accel_multiplier: float = 4.0   # accel multiplier on slopes
-@export var slope_gravity: float = 20.0            # downhill force on slopes (units/s²)
+@export var slope_gravity: float = 40.0            # downhill force on slopes (units/s²)
 @export var min_slope_angle: float = 5.0           # degrees, min slope for accel boost
 
 # Standing friction ramps UP at high speeds to kill momentum.
@@ -940,6 +940,19 @@ func _air_accelerate(wish_dir: Vector3, wish_speed: float, delta: float) -> void
 	velocity.x = vel.x
 	velocity.z = vel.z
 
+
+func _process(_delta: float) -> void:
+	# Scope FOV + mouse sensitivity are visual/local, so update them every
+	# rendered frame rather than inside the rollback tick (which re-simulates and
+	# made the ADS zoom step/jitter).
+	const BASE_MOUSE_SENS: float = 0.002
+	const BASE_FOV: float = 90.0
+	camera.fov = weapon_controller.get_scope_fov()
+	var fov_ratio: float = camera.fov / BASE_FOV
+	body.mouse_sens_x = BASE_MOUSE_SENS * fov_ratio
+	body.mouse_sens_y = BASE_MOUSE_SENS * fov_ratio
+
+
 func _apply_movement_from_input(delta):
 	_force_update_is_on_floor()
 	var on_floor := is_on_floor()
@@ -1186,17 +1199,6 @@ func _apply_movement_from_input(delta):
 	var knockback_decay: float = velocity.length() ** 2 * 10
 	knockback_velocity = knockback_velocity.move_toward(Vector3.ZERO, knockback_decay * delta)
 
-	const BASE_MOUSE_SENS: float = 0.002
-	const BASE_FOV: float = 90.0
-
-	if ads:
-		camera.fov = weapon_controller.get_ads_zoom_fov()
-	else:
-		camera.fov = 90.0
-
-	var fov_ratio: float = camera.fov / BASE_FOV
-	body.mouse_sens_x = BASE_MOUSE_SENS * fov_ratio
-	body.mouse_sens_y = BASE_MOUSE_SENS * fov_ratio
 	# Cap head turn speed while charging (0 = unlimited).
 	body.max_turn_speed = (_charge_ability.turn_speed if _charge_ability else 1.5) if charge_time > 0.0 else 0.0
 
