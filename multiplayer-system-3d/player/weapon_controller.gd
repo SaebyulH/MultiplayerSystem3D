@@ -1801,7 +1801,7 @@ func _try_fire(weapon_fire_index: int) -> void:
 func _do_fire_client() -> void:
 	if not _is_ready():
 		return
-	_fire_cooldown = _weapons[current_weapon_index].post_shoot_delay * (_parent_player._character.shoot_delay_mult if _parent_player._character else 1.0)
+	_fire_cooldown = _weapons[current_weapon_index].weapon_fires[_pending_fire_index].post_shoot_delay * (_parent_player._character.shoot_delay_mult if _parent_player._character else 1.0)
 	fire_intent.rpc_id(1, current_weapon_index, _pending_fire_index)
 
 
