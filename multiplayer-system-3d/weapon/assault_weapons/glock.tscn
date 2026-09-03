@@ -67,8 +67,6 @@ fadeout_time = 0.06
 animation = &"Glock Human Pullout"
 
 [sub_resource type="AnimationNodeOneShot" id="AnimationNodeOneShot_s7qer"]
-fadein_time = 0.06
-fadeout_time = 0.06
 
 [sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_pullout"]
 
@@ -107,7 +105,7 @@ fadeout_time = 0.02
 [sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_wpyo2"]
 
 [sub_resource type="AnimationNodeBlendTree" id="AnimationNodeBlendTree_rucvb"]
-graph_offset = Vector2(1775.4106, -485.34412)
+graph_offset = Vector2(818.79474, -503.52466)
 nodes/output/position = Vector2(3260, -200)
 nodes/ShootAnim/node = SubResource("AnimationNodeAnimation_jfgyi")
 nodes/ShootAnim/position = Vector2(2420, 0)

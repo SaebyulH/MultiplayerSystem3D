@@ -2111,6 +2111,14 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 	if weapon_fire.bullet_type == WeaponFire.BulletType.HITSCAN:
 		# Very short range reads as a melee weapon — no muzzle flash or tracer.
 		var is_melee: bool = weapon_fire.hitscan_range < 10.0
+		# Direction that rotates the melee scratch decal around the surface normal:
+		# the swing direction when the weapon sweeps multiple directions, or the
+		# camera's up (vertical from the player's view) for a single direction.
+		var orientation_dir: Vector3 = camera.global_transform.basis.y
+		if is_melee and weapon_fire.multishot_data.size() > 1:
+			var swing_local: Vector3 = weapon_fire.multishot_data[weapon_fire.multishot_data.size() - 1] - weapon_fire.multishot_data[0]
+			if swing_local.length_squared() > 0.000001:
+				orientation_dir = (camera.global_transform.basis * swing_local).normalized()
 		var muzzle_node: Node3D = _next_muzzle()
 		var muzzle_pos: Vector3 = muzzle_node.global_position if muzzle_node else current_weapon_model.global_position
 		var flash_color: Color = MuzzleFlash.SCI_COLOR if _parent_player.team == Player.Team.SCI else MuzzleFlash.DEFAULT_COLOR
@@ -2135,7 +2143,7 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 		var result: Dictionary = space_state.intersect_ray(query)
 
 		if not result.is_empty():
-			_on_hitscan_hit.rpc(result.position, result.normal, muzzle_pos, flash_color, is_melee)
+			_on_hitscan_hit.rpc(result.position, result.normal, muzzle_pos, flash_color, is_melee, orientation_dir)
 			var collider: Node3D = result.collider
 			if collider is HurtboxComponent:
 				if shape_hits != null:
@@ -2189,7 +2197,7 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 			if weapon_fire.hitscan_range >= 1000000000.0 / 10.0:
 				var far_pos: Vector3 = origin + world_dir * 10000.0
 				var fake_normal: Vector3 = -world_dir
-				_on_hitscan_hit.rpc(far_pos, fake_normal, muzzle_pos, flash_color, false)
+				_on_hitscan_hit.rpc(far_pos, fake_normal, muzzle_pos, flash_color, false, Vector3.ZERO)
 
 	elif weapon_fire.bullet_type == WeaponFire.BulletType.PROJECTILE:
 		_spawn_projectile_on_server.rpc_id(
@@ -2389,13 +2397,16 @@ func _flash_muzzle_flash(start_position: Vector3, flash_color: Color, direction:
 	muzzle_flash.fire(flash_color)
 
 @rpc("any_peer", "call_local")
-func _on_hitscan_hit(hit_position: Vector3, hit_normal: Vector3, start_position: Vector3, flash_color: Color, melee: bool = false) -> void:
+func _on_hitscan_hit(hit_position: Vector3, hit_normal: Vector3, start_position: Vector3, flash_color: Color, melee: bool = false, orientation_dir: Vector3 = Vector3.ZERO) -> void:
 	# Melee hits leave a scratch decal instead of a bullet hole, and no tracer.
 	var decal_scene: PackedScene = _scratch_scene if melee else _bullet_hole_scene
 	var decal: Node3D = decal_scene.instantiate() as Node3D
 	projectile_spawn_parent.add_child(decal)
-	decal.global_position        = hit_position
-	decal.global_transform.basis = Basis(Quaternion(Vector3.UP, hit_normal))
+	decal.global_position = hit_position
+	if melee:
+		decal.global_transform.basis = _melee_decal_basis(hit_normal, orientation_dir)
+	else:
+		decal.global_transform.basis = Basis(Quaternion(Vector3.UP, hit_normal))
 	# Timer is a child of the decal Ã¢â‚¬â€ if the decal is freed (parent cleanup),
 	# the timer is freed too, so the timeout never fires with a stale reference.
 	var timer := Timer.new()
@@ -2409,6 +2420,21 @@ func _on_hitscan_hit(hit_position: Vector3, hit_normal: Vector3, start_position:
 		var tracer: Tracer = _tracer_scene.instantiate() as Tracer
 		projectile_spawn_parent.add_child(tracer)
 		tracer.fire(start_position, hit_position, flash_color)
+
+
+## Build the basis for a melee scratch decal: flat against the surface
+## (normal to [param normal]) but rotated around the normal so the scratch's
+## long axis follows [param orientation_dir] projected onto the surface.
+func _melee_decal_basis(normal: Vector3, orientation_dir: Vector3) -> Basis:
+	normal = normal.normalized()
+	var tangent := orientation_dir - normal * orientation_dir.dot(normal)
+	if tangent.length_squared() < 0.000001:
+		tangent = Vector3.RIGHT - normal * normal.dot(Vector3.RIGHT)
+		if tangent.length_squared() < 0.000001:
+			tangent = Vector3.UP - normal * normal.dot(Vector3.UP)
+	tangent = tangent.normalized()
+	var bitangent := tangent.cross(normal).normalized()
+	return Basis(tangent, normal, bitangent)
 
 
 @rpc("any_peer", "call_local")

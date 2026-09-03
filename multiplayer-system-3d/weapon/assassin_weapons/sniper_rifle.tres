@@ -24,12 +24,6 @@ script = ExtResource("3_yhfpo")
 
 [sub_resource type="Resource" id="Resource_aikgn"]
 script = ExtResource("7_b7nwq")
-scope_in_time = null
-scope_out_time = null
-fov_change_instant = null
-force_unscope_during_post_shoot_delay = null
-scoped_damage_amp_max = null
-scoped_damage_amp_time = null
 recoil_data = SubResource("Resource_so61o")
 hitscan_damage = 90.0
 headshot_multiplier = 5.0

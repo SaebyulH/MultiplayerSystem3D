@@ -61,8 +61,6 @@ fadeout_time = 0.06
 animation = &"Ak Human Pullout"
 
 [sub_resource type="AnimationNodeOneShot" id="AnimationNodeOneShot_s7qer"]
-fadein_time = 0.06
-fadeout_time = 0.06
 
 [sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_pullout"]
 
@@ -101,7 +99,7 @@ fadeout_time = 0.02
 [sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_wpyo2"]
 
 [sub_resource type="AnimationNodeBlendTree" id="AnimationNodeBlendTree_h44ov"]
-graph_offset = Vector2(1312.1736, -685.35205)
+graph_offset = Vector2(1145.3092, -826.25946)
 nodes/output/position = Vector2(3260, -200)
 nodes/ShootAnim/node = SubResource("AnimationNodeAnimation_jfgyi")
 nodes/ShootAnim/position = Vector2(2420, 0)
@@ -156,7 +154,7 @@ anim_groups = Array[ExtResource("3_a603s")]([SubResource("Resource_65viv"), SubR
 transform = Transform3D(1, 0, 0, 0, 0.99999964, 0, 0, 0, 0.99999964, 0, 0, 0)
 
 [node name="Skeleton3D" parent="Ak2/Ak" index="0" unique_id=1949791169]
-bones/0/position = Vector3(-0.10229178, 1.5023776, 0.30651617)
+bones/0/position = Vector3(-0.10229178, 1.5022472, 0.3065017)
 bones/0/rotation = Quaternion(-0.003901305, 0.99995303, 0.0061588297, 0.0063979407)
 bones/1/position = Vector3(-6.600763e-09, 0.09451035, -0.11628167)
 bones/2/position = Vector3(-2.7187752e-08, -0.050684985, -0.15147687)
@@ -173,7 +171,7 @@ surface_material_override/0 = ExtResource("5_a603s")
 surface_material_override/0 = ExtResource("5_a603s")
 
 [node name="BoneAttachment3D" type="BoneAttachment3D" parent="Ak2/Ak/Skeleton3D" index="5" unique_id=1431857578]
-transform = Transform3D(-0.9998877, -0.007881046, 0.012747222, -0.007723435, 0.99989325, 0.012366998, -0.012843334, 0.012267153, -0.9998421, -0.10229178, 1.5023776, 0.30651617)
+transform = Transform3D(-0.9998877, -0.007881046, 0.012747222, -0.007723435, 0.99989325, 0.012366998, -0.012843334, 0.012267153, -0.9998421, -0.10229178, 1.5022472, 0.3065017)
 bone_name = "Root"
 bone_idx = 0
 

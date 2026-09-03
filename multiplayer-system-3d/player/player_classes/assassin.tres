@@ -5,7 +5,6 @@
 [ext_resource type="Script" uid="uid://cbg4mqtqfaara" path="res://player/class.gd" id="4_oiapg"]
 [ext_resource type="Resource" uid="uid://b3tknjp4eb7lr" path="res://weapon/assassin_weapons/rifle.tres" id="5_blhw6"]
 [ext_resource type="Resource" uid="uid://dngitmfspeu7j" path="res://weapon/assassin_weapons/bow.tres" id="5_oiapg"]
-[ext_resource type="Resource" uid="uid://cw2aegbbgpv5i" path="res://weapon/shared/kiss_of_death.tres" id="6_gwsf4"]
 [ext_resource type="Resource" uid="uid://bff06umbrrcef" path="res://weapon/shared/revolver.tres" id="7_3tebw"]
 [ext_resource type="Resource" uid="uid://cteiol02rkdkk" path="res://weapon/assistance_weapons/bat.tres" id="7_id5m6"]
 [ext_resource type="Resource" uid="uid://b6kvetov2dlsv" path="res://weapon/assassin_weapons/heavy_rifle.tres" id="8_arg6d"]
@@ -22,6 +21,6 @@ script = ExtResource("4_oiapg")
 class_display_name = "Assassin"
 primary_weapons = Array[ExtResource("1_lj83e")]([ExtResource("5_blhw6"), ExtResource("2_lj83e"), ExtResource("8_arg6d"), ExtResource("5_oiapg"), ExtResource("7_3tebw"), ExtResource("11_tpx7a")])
 secondary_weapons = Array[ExtResource("1_lj83e")]([ExtResource("15_gwsf4"), ExtResource("14_tpx7a")])
-melee_weapons = Array[ExtResource("1_lj83e")]([ExtResource("13_melee"), ExtResource("6_gwsf4"), ExtResource("7_id5m6")])
+melee_weapons = Array[ExtResource("1_lj83e")]([ExtResource("13_melee"), ExtResource("7_id5m6")])
 characters = Array[ExtResource("10_char")]([ExtResource("11_char"), ExtResource("12_char")])
 metadata/_custom_type_script = "uid://cbg4mqtqfaara"

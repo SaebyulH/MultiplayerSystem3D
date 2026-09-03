@@ -17,9 +17,9 @@ script = ExtResource("3_0yaxy")
 [sub_resource type="Resource" id="Resource_rx36s"]
 script = ExtResource("8_s81mx")
 automatic = true
-pre_shoot_delay = 0.33
+pre_shoot_delay = 0.16
 hold_required_for_pre_shoot_delay = true
-post_shoot_delay = 0.6
+post_shoot_delay = 0.3
 recoil_data = SubResource("Resource_mey0f")
 hitscan_damage = 50.0
 hitscan_range = 2.0

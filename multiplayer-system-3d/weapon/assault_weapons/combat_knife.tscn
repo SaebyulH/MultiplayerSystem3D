@@ -21,7 +21,7 @@ metadata/_custom_type_script = "uid://cutc4qk6eibrf"
 script = ExtResource("3_qlblj")
 slot = 3
 gun_anim = &"Knife Human Inspect"
-human_anim = &"Human Knife Insspect"
+human_anim = &"Human Knife Inspect"
 metadata/_custom_type_script = "uid://cutc4qk6eibrf"
 
 [sub_resource type="Resource" id="Resource_a603s"]
@@ -57,8 +57,6 @@ fadeout_time = 0.06
 animation = &"Knife Human Pullout"
 
 [sub_resource type="AnimationNodeOneShot" id="AnimationNodeOneShot_s7qer"]
-fadein_time = 0.06
-fadeout_time = 0.06
 
 [sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_pullout"]
 
@@ -85,7 +83,7 @@ fadeout_time = 0.06
 [sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_anqxl"]
 
 [sub_resource type="AnimationNodeBlendTree" id="AnimationNodeBlendTree_m1dvp"]
-graph_offset = Vector2(1228.3304, -633.0081)
+graph_offset = Vector2(1182.9971, -725.0081)
 nodes/output/position = Vector2(2920, -320)
 nodes/PutawayOneShot/node = SubResource("AnimationNodeOneShot_g4c7l")
 nodes/PutawayOneShot/position = Vector2(1680, -880)
