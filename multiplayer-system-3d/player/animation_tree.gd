@@ -11,7 +11,8 @@ extends AnimationTree
 # constant speed, these give a fast initial response that eases into the
 # target — feels responsive on input but never abrupt on arrival.
 const DIRECTION_SMOOTH_RATE: float = 18.0
-const GROUND_ENTER_RATE: float = 14.0
+const SPRINT_ENTER_RATE: float = 14.0
+const CROUCH_ENTER_RATE: float = 9.0
 const CROUCH_RETURN_RATE: float = 7.0
 const AIR_ENTER_RATE: float = 16.0
 const AIR_EXIT_RATE: float = 10.0
@@ -55,11 +56,16 @@ func _process(delta: float) -> void:
 		target_ground = 1.0
 
 	var current_ground: float = get("parameters/CrouchWalkSprintBlend3/blend_amount")
-	# Enter crouch normally, but return from crouch more gradually so the
-	# crouch animation doesn't abruptly snap back into the walk animation.
-	var ground_rate: float = GROUND_ENTER_RATE
-	if current_ground < 0.0 and target_ground >= 0.0:
+
+	# Pick a rate based on which transition is happening: crouch has its
+	# own smoother entry and an even gentler return, sprint keeps its
+	# punchier default rate.
+	var ground_rate: float = SPRINT_ENTER_RATE
+	if target_ground < 0.0:
+		ground_rate = CROUCH_ENTER_RATE
+	elif current_ground < 0.0 and target_ground >= 0.0:
 		ground_rate = CROUCH_RETURN_RATE
+
 	set(
 		"parameters/CrouchWalkSprintBlend3/blend_amount",
 		_smooth_towards(current_ground, target_ground, ground_rate, delta)
