@@ -1,5 +1,5 @@
 shader_type spatial;
-render_mode unshaded, cull_front, depth_test_disabled;
+render_mode unshaded, cull_front, depth_test_disabled, blend_mix;
 
 // X-ray outline used for the wallhack reveal.  Applied as a mesh's
 // material_override, it inflates the silhouette along the surface normals and

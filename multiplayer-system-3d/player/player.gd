@@ -295,6 +295,21 @@ var _outline_meshes: Array[MeshInstance3D] = []
 var _wallhack_outline_enabled := false
 var _wallhack_outline_color := ALLY_OUTLINE_COLOR
 
+## Teammate wallhack outlines fade out after being occluded this long (to avoid
+## constant visual noise), then fade over TEAM_WALLHACK_FADE_TIME seconds.
+const TEAM_WALLHACK_FADE_DELAY := 3.0
+const TEAM_WALLHACK_FADE_TIME := 1.0
+## Player name -> seconds spent occluded (teammates only).
+var _teammate_occluded_time: Dictionary = {}
+
+## Set by the local viewer each frame: whether they can currently "see" this
+## player — directly (not occluded) or revealed through a wallhack.  Read by
+## damage numbers and the health bar.
+var _seen_by_local := true
+
+## 2D health-bar reveal UI (projected above the head, like a damage number).
+var _health_bar: Label = null
+
 # Stored so late-joining peers can be synced with the correct weapon models.
 var _loadout_primary_path: String = ""
 var _loadout_secondary_path: String = ""
@@ -372,6 +387,24 @@ func _ready() -> void:
 	# Wallhack outline material — one shared instance per player.
 	_outline_material = ShaderMaterial.new()
 	_outline_material.shader = WALLHACK_OUTLINE_SHADER
+
+	# Health-bar reveal UI: a 2D Label on its own CanvasLayer, projected above
+	# the head like a damage number (constant screen size regardless of distance).
+	var layer := CanvasLayer.new()
+	layer.layer = 3
+	layer.name = "HealthBarLayer"
+	add_child(layer)
+	_health_bar = Label.new()
+	_health_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_health_bar.add_theme_color_override("font_color", Color(0.35, 0.95, 0.35))
+	_health_bar.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+	_health_bar.add_theme_constant_override("outline_size", 4)
+	_health_bar.add_theme_font_size_override("font_size", 22)
+	_health_bar.visible = false
+	layer.add_child(_health_bar)
+
+	# The old world-space label is superseded by the 2D bar above.
+	$Body/HealthBarPublic.hide()
 
 	despawn()
 
@@ -976,7 +1009,8 @@ func _process(_delta: float) -> void:
 	body.mouse_sens_x = BASE_MOUSE_SENS * fov_ratio
 	body.mouse_sens_y = BASE_MOUSE_SENS * fov_ratio
 
-	_update_visibility()
+	_update_health_bar()
+	_update_visibility(_delta)
 
 
 func _apply_movement_from_input(delta):
@@ -1560,16 +1594,28 @@ func set_wallhack_outline(enabled: bool, color: Color = ALLY_OUTLINE_COLOR) -> v
 			m.material_override = _outline_material if enabled else null
 
 
-## Show or hide this player's floating health bar for the local viewer.
+## Show or hide this player's 2D health bar for the local viewer.
 func set_public_health_visible(show: bool) -> void:
-	var lbl: Label3D = $Body/HealthBarPublic
-	if lbl == null:
+	if _health_bar == null:
 		return
 	if show:
-		lbl.text = str(int(attribute_component.health)) if attribute_component else ""
-		lbl.visible = true
-	else:
-		lbl.visible = false
+		_health_bar.text = str(int(attribute_component.health)) if attribute_component else ""
+	_health_bar.visible = show
+
+
+## Project the 2D health bar above the head each frame.  Moves it off-screen
+## when the target is behind the camera.
+func _update_health_bar() -> void:
+	if _health_bar == null or not _health_bar.visible:
+		return
+	var cam := get_viewport().get_camera_3d()
+	if cam == null:
+		return
+	var world_pos := global_position + Vector3(0.0, 2.2, 0.0)
+	if cam.is_position_behind(world_pos):
+		_health_bar.position = Vector2(-10000.0, -10000.0)
+		return
+	_health_bar.position = cam.unproject_position(world_pos) - _health_bar.size * 0.5
 
 
 ## True when [param other] is on the same (non-FFA) team as this player.
@@ -1592,19 +1638,17 @@ func _is_occluded_by_wall(other: Player) -> bool:
 
 
 ## Per-viewer update: decide, for every other player, whether the local client
-## should reveal their outline (through walls) and/or their health bar.  Runs
-## only on the local player's node, so exactly once per client.
-func _update_visibility() -> void:
+## should reveal their outline (through walls) and/or their health bar, and
+## record whether each player is currently "seen".  Runs only on the local
+## player's node, so exactly once per client.
+func _update_visibility(delta: float) -> void:
 	if not _is_own_model():
 		return
 	var sem := status_effect_manager
 	if sem == null:
 		return
 	var i_wallhack := sem.has_effect("wallhacking")
-	# Ghost's passive reveals enemy health directly from the character, so it
-	# still works even if the permanent see_enemy_health marker hasn't synced yet.
-	var i_see_health := sem.has_effect("see_enemy_health") \
-		or (_character != null and _character.passive_see_enemy_health)
+	var i_see_health := _character != null and _character.passive_see_enemy_health
 
 	for node in get_tree().get_nodes_in_group("players"):
 		var other := node as Player
@@ -1620,7 +1664,7 @@ func _update_visibility() -> void:
 			var ally := is_teammate_of(other)
 			var enemy := _is_enemy_of(other)
 
-			# Outline: reveal a teammate or enemy through walls.
+			# Whether a through-wall outline applies to this player.
 			var outline_allowed := false
 			if ally and osem.has_effect("wallhacked_team"):
 				outline_allowed = true
@@ -1630,19 +1674,45 @@ func _update_visibility() -> void:
 			elif enemy and i_wallhack:
 				outline_allowed = true
 				outline_color = ENEMY_OUTLINE_COLOR
-			if outline_allowed:
-				show_outline = _is_occluded_by_wall(other)
 
-			# Health: reveal a teammate or enemy's health bar.
-			if ally and osem.has_effect("health_visible_team"):
-				show_health = true
-			elif enemy and osem.has_effect("health_visible_enemy"):
-				show_health = true
-			elif enemy and i_see_health:
+			var occluded := _is_occluded_by_wall(other)
+
+			# Outline shows only while occluded.  Teammate outlines fade out
+			# after being behind a wall for a while to reduce distraction.
+			if outline_allowed and occluded:
+				if ally:
+					var t: float = _teammate_occluded_time.get(other.name, 0.0) + delta
+					_teammate_occluded_time[other.name] = t
+					outline_color.a = _teammate_outline_alpha(t)
+					show_outline = outline_color.a > 0.0
+				else:
+					show_outline = true
+			else:
+				_teammate_occluded_time[other.name] = 0.0
+
+			# "Seen" = directly visible OR revealed through a (non-faded) wallhack.
+			var seen := (not occluded) or show_outline
+			other._seen_by_local = seen
+
+			# Health: reveal when the viewer is allowed to see this player's
+			# health, and they're currently "seen".
+			var can_see_health := (ally and osem.has_effect("health_visible_team")) \
+				or (enemy and osem.has_effect("health_visible_enemy")) \
+				or (enemy and i_see_health)
+			if can_see_health and seen:
 				show_health = true
 
 		other.set_wallhack_outline(show_outline, outline_color)
 		other.set_public_health_visible(show_health)
+
+
+## Outline alpha for a teammate that has been occluded for [param t] seconds:
+## full opacity for the first TEAM_WALLHACK_FADE_DELAY seconds, then a smooth
+## fade to transparent over TEAM_WALLHACK_FADE_TIME seconds.
+func _teammate_outline_alpha(t: float) -> float:
+	if t <= TEAM_WALLHACK_FADE_DELAY:
+		return 1.0
+	return clampf(1.0 - (t - TEAM_WALLHACK_FADE_DELAY) / TEAM_WALLHACK_FADE_TIME, 0.0, 1.0)
 
 
 # ── Always-on passive status effects ───────────────────────────────────────
@@ -1657,8 +1727,6 @@ func _apply_passive_effects() -> void:
 		return
 	_apply_flag_effect("wallhacked_team", "Wallhacked (Team)", true)
 	_apply_flag_effect("health_visible_team", "Health Visible (Team)", true)
-	if _character and _character.passive_see_enemy_health:
-		_apply_flag_effect("see_enemy_health", "Enemy Health Vision", true)
 
 
 ## Create and apply a (typically permanent) marker status effect.

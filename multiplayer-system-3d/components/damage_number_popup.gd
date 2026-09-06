@@ -126,6 +126,12 @@ func _process(delta: float) -> void:
 	if camera.is_position_behind(proj_pos):
 		visible = false
 		return
+	# Hide when the target isn't currently "seen" by the viewer — occluded and
+	# not revealed through a wallhack.
+	var p := _target_node as Player
+	if p != null and not p._seen_by_local:
+		visible = false
+		return
 	visible = true
 
 	position = screen_pos - size * 0.5
