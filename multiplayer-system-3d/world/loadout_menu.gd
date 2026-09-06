@@ -33,6 +33,7 @@ var _info_label: RichTextLabel
 # Character panel
 var _character_viewport: SubViewport
 var _character_preview_root: Node3D = null
+var _character_preview_model: Node3D = null
 var _character_dragging: bool = false
 var _character_drag_moved: bool = false
 var _character_wrap_style: StyleBoxFlat = null
@@ -358,36 +359,93 @@ func _build_action_bar() -> Control:
 func _build_character_picker() -> void:
 	_character_picker = PopupPanel.new()
 	_character_picker.name = "CharacterPicker"
+	# Translucent popup: a barely-there dark tint so the loadout stays visible behind it.
+	var popup_style := StyleBoxFlat.new()
+	popup_style.bg_color = Color(0.04, 0.05, 0.09, 0.72)
+	popup_style.border_color = Color(0.4, 0.45, 0.55, 0.8)
+	popup_style.set_border_width_all(2)
+	popup_style.set_corner_radius_all(12)
+	popup_style.content_margin_left = 24
+	popup_style.content_margin_right = 24
+	popup_style.content_margin_top = 20
+	popup_style.content_margin_bottom = 24
+	_character_picker.add_theme_stylebox_override("panel", popup_style)
+	_character_picker.popup_hide.connect(_on_picker_closed)
+	_character_picker.about_to_popup.connect(_on_picker_opened)
 	_canvas.add_child(_character_picker)
 
 	var vb := VBoxContainer.new()
 	vb.add_theme_constant_override("separation", 10)
-	vb.custom_minimum_size = Vector2(540, 0)
+	vb.custom_minimum_size = Vector2(760, 0)
 	_character_picker.add_child(vb)
 
 	var title := Label.new()
 	title.text = "SELECT AGENT"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 22)
+	title.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+	title.add_theme_constant_override("outline_size", 4)
+	title.add_theme_font_size_override("font_size", 24)
 	title.add_theme_color_override("font_color", Color(0.92, 0.92, 0.92))
 	vb.add_child(title)
 
-	var grid := GridContainer.new()
-	grid.columns = 2
-	grid.add_theme_constant_override("h_separation", 8)
-	grid.add_theme_constant_override("v_separation", 8)
-	vb.add_child(grid)
+	# Group characters by class, one labelled section per class.
+	for cls in available_classes:
+		if not cls or cls.characters.is_empty():
+			continue
+		var accent := _class_accent(cls.class_display_name)
 
-	for entry in _all_characters:
-		var char: Character = entry["char"]
-		var cls: Class = entry["class"]
-		var btn := Button.new()
-		btn.text = "%s\n%s" % [char.character_name, cls.class_display_name]
-		btn.alignment = HORIZONTAL_ALIGNMENT_CENTER
-		btn.custom_minimum_size = Vector2(260, 56)
-		btn.add_theme_font_size_override("font_size", 16)
-		btn.pressed.connect(_on_pick_character.bind(char))
-		grid.add_child(btn)
+		var header := Label.new()
+		header.text = cls.class_display_name.to_upper()
+		header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		header.add_theme_font_size_override("font_size", 16)
+		header.add_theme_color_override("font_color", accent)
+		vb.add_child(header)
+
+		var sep := ColorRect.new()
+		sep.custom_minimum_size = Vector2(0, 1)
+		sep.color = Color(accent.r, accent.g, accent.b, 0.4)
+		sep.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		vb.add_child(sep)
+
+		var row := HBoxContainer.new()
+		row.alignment = BoxContainer.ALIGNMENT_CENTER
+		row.add_theme_constant_override("separation", 10)
+		vb.add_child(row)
+
+		for char in cls.characters:
+			if not char:
+				continue
+			var btn := Button.new()
+			btn.text = char.character_name
+			btn.alignment = HORIZONTAL_ALIGNMENT_CENTER
+			btn.custom_minimum_size = Vector2(180, 48)
+			btn.add_theme_font_size_override("font_size", 17)
+			btn.pressed.connect(_on_pick_character.bind(char))
+			row.add_child(btn)
+
+
+func _class_accent(display_name: String) -> Color:
+	match display_name.to_lower():
+		"assault":
+			return Color(1.0, 0.55, 0.25)
+		"assassin":
+			return Color(0.72, 0.45, 1.0)
+		"assistance":
+			return Color(0.35, 0.8, 0.6)
+		_:
+			return Color(0.7, 0.7, 0.7)
+
+
+func _on_picker_opened() -> void:
+	# Pause the character model while the picker covers it — its jigglebones /
+	# physics are the main lag source behind the popup.
+	if _character_preview_model and is_instance_valid(_character_preview_model):
+		_character_preview_model.process_mode = Node.PROCESS_MODE_DISABLED
+
+
+func _on_picker_closed() -> void:
+	if _character_preview_model and is_instance_valid(_character_preview_model):
+		_character_preview_model.process_mode = Node.PROCESS_MODE_INHERIT
 
 
 func _on_pick_character(char: Character) -> void:
@@ -605,7 +663,7 @@ func _show_info(title: String, body: String) -> void:
 	if title == "":
 		_info_label.text = body
 	else:
-		_info_label.text = "[b][size=18]%s[/size][/b]\n\n%s" % [title, body]
+		_info_label.text = "[b][font_size=18]%s[/font_size][/b]\n\n%s" % [title, body]
 
 
 func _show_weapon_info(weapon: Weapon) -> void:
@@ -793,6 +851,7 @@ func _spawn_character_preview(char: Character) -> void:
 		return
 	_character_preview_root = pr
 	var model := char.character_scene.instantiate() as Node3D
+	_character_preview_model = model
 	pr.add_child(model)
 
 	var box := _visual_aabb(model)
@@ -803,10 +862,17 @@ func _spawn_character_preview(char: Character) -> void:
 	var anims := model.find_children("*", "AnimationPlayer", true, false)
 	var anim: AnimationPlayer = anims[0] if not anims.is_empty() else null
 	if anim:
+		var anim_name := ""
 		if anim.has_animation("walk/idle"):
-			anim.play("walk/idle")
+			anim_name = "walk/idle"
 		elif anim.has_animation("walk/walk_w"):
-			anim.play("walk/walk_w")
+			anim_name = "walk/walk_w"
+		if anim_name != "":
+			anim.play(anim_name)
+			# The preview renders once (UPDATE_ONCE), so a looping animation only
+			# burns CPU.  Freeze it on a mid-cycle pose instead.
+			anim.seek(anim.current_animation_length * 0.5, true)
+			anim.pause()
 
 	var camera := _character_viewport.get_node_or_null("Node3D/Camera3D") as Camera3D
 	if camera:
@@ -833,6 +899,7 @@ func _clear_viewport(vp: SubViewport) -> void:
 func _character_vp() -> SubViewport:
 	var vp := SubViewport.new()
 	vp.own_world_3d = true
+	vp.transparent_bg = true
 	vp.handle_input_locally = false
 	vp.size = Vector2i(360, 520)
 	vp.render_target_update_mode = SubViewport.UPDATE_ONCE

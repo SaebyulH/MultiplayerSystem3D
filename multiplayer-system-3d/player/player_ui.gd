@@ -12,7 +12,6 @@ class_name PlayerBodyUI
 # Public UI (visible above the player model for other players)
 @onready var _ammo_bar_public: Label3D = $"../AmmoBarPublic"
 @onready var _health_bar_public: Label3D = $"../HealthBarPublic"
-@onready var _health_delta_bar_public: Label3D = $"../HealthDeltaBarPublic"
 @onready var _status_bar_public: Label3D = $"../StatusBarPublic"
 @onready var _name_public: Label3D = %NamePublic
 
@@ -681,8 +680,6 @@ func _update_health_delta() -> void:
 
 	if elapsed > HIDE_TIME:
 		_health_delta_label.text = ""
-		if _health_delta_bar_public:
-			_health_delta_bar_public.text = ""
 		return
 
 	if _last_change < 0:
@@ -693,11 +690,6 @@ func _update_health_delta() -> void:
 		_health_delta_label.text = "+%d" % int(_last_change)
 	else:
 		_health_delta_label.text = ""
-
-	# Public delta
-	if _health_delta_bar_public:
-		_health_delta_bar_public.text = _health_delta_label.text
-		_health_delta_bar_public.modulate = _health_delta_label.modulate
 
 	if elapsed > HIDE_TIME * 0.5:
 		var alpha := clampf(1.0 - (elapsed - HIDE_TIME * 0.5) / (HIDE_TIME * 0.5), 0.0, 1.0)
@@ -909,7 +901,12 @@ func _update_status_effects() -> void:
 		_clear_effect_list()
 		return
 	var times: Dictionary = sem.get_active_effect_times()
-	var ids: Array = times.keys()
+	# Permanent (always-on) effects have an infinite remaining time and are
+	# passive markers, not something the HUD should list with a countdown.
+	var ids: Array = []
+	for id in times:
+		if not is_inf(times[id]):
+			ids.append(id)
 
 	# ---- Top-center labels (existing) ----
 	while _effect_labels.size() > ids.size():

@@ -282,6 +282,19 @@ var pinned_at_wall: bool = false
 # (global_transform), so the scale is re-derived from this multiplier every tick.
 var _enlarge_scale: float = 1.0
 
+# ── Wallhack reveal state (client-side rendering) ──
+# Each client toggles the outline / health bar on its own copies of other
+# players, based on the viewer's wallhack/health-sight effects and the target's
+# reveal effects.  Purely visual — never rollback-simulated or networked.
+const WALLHACK_OUTLINE_SHADER: Shader = preload("res://player/wallhack_outline.gdshader")
+const ALLY_OUTLINE_COLOR := Color(0.35, 0.85, 1.0)
+const ENEMY_OUTLINE_COLOR := Color(1.0, 0.4, 0.2)
+
+var _outline_material: ShaderMaterial = null
+var _outline_meshes: Array[MeshInstance3D] = []
+var _wallhack_outline_enabled := false
+var _wallhack_outline_color := ALLY_OUTLINE_COLOR
+
 # Stored so late-joining peers can be synced with the correct weapon models.
 var _loadout_primary_path: String = ""
 var _loadout_secondary_path: String = ""
@@ -355,6 +368,10 @@ func _ready() -> void:
 		_stand_collider_height = shape.height
 	_stand_collider_y = collider.position.y
 	_stand_recoil_y = %Recoil.position.y
+
+	# Wallhack outline material — one shared instance per player.
+	_outline_material = ShaderMaterial.new()
+	_outline_material.shader = WALLHACK_OUTLINE_SHADER
 
 	despawn()
 
@@ -473,6 +490,8 @@ func despawn():
 		_active_shield_fire.shield_current_hp = _active_shield_fire.shield_hp
 	if status_effect_manager:
 		status_effect_manager.clear_all_effects()
+	set_wallhack_outline(false)
+	set_public_health_visible(false)
 	hide()
 	spawned = false
 	collider.disabled = true
@@ -505,6 +524,11 @@ func spawn():
 	# Weapon is briefly unusable on every (re)spawn — plays the pull-out anim and
 	# locks it for the weapon's pullout_time.
 	weapon_controller.trigger_pullout()
+
+	# Re-apply always-on passive status effects (wallhacked/health-visible to
+	# team, and any character passives).  Server-only; clear_all_effects() wiped
+	# them on the previous death.
+	_apply_passive_effects()
 
 
 func set_randomize_on_death(enabled: bool) -> void:
@@ -952,6 +976,8 @@ func _process(_delta: float) -> void:
 	body.mouse_sens_x = BASE_MOUSE_SENS * fov_ratio
 	body.mouse_sens_y = BASE_MOUSE_SENS * fov_ratio
 
+	_update_visibility()
+
 
 func _apply_movement_from_input(delta):
 	_force_update_is_on_floor()
@@ -1387,6 +1413,13 @@ func _spawn_character_model() -> void:
 
 	model_script = model as PlayerModel
 
+	# Collect the meshes the wallhack outline can be applied to.  Character
+	# model only — the mannequin placeholder is never revealed through walls.
+	_outline_meshes.clear()
+	if world_instance != null:
+		for m in world_instance.find_children("*", "MeshInstance3D", true, false):
+			_outline_meshes.append(m as MeshInstance3D)
+
 	# Rebuild the team-colour skin list and re-apply the current team.
 	_rebuild_skins()
 	team = team
@@ -1507,3 +1540,134 @@ func _rebuild_skins() -> void:
 ## Read a base stat with an optional character offset applied.
 func _cmult(base: float, mult: float) -> float:
 	return base * mult
+
+
+# ── Wallhack reveal / health visibility (client-side rendering) ────────────
+
+
+## Turn the through-wall outline on or off for this player's model.
+## Purely visual and local — each client calls this on its own copies of other
+## players.  [param color] tints the outline (ally vs enemy).
+func set_wallhack_outline(enabled: bool, color: Color = ALLY_OUTLINE_COLOR) -> void:
+	if _wallhack_outline_enabled == enabled and _wallhack_outline_color.is_equal_approx(color):
+		return
+	_wallhack_outline_enabled = enabled
+	_wallhack_outline_color = color
+	if _outline_material:
+		_outline_material.set_shader_parameter("outline_color", color)
+	for m in _outline_meshes:
+		if is_instance_valid(m):
+			m.material_override = _outline_material if enabled else null
+
+
+## Show or hide this player's floating health bar for the local viewer.
+func set_public_health_visible(show: bool) -> void:
+	var lbl: Label3D = $Body/HealthBarPublic
+	if lbl == null:
+		return
+	if show:
+		lbl.text = str(int(attribute_component.health)) if attribute_component else ""
+		lbl.visible = true
+	else:
+		lbl.visible = false
+
+
+## True when [param other] is on the same (non-FFA) team as this player.
+func is_teammate_of(other: Player) -> bool:
+	return team != Team.FFA and other.team == team
+
+
+## True when there is world geometry between this player's camera and
+## [param other].  Rays against the world layer (1) only, so player bodies are
+## ignored.
+func _is_occluded_by_wall(other: Player) -> bool:
+	var space := get_world_3d().direct_space_state
+	if space == null:
+		return false
+	var from: Vector3 = camera.global_position
+	var to: Vector3 = other.global_position + Vector3(0.0, 1.2, 0.0)
+	var query := PhysicsRayQueryParameters3D.create(from, to, 1)
+	query.exclude = [get_rid(), other.get_rid()]
+	return not space.intersect_ray(query).is_empty()
+
+
+## Per-viewer update: decide, for every other player, whether the local client
+## should reveal their outline (through walls) and/or their health bar.  Runs
+## only on the local player's node, so exactly once per client.
+func _update_visibility() -> void:
+	if not _is_own_model():
+		return
+	var sem := status_effect_manager
+	if sem == null:
+		return
+	var i_wallhack := sem.has_effect("wallhacking")
+	# Ghost's passive reveals enemy health directly from the character, so it
+	# still works even if the permanent see_enemy_health marker hasn't synced yet.
+	var i_see_health := sem.has_effect("see_enemy_health") \
+		or (_character != null and _character.passive_see_enemy_health)
+
+	for node in get_tree().get_nodes_in_group("players"):
+		var other := node as Player
+		if other == null or other == self:
+			continue
+
+		var show_outline := false
+		var show_health := false
+		var outline_color := ALLY_OUTLINE_COLOR
+
+		if other.spawned and other.status_effect_manager:
+			var osem := other.status_effect_manager
+			var ally := is_teammate_of(other)
+			var enemy := _is_enemy_of(other)
+
+			# Outline: reveal a teammate or enemy through walls.
+			var outline_allowed := false
+			if ally and osem.has_effect("wallhacked_team"):
+				outline_allowed = true
+			elif enemy and osem.has_effect("wallhacked_enemy"):
+				outline_allowed = true
+				outline_color = ENEMY_OUTLINE_COLOR
+			elif enemy and i_wallhack:
+				outline_allowed = true
+				outline_color = ENEMY_OUTLINE_COLOR
+			if outline_allowed:
+				show_outline = _is_occluded_by_wall(other)
+
+			# Health: reveal a teammate or enemy's health bar.
+			if ally and osem.has_effect("health_visible_team"):
+				show_health = true
+			elif enemy and osem.has_effect("health_visible_enemy"):
+				show_health = true
+			elif enemy and i_see_health:
+				show_health = true
+
+		other.set_wallhack_outline(show_outline, outline_color)
+		other.set_public_health_visible(show_health)
+
+
+# ── Always-on passive status effects ───────────────────────────────────────
+
+
+## Apply the always-on passive status effects (server-authoritative).  Called
+## on every (re)spawn so the markers survive clear_all_effects().
+func _apply_passive_effects() -> void:
+	if not multiplayer.is_server():
+		return
+	if status_effect_manager == null:
+		return
+	_apply_flag_effect("wallhacked_team", "Wallhacked (Team)", true)
+	_apply_flag_effect("health_visible_team", "Health Visible (Team)", true)
+	if _character and _character.passive_see_enemy_health:
+		_apply_flag_effect("see_enemy_health", "Enemy Health Vision", true)
+
+
+## Create and apply a (typically permanent) marker status effect.
+func _apply_flag_effect(effect_id: String, display_name: String, permanent: bool, duration := 0.0) -> void:
+	var effect := StatusEffect.new()
+	effect.effect_id = effect_id
+	effect.display_name = display_name
+	effect.is_negative = false
+	effect.is_permanent = permanent
+	effect.base_duration = duration
+	effect.tick_interval = 0.0
+	status_effect_manager.apply_effect(effect, name)

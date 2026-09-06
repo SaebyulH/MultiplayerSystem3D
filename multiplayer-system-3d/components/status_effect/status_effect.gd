@@ -22,6 +22,11 @@ class_name StatusEffect
 ## If true, this effect is cleared by invincibility and stacks by duration.
 @export var is_negative: bool = true
 
+## If true, this effect never expires and ignores [member base_duration].
+## Used for passive, always-on markers (e.g. "wallhacked to team").  Permanent
+## effects are still cleared by clear_all_effects() on respawn.
+@export var is_permanent: bool = false
+
 ## Base duration in seconds applied when the effect is first added.
 ## Stacking extends the remaining time by this amount.
 @export var base_duration: float = 4.0

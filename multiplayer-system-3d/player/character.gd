@@ -58,3 +58,7 @@ class_name Character
 @export_group("Abilities")
 ## Abilities this character can use (max 4).  See player/abilities/ability.gd.
 @export var abilities: Array[Ability] = []
+
+## If true, this character always reveals enemy health (see_enemy_health is
+## applied passively on spawn).
+@export var passive_see_enemy_health: bool = false

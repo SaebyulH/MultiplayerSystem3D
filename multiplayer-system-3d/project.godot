@@ -54,6 +54,10 @@ folder_colors={
 players=""
 payload=""
 
+[gui]
+
+theme/custom_font="uid://duur25wwn5vgw"
+
 [input]
 
 move_forward={

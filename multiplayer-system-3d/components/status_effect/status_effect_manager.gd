@@ -52,6 +52,10 @@ func _tick_server(delta: float) -> void:
 		var effect: StatusEffect = data["effect"]
 		var remaining: float = data["remaining"]
 
+		# Permanent effects never tick down or expire.
+		if effect.is_permanent:
+			continue
+
 		remaining -= delta
 		data["remaining"] = remaining
 
@@ -109,11 +113,13 @@ func apply_effect(effect: StatusEffect, applier: String) -> void:
 		_active_effects[effect.effect_id]["remaining"] += effect.base_duration
 		return
 
-	# Create a fresh runtime instance.
+	# Create a fresh runtime instance.  Permanent effects use an infinite
+	# remaining time so they never expire (skipped by _tick_server).
+	var remaining: float = INF if effect.is_permanent else effect.base_duration
 	var state: Dictionary = {}
 	_active_effects[effect.effect_id] = {
 		"effect": effect,
-		"remaining": effect.base_duration,
+		"remaining": remaining,
 		"applier": applier,
 		"tick_timer": effect.tick_interval if effect.tick_interval > 0.0 else 0.0,
 		"state": state,
