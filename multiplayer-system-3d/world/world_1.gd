@@ -1,7 +1,7 @@
 extends Node3D
 
 @export var player_scene: PackedScene
-@onready var class_select: Control = %ClassSelect
+@onready var loadout_menu: Control = %LoadoutMenu
 @onready var game_menu: Control = $GameMenu
 
 
@@ -11,6 +11,10 @@ var map_path
 
 func _ready() -> void:
 	GameManager.spawn_parent = %SpawnParent
+
+	# The legacy class-select menu is superseded by the loadout menu.  Keep it
+	# hidden so its own CanvasLayer doesn't overlap the new UI.
+	%ClassSelect.visible = false
 
 	# Global kill feed — one per peer, cleaned up with the scene.
 	var kill_feed := KillFeed.new()
@@ -49,6 +53,13 @@ func _unhandled_input(event: InputEvent) -> void:
 	if Input.is_action_just_pressed("class_select"):
 		if class_selected == false:
 			return
-		class_select.visible = not class_select.visible
-		PlayerInput.ui_open = class_select.visible
-		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE if class_select.visible else Input.MOUSE_MODE_CAPTURED)
+		loadout_menu.visible = not loadout_menu.visible
+		PlayerInput.ui_open = loadout_menu.visible
+		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE if loadout_menu.visible else Input.MOUSE_MODE_CAPTURED)
+	elif event.is_action_pressed("ui_cancel") and loadout_menu.visible:
+		# ESC closes the loadout menu without applying any changes.  Only after
+		# an initial loadout is confirmed (mirrors the H-toggle guard above).
+		if class_selected:
+			loadout_menu.visible = false
+			PlayerInput.ui_open = false
+			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
