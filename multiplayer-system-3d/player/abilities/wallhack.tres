@@ -1,10 +1,9 @@
-[gd_resource type="Resource" script_class="WallhackAbility" format=3]
+[gd_resource type="Resource" script_class="WallhackAbility" format=3 uid="uid://d2d4m0f7c28x3"]
 
-[ext_resource type="Script" path="res://player/abilities/wallhack_ability.gd" id="1"]
+[ext_resource type="Script" uid="uid://coggjlsesnnph" path="res://player/abilities/wallhack_ability.gd" id="1"]
 
 [resource]
 script = ExtResource("1")
 ability_name = "Wallhack"
 description = "See enemies through walls for 10 seconds."
-cooldown = 20.0
-duration = 10.0
+cooldown = 15.0

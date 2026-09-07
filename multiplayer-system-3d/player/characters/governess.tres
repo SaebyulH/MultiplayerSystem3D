@@ -1,0 +1,57 @@
+[gd_resource type="Resource" script_class="Character" format=3 uid="uid://duqdt44tvgi3j"]
+
+[ext_resource type="Script" uid="uid://nwsvfqljwb2b" path="res://player/abilities/ability.gd" id="1_fbd81"]
+[ext_resource type="Script" uid="uid://cqveqjaj5p1jv" path="res://player/abilities/heal_ability.gd" id="2_oajhw"]
+[ext_resource type="Script" uid="uid://lrht2lh1enw5" path="res://player/abilities/weapon_fire_ability.gd" id="3_k4fpw"]
+[ext_resource type="AudioStream" uid="uid://bwfdsxbmx4ko8" path="res://assets/sounds/empty_gun.mp3" id="4_3kmsh"]
+[ext_resource type="Texture2D" uid="uid://b6gktr1vfryte" path="res://defaults/default_damage_falloff_curve.tres" id="5_kt3qe"]
+[ext_resource type="PackedScene" uid="uid://bo0edtxgakruc" path="res://weapon/projectiles/scenes/rocket.tscn" id="6_ih6op"]
+[ext_resource type="Script" uid="uid://yvevtn4dsddy" path="res://player/recoil/recoil_data.gd" id="7_aylha"]
+[ext_resource type="Script" uid="uid://djg0ti1n45f8b" path="res://weapon/weapon_fire.gd" id="8_lltd0"]
+[ext_resource type="AudioStream" uid="uid://h5oipa516ci8" path="res://assets/sounds/kalsstockmedia-thunderous-sci-fi-gunshot-sound-341615.mp3" id="9_hs6ue"]
+[ext_resource type="Script" uid="uid://bv0g4rnfelqch" path="res://components/status_effect/status_effect.gd" id="10_h0k83"]
+[ext_resource type="PackedScene" uid="uid://dbnh2qxbqrh81" path="res://assets/characters/governess.tscn" id="11_fbd81"]
+[ext_resource type="AudioStream" uid="uid://c4hcib02wpb8t" path="res://assets/sounds/flier_death.mp3" id="12_rynjg"]
+[ext_resource type="Script" uid="uid://bxv3anwekoggx" path="res://player/character.gd" id="13_8peq3"]
+
+[sub_resource type="Resource" id="Resource_x7c3f"]
+script = ExtResource("2_oajhw")
+heal_amount = 20.0
+ability_name = "Heal 40 Health"
+cooldown = 3.0
+
+[sub_resource type="Resource" id="Resource_ur13p"]
+script = ExtResource("7_aylha")
+recoil = Vector3(0, 0, 0)
+aim_recoil = Vector3(0, 0, 0)
+
+[sub_resource type="Resource" id="Resource_qisbw"]
+script = ExtResource("8_lltd0")
+automatic = true
+ammo_cost = 4
+recoil_data = SubResource("Resource_ur13p")
+bullet_type = 1
+projectile_scene = ExtResource("6_ih6op")
+multishot_data = Array[Vector3]([Vector3(0, 0.1, -1), Vector3(0, 0, -1), Vector3(0, 0, -1), Vector3(0, 0, -1), Vector3(0, 0, -1), Vector3(0, 0, -1), Vector3(0, 0, -1), Vector3(0, 0, -1), Vector3(0, 0, -1), Vector3(0, 0, -1), Vector3(0, 0, -1), Vector3(0, 0, -1), Vector3(0, 0, -1), Vector3(0, 0, -1), Vector3(0, 0, -1)])
+multishot_mode = 1
+burst_post_shoot_delay = 0.1
+burst_fire_has_recoil = false
+shoot_sound = ExtResource("9_hs6ue")
+empty_sound = ExtResource("4_3kmsh")
+metadata/_custom_type_script = "uid://djg0ti1n45f8b"
+
+[sub_resource type="Resource" id="Resource_bjvpn"]
+script = ExtResource("3_k4fpw")
+weapon_fire = SubResource("Resource_qisbw")
+ability_name = "Carpet Bomb"
+cooldown = 10.0
+
+[resource]
+script = ExtResource("13_8peq3")
+character_name = "Governess"
+description = "With an umbrella she can use to shield herself. "
+character_scene = ExtResource("11_fbd81")
+health_mult = 2.0
+heal_on_kill = 999.0
+death_sound = ExtResource("12_rynjg")
+abilities = Array[ExtResource("1_fbd81")]([SubResource("Resource_x7c3f"), SubResource("Resource_bjvpn")])

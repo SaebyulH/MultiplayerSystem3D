@@ -58,6 +58,7 @@ func _ready() -> void:
 
 	# Start hidden (synced with self.visible below).
 	_canvas.visible = false
+	visibility_changed.connect(_on_visibility_changed)
 
 	# Load classes
 	var loaded_classes: Array[Class] = []
@@ -78,7 +79,7 @@ func _ready() -> void:
 	_melee_option.item_selected.connect(_on_melee_selected)
 	_confirm_button.pressed.connect(_on_confirm_pressed)
 
-func _process(_delta: float) -> void:
+func _on_visibility_changed() -> void:
 	# world_1.gd toggles self.visible to show/hide the class select.
 	# Since we moved the real UI into _canvas, sync its visibility.
 	if _canvas:

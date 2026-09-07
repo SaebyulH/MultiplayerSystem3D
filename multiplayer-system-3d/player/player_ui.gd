@@ -36,6 +36,8 @@ var _bg_reload_labels: Array[Label] = []
 var _crosshair: ColorRect
 var _respawn_label: Label
 var _respawn_label_bg: ColorRect
+var _fps_label: Label
+var _fps_low: bool = false
 
 # Full-screen scope overlay shown over the HUD while ADS is active.
 var _ads_overlay: TextureRect
@@ -47,6 +49,8 @@ var _scope_charge_label: Label
 # Ability display (left-side list) and "USING" prompt under the crosshair.
 var _ability_list: VBoxContainer
 var _ability_use_label: Label
+var _ability_labels: Array[Label] = []
+var _ability_indices: Array[int] = []
 
 # Stamina / dash indicator
 var _stamina_container: HBoxContainer
@@ -69,6 +73,7 @@ const BLEED_MATERIAL := preload("res://components/status_effect/shaders/bleed_bo
 const POISON_MATERIAL := preload("res://components/status_effect/shaders/poison_border.tres")
 const STUN_MATERIAL := preload("res://components/status_effect/shaders/stun_border.tres")
 const FLAME_SHADER_PATH := "res://components/status_effect/shaders/flame_border.gdshader"
+const STATUS_BORDER_SHADER_PATH := "res://components/status_effect/shaders/status_border.gdshader"
 const FALLBACK_BORDER_COLOR := Color(0.7, 0.7, 0.7, 0.5)
 
 # Built in _build_status_effects after the shader file has been loaded.
@@ -84,6 +89,12 @@ var _last_change_time: float = 0.0
 
 const HIDE_TIME: float = 2.0
 const MIN_DISPLAY_DELTA: float = 0.5
+
+## Interval (seconds) for coarse, countdown-style HUD updates (health-delta fade,
+## shield regen, respawn timer, reload bars, ability cooldowns).  Discrete state
+## is signal-driven; only stamina/scope-charge/border-shader run per frame.
+const UI_TICK_INTERVAL: float = 0.1
+var _ui_timer: Timer
 
 # Layout constants
 const MARGIN: float = 20.0
@@ -109,7 +120,8 @@ func _ready() -> void:
 	_build_ui()
 
 	var is_owner := is_multiplayer_authority()
-	visible = is_owner and not _owner_player.is_bot
+	var should_show := is_owner and not _owner_player.is_bot
+	visible = should_show
 
 	if attribute_component:
 		_last_health = attribute_component.health
@@ -121,17 +133,41 @@ func _ready() -> void:
 
 	_connect_signals()
 
+	_ui_timer = Timer.new()
+	_ui_timer.name = "UITickTimer"
+	_ui_timer.wait_time = UI_TICK_INTERVAL
+	_ui_timer.one_shot = false
+	_ui_timer.timeout.connect(_on_ui_tick)
+	add_child(_ui_timer)
+	_ui_timer.start()
+
+	# Initial paint for discrete state that may already be set.
+	_update_health()
+	_update_team()
+	_update_character()
+	_rebuild_abilities()
+	_rebuild_status_effects()
+
 @rpc("authority", "call_local", "reliable")
 func _set_name_label(display_name: String) -> void:
 	_name_public.text = display_name
 
 func _connect_signals() -> void:
-	if not weapon_controller:
-		return
-	weapon_controller.mag_changed.connect(_on_ammo_updated)
-	weapon_controller.weapon_changed.connect(_on_weapon_changed)
-	_on_ammo_updated()
-	_on_weapon_changed()
+	if weapon_controller:
+		weapon_controller.mag_changed.connect(_on_ammo_updated)
+		weapon_controller.weapon_changed.connect(_on_weapon_changed)
+		_on_ammo_updated()
+		_on_weapon_changed()
+
+	if attribute_component:
+		attribute_component.health_changed.connect(_on_health_changed)
+
+	if _owner_player:
+		_owner_player.team_changed.connect(_on_team_changed)
+		_owner_player.character_changed.connect(_on_character_changed)
+		var sem := _owner_player.get_node_or_null("StatusEffectManager") as StatusEffectManager
+		if sem:
+			sem.client_effects_changed.connect(_rebuild_status_effects)
 
 # --------------------------------------------------
 #  UI Building
@@ -151,6 +187,7 @@ func _build_ui() -> void:
 	_build_status_effects()
 	_build_ads_overlay()
 	_build_scope_charge_ui()
+	_build_fps()
 
 func _build_crosshair() -> void:
 	# Black outline
@@ -229,6 +266,32 @@ func _build_scope_charge_ui() -> void:
 	_scope_charge_label.add_theme_font_size_override("font_size", 22)
 	_scope_charge_label.visible = false
 	add_child(_scope_charge_label)
+
+func _build_fps() -> void:
+	# FPS counter (top-right), drawn on its own high CanvasLayer so it renders
+	# over every other HUD/menu.  Built only for the owning peer.
+	if not (is_multiplayer_authority() and not _owner_player.is_bot):
+		return
+	var fps_canvas := CanvasLayer.new()
+	fps_canvas.name = "FPSCanvas"
+	fps_canvas.layer = 100
+	get_tree().root.add_child(fps_canvas)
+
+	_fps_label = Label.new()
+	_fps_label.anchor_left   = 1.0
+	_fps_label.anchor_right  = 1.0
+	_fps_label.anchor_top    = 0.0
+	_fps_label.anchor_bottom = 0.0
+	_fps_label.offset_left   = -140.0
+	_fps_label.offset_top    = 8.0
+	_fps_label.offset_right  = -MARGIN
+	_fps_label.offset_bottom = 36.0
+	_fps_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_fps_label.add_theme_font_size_override("font_size", 18)
+	_fps_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+	_fps_label.add_theme_constant_override("outline_size", 4)
+	_fps_label.add_theme_color_override("font_color", Color(0.3, 0.9, 0.3))
+	fps_canvas.add_child(_fps_label)
 
 func _build_health() -> void:
 	# -- Container (bottom-left, fixed size) --
@@ -545,6 +608,16 @@ func _build_status_effects() -> void:
 		flame_mat.shader = flame_shader
 		_effect_materials["burn"] = flame_mat
 
+	# Remaining effects — built from the shared status_border.gdshader preset.
+	var border_shader := load(STATUS_BORDER_SHADER_PATH) as Shader
+	if border_shader:
+		_add_border_material("slow", border_shader, Color(0.35, 0.7, 1.0, 0.6), 1.0, 0.2, 15.0)
+		_add_border_material("gravity_flip", border_shader, Color(0.8, 0.3, 1.0, 0.6), 3.5, 0.5, 40.0)
+		_add_border_material("invincible", border_shader, Color(1.0, 0.85, 0.2, 0.6), 2.0, 0.15, 12.0)
+		_add_border_material("pinned", border_shader, Color(0.65, 0.45, 0.25, 0.6), 0.8, 0.1, 10.0)
+		_add_border_material("enlarge", border_shader, Color(1.0, 0.4, 0.1, 0.6), 4.0, 0.3, 25.0)
+		_add_border_material("wallhacking", border_shader, Color(0.0, 0.0, 0.0, 0.6), 4.0, 0.3, 25.0)
+
 	# -- Top-center labels (existing) --
 	_effect_container = HBoxContainer.new()
 	_effect_container.anchor_left   = 0.5
@@ -583,34 +656,65 @@ func _build_status_effects() -> void:
 	_effect_list.add_theme_constant_override("separation", 4)
 	add_child(_effect_list)
 
+
+## Create a border ShaderMaterial from the shared status_border.gdshader and
+## store it in [_effect_materials] under [param id].
+func _add_border_material(id: String, shader: Shader, color: Color, pulse_speed: float, noise_intensity: float, noise_scale: float) -> void:
+	var mat := ShaderMaterial.new()
+	mat.shader = shader
+	mat.set_shader_parameter("effect_color", color)
+	mat.set_shader_parameter("pulse_speed", pulse_speed)
+	mat.set_shader_parameter("noise_intensity", noise_intensity)
+	mat.set_shader_parameter("noise_scale", noise_scale)
+	mat.set_shader_parameter("u_time", 0.0)
+	_effect_materials[id] = mat
+
 # --------------------------------------------------
-#  Updates (called from _process)
+#  Updates (signal / timer / process driven)
 # --------------------------------------------------
 
 func _process(delta: float) -> void:
-	# Enforce ownership visibility every frame -- parent's show()/hide() overrides
-	# our visible flag, so we must re-assert it.
+	# Re-assert ownership visibility every frame (parent show()/hide() overrides
+	# our flag), then run continuous-only work for the owner.  Discrete state is
+	# signal-driven; coarse countdowns run on _ui_timer.
 	var should_show := is_multiplayer_authority() and not _owner_player.is_bot
 	if visible != should_show:
 		visible = should_show
-		if not should_show:
-			return  # skip all updates when hidden
+	if not should_show:
+		return
 
 	_border_time += delta
-
-	_update_health()
-	_update_health_delta()
-	_update_ammo()
-	_update_shield()
+	_update_border_shader_time()
 	_update_stamina()
-	_update_team()
-	_update_character()
-	_update_abilities()
+	_update_scope_charge_ui()
+	_update_fps()
+
+
+func _on_ui_tick() -> void:
+	if not visible:
+		return
+	_update_health_delta()
+	_update_shield()
 	_update_respawn_timer()
 	_update_bg_reload_bars()
-	_update_status_effects()
+	_update_ability_cooldowns()
 	_update_ads_overlay()
-	_update_scope_charge_ui()
+
+
+func _on_health_changed() -> void:
+	_update_health()
+	_update_health_delta()
+
+
+func _on_team_changed() -> void:
+	_update_team()
+	_update_health()
+
+
+func _on_character_changed() -> void:
+	_update_character()
+	_rebuild_abilities()
+
 
 func _update_ads_overlay() -> void:
 	if not _owner_player or not weapon_controller:
@@ -634,6 +738,16 @@ func _update_scope_charge_ui() -> void:
 	if show:
 		_scope_charge_bar.value = weapon_controller.get_scoped_charge_progress()
 		_scope_charge_label.text = "%.1f" % weapon_controller.get_scoped_damage_multiplier()
+
+func _update_fps() -> void:
+	if not _fps_label:
+		return
+	var fps := Engine.get_frames_per_second()
+	_fps_label.text = "%d FPS" % int(fps)
+	var low := fps < 60.0
+	if low != _fps_low:
+		_fps_low = low
+		_fps_label.add_theme_color_override("font_color", Color(0.95, 0.3, 0.3) if low else Color(0.3, 0.9, 0.3))
 
 func _update_health() -> void:
 	if not attribute_component or not is_inside_tree():
@@ -817,15 +931,17 @@ func _update_character() -> void:
 	else:
 		_character_label.text = ""
 
-func _update_abilities() -> void:
+func _rebuild_abilities() -> void:
+	for child in _ability_list.get_children():
+		child.queue_free()
+	_ability_labels.clear()
+	_ability_indices.clear()
+
 	var am: AbilityManager = _owner_player.ability_manager if _owner_player else null
 	if not am:
 		_ability_use_label.text = ""
 		return
 
-	# Rebuild the left-side list (name + cooldown).
-	for child in _ability_list.get_children():
-		child.queue_free()
 	var abilities: Array[Ability] = am.get_abilities()
 	for i in abilities.size():
 		var ability: Ability = abilities[i]
@@ -835,11 +951,27 @@ func _update_abilities() -> void:
 		label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
 		label.add_theme_constant_override("outline_size", 4)
 		label.add_theme_font_size_override("font_size", 16)
+		_ability_list.add_child(label)
+		_ability_labels.append(label)
+		_ability_indices.append(i)
+
+	_update_ability_cooldowns()
+
+
+func _update_ability_cooldowns() -> void:
+	var am: AbilityManager = _owner_player.ability_manager if _owner_player else null
+	if not am:
+		_ability_use_label.text = ""
+		return
+
+	var abilities: Array[Ability] = am.get_abilities()
+	for j in _ability_labels.size():
+		var i: int = _ability_indices[j]
+		var ability: Ability = abilities[i]
 		var remaining := am.get_cooldown_remaining(i)
 		var cd_text := "Ready" if remaining <= 0.0 else "%.1fs" % remaining
-		label.text = "%d  %s   (%s)" % [i + 1, ability.ability_name, cd_text]
-		label.modulate = Color(0.6, 0.6, 0.6) if remaining > 0.0 else Color(0.9, 0.9, 0.9)
-		_ability_list.add_child(label)
+		_ability_labels[j].text = "%d  %s   (%s)" % [i + 1, ability.ability_name, cd_text]
+		_ability_labels[j].modulate = Color(0.6, 0.6, 0.6) if remaining > 0.0 else Color(0.9, 0.9, 0.9)
 
 	# "USING X" prompt while an ability is in progress — either an equipped
 	# (non-instant) ability, or a burst fire that is still firing its shots.
@@ -894,107 +1026,74 @@ func _update_bg_reload_bars() -> void:
 			# Reset non-active label color (not gold, not blue — just grey).
 			_bg_reload_labels[i].modulate = Color(0.65, 0.65, 0.65)
 
-func _update_status_effects() -> void:
+func _rebuild_status_effects() -> void:
 	var sem: StatusEffectManager = _owner_player.status_effect_manager if _owner_player else null
 	if not sem:
 		_clear_all_borders()
 		_clear_effect_list()
+		for lbl in _effect_labels:
+			lbl.queue_free()
+		_effect_labels.clear()
 		return
-	var times: Dictionary = sem.get_active_effect_times()
-	# Permanent (always-on) effects have an infinite remaining time and are
-	# passive markers, not something the HUD should list with a countdown.
-	var ids: Array = []
-	for id in times:
-		if not is_inf(times[id]):
-			ids.append(id)
+	var ids: Array = _active_effect_ids(sem)
 
 	# ---- Top-center labels (existing) ----
 	while _effect_labels.size() > ids.size():
 		var lbl: Label = _effect_labels.pop_back()
 		lbl.queue_free()
-
-	var visible_index := 0
-	for i in ids.size():
-		var id: String = ids[i]
-		var remaining: float = times[id]
-
-		var label: Label
-		if visible_index < _effect_labels.size():
-			label = _effect_labels[visible_index]
-		else:
-			label = Label.new()
-			label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-			label.add_theme_constant_override("outline_size", 6)
-			label.add_theme_font_size_override("font_size", 16)
-			label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-			_effect_container.add_child(label)
-			_effect_labels.append(label)
-		label.text = "%s %.1fs" % [id.capitalize(), remaining]
-		label.visible = true
-		visible_index += 1
+	while _effect_labels.size() < ids.size():
+		var label := Label.new()
+		label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+		label.add_theme_constant_override("outline_size", 6)
+		label.add_theme_font_size_override("font_size", 16)
+		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		_effect_container.add_child(label)
+		_effect_labels.append(label)
 
 	# ---- Shader border overlays ----
-	# Remove borders for effects that are no longer active.
 	var stale_borders: Array[String] = []
 	for border_id: String in _border_overlays:
-		if not times.has(border_id):
+		if not (border_id in ids):
 			stale_borders.append(border_id)
 	for border_id: String in stale_borders:
 		var cr: Control = _border_overlays[border_id]
 		cr.queue_free()
 		_border_overlays.erase(border_id)
-
-	# Add / update borders for currently active effects.
 	for id in ids:
+		if _border_overlays.has(id):
+			_border_overlays[id].visible = true
+			continue
 		var mat = _effect_materials.get(id, null)
 		if not mat:
-			# Fallback: if we don't have a custom shader, still show a plain border.
-			var cr: ColorRect
-			if _border_overlays.has(id):
-				cr = _border_overlays[id]
-			else:
-				cr = _create_border_overlay(FALLBACK_BORDER_COLOR)
-				_border_overlays[id] = cr
+			# Fallback: no custom shader, show a plain border.
+			var cr := _create_border_overlay(FALLBACK_BORDER_COLOR)
 			cr.material = null
 			cr.color = FALLBACK_BORDER_COLOR
-			cr.visible = true
-			continue
-
-		var cr: ColorRect
-		if _border_overlays.has(id):
-			cr = _border_overlays[id]
+			_border_overlays[id] = cr
 		else:
-			cr = _create_border_overlay()
+			var cr := _create_border_overlay()
 			cr.material = mat.duplicate()  # unique instance so multiple effects don't share uniforms
 			_border_overlays[id] = cr
-			cr.visible = true
-		# Push elapsed time to every visible border shader.
-		for bcr: ColorRect in _border_overlays.values():
-			if bcr.visible and bcr.material is ShaderMaterial:
-				(bcr.material as ShaderMaterial).set_shader_parameter("u_time", _border_time)
+		_border_overlays[id].visible = true
 
 	# ---- Side-panel effect list ----
-	# Remove stale entries.
+	var stale_list: Array[String] = []
 	for list_id in _effect_list_labels:
-		if not list_id in times:
-			var lbl: Label = _effect_list_labels[list_id]
-			lbl.queue_free()
-			_effect_list_labels.erase(list_id)
-
-	# Add / update entries.
+		if not (list_id in ids):
+			stale_list.append(list_id)
+	for list_id in stale_list:
+		var lbl: Label = _effect_list_labels[list_id]
+		lbl.queue_free()
+		_effect_list_labels.erase(list_id)
 	for id in ids:
-		var remaining: float = times[id]
-		var lbl: Label
 		if _effect_list_labels.has(id):
-			lbl = _effect_list_labels[id]
-		else:
-			lbl = Label.new()
-			lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-			lbl.add_theme_constant_override("outline_size", 4)
-			lbl.add_theme_font_size_override("font_size", 14)
-			_effect_list.add_child(lbl)
-			_effect_list_labels[id] = lbl
-		lbl.text = "■ %s  %.1fs" % [id.capitalize(), remaining]
+			continue
+		var lbl := Label.new()
+		lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+		lbl.add_theme_constant_override("outline_size", 4)
+		lbl.add_theme_font_size_override("font_size", 14)
+		_effect_list.add_child(lbl)
+		_effect_list_labels[id] = lbl
 		# Color the label to match the effect.
 		match id:
 			"bleed":   lbl.modulate = Color(1.0, 0.3, 0.3)
@@ -1002,7 +1101,38 @@ func _update_status_effects() -> void:
 			"poison":  lbl.modulate = Color(0.7, 0.4, 1.0)
 			"stun":    lbl.modulate = Color(1.0, 0.9, 0.2)
 			_:         lbl.modulate = Color(0.8, 0.8, 0.8)
-		lbl.visible = true
+
+	_update_status_effect_countdowns()
+
+
+## Return the list of active (non-permanent) effect ids, in mirror order.
+func _active_effect_ids(sem: StatusEffectManager) -> Array:
+	var times: Dictionary = sem.get_active_effect_times()
+	var ids: Array = []
+	for id in times:
+		if not is_inf(times[id]):
+			ids.append(id)
+	return ids
+
+
+func _update_status_effect_countdowns() -> void:
+	var sem: StatusEffectManager = _owner_player.status_effect_manager if _owner_player else null
+	if not sem:
+		return
+	var times: Dictionary = sem.get_active_effect_times()
+	var ids: Array = _active_effect_ids(sem)
+
+	for i in _effect_labels.size():
+		if i >= ids.size():
+			break
+		var id: String = ids[i]
+		_effect_labels[i].text = "%s %.1fs" % [id.capitalize(), times[id]]
+		_effect_labels[i].visible = true
+
+	for list_id in _effect_list_labels:
+		if times.has(list_id):
+			_effect_list_labels[list_id].text = "■ %s  %.1fs" % [list_id.capitalize(), times[list_id]]
+			_effect_list_labels[list_id].visible = true
 
 	# ---- Public world-space status bar (above the player model) ----
 	if _status_bar_public:
@@ -1012,6 +1142,12 @@ func _update_status_effects() -> void:
 			parts.append(str(names.get(id, id.capitalize())))
 		_status_bar_public.text = ", ".join(parts)
 		_status_bar_public.visible = not parts.is_empty()
+
+
+func _update_border_shader_time() -> void:
+	for bcr: ColorRect in _border_overlays.values():
+		if bcr.visible and bcr.material is ShaderMaterial:
+			(bcr.material as ShaderMaterial).set_shader_parameter("u_time", _border_time)
 
 
 func _create_border_overlay(col := Color.WHITE) -> ColorRect:
@@ -1041,6 +1177,7 @@ func _clear_effect_list() -> void:
 func _on_weapon_changed(_index = null, _weapon = null) -> void:
 	_update_weapon_list()
 	_update_bg_reload_bars()
+	_update_ads_overlay()
 
 func _update_weapon_list() -> void:
 	if not weapon_controller:

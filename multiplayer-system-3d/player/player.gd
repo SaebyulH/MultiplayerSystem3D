@@ -48,6 +48,7 @@ enum Team {SPI, SCI, FFA} #If set to FFA, you can damage anyone
 const FRIENDLY_FIRE_MULTIPLIER = 0.0
 
 signal team_changed()
+signal character_changed()
 
 
 var skins: Array[MeshInstance3D] = []
@@ -243,6 +244,10 @@ var _ground_contact_time: float = 0.0
 var spawn_manager: SpawnManager
 
 var pitch := 0.0
+
+## Cached FOV applied to the camera; used to skip recomputing mouse sensitivity
+## every rendered frame when the scope FOV is unchanged.
+var _applied_fov: float = -1.0
 
 # ── Footsteps ──────────────────────────────────────
 ## Time between footstep sounds while walking.
@@ -1001,13 +1006,18 @@ func _air_accelerate(wish_dir: Vector3, wish_speed: float, delta: float) -> void
 func _process(_delta: float) -> void:
 	# Scope FOV + mouse sensitivity are visual/local, so update them every
 	# rendered frame rather than inside the rollback tick (which re-simulates and
-	# made the ADS zoom step/jitter).
+	# made the ADS zoom step/jitter).  The FOV is a pure function of `ads` + the
+	# current weapon except while a scope transition lerps, so only recompute
+	# sensitivity when the FOV actually changes — not every frame.
 	const BASE_MOUSE_SENS: float = 0.002
 	const BASE_FOV: float = 90.0
-	camera.fov = weapon_controller.get_scope_fov()
-	var fov_ratio: float = camera.fov / BASE_FOV
-	body.mouse_sens_x = BASE_MOUSE_SENS * fov_ratio
-	body.mouse_sens_y = BASE_MOUSE_SENS * fov_ratio
+	var fov: float = weapon_controller.get_scope_fov()
+	if fov != _applied_fov:
+		_applied_fov = fov
+		camera.fov = fov
+		var fov_ratio: float = fov / BASE_FOV
+		body.mouse_sens_x = BASE_MOUSE_SENS * fov_ratio
+		body.mouse_sens_y = BASE_MOUSE_SENS * fov_ratio
 
 	_update_health_bar()
 	_update_visibility(_delta)
@@ -1360,6 +1370,7 @@ func set_character(char: Character) -> void:
 			ability_manager.set_abilities(char.abilities)
 	_refresh_charge_ability()
 	_spawn_character_model()
+	character_changed.emit()
 
 
 ## The camera's forward vector flattened to the XZ plane (never points up/down).

@@ -196,9 +196,6 @@ func _update_animation_state() -> void:
 	# ── Upper-body shoot blend (additive / one-shot) ────────────────────
 	_update_shoot_overlay()
 
-	# ── Weapon-type skeleton mask / IK pose ──────────────────────────────
-	_update_weapon_pose()
-
 
 # ---------------------------------------------------------------------------
 # Shoot overlay — plays a one-shot "fire" on the upper body via a BlendTree
@@ -220,23 +217,6 @@ func _update_shoot_overlay() -> void:
 		_safe_set_param(&"Shoot/request", AnimationNodeOneShot.ONE_SHOT_REQUEST_FIRE)
 	elif not shooting_now:
 		_active_fire_index = -1
-
-
-# ---------------------------------------------------------------------------
-# Weapon pose — blends between rifle / pistol / empty-hand IK targets.
-# ---------------------------------------------------------------------------
-
-func _update_weapon_pose() -> void:
-	if not weapon_controller:
-		return
-	var weapons := weapon_controller.get_weapons()
-	if weapons.is_empty():
-		return
-	var idx: int = weapon_controller.current_weapon_index
-	if idx < 0 or idx >= weapons.size():
-		return
-	# Stub: future expansion for per-weapon-family upper-body poses.
-	# e.g. _safe_set_param(&"WeaponPose/weapon_type", weapon.animation_pose)
 
 
 func _on_weapon_changed(_index: int, _weapon: Weapon) -> void:

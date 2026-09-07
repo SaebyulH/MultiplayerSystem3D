@@ -2007,7 +2007,7 @@ func _execute_fire(weapon: Weapon, weapon_fire_index: int) -> void:
 	# Don't apply recoil here for BURST Ã¢â‚¬â€ it handles its own
 	if weapon_fire.multishot_mode != WeaponFire.MultishotMode.BURST:
 		var basis: Basis = weapon_model_parent.global_transform.basis
-		var recoil: Vector3 = basis * weapon_fire.recoil_knockback
+		var recoil: Vector3 = basis * -weapon_fire.recoil_knockback
 		if multiplayer.is_server():
 			get_parent().apply_knockback(recoil)
 		else:

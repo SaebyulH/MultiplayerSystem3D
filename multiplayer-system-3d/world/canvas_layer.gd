@@ -48,21 +48,11 @@ func register_control_point(cp: ControlPoint) -> void:
 		cp.captured.connect(_on_any_change)
 
 # ─────────────────────────────────────────────
-#  PROCESS  (fallback polling for return countdown)
-# ─────────────────────────────────────────────
-
-func _process(_delta: float) -> void:
-	if not _initialized:
-		return
-	# Poll every frame for all modes -- the underlying data is synced
-	# reliably by GameModeComponent._rpc_sync_state at 10 Hz, so
-	# this keeps capture-progress bars smooth and ensures late-joining
-	# players see current state immediately.
-	_refresh()
-
-# ─────────────────────────────────────────────
 #  SIGNAL SINK
 # ─────────────────────────────────────────────
+# The HUD is rebuilt on every relevant signal (phase/timer/round/match/overtime/
+# koth/points/capture/contested/captured) plus the 1 Hz time_updated, instead of
+# polling every frame.
 
 func _on_any_change(_a = null, _b = null, _c = null) -> void:
 	_refresh()

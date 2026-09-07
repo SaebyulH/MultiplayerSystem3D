@@ -53,6 +53,12 @@ var _deathmatch_panel: DeathmatchPanel = null
 # Internal
 var _initialized := false
 
+## Interval (seconds) for the timer-bar countdown and class-select visibility
+## check.  phase_timer only changes at the 10 Hz state sync, so 0.1 s is
+## visually identical to per-frame.
+const HUD_TICK_INTERVAL: float = 0.1
+var _hud_timer: Timer
+
 # ─────────────────────────────────────────────
 #  Lifecycle
 # ─────────────────────────────────────────────
@@ -60,21 +66,25 @@ var _initialized := false
 func _ready() -> void:
 	_build_shared_ui()
 
-func _process(_delta: float) -> void:
+	_hud_timer = Timer.new()
+	_hud_timer.name = "HUDTickTimer"
+	_hud_timer.wait_time = HUD_TICK_INTERVAL
+	_hud_timer.one_shot = false
+	_hud_timer.timeout.connect(_on_hud_tick)
+	add_child(_hud_timer)
+	_hud_timer.start()
+
+
+func _on_hud_tick() -> void:
 	if not _initialized or not gmc:
 		return
 
 	# Hide the HUD while the class-select screen is open so the two don't overlap.
 	_root.visible = not PlayerInput.ui_open
 
-	# Timer bar updates every frame
+	# Timer bar countdown.  Mode data is pushed via the signal handlers below,
+	# not polled here.
 	_timer_bar.set_time(gmc.phase_timer, gmc.round_time)
-
-	# Poll every frame for all modes so the HUD stays in sync with the
-	# latest server-authoritative state (arrives via reliable _rpc_sync_state
-	# at 10 Hz).  This keeps capture-progress bars smooth and ensures
-	# late-joining players see correct data immediately.
-	_push_data_to_panel()
 
 # ─────────────────────────────────────────────
 #  Build shared UI (called from _ready)

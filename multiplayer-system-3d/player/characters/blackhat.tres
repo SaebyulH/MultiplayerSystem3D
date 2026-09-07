@@ -1,0 +1,38 @@
+[gd_resource type="Resource" script_class="Character" format=3 uid="uid://dk51two052lel"]
+
+[ext_resource type="Script" uid="uid://nwsvfqljwb2b" path="res://player/abilities/ability.gd" id="1_wvobv"]
+[ext_resource type="Script" uid="uid://coggjlsesnnph" path="res://player/abilities/wallhack_ability.gd" id="2_ylv4e"]
+[ext_resource type="PackedScene" uid="uid://c6puxayhq8we2" path="res://assets/characters/blackhat.tscn" id="3_l8a6s"]
+[ext_resource type="Script" uid="uid://bxv3anwekoggx" path="res://player/character.gd" id="4_cyqsu"]
+[ext_resource type="AudioStream" uid="uid://cdvd2hnuk6uxs" path="res://assets/sounds/vinodadora-male-death-sound-128357.mp3" id="4_unj1j"]
+
+[sub_resource type="Resource" id="Resource_5dt4b"]
+script = ExtResource("2_ylv4e")
+metadata/_custom_type_script = "uid://coggjlsesnnph"
+
+[sub_resource type="Resource" id="Resource_dhptb"]
+script = ExtResource("2_ylv4e")
+metadata/_custom_type_script = "uid://coggjlsesnnph"
+
+[sub_resource type="Resource" id="Resource_mmpn6"]
+script = ExtResource("2_ylv4e")
+metadata/_custom_type_script = "uid://coggjlsesnnph"
+
+[sub_resource type="Resource" id="Resource_8qvhx"]
+script = ExtResource("2_ylv4e")
+metadata/_custom_type_script = "uid://coggjlsesnnph"
+
+[resource]
+script = ExtResource("4_cyqsu")
+character_name = "BlackHat"
+description = "Hacker"
+character_scene = ExtResource("3_l8a6s")
+slide_friction_mult = 1.2
+slide_entry_boost_mult = 0.8
+slope_gravity_mult = 0.8
+health_mult = 1.5
+regen_per_sec = 3.0
+regen_delay = 0.0
+heal_on_kill = 999.0
+death_sound = ExtResource("4_unj1j")
+abilities = Array[ExtResource("1_wvobv")]([SubResource("Resource_5dt4b"), SubResource("Resource_dhptb"), SubResource("Resource_mmpn6"), SubResource("Resource_8qvhx")])

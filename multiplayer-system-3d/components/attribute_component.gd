@@ -10,10 +10,9 @@ var killstreak := 0
 ## Last *enemy* who damaged this player, credited for environmental kills
 ## (fall damage, hazards).  Expires after ENEMY_ATTACKER_EXPIRY seconds.
 var last_enemy_attacker = "NONE"
-var _enemy_attacker_timer: float = 0.0
+var _enemy_attacker_expiry: Timer
 
 @export var passive_heal_per_sec: float = 10.0
-var _heal_timer: float = 0.0
 
 var _time_since_last_damage: float = 0.0
 const HEAL_DELAY := 5.0
@@ -31,6 +30,19 @@ const ENEMY_ATTACKER_EXPIRY := 30.0
 
 func reset_health():
 	health = starting_health
+
+
+func _ready() -> void:
+	_enemy_attacker_expiry = Timer.new()
+	_enemy_attacker_expiry.name = "EnemyAttackerExpiryTimer"
+	_enemy_attacker_expiry.wait_time = ENEMY_ATTACKER_EXPIRY
+	_enemy_attacker_expiry.one_shot = true
+	_enemy_attacker_expiry.timeout.connect(_on_enemy_attacker_expired)
+	add_child(_enemy_attacker_expiry)
+
+
+func _on_enemy_attacker_expired() -> void:
+	last_enemy_attacker = "NONE"
 
 
 func apply_health_delta(delta: float, changer: String, changee: String, is_headshot: bool = false, falloff_mult: float = 1.0, is_backshot: bool = false):
@@ -63,7 +75,8 @@ func apply_health_delta(delta: float, changer: String, changee: String, is_heads
 		last_attacker = changer
 		if _is_enemy_attacker(changer):
 			last_enemy_attacker = changer
-			_enemy_attacker_timer = ENEMY_ATTACKER_EXPIRY
+			if _enemy_attacker_expiry:
+				_enemy_attacker_expiry.start()
 	else:
 		if changee == changer:
 			Leaderboard.request_add_self_heal(changer, applied_delta)
@@ -134,17 +147,11 @@ func reset():
 	reset_health()
 	last_attacker = "NONE"
 	last_enemy_attacker = "NONE"
-	_enemy_attacker_timer = 0.0
+	if _enemy_attacker_expiry:
+		_enemy_attacker_expiry.stop()
 	_time_since_last_damage = 0.0
-	_heal_timer = 0.0  # ← add this
 
 func _process(delta: float) -> void:
-	# Expire the "last enemy attacker" credit after the timeout.
-	if _enemy_attacker_timer > 0.0:
-		_enemy_attacker_timer -= delta
-		if _enemy_attacker_timer <= 0.0:
-			last_enemy_attacker = "NONE"
-
 	# Character regen overrides base values when set (non-null character).
 	var heal_rate: float = passive_heal_per_sec
 	var heal_delay: float = HEAL_DELAY
@@ -161,7 +168,6 @@ func _process(delta: float) -> void:
 
 	_time_since_last_damage += delta
 	if health <= 0.0 or health >= starting_health:
-		_heal_timer = 0.0
 		return
 	if _time_since_last_damage < heal_delay:
 		return

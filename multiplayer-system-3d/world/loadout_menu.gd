@@ -83,6 +83,7 @@ func _ready() -> void:
 
 	# Sync canvas visibility immediately (menu starts visible, matching self.visible).
 	_canvas.visible = visible
+	visibility_changed.connect(_on_visibility_changed)
 
 	# Load classes
 	var loaded_classes: Array[Class] = []
@@ -106,7 +107,7 @@ func _ready() -> void:
 		_select_character(_all_characters[0]["char"])
 
 
-func _process(_delta: float) -> void:
+func _on_visibility_changed() -> void:
 	# world_1.gd toggles self.visible to show/hide the loadout menu.  Free the
 	# character preview while hidden so its animation/jigglebones stop consuming
 	# CPU during gameplay; re-spawn it when the menu reopens.

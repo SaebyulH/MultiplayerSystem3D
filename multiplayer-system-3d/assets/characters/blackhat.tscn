@@ -1,0 +1,38 @@
+[gd_scene format=3 uid="uid://c6puxayhq8we2"]
+
+[ext_resource type="Script" uid="uid://b4ohd0sroqg5d" path="res://player/player_model.gd" id="1_5dt4b"]
+[ext_resource type="PackedScene" uid="uid://bxkrtcosvhhld" path="res://assets/BlackHat/blackhat.glb" id="2_5dt4b"]
+[ext_resource type="AnimationLibrary" uid="uid://ct8c4qs0yx4o3" path="res://assets/human/crouch.glb" id="3_mmpn6"]
+[ext_resource type="AnimationLibrary" uid="uid://dd783w6dpe1gq" path="res://assets/human/other_movement.glb" id="4_8qvhx"]
+[ext_resource type="AnimationLibrary" uid="uid://cl3hr20wvwixe" path="res://assets/human/sprint.glb" id="5_hf2yq"]
+[ext_resource type="AnimationLibrary" uid="uid://ch1fkaujvdl85" path="res://assets/human/walk.glb" id="6_yybij"]
+
+[node name="Blackhat" type="Node3D" unique_id=1833866528 node_paths=PackedStringArray("head_meshes")]
+script = ExtResource("1_5dt4b")
+head_meshes = [NodePath(""), NodePath(""), NodePath(""), NodePath(""), NodePath(""), NodePath(""), NodePath(""), NodePath("")]
+
+[node name="blackhat" parent="." unique_id=176952940 instance=ExtResource("2_5dt4b")]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0, 0)
+
+[node name="blackhatbody" parent="blackhat/Skeleton3D" parent_id_path=PackedInt32Array(176952940, 2072632411) index="1" unique_id=1287946344]
+blend_shapes/JUggernaut = 1.0
+
+[node name="Blackhathead" parent="blackhat/Skeleton3D" parent_id_path=PackedInt32Array(176952940, 2072632411) index="3" unique_id=131732468]
+blend_shapes/JUggernaut = 0.725
+
+[node name="BoneAttachment3D" type="BoneAttachment3D" parent="blackhat/Skeleton3D" parent_id_path=PackedInt32Array(176952940, 2072632411) index="11" unique_id=1197533160]
+transform = Transform3D(0.97903544, 0.09595318, -0.17967398, -0.009870769, 0.90340704, 0.42867044, 0.20345108, -0.4179101, 0.8854145, 0.0012020203, 1.5903263, 0.01404364)
+bone_name = "DEF-spine.006"
+bone_idx = 72
+
+[node name="Node3D" type="Node3D" parent="blackhat/Skeleton3D/BoneAttachment3D" unique_id=1977014581]
+transform = Transform3D(1, -1.6940659e-21, 0, -1.4823077e-21, 1, 0, 0, 0, 1, -1.3901665e-08, 0.11539245, 0.1590165)
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="blackhat" unique_id=808298058]
+root_node = NodePath("")
+libraries/crouch = ExtResource("3_mmpn6")
+libraries/other_movement = ExtResource("4_8qvhx")
+libraries/sprint = ExtResource("5_hf2yq")
+libraries/walk = ExtResource("6_yybij")
+
+[editable path="blackhat"]

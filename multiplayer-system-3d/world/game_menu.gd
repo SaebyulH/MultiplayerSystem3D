@@ -112,6 +112,8 @@ func _ready() -> void:
 		$ID.text = "ID: " + player_id
 
 	Leaderboard.killstreak_changed.connect(_on_killstreak_changed)
+	Leaderboard.scores_changed.connect(_on_scores_changed)
+	Leaderboard.player_removed.connect(_on_scores_changed)
 	_build_leaderboard_ui()
 
 
@@ -241,7 +243,11 @@ func _build_row(rank: String, name: String, char_name: String, kills: String, de
 	return hbox
 
 
-func _process(_delta: float) -> void:
+func _on_scores_changed(_player_name = null) -> void:
+	_rebuild_leaderboard()
+
+
+func _rebuild_leaderboard() -> void:
 	if not _lb_canvas or not _lb_canvas.visible:
 		return
 	if Leaderboard == null:
@@ -299,6 +305,7 @@ func _process(_delta: float) -> void:
 func show_leaderboard() -> void:
 	if _lb_canvas:
 		_lb_canvas.visible = true
+		_rebuild_leaderboard()
 
 func hide_leaderboard() -> void:
 	if _lb_canvas:

@@ -7,11 +7,11 @@
 [ext_resource type="Resource" path="res://player/abilities/heal.tres" id="3_abil"]
 [ext_resource type="Resource" uid="uid://df5ob7dqaxjgc" path="res://player/abilities/weapon_fire.tres" id="4_abil"]
 [ext_resource type="Resource" uid="uid://bkofte7pvpmh5" path="res://player/abilities/shoulder_charge.tres" id="6_abil"]
-[ext_resource type="Resource" path="res://player/abilities/rampage.tres" id="7_abil"]
+[ext_resource type="Resource" uid="uid://d3yv8ta033nvs" path="res://player/abilities/rampage.tres" id="7_abil"]
 
 [resource]
 script = ExtResource("1_char")
-character_name = "Juggernaut"
+character_name = "Boldbaatar"
 description = "Heavily armored assault unit. Slow but durable. High regen"
 character_scene = ExtResource("1_3mk60")
 speed_mult = 0.75

@@ -9,13 +9,17 @@ var _damage_dealt: Dictionary = {}
 var _self_damage: Dictionary = {}
 var _self_heal: Dictionary = {}
 var _heal_others: Dictionary = {}
-var _dirty: bool = false
-var _sync_cooldown: float = 0.0
+
+## Debounce window (seconds) for coalescing rapid score mutations into one sync.
 const LEADERBOARD_SYNC_INTERVAL: float = 0.5
+var _sync_timer: Timer
 
 signal killstreak_changed(player_name: String, killstreak: int)
 signal player_removed(player_name: String)
 signal kill_feed_entry(killer_name: String, victim_name: String, weapon_name: String, weapon_resource_path: String)
+## Emitted whenever score data changes on this peer (server: on mutation;
+## clients: when a sync arrives).  Lets UI rebuild instead of polling.
+signal scores_changed()
 
 # -------------------------
 # PLAYER MANAGEMENT
@@ -24,6 +28,12 @@ signal kill_feed_entry(killer_name: String, victim_name: String, weapon_name: St
 func _ready() -> void:
 	if multiplayer.is_server():
 		set_multiplayer_authority(1)
+	_sync_timer = Timer.new()
+	_sync_timer.name = "ScoreSyncTimer"
+	_sync_timer.wait_time = LEADERBOARD_SYNC_INTERVAL
+	_sync_timer.one_shot = true
+	_sync_timer.timeout.connect(_sync_scores)
+	add_child(_sync_timer)
 
 @rpc("any_peer", "call_local")
 func _add_player(player_name: String):
@@ -139,16 +149,11 @@ func _add_heal_other(healer_name: String, amount: float):
 # -------------------------
 
 func _mark_dirty() -> void:
-	_dirty = true
-
-func _process(delta: float) -> void:
-	if not _dirty:
-		return
-	_sync_cooldown -= delta
-	if _sync_cooldown <= 0.0:
-		_sync_cooldown = LEADERBOARD_SYNC_INTERVAL
-		_dirty = false
-		_sync_scores()
+	# Scores are already updated locally, so notify UI immediately, then
+	# schedule the (debounced) broadcast to clients.
+	scores_changed.emit()
+	if _sync_timer.is_stopped():
+		_sync_timer.start()
 
 func _sync_scores():
 	rpc("_receive_scores",
@@ -184,6 +189,7 @@ func _receive_scores(kills: Dictionary,
 			killstreak_changed.emit(player_name, new_streak)
 
 	_killstreak = killstreak.duplicate()
+	scores_changed.emit()
 
 
 @rpc("any_peer", "reliable")
