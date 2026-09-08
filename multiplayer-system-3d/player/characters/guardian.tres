@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://bxv3anwekoggx" path="res://player/character.gd" id="1_char"]
 [ext_resource type="PackedScene" uid="uid://c25ral6vey0g" path="res://assets/characters/nerd.tscn" id="1_lls2m"]
+[ext_resource type="Script" uid="uid://nwsvfqljwb2b" path="res://player/abilities/ability.gd" id="1_rf8w2"]
 [ext_resource type="AudioStream" uid="uid://cj8jpcm1bfpio" path="res://assets/sounds/nerd_death.mp3" id="2_slv88"]
 
 [resource]
@@ -12,6 +13,7 @@ character_scene = ExtResource("1_lls2m")
 acceleration_mult = 0.9
 friction_mult = 1.2
 crouch_speed_mult = 0.9
+air_jumps = 2
 jump_mult = 1.5
 slide_friction_mult = 1.2
 slide_entry_boost_mult = 0.8

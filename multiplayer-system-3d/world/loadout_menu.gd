@@ -674,6 +674,10 @@ func _show_weapon_info(weapon: Weapon) -> void:
 
 
 func _show_ability_info(ability: Ability) -> void:
+	# Passive abilities are informational only — show just their description.
+	if ability is PassiveAbility:
+		_show_info(ability.ability_name, ability.description)
+		return
 	var parts: PackedStringArray = []
 	if not ability.description.is_empty():
 		parts.append(ability.description)

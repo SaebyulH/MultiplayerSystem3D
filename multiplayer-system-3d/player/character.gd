@@ -15,6 +15,12 @@ class_name Character
 @export var acceleration_mult: float = 1.0
 @export var friction_mult: float = 1.0
 @export var crouch_speed_mult: float = 1.0
+## Maximum stamina bars this character can hold.
+@export var max_stamina: int = 3
+## Mid-air jumps allowed per airtime (0 disables double jumping).
+@export var air_jumps: int = 1
+## Mid-air dashes allowed per airtime.
+@export var air_dashes: int = 1
 
 # -- Air --
 @export_group("Air")

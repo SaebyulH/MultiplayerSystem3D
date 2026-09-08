@@ -2295,7 +2295,11 @@ func _spawn_projectile(fire: WeaponFire, world_dir: Vector3, shooter_name: Strin
 	projectile_scene.shooter_name     = shooter_name
 
 	var speed: float = projectile_scene.linear_velocity.length()
-	projectile_scene.linear_velocity = world_dir * speed
+	# Inherit only the shooter's velocity component along the aim direction, so
+	# projectiles pick up forward momentum but never veer off the crosshair — and
+	# moving against the aim can never slow the shot down.
+	var forward_boost: float = maxf(_parent_player.velocity.dot(world_dir), 0.0)
+	projectile_scene.linear_velocity = world_dir * speed + world_dir * forward_boost
 	projectile_scene.shooter_team = shooter_team
 	# Copy status effects and knockback from the WeaponFire to the projectile.
 	var hb: HitboxComponent = projectile_scene.get_node_or_null("HitboxComponent") as HitboxComponent

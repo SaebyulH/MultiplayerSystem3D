@@ -13,6 +13,9 @@
 [ext_resource type="Script" uid="uid://djg0ti1n45f8b" path="res://weapon/weapon_fire.gd" id="8_at1ad"]
 [ext_resource type="AudioStream" uid="uid://h5oipa516ci8" path="res://assets/sounds/kalsstockmedia-thunderous-sci-fi-gunshot-sound-341615.mp3" id="9_5qela"]
 [ext_resource type="Script" uid="uid://bv0g4rnfelqch" path="res://components/status_effect/status_effect.gd" id="10_trpmt"]
+[ext_resource type="AudioStream" uid="uid://u24dsvsfmlr2" path="res://assets/sounds/gun_sound.mp3" id="11_moh7u"]
+[ext_resource type="PackedScene" uid="uid://c0plytpiwyh8p" path="res://weapon/projectiles/scenes/nuke.tscn" id="12_ow7rt"]
+[ext_resource type="Script" uid="uid://bgnoupinctd73" path="res://player/abilities/passive_ability.gd" id="12_pasv"]
 
 [sub_resource type="Resource" id="Resource_x7c3f"]
 script = ExtResource("2_moh7u")
@@ -46,11 +49,38 @@ weapon_fire = SubResource("Resource_qisbw")
 ability_name = "Carpet Bomb"
 cooldown = 10.0
 
+[sub_resource type="Resource" id="Resource_lowg"]
+script = ExtResource("12_pasv")
+ability_name = "Low Gravity"
+description = "You fall slowly and drift through the air, making long jumps, air strafing and mid-air control much easier."
+
+[sub_resource type="Resource" id="Resource_a2xb3"]
+script = ExtResource("7_1o6mg")
+
+[sub_resource type="Resource" id="Resource_23iyw"]
+script = ExtResource("8_at1ad")
+recoil_data = SubResource("Resource_a2xb3")
+bullet_type = 1
+projectile_scene = ExtResource("12_ow7rt")
+shoot_sound = ExtResource("11_moh7u")
+empty_sound = ExtResource("4_ow7rt")
+metadata/_custom_type_script = "uid://djg0ti1n45f8b"
+
+[sub_resource type="Resource" id="Resource_odo1h"]
+script = ExtResource("3_a2xb3")
+weapon_fire = SubResource("Resource_23iyw")
+ability_name = "Davy Crockett"
+description = "Drop a nuke below you."
+metadata/_custom_type_script = "uid://lrht2lh1enw5"
+
 [resource]
 script = ExtResource("1_char")
 character_name = "FlyGirl"
 description = "A fast assault class with high air control, ideal for explosion jumping."
 character_scene = ExtResource("1_1m2t5")
+max_stamina = 5
+air_jumps = 2
+air_dashes = 2
 air_accel_mult = 2.0
 air_speed_cap_mult = 2.0
 jump_mult = 1.1
@@ -61,4 +91,4 @@ slope_gravity_mult = 1.4
 health_mult = 2.0
 heal_on_kill = 999.0
 death_sound = ExtResource("2_kaefc")
-abilities = Array[ExtResource("1_ckkow")]([SubResource("Resource_x7c3f"), SubResource("Resource_bjvpn")])
+abilities = Array[ExtResource("1_ckkow")]([SubResource("Resource_x7c3f"), SubResource("Resource_bjvpn"), SubResource("Resource_lowg"), SubResource("Resource_odo1h")])

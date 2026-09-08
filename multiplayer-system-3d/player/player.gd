@@ -112,9 +112,23 @@ var dash_held_prev: bool = false
 var jump_held_prev: bool = false
 var crouch_held_prev: bool = false
 
-# Air action limits - one double jump and one air dash per airtime.
-var air_jump_used: bool = false
-var air_dash_used: bool = false
+# Air action limits — consumed mid-air jumps/dashes, reset each grounded tick.
+var air_jumps_used: int = 0
+var air_dashes_used: int = 0
+
+## The character's maximum stamina, or the default when no character is set.
+func get_max_stamina() -> int:
+	return _character.max_stamina if _character else MAX_STAMINA
+
+
+## Mid-air jumps allowed per airtime (character override, default 1).
+func get_max_air_jumps() -> int:
+	return _character.air_jumps if _character else 1
+
+
+## Mid-air dashes allowed per airtime (character override, default 1).
+func get_max_air_dashes() -> int:
+	return _character.air_dashes if _character else 1
 
 # Active grounded-dash state.
 var dash_time: float = 0.0             # > 0 while a grounded dash is running
@@ -1176,12 +1190,12 @@ func set_enlarge_scale(mult: float) -> void:
 
 ## Reset all stamina / dash / air-action state on respawn.
 func _reset_movement_tech() -> void:
-	stamina = float(MAX_STAMINA)
+	stamina = float(get_max_stamina())
 	dash_held_prev = false
 	jump_held_prev = false
 	crouch_held_prev = false
-	air_jump_used = false
-	air_dash_used = false
+	air_jumps_used = 0
+	air_dashes_used = 0
 	dash_time = 0.0
 	active_dash_dir = Vector3.ZERO
 	dash_grounded = false
@@ -1351,8 +1365,8 @@ func _apply_movement_from_input(delta):
 
 	# While grounded, air actions are available (reset each grounded tick).
 	if on_floor:
-		air_jump_used = false
-		air_dash_used = false
+		air_jumps_used = 0
+		air_dashes_used = 0
 
 	# Advance the grounded dash and end it once its duration elapses.
 	if dash_time > 0.0:
@@ -1374,9 +1388,9 @@ func _apply_movement_from_input(delta):
 		if not on_floor:
 			if crouch_tap_timer > 0.0:
 				crouch_tap_timer = 0.0
-				if dash_time <= 0.0 and not air_dash_used and stamina >= 1.0:
+				if dash_time <= 0.0 and air_dashes_used < get_max_air_dashes() and stamina >= 1.0:
 					stamina -= 1.0
-					air_dash_used = true
+					air_dashes_used += 1
 					velocity.y = -down_dash_impulse
 			else:
 				crouch_tap_timer = DOWN_DASH_WINDOW
@@ -1397,10 +1411,10 @@ func _apply_movement_from_input(delta):
 		elif on_floor:
 			# Normal jump.
 			_grounded_jump()
-		elif not air_jump_used and stamina >= 1.0:
-			# Double jump.
+		elif air_jumps_used < get_max_air_jumps() and stamina >= 1.0:
+			# Mid-air jump.
 			stamina -= 1.0
-			air_jump_used = true
+			air_jumps_used += 1
 			velocity.y = _cmult(JUMP_VELOCITY, _character.jump_mult if _character else 1.0)
 	elif on_floor and player_input.jump_input and dash_time <= 0.0 and charge_time <= 0.0:
 		# Auto bunny hop: holding jump re-jumps the moment the player lands.
@@ -1426,10 +1440,10 @@ func _apply_movement_from_input(delta):
 				active_dash_dir = dash_dir
 				dash_grounded = true
 				dash_jump_locked = false
-			elif not on_floor and not air_dash_used and stamina >= 1.0:
+			elif not on_floor and air_dashes_used < get_max_air_dashes() and stamina >= 1.0:
 				# Air dash: impulse stacked onto current velocity.
 				stamina -= 1.0
-				air_dash_used = true
+				air_dashes_used += 1
 				velocity.x += dash_dir.x * air_dash_impulse
 				velocity.z += dash_dir.z * air_dash_impulse
 
@@ -1439,8 +1453,9 @@ func _apply_movement_from_input(delta):
 		velocity.z = active_dash_dir.z * dash_speed
 
 	# Recover a stamina bar once every stamina_recovery_time seconds.
-	if stamina < MAX_STAMINA:
-		stamina = minf(stamina + delta / stamina_recovery_time, float(MAX_STAMINA))
+	var max_stamina: int = get_max_stamina()
+	if stamina < max_stamina:
+		stamina = minf(stamina + delta / stamina_recovery_time, float(max_stamina))
 
 	# Apply ADS speed modifier before computing final speed.
 	if ads:

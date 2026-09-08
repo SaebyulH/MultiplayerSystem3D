@@ -451,7 +451,7 @@ func _build_shield() -> void:
 
 func _build_stamina() -> void:
 	# -- Stamina indicator (bottom-center) --
-	var slots: int = Player.MAX_STAMINA
+	var slots: int = _owner_player.get_max_stamina() if _owner_player else Player.MAX_STAMINA
 	var total_w: float = slots * DASH_CELL_WIDTH + (slots - 1) * DASH_CELL_GAP
 
 	# Timing feedback text (above the bars).
@@ -786,6 +786,19 @@ func _on_team_changed() -> void:
 func _on_character_changed() -> void:
 	_update_character()
 	_rebuild_abilities()
+	_rebuild_stamina()
+
+
+func _rebuild_stamina() -> void:
+	# Recreate the stamina bar to match the character's max stamina.
+	if _stamina_feedback != null:
+		_stamina_feedback.hide()
+		_stamina_feedback.queue_free()
+	if _stamina_container != null:
+		_stamina_container.hide()
+		_stamina_container.queue_free()
+	_stamina_fills.clear()
+	_build_stamina()
 
 
 func _update_ads_overlay() -> void:

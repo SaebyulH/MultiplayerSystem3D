@@ -16,6 +16,7 @@ description = "Lightning-fast assassin. High fire rate and lifesteal but low hea
 character_scene = ExtResource("1_85qva")
 speed_mult = 1.35
 friction_mult = 0.7
+max_stamina = 7
 air_accel_mult = 4.0
 air_speed_cap_mult = 2.0
 min_ground_contact_time = 0.0

@@ -10,6 +10,7 @@ script = ExtResource("1_char")
 character_name = "Dr. Schweizerstein"
 description = "A medic"
 character_scene = ExtResource("1_oowlt")
+max_stamina = 2
 health_mult = 1.5
 lifesteal_percent = 0.4
 regen_per_sec = 1.0
