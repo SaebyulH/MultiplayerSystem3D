@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="EradicateAbility" format=3 uid="uid://dvlv4dsju47lp"]
+
+[ext_resource type="Script" uid="uid://boh14lf3ukqkk" path="res://player/abilities/eradicate_ability.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+max_range = 30.0
+min_angle_deg = 180.0
+max_targets = 100
+locked_color = Color(1.1778815, 0, 1.7630411, 1)
+ability_name = "Eradicate"
+description = "Deal 1000 damage to every enemy within 360 degrees."
+cooldown = 30.0

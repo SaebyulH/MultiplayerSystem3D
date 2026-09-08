@@ -1974,6 +1974,12 @@ func _is_occluded_by_wall(other: Player) -> bool:
 	return not space.intersect_ray(query).is_empty()
 
 
+## True when there is a clear line of sight from this player's camera to
+## [param other] (no world geometry between them).
+func has_line_of_sight_to(other: Player) -> bool:
+	return not _is_occluded_by_wall(other)
+
+
 ## Apply the ghost visual tier to this player's local model + weapon (client-side).
 ## NONE = normal; GLASS = translucent glass; BLACK = translucent black; HIDDEN =
 ## fully invisible (model, weapon and name label hidden).

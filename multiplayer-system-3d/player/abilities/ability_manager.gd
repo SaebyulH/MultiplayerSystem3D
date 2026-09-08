@@ -111,7 +111,8 @@ func _cast_equipped(mode: int) -> void:
 	if _is_on_cooldown(equipped_index):
 		return
 	var index: int = equipped_index
-	_request_cast(index, mode)
+	if not _request_cast(index, mode):
+		return
 	# Unequip after this frame's physics so the fire press that cast the ability
 	# doesn't also fire the weapon (WeaponController suppresses while equipped).
 	_unequip.call_deferred()
@@ -119,15 +120,23 @@ func _cast_equipped(mode: int) -> void:
 func _unequip() -> void:
 	equipped_index = -1
 
-func _request_cast(index: int, mode: int) -> void:
+func _request_cast(index: int, mode: int) -> bool:
 	if index < 0 or index >= abilities.size():
-		return
+		return false
 	if _is_on_cooldown(index):
-		return
+		return false
 	var ability: Ability = abilities[index]
 	if ability == null:
-		return
+		return false
 	print("[Ability] request_cast index=", index, " mode=", mode)
+	# Targeted abilities auto-select visible enemies nearest the crosshair; the
+	# chosen target names ride along with the cast so the server can validate.
+	# With no valid candidates the cast is skipped and nothing is consumed.
+	var target_names: Array = []
+	if ability is TargetedAbility:
+		target_names = _compute_target_names(ability)
+		if target_names.is_empty():
+			return false
 	if ability.cast_mode == Ability.CastMode.CLIENT:
 		# Deterministic effect (movement/teleport): run the hook locally so it can
 		# queue rollback input.  Cooldown is tracked optimistically on the client.
@@ -135,11 +144,12 @@ func _request_cast(index: int, mode: int) -> void:
 		_run_ability(index, mode)
 	elif multiplayer.is_server():
 		# Server sets its own cooldown authoritatively in _cast_ability.
-		_cast_ability(index, mode)
+		_cast_ability(index, mode, target_names)
 	else:
 		# Optimistic local cooldown for responsive HUD / spam prevention.
 		_start_cooldown(index, ability.cooldown)
-		_cast_ability.rpc_id(1, index, mode)
+		_cast_ability.rpc_id(1, index, mode, target_names)
+	return true
 
 ## Dispatch the ability's effect hook for [param mode].
 func _run_ability(index: int, mode: int) -> void:
@@ -156,7 +166,7 @@ func _run_ability(index: int, mode: int) -> void:
 			ability.activate_tertiary(_parent_player)
 
 @rpc("any_peer", "reliable")
-func _cast_ability(index: int, mode: int) -> void:
+func _cast_ability(index: int, mode: int, target_names: Array = []) -> void:
 	if not multiplayer.is_server():
 		return
 	if index < 0 or index >= abilities.size():
@@ -166,6 +176,43 @@ func _cast_ability(index: int, mode: int) -> void:
 		return
 	if _is_on_cooldown(index):
 		return
-	_start_cooldown(index, ability.cooldown)
 	print("[Ability] server casting ", ability.ability_name, " mode=", mode)
-	_run_ability(index, mode)
+	if ability is TargetedAbility:
+		var targets := _resolve_targets(ability, target_names)
+		if targets.is_empty():
+			return  # no valid targets — don't consume the cooldown
+		_start_cooldown(index, ability.cooldown)
+		ability.apply_to_targets(_parent_player, targets)
+	else:
+		_start_cooldown(index, ability.cooldown)
+		_run_ability(index, mode)
+
+
+## Auto-select the locked targets for a targeted ability and return their names.
+## Runs on the casting peer (a client, or the host server) where the camera is live.
+func _compute_target_names(ability: TargetedAbility) -> Array[String]:
+	var names: Array[String] = []
+	if _parent_player == null:
+		return names
+	var candidates := ability.find_candidates(_parent_player)
+	var limit := mini(candidates.size(), ability.max_targets)
+	for i in limit:
+		names.append(candidates[i].name)
+	return names
+
+
+## Resolve and validate target names on the server (enemy, spawned, in range, LOS).
+func _resolve_targets(ability: TargetedAbility, names: Array) -> Array[Player]:
+	var targets: Array[Player] = []
+	for n in names:
+		var p: Player = GameManager.find_player(n)
+		if p == null or not p.spawned or p == _parent_player:
+			continue
+		if not _parent_player._is_enemy_of(p):
+			continue
+		if _parent_player.global_position.distance_to(p.global_position) > ability.max_range:
+			continue
+		if not _parent_player.has_line_of_sight_to(p):
+			continue
+		targets.append(p)
+	return targets

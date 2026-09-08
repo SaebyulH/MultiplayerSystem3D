@@ -3,6 +3,11 @@
 [ext_resource type="PackedScene" uid="uid://btdcls63jy1a3" path="res://assets/characters/stalker.tscn" id="1_6rdoh"]
 [ext_resource type="Script" uid="uid://bxv3anwekoggx" path="res://player/character.gd" id="1_char"]
 [ext_resource type="AudioStream" uid="uid://bhhlf5datutds" path="res://assets/sounds/stalker_death.mp3" id="2_4vwll"]
+[ext_resource type="Script" uid="uid://nwsvfqljwb2b" path="res://player/abilities/ability.gd" id="2_abil"]
+[ext_resource type="Resource" uid="uid://hjpxah8x0xip" path="res://player/abilities/smite.tres" id="3_abil"]
+[ext_resource type="Resource" uid="uid://0gi0ki6n1462" path="res://player/abilities/bleed.tres" id="4_abil"]
+[ext_resource type="Resource" path="res://player/abilities/eradicate.tres" id="5_abil"]
+[ext_resource type="Resource" path="res://player/abilities/burn.tres" id="6_abil"]
 
 [resource]
 script = ExtResource("1_char")
@@ -18,3 +23,5 @@ regen_per_sec = 0.0
 regen_delay = 0.0
 heal_on_kill = 999.0
 death_sound = ExtResource("2_4vwll")
+abilities = Array[ExtResource("2_abil")]([ExtResource("3_abil"), ExtResource("4_abil"), ExtResource("6_abil"), ExtResource("5_abil")])
+passive_see_enemy_health = true

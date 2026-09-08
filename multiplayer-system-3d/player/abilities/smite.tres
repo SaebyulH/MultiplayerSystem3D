@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="SmiteAbility" format=3 uid="uid://hjpxah8x0xip"]
+
+[ext_resource type="Script" uid="uid://cx35ymweutjjf" path="res://player/abilities/smite_ability.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+locked_color = Color(0.8292704, 0.4700806, 0, 1)
+ability_name = "Smite"
+description = "Strike the visible enemy nearest your crosshair for 50 damage."
+cooldown = 6.0

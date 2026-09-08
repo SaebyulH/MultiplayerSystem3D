@@ -95,6 +95,10 @@ const MIN_DISPLAY_DELTA: float = 0.5
 const UI_TICK_INTERVAL: float = 0.1
 var _ui_timer: Timer
 
+# Targeted-ability preview labels (projected over candidate enemies).
+var _preview_layer: CanvasLayer
+var _preview_labels: Array[Label] = []
+
 # Layout constants
 const MARGIN: float = 20.0
 const BAR_WIDTH: float = 260.0
@@ -178,6 +182,7 @@ func _build_ui() -> void:
 	_build_ads_overlay()
 	_build_scope_charge_ui()
 	_build_fps()
+	_build_ability_previews()
 
 func _build_crosshair() -> void:
 	# Black outline
@@ -678,6 +683,7 @@ func _process(delta: float) -> void:
 	_update_stamina()
 	_update_scope_charge_ui()
 	_update_fps()
+	_update_targeted_previews()
 
 
 func _on_ui_tick() -> void:
@@ -689,6 +695,82 @@ func _on_ui_tick() -> void:
 	_update_bg_reload_bars()
 	_update_ability_cooldowns()
 	_update_ads_overlay()
+
+
+func _build_ability_previews() -> void:
+	_preview_layer = CanvasLayer.new()
+	_preview_layer.layer = 4
+	_preview_layer.name = "AbilityPreviewLayer"
+	add_child(_preview_layer)
+
+
+## Draw a column of ability-name labels over each candidate enemy for every
+## active targeted ability.  Locked (would-hit) targets are coloured red.
+func _update_targeted_previews() -> void:
+	if _owner_player == null:
+		return
+	var am := _owner_player.ability_manager
+	var cam := _owner_player.camera as Camera3D
+	if am == null or cam == null:
+		for lbl in _preview_labels:
+			lbl.visible = false
+		return
+
+	# Build entries: one per (candidate, active targeted ability).
+	var entries: Array[Dictionary] = []
+	var stacks: Dictionary = {}  # candidate name -> next column slot
+	var abilities := am.get_abilities()
+	for i in abilities.size():
+		var ability := abilities[i] as TargetedAbility
+		if ability == null:
+			continue
+		# No preview while the ability is on cooldown.
+		if am.get_cooldown_remaining(i) > 0.0:
+			continue
+		# INSTANT abilities are always active; EQUIP only while equipped.
+		if ability.cast_type == Ability.CastType.EQUIP and am.equipped_index != i:
+			continue
+		var candidates := ability.find_candidates(_owner_player)
+		var locked: Dictionary = {}
+		var limit := mini(candidates.size(), ability.max_targets)
+		for k in limit:
+			locked[candidates[k].name] = true
+		for c in candidates:
+			var stack: int = stacks.get(c.name, 0)
+			entries.append({
+				"player": c,
+				"ability": ability,
+				"locked": locked.has(c.name),
+				"stack": stack,
+			})
+			stacks[c.name] = stack + 1
+
+	# Grow the label pool as needed (never shrink; the whole HUD is freed on death).
+	while _preview_labels.size() < entries.size():
+		var lbl := Label.new()
+		lbl.add_theme_font_size_override("font_size", 14)
+		lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+		lbl.add_theme_constant_override("outline_size", 4)
+		lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_preview_layer.add_child(lbl)
+		_preview_labels.append(lbl)
+
+	for j in _preview_labels.size():
+		var lbl: Label = _preview_labels[j]
+		if j >= entries.size():
+			lbl.visible = false
+			continue
+		var entry: Dictionary = entries[j]
+		var ability := entry["ability"] as TargetedAbility
+		var target := entry["player"] as Player
+		var locked: bool = entry["locked"]
+		var stack: int = entry["stack"]
+		lbl.text = ability.ability_name
+		lbl.modulate = ability.locked_color if locked else ability.preview_color
+		lbl.visible = true
+		var world_pos: Vector3 = target.global_position + Vector3(0, 2.2, 0)
+		var screen: Vector2 = cam.unproject_position(world_pos)
+		lbl.position = screen + Vector2(-lbl.get_minimum_size().x * 0.5, float(stack) * 20.0)
 
 
 func _on_health_changed() -> void:

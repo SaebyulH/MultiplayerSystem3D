@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="BleedAbility" format=3 uid="uid://0gi0ki6n1462"]
+
+[ext_resource type="Script" uid="uid://c5op0ctd5cqm2" path="res://player/abilities/bleed_ability.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+max_targets = 100
+ability_name = "Bleed"
+description = "Afflict visible enemies nearest your crosshair with bleed."
+cooldown = 10.0
