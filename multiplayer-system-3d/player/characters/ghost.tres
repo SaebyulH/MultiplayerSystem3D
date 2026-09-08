@@ -3,8 +3,11 @@
 [ext_resource type="PackedScene" uid="uid://ckqx4woyqsg2o" path="res://assets/characters/ghost.tscn" id="1_85qva"]
 [ext_resource type="Script" uid="uid://bxv3anwekoggx" path="res://player/character.gd" id="1_char"]
 [ext_resource type="AudioStream" uid="uid://b201yyyuo4tan" path="res://assets/sounds/female_pain.mp3" id="2_85qva"]
-[ext_resource type="Script" path="res://player/abilities/ability.gd" id="2_abil"]
-[ext_resource type="Resource" path="res://player/abilities/wallhack.tres" id="3_abil"]
+[ext_resource type="Script" uid="uid://nwsvfqljwb2b" path="res://player/abilities/ability.gd" id="2_abil"]
+[ext_resource type="Resource" uid="uid://d2d4m0f7c28x3" path="res://player/abilities/wallhack.tres" id="3_abil"]
+[ext_resource type="Resource" path="res://player/abilities/teleport.tres" id="4_abil"]
+[ext_resource type="Resource" path="res://player/abilities/invisibility.tres" id="5_abil"]
+[ext_resource type="Resource" path="res://player/abilities/noclip.tres" id="6_abil"]
 
 [resource]
 script = ExtResource("1_char")
@@ -22,6 +25,6 @@ slope_gravity_mult = 1.3
 lifesteal_percent = 0.6
 regen_per_sec = 2.0
 heal_on_kill = 999.0
-passive_see_enemy_health = true
 death_sound = ExtResource("2_85qva")
-abilities = Array[ExtResource("2_abil")]([ExtResource("3_abil")])
+abilities = Array[ExtResource("2_abil")]([ExtResource("3_abil"), ExtResource("4_abil"), ExtResource("5_abil"), ExtResource("6_abil")])
+passive_see_enemy_health = true

@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="TeleportAbility" format=3]
+
+[ext_resource type="Script" path="res://player/abilities/teleport_ability.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+ability_name = "Teleport"
+description = "Blink 3 metres along your aim direction."
+cast_mode = 1
+cooldown = 5.0
+teleport_distance = 3.0

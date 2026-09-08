@@ -1602,8 +1602,8 @@ func _process_fire() -> void:
 		return
 	if is_switching():
 		return
-	# While a shoulder charge is active, weapons cannot be fired.
-	if _parent_player.is_charging():
+	# While a shoulder charge or bashdown is active, weapons cannot be fired.
+	if _parent_player.is_charging() or _parent_player.is_bashing():
 		return
 	# While an ability is equipped (EQUIP-cast), fire buttons cast the ability
 	# instead of firing the weapon.

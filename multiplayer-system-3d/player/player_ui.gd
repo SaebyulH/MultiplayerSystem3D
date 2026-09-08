@@ -13,7 +13,6 @@ class_name PlayerBodyUI
 @onready var _ammo_bar_public: Label3D = $"../AmmoBarPublic"
 @onready var _health_bar_public: Label3D = $"../HealthBarPublic"
 @onready var _status_bar_public: Label3D = $"../StatusBarPublic"
-@onready var _name_public: Label3D = %NamePublic
 
 # -- Built UI nodes --
 
@@ -126,11 +125,6 @@ func _ready() -> void:
 	if attribute_component:
 		_last_health = attribute_component.health
 
-	# Broadcast display name to all peers (authority only)
-	if is_owner:
-		var display_name := ("Host" if (name.to_int() == 1) else "Client") + ", NetID: " + str(name)
-		_set_name_label.rpc(display_name)
-
 	_connect_signals()
 
 	_ui_timer = Timer.new()
@@ -147,10 +141,6 @@ func _ready() -> void:
 	_update_character()
 	_rebuild_abilities()
 	_rebuild_status_effects()
-
-@rpc("authority", "call_local", "reliable")
-func _set_name_label(display_name: String) -> void:
-	_name_public.text = display_name
 
 func _connect_signals() -> void:
 	if weapon_controller:
@@ -1065,15 +1055,11 @@ func _rebuild_status_effects() -> void:
 			continue
 		var mat = _effect_materials.get(id, null)
 		if not mat:
-			# Fallback: no custom shader, show a plain border.
-			var cr := _create_border_overlay(FALLBACK_BORDER_COLOR)
-			cr.material = null
-			cr.color = FALLBACK_BORDER_COLOR
-			_border_overlays[id] = cr
-		else:
-			var cr := _create_border_overlay()
-			cr.material = mat.duplicate()  # unique instance so multiple effects don't share uniforms
-			_border_overlays[id] = cr
+			# No custom on-screen effect defined — render no border for this effect.
+			continue
+		var cr := _create_border_overlay()
+		cr.material = mat.duplicate()  # unique instance so multiple effects don't share uniforms
+		_border_overlays[id] = cr
 		_border_overlays[id].visible = true
 
 	# ---- Side-panel effect list ----

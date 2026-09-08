@@ -54,8 +54,8 @@ func _input(event: InputEvent) -> void:
 		return
 	if PlayerInput.ui_open:
 		return
-	# While a shoulder charge is active, no other ability can be cast.
-	if _parent_player.is_charging():
+	# While a shoulder charge or bashdown is active, no other ability can be cast.
+	if _parent_player.is_charging() or _parent_player.is_bashing():
 		return
 
 	# Ability keys 1-4.

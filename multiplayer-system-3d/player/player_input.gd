@@ -27,6 +27,24 @@ var charge_trigger_dir: Vector3 = Vector3.ZERO
 ## copies it into [member charge_trigger_dir] and clears it.  Not rolled back.
 var queued_charge_trigger_dir: Vector3 = Vector3.ZERO
 
+## One-shot bashdown direction (world space) queued by abilities.
+## ZERO = no trigger.  Input property: gathered here, broadcast, and consumed in
+## _rollback_tick to start a bashdown.  Local staging is [member queued_bashdown_trigger_dir].
+var bashdown_trigger_dir: Vector3 = Vector3.ZERO
+
+## Local staging for the next gathered tick.  Abilities set this; _gather()
+## copies it into [member bashdown_trigger_dir] and clears it.  Not rolled back.
+var queued_bashdown_trigger_dir: Vector3 = Vector3.ZERO
+
+## One-shot teleport direction (world space) queued by abilities.
+## ZERO = no trigger.  Input property: gathered here, broadcast, and consumed in
+## _rollback_tick to apply a position jump.  Local staging is [member queued_teleport_trigger_dir].
+var teleport_trigger_dir: Vector3 = Vector3.ZERO
+
+## Local staging for the next gathered tick.  Abilities set this; _gather()
+## copies it into [member teleport_trigger_dir] and clears it.  Not rolled back.
+var queued_teleport_trigger_dir: Vector3 = Vector3.ZERO
+
 # Not rolled back — polled each physics frame by WeaponController
 var primary_fire_held: bool   = false
 var secondary_fire_held: bool = false
@@ -57,6 +75,10 @@ func _gather() -> void:
 		dash_input = false
 		charge_trigger_dir = Vector3.ZERO
 		queued_charge_trigger_dir = Vector3.ZERO
+		bashdown_trigger_dir = Vector3.ZERO
+		queued_bashdown_trigger_dir = Vector3.ZERO
+		teleport_trigger_dir = Vector3.ZERO
+		queued_teleport_trigger_dir = Vector3.ZERO
 		return
 	# Stunned or pinned players cannot move, jump, crouch, dash, or cast.
 	var status_manager := get_parent().status_effect_manager as StatusEffectManager
@@ -67,6 +89,10 @@ func _gather() -> void:
 		dash_input = false
 		charge_trigger_dir = Vector3.ZERO
 		queued_charge_trigger_dir = Vector3.ZERO
+		bashdown_trigger_dir = Vector3.ZERO
+		queued_bashdown_trigger_dir = Vector3.ZERO
+		teleport_trigger_dir = Vector3.ZERO
+		queued_teleport_trigger_dir = Vector3.ZERO
 		return
 	input_dir  = Input.get_vector("move_left", "move_right", "move_forward", "move_backward")
 	jump_input = Input.is_action_pressed("ui_accept")
@@ -74,6 +100,10 @@ func _gather() -> void:
 	dash_input = Input.is_action_pressed("dash")
 	charge_trigger_dir = queued_charge_trigger_dir
 	queued_charge_trigger_dir = Vector3.ZERO
+	bashdown_trigger_dir = queued_bashdown_trigger_dir
+	queued_bashdown_trigger_dir = Vector3.ZERO
+	teleport_trigger_dir = queued_teleport_trigger_dir
+	queued_teleport_trigger_dir = Vector3.ZERO
 
 func _input(event: InputEvent) -> void:
 	if get_parent().is_bot:

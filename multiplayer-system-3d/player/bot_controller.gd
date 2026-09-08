@@ -352,6 +352,9 @@ func _think() -> void:
 			# A heal weapon can't damage enemies — skip the wasted LOS raycast.
 			if holding_heal:
 				continue
+			# Invisible players are untargetable.
+			if p.status_effect_manager and p.status_effect_manager.has_effect("invisible"):
+				continue
 			if dist_sq < closest_dist_sq and _is_in_view_cone(p) and _has_line_of_sight_to_player(p):
 				closest_dist_sq = dist_sq
 				_current_target = p
@@ -395,6 +398,8 @@ func _targets_valid() -> bool:
 		if not is_instance_valid(_current_target) or not _current_target.spawned:
 			return false
 		if not _is_enemy_of(_current_target):
+			return false
+		if _current_target.status_effect_manager and _current_target.status_effect_manager.has_effect("invisible"):
 			return false
 		return _has_line_of_sight_to_player(_current_target)
 	if _heal_target != null:

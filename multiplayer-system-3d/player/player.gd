@@ -125,6 +125,11 @@ var dash_grounded: bool = false        # dash began grounded (enables coyote das
 var charge_time: float = 0.0           # > 0 while a charge is running
 var charge_dir: Vector3 = Vector3.ZERO # unit direction the charge travels along
 
+# Active bashdown state (rolled back).
+var bashdown_time: float = 0.0            # > 0 while the lunge window is open
+var bashdown_dir: Vector3 = Vector3.ZERO  # frozen look direction at cast
+var bashdown_slamming: bool = false       # true during the slam-down phase
+
 # Dash-jump timing.
 var dash_jump_locked: bool = false     # timing failed; locked out this dash
 
@@ -170,6 +175,24 @@ var _charge_ability: ShoulderChargeAbility = null
 var _pinned_players: Array[String] = []
 ## Server-side latch: set when the charge hits a wall, processed next frame.
 var _wall_slam_pending: bool = false
+
+## Cached BashDownAbility (read for its tunables inside the rollback tick).
+var _bashdown_ability: BashDownAbility = null
+
+## Cached TeleportAbility (read for its tunables inside the rollback tick).
+var _teleport_ability: TeleportAbility = null
+## Server-side list of players currently being carried by a bashdown slam.
+var _bashdown_pinned: Array[String] = []
+## victim name -> whether they were standing on the ground when grabbed.
+var _bashdown_victim_grounded: Dictionary = {}
+## Server-side latch: a bashdown bump was detected; pin the victim next frame.
+var _bashdown_bump_pending: bool = false
+## Server-side latch: a bashdown slam reached the ground; release victims next frame.
+var _bashdown_land_pending: bool = false
+## Victim name chosen by the deterministic bump scan (server only).
+var _bashdown_bump_enemy: String = ""
+## The victim's is_on_floor() at the moment of the bump (server only).
+var _bashdown_bump_grounded: bool = false
 
 ## The currently-active third-person model (what other players see): the
 ## built-in mannequin, or a spawned character model.
@@ -312,6 +335,28 @@ var _teammate_occluded_time: Dictionary = {}
 ## damage numbers and the health bar.
 var _seen_by_local := true
 
+# ── Ghost abilities (invisibility / noclip) ───────────────────────────────
+## Materials applied as material_override to the model + weapon while a ghost
+## effect is active.  Client-side rendering, driven by the synced effect mirror.
+const INVISIBLE_GLASS: StandardMaterial3D = preload("res://assets/materials/invisible_glass.tres")
+const NOCLIP_BLACK: StandardMaterial3D = preload("res://assets/materials/noclip_black.tres")
+
+## Visual tiers for a ghost-effected player.  NONE = normal, GLASS = translucent
+## glass (self/teammate invisible), BLACK = translucent black (noclip), HIDDEN =
+## fully invisible (invisible to an enemy).
+enum GhostTier { NONE, GLASS, BLACK, HIDDEN }
+
+## The tier currently applied to this player's local copy of the model.
+var _ghost_tier: int = GhostTier.NONE
+
+## Server-only: seconds remaining of the post-noclip 999-damage overlap pulse.
+var _noclip_exit_time: float = 0.0
+## Server-only: player names already hit by the current exit pulse (once each).
+var _noclip_exit_hit: Dictionary = {}
+
+## Whether the player's hurtbox areas are currently enabled (disabled in noclip).
+var _hurtboxes_active := true
+
 ## 2D health-bar reveal UI (projected above the head, like a damage number).
 var _health_bar: Label = null
 
@@ -439,10 +484,14 @@ func rpc_reset(pos: Vector3) -> void:
 	pinned_offset = Vector3.ZERO
 	pinned_at_wall = false
 	_wall_slam_pending = false
+	_bashdown_bump_pending = false
+	_bashdown_land_pending = false
+	_bashdown_bump_enemy = ""
 
 	# If this player was carrying enemies, release them (server only).
 	if multiplayer.is_server():
 		_release_all_pinned(false)
+		_release_bashdown_pinned()
 
 	# Reset health, weapons, and status effects on every peer.
 	attribute_component.reset()
@@ -641,6 +690,15 @@ func _physics_process(delta: float) -> void:
 	# Shoulder charge carry/stun (server-authoritative, real frames only).
 	_update_shoulder_charge()
 
+	# Bashdown bump/slam damage (server-authoritative, real frames only).
+	_update_bashdown()
+
+	# Noclip exit pulse: for ~1 s after leaving noclip, deal 999 damage to any
+	# enemy overlapping this player's body (server-authoritative).
+	if _noclip_exit_time > 0.0:
+		_noclip_exit_time -= delta
+		_update_noclip_exit_pulse()
+
 	# Passive shield regen — runs even when retracted.
 	_shield_regen(delta)
 
@@ -658,6 +716,11 @@ func _physics_process(delta: float) -> void:
 ## Server-only and real-frames-only (never inside the rollback tick).
 func _track_fall_damage() -> void:
 	if not multiplayer.is_server():
+		return
+	# Don't deal self fall damage during a bashdown (the slam is intentional).
+	if is_bashing():
+		_max_fall_speed = 0.0
+		_was_airborne = false
 		return
 	if not spawned:
 		_max_fall_speed = 0.0
@@ -740,6 +803,14 @@ func _rollback_tick(delta, tick, is_fresh):
 	if player_input.charge_trigger_dir != Vector3.ZERO:
 		_start_charge(player_input.charge_trigger_dir)
 
+	# Bashdown trigger (deterministic — see PlayerInput.bashdown_trigger_dir).
+	if player_input.bashdown_trigger_dir != Vector3.ZERO:
+		_start_bashdown(player_input.bashdown_trigger_dir)
+
+	# Teleport trigger (deterministic — see PlayerInput.teleport_trigger_dir).
+	if player_input.teleport_trigger_dir != Vector3.ZERO:
+		_do_teleport(player_input.teleport_trigger_dir)
+
 	# Pinned by a shoulder charge — follow the charger every tick.  The pin is
 	# set via RPC and persists across re-simulation (see _rpc_pin).  The carry
 	# respects walls: if it would push us into geometry, we hold position and
@@ -776,11 +847,115 @@ func _rollback_tick(delta, tick, is_fresh):
 		if multiplayer.is_server():
 			_wall_slam_pending = true
 
+	# Bashdown bump — deterministically detect the first enemy hit during the lunge
+	# and transition to the slam.  Damage/pin is server-only; it's latched here.
+	if bashdown_time > 0.0 and not bashdown_slamming:
+		var target := _find_bashdown_target()
+		if target != null:
+			bashdown_time = 0.0
+			bashdown_slamming = true
+			if multiplayer.is_server():
+				_bashdown_bump_enemy = target.name
+				_bashdown_bump_grounded = target.is_on_floor()
+				_bashdown_bump_pending = true
+	# Bashdown slam landing — deterministically end the slam when the charger hits
+	# the ground.  Slam damage/release is server-only; it's latched here.
+	if bashdown_slamming and is_on_floor():
+		bashdown_slamming = false
+		if multiplayer.is_server():
+			_bashdown_land_pending = true
+
 func _force_update_is_on_floor():
 	var old_velocity = velocity
 	velocity = Vector3.ZERO
 	move_and_slide()
 	velocity = old_velocity
+
+
+# ── Noclip free-fly ──────────────────────────────────────────────────────────
+# Noclip removes gravity and all collision (walls, floors and players).  WASD
+# moves the player along the camera's full 3D basis — W is the camera forward
+# (including pitch), A/D strafe — so the ghost can fly through geometry.
+
+## Free-fly movement for the noclip state: camera-relative 3D steering with no
+## gravity and no collision.  Replaces the normal movement sim entirely.
+func _noclip_move(delta: float) -> void:
+	var cam_basis: Basis = camera.global_transform.basis
+	var fwd := -cam_basis.z
+	var rgt := cam_basis.x
+	var input := player_input.input_dir
+	# input_dir.y is -1 for forward (W) and +1 for backward (S), so negate it to
+	# steer along the true camera-forward vector.
+	var wish := fwd * (-input.y) + rgt * input.x
+	var wish_dir := wish.normalized() if wish.length_squared() > 0.0001 else Vector3.ZERO
+
+	speed = ADS_SPEED if ads else NORMAL_SPEED
+	var calc_speed: float = _cmult(speed, _character.speed_mult if _character else 1.0)
+	var weapons := weapon_controller.get_weapons()
+	if not weapons.is_empty():
+		calc_speed = calc_speed * weapons[weapon_controller.current_weapon_index].player_speed_multiplier
+		calc_speed = calc_speed * weapon_controller.get_active_fire_speed_mult()
+	calc_speed *= get_status_speed_mult()
+
+	if wish_dir == Vector3.ZERO:
+		# No input: damp velocity to a stop on all axes.
+		var fric: float = _cmult(friction, _character.friction_mult if _character else 1.0)
+		velocity = velocity.move_toward(Vector3.ZERO, fric * delta)
+	else:
+		var accel: float = _cmult(acceleration, _character.acceleration_mult if _character else 1.0)
+		var target := wish_dir * calc_speed
+		velocity.x = move_toward(velocity.x, target.x, accel * delta)
+		velocity.y = move_toward(velocity.y, target.y, accel * delta)
+		velocity.z = move_toward(velocity.z, target.z, accel * delta)
+
+	# Integrate directly — no move_and_slide, so nothing blocks the body.
+	velocity *= NetworkTime.physics_factor
+	velocity += knockback_velocity
+	global_position += velocity * delta
+	velocity /= NetworkTime.physics_factor
+
+	var knockback_decay: float = velocity.length() ** 2 * 10
+	knockback_velocity = knockback_velocity.move_toward(Vector3.ZERO, knockback_decay * delta)
+
+
+## Enable/disable the player's hurtbox areas.  Disabled during noclip so
+## bullets/projectiles pass straight through (damage is also gated in
+## change_health).
+func _set_hurtboxes_active(active: bool) -> void:
+	for path in ["HeadHurtbox", "BodyHurtbox", "BodyHurtbox2"]:
+		var area := get_node_or_null(path) as Area3D
+		if area != null:
+			area.collision_layer = 4 if active else 0
+
+
+## Begin the post-noclip 999-damage overlap window (server only).  Called by
+## NoclipEffect._on_remove when noclip is cancelled or cleared on death.
+func _start_noclip_exit_pulse() -> void:
+	if not multiplayer.is_server() or not spawned:
+		return
+	_noclip_exit_time = 1.0
+	_noclip_exit_hit.clear()
+
+
+## Deal 999 damage to every enemy overlapping this player's body, once each.
+## Called each physics frame while [_noclip_exit_time] is positive.
+func _update_noclip_exit_pulse() -> void:
+	if not multiplayer.is_server() or not spawned:
+		return
+	var params := PhysicsShapeQueryParameters3D.new()
+	params.shape = collider.shape
+	params.transform = global_transform
+	params.collision_mask = 2  # PLAYER_COLLISION
+	params.exclude = [get_rid()]
+	var hits := get_world_3d().direct_space_state.intersect_shape(params, 32)
+	for hit in hits:
+		var other := hit.get("collider") as Player
+		if other == null or other == self or not _is_enemy_of(other):
+			continue
+		if _noclip_exit_hit.has(other.name):
+			continue
+		_noclip_exit_hit[other.name] = true
+		other.change_health(-999.0, name)
 
 
 func apply_knockback(force: Vector3) -> void:
@@ -796,6 +971,99 @@ func _start_charge(dir: Vector3) -> void:
 	var duration: float = _charge_ability.charge_duration if _charge_ability else 4.0
 	charge_time = duration
 	charge_dir = dir.normalized()
+
+
+# ── Bashdown (server-authoritative bump/slam) ────────────────────────────
+
+## Begin a bashdown deterministically from a queued trigger direction.
+func _start_bashdown(dir: Vector3) -> void:
+	bashdown_dir = dir.normalized()
+	bashdown_time = _bashdown_ability.lunge_duration if _bashdown_ability else 0.5
+	bashdown_slamming = false
+
+
+## Apply a deterministic teleport from a queued trigger direction.  The target is
+## clamped against geometry so the player never ends up inside a wall.  Position
+## and velocity are rollback state, so every peer replays the same jump.
+func _do_teleport(dir: Vector3) -> void:
+	var dist: float = _teleport_ability.teleport_distance if _teleport_ability else 3.0
+	var motion := dir.normalized() * dist
+	if dist > 0.0 and test_move(global_transform, motion):
+		# Back off from the full distance until the motion clears the geometry.
+		var travel := motion
+		for i in range(8, 0, -1):
+			travel = motion * (float(i) / 8.0)
+			if not test_move(global_transform, travel):
+				break
+		global_position += travel
+	else:
+		global_position += motion
+	velocity = Vector3.ZERO
+	tick_interpolator.teleport()
+
+
+## Server-side per-frame driver: consume the bump/land latches set in _rollback_tick.
+func _update_bashdown() -> void:
+	if not multiplayer.is_server() or not spawned:
+		return
+	if _bashdown_bump_pending:
+		_bashdown_bump_pending = false
+		var enemy := GameManager.find_player(_bashdown_bump_enemy)
+		if enemy != null and enemy.spawned:
+			_pin_bashdown_player(enemy)
+	if _bashdown_land_pending:
+		_bashdown_land_pending = false
+		_release_bashdown_pinned()
+
+
+## Deterministic: first enemy within grab_radius and roughly in front of the dive.
+## Must NOT read server-only state (e.g. _bashdown_pinned) so every peer agrees.
+func _find_bashdown_target() -> Player:
+	var radius: float = _bashdown_ability.grab_radius if _bashdown_ability else 1.5
+	for node in get_tree().get_nodes_in_group("players"):
+		var other := node as Player
+		if other == null or other == self:
+			continue
+		if not _is_enemy_of(other) or other.pinned_charger_name != "":
+			continue
+		var to := other.global_position - global_position
+		var dist := to.length()
+		if dist > radius:
+			continue
+		if dist > 0.001 and to.normalized().dot(bashdown_dir) < 0.3:
+			continue
+		return other
+	return null
+
+
+## Bump: deal bump damage, then carry the victim (server only).
+func _pin_bashdown_player(other: Player) -> void:
+	other.change_health(-(_bashdown_ability.bump_damage if _bashdown_ability else 20.0), name)
+	if not other.spawned:
+		return
+	_bashdown_pinned.append(other.name)
+	_bashdown_victim_grounded[other.name] = _bashdown_bump_grounded
+	other._rpc_pin.rpc(name, other.global_position - global_position)
+	var pinned := PinnedEffect.new()
+	pinned.base_duration = 4.0   # fallback; released by the slam landing, not the timer
+	if other.status_effect_manager:
+		other.status_effect_manager.apply_effect(pinned, name)
+
+
+## Slam landing: release victims; apply slam damage only if they were grounded at grab.
+func _release_bashdown_pinned() -> void:
+	if not multiplayer.is_server():
+		return
+	for victim_name in _bashdown_pinned:
+		var victim := GameManager.find_player(victim_name)
+		if victim != null:
+			victim._rpc_unpin.rpc()
+			if victim.status_effect_manager:
+				victim.status_effect_manager.remove_effect("pinned")
+			if victim.spawned and _bashdown_victim_grounded.get(victim_name, false):
+				victim.change_health(-(_bashdown_ability.slam_damage if _bashdown_ability else 30.0), name)
+	_bashdown_pinned.clear()
+	_bashdown_victim_grounded.clear()
 
 
 ## Server-side per-frame driver: grab nearby enemies while charging, and release
@@ -921,6 +1189,9 @@ func _reset_movement_tech() -> void:
 	crouch_tap_timer = 0.0
 	charge_time = 0.0
 	charge_dir = Vector3.ZERO
+	bashdown_time = 0.0
+	bashdown_dir = Vector3.ZERO
+	bashdown_slamming = false
 	_dash_jump_feedback = ""
 	_dash_jump_feedback_timer = 0.0
 
@@ -1019,11 +1290,24 @@ func _process(_delta: float) -> void:
 		body.mouse_sens_x = BASE_MOUSE_SENS * fov_ratio
 		body.mouse_sens_y = BASE_MOUSE_SENS * fov_ratio
 
+	# Noclip: disable hurtboxes so bullets/projectiles pass through (mirrored on
+	# all peers via the synced effect id).
+	var noclip_active := status_effect_manager != null and status_effect_manager.has_effect("noclip")
+	if _hurtboxes_active == noclip_active:
+		_hurtboxes_active = not noclip_active
+		_set_hurtboxes_active(_hurtboxes_active)
+
 	_update_health_bar()
 	_update_visibility(_delta)
 
 
 func _apply_movement_from_input(delta):
+	# Noclip is free-fly: no gravity, no collision, and WASD moves along the
+	# camera's full 3D basis (W = camera forward incl. pitch).  It replaces the
+	# normal movement simulation entirely.
+	if status_effect_manager != null and status_effect_manager.has_effect("noclip"):
+		_noclip_move(delta)
+		return
 	_force_update_is_on_floor()
 	var on_floor := is_on_floor()
 
@@ -1261,6 +1545,14 @@ func _apply_movement_from_input(delta):
 		velocity.x = charge_dir.x * _charge_speed()
 		velocity.z = charge_dir.z * _charge_speed()
 
+	# -- Bashdown: lunge in the cast direction, or slam straight down --
+	if bashdown_slamming:
+		velocity = Vector3.DOWN * (_bashdown_ability.slam_speed if _bashdown_ability else 30.0)
+	elif bashdown_time > 0.0:
+		bashdown_time = maxf(bashdown_time - delta, 0.0)
+		velocity = bashdown_dir * (_bashdown_ability.lunge_speed if _bashdown_ability else 20.0)
+		velocity.y += (_bashdown_ability.launch_up_speed if _bashdown_ability else 6.0)
+
 	velocity *= NetworkTime.physics_factor
 	velocity += knockback_velocity
 	move_and_slide()
@@ -1273,8 +1565,8 @@ func _apply_movement_from_input(delta):
 	body.max_turn_speed = (_charge_ability.turn_speed if _charge_ability else 1.5) if charge_time > 0.0 else 0.0
 
 func change_health(health: float, changer: String, is_headshot: bool = false, falloff_mult: float = 1.0, is_backshot: bool = false):
-	# Invincible players take no damage and are immune to negative effects.
-	if health < 0.0 and status_effect_manager and status_effect_manager.is_invincible():
+	# Invincible or noclipping players take no damage and are immune to effects.
+	if health < 0.0 and status_effect_manager and (status_effect_manager.is_invincible() or status_effect_manager.has_effect("noclip")):
 		return
 	if health < 0.0 and shield_instance and shield_instance.active:
 		shield_instance.absorb_damage(-health)
@@ -1369,6 +1661,8 @@ func set_character(char: Character) -> void:
 		if ability_manager:
 			ability_manager.set_abilities(char.abilities)
 	_refresh_charge_ability()
+	_refresh_bashdown_ability()
+	_refresh_teleport_ability()
 	_spawn_character_model()
 	character_changed.emit()
 
@@ -1379,6 +1673,11 @@ func horizontal_forward() -> Vector3:
 	var cam_basis: Basis = camera.global_transform.basis
 	var right := Vector3(cam_basis.x.x, 0.0, cam_basis.x.z).normalized()
 	return Vector3.UP.cross(right)
+
+
+## The camera's full 3D forward vector (includes pitch).  The camera faces -Z.
+func camera_forward() -> Vector3:
+	return -camera.global_transform.basis.z
 
 
 ## Cache the character's shoulder-charge ability (if any) for reading its
@@ -1392,9 +1691,36 @@ func _refresh_charge_ability() -> void:
 				return
 
 
+## Cache the character's bashdown ability (if any) for reading its tunables
+## inside the rollback tick.
+func _refresh_bashdown_ability() -> void:
+	_bashdown_ability = null
+	if ability_manager:
+		for a in ability_manager.abilities:
+			if a is BashDownAbility:
+				_bashdown_ability = a
+				return
+
+
+## Cache the character's teleport ability (if any) for reading its tunables
+## inside the rollback tick.
+func _refresh_teleport_ability() -> void:
+	_teleport_ability = null
+	if ability_manager:
+		for a in ability_manager.abilities:
+			if a is TeleportAbility:
+				_teleport_ability = a
+				return
+
+
 ## Whether a shoulder charge is currently active.
 func is_charging() -> bool:
 	return charge_time > 0.0
+
+
+## Whether a bashdown lunge or slam is currently active.
+func is_bashing() -> bool:
+	return bashdown_time > 0.0 or bashdown_slamming
 
 
 ## Whether [param other] is on an opposing team (or everyone, in FFA).
@@ -1648,6 +1974,37 @@ func _is_occluded_by_wall(other: Player) -> bool:
 	return not space.intersect_ray(query).is_empty()
 
 
+## Apply the ghost visual tier to this player's local model + weapon (client-side).
+## NONE = normal; GLASS = translucent glass; BLACK = translucent black; HIDDEN =
+## fully invisible (model, weapon and name label hidden).
+func set_ghost_tier(tier: int) -> void:
+	if _ghost_tier == tier:
+		return
+	_ghost_tier = tier
+
+	var show := tier != GhostTier.HIDDEN
+	var override: Material = null
+	if tier == GhostTier.GLASS:
+		override = INVISIBLE_GLASS
+	elif tier == GhostTier.BLACK:
+		override = NOCLIP_BLACK
+
+	if model != null:
+		model.visible = show
+	for m in _outline_meshes:
+		if is_instance_valid(m):
+			m.visible = show
+			m.material_override = override
+
+	# The world weapon model (parented to the mannequin's hand bone).
+	var weapon: Node3D = weapon_controller.current_weapon_model if weapon_controller else null
+	if weapon != null:
+		for m in weapon.find_children("*", "MeshInstance3D", true, false):
+			var mesh := m as MeshInstance3D
+			if mesh != null:
+				mesh.visible = show
+				mesh.material_override = override
+
 ## Per-viewer update: decide, for every other player, whether the local client
 ## should reveal their outline (through walls) and/or their health bar, and
 ## record whether each player is currently "seen".  Runs only on the local
@@ -1661,6 +2018,14 @@ func _update_visibility(delta: float) -> void:
 	var i_wallhack := sem.has_effect("wallhacking")
 	var i_see_health := _character != null and _character.passive_see_enemy_health
 
+	# The local player's own ghost tier (this node is the local peer's model).
+	var self_tier := GhostTier.NONE
+	if sem.has_effect("noclip"):
+		self_tier = GhostTier.BLACK
+	elif sem.has_effect("invisible"):
+		self_tier = GhostTier.GLASS
+	set_ghost_tier(self_tier)
+
 	for node in get_tree().get_nodes_in_group("players"):
 		var other := node as Player
 		if other == null or other == self:
@@ -1669,11 +2034,18 @@ func _update_visibility(delta: float) -> void:
 		var show_outline := false
 		var show_health := false
 		var outline_color := ALLY_OUTLINE_COLOR
+		var tier := GhostTier.NONE
 
 		if other.spawned and other.status_effect_manager:
 			var osem := other.status_effect_manager
 			var ally := is_teammate_of(other)
 			var enemy := _is_enemy_of(other)
+
+			# Ghost effect tier for this target (noclip wins over invisibility).
+			if osem.has_effect("noclip"):
+				tier = GhostTier.BLACK
+			elif osem.has_effect("invisible"):
+				tier = GhostTier.HIDDEN if enemy else GhostTier.GLASS
 
 			# Whether a through-wall outline applies to this player.
 			var outline_allowed := false
@@ -1713,7 +2085,20 @@ func _update_visibility(delta: float) -> void:
 			if can_see_health and seen:
 				show_health = true
 
-		other.set_wallhack_outline(show_outline, outline_color)
+		# Ghost effects override reveal: an invisible enemy is fully hidden, and
+		# glass/black override the material so the wallhack outline is suppressed.
+		if tier == GhostTier.HIDDEN:
+			show_outline = false
+			show_health = false
+		elif tier != GhostTier.NONE:
+			show_outline = false
+
+		if tier == GhostTier.NONE:
+			other.set_ghost_tier(GhostTier.NONE)
+			other.set_wallhack_outline(show_outline, outline_color)
+		else:
+			other.set_wallhack_outline(false, outline_color)
+			other.set_ghost_tier(tier)
 		other.set_public_health_visible(show_health)
 
 

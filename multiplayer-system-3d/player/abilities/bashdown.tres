@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="BashDownAbility" format=3]
+
+[ext_resource type="Script" path="res://player/abilities/bashdown_ability.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+ability_name = "Bashdown"
+description = "Lunge in the direction you're looking; pin a hit enemy and slam down to the ground."
+cast_mode = 1
+cooldown = 4.0
