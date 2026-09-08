@@ -1598,6 +1598,9 @@ func _confirm_reload_done(new_mag: int) -> void:
 
 #region Firing Ã¢â‚¬â€ input processing (owning peer only)
 func _process_fire() -> void:
+	# Disable firing while despawned (dead / awaiting respawn).
+	if not _parent_player.spawned:
+		return
 	if not _is_ready():
 		return
 	if is_switching():
@@ -1929,6 +1932,10 @@ func _play_empty(weapon_fire_index: int) -> void:
 
 @rpc("any_peer")
 func fire_intent(weapon_index: int, weapon_fire_index: int) -> void:
+	# Server backstop: reject fire while despawned (e.g. an in-flight intent RPC
+	# that lands just after death).
+	if not _parent_player.spawned:
+		return
 	if not _is_ready():
 		return
 	if is_switching():

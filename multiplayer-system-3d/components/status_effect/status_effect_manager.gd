@@ -180,6 +180,9 @@ func clear_all_effects() -> void:
 		return
 	for id in _active_effects.keys():
 		remove_effect(id)
+	# Force an empty snapshot to clients even when there were no active effects to
+	# remove, so a stale client mirror can never survive a respawn.
+	_sync_to_clients()
 
 
 ## Whether the player is currently invincible.

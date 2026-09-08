@@ -55,7 +55,6 @@ emission = Color(0.85268945, 0.71366084, 0.3015667, 1)
 emission_energy_multiplier = 21.81
 
 [node name="SimpleProjectile" unique_id=1706686187 instance=ExtResource("1_odo1h")]
-gravity_scale = 1.5
 linear_velocity = Vector3(0, 0, -5)
 script = ExtResource("2_23iyw")
 lifetime = 1000.0

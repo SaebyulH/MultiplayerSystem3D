@@ -573,6 +573,10 @@ func no_health() -> void:
 
 	# State reset is handled inside rpc_reset so it runs on every peer.
 	if multiplayer.is_server():
+		# Cleanse status effects the moment of death so nothing leaks to the next
+		# life.  (rpc_reset clears again below; this guards the death frame itself.)
+		if status_effect_manager:
+			status_effect_manager.clear_all_effects()
 		rpc_reset.rpc(_get_spawn_position())
 
 @rpc("call_local")
@@ -626,9 +630,14 @@ func spawn():
 	# locks it for the weapon's pullout_time.
 	weapon_controller.trigger_pullout()
 
+	# Cleanse any status effect that leaked in during the despawn window (e.g. a
+	# lingering projectile hit) so every life starts clean.
+	if status_effect_manager:
+		status_effect_manager.clear_all_effects()
+
 	# Re-apply always-on passive status effects (wallhacked/health-visible to
 	# team, and any character passives).  Server-only; clear_all_effects() wiped
-	# them on the previous death.
+	# them above.
 	_apply_passive_effects()
 
 

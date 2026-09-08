@@ -52,6 +52,9 @@ func is_equipped() -> bool:
 func _input(event: InputEvent) -> void:
 	if not _is_owning_client():
 		return
+	# Disable abilities while despawned (dead / awaiting respawn).
+	if not _parent_player.spawned:
+		return
 	if PlayerInput.ui_open:
 		return
 	# While a shoulder charge or bashdown is active, no other ability can be cast.
@@ -168,6 +171,9 @@ func _run_ability(index: int, mode: int) -> void:
 @rpc("any_peer", "reliable")
 func _cast_ability(index: int, mode: int, target_names: Array = []) -> void:
 	if not multiplayer.is_server():
+		return
+	# Server backstop: reject casts while despawned (in-flight RPC after death).
+	if not _parent_player.spawned:
 		return
 	if index < 0 or index >= abilities.size():
 		return

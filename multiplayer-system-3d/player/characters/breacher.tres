@@ -71,6 +71,7 @@ script = ExtResource("3_a2xb3")
 weapon_fire = SubResource("Resource_23iyw")
 ability_name = "Davy Crockett"
 description = "Drop a nuke below you."
+cooldown = 30.0
 metadata/_custom_type_script = "uid://lrht2lh1enw5"
 
 [resource]
