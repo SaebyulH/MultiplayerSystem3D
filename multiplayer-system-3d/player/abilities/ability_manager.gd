@@ -52,9 +52,6 @@ func is_equipped() -> bool:
 func _input(event: InputEvent) -> void:
 	if not _is_owning_client():
 		return
-	# Disable abilities while despawned (dead / awaiting respawn).
-	if not _parent_player.spawned:
-		return
 	if PlayerInput.ui_open:
 		return
 	# While a shoulder charge or bashdown is active, no other ability can be cast.
@@ -101,6 +98,9 @@ func _on_ability_key(index: int) -> void:
 	if ability == null:
 		print("[Ability] ability ", index, " is null")
 		return
+	# Only abilities that opt in can be used while dead (despawned).
+	if not _parent_player.spawned and not ability.can_be_used_while_dead:
+		return
 	print("[Ability] on_key ", index, " -> ", ability.ability_name, " cast_type=", ability.cast_type)
 	if ability.cast_type == Ability.CastType.EQUIP:
 		# Toggle: press the same key again to unequip.
@@ -130,6 +130,9 @@ func _request_cast(index: int, mode: int) -> bool:
 		return false
 	var ability: Ability = abilities[index]
 	if ability == null:
+		return false
+	# Only abilities that opt in can be used while dead (despawned).
+	if not _parent_player.spawned and not ability.can_be_used_while_dead:
 		return false
 	print("[Ability] request_cast index=", index, " mode=", mode)
 	# Targeted abilities auto-select visible enemies nearest the crosshair; the
@@ -172,13 +175,13 @@ func _run_ability(index: int, mode: int) -> void:
 func _cast_ability(index: int, mode: int, target_names: Array = []) -> void:
 	if not multiplayer.is_server():
 		return
-	# Server backstop: reject casts while despawned (in-flight RPC after death).
-	if not _parent_player.spawned:
-		return
 	if index < 0 or index >= abilities.size():
 		return
 	var ability: Ability = abilities[index]
 	if ability == null:
+		return
+	# Server backstop: reject casts while despawned unless the ability opts in.
+	if not _parent_player.spawned and not ability.can_be_used_while_dead:
 		return
 	if _is_on_cooldown(index):
 		return

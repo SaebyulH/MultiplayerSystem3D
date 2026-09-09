@@ -56,6 +56,9 @@ var _stamina_container: HBoxContainer
 var _stamina_fills: Array[ColorRect] = []
 var _stamina_feedback: Label
 
+# Aimbot aim-assist cone indicator (circle around the crosshair).
+var _aimbot_circle: AimbotCircle
+
 # Status effect display
 var _effect_container: HBoxContainer
 var _effect_labels: Array[Label] = []
@@ -171,6 +174,7 @@ func _build_ui() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	_build_crosshair()
+	_build_aimbot_circle()
 	_build_health()
 	_build_ammo()
 	_build_shield()
@@ -210,6 +214,18 @@ func _build_crosshair() -> void:
 	_crosshair.offset_bottom = 2.0
 	_crosshair.color = Color.LIME_GREEN # or Color.GREEN
 	add_child(_crosshair)
+
+func _build_aimbot_circle() -> void:
+	# Aim-assist cone indicator, centered on the crosshair.  Sized and shown
+	# only while the aimbot effect is active (see _update_aimbot_circle).
+	_aimbot_circle = AimbotCircle.new()
+	_aimbot_circle.anchor_left   = 0.5
+	_aimbot_circle.anchor_right  = 0.5
+	_aimbot_circle.anchor_top    = 0.5
+	_aimbot_circle.anchor_bottom = 0.5
+	_aimbot_circle.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_aimbot_circle.visible = false
+	add_child(_aimbot_circle)
 
 func _build_ads_overlay() -> void:
 	# Full-screen texture shown over the HUD while scoped in.  Hidden by default;
@@ -684,6 +700,7 @@ func _process(delta: float) -> void:
 	_update_scope_charge_ui()
 	_update_fps()
 	_update_targeted_previews()
+	_update_aimbot_circle()
 
 
 func _on_ui_tick() -> void:
@@ -771,6 +788,33 @@ func _update_targeted_previews() -> void:
 		var world_pos: Vector3 = target.global_position + Vector3(0, 2.2, 0)
 		var screen: Vector2 = cam.unproject_position(world_pos)
 		lbl.position = screen + Vector2(-lbl.get_minimum_size().x * 0.5, float(stack) * 20.0)
+
+
+## Size and show the aimbot cone circle while the aimbot effect is active.  The
+## radius maps the ability's max angle onto screen pixels via the vertical FOV.
+func _update_aimbot_circle() -> void:
+	if _aimbot_circle == null:
+		return
+	if not _owner_player or not _owner_player.is_aimbot_active():
+		_aimbot_circle.visible = false
+		return
+	var cam := _owner_player.camera as Camera3D
+	if cam == null:
+		_aimbot_circle.visible = false
+		return
+	var max_angle: float = _owner_player.get_aimbot_max_angle_deg()
+	var height := get_viewport().get_visible_rect().size.y
+	if max_angle <= 0.0 or height <= 0.0 or cam.fov <= 0.0:
+		_aimbot_circle.visible = false
+		return
+	var radius := (max_angle / cam.fov) * height
+	_aimbot_circle.radius = radius
+	_aimbot_circle.offset_left   = -radius
+	_aimbot_circle.offset_top    = -radius
+	_aimbot_circle.offset_right  = radius
+	_aimbot_circle.offset_bottom = radius
+	_aimbot_circle.visible = true
+	_aimbot_circle.queue_redraw()
 
 
 func _on_health_changed() -> void:

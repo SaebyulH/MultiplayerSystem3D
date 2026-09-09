@@ -28,6 +28,10 @@ enum CastMode {
 @export var cast_type: CastType = CastType.INSTANT
 @export var cast_mode: CastMode = CastMode.SERVER
 @export var cooldown: float = 0.1
+## If true, this ability can be cast while the player is dead (despawned, under
+## the respawn timer).  Most abilities leave this false and are blocked by the
+## AbilityManager while the player is dead.
+@export var can_be_used_while_dead: bool = false
 
 ## INSTANT cast — called the moment the ability key is pressed.
 func activate(player: Player) -> void:

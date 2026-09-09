@@ -195,6 +195,9 @@ var _bashdown_ability: BashDownAbility = null
 
 ## Cached TeleportAbility (read for its tunables inside the rollback tick).
 var _teleport_ability: TeleportAbility = null
+
+## Cached AimbotAbility (read for its max angle / active-state inside _process).
+var _aimbot_ability: AimbotAbility = null
 ## Server-side list of players currently being carried by a bashdown slam.
 var _bashdown_pinned: Array[String] = []
 ## victim name -> whether they were standing on the ground when grabbed.
@@ -578,6 +581,21 @@ func no_health() -> void:
 		if status_effect_manager:
 			status_effect_manager.clear_all_effects()
 		rpc_reset.rpc(_get_spawn_position())
+
+
+## Respawn immediately, skipping the respawn timer.  Called by CheatDeathAbility.
+## Server-only entry point; the RPC zeroes the timer on every peer so each peer
+## respawns on its next _physics_process tick (spawn position already queued).
+func cheat_death() -> void:
+	if not multiplayer.is_server() or spawned:
+		return
+	rpc_cheat_death.rpc()
+
+
+@rpc("any_peer", "call_local", "reliable")
+func rpc_cheat_death() -> void:
+	respawn_timer = 0.0
+
 
 @rpc("call_local")
 func _sync_head():
@@ -1322,6 +1340,7 @@ func _process(_delta: float) -> void:
 
 	_update_health_bar()
 	_update_visibility(_delta)
+	_update_aimbot()
 
 
 func _apply_movement_from_input(delta):
@@ -1687,6 +1706,7 @@ func set_character(char: Character) -> void:
 	_refresh_charge_ability()
 	_refresh_bashdown_ability()
 	_refresh_teleport_ability()
+	_refresh_aimbot_ability()
 	_spawn_character_model()
 	character_changed.emit()
 
@@ -1737,6 +1757,17 @@ func _refresh_teleport_ability() -> void:
 				return
 
 
+## Cache the character's aimbot ability (if any) for reading its max angle and
+## active state inside _process.
+func _refresh_aimbot_ability() -> void:
+	_aimbot_ability = null
+	if ability_manager:
+		for a in ability_manager.abilities:
+			if a is AimbotAbility:
+				_aimbot_ability = a
+				return
+
+
 ## Whether a shoulder charge is currently active.
 func is_charging() -> bool:
 	return charge_time > 0.0
@@ -1750,6 +1781,87 @@ func is_bashing() -> bool:
 ## Whether [param other] is on an opposing team (or everyone, in FFA).
 func _is_enemy_of(other: Player) -> bool:
 	return team == Team.FFA or other.team != team
+
+
+## Whether the aimbot effect is currently active on this player.
+func is_aimbot_active() -> bool:
+	return status_effect_manager != null and status_effect_manager.has_effect("aimbot")
+
+
+## The aimbot's max snap angle (degrees), or 0 when no aimbot ability is set.
+func get_aimbot_max_angle_deg() -> float:
+	return _aimbot_ability.max_angle_deg if _aimbot_ability else 0.0
+
+
+## Aim-assist tick: while the aimbot is active, we are the local player, and we
+## are actively firing, rotate the head toward the best enemy head in the cone.
+func _update_aimbot() -> void:
+	if not _is_own_model() or not spawned:
+		return
+	if not is_aimbot_active():
+		return
+	# Only track while shooting (any fire button held).
+	if not (player_input.primary_fire_held or player_input.secondary_fire_held or player_input.tertiary_fire_held):
+		return
+	var target := aimbot_find_target()
+	if target == null:
+		return
+	_aimbot_rotate_to(target)
+
+
+## Best enemy head to track: spawned enemies within max_angle_deg of the
+## crosshair, choosing the one most directly under the crosshair (highest dot).
+func aimbot_find_target() -> Player:
+	var max_angle := get_aimbot_max_angle_deg()
+	if max_angle <= 0.0 or camera == null:
+		return null
+	var cam := camera as Camera3D
+	var cam_pos := cam.global_position
+	var cam_fwd := camera_forward()
+	var cos_max := cos(deg_to_rad(max_angle))
+	var best: Player = null
+	var best_dot := cos_max
+	for node in get_tree().get_nodes_in_group("players"):
+		var other := node as Player
+		if other == null or other == self or not other.spawned:
+			continue
+		if not _is_enemy_of(other):
+			continue
+		var to := (other.global_position + Vector3(0.0, 1.69, 0.0)) - cam_pos
+		var dist := to.length()
+		if dist < 0.0001:
+			continue
+		var d := cam_fwd.dot(to / dist)
+		if d > best_dot:
+			best_dot = d
+			best = other
+	return best
+
+
+## Rotate the head (body yaw + head pitch) so the camera points at the target's
+## head.  Applies a delta so any recoil offset in the Recoil node is preserved.
+func _aimbot_rotate_to(target: Player) -> void:
+	if camera == null or body == null:
+		return
+	var cam := camera as Camera3D
+	var cam_pos := cam.global_position
+	var dir := (target.global_position + Vector3(0.0, 1.69, 0.0)) - cam_pos
+	if dir.length_squared() < 0.0001:
+		return
+	dir = dir.normalized()
+	var cam_fwd := camera_forward()
+
+	# Yaw: rotate the body around Y to align the horizontal component.
+	var f0_h := Vector3(cam_fwd.x, 0.0, cam_fwd.z)
+	var f1_h := Vector3(dir.x, 0.0, dir.z)
+	if f0_h.length_squared() > 0.0001 and f1_h.length_squared() > 0.0001:
+		body.rotation.y += f0_h.normalized().signed_angle_to(f1_h.normalized(), Vector3.UP)
+
+	# Pitch: rotate the head node (camera's parent) around X.
+	var head_node := cam.get_parent() as Node3D
+	if head_node:
+		var pitch_delta := asin(clampf(dir.y, -1.0, 1.0)) - asin(clampf(cam_fwd.y, -1.0, 1.0))
+		head_node.rotation.x = clampf(head_node.rotation.x + pitch_delta, -PI / 2.0, PI / 2.0)
 
 
 ## The charge speed from the ability resource, or a sensible fallback.
