@@ -2,21 +2,20 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://ygukauet8tyo"
-path.s3tc="res://.godot/imported/greybox_light_solid.png-cebdd2fedcee40d20355e5b9f3921fc2.s3tc.ctex"
+uid="uid://bgtd7kkamcy4j"
+path="res://.godot/imported/clocks.png-cd780de04b7c073e22f66226b06a42c9.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/greybox/greybox_light_solid.png"
-dest_files=["res://.godot/imported/greybox_light_solid.png-cebdd2fedcee40d20355e5b9f3921fc2.s3tc.ctex"]
+source_file="res://assets/clocks.png"
+dest_files=["res://.godot/imported/clocks.png-cd780de04b7c073e22f66226b06a42c9.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
@@ -24,7 +23,7 @@ compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=true
+mipmaps/generate=false
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""
@@ -38,4 +37,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=0
+detect_3d/compress_to=1

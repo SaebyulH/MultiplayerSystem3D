@@ -14,7 +14,7 @@ const FALL_DAMAGE_SOUND: AudioStream = preload("res://assets/sounds/universfield
 @export var air_speed_cap: float = 1.5
 @export var tick_interpolator: TickInterpolator
 
-@export var respawn_time: float = 1.5
+@export var respawn_time: float = 5.0
 ## Kill and respawn the player when they fall below this Y position (out of world).
 @export var fall_kill_y: float = -200.0
 ## Fall damage: maximum damage dealt at/above [member fall_damage_max_distance].

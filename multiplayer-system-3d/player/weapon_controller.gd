@@ -50,6 +50,7 @@ const ARMS_ANIM_RESET := &"other_movement/a_pose"
 var _bullet_hole_scene: PackedScene = preload("res://effects/bullet_hole.tscn")
 var _scratch_scene: PackedScene = preload("res://effects/scratch.tscn")
 var _tracer_scene: PackedScene = preload("res://weapon/tracer.tscn")
+var _bullet_impact_scene: PackedScene = preload("res://effects/bullet_impact.tscn")
 var _hit_sound: AudioStream = preload("res://assets/sounds/Hitsound.wav")
 var _hit_heal_sound: AudioStream = preload("res://assets/sounds/medkit_sound.mp3")
 var _crit_sound: AudioStream = preload("res://assets/sounds/Crit_received1.wav")
@@ -2204,7 +2205,7 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 			if weapon_fire.hitscan_range >= 1000000000.0 / 10.0:
 				var far_pos: Vector3 = origin + world_dir * 10000.0
 				var fake_normal: Vector3 = -world_dir
-				_on_hitscan_hit.rpc(far_pos, fake_normal, muzzle_pos, flash_color, false, Vector3.ZERO)
+				_on_hitscan_hit.rpc(far_pos, fake_normal, muzzle_pos, flash_color, false, Vector3.ZERO, false)
 
 	elif weapon_fire.bullet_type == WeaponFire.BulletType.PROJECTILE:
 		_spawn_projectile_on_server.rpc_id(
@@ -2408,7 +2409,7 @@ func _flash_muzzle_flash(start_position: Vector3, flash_color: Color, direction:
 	muzzle_flash.fire(flash_color)
 
 @rpc("any_peer", "call_local")
-func _on_hitscan_hit(hit_position: Vector3, hit_normal: Vector3, start_position: Vector3, flash_color: Color, melee: bool = false, orientation_dir: Vector3 = Vector3.ZERO) -> void:
+func _on_hitscan_hit(hit_position: Vector3, hit_normal: Vector3, start_position: Vector3, flash_color: Color, melee: bool = false, orientation_dir: Vector3 = Vector3.ZERO, surface_hit: bool = true) -> void:
 	# Melee hits leave a scratch decal instead of a bullet hole, and no tracer.
 	var decal_scene: PackedScene = _scratch_scene if melee else _bullet_hole_scene
 	var decal: Node3D = decal_scene.instantiate() as Node3D
@@ -2431,6 +2432,18 @@ func _on_hitscan_hit(hit_position: Vector3, hit_normal: Vector3, start_position:
 		var tracer: Tracer = _tracer_scene.instantiate() as Tracer
 		projectile_spawn_parent.add_child(tracer)
 		tracer.fire(start_position, hit_position, flash_color)
+
+		# Bullet-impact particles on the struck surface.  Skipped for the "far
+		# miss" path (surface_hit == false), which still needs a tracer but has
+		# no surface to impact.  The impact frees itself once its one-shot
+		# particles finish (see BulletImpact.fire).
+		if surface_hit:
+			var impact: BulletImpact = _bullet_impact_scene.instantiate() as BulletImpact
+			projectile_spawn_parent.add_child(impact)
+			impact.global_position = hit_position
+			if hit_normal.length_squared() > 0.0001:
+				impact.global_transform.basis = Basis.looking_at(hit_normal.normalized(), Vector3.UP)
+			impact.fire()
 
 
 ## Build the basis for a melee scratch decal: flat against the surface

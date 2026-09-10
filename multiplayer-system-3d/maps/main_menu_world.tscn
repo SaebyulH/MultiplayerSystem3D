@@ -8,6 +8,7 @@
 [ext_resource type="Script" uid="uid://ccrf5bdka2m35" path="res://player/auto_projectile_spawner.gd" id="4_gpsch"]
 [ext_resource type="Texture2D" uid="uid://c3sha4tclocn7" path="res://assets/greybox/greybox_grey_grid.png" id="4_ykm5p"]
 [ext_resource type="Script" uid="uid://r6rneeolnvra" path="res://components/game_mode_component.gd" id="5_bgj78"]
+[ext_resource type="Texture2D" uid="uid://ygukauet8tyo" path="res://assets/greybox/greybox_light_solid.png" id="5_fh2lp"]
 [ext_resource type="Script" uid="uid://dwcq33mnoqpgi" path="res://world/host_server_area.gd" id="6_host"]
 [ext_resource type="FontFile" uid="uid://cwys10lucxxmh" path="res://assets/Montserrat/static/Montserrat-Regular.ttf" id="6_ykm5p"]
 [ext_resource type="Script" uid="uid://df15x0c0nulp2" path="res://world/join_party_area.gd" id="7_join"]
@@ -52,6 +53,15 @@ roughness_texture_channel = 1
 emission_enabled = true
 emission_energy_multiplier = 3.49
 emission_texture = ExtResource("3_ykm5p")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_b3rx5"]
+render_priority = 0
+shader = ExtResource("2_s0y3g")
+shader_parameter/texture_a = ExtResource("3_jaf4h")
+shader_parameter/texture_b = ExtResource("5_fh2lp")
+shader_parameter/grid_size = 1.0
+shader_parameter/flat_threshold = 0.7
+shader_parameter/roughness_value = 0.9
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_fh2lp"]
 render_priority = 0
@@ -114,15 +124,20 @@ transform = Transform3D(-1.1909884, 0, 1.04119515e-07, 0, 1.1909884, 0, -1.04119
 size = Vector3(30.257751, 1.4872742, 48)
 material = SubResource("StandardMaterial3D_fh2lp")
 
+[node name="ground2" type="CSGBox3D" parent="." unique_id=1512427693]
+transform = Transform3D(-1.1909884, 0, 1.04119515e-07, 0, 1.1909884, 0, -1.04119515e-07, 0, -1.1909884, 27.229961, 5.56263, 0.2140912)
+material_override = SubResource("ShaderMaterial_b3rx5")
+size = Vector3(2, 14.703064, 48)
+
+[node name="ground10" type="CSGBox3D" parent="ground2" unique_id=501011969]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 32.795097, 2.7590313, 2.7728841)
+size = Vector3(1.3232422, 10.1744995, 19.685934)
+
 [node name="CSGCombiner3D3" type="CSGCombiner3D" parent="." unique_id=1320330278]
 transform = Transform3D(-1.1909884, 0, 1.04119515e-07, 0, 1.1909884, 0, -1.04119515e-07, 0, -1.1909884, -0.16277742, -6.1704307, 0.2140888)
 material_override = SubResource("ShaderMaterial_fh2lp")
 use_collision = true
 collision_mask = 0
-
-[node name="ground2" type="CSGBox3D" parent="CSGCombiner3D3" unique_id=1512427693]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -23.000004, 9.851532, 0)
-size = Vector3(2, 14.703064, 48)
 
 [node name="ground14" type="CSGBox3D" parent="CSGCombiner3D3" unique_id=1182697075]
 transform = Transform3D(0.053274456, 0, 5.7731597e-15, 0, 0.053274456, 0, -5.7731597e-15, 0, 0.053274456, -0.5698056, 13.145931, 0.22436835)
@@ -239,10 +254,6 @@ font = ExtResource("6_ykm5p")
 [node name="ground20" type="CSGBox3D" parent="CSGCombiner3D3" unique_id=1812746732]
 transform = Transform3D(0.76187676, 0.647722, 2.0817396e-08, -0.647722, 0.76187676, 5.6625655e-08, 2.0817403e-08, -5.6625655e-08, 1, 9.128002, 2.1809332, 2.7728844)
 size = Vector3(1.2712402, 2, 3.2243652)
-
-[node name="ground10" type="CSGBox3D" parent="CSGCombiner3D3" unique_id=501011969]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.7950945, 12.610563, 2.7728841)
-size = Vector3(1.3232422, 10.1744995, 19.685934)
 
 [node name="ground13" type="CSGBox3D" parent="CSGCombiner3D3" unique_id=2009093878]
 transform = Transform3D(0.19326782, 0, 0, 0, 0.19326782, 0, 0, 0, 0.19326782, 9.062037, 8.394484, 2.7728844)
