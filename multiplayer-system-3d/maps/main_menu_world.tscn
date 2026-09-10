@@ -43,6 +43,16 @@ metallic = 0.22
 roughness_texture = ExtResource("3_ykm5p")
 roughness_texture_channel = 1
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fh2lp"]
+albedo_color = Color(0.2159017, 0.21590173, 0.2159017, 1)
+albedo_texture = ExtResource("3_jaf4h")
+metallic = 0.22
+roughness_texture = ExtResource("3_ykm5p")
+roughness_texture_channel = 1
+emission_enabled = true
+emission_energy_multiplier = 3.49
+emission_texture = ExtResource("3_ykm5p")
+
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_fh2lp"]
 render_priority = 0
 shader = ExtResource("2_s0y3g")
@@ -99,6 +109,11 @@ use_collision = true
 size = Vector3(48, 5, 48)
 material = SubResource("StandardMaterial3D_ykm5p")
 
+[node name="ground12" type="CSGBox3D" parent="." unique_id=1014008784]
+transform = Transform3D(-1.1909884, 0, 1.04119515e-07, 0, 1.1909884, 0, -1.04119515e-07, 0, -1.1909884, -0.42710584, 14.971279, 0.21408974)
+size = Vector3(30.257751, 1.4872742, 48)
+material = SubResource("StandardMaterial3D_fh2lp")
+
 [node name="CSGCombiner3D3" type="CSGCombiner3D" parent="." unique_id=1320330278]
 transform = Transform3D(-1.1909884, 0, 1.04119515e-07, 0, 1.1909884, 0, -1.04119515e-07, 0, -1.1909884, -0.16277742, -6.1704307, 0.2140888)
 material_override = SubResource("ShaderMaterial_fh2lp")
@@ -109,9 +124,13 @@ collision_mask = 0
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -23.000004, 9.851532, 0)
 size = Vector3(2, 14.703064, 48)
 
-[node name="ground12" type="CSGBox3D" parent="CSGCombiner3D3" unique_id=1014008784]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.22194038, 17.751398, -8.046627e-07)
-size = Vector3(30.257751, 1.4872742, 48)
+[node name="ground14" type="CSGBox3D" parent="CSGCombiner3D3" unique_id=1182697075]
+transform = Transform3D(0.053274456, 0, 5.7731597e-15, 0, 0.053274456, 0, -5.7731597e-15, 0, 0.053274456, -0.5698056, 13.145931, 0.22436835)
+size = Vector3(10.900635, 157.3227, 16.081787)
+
+[node name="ground28" type="CSGBox3D" parent="CSGCombiner3D3" unique_id=2045768830]
+transform = Transform3D(0.20104373, 0, 0, 0, 0.20104373, 0, 0, 0, 0.20104373, -0.42823875, 9.4742985, 0.23791888)
+size = Vector3(16.71582, 6.693115, 16.081787)
 
 [node name="ground15" type="CSGBox3D" parent="CSGCombiner3D3" unique_id=2094623461]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -23.133135, 17.751398, 2.3841858e-07)
@@ -318,6 +337,26 @@ mesh = SubResource("PlaneMesh_yf5fn")
 
 [node name="MeshInstance3D4" type="MeshInstance3D" parent="." unique_id=61043935]
 transform = Transform3D(-1.9461554, 1.7332237e-15, -8.239347e-08, 1.7013834e-07, 0, -0.9424715, -3.1843765e-15, -0.94247127, -2.6712486e-08, 1.9621806, 8.47198, 7.911885)
+material_override = SubResource("StandardMaterial3D_jaf4h")
+mesh = SubResource("PlaneMesh_yf5fn")
+
+[node name="MeshInstance3D7" type="MeshInstance3D" parent="." unique_id=1203841766]
+transform = Transform3D(-1.4245126, 1.2686546e-15, -6.030893e-08, 1.2453488e-07, 0, -0.6898537, -2.330844e-15, -0.68985355, -1.9552537e-08, 0.37317622, 5.0789313, -2.046222)
+material_override = SubResource("StandardMaterial3D_jaf4h")
+mesh = SubResource("PlaneMesh_yf5fn")
+
+[node name="MeshInstance3D8" type="MeshInstance3D" parent="." unique_id=1078527085]
+transform = Transform3D(1.4245126, 6.030891e-08, 6.0308935e-08, 1.2453488e-07, 1.7107193e-29, -0.68985367, -1.2453484e-07, 0.6898535, 1.955253e-08, 0.37317622, 5.2368503, 1.9403274)
+material_override = SubResource("StandardMaterial3D_jaf4h")
+mesh = SubResource("PlaneMesh_yf5fn")
+
+[node name="MeshInstance3D9" type="MeshInstance3D" parent="." unique_id=476292811]
+transform = Transform3D(6.2267425e-08, -0.68985355, -1.955253e-08, 1.2453488e-07, -9.014333e-30, -0.68985367, 1.4245125, 3.0154453e-08, 6.030893e-08, -1.7305328, 5.2368503, -0.026200414)
+material_override = SubResource("StandardMaterial3D_jaf4h")
+mesh = SubResource("PlaneMesh_yf5fn")
+
+[node name="MeshInstance3D10" type="MeshInstance3D" parent="." unique_id=1829215557]
+transform = Transform3D(-1.8680227e-07, 0.6898535, 1.9552523e-08, 1.2453489e-07, 1.0128491e-21, -0.68985367, -1.4245126, -9.046336e-08, -6.030894e-08, 2.4454174, 5.2368503, -0.026200652)
 material_override = SubResource("StandardMaterial3D_jaf4h")
 mesh = SubResource("PlaneMesh_yf5fn")
 
