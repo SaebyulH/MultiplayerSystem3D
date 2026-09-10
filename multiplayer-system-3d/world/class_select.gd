@@ -247,11 +247,11 @@ func _build_ui_in(cl: CanvasLayer) -> void:
 	var menu_row: CenterContainer = CenterContainer.new()
 	col.add_child(menu_row)
 	var menu_btn: Button = Button.new()
-	menu_btn.text = "Main Menu"
+	menu_btn.text = "Leave Party"
 	menu_btn.add_theme_font_size_override("font_size", 18)
 	menu_btn.pressed.connect(func():
 		_canvas.queue_free()
-		NetworkManager.terminate_connection_load_main_menu()
+		NetworkManager.return_to_lobby()
 	)
 	menu_row.add_child(menu_btn)
 

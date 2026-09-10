@@ -52,6 +52,7 @@ var _deathmatch_panel: DeathmatchPanel = null
 
 # Internal
 var _initialized := false
+var _menu_mode := false  # true while in the inert MAIN_MENU lobby (no HUD)
 
 ## Interval (seconds) for the timer-bar countdown and class-select visibility
 ## check.  phase_timer only changes at the 10 Hz state sync, so 0.1 s is
@@ -76,11 +77,15 @@ func _ready() -> void:
 
 
 func _on_hud_tick() -> void:
-	if not _initialized or not gmc:
+	if not _initialized:
 		return
+	if not is_instance_valid(gmc):
+		gmc = GameManager.game_mode_component
+		if not gmc:
+			return
 
-	# Hide the HUD while the class-select screen is open so the two don't overlap.
-	_root.visible = not PlayerInput.ui_open
+	# Hide the HUD while the class-select screen is open, or in the lobby.
+	_root.visible = (not PlayerInput.ui_open) and (not _menu_mode)
 
 	# Timer bar countdown.  Mode data is pushed via the signal handlers below,
 	# not polled here.
@@ -220,6 +225,17 @@ func _connect_mode_signals() -> void:
 		gmc.deathmatch_mode.deathmatch_ended.connect(_on_deathmatch_ended)
 
 func _create_panel_registry() -> void:
+	# Idempotent: setup_gmc() runs again when the match map replaces the lobby
+	# map, so free any panels from a previous mode before rebuilding.
+	if not _panel_registry.is_empty():
+		for p in _panel_registry.values():
+			if is_instance_valid(p):
+				p.queue_free()
+		_panel_registry.clear()
+	if _deathmatch_panel and is_instance_valid(_deathmatch_panel):
+		_deathmatch_panel.queue_free()
+		_deathmatch_panel = null
+
 	# Deathmatch panel lives outside _panel_container so it can span
 	# the full width at the top of the screen (not constricted by the
 	# centered HUD layout).
@@ -253,6 +269,22 @@ func _switch_to_mode(mode: GameModeComponent.GameMode) -> void:
 	if _active_panel:
 		_active_panel.visible = false
 	_deathmatch_panel.visible = false
+
+	# The inert lobby shows no HUD at all.
+	if mode == GameModeComponent.GameMode.MAIN_MENU:
+		_menu_mode = true
+		_active_panel = null
+		_panel_container.visible = false
+		_round_score_label.visible = false
+		_deathmatch_panel.visible = false
+		_team_spi_bar.visible = false
+		_team_sci_bar.visible = false
+		_overtime_label.visible = false
+		_timer_bar.visible = false
+		return
+
+	_menu_mode = false
+	_timer_bar.visible = true
 
 	# Show new
 	if mode == GameModeComponent.GameMode.DEATHMATCH:

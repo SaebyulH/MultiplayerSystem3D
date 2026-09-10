@@ -12,6 +12,7 @@ enum GameMode {
 	HYBRID,      ## Capture point, then escort payload
 	CONTROL,     ## Like KOTH but BO3 with separate sub-maps
 	DEATHMATCH,  ## Free-for-all: first to 20 kills or highest after 10 min
+	MAIN_MENU,   ## 3D lobby world — no objective, no round timer
 }
 
 enum PhaseState {
@@ -67,6 +68,7 @@ var hybrid_mode: HybridMode
 var koth_mode: KothMode
 var domination_mode: DominationMode
 var deathmatch_mode: DeathmatchMode
+var main_menu_mode: MainMenuMode
 var deathmatch_announcer: DeathmatchAnnouncer
 
 # ─────────────────────────────────────────────
@@ -95,6 +97,8 @@ func _ready() -> void:
 	_connect_mode_signals()
 	if game_mode == GameMode.DEATHMATCH:
 		_create_deathmatch_announcer()
+	if game_mode == GameMode.MAIN_MENU:
+		return  # lobby: no SETUP countdown, no round timer
 	if not multiplayer.is_server():
 		return
 	_transition_phase(PhaseState.SETUP)
@@ -111,6 +115,8 @@ func _create_mode_nodes() -> void:
 		domination_mode = DominationMode.new()
 	if not deathmatch_mode:
 		deathmatch_mode = DeathmatchMode.new()
+	if not main_menu_mode:
+		main_menu_mode = MainMenuMode.new()
 
 func _create_deathmatch_announcer() -> void:
 	if deathmatch_announcer:
@@ -208,6 +214,9 @@ func _process(delta: float) -> void:
 	if not multiplayer.is_server() or not is_multiplayer_authority():
 		return
 
+	if game_mode == GameMode.MAIN_MENU:
+		return  # inert lobby: no time broadcast, no state sync
+
 	_hud_tick += delta
 	if _hud_tick >= 1.0:
 		_hud_tick = 0.0
@@ -271,6 +280,8 @@ func _tick_active(delta: float) -> void:
 		GameMode.DEATHMATCH:
 			if deathmatch_mode:
 				match_ended = deathmatch_mode.tick()
+		GameMode.MAIN_MENU:
+			pass
 
 	if match_ended:
 		return
@@ -388,6 +399,8 @@ func _start_new_round() -> void:
 		GameMode.DEATHMATCH:
 			if deathmatch_mode:
 				deathmatch_mode.reset()
+		GameMode.MAIN_MENU:
+			pass
 
 	_transition_phase(PhaseState.SETUP)
 

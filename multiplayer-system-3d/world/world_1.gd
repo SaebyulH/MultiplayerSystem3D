@@ -42,7 +42,7 @@ func _ready() -> void:
 		add_child(spawn_manager)
 
 func _on_main_menu_pressed() -> void:
-	NetworkManager.terminate_connection_load_main_menu()
+	NetworkManager.return_to_lobby()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if Input.is_action_pressed("leaderboard"):
