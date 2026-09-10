@@ -1,0 +1,116 @@
+[gd_scene format=3 uid="uid://cgnm6fpurb2b2"]
+
+[ext_resource type="Script" uid="uid://b3gtcm614wpi8" path="res://maps/map.gd" id="1_q7lo8"]
+[ext_resource type="Texture2D" uid="uid://c4ln0bpu3tmo3" path="res://assets/environment/kloppenheim_06_puresky_4k.exr" id="2_m5rel"]
+[ext_resource type="Material" uid="uid://b6l23ihtcguc1" path="res://assets/environment/grid_material.tres" id="3_3pnlf"]
+[ext_resource type="Script" uid="uid://ccrf5bdka2m35" path="res://player/auto_projectile_spawner.gd" id="4_gpsch"]
+[ext_resource type="Script" uid="uid://r6rneeolnvra" path="res://components/game_mode_component.gd" id="5_bgj78"]
+
+[sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_wnf2b"]
+panorama = ExtResource("2_m5rel")
+
+[sub_resource type="Sky" id="Sky_yhcpw"]
+sky_material = SubResource("PanoramaSkyMaterial_wnf2b")
+
+[sub_resource type="Environment" id="Environment_yhcpw"]
+background_mode = 2
+sky = SubResource("Sky_yhcpw")
+tonemap_mode = 2
+ssr_enabled = true
+ssao_enabled = true
+ssil_enabled = true
+sdfgi_use_occlusion = true
+sdfgi_cascades = 1
+sdfgi_y_scale = 0
+glow_enabled = true
+volumetric_fog_enabled = true
+volumetric_fog_density = 0.0042
+adjustment_enabled = true
+
+[node name="Game" type="Node3D" unique_id=159294576 node_paths=PackedStringArray("despawn_location")]
+script = ExtResource("1_q7lo8")
+despawn_location = NodePath("Despawn")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=765331845]
+environment = SubResource("Environment_yhcpw")
+
+[node name="SCI Spawn Location" type="Marker3D" parent="." unique_id=908470764]
+transform = Transform3D(-0.103933066, -0.051966544, 0.030002892, 0, 0.06000578, 0.10393307, -0.06000579, 0.090008676, -0.051966533, -2.7936406, -1.7795264, -2.919914)
+
+[node name="SCI Spawn Location2" type="Marker3D" parent="." unique_id=996857054]
+transform = Transform3D(-0.103933066, -0.051966544, 0.030002892, 0, 0.06000578, 0.10393307, -0.06000579, 0.090008676, -0.051966533, 1.8341134, -1.427079, -2.5009692)
+
+[node name="SCI Spawn Location3" type="Marker3D" parent="." unique_id=1889475643]
+transform = Transform3D(-0.103933066, -0.051966544, 0.030002892, 0, 0.06000578, 0.10393307, -0.06000579, 0.090008676, -0.051966533, 1.5926943, -1.7923498, 0.35029674)
+
+[node name="SCI Spawn Location4" type="Marker3D" parent="." unique_id=546997712]
+transform = Transform3D(-0.103933066, -0.051966544, 0.030002892, 0, 0.06000578, 0.10393307, -0.06000579, 0.090008676, -0.051966533, -0.068805456, -2.0892212, -0.7340408)
+
+[node name="SCI Spawn Location5" type="Marker3D" parent="." unique_id=188725120]
+transform = Transform3D(-0.103933066, -0.051966544, 0.030002892, 0, 0.06000578, 0.10393307, -0.06000579, 0.090008676, -0.051966533, -0.6451213, -2.0892212, -0.7340408)
+
+[node name="SCI Spawn Location6" type="Marker3D" parent="." unique_id=268036407]
+transform = Transform3D(-0.103933066, -0.051966544, 0.030002892, 0, 0.06000578, 0.10393307, -0.06000579, 0.090008676, -0.051966533, -2.9765007, -1.9231699, -0.390684)
+
+[node name="SCI Spawn Location7" type="Marker3D" parent="." unique_id=60947169]
+transform = Transform3D(-0.103933066, -0.051966544, 0.030002892, 0, 0.06000578, 0.10393307, -0.06000579, 0.090008676, -0.051966533, -0.13362566, -2.059355, 1.5779529)
+
+[node name="SCI Spawn Location8" type="Marker3D" parent="." unique_id=1574563656]
+transform = Transform3D(-0.103933066, -0.051966544, 0.030002892, 0, 0.06000578, 0.10393307, -0.06000579, 0.090008676, -0.051966533, -0.3493967, -1.6447201, -0.09745771)
+
+[node name="Despawn" type="Marker3D" parent="." unique_id=1311557604]
+transform = Transform3D(-1.0314262, -0.5157132, 0.2977471, 0, 0.59549415, 1.0314263, -0.5954943, 0.8932413, -0.5157131, -3.4940958, -62.606888, 21.097939)
+
+[node name="CSGCombiner3D3" type="CSGCombiner3D" parent="." unique_id=1320330278]
+transform = Transform3D(-1.1909884, 0, 1.04119515e-07, 0, 1.1909884, 0, -1.04119515e-07, 0, -1.1909884, -0.16277742, -6.1704307, 0.2140888)
+material_override = ExtResource("3_3pnlf")
+use_collision = true
+collision_mask = 0
+
+[node name="ground" type="CSGBox3D" parent="CSGCombiner3D3" unique_id=127720744]
+size = Vector3(48, 5, 48)
+
+[node name="ground2" type="CSGBox3D" parent="CSGCombiner3D3" unique_id=1512427693]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -23.000004, 7.430603, 0)
+size = Vector3(2, 9.861206, 48)
+
+[node name="ground3" type="CSGBox3D" parent="CSGCombiner3D3" unique_id=523260685]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 23, 7.14331, 0)
+size = Vector3(2, 9.286621, 48)
+
+[node name="ground4" type="CSGBox3D" parent="CSGCombiner3D3" unique_id=1031985075]
+transform = Transform3D(-4.371138e-08, 0, -1, 0, 1, 0, 1, 0, -4.371138e-08, -4.4703484e-08, 7.6342163, -23)
+size = Vector3(3, 10.268433, 48)
+
+[node name="ground5" type="CSGBox3D" parent="CSGCombiner3D3" unique_id=786067897]
+transform = Transform3D(-4.371138e-08, 0, -1, 0, 1, 0, 1, 0, -4.371138e-08, 0, 7.3237305, 23.000004)
+size = Vector3(2, 9.647461, 48)
+
+[node name="ground6" type="CSGBox3D" parent="CSGCombiner3D3" unique_id=80368125]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.13667421, 3.6809325, -0.090826824)
+size = Vector3(19.094727, 5, 13.458832)
+
+[node name="ground30" type="CSGBox3D" parent="CSGCombiner3D3" unique_id=1810944832]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.13667421, 5.1241565, 0.18540289)
+operation = 2
+size = Vector3(16.913086, 2.9279785, 12.054871)
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=517602722]
+transform = Transform3D(0.72554255, -0.33358252, -0.60192263, 0.68817735, 0.35169467, 0.6346045, 0, -0.87466204, 0.48473334, 0, 9.392839, 0)
+shadow_enabled = true
+
+[node name="ProjectilesParent" type="Node3D" parent="." unique_id=1338997683]
+top_level = true
+
+[node name="ProjectileSpawner" type="MultiplayerSpawner" parent="ProjectilesParent" unique_id=1469450871]
+_spawnable_scenes = PackedStringArray("uid://dy7hw0uphca40", "uid://v27fq461i5vr", "uid://bo0edtxgakruc", "uid://6mr0d18yn8po", "uid://daan6liu8ej2", "uid://cccu8xmm1tqq7", "uid://dy7hw0uphca40", "uid://v27fq461i5vr", "uid://dfyafkr18mtuq", "uid://bo0edtxgakruc", "uid://6mr0d18yn8po", "uid://daan6liu8ej2")
+spawn_path = NodePath("..")
+script = ExtResource("4_gpsch")
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=542390642]
+transform = Transform3D(-0.6691307, -0.37717453, 0.64031523, 0, 0.8616291, 0.5075384, -0.7431448, 0.3396095, -0.5765425, 30.735, 23.336, -12.33)
+
+[node name="GameModeComponent" type="Node" parent="." unique_id=1762082187]
+script = ExtResource("5_bgj78")
+game_mode = 5
+metadata/_custom_type_script = "uid://r6rneeolnvra"
