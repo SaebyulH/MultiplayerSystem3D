@@ -171,7 +171,10 @@ var queue_velocity := Vector3(0.0, 0.0, 0.0)
 @export var rollback_sync: RollbackSynchronizer
 @export var attribute_component: AttributeComponent
 @onready var camera := %Camera3D
-@onready var third_person_camera := $Body/Recoil/Head/SpringArm3D/ThirdPersonCamera3D as Camera3D
+@onready var third_person_camera := $ThirdPersonRoot/ThirdPersonPitch/SpringArm3D/ThirdPersonCamera3D as Camera3D
+@onready var third_person_root := $ThirdPersonRoot as Node3D
+@onready var third_person_pitch := $ThirdPersonRoot/ThirdPersonPitch as Node3D
+@onready var third_person_raycast := $ThirdPersonRoot/ThirdPersonPitch/SpringArm3D/ThirdPersonCamera3D/RayCast3D as RayCast3D
 @export var body :Node3D
 
 
@@ -429,9 +432,6 @@ func _ready() -> void:
 	]
 	team = team
 
-	# SpringArm3D places its child along local +Z; the head's -Z is the look
-	# direction (forward), so +Z is already behind the player. No rotation is
-	# needed — the arm/camera are left at their scene-authored transforms.
 	player_input.toggle_camera.connect(_on_toggle_camera)
 
 	# Resolve the built-in mannequin — it always drives the animation.
@@ -713,6 +713,7 @@ func _apply_camera_mode() -> void:
 	if not _is_own_model() or not spawned:
 		return
 	if third_person:
+		_sync_third_person_rig()
 		camera.current = false
 		camera.visible = false
 		third_person_camera.visible = true
@@ -1065,7 +1066,7 @@ func _force_update_is_on_floor():
 ## Free-fly movement for the noclip state: camera-relative 3D steering with no
 ## gravity and no collision.  Replaces the normal movement sim entirely.
 func _noclip_move(delta: float) -> void:
-	var cam_basis: Basis = camera.global_transform.basis
+	var cam_basis: Basis = _movement_basis()
 	var fwd := -cam_basis.z
 	var rgt := cam_basis.x
 	var input := player_input.input_dir
@@ -1486,6 +1487,7 @@ func _process(_delta: float) -> void:
 	_update_health_bar()
 	_update_visibility(_delta)
 	_update_aimbot()
+	_update_third_person_aim()
 
 
 func _apply_movement_from_input(delta):
@@ -1520,7 +1522,7 @@ func _apply_movement_from_input(delta):
 		_ground_contact_time = 0.0
 
 	var input_dir := player_input.input_dir
-	var cam_basis: Basis = camera.global_transform.basis
+	var cam_basis: Basis = _movement_basis()
 	# Derive forward from the camera's (always-horizontal) right vector so pitch
 	# never inverts inputs when looking straight up or down.
 	var right   := Vector3(cam_basis.x.x, 0, cam_basis.x.z).normalized()
@@ -1856,10 +1858,19 @@ func set_character(char: Character) -> void:
 	character_changed.emit()
 
 
+## The basis of the camera the local player is currently looking through, used to
+## steer movement (WASD, dash, charge).  Third person uses the orbiting
+## third-person camera; first person uses the head camera.
+func _movement_basis() -> Basis:
+	if third_person and third_person_camera != null:
+		return third_person_camera.global_transform.basis
+	return camera.global_transform.basis
+
+
 ## The camera's forward vector flattened to the XZ plane (never points up/down).
 ## The camera faces -Z, so forward = up × right (not right × up, which is backward).
 func horizontal_forward() -> Vector3:
-	var cam_basis: Basis = camera.global_transform.basis
+	var cam_basis: Basis = _movement_basis()
 	var right := Vector3(cam_basis.x.x, 0.0, cam_basis.x.z).normalized()
 	return Vector3.UP.cross(right)
 
@@ -1983,30 +1994,89 @@ func aimbot_find_target() -> Player:
 	return best
 
 
-## Rotate the head (body yaw + head pitch) so the camera points at the target's
-## head.  Applies a delta so any recoil offset in the Recoil node is preserved.
-func _aimbot_rotate_to(target: Player) -> void:
+## Rotate the head (body yaw + head pitch) so the camera aims at `point`.
+## `recoil_free` (third-person aim) uses a forward that ignores the Recoil node's
+## offset, so recoil visibly kicks; the default (aimbot) uses the real camera
+## forward and keeps compensating recoil.
+func _aim_body_head_at_point(point: Vector3, recoil_free: bool = false) -> void:
 	if camera == null or body == null:
 		return
 	var cam := camera as Camera3D
-	var cam_pos := cam.global_position
-	var dir :Vector3= (target.get_node("Body/Mannequin/mannequin/Skeleton3D/PhysicalBoneSimulator3D/Physical Bone DEF-spine_006").global_position) - cam_pos
+	var head_node := cam.get_parent() as Node3D
+	if head_node == null:
+		return
+	var head_pos := cam.global_position
+	# Measure the aim direction from a point on the body's yaw axis (at head
+	# height) rather than the actual head position.  The head orbits the yaw axis
+	# as the body turns, so using it as the origin feeds the yaw back into `dir`
+	# and flips the body ~180° every frame when the crosshair is steep (flicker).
+	var cam_pos := Vector3(body.global_position.x, head_pos.y, body.global_position.z)
+	var dir: Vector3 = point - cam_pos
 	if dir.length_squared() < 0.0001:
 		return
 	dir = dir.normalized()
-	var cam_fwd := camera_forward()
 
-	# Yaw: rotate the body around Y to align the horizontal component.
-	var f0_h := Vector3(cam_fwd.x, 0.0, cam_fwd.z)
-	var f1_h := Vector3(dir.x, 0.0, dir.z)
-	if f0_h.length_squared() > 0.0001 and f1_h.length_squared() > 0.0001:
-		body.rotation.y += f0_h.normalized().signed_angle_to(f1_h.normalized(), Vector3.UP)
+	# Current aim forward.  Recoil-free reconstructs it from body yaw + head pitch
+	# so the recoil (on the parent Recoil node) is not read back and canceled.
+	var aim_fwd: Vector3
+	if recoil_free:
+		var cy := cos(body.rotation.y)
+		var sy := sin(body.rotation.y)
+		var cp := cos(head_node.rotation.x)
+		var sp := sin(head_node.rotation.x)
+		aim_fwd = Vector3(-sy * cp, sp, -cy * cp)
+	else:
+		aim_fwd = camera_forward()
+
+	# Yaw: rotate the body around Y to align the horizontal component.  Skip when
+	# the target is nearly straight up/down (the crosshair sits almost directly
+	# over/under the player) — yaw is degenerate there and the body would flip
+	# ~180° between frames, which reads as flicker.
+	if absf(dir.y) < 0.99:
+		var f0_h := Vector3(aim_fwd.x, 0.0, aim_fwd.z)
+		var f1_h := Vector3(dir.x, 0.0, dir.z)
+		if f0_h.length_squared() > 0.0001 and f1_h.length_squared() > 0.0001:
+			body.rotation.y += f0_h.normalized().signed_angle_to(f1_h.normalized(), Vector3.UP)
 
 	# Pitch: rotate the head node (camera's parent) around X.
-	var head_node := cam.get_parent() as Node3D
-	if head_node:
-		var pitch_delta := asin(clampf(dir.y, -1.0, 1.0)) - asin(clampf(cam_fwd.y, -1.0, 1.0))
-		head_node.rotation.x = clampf(head_node.rotation.x + pitch_delta, -PI / 2.0, PI / 2.0)
+	var pitch_delta := asin(clampf(dir.y, -1.0, 1.0)) - asin(clampf(aim_fwd.y, -1.0, 1.0))
+	head_node.rotation.x = clampf(head_node.rotation.x + pitch_delta, -PI / 2.0, PI / 2.0)
+
+
+## Aimbot: aim the head at the target's head bone.
+func _aimbot_rotate_to(target: Player) -> void:
+	var bone := target.get_node("Body/Mannequin/mannequin/Skeleton3D/PhysicalBoneSimulator3D/Physical Bone DEF-spine_006") as Node3D
+	if bone:
+		_aim_body_head_at_point(bone.global_position)
+
+
+## The world point the crosshair sits on in third person: the raycast hit, or a
+## far point along the third-person camera's forward when nothing is hit.
+func _third_person_aim_target() -> Vector3:
+	if third_person_raycast and third_person_raycast.is_colliding():
+		return third_person_raycast.get_collision_point()
+	return third_person_camera.global_position + (-third_person_camera.global_transform.basis.z) * 10000.0
+
+
+## Third-person aim tick: point the body/head at the crosshair so the character
+## model visually aims where the third-person camera looks.
+func _update_third_person_aim() -> void:
+	if not third_person:
+		return
+	if not _is_own_model() or not spawned:
+		return
+	_aim_body_head_at_point(_third_person_aim_target(), true)
+
+
+## Snap the third-person rig to the player's current facing (yaw on the root,
+## pitch on the pitch node) when entering third person.  The over-shoulder offset
+## is fixed on the SpringArm3D/camera pair, so it needs no syncing.
+func _sync_third_person_rig() -> void:
+	if third_person_root == null or third_person_pitch == null or body == null:
+		return
+	var head_node := camera.get_parent() as Node3D
+	third_person_root.rotation.y = body.rotation.y
+	third_person_pitch.rotation.x = head_node.rotation.x if head_node else 0.0
 
 
 ## The charge speed from the ability resource, or a sensible fallback.
