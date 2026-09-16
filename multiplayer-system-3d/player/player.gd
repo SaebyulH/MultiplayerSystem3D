@@ -171,6 +171,7 @@ var queue_velocity := Vector3(0.0, 0.0, 0.0)
 @export var rollback_sync: RollbackSynchronizer
 @export var attribute_component: AttributeComponent
 @onready var camera := %Camera3D
+@onready var third_person_camera := $Body/Recoil/Head/SpringArm3D/ThirdPersonCamera3D as Camera3D
 @export var body :Node3D
 
 
@@ -182,6 +183,9 @@ var queue_velocity := Vector3(0.0, 0.0, 0.0)
 @onready var ability_manager: AbilityManager = $AbilityManager
 
 var is_crouching: bool = false
+
+## True while the local player is in third-person view (toggled with F).
+var third_person: bool = false
 
 # Character selection
 var _character: Character = null
@@ -424,6 +428,11 @@ func _ready() -> void:
 		#$Body/RighLeg,
 	]
 	team = team
+
+	# SpringArm3D places its child along local +Z; the head's -Z is the look
+	# direction (forward), so +Z is already behind the player. No rotation is
+	# needed — the arm/camera are left at their scene-authored transforms.
+	player_input.toggle_camera.connect(_on_toggle_camera)
 
 	# Resolve the built-in mannequin — it always drives the animation.
 	mannequin_skeleton = mannequin.find_child("Skeleton3D", true, false) as Skeleton3D
@@ -693,6 +702,41 @@ func rpc_cheat_death() -> void:
 	#$BodyHurtbox.global_rotation = $Body.global_rotation
 
 
+## Toggle between first- and third-person view (F key).
+func _on_toggle_camera() -> void:
+	third_person = not third_person
+	_apply_camera_mode()
+
+
+## Make the first- or third-person camera current for the local player.
+func _apply_camera_mode() -> void:
+	if not _is_own_model() or not spawned:
+		return
+	if third_person:
+		camera.current = false
+		camera.visible = false
+		third_person_camera.visible = true
+		third_person_camera.make_current()
+		_set_own_head_visible(true)
+	else:
+		third_person_camera.current = false
+		third_person_camera.visible = false
+		camera.visible = true
+		camera.make_current()
+		_set_own_head_visible(false)
+
+
+## Show or hide the local player's own head meshes.  The head is hidden in first
+## person so it doesn't clip the camera; third person shows it again.
+func _set_own_head_visible(visible: bool) -> void:
+	if model_script == null:
+		return
+	if visible:
+		model_script.show_head_meshes()
+	else:
+		model_script.hide_head_meshes()
+
+
 ## Hide the player: disable collision, stop camera, move off-grid.
 ## Projectiles (child of ProjectilesParent) are NOT touched.
 func despawn():
@@ -712,6 +756,8 @@ func despawn():
 	$Body/PlayerUI.hide()
 	camera.current = false
 	camera.visible = false
+	third_person_camera.current = false
+	third_person_camera.visible = false
 
 ## Show the player: enable collision, restore camera, position at the given
 ## location (already set before calling this).
@@ -729,15 +775,18 @@ func spawn():
 		var my_id := multiplayer.get_unique_id()
 		var player_id := name.to_int()
 		if my_id == player_id:
-			camera.visible = true
-			camera.make_current()
+			_apply_camera_mode()
 			#$BodyHurtbox/CollisionShape3D.hide()
 		else:
 			camera.current = false
 			camera.visible = false
+			third_person_camera.current = false
+			third_person_camera.visible = false
 	else:
 		camera.current = false
 		camera.visible = false
+		third_person_camera.current = false
+		third_person_camera.visible = false
 
 	# Weapon is briefly unusable on every (re)spawn — plays the pull-out anim and
 	# locks it for the weapon's pullout_time.
@@ -2028,10 +2077,10 @@ func _spawn_character_model() -> void:
 	team = team
 
 	# Our own model: strip the rim light and hide the head so it doesn't clip the
-	# first-person camera.
+	# first-person camera (shown again if the local player is in third person).
 	if own and model_script != null:
 		model_script.disable_rim_layer()
-		model_script.hide_head_meshes()
+		_set_own_head_visible(third_person)
 
 
 ## Show or hide the mannequin's body/head meshes without hiding the node itself.

@@ -29,6 +29,13 @@ func hide_head_meshes() -> void:
 			mesh.hide()
 
 
+## Show the head meshes again (third-person view).
+func show_head_meshes() -> void:
+	for mesh in head_meshes:
+		if is_instance_valid(mesh):
+			mesh.show()
+
+
 ## Stop this model from catching the rim light (the local player's own
 ## first-person model).
 func disable_rim_layer() -> void:
