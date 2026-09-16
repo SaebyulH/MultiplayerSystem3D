@@ -12,10 +12,6 @@ var map_path
 func _ready() -> void:
 	GameManager.spawn_parent = %SpawnParent
 
-	# The legacy class-select menu is superseded by the loadout menu.  Keep it
-	# hidden so its own CanvasLayer doesn't overlap the new UI.
-	%ClassSelect.visible = false
-
 	# Global kill feed — one per peer, cleaned up with the scene.
 	var kill_feed := KillFeed.new()
 	add_child(kill_feed)

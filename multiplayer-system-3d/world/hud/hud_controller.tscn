@@ -1,0 +1,73 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://world/hud/hud_controller.gd" id="1_hud"]
+[ext_resource type="PackedScene" path="res://world/hud/components/timer_bar.tscn" id="2_timer"]
+[ext_resource type="PackedScene" path="res://world/hud/components/team_progress_bar.tscn" id="3_team"]
+
+[node name="HUDController" type="CanvasLayer"]
+layer = 1
+script = ExtResource("1_hud")
+
+[node name="TimerBar" parent="." instance=ExtResource("2_timer")]
+anchor_right = 1.0
+offset_bottom = 32.0
+
+[node name="TeamBarRow" type="HBoxContainer" parent="."]
+anchor_left = 0.5
+anchor_right = 0.5
+offset_top = 34.0
+offset_bottom = 60.0
+offset_left = -260.0
+offset_right = 260.0
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="SpiBar" parent="TeamBarRow" instance=ExtResource("3_team")]
+visible = false
+custom_minimum_size = Vector2(240, 28)
+team_color = Color(0.88, 0.24, 0.24, 1)
+
+[node name="SciBar" parent="TeamBarRow" instance=ExtResource("3_team")]
+visible = false
+custom_minimum_size = Vector2(240, 28)
+team_color = Color(0.2, 0.6, 0.86, 1)
+
+[node name="OvertimeLabel" type="Label" parent="."]
+visible = false
+anchor_right = 1.0
+offset_top = 34.0
+offset_bottom = 56.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(1, 0.3, 0.3, 1)
+text = "OVERTIME"
+horizontal_alignment = 1
+
+[node name="Root" type="Control" parent="."]
+anchor_left = 0.5
+anchor_right = 0.5
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = -260.0
+offset_right = 260.0
+offset_top = -200.0
+offset_bottom = -40.0
+
+[node name="MainVBox" type="VBoxContainer" parent="Root"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_constants/separation = 8
+
+[node name="RoundScoreLabel" type="Label" parent="Root/MainVBox"]
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.85, 0.85, 0.85, 1)
+horizontal_alignment = 1
+
+[node name="PanelContainer" type="Control" parent="Root/MainVBox"]
+custom_minimum_size = Vector2(0, 120)
+
+[node name="HUDTickTimer" type="Timer" parent="."]
+wait_time = 0.1

@@ -1,0 +1,25 @@
+[gd_scene format=3]
+
+[sub_resource type="StyleBoxFlat" id="slot_panel"]
+resource_local_to_scene = true
+bg_color = Color(0.10, 0.11, 0.15, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.30, 0.32, 0.38, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[node name="AbilitySlot" type="PanelContainer"]
+custom_minimum_size = Vector2(200, 64)
+size_flags_horizontal = 3
+mouse_filter = 0
+theme_override_styles/panel = SubResource("slot_panel")
+
+[node name="Label" type="Label" parent="."]
+theme_override_font_sizes/font_size = 15
+horizontal_alignment = 1
+vertical_alignment = 1

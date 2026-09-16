@@ -1,0 +1,73 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://world/hud/panels/hybrid_panel.gd" id="1_panel"]
+[ext_resource type="PackedScene" path="res://world/hud/components/team_progress_bar.tscn" id="2_team"]
+
+[node name="HybridPanel" type="Control"]
+mouse_filter = 1
+script = ExtResource("1_panel")
+
+[node name="VBox" type="VBoxContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_constants/separation = 6
+
+[node name="Header" type="Label" parent="VBox"]
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 20
+text = "── HYBRID ──"
+horizontal_alignment = 1
+
+[node name="PhaseHeader" type="Label" parent="VBox"]
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.9, 0.9, 0.6, 1)
+horizontal_alignment = 1
+
+[node name="CaptureBar" parent="VBox" instance=ExtResource("2_team")]
+team_color = Color(0.88, 0.24, 0.24, 1)
+
+[node name="EscortContainer" type="Control" parent="VBox"]
+visible = false
+custom_minimum_size = Vector2(0, 38)
+
+[node name="Bg" type="ColorRect" parent="VBox/EscortContainer"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.12, 0.12, 0.12, 0.85)
+
+[node name="EscortFill" type="ColorRect" parent="VBox/EscortContainer"]
+anchor_bottom = 1.0
+color = Color(0.88, 0.24, 0.24, 1)
+
+[node name="EscortState" type="Label" parent="VBox/EscortContainer"]
+anchor_right = 0.55
+anchor_bottom = 1.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 18
+vertical_alignment = 1
+
+[node name="EscortPct" type="Label" parent="VBox/EscortContainer"]
+anchor_left = 0.55
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="EscortCpContainer" type="Control" parent="VBox"]
+visible = false
+custom_minimum_size = Vector2(0, 10)
+
+[node name="EscortInfo" type="Label" parent="VBox"]
+visible = false
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+horizontal_alignment = 1

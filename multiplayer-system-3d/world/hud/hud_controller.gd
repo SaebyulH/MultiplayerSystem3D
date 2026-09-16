@@ -33,15 +33,22 @@ class_name HUDController
 
 var gmc: GameModeComponent
 
-# Shared UI nodes
-var _root: Control
-var _timer_bar: TimerBar
-var _round_score_label: Label
-var _overtime_label: Label
-var _panel_container: Control
-var _team_bar_row: HBoxContainer
-var _team_spi_bar: TeamProgressBar
-var _team_sci_bar: TeamProgressBar
+# Panel scenes, instantiated once per game mode in _create_panel_registry().
+const _koth_scene := preload("res://world/hud/panels/koth_panel.tscn")
+const _domination_scene := preload("res://world/hud/panels/domination_panel.tscn")
+const _escort_scene := preload("res://world/hud/panels/escort_panel.tscn")
+const _hybrid_scene := preload("res://world/hud/panels/hybrid_panel.tscn")
+const _deathmatch_scene := preload("res://world/hud/panels/deathmatch_panel.tscn")
+
+# Shared UI nodes (defined in hud_controller.tscn)
+@onready var _root: Control = $Root
+@onready var _timer_bar: TimerBar = $TimerBar
+@onready var _round_score_label: Label = $Root/MainVBox/RoundScoreLabel
+@onready var _overtime_label: Label = $OvertimeLabel
+@onready var _panel_container: Control = $Root/MainVBox/PanelContainer
+@onready var _team_bar_row: HBoxContainer = $TeamBarRow
+@onready var _team_spi_bar: TeamProgressBar = $TeamBarRow/SpiBar
+@onready var _team_sci_bar: TeamProgressBar = $TeamBarRow/SciBar
 
 # Active panel
 var _active_panel: BaseModePanel = null
@@ -58,22 +65,23 @@ var _menu_mode := false  # true while in the inert MAIN_MENU lobby (no HUD)
 ## check.  phase_timer only changes at the 10 Hz state sync, so 0.1 s is
 ## visually identical to per-frame.
 const HUD_TICK_INTERVAL: float = 0.1
-var _hud_timer: Timer
+@onready var _hud_timer: Timer = $HUDTickTimer
+
+# ─────────────────────────────────────────────
+#  Debug instrumentation (FPS + cost breakdown)
+# ─────────────────────────────────────────────
+var _dbg_accum := 0.0
+var _dbg_frames := 0
 
 # ─────────────────────────────────────────────
 #  Lifecycle
 # ─────────────────────────────────────────────
 
 func _ready() -> void:
-	_build_shared_ui()
-
-	_hud_timer = Timer.new()
-	_hud_timer.name = "HUDTickTimer"
-	_hud_timer.wait_time = HUD_TICK_INTERVAL
-	_hud_timer.one_shot = false
 	_hud_timer.timeout.connect(_on_hud_tick)
-	add_child(_hud_timer)
 	_hud_timer.start()
+	if OS.is_debug_build():
+		print("[DEBUG] HUD FPS monitor active. Per line: FPS | process ms | physics ms | drawCalls | objects | physBodies | ui_open | menu_mode")
 
 
 func _on_hud_tick() -> void:
@@ -91,102 +99,26 @@ func _on_hud_tick() -> void:
 	# not polled here.
 	_timer_bar.set_time(gmc.phase_timer, gmc.round_time)
 
-# ─────────────────────────────────────────────
-#  Build shared UI (called from _ready)
-# ─────────────────────────────────────────────
 
-func _build_shared_ui() -> void:
-	layer = 1  # above game world but below console (layer 3)
-
-	# Timer bar -- full width, top of screen, direct child of CanvasLayer
-	_timer_bar = TimerBar.new()
-	_timer_bar.anchor_left   = 0.0
-	_timer_bar.anchor_right  = 1.0
-	_timer_bar.anchor_top    = 0.0
-	_timer_bar.anchor_bottom = 0.0
-	_timer_bar.offset_top    = 0
-	_timer_bar.offset_bottom = 32
-	add_child(_timer_bar)
-
-	# Team score bars -- centered row below the timer
-	_team_bar_row = HBoxContainer.new()
-	_team_bar_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	_team_bar_row.add_theme_constant_override("separation", 12)
-	_team_bar_row.anchor_left   = 0.5
-	_team_bar_row.anchor_right  = 0.5
-	_team_bar_row.anchor_top    = 0.0
-	_team_bar_row.anchor_bottom = 0.0
-	_team_bar_row.offset_top    = 34
-	_team_bar_row.offset_bottom = 60
-	_team_bar_row.offset_left   = -260
-
-	# Create team bars once (shared across modes)
-	_team_spi_bar = TeamProgressBar.new()
-	_team_spi_bar.set_bar_color(Color(0.88, 0.24, 0.24))
-	_team_spi_bar.custom_minimum_size = Vector2(240, 28)
-	_team_spi_bar.visible = false
-	_team_bar_row.add_child(_team_spi_bar)
-
-	_team_sci_bar = TeamProgressBar.new()
-	_team_sci_bar.set_bar_color(Color(0.20, 0.60, 0.86))
-	_team_sci_bar.custom_minimum_size = Vector2(240, 28)
-	_team_sci_bar.visible = false
-	_team_bar_row.add_child(_team_sci_bar)
-	_team_bar_row.offset_right  = 260
-	add_child(_team_bar_row)
-
-	# Overtime flash label -- below the timer bar
-	_overtime_label = Label.new()
-	_overtime_label.text = "OVERTIME"
-	_overtime_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_overtime_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-	_overtime_label.add_theme_constant_override("outline_size", 8)
-	_overtime_label.add_theme_font_size_override("font_size", 20)
-	_overtime_label.add_theme_color_override("font_color", Color(1, 0.3, 0.3))
-	_overtime_label.anchor_left   = 0.0
-	_overtime_label.anchor_right  = 1.0
-	_overtime_label.anchor_top    = 0.0
-	_overtime_label.anchor_bottom = 0.0
-	_overtime_label.offset_top    = 34
-	_overtime_label.offset_bottom = 56
-	_overtime_label.visible = false
-	add_child(_overtime_label)
-
-	# Centered HUD container (round score + mode panels)
-	_root = Control.new()
-	_root.anchor_left   = 0.5
-	_root.anchor_right  = 0.5
-	_root.anchor_top    = 1.0
-	_root.anchor_bottom = 1.0
-	_root.offset_left   = -hud_width * 0.5
-	_root.offset_right  = hud_width * 0.5
-	_root.offset_top    = -200
-	_root.offset_bottom = -40
-	add_child(_root)
-
-	var main_vbox := VBoxContainer.new()
-	main_vbox.add_theme_constant_override("separation", 8)
-	main_vbox.anchor_left   = 0.0
-	main_vbox.anchor_right  = 1.0
-	main_vbox.anchor_top    = 0.0
-	main_vbox.anchor_bottom = 1.0
-	_root.add_child(main_vbox)
-
-	# Round score
-	_round_score_label = Label.new()
-	_round_score_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_round_score_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-	_round_score_label.add_theme_constant_override("outline_size", 6)
-	_round_score_label.add_theme_font_size_override("font_size", 18)
-	_round_score_label.add_theme_color_override("font_color", Color(0.85, 0.85, 0.85))
-	main_vbox.add_child(_round_score_label)
-
-	# Mode panel container
-	_panel_container = Control.new()
-	_panel_container.custom_minimum_size = Vector2(0, 120)
-	_panel_container.anchor_left   = 0.0
-	_panel_container.anchor_right  = 1.0
-	main_vbox.add_child(_panel_container)
+func _process(delta: float) -> void:
+	if not OS.is_debug_build():
+		return
+	_dbg_accum += delta
+	_dbg_frames += 1
+	if _dbg_accum < 1.0:
+		return
+	var fps := _dbg_frames / _dbg_accum
+	var proc_ms := Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0
+	var phys_ms := Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0
+	var draw_calls := int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))
+	var objs := int(Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME))
+	var phys_bodies := int(Performance.get_monitor(Performance.PHYSICS_3D_ACTIVE_OBJECTS))
+	print("[DEBUG] FPS %.1f | proc %.2fms | phys %.2fms | drawCalls %d | objs %d | physBodies %d | ui_open=%s menu_mode=%s" % [
+		fps, proc_ms, phys_ms, draw_calls, objs, phys_bodies,
+		PlayerInput.ui_open, _menu_mode,
+	])
+	_dbg_accum = 0.0
+	_dbg_frames = 0
 
 func setup_gmc() -> void:
 	await get_tree().process_frame
@@ -239,16 +171,16 @@ func _create_panel_registry() -> void:
 	# Deathmatch panel lives outside _panel_container so it can span
 	# the full width at the top of the screen (not constricted by the
 	# centered HUD layout).
-	_deathmatch_panel = DeathmatchPanel.new()
+	_deathmatch_panel = _deathmatch_scene.instantiate() as DeathmatchPanel
 	_deathmatch_panel.visible = false
 	add_child(_deathmatch_panel)
 
 	# Create one panel per game mode; they stay hidden until switched to.
-	_panel_registry[GameModeComponent.GameMode.KOTH]      = _make_panel(KothPanel.new())
-	_panel_registry[GameModeComponent.GameMode.CONTROL]    = _make_panel(KothPanel.new())
-	_panel_registry[GameModeComponent.GameMode.DOMINATION] = _make_panel(DominationPanel.new())
-	_panel_registry[GameModeComponent.GameMode.ESCORT]     = _make_panel(EscortPanel.new())
-	_panel_registry[GameModeComponent.GameMode.HYBRID]     = _make_panel(HybridPanel.new())
+	_panel_registry[GameModeComponent.GameMode.KOTH]      = _make_panel(_koth_scene.instantiate() as BaseModePanel)
+	_panel_registry[GameModeComponent.GameMode.CONTROL]    = _make_panel(_koth_scene.instantiate() as BaseModePanel)
+	_panel_registry[GameModeComponent.GameMode.DOMINATION] = _make_panel(_domination_scene.instantiate() as BaseModePanel)
+	_panel_registry[GameModeComponent.GameMode.ESCORT]     = _make_panel(_escort_scene.instantiate() as BaseModePanel)
+	_panel_registry[GameModeComponent.GameMode.HYBRID]     = _make_panel(_hybrid_scene.instantiate() as BaseModePanel)
 
 func _make_panel(panel: BaseModePanel) -> BaseModePanel:
 	panel.visible = false

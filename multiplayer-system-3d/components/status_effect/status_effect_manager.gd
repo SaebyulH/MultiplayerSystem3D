@@ -95,12 +95,22 @@ func _tick_server(delta: float) -> void:
 		_active_effects.erase(id)
 		effect_removed.emit(id)
 
-	# Sync at TICK_INTERVAL.  The tick timer only runs while effects are active,
-	# so this also fires the empty snapshot when the last effect expires.
-	_sync_to_clients()
+	# Only push a snapshot when there is a *timed* effect to update (or one just
+	# expired). Permanent markers (wallhacked/health-visible) never change, so
+	# re-broadcasting them at 10 Hz was pure waste — and, because every player
+	# always carries two passives, the timer never idled and every bot broadcast
+	# an RPC every 100 ms forever.
+	var has_timed := false
+	for id in _active_effects:
+		if not _active_effects[id]["effect"].is_permanent:
+			has_timed = true
+			break
 
-	# Stop ticking once nothing is active (restarted by the next apply).
-	if _active_effects.is_empty():
+	if has_timed or not expired.is_empty():
+		_sync_to_clients()
+
+	# Stop ticking once no timed effect remains (restarted by the next apply).
+	if not has_timed:
 		_tick_timer.stop()
 # ------------------------------------------------------------------ public API
 
@@ -134,7 +144,7 @@ func apply_effect(effect: StatusEffect, applier: String) -> void:
 
 	effect._on_apply(_player, applier, state)
 	effect_applied.emit(effect.effect_id)
-	if _tick_timer.is_stopped():
+	if not effect.is_permanent and _tick_timer.is_stopped():
 		_tick_timer.start()
 	_sync_to_clients()
 
@@ -226,8 +236,8 @@ func get_active_effect_names() -> Dictionary:
 
 # ----------------------------------------------------------------- networking
 
-func _sync_to_clients() -> void:
-	"""Push the authoritative remaining-time snapshot to all peers."""
+func _sync_to_clients(target_peer: int = 0) -> void:
+	"""Push the authoritative remaining-time snapshot to all peers (or one peer)."""
 	if not multiplayer.is_server():
 		return
 	_refresh_client_mirror()
@@ -238,7 +248,10 @@ func _sync_to_clients() -> void:
 		ids.append(id)
 		names.append(_client_effect_names.get(id, id))
 		times.append(_client_effects[id])
-	_rpc_sync_effects.rpc(ids, names, times)
+	if target_peer > 0:
+		_rpc_sync_effects.rpc_id(target_peer, ids, names, times)
+	else:
+		_rpc_sync_effects.rpc(ids, names, times)
 	client_effects_changed.emit()
 
 

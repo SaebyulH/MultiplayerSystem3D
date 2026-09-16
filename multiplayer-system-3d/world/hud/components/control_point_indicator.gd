@@ -6,62 +6,14 @@ class_name ControlPointIndicator
 
 const SIZE: float = 72.0
 
-var _bg_rect: ColorRect
-var _fill_rect: ColorRect
-var _label: Label
-var _pct_label: Label
+@onready var _bg_rect: ColorRect = $BgRect
+@onready var _fill_rect: ColorRect = $FillRect
+@onready var _label: Label = $Label
+@onready var _pct_label: Label = $PctLabel
 
 func _init() -> void:
 	custom_minimum_size = Vector2(SIZE, SIZE)
 	mouse_filter = Control.MOUSE_FILTER_PASS
-
-func _ready() -> void:
-	_build()
-
-func _build() -> void:
-	# Background square
-	_bg_rect = ColorRect.new()
-	_bg_rect.color = _dim(_team_color(Player.Team.FFA))
-	_bg_rect.anchor_left   = 0.0
-	_bg_rect.anchor_right  = 1.0
-	_bg_rect.anchor_top    = 0.0
-	_bg_rect.anchor_bottom = 1.0
-	add_child(_bg_rect)
-
-	# Capture progress fill (bottom-up)
-	_fill_rect = ColorRect.new()
-	_fill_rect.color = _team_color(Player.Team.FFA)
-	_fill_rect.anchor_left   = 0.0
-	_fill_rect.anchor_right  = 1.0
-	_fill_rect.anchor_bottom = 1.0
-	_fill_rect.anchor_top    = 1.0
-	add_child(_fill_rect)
-
-	# Team / status label
-	_label = Label.new()
-	_label.anchor_left   = 0.0
-	_label.anchor_right  = 1.0
-	_label.anchor_top    = 0.0
-	_label.anchor_bottom = 0.55
-	_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_label.vertical_alignment   = VERTICAL_ALIGNMENT_BOTTOM
-	_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-	_label.add_theme_constant_override("outline_size", 4)
-	_label.add_theme_font_size_override("font_size", 16)
-	add_child(_label)
-
-	# Percentage label
-	_pct_label = Label.new()
-	_pct_label.anchor_left   = 0.0
-	_pct_label.anchor_right  = 1.0
-	_pct_label.anchor_top    = 0.45
-	_pct_label.anchor_bottom = 1.0
-	_pct_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_pct_label.vertical_alignment   = VERTICAL_ALIGNMENT_TOP
-	_pct_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-	_pct_label.add_theme_constant_override("outline_size", 4)
-	_pct_label.add_theme_font_size_override("font_size", 13)
-	add_child(_pct_label)
 
 func set_cp_state(data: Dictionary) -> void:
 	var owning_team := data.get("owning_team", Player.Team.FFA) as int

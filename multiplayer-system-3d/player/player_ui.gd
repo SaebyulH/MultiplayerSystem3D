@@ -123,11 +123,17 @@ func _ready() -> void:
 	for child in get_children():
 		child.queue_free()
 
-	_build_ui()
-
+	# Only the local peer's own (non-bot) player builds a first-person HUD.
+	# Every replicated Player (bots, remote players) still carries a PlayerUI
+	# node, but building its full HUD + per-instance timer + signal wiring is
+	# pure waste — it stays hidden and is never shown for them.
 	var is_owner := is_multiplayer_authority()
 	var should_show := is_owner and not _owner_player.is_bot
 	visible = should_show
+	if not should_show:
+		return
+
+	_build_ui()
 
 	if attribute_component:
 		_last_health = attribute_component.health
@@ -725,6 +731,12 @@ func _build_ability_previews() -> void:
 ## active targeted ability.  Locked (would-hit) targets are coloured red.
 func _update_targeted_previews() -> void:
 	if _owner_player == null:
+		return
+	# While a menu (loadout / join / host popup) is open the 3D world is dimmed;
+	# these projected labels sit on CanvasLayer 4, above the menu, so hide them.
+	if PlayerInput.ui_open:
+		for lbl in _preview_labels:
+			lbl.visible = false
 		return
 	var am := _owner_player.ability_manager
 	var cam := _owner_player.camera as Camera3D

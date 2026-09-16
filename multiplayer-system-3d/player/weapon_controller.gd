@@ -95,7 +95,9 @@ var _weapon_switch_cooldown: float = 0.0
 const WEAPON_SWITCH_THROTTLE: float = 0.08
 
 ## Weapon-switch transition state machine.  While != IDLE the active weapon is
-## locked (can't fire/reload/ADS/shield) and new switches are ignored.
+## locked (can't fire/reload/ADS/shield).  New switches are NOT ignored — they
+## interrupt and restart the put-away/pull-out sequence for the new weapon, so
+## the player is never locked into the weapon they're switching to.
 enum SwitchPhase { IDLE, PUT_AWAY, PULLOUT }
 var _switch_phase: SwitchPhase = SwitchPhase.IDLE
 var _switch_timer: float = 0.0
@@ -713,7 +715,18 @@ func spawn_weapon_model() -> void:
 	
 	current_weapon_model.rotation = weapon.weapon_rotation
 	current_weapon_model.scale    = weapon.weapon_scale
-	weapon_model_parent.add_child(current_weapon_model)
+	# WeaponModel scenes are authored relative to the weapon-handle Node3D; legacy
+	# scenes (no WeaponModel script) are authored relative to the hand bone, so
+	# parent them to the BoneAttachment3D "GunAttach" directly — otherwise they sit
+	# at the player's feet.
+	var parent: Node3D = weapon_model_parent
+	if not (current_weapon_model is WeaponModel):
+		current_weapon_model.position += Vector3(-0.2, 0.1, 0.5)
+		current_weapon_model.rotation.y = deg_to_rad(180)
+		var bone_attach := weapon_model_parent.get_parent() as Node3D
+		if bone_attach:
+			parent = bone_attach
+	parent.add_child(current_weapon_model)
 
 	_refresh_muzzles()
 
@@ -1381,7 +1394,7 @@ func _find_next_selectable(direction: int) -> int:
 	return current_weapon_index
 
 func next_weapon() -> void:
-	if _weapon_switch_cooldown > 0.0 or is_switching():
+	if _weapon_switch_cooldown > 0.0:
 		return
 	_weapon_switch_cooldown = WEAPON_SWITCH_THROTTLE
 	if multiplayer.is_server():
@@ -1390,7 +1403,7 @@ func next_weapon() -> void:
 		_next_weapon_server.rpc_id(1)
 
 func previous_weapon() -> void:
-	if _weapon_switch_cooldown > 0.0 or is_switching():
+	if _weapon_switch_cooldown > 0.0:
 		return
 	_weapon_switch_cooldown = WEAPON_SWITCH_THROTTLE
 	if multiplayer.is_server():
@@ -1401,7 +1414,7 @@ func previous_weapon() -> void:
 @rpc("any_peer", "call_local")
 func _next_weapon_server() -> void:
 	if is_multiplayer_authority():
-		if _weapon_switch_cooldown > 0.0 or is_switching():
+		if _weapon_switch_cooldown > 0.0:
 			return
 		_weapon_switch_cooldown = WEAPON_SWITCH_THROTTLE
 		current_weapon_index = _find_next_selectable(1)
@@ -1409,7 +1422,7 @@ func _next_weapon_server() -> void:
 @rpc("any_peer", "call_local")
 func _previous_weapon_server() -> void:
 	if is_multiplayer_authority():
-		if _weapon_switch_cooldown > 0.0 or is_switching():
+		if _weapon_switch_cooldown > 0.0:
 			return
 		_weapon_switch_cooldown = WEAPON_SWITCH_THROTTLE
 		current_weapon_index = _find_next_selectable(-1)
@@ -2139,7 +2152,15 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 			origin,
 			origin + world_dir * weapon_fire.hitscan_range
 		)
-		var exclude_rids := [_parent_player.get_rid(), $"../HeadHurtbox".get_rid(), $"../BodyHurtbox".get_rid(), $"../BodyHurtbox2".get_rid()]
+		
+		
+		
+		
+		var exclude_rids := [_parent_player.get_rid()] #,$"../HeadHurtbox".get_rid(), $"../BodyHurtbox".get_rid(), $"../BodyHurtbox2".get_rid()]
+		for hurtbox_component in $"../HurtComponent2".hurtbox_components:
+			exclude_rids.append(hurtbox_component.get_rid())
+		
+		
 		# Also exclude the player's own shield so they can't damage it.
 		if _parent_player.shield_instance and is_instance_valid(_parent_player.shield_instance):
 			var shield_area := _parent_player.shield_instance.get_node_or_null("ShieldArea") as Area3D
@@ -2147,7 +2168,7 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 				exclude_rids.append(shield_area.get_rid())
 		query.exclude = exclude_rids
 		query.collide_with_areas = true
-		query.collision_mask = (1 << 0) | (1 << 2)
+		query.collision_mask = (1 << 0) | (1 << 2) | (1 << 7)
 		var result: Dictionary = space_state.intersect_ray(query)
 
 		if not result.is_empty():
@@ -2155,29 +2176,29 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 			var collider: Node3D = result.collider
 			if collider is HurtboxComponent:
 				if shape_hits != null:
-					var player_name: String = collider.get_parent().name
+					var player_name: String = (collider as HurtboxComponent).get_owner_player().name
 					var distance: float = origin.distance_to(result.position)
 					if not shape_hits.has(player_name):
 						shape_hits[player_name] = {
-							"is_head": collider.is_head,
+							"is_head": (collider as HurtboxComponent).is_head,
 							"collider": collider,
 							"distance": distance,
 						}
-					elif collider.is_head:
+					elif (collider as HurtboxComponent).is_head:
 						shape_hits[player_name]["is_head"] = true
 				else:
 					var distance := origin.distance_to(result.position)
 					var mult := _compute_falloff_multiplier(weapon, weapon_fire_index, distance)
 					var damage := weapon_fire.hitscan_damage * mult * _current_shot_amp_mult
 					var is_headshot := false
-					if collider.is_head and not is_equal_approx(weapon_fire.headshot_multiplier, 1.0):
+					if (collider as HurtboxComponent).is_head and not is_equal_approx(weapon_fire.headshot_multiplier, 1.0):
 						damage *= weapon_fire.headshot_multiplier
 						is_headshot = true
 					# Shield hurtbox Ã¢â‚¬â€ absorb all damage, no overflow to player.
-					if collider.get_parent() is PlayerShield:
-						(collider.get_parent() as PlayerShield).absorb_damage(damage)
+					if (collider as HurtboxComponent).get_hurtbox_owner() is PlayerShield:
+						((collider as HurtboxComponent).get_hurtbox_owner() as PlayerShield).absorb_damage(damage)
 					else:
-						var victim := collider.get_parent() as Player
+						var victim := (collider as HurtboxComponent).get_owner_player()
 						var is_backshot := _is_backshot(victim)
 						# Only highlight the number as a crit when the multiplier boosts damage.
 						var is_backshot_crit := is_backshot and weapon_fire.backshot_multiplier > 1.0
@@ -2201,6 +2222,12 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 							_change_health_on_server.rpc_id(1, player_name, -damage, _parent_player.name, is_headshot, mult, is_backshot_crit)
 							if weapon_fire.hit_knockback > 0.0:
 								_apply_hit_knockback_on_server.rpc_id(1, player_name, world_dir, weapon_fire.hit_knockback)
+			elif collider is PhysicalBone3D and multiplayer.is_server():
+				# Hit a ragdoll bone — jerk it in the shot direction.
+				var corpse := GameManager.find_ragdoll_corpse(collider)
+				if corpse:
+					var kb_force := weapon_fire.hit_knockback if weapon_fire.hit_knockback > 0.0 else 2.0
+					GameManager.rpc_ragdoll_bone_impulse.rpc(corpse.name, (collider as PhysicalBone3D).bone_name, world_dir * kb_force, result.position)
 		else:
 			if weapon_fire.hitscan_range >= 1000000000.0 / 10.0:
 				var far_pos: Vector3 = origin + world_dir * 10000.0
@@ -2228,11 +2255,11 @@ func _apply_shape_damage(weapon: Weapon, weapon_fire_index: int, shape_hits: Dic
 			damage *= weapon_fire.headshot_multiplier
 			is_headshot = true
 		# Shield hurtbox Ã¢â‚¬â€ absorb all damage, no overflow to player.
-		if collider.get_parent() is PlayerShield:
-			(collider.get_parent() as PlayerShield).absorb_damage(damage)
+		if (collider as HurtboxComponent).get_hurtbox_owner() is PlayerShield:
+			((collider as HurtboxComponent).get_hurtbox_owner() as PlayerShield).absorb_damage(damage)
 			continue
 		var player_name: String = key
-		var victim := collider.get_parent() as Player
+		var victim := (collider as HurtboxComponent).get_owner_player()
 		var is_backshot := _is_backshot(victim)
 		# Only highlight the number as a crit when the multiplier boosts damage.
 		var is_backshot_crit := is_backshot and weapon_fire.backshot_multiplier > 1.0

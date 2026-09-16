@@ -148,6 +148,15 @@ func _apply_explosion_tick(shooter_name: String, shooter_team: Player.Team, fall
 				if effect:
 					player.status_effect_manager.apply_effect(effect, shooter_name)
 
+	# Knock back any ragdoll corpses within the blast radius.
+	for corpse in get_tree().get_nodes_in_group("ragdolls"):
+		var to_corpse: Vector3 = (corpse as Node3D).global_position - explosion_origin
+		var corpse_dist := to_corpse.length()
+		if corpse_dist > splash_radius:
+			continue
+		var corpse_falloff: float = 1.0 - clamp(corpse_dist / splash_radius, 0.0, 1.0) * (1.0 - min_knockback_percent)
+		GameManager.rpc_ragdoll_blast.rpc(corpse.name, explosion_origin, knockback_force * corpse_falloff * falloff_multiplier *0.1)
+
 
 # ----------------------------------------------------
 # VISUAL EFFECT (replicated locally)

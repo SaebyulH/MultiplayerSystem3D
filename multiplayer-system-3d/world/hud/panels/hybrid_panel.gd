@@ -6,123 +6,18 @@ class_name HybridPanel
 ## Phase 1 – Capture: shows a single SPI progress bar for point capture.
 ## Phase 2 – Escort:  switches to a payload-progress bar with state info.
 
-var _phase_header: Label
-var _capture_bar: TeamProgressBar
-var _escort_container: Control
-var _escort_fill: ColorRect
-var _escort_state: Label
-var _escort_pct: Label
-var _escort_info: Label
-var _escort_cp_container: Control
+const _marker_scene := preload("res://world/hud/components/checkpoint_marker.tscn")
+
+@onready var _phase_header: Label = $VBox/PhaseHeader
+@onready var _capture_bar: TeamProgressBar = $VBox/CaptureBar
+@onready var _escort_container: Control = $VBox/EscortContainer
+@onready var _escort_fill: ColorRect = $VBox/EscortContainer/EscortFill
+@onready var _escort_state: Label = $VBox/EscortContainer/EscortState
+@onready var _escort_pct: Label = $VBox/EscortContainer/EscortPct
+@onready var _escort_info: Label = $VBox/EscortInfo
+@onready var _escort_cp_container: Control = $VBox/EscortCpContainer
 
 var _checkpoint_markers: Array[ColorRect] = []
-
-# ─────────────────────────────────────────────
-#  Lifecycle
-# ─────────────────────────────────────────────
-
-func _ready() -> void:
-	_build()
-
-func _build() -> void:
-	mouse_filter = Control.MOUSE_FILTER_PASS
-
-	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 6)
-	vbox.anchor_left   = 0.0
-	vbox.anchor_right  = 1.0
-	vbox.anchor_top    = 0.0
-	vbox.anchor_bottom = 1.0
-	add_child(vbox)
-
-	# Header
-	var header := Label.new()
-	header.text = "── HYBRID ──"
-	header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	header.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-	header.add_theme_constant_override("outline_size", 6)
-	header.add_theme_font_size_override("font_size", 20)
-	vbox.add_child(header)
-
-	# Phase label
-	_phase_header = Label.new()
-	_phase_header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_phase_header.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-	_phase_header.add_theme_constant_override("outline_size", 4)
-	_phase_header.add_theme_font_size_override("font_size", 18)
-	_phase_header.add_theme_color_override("font_color", Color(0.9, 0.9, 0.6))
-	vbox.add_child(_phase_header)
-
-	# ── Phase 1: Capture bar ──────────────────
-	_capture_bar = TeamProgressBar.new()
-	vbox.add_child(_capture_bar)
-	_capture_bar.set_bar_color(Color(0.88, 0.24, 0.24))
-
-	# ── Phase 2: Escort bar ───────────────────
-	_escort_container = Control.new()
-	_escort_container.custom_minimum_size = Vector2(0, 38)
-	_escort_container.visible = false
-	vbox.add_child(_escort_container)
-
-	var bg := ColorRect.new()
-	bg.color = Color(0.12, 0.12, 0.12, 0.85)
-	bg.anchor_left   = 0.0
-	bg.anchor_right  = 1.0
-	bg.anchor_top    = 0.0
-	bg.anchor_bottom = 1.0
-	_escort_container.add_child(bg)
-
-	_escort_fill = ColorRect.new()
-	_escort_fill.color = Color(0.88, 0.24, 0.24)
-	_escort_fill.anchor_left   = 0.0
-	_escort_fill.anchor_right  = 0.0
-	_escort_fill.anchor_top    = 0.0
-	_escort_fill.anchor_bottom = 1.0
-	_escort_container.add_child(_escort_fill)
-
-	_escort_state = Label.new()
-	_escort_state.anchor_left   = 0.0
-	_escort_state.anchor_right  = 0.55
-	_escort_state.anchor_top    = 0.0
-	_escort_state.anchor_bottom = 1.0
-	_escort_state.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
-	_escort_state.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-	_escort_state.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-	_escort_state.add_theme_constant_override("outline_size", 6)
-	_escort_state.add_theme_font_size_override("font_size", 18)
-	_escort_container.add_child(_escort_state)
-
-	_escort_pct = Label.new()
-	_escort_pct.anchor_left   = 0.55
-	_escort_pct.anchor_right  = 1.0
-	_escort_pct.anchor_top    = 0.0
-	_escort_pct.anchor_bottom = 1.0
-	_escort_pct.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
-	_escort_pct.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_escort_pct.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-	_escort_pct.add_theme_constant_override("outline_size", 6)
-	_escort_pct.add_theme_font_size_override("font_size", 18)
-	_escort_container.add_child(_escort_pct)
-
-	# Checkpoint markers (escort phase)
-	_escort_cp_container = Control.new()
-	_escort_cp_container.custom_minimum_size = Vector2(0, 10)
-	_escort_cp_container.visible = false
-	vbox.add_child(_escort_cp_container)
-
-	# Info line
-	_escort_info = Label.new()
-	_escort_info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_escort_info.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-	_escort_info.add_theme_constant_override("outline_size", 4)
-	_escort_info.add_theme_font_size_override("font_size", 16)
-	_escort_info.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
-	_escort_info.visible = false
-	vbox.add_child(_escort_info)
-
-# ─────────────────────────────────────────────
-#  Update
-# ─────────────────────────────────────────────
 
 func update_display(data: Dictionary) -> void:
 	var captured: bool = data.get("point_captured", false)
@@ -204,24 +99,22 @@ func _show_escort_phase(data: Dictionary) -> void:
 # ─────────────────────────────────────────────
 
 func _rebuild_checkpoints(checkpoints: Array, next_idx: int) -> void:
-	for m in _checkpoint_markers:
+	# Reuse markers across calls instead of free + re-instantiate every tick
+	# (update_display runs at the 10 Hz state sync, so this was churning nodes).
+	while _checkpoint_markers.size() > checkpoints.size():
+		var m: ColorRect = _checkpoint_markers.pop_back()
 		m.queue_free()
-	_checkpoint_markers.clear()
-
-	if checkpoints.is_empty():
-		return
+	while _checkpoint_markers.size() < checkpoints.size():
+		var marker := _marker_scene.instantiate() as ColorRect
+		_escort_cp_container.add_child(marker)
+		_checkpoint_markers.append(marker)
 
 	for i in checkpoints.size():
 		var cp_p := checkpoints[i] as float
-		var marker := ColorRect.new()
+		var marker: ColorRect = _checkpoint_markers[i]
 		marker.color = Color.WHITE if i >= next_idx else Color(0.30, 0.30, 0.30)
 		marker.anchor_left  = clampf(cp_p, 0.0, 1.0)
 		marker.anchor_right = clampf(cp_p, 0.0, 1.0)
-		marker.anchor_top    = 0.0
-		marker.anchor_bottom = 1.0
-		marker.custom_minimum_size = Vector2(4, 0)
-		_escort_cp_container.add_child(marker)
-		_checkpoint_markers.append(marker)
 
 # ─────────────────────────────────────────────
 #  Helpers

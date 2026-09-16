@@ -6,6 +6,15 @@ class_name LoadoutMenuUI
 ## above all other UI.  Class is inferred from the selected character, so
 ## there is no separate class-selection step.
 
+## Disable the 3D character-preview SubViewport entirely.  Set to true to skip
+## spawning the preview model (the separate World3D is the expensive part).
+const PREVIEW_DISABLED := false
+
+## Whether the initial random character/loadout selection has already been made.
+## The menu is re-instantiated on return-to-lobby; we only want to randomize on
+## the very first load, not on subsequent loads.
+static var _initial_selection_done := false
+
 @onready var world := $"../../.."
 
 var player_id: String
@@ -20,39 +29,43 @@ var selected_primary: Weapon = null
 var selected_secondary: Weapon = null
 var selected_melee: Weapon = null
 
-# ── Built nodes ──────────────────────────────
+# ── Scene templates (instantiated for repeated elements) ──
+const _weapon_card_scene := preload("res://world/loadout/weapon_card.tscn")
+const _ability_slot_scene := preload("res://world/loadout/ability_slot.tscn")
+const _character_button_scene := preload("res://world/loadout/character_button.tscn")
 
-var _canvas: CanvasLayer
-var _team_option: OptionButton
-var _confirm_button: Button
-var _randomize_once_button: Button
-var _randomize_on_death_check: CheckBox
-var _mode_label: Label
-var _info_label: RichTextLabel
+# ── Scene nodes (defined in loadout_menu.tscn) ──
+@onready var _canvas: CanvasLayer = $LoadoutMenuCanvas
+@onready var _team_option: OptionButton = $LoadoutMenuCanvas/Root/Col/ActionBar/TeamRow/TeamOption
+@onready var _confirm_button: Button = $LoadoutMenuCanvas/Root/Col/ActionBar/ConfirmButton
+@onready var _randomize_once_button: Button = $LoadoutMenuCanvas/Root/Col/ActionBar/RandomizeOnceButton
+@onready var _randomize_on_death_check: CheckBox = $LoadoutMenuCanvas/Root/Col/ActionBar/RandomizeOnDeathCheck
+@onready var _leave_party_button: Button = $LoadoutMenuCanvas/Root/Col/ActionBar/LeavePartyButton
+@onready var _mode_label: Label = $LoadoutMenuCanvas/Root/Col/ModeLabel
+@onready var _info_label: RichTextLabel = $LoadoutMenuCanvas/Root/Col/MainRow/InfoPanel/VBox/InfoLabel
 
 # Character panel
-var _character_viewport: SubViewport
+@onready var _character_viewport: SubViewport = $LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/Wrap/Svc/CharacterViewport
+@onready var _character_wrap: Panel = $LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/Wrap
+@onready var _character_svc: SubViewportContainer = $LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/Wrap/Svc
+@onready var _change_agent_overlay: Label = $LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/Wrap/ChangeAgentOverlay
+@onready var _character_name_label: Label = $LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/CharacterNameLabel
+@onready var _loadout_class_label: Label = $LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/LoadoutClassLabel
+@onready var _loadout_class_label_title: Label = $LoadoutMenuCanvas/Root/Col/MainRow/LoadoutPanel/VBox/LoadoutClassLabelTitle
+@onready var _character_picker: PopupPanel = $LoadoutMenuCanvas/CharacterPicker
+
+# Ability strip
+@onready var _ability_slots_hbox: HBoxContainer = $LoadoutMenuCanvas/Root/Col/AbilitySection/AbilitySlotsHbox
+
 var _character_preview_root: Node3D = null
 var _character_preview_model: Node3D = null
 var _character_dragging: bool = false
 var _character_drag_moved: bool = false
 var _character_wrap_style: StyleBoxFlat = null
-var _change_agent_overlay: Label
-var _character_name_label: Label
-var _loadout_class_label: Label
-var _loadout_class_label_title: Label
-var _character_picker: PopupPanel
 
-# Loadout columns  (SECONDARY | PRIMARY | MELEE)
-var _secondary_column: VBoxContainer
-var _primary_column: VBoxContainer
-var _melee_column: VBoxContainer
 var _column_lists: Dictionary = {}       # column key -> inner card VBoxContainer
 var _card_style: Dictionary = {}         # card -> StyleBoxFlat
 var _selected_card: Dictionary = {}      # column key -> selected card
-
-# Ability strip
-var _ability_slots_hbox: HBoxContainer
 var _ability_style: Dictionary = {}      # slot -> StyleBoxFlat
 
 # ── Card style colours ───────────────────────
@@ -70,16 +83,19 @@ const CARD_BORDER_SELECTED := Color(1.0, 0.80, 0.25, 1)
 func _ready() -> void:
 	player_id = str(multiplayer.get_unique_id())
 
-	# Nuke ALL old scene children so the host Control shows nothing.
-	for child in get_children():
-		child.queue_free()
+	# Grab the character-panel border stylebox so hover can tween it.
+	_character_wrap_style = _character_wrap.get_theme_stylebox("panel") as StyleBoxFlat
 
-	# Build everything in a dedicated CanvasLayer attached to the root window.
-	_canvas = CanvasLayer.new()
-	_canvas.layer = 2
-	_canvas.name = "LoadoutMenuCanvas"
-	get_tree().root.add_child(_canvas)
-	_build_ui_in(_canvas)
+	if PREVIEW_DISABLED:
+		_character_svc.visible = false
+		_character_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
+
+	# Weapon cards get instantiated into these per-column list containers.
+	_column_lists = {
+		"secondary": $LoadoutMenuCanvas/Root/Col/MainRow/LoadoutPanel/VBox/Cols/SecondaryColumn/Scroll/List,
+		"primary":   $LoadoutMenuCanvas/Root/Col/MainRow/LoadoutPanel/VBox/Cols/PrimaryColumn/Scroll/List,
+		"melee":     $LoadoutMenuCanvas/Root/Col/MainRow/LoadoutPanel/VBox/Cols/MeleeColumn/Scroll/List,
+	}
 
 	# Sync canvas visibility immediately (menu starts visible, matching self.visible).
 	_canvas.visible = visible
@@ -98,298 +114,59 @@ func _ready() -> void:
 	load_classes(loaded_classes)
 
 	_build_character_picker()
+	_populate_mode_info.call_deferred()
 
 	_confirm_button.pressed.connect(_on_confirm_pressed)
 	_randomize_once_button.pressed.connect(_on_randomize_once_pressed)
+	_leave_party_button.pressed.connect(_on_leave_party_pressed)
 
-	# Default to the first available character so the menu opens populated.
+	_character_svc.gui_input.connect(_on_character_gui_input)
+	_character_svc.mouse_entered.connect(_on_character_hover_enter)
+	_character_svc.mouse_exited.connect(_on_character_hover_exit)
+
+	_character_picker.popup_hide.connect(_on_picker_closed)
+	_character_picker.about_to_popup.connect(_on_picker_opened)
+
+	# Populate the menu. The first load picks a random character + loadout; later
+	# loads fall back to the first character (assault) so we don't re-randomize.
 	if not _all_characters.is_empty():
-		_select_character(_all_characters[0]["char"])
+		if not _initial_selection_done:
+			_initial_selection_done = true
+			randomize()
+			_select_random_loadout()
+		else:
+			_select_character(_all_characters[0]["char"])
 
 
 func _on_visibility_changed() -> void:
-	# world_1.gd toggles self.visible to show/hide the loadout menu.  Free the
-	# character preview while hidden so its animation/jigglebones stop consuming
-	# CPU during gameplay; re-spawn it when the menu reopens.
+	# world_1.gd toggles self.visible to show/hide the loadout menu.
+	#
+	# Deliberately do NOT free/re-spawn the character preview here.  Re-spawning
+	# forced a fresh SubViewport 3D render on every open (own_world_3d renders a
+	# separate world) — the multi-second freeze netfox logs as "Game stalled".
+	# The model has no per-frame work (process_mode disabled, animation paused,
+	# no physics), so keeping it alive + rendered once is free.
 	if not _canvas:
 		return
 	if _canvas.visible == visible:
 		return
 	_canvas.visible = visible
-	if visible:
-		_refresh_character_preview()
-	else:
-		_spawn_character_preview(null)
-
-# ─────────────────────────────────────────────
-#  UI Building  (target: a CanvasLayer)
-# ─────────────────────────────────────────────
-
-func _build_ui_in(cl: CanvasLayer) -> void:
-	# Dim backdrop
-	var dim := ColorRect.new()
-	dim.color = Color(0.0, 0.02, 0.06, 0.78)
-	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
-	cl.add_child(dim)
-
-	# Root margin container filling the viewport.
-	var root := MarginContainer.new()
-	root.set_anchors_preset(Control.PRESET_FULL_RECT)
-	root.add_theme_constant_override("margin_left", 24)
-	root.add_theme_constant_override("margin_top", 16)
-	root.add_theme_constant_override("margin_right", 24)
-	root.add_theme_constant_override("margin_bottom", 16)
-	cl.add_child(root)
-
-	var col := VBoxContainer.new()
-	col.add_theme_constant_override("separation", 10)
-	root.add_child(col)
-
-	# ── Title ────────────────────────────────
-	col.add_child(_title())
-	col.add_child(_sep())
-
-	# Game-mode info
-	_mode_label = Label.new()
-	_mode_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_mode_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-	_mode_label.add_theme_constant_override("outline_size", 4)
-	_mode_label.add_theme_font_size_override("font_size", 15)
-	_mode_label.add_theme_color_override("font_color", Color(0.85, 0.85, 0.5))
-	_mode_label.text = ""
-	col.add_child(_mode_label)
-	col.add_child(_sep())
-	_populate_mode_info.call_deferred()
-
-	# ── Main 3-panel row  (25% / 50% / 25%) ──
-	var main_row := HBoxContainer.new()
-	main_row.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	main_row.add_theme_constant_override("separation", 12)
-	col.add_child(main_row)
-
-	main_row.add_child(_build_character_panel())
-	main_row.add_child(_build_loadout_panel())
-	main_row.add_child(_build_info_panel())
-
-	col.add_child(_sep())
-
-	# ── Ability section ──────────────────────
-	col.add_child(_build_ability_section())
-
-	col.add_child(_sep())
-
-	# ── Action bar ───────────────────────────
-	col.add_child(_build_action_bar())
-
-# ─────────────────────────────────────────────
-#  Panels
-# ─────────────────────────────────────────────
-
-func _build_character_panel() -> Control:
-	var panel := _panel_container()
-	panel.size_flags_stretch_ratio = 1.0
-
-	var vb := VBoxContainer.new()
-	vb.add_theme_constant_override("separation", 6)
-	panel.add_child(vb)
-
-	vb.add_child(_header("AGENT"))
-
-	# Preview wrap — the hover/click/drag target.  A plain Panel (not a
-	# container) so the SubViewport and the hover overlay can be freely anchored.
-	var wrap := Panel.new()
-	wrap.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	wrap.mouse_filter = Control.MOUSE_FILTER_STOP
-	_character_wrap_style = StyleBoxFlat.new()
-	_character_wrap_style.bg_color = Color(0.0, 0.0, 0.0, 0.0)
-	_character_wrap_style.border_color = Color(0.35, 0.4, 0.5, 1)
-	_character_wrap_style.set_border_width_all(2)
-	_character_wrap_style.set_corner_radius_all(6)
-	wrap.add_theme_stylebox_override("panel", _character_wrap_style)
-	vb.add_child(wrap)
-
-	var svc := SubViewportContainer.new()
-	svc.stretch = true
-	svc.set_anchors_preset(Control.PRESET_FULL_RECT)
-	svc.mouse_filter = Control.MOUSE_FILTER_STOP
-	svc.gui_input.connect(_on_character_gui_input)
-	svc.mouse_entered.connect(_on_character_hover_enter)
-	svc.mouse_exited.connect(_on_character_hover_exit)
-	_character_viewport = _character_vp()
-	svc.add_child(_character_viewport)
-	wrap.add_child(svc)
-
-	# "Change Agent" overlay — on top of the preview, only shown on hover.
-	_change_agent_overlay = Label.new()
-	_change_agent_overlay.text = "CHANGE AGENT"
-	_change_agent_overlay.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_change_agent_overlay.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_change_agent_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_change_agent_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_change_agent_overlay.visible = false
-	_change_agent_overlay.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-	_change_agent_overlay.add_theme_constant_override("outline_size", 8)
-	_change_agent_overlay.add_theme_font_size_override("font_size", 24)
-	_change_agent_overlay.add_theme_color_override("font_color", Color(0.95, 0.95, 0.95))
-	wrap.add_child(_change_agent_overlay)
-
-	# Name + inferred class labels
-	_character_name_label = Label.new()
-	_character_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_character_name_label.add_theme_font_size_override("font_size", 18)
-	_character_name_label.add_theme_color_override("font_color", Color(0.92, 0.92, 0.92))
-	vb.add_child(_character_name_label)
-
-	_loadout_class_label = Label.new()
-	_loadout_class_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_loadout_class_label.add_theme_font_size_override("font_size", 14)
-	_loadout_class_label.add_theme_color_override("font_color", Color(0.85, 0.85, 0.5))
-	vb.add_child(_loadout_class_label)
-
-	return panel
+	if OS.is_debug_build():
+		print("[DEBUG] loadout menu %s" % ("opened" if visible else "closed"))
 
 
-func _build_loadout_panel() -> Control:
-	var panel := _panel_container()
-	panel.size_flags_stretch_ratio = 2.0
-
-	var vb := VBoxContainer.new()
-	vb.add_theme_constant_override("separation", 6)
-	panel.add_child(vb)
-
-	_loadout_class_label_title = Label.new()
-	_loadout_class_label_title.text = "LOADOUT"
-	_loadout_class_label_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_loadout_class_label_title.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-	_loadout_class_label_title.add_theme_constant_override("outline_size", 4)
-	_loadout_class_label_title.add_theme_font_size_override("font_size", 16)
-	_loadout_class_label_title.add_theme_color_override("font_color", Color(0.65, 0.65, 0.65))
-	vb.add_child(_loadout_class_label_title)
-
-	var cols := HBoxContainer.new()
-	cols.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	cols.add_theme_constant_override("separation", 10)
-	vb.add_child(cols)
-
-	# Order per spec: SECONDARY, PRIMARY, MELEE.
-	_secondary_column = _build_weapon_column("SECONDARY", "secondary")
-	_primary_column = _build_weapon_column("PRIMARY", "primary")
-	_melee_column = _build_weapon_column("MELEE", "melee")
-	cols.add_child(_secondary_column)
-	cols.add_child(_primary_column)
-	cols.add_child(_melee_column)
-
-	return panel
-
-
-func _build_info_panel() -> Control:
-	var panel := _panel_container()
-	panel.size_flags_stretch_ratio = 1.0
-
-	var vb := VBoxContainer.new()
-	vb.add_theme_constant_override("separation", 6)
-	panel.add_child(vb)
-
-	vb.add_child(_header("INFO"))
-
-	_info_label = _stat_label()
-	_info_label.visible = true
-	_info_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	vb.add_child(_info_label)
-
-	return panel
-
-
-func _build_ability_section() -> Control:
-	var vb := VBoxContainer.new()
-	vb.add_theme_constant_override("separation", 6)
-
-	vb.add_child(_header("ABILITIES"))
-
-	_ability_slots_hbox = HBoxContainer.new()
-	_ability_slots_hbox.add_theme_constant_override("separation", 8)
-	vb.add_child(_ability_slots_hbox)
-
-	return vb
-
-
-func _build_action_bar() -> Control:
-	var hbox := HBoxContainer.new()
-	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	hbox.add_theme_constant_override("separation", 16)
-
-	_team_option = _opt()
-	_team_option.add_item("FFA", 0)
-	_team_option.add_item("SPI", 1)
-	_team_option.add_item("SCI", 2)
-	hbox.add_child(_labeled("TEAM", _team_option))
-
-	_randomize_once_button = Button.new()
-	_randomize_once_button.text = "  RANDOMIZE  "
-	_randomize_once_button.add_theme_font_size_override("font_size", 16)
-	hbox.add_child(_randomize_once_button)
-
-	_randomize_on_death_check = CheckBox.new()
-	_randomize_on_death_check.text = "Randomize on every death"
-	_randomize_on_death_check.add_theme_font_size_override("font_size", 16)
-	_randomize_on_death_check.add_theme_color_override("font_color", Color(0.75, 0.75, 0.75))
-	hbox.add_child(_randomize_on_death_check)
-
-	_confirm_button = Button.new()
-	_confirm_button.text = "  CONFIRM BUILD  "
-	_confirm_button.add_theme_font_size_override("font_size", 22)
-	_confirm_button.disabled = true
-	hbox.add_child(_confirm_button)
-
-	var menu_btn := Button.new()
-	menu_btn.text = "Leave Party"
-	menu_btn.add_theme_font_size_override("font_size", 18)
-	menu_btn.pressed.connect(func():
-		_canvas.queue_free()
-		NetworkManager.return_to_lobby()
-	)
-	hbox.add_child(menu_btn)
-
-	return hbox
-
+func _on_leave_party_pressed() -> void:
+	_canvas.queue_free()
+	NetworkManager.return_to_lobby()
 
 # ─────────────────────────────────────────────
 #  Character picker
 # ─────────────────────────────────────────────
 
 func _build_character_picker() -> void:
-	_character_picker = PopupPanel.new()
-	_character_picker.name = "CharacterPicker"
-	# Translucent popup: a barely-there dark tint so the loadout stays visible behind it.
-	var popup_style := StyleBoxFlat.new()
-	popup_style.bg_color = Color(0.04, 0.05, 0.09, 0.72)
-	popup_style.border_color = Color(0.4, 0.45, 0.55, 0.8)
-	popup_style.set_border_width_all(2)
-	popup_style.set_corner_radius_all(12)
-	popup_style.content_margin_left = 24
-	popup_style.content_margin_right = 24
-	popup_style.content_margin_top = 20
-	popup_style.content_margin_bottom = 24
-	_character_picker.add_theme_stylebox_override("panel", popup_style)
-	_character_picker.popup_hide.connect(_on_picker_closed)
-	_character_picker.about_to_popup.connect(_on_picker_opened)
-	_canvas.add_child(_character_picker)
-
-	var vb := VBoxContainer.new()
-	vb.add_theme_constant_override("separation", 10)
-	vb.custom_minimum_size = Vector2(760, 0)
-	_character_picker.add_child(vb)
-
-	var title := Label.new()
-	title.text = "SELECT AGENT"
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-	title.add_theme_constant_override("outline_size", 4)
-	title.add_theme_font_size_override("font_size", 24)
-	title.add_theme_color_override("font_color", Color(0.92, 0.92, 0.92))
-	vb.add_child(title)
-
-	# Group characters by class, one labelled section per class.
+	# Group characters by class, one labelled section per class.  The PopupPanel
+	# and its title are defined in loadout_menu.tscn; sections are data-driven.
+	var vb := _character_picker.get_node("VBox") as VBoxContainer
 	for cls in available_classes:
 		if not cls or cls.characters.is_empty():
 			continue
@@ -416,11 +193,8 @@ func _build_character_picker() -> void:
 		for char in cls.characters:
 			if not char:
 				continue
-			var btn := Button.new()
+			var btn := _character_button_scene.instantiate() as Button
 			btn.text = char.character_name
-			btn.alignment = HORIZONTAL_ALIGNMENT_CENTER
-			btn.custom_minimum_size = Vector2(180, 48)
-			btn.add_theme_font_size_override("font_size", 17)
 			btn.pressed.connect(_on_pick_character.bind(char))
 			row.add_child(btn)
 
@@ -458,96 +232,24 @@ func _on_pick_character(char: Character) -> void:
 #  Weapon cards
 # ─────────────────────────────────────────────
 
-func _build_weapon_column(title: String, key: String) -> VBoxContainer:
-	var col := VBoxContainer.new()
-	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	col.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	col.add_theme_constant_override("separation", 6)
-
-	col.add_child(_header(title))
-
-	var scroll := ScrollContainer.new()
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	col.add_child(scroll)
-
-	var list := VBoxContainer.new()
-	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	list.add_theme_constant_override("separation", 8)
-	scroll.add_child(list)
-	_column_lists[key] = list
-
-	return col
-
-
-func _make_card_stylebox(bg: Color, border: Color) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = bg
-	style.border_color = border
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(6)
-	style.content_margin_left = 6
-	style.content_margin_right = 6
-	style.content_margin_top = 6
-	style.content_margin_bottom = 6
-	return style
-
-
 func _make_weapon_card(weapon: Weapon, key: String) -> Button:
-	var card := Button.new()
-	card.custom_minimum_size = Vector2(170, 150)
-	card.focus_mode = Control.FOCUS_NONE
-	card.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	var card := _weapon_card_scene.instantiate() as Button
 	card.set_meta("weapon", weapon)
 	card.set_meta("column", key)
 	card.set_meta("selected", false)
+	_card_style[card] = card.get_theme_stylebox("normal") as StyleBoxFlat
 
-	var normal := _make_card_stylebox(CARD_BG_NORMAL, CARD_BORDER_NORMAL)
-	card.add_theme_stylebox_override("normal", normal)
-	card.add_theme_stylebox_override("hover", _make_card_stylebox(CARD_BG_HOVER, CARD_BORDER_HOVER))
-	card.add_theme_stylebox_override("pressed", _make_card_stylebox(CARD_BG_SELECTED, CARD_BORDER_SELECTED))
-	card.add_theme_stylebox_override("hover_pressed", _make_card_stylebox(CARD_BG_SELECTED, CARD_BORDER_SELECTED))
-	card.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
-	_card_style[card] = normal
-
-	# A Button is not a container, so anchor a margin box inside it to lay the
-	# content out while keeping it inset from the card border.
-	var margin := MarginContainer.new()
-	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
-	margin.add_theme_constant_override("margin_left", 6)
-	margin.add_theme_constant_override("margin_right", 6)
-	margin.add_theme_constant_override("margin_top", 6)
-	margin.add_theme_constant_override("margin_bottom", 6)
-	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	card.add_child(margin)
-
-	var vb := VBoxContainer.new()
-	vb.add_theme_constant_override("separation", 4)
-	vb.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	margin.add_child(vb)
-
+	var icon: TextureRect = card.get_node("Margin/VBox/Icon") as TextureRect
+	var placeholder: ColorRect = card.get_node("Margin/VBox/Placeholder") as ColorRect
+	var name_label: Label = card.get_node("Margin/VBox/NameLabel") as Label
 	if weapon.killfeed_icon:
-		var icon := TextureRect.new()
-		icon.custom_minimum_size = Vector2(158, 88)
-		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		icon.texture = weapon.killfeed_icon
-		vb.add_child(icon)
+		icon.visible = true
+		placeholder.visible = false
 	else:
-		var placeholder := ColorRect.new()
-		placeholder.color = Color(0.12, 0.12, 0.16, 1)
-		placeholder.custom_minimum_size = Vector2(158, 88)
-		placeholder.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		vb.add_child(placeholder)
-
-	var name_label := Label.new()
+		icon.visible = false
+		placeholder.visible = true
 	name_label.text = weapon.display_name
-	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	name_label.add_theme_font_size_override("font_size", 13)
-	name_label.add_theme_color_override("font_color", Color(0.85, 0.85, 0.85))
-	vb.add_child(name_label)
 
 	card.mouse_entered.connect(_on_card_hover.bind(card))
 	card.pressed.connect(_on_card_pressed.bind(card))
@@ -601,30 +303,16 @@ func _select_card(card: Button) -> void:
 # ─────────────────────────────────────────────
 
 func _make_ability_slot(index: int, ability: Ability) -> PanelContainer:
-	var slot := PanelContainer.new()
-	slot.custom_minimum_size = Vector2(200, 64)
-	slot.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	slot.mouse_filter = Control.MOUSE_FILTER_STOP
+	var slot := _ability_slot_scene.instantiate() as PanelContainer
+	_ability_style[slot] = slot.get_theme_stylebox("panel") as StyleBoxFlat
 
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.10, 0.11, 0.15, 1)
-	style.border_color = Color(0.30, 0.32, 0.38, 1)
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(6)
-	slot.add_theme_stylebox_override("panel", style)
-	_ability_style[slot] = style
-
-	var lbl := Label.new()
-	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	lbl.add_theme_font_size_override("font_size", 15)
+	var lbl: Label = slot.get_node("Label") as Label
 	if ability:
 		lbl.text = ability.ability_name
 		lbl.add_theme_color_override("font_color", Color(0.85, 0.85, 0.85))
 	else:
 		lbl.text = "UNASSIGNED"
 		lbl.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
-	slot.add_child(lbl)
 
 	slot.set_meta("ability", ability)
 	slot.set_meta("index", index)
@@ -846,6 +534,8 @@ func _refresh_character_preview() -> void:
 
 
 func _spawn_character_preview(char: Character) -> void:
+	if PREVIEW_DISABLED:
+		return
 	if _character_viewport == null:
 		return
 	_clear_viewport(_character_viewport)
@@ -855,8 +545,12 @@ func _spawn_character_preview(char: Character) -> void:
 	if pr == null:
 		return
 	_character_preview_root = pr
+	var t0 := Time.get_ticks_usec()
 	var model := char.character_scene.instantiate() as Node3D
 	_character_preview_model = model
+	# The preview is a static pose — disable processing entirely so nothing on
+	# the model (animations, jigglebones, scripts) ticks while it sits in the menu.
+	model.process_mode = Node.PROCESS_MODE_DISABLED
 	pr.add_child(model)
 
 	var box := _visual_aabb(model)
@@ -889,6 +583,14 @@ func _spawn_character_preview(char: Character) -> void:
 		camera.look_at(Vector3.ZERO)
 	_character_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 
+	if OS.is_debug_build():
+		var ms := (Time.get_ticks_usec() - t0) / 1000.0
+		var meshes := model.find_children("*", "MeshInstance3D", true, false).size()
+		var phys := model.find_children("*", "PhysicsBody3D", true, false).size()
+		var skel := model.find_child("Skeleton3D", true, false) as Skeleton3D
+		var bones := skel.get_bone_count() if skel else 0
+		print("[DEBUG PREVIEW] spawned '%s' in %.2f ms | meshes=%d bones=%d physics_bodies=%d" % [char.character_name, ms, meshes, bones, phys])
+
 # ─────────────────────────────────────────────
 #  Preview helpers (mirrors ClassSelectUI)
 # ─────────────────────────────────────────────
@@ -899,19 +601,6 @@ func _clear_viewport(vp: SubViewport) -> void:
 		return
 	for child in pr.get_children():
 		child.queue_free()
-
-
-func _character_vp() -> SubViewport:
-	var vp := SubViewport.new()
-	vp.own_world_3d = true
-	vp.transparent_bg = true
-	vp.handle_input_locally = false
-	vp.size = Vector2i(360, 520)
-	vp.render_target_update_mode = SubViewport.UPDATE_ONCE
-	var preview_scene := preload("res://world/character_subviewport_preview.tscn")
-	if preview_scene:
-		vp.add_child(preview_scene.instantiate())
-	return vp
 
 
 func _visual_aabb(root: Node3D) -> AABB:
@@ -1095,6 +784,19 @@ func _get_selected_team() -> Player.Team:
 	return Player.Team.FFA
 
 
+## Pick a random character and a random weapon in each column, so the menu
+## doesn't always open on assault + the first weapon of each category.
+func _select_random_loadout() -> void:
+	var entry: Dictionary = _all_characters[randi() % _all_characters.size()]
+	var char: Character = entry["char"]
+	_select_character(char)
+	if selected_class == null:
+		return
+	_randomize_column("primary", selected_class.primary_weapons)
+	_randomize_column("secondary", selected_class.secondary_weapons)
+	_randomize_column("melee", selected_class.melee_weapons)
+
+
 func _on_randomize_once_pressed() -> void:
 	if selected_class == null:
 		return
@@ -1202,84 +904,8 @@ func _apply_loadout(tpid: String, pp: String, sp: String, mp: String, team: Play
 			player._loadout_character_path = cp
 
 # ─────────────────────────────────────────────
-#  Tiny helpers (mirrors ClassSelectUI)
+#  Mode info (mirrors ClassSelectUI)
 # ─────────────────────────────────────────────
-
-func _panel_container() -> PanelContainer:
-	var panel := PanelContainer.new()
-	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.05, 0.06, 0.09, 0.85)
-	style.border_color = Color(0.30, 0.32, 0.38, 1)
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(8)
-	style.content_margin_left = 10
-	style.content_margin_right = 10
-	style.content_margin_top = 10
-	style.content_margin_bottom = 10
-	panel.add_theme_stylebox_override("panel", style)
-	return panel
-
-
-func _header(text: String) -> Label:
-	var l := Label.new()
-	l.text = text
-	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-	l.add_theme_constant_override("outline_size", 4)
-	l.add_theme_font_size_override("font_size", 16)
-	l.add_theme_color_override("font_color", Color(0.65, 0.65, 0.65))
-	return l
-
-
-func _title() -> Label:
-	var l := Label.new()
-	l.text = "—  LOADOUT  —"
-	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-	l.add_theme_constant_override("outline_size", 6)
-	l.add_theme_font_size_override("font_size", 30)
-	l.add_theme_color_override("font_color", Color(0.92, 0.92, 0.92))
-	return l
-
-
-func _sep() -> ColorRect:
-	var c := ColorRect.new()
-	c.custom_minimum_size = Vector2(0, 2)
-	c.color = Color(0.35, 0.35, 0.35, 0.5)
-	c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	return c
-
-
-func _opt() -> OptionButton:
-	var o := OptionButton.new()
-	o.add_theme_font_size_override("font_size", 18)
-	o.custom_minimum_size = Vector2(120, 32)
-	return o
-
-
-func _labeled(text: String, child: Control) -> HBoxContainer:
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 8)
-	var lbl := Label.new()
-	lbl.text = text
-	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	lbl.add_theme_font_size_override("font_size", 16)
-	lbl.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
-	lbl.custom_minimum_size = Vector2(52, 0)
-	row.add_child(lbl)
-	row.add_child(child)
-	return row
-
-
-func _stat_label() -> RichTextLabel:
-	var rtl := RichTextLabel.new()
-	rtl.bbcode_enabled = true
-	rtl.fit_content = true
-	rtl.add_theme_font_size_override("normal_font_size", 13)
-	rtl.add_theme_color_override("default_color", Color(0.82, 0.82, 0.82))
-	return rtl
-
 
 func _populate_mode_info() -> void:
 	if not _mode_label:

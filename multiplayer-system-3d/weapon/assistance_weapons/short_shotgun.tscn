@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://da2vk2tcdwjmc"]
+
+[ext_resource type="PackedScene" uid="uid://cxy8nj1aglh2w" path="res://player/player_classes/low-poly_spas-15.glb" id="1_dwu6n"]
+
+[node name="Scattergun" type="Node3D" unique_id=664585380]
+
+[node name="Muzzle" type="Node3D" parent="." unique_id=2026291909]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1431935, -0.99831444)
+
+[node name="Sketchfab_Scene" parent="." unique_id=1229004112 instance=ExtResource("1_dwu6n")]
+transform = Transform3D(-8.491722e-09, 0, 0.5, 0, 0.31799918, 0, -0.19426796, 0, -2.1855694e-08, 0.004506916, 0.056680113, -0.15229258)
+
+[node name="Sketchfab_Scene2" parent="." unique_id=260599579 instance=ExtResource("1_dwu6n")]
+transform = Transform3D(-8.491722e-09, 0, 0.5, 0, 0.31799918, 0, -0.19426796, 0, -2.1855694e-08, -0.04659927, 0.056680113, -0.15229258)

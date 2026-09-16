@@ -14,7 +14,11 @@ const FALL_DAMAGE_SOUND: AudioStream = preload("res://assets/sounds/universfield
 @export var air_speed_cap: float = 1.5
 @export var tick_interpolator: TickInterpolator
 
-@export var respawn_time: float = 5.0
+@export var respawn_time: float = 1.0
+## Seconds a death ragdoll corpse stays in the world before being freed.
+const RAGDOLL_LIFETIME: float = 25.0
+## Impulse (N·s) applied to each ragdoll bone along the killing blow's direction.
+const RAGDOLL_DEATH_IMPULSE: float = 4.0
 ## Kill and respawn the player when they fall below this Y position (out of world).
 @export var fall_kill_y: float = -200.0
 ## Fall damage: maximum damage dealt at/above [member fall_damage_max_distance].
@@ -560,6 +564,90 @@ func rpc_sync_full_state(pos: Vector3, pp: String, sp: String, mp: String = "", 
 	spawn()
 
 
+## Spawn a physical ragdoll corpse at this player's death location, on every peer.
+## Each peer duplicates its own local copy of the dead player's visible model (the
+## character skin when one is active, otherwise the built-in mannequin), freezes
+## its animation, and lets the physical bones flop it to the ground for
+## RAGDOLL_LIFETIME seconds.
+@rpc("any_peer", "call_local", "reliable")
+func _spawn_ragdoll(ragdoll_transform: Transform3D, death_impulse: Vector3) -> void:
+	if mannequin == null:
+		return
+
+	# Ragdoll the player's current third-person model: the character skin when one
+	# is active, otherwise the built-in mannequin.
+	var source: Node3D = mannequin
+	if model != null and model != mannequin and is_instance_valid(model):
+		source = model
+
+	var corpse: Node3D = source.duplicate()
+	corpse.name = "Ragdoll_" + name
+	get_parent().add_child(corpse)
+	corpse.global_transform = ragdoll_transform
+	corpse.visible = true
+	corpse.add_to_group("ragdolls")
+
+	# Reveal every mesh (the local player's own head is hidden in first person).
+	for m in corpse.find_children("*", "MeshInstance3D", true, false):
+		if m is MeshInstance3D:
+			(m as MeshInstance3D).visible = true
+
+	var skel := corpse.find_child("Skeleton3D", true, false) as Skeleton3D
+	if skel:
+		# `duplicate()` copies rest poses only, not the current animated pose —
+		# copy the live skeleton pose so the corpse drops from the death pose.
+		var src_skel := source.find_child("Skeleton3D", true, false) as Skeleton3D
+		if src_skel:
+			for i in src_skel.get_bone_count():
+				skel.set_bone_pose_position(i, src_skel.get_bone_pose_position(i))
+				skel.set_bone_pose_rotation(i, src_skel.get_bone_pose_rotation(i))
+				skel.set_bone_pose_scale(i, src_skel.get_bone_pose_scale(i))
+		# Freeze aim/copy modifiers (CCDIK, CopyTransformModifier) so they don't
+		# fight the ragdoll physics. PhysicalBoneSimulator3D is itself a
+		# SkeletonModifier3D, so exclude it explicitly.
+		for child in skel.get_children():
+			if child is SkeletonModifier3D and not child is PhysicalBoneSimulator3D:
+				child.enabled = false
+
+	# The mannequin carries the physical-bone setup; a character model does not.
+	# Copy it onto the character model's skeleton — bone names match (both rigs
+	# use the same humanoid "DEF-…" naming, see _setup_pose_copy).
+	var sim := corpse.find_child("PhysicalBoneSimulator3D", true, false) as PhysicalBoneSimulator3D
+	if sim == null and skel != null:
+		var src_sim := mannequin.find_child("PhysicalBoneSimulator3D", true, false) as PhysicalBoneSimulator3D
+		if src_sim:
+			sim = src_sim.duplicate() as PhysicalBoneSimulator3D
+			skel.add_child(sim)
+
+	# Turn on the ragdoll physics so the corpse flops to the ground.  Move the
+	# bones to the dedicated RAGDOLLS layer (1 << 7) that nothing scans, and keep
+	# them colliding only with world geometry (1 << 0) so they don't shove players.
+	if sim:
+		for bone in sim.get_children():
+			if bone is PhysicalBone3D:
+				bone.collision_layer = 1 << 7
+				bone.collision_mask = 1 << 0
+				# The corpse's bones inherited the HurtboxComponent script from the
+				# live mannequin; strip it so they aren't mistaken for living hurtboxes.
+				bone.set_script(null)
+		sim.physical_bones_start_simulation()
+
+	# Apply the killing blow's impulse so the corpse flies away from the shot.
+	if sim and death_impulse != Vector3.ZERO:
+		for bone in sim.get_children():
+			if bone is PhysicalBone3D:
+				(bone as PhysicalBone3D).apply_central_impulse(death_impulse)
+
+	# Despawn after RAGDOLL_LIFETIME seconds (timer parented to the corpse so it
+	# is freed alongside it on map swap — same pattern as the hit-decal timer).
+	var timer := Timer.new()
+	timer.one_shot = true
+	timer.wait_time = RAGDOLL_LIFETIME
+	timer.timeout.connect(corpse.queue_free)
+	corpse.add_child(timer)
+	timer.start()
+
+
 func no_health() -> void:
 	# Play the character's death sound at the death location, delayed 0.5s.
 	if _character and _character.death_sound:
@@ -580,6 +668,8 @@ func no_health() -> void:
 		# life.  (rpc_reset clears again below; this guards the death frame itself.)
 		if status_effect_manager:
 			status_effect_manager.clear_all_effects()
+		var death_impulse := attribute_component.last_hit_direction * RAGDOLL_DEATH_IMPULSE
+		_spawn_ragdoll.rpc(mannequin.global_transform, death_impulse)
 		rpc_reset.rpc(_get_spawn_position())
 
 
@@ -597,10 +687,10 @@ func rpc_cheat_death() -> void:
 	respawn_timer = 0.0
 
 
-@rpc("call_local")
-func _sync_head():
-	$HeadHurtbox.global_rotation = %Head.global_rotation
-	$BodyHurtbox.global_rotation = $Body.global_rotation
+#@rpc("call_local")
+#func _sync_head():
+	#$HeadHurtbox.global_rotation = %Head.global_rotation
+	#$BodyHurtbox.global_rotation = $Body.global_rotation
 
 
 ## Hide the player: disable collision, stop camera, move off-grid.
@@ -629,14 +719,19 @@ func spawn():
 	show()
 	spawned = true
 	collider.disabled = false
-	$Body/PlayerUI.show()
+	# The first-person HUD belongs only to the local peer's own model. Showing it
+	# for bots/remote players is what briefly surfaced their HUD on your screen.
+	if _is_own_model():
+		$Body/PlayerUI.show()
+	else:
+		$Body/PlayerUI.hide()
 	if not is_bot:
 		var my_id := multiplayer.get_unique_id()
 		var player_id := name.to_int()
 		if my_id == player_id:
 			camera.visible = true
 			camera.make_current()
-			$BodyHurtbox/CollisionShape3D.hide()
+			#$BodyHurtbox/CollisionShape3D.hide()
 		else:
 			camera.current = false
 			camera.visible = false
@@ -963,10 +1058,11 @@ func _noclip_move(delta: float) -> void:
 ## bullets/projectiles pass straight through (damage is also gated in
 ## change_health).
 func _set_hurtboxes_active(active: bool) -> void:
-	for path in ["HeadHurtbox", "BodyHurtbox", "BodyHurtbox2"]:
-		var area := get_node_or_null(path) as Area3D
-		if area != null:
-			area.collision_layer = 4 if active else 0
+	# Hurtboxes are now PhysicalBone3D hurtboxes held by HurtComponent2, not
+	# Area3D direct children.  Toggle each one's collision layer directly.
+	for hb in $HurtComponent2.hurtbox_components:
+		if hb != null:
+			hb.collision_layer = 4 if active else 0
 
 
 ## Begin the post-noclip 999-damage overlap window (server only).  Called by
@@ -1627,7 +1723,7 @@ func deploy_shield(fire: WeaponFire) -> void:
 	retract_shield()
 
 	var instance := fire.shield_scene.instantiate()
-	$Body/Recoil/Head/WeaponParent.add_child(instance)
+	$Body/Recoil/Head.add_child(instance)
 	instance.position = Vector3.ZERO
 	print("[deploy_shield] instance=", instance, " is_PlayerShield=", instance is PlayerShield)
 
@@ -1845,7 +1941,7 @@ func _aimbot_rotate_to(target: Player) -> void:
 		return
 	var cam := camera as Camera3D
 	var cam_pos := cam.global_position
-	var dir := (target.global_position + Vector3(0.0, 1.69, 0.0)) - cam_pos
+	var dir :Vector3= (target.get_node("Body/Mannequin/mannequin/Skeleton3D/PhysicalBoneSimulator3D/Physical Bone DEF-spine_006").global_position) - cam_pos
 	if dir.length_squared() < 0.0001:
 		return
 	dir = dir.normalized()
@@ -2080,6 +2176,11 @@ func set_public_health_visible(show: bool) -> void:
 ## when the target is behind the camera.
 func _update_health_bar() -> void:
 	if _health_bar == null or not _health_bar.visible:
+		return
+	# Hide projected health bars while a menu is open — they render on a
+	# CanvasLayer above the menu's dim overlay.
+	if PlayerInput.ui_open:
+		_health_bar.position = Vector2(-10000.0, -10000.0)
 		return
 	var cam := get_viewport().get_camera_3d()
 	if cam == null:

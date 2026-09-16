@@ -1,0 +1,523 @@
+#extends CanvasLayer
+#class_name HUDController
+#
+### Central HUD controller.  Replaces the old text-based canvas_layer.gd.
+###
+### Architecture
+### ────────────
+###   HUDController (CanvasLayer)        ← replaces canvas_layer.gd
+###   ├── Shared elements (phase label, timer bar, round scores)
+###   ├── DeathmatchPanel                ← full-width top strip (DM only)
+###   └── ModePanelContainer
+###        └── BaseModePanel subclass    ← one per game mode, swapped in
+###
+### Signals are routed from GameModeComponent through this controller to the
+### active panel.  Panels are created once and hidden/shown on mode switch.
+###
+### To add a new game mode:
+###   1. Create a panel script in panels/ extending BaseModePanel
+###   2. Add it to _create_panel_registry()
+###   3. Add a data-building case in _build_mode_data()
+###   4. (Optional) connect mode-specific signals in _connect_mode_signals()
+#
+## ─────────────────────────────────────────────
+##  Exports
+## ─────────────────────────────────────────────
+#
+#@export var hud_width: float = 520.0
+#@export var hud_margin_top: float = 80.0  # below killstreak
+#
+## ─────────────────────────────────────────────
+##  References
+## ─────────────────────────────────────────────
+#
+#var gmc: GameModeComponent
+#
+## Shared UI nodes
+#var _root: Control
+#var _timer_bar: TimerBar
+#var _round_score_label: Label
+#var _overtime_label: Label
+#var _panel_container: Control
+#var _team_bar_row: HBoxContainer
+#var _team_spi_bar: TeamProgressBar
+#var _team_sci_bar: TeamProgressBar
+#
+## Active panel
+#var _active_panel: BaseModePanel = null
+#var _panel_registry: Dictionary = {}
+#
+## Deathmatch overlay (child of CanvasLayer, not _panel_container)
+#var _deathmatch_panel: DeathmatchPanel = null
+#
+## Internal
+#var _initialized := false
+#var _menu_mode := false  # true while in the inert MAIN_MENU lobby (no HUD)
+#
+### Interval (seconds) for the timer-bar countdown and class-select visibility
+### check.  phase_timer only changes at the 10 Hz state sync, so 0.1 s is
+### visually identical to per-frame.
+#const HUD_TICK_INTERVAL: float = 0.1
+#var _hud_timer: Timer
+#
+## ─────────────────────────────────────────────
+##  Lifecycle
+## ─────────────────────────────────────────────
+#
+#func _ready() -> void:
+	#_build_shared_ui()
+#
+	#_hud_timer = Timer.new()
+	#_hud_timer.name = "HUDTickTimer"
+	#_hud_timer.wait_time = HUD_TICK_INTERVAL
+	#_hud_timer.one_shot = false
+	#_hud_timer.timeout.connect(_on_hud_tick)
+	#add_child(_hud_timer)
+	#_hud_timer.start()
+#
+#
+#func _on_hud_tick() -> void:
+	#if not _initialized:
+		#return
+	#if not is_instance_valid(gmc):
+		#gmc = GameManager.game_mode_component
+		#if not gmc:
+			#return
+#
+	## Hide the HUD while the class-select screen is open, or in the lobby.
+	#_root.visible = (not PlayerInput.ui_open) and (not _menu_mode)
+#
+	## Timer bar countdown.  Mode data is pushed via the signal handlers below,
+	## not polled here.
+	#_timer_bar.set_time(gmc.phase_timer, gmc.round_time)
+#
+## ─────────────────────────────────────────────
+##  Build shared UI (called from _ready)
+## ─────────────────────────────────────────────
+#
+#func _build_shared_ui() -> void:
+	#layer = 1  # above game world but below console (layer 3)
+#
+	## Timer bar -- full width, top of screen, direct child of CanvasLayer
+	#_timer_bar = TimerBar.new()
+	#_timer_bar.anchor_left   = 0.0
+	#_timer_bar.anchor_right  = 1.0
+	#_timer_bar.anchor_top    = 0.0
+	#_timer_bar.anchor_bottom = 0.0
+	#_timer_bar.offset_top    = 0
+	#_timer_bar.offset_bottom = 32
+	#add_child(_timer_bar)
+#
+	## Team score bars -- centered row below the timer
+	#_team_bar_row = HBoxContainer.new()
+	#_team_bar_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	#_team_bar_row.add_theme_constant_override("separation", 12)
+	#_team_bar_row.anchor_left   = 0.5
+	#_team_bar_row.anchor_right  = 0.5
+	#_team_bar_row.anchor_top    = 0.0
+	#_team_bar_row.anchor_bottom = 0.0
+	#_team_bar_row.offset_top    = 34
+	#_team_bar_row.offset_bottom = 60
+	#_team_bar_row.offset_left   = -260
+#
+	## Create team bars once (shared across modes)
+	#_team_spi_bar = TeamProgressBar.new()
+	#_team_spi_bar.set_bar_color(Color(0.88, 0.24, 0.24))
+	#_team_spi_bar.custom_minimum_size = Vector2(240, 28)
+	#_team_spi_bar.visible = false
+	#_team_bar_row.add_child(_team_spi_bar)
+#
+	#_team_sci_bar = TeamProgressBar.new()
+	#_team_sci_bar.set_bar_color(Color(0.20, 0.60, 0.86))
+	#_team_sci_bar.custom_minimum_size = Vector2(240, 28)
+	#_team_sci_bar.visible = false
+	#_team_bar_row.add_child(_team_sci_bar)
+	#_team_bar_row.offset_right  = 260
+	#add_child(_team_bar_row)
+#
+	## Overtime flash label -- below the timer bar
+	#_overtime_label = Label.new()
+	#_overtime_label.text = "OVERTIME"
+	#_overtime_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	#_overtime_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+	#_overtime_label.add_theme_constant_override("outline_size", 8)
+	#_overtime_label.add_theme_font_size_override("font_size", 20)
+	#_overtime_label.add_theme_color_override("font_color", Color(1, 0.3, 0.3))
+	#_overtime_label.anchor_left   = 0.0
+	#_overtime_label.anchor_right  = 1.0
+	#_overtime_label.anchor_top    = 0.0
+	#_overtime_label.anchor_bottom = 0.0
+	#_overtime_label.offset_top    = 34
+	#_overtime_label.offset_bottom = 56
+	#_overtime_label.visible = false
+	#add_child(_overtime_label)
+#
+	## Centered HUD container (round score + mode panels)
+	#_root = Control.new()
+	#_root.anchor_left   = 0.5
+	#_root.anchor_right  = 0.5
+	#_root.anchor_top    = 1.0
+	#_root.anchor_bottom = 1.0
+	#_root.offset_left   = -hud_width * 0.5
+	#_root.offset_right  = hud_width * 0.5
+	#_root.offset_top    = -200
+	#_root.offset_bottom = -40
+	#add_child(_root)
+#
+	#var main_vbox := VBoxContainer.new()
+	#main_vbox.add_theme_constant_override("separation", 8)
+	#main_vbox.anchor_left   = 0.0
+	#main_vbox.anchor_right  = 1.0
+	#main_vbox.anchor_top    = 0.0
+	#main_vbox.anchor_bottom = 1.0
+	#_root.add_child(main_vbox)
+#
+	## Round score
+	#_round_score_label = Label.new()
+	#_round_score_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	#_round_score_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+	#_round_score_label.add_theme_constant_override("outline_size", 6)
+	#_round_score_label.add_theme_font_size_override("font_size", 18)
+	#_round_score_label.add_theme_color_override("font_color", Color(0.85, 0.85, 0.85))
+	#main_vbox.add_child(_round_score_label)
+#
+	## Mode panel container
+	#_panel_container = Control.new()
+	#_panel_container.custom_minimum_size = Vector2(0, 120)
+	#_panel_container.anchor_left   = 0.0
+	#_panel_container.anchor_right  = 1.0
+	#main_vbox.add_child(_panel_container)
+#
+#func setup_gmc() -> void:
+	#await get_tree().process_frame
+#
+	#gmc = GameManager.game_mode_component
+	#if not gmc:
+		#push_warning("HUD: no GameModeComponent found")
+		#return
+#
+	#_connect_mode_signals()
+	#_create_panel_registry()
+	#_switch_to_mode(gmc.game_mode)
+	#_update_round_score()
+	#_initialized = true
+#
+## ─────────────────────────────────────────────
+##  Signal wiring
+## ─────────────────────────────────────────────
+#
+#func _connect_mode_signals() -> void:
+	#gmc.phase_changed.connect(_on_phase_changed)
+	#gmc.time_updated.connect(_on_time_updated)
+	#gmc.round_won.connect(_on_round_won)
+	#gmc.match_won.connect(_on_match_won)
+	#gmc.overtime_started.connect(_on_overtime_started)
+	#gmc.overtime_ended.connect(_on_overtime_ended)
+	#gmc.koth_updated.connect(_on_koth_updated)
+#
+	#if gmc.domination_mode:
+		#gmc.domination_mode.points_updated.connect(_on_domination_updated)
+#
+	#if gmc.hybrid_mode:
+		#gmc.hybrid_point_captured_signal.connect(_on_hybrid_updated)
+#
+	#if gmc.deathmatch_mode:
+		#gmc.deathmatch_mode.deathmatch_ended.connect(_on_deathmatch_ended)
+#
+#func _create_panel_registry() -> void:
+	## Idempotent: setup_gmc() runs again when the match map replaces the lobby
+	## map, so free any panels from a previous mode before rebuilding.
+	#if not _panel_registry.is_empty():
+		#for p in _panel_registry.values():
+			#if is_instance_valid(p):
+				#p.queue_free()
+		#_panel_registry.clear()
+	#if _deathmatch_panel and is_instance_valid(_deathmatch_panel):
+		#_deathmatch_panel.queue_free()
+		#_deathmatch_panel = null
+#
+	## Deathmatch panel lives outside _panel_container so it can span
+	## the full width at the top of the screen (not constricted by the
+	## centered HUD layout).
+	#_deathmatch_panel = DeathmatchPanel.new()
+	#_deathmatch_panel.visible = false
+	#add_child(_deathmatch_panel)
+#
+	## Create one panel per game mode; they stay hidden until switched to.
+	#_panel_registry[GameModeComponent.GameMode.KOTH]      = _make_panel(KothPanel.new())
+	#_panel_registry[GameModeComponent.GameMode.CONTROL]    = _make_panel(KothPanel.new())
+	#_panel_registry[GameModeComponent.GameMode.DOMINATION] = _make_panel(DominationPanel.new())
+	#_panel_registry[GameModeComponent.GameMode.ESCORT]     = _make_panel(EscortPanel.new())
+	#_panel_registry[GameModeComponent.GameMode.HYBRID]     = _make_panel(HybridPanel.new())
+#
+#func _make_panel(panel: BaseModePanel) -> BaseModePanel:
+	#panel.visible = false
+	#panel.team_bar_row = _team_bar_row
+	#panel.anchor_left   = 0.0
+	#panel.anchor_right  = 1.0
+	#panel.anchor_top    = 0.0
+	#panel.anchor_bottom = 1.0
+	#_panel_container.add_child(panel)
+	#return panel
+#
+## ─────────────────────────────────────────────
+##  Panel switching
+## ─────────────────────────────────────────────
+#
+#func _switch_to_mode(mode: GameModeComponent.GameMode) -> void:
+	## Hide previous
+	#if _active_panel:
+		#_active_panel.visible = false
+	#_deathmatch_panel.visible = false
+#
+	## The inert lobby shows no HUD at all.
+	#if mode == GameModeComponent.GameMode.MAIN_MENU:
+		#_menu_mode = true
+		#_active_panel = null
+		#_panel_container.visible = false
+		#_round_score_label.visible = false
+		#_deathmatch_panel.visible = false
+		#_team_spi_bar.visible = false
+		#_team_sci_bar.visible = false
+		#_overtime_label.visible = false
+		#_timer_bar.visible = false
+		#return
+#
+	#_menu_mode = false
+	#_timer_bar.visible = true
+#
+	## Show new
+	#if mode == GameModeComponent.GameMode.DEATHMATCH:
+		#_panel_container.visible = false
+		#_round_score_label.visible = false
+		#_deathmatch_panel.visible = true
+	#else:
+		#_panel_container.visible = true
+		#_round_score_label.visible = true
+		#_active_panel = _panel_registry.get(mode)
+		#if _active_panel:
+			#_active_panel.visible = true
+#
+	## Immediate data push
+	#_push_data_to_panel()
+#
+## ─────────────────────────────────────────────
+##  Data gathering & push
+## ─────────────────────────────────────────────
+#
+#func _push_data_to_panel() -> void:
+	## Push to normal mode panel.
+	#_update_team_bars()
+	#if _active_panel and gmc:
+		#_active_panel.update_display(_build_mode_data())
+#
+	## Also push to deathmatch overlay when active.
+	#if _deathmatch_panel and _deathmatch_panel.visible and gmc:
+		#_deathmatch_panel.update_display(_build_mode_data())
+#
+#func _build_mode_data() -> Dictionary:
+	#match gmc.game_mode:
+		#GameModeComponent.GameMode.KOTH, GameModeComponent.GameMode.CONTROL:
+			#return _koth_data()
+		#GameModeComponent.GameMode.DOMINATION:
+			#return _domination_data()
+		#GameModeComponent.GameMode.ESCORT:
+			#return _escort_data()
+		#GameModeComponent.GameMode.HYBRID:
+			#return _hybrid_data()
+		#GameModeComponent.GameMode.DEATHMATCH:
+			#return _deathmatch_data()
+	#return {}
+#
+#func _koth_data() -> Dictionary:
+	#if not gmc.koth_mode:
+		#return {}
+	#return {
+		#"time_held":          gmc.koth_mode.time_held.duplicate(),
+		#"capture_time_to_win": gmc.koth_mode.capture_time_to_win,
+		#"control_points":     gmc.koth_mode.get_cp_states(),
+	#}
+#
+#func _domination_data() -> Dictionary:
+	#if not gmc.domination_mode:
+		#return {}
+	#var owned: Dictionary = _count_owned_cps()
+	#return {
+		#"points":                     gmc.domination_mode.points.duplicate(),
+		#"points_to_win":              gmc.domination_mode.points_to_win,
+		#"owned_points":               owned,
+		#"pps":                        gmc.domination_mode.points_per_second_per_point,
+		#"control_points":             gmc.domination_mode.get_cp_states(),
+	#}
+#
+#func _escort_data() -> Dictionary:
+	#var payload := _get_payload()
+	#if not payload:
+		#return {"state": "LOCKED", "progress": 0.0}
+	#return {
+		#"progress":             payload.progress,
+		#"state":                EscortPanel.state_name(payload.payload_state),
+		#"attackers":            payload.get_attackers_on_point(),
+		#"defenders":            payload.get_defenders_on_point(),
+		#"return_countdown":     payload._return_countdown,
+		#"checkpoint_progresses": payload._checkpoint_progresses.duplicate(),
+		#"next_checkpoint_index": payload._next_checkpoint_index,
+	#}
+#
+#func _hybrid_data() -> Dictionary:
+	#if not gmc.hybrid_mode:
+		#return {}
+	#var hm := gmc.hybrid_mode
+	#var data: Dictionary = {
+		#"point_captured":      hm.point_is_captured,
+		#"time_held":           hm.time_held,
+		#"capture_time_to_win": hm.capture_time_to_win,
+	#}
+	#if hm.point_is_captured:
+		#var payload := _get_payload()
+		#if payload:
+			#data["payload_progress"]       = payload.progress
+			#data["payload_state"]          = EscortPanel.state_name(payload.payload_state)
+			#data["attackers"]              = payload.get_attackers_on_point()
+			#data["defenders"]              = payload.get_defenders_on_point()
+			#data["return_countdown"]       = payload._return_countdown
+			#data["checkpoint_progresses"]  = payload._checkpoint_progresses.duplicate()
+			#data["next_checkpoint_index"]  = payload._next_checkpoint_index
+	#return data
+#
+#func _deathmatch_data() -> Dictionary:
+	#if not gmc.deathmatch_mode:
+		#return {}
+	#return {
+		#"deathmatch_ended": gmc.deathmatch_mode.winner_name != "",
+		#"winner_name": gmc.deathmatch_mode.winner_name,
+		#"end_reason": gmc.deathmatch_mode.end_reason,
+		#"phase_timer": gmc.phase_timer,
+		#"round_time": gmc.round_time,
+		#"kills_to_win": gmc.deathmatch_mode.kills_to_win,
+	#}
+#
+#func _count_owned_cps() -> Dictionary:
+	#var owned := { Player.Team.SPI: 0, Player.Team.SCI: 0 }
+	#if gmc.domination_mode and gmc.domination_mode.has_method("_count_owned_points"):
+		#return gmc.domination_mode._count_owned_points()
+	#return owned
+#
+#func _get_payload() -> PayloadNode:
+	#if gmc and gmc.escort_mode and gmc.escort_mode._payload:
+		#return gmc.escort_mode._payload
+	#if gmc and gmc.hybrid_mode and gmc.hybrid_mode._payload:
+		#return gmc.hybrid_mode._payload
+	#var found := get_tree().get_nodes_in_group("payload")
+	#if not found.is_empty():
+		#return found[0] as PayloadNode
+	#return null
+#
+## ─────────────────────────────────────────────
+##  Signal handlers
+## ─────────────────────────────────────────────
+#
+#func _on_phase_changed(new_phase: GameModeComponent.PhaseState) -> void:
+	#_overtime_label.visible = (new_phase == GameModeComponent.PhaseState.OVERTIME)
+	#_timer_bar.set_overtime(new_phase == GameModeComponent.PhaseState.OVERTIME)
+	#_push_data_to_panel()
+#
+#func _on_time_updated(_remaining: float) -> void:
+	#_push_data_to_panel()
+#
+#func _on_round_won(_team: Player.Team) -> void:
+	#_update_round_score()
+	#_push_data_to_panel()
+#
+#func _on_match_won(_team: Player.Team) -> void:
+	#_update_round_score()
+	#_push_data_to_panel()
+#
+#func _on_overtime_started() -> void:
+	#_overtime_label.visible = true
+	#_timer_bar.set_overtime(true)
+#
+#func _on_overtime_ended() -> void:
+	#_overtime_label.visible = false
+	#_timer_bar.set_overtime(false)
+#
+#func _on_koth_updated(_held) -> void:
+	#_push_data_to_panel()
+#
+#func _on_domination_updated(_points) -> void:
+	#_push_data_to_panel()
+#
+#func _on_deathmatch_ended(_winner: String, _reason: String) -> void:
+	#_push_data_to_panel()
+#
+#func _on_hybrid_updated() -> void:
+	#_push_data_to_panel()
+#
+## ─────────────────────────────────────────────
+##  Helpers
+## ─────────────────────────────────────────────
+#
+#
+#func _update_team_bars() -> void:
+	#var show := gmc.game_mode in [GameModeComponent.GameMode.KOTH, GameModeComponent.GameMode.CONTROL, GameModeComponent.GameMode.DOMINATION]
+	#_team_spi_bar.visible = show
+	#_team_sci_bar.visible = show
+	#if not show:
+		#return
+#
+	#match gmc.game_mode:
+		#GameModeComponent.GameMode.KOTH, GameModeComponent.GameMode.CONTROL:
+			#if not gmc.koth_mode:
+				#return
+			#var held := gmc.koth_mode.time_held
+			#var target := gmc.koth_mode.capture_time_to_win
+			#var spi_t: float = held.get(Player.Team.SPI, 0.0)
+			#var sci_t: float = held.get(Player.Team.SCI, 0.0)
+			#_team_spi_bar.set_progress(spi_t / target if target > 0 else 0.0)
+			#_team_sci_bar.set_progress(sci_t / target if target > 0 else 0.0)
+			#_team_spi_bar.set_labels("SPI", _fmt_seconds(spi_t) + " / " + _fmt_seconds(target))
+			#_team_sci_bar.set_labels("SCI", _fmt_seconds(sci_t) + " / " + _fmt_seconds(target))
+#
+		#GameModeComponent.GameMode.DOMINATION:
+			#if not gmc.domination_mode:
+				#return
+			#var pts := gmc.domination_mode.points
+			#var target := gmc.domination_mode.points_to_win
+			#var spi_p: float = pts.get(Player.Team.SPI, 0.0)
+			#var sci_p: float = pts.get(Player.Team.SCI, 0.0)
+			#_team_spi_bar.set_progress(spi_p / target if target > 0 else 0.0)
+			#_team_sci_bar.set_progress(sci_p / target if target > 0 else 0.0)
+			#_team_spi_bar.set_labels("SPI", "%d  /  %d" % [int(spi_p), int(target)])
+			#_team_sci_bar.set_labels("SCI", "%d  /  %d" % [int(sci_p), int(target)])
+#
+#static func _fmt_seconds(seconds: float) -> String:
+	#if seconds <= 0.0:
+		#return "0:00"
+	#var m: int = int(seconds / 60.0)
+	#var s: int = int(seconds) % 60
+	#return "%d:%02d" % [m, s]
+#func _update_round_score() -> void:
+	#if not gmc:
+		#return
+	#var spi = gmc.round_wins.get(Player.Team.SPI, 0)
+	#var sci = gmc.round_wins.get(Player.Team.SCI, 0)
+	#var target: int = gmc.rounds_to_win
+	#_round_score_label.text = "Rounds:  SPI %d/%d  —  SCI %d/%d" % [spi, target, sci, target]
+#
+#func _phase_text(phase: GameModeComponent.PhaseState) -> String:
+	#if gmc and gmc.game_mode == GameModeComponent.GameMode.DEATHMATCH:
+		#match phase:
+			#GameModeComponent.PhaseState.SETUP:     return "DEATHMATCH — SETUP"
+			#GameModeComponent.PhaseState.ACTIVE:     return "DEATHMATCH"
+			#GameModeComponent.PhaseState.ROUND_END:  return "ROUND OVER"
+			#GameModeComponent.PhaseState.MATCH_END:  return "MATCH OVER"
+			#_:                                       return ""
+	#match phase:
+		#GameModeComponent.PhaseState.WAITING_FOR_PLAYERS:  return "WAITING FOR PLAYERS"
+		#GameModeComponent.PhaseState.SETUP:                return "SETUP"
+		#GameModeComponent.PhaseState.OBJECTIVE_LOCKED:     return "GET READY"
+		#GameModeComponent.PhaseState.ACTIVE:               return "ACTIVE"
+		#GameModeComponent.PhaseState.OVERTIME:             return "⚠ OVERTIME ⚠"
+		#GameModeComponent.PhaseState.ROUND_END:            return "ROUND OVER"
+		#GameModeComponent.PhaseState.MATCH_END:            return "MATCH OVER"
+		#_:                                                 return ""

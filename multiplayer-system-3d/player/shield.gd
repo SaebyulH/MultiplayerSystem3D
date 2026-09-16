@@ -50,7 +50,7 @@ func _ready() -> void:
 ## Configures the ShieldArea for hit detection.  Called from _ready() and
 ## also from deploy() as a safety net (in case _ready hasn't fired yet).
 func _setup_shield_area() -> void:
-	var area := $ShieldArea as Area3D if has_node("ShieldArea") else null
+	var area := $ShieldArea as CollisionObject3D if has_node("ShieldArea") else null
 	if not area:
 		return
 	# Same collision layer as the player's HeadHurtbox / BodyHurtbox so

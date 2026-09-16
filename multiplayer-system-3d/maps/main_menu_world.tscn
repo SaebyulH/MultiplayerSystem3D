@@ -121,12 +121,14 @@ material = SubResource("StandardMaterial3D_ykm5p")
 
 [node name="ground12" type="CSGBox3D" parent="." unique_id=1014008784]
 transform = Transform3D(-1.1909884, 0, 1.04119515e-07, 0, 1.1909884, 0, -1.04119515e-07, 0, -1.1909884, -0.42710584, 14.971279, 0.21408974)
+use_collision = true
 size = Vector3(30.257751, 1.4872742, 48)
 material = SubResource("StandardMaterial3D_fh2lp")
 
 [node name="ground2" type="CSGBox3D" parent="." unique_id=1512427693]
 transform = Transform3D(-1.1909884, 0, 1.04119515e-07, 0, 1.1909884, 0, -1.04119515e-07, 0, -1.1909884, 27.229961, 5.56263, 0.2140912)
 material_override = SubResource("ShaderMaterial_b3rx5")
+use_collision = true
 size = Vector3(2, 14.703064, 48)
 
 [node name="ground10" type="CSGBox3D" parent="ground2" unique_id=501011969]

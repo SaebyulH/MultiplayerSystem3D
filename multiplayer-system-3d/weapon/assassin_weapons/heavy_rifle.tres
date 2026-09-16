@@ -54,7 +54,6 @@ reload_time = 4.0
 player_speed_multiplier = 0.75
 weapon_fires = Array[ExtResource("3_2wfvi")]([SubResource("Resource_aikgn"), SubResource("Resource_b7nwq")])
 weapon_model = ExtResource("8_ny6lo")
-weapon_offset = Vector3(0.2, -0.4, -0.55)
 killfeed_icon = ExtResource("1_87q2j")
 reload_sound = ExtResource("1_np3fa")
 metadata/_custom_type_script = "uid://qjf4ciit3dqy"

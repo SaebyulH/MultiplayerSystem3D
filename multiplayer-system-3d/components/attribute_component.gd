@@ -5,6 +5,9 @@ signal health_changed
 signal no_health
 
 var last_attacker = "NONE"
+## Direction of the last damaging hit (away from the attacker), used to knock the
+## death ragdoll backward.  Overwritten on every hit, so it holds the killing blow.
+var last_hit_direction: Vector3 = Vector3.ZERO
 var killstreak := 0
 
 ## Last *enemy* who damaged this player, credited for environmental kills
@@ -73,6 +76,8 @@ func apply_health_delta(delta: float, changer: String, changee: String, is_heads
 					changer_node.weapon_controller.play_hit_sound.rpc_id(changer.to_int())
 				changer_node.damage_number_manager._receive_damage_number.rpc_id(changer.to_int(), changee, applied_delta, is_headshot, falloff_mult, is_backshot)
 		last_attacker = changer
+		if changer_node != null and changer_node != get_parent():
+			last_hit_direction = ((get_parent() as Node3D).global_position - changer_node.global_position).normalized()
 		if _is_enemy_attacker(changer):
 			last_enemy_attacker = changer
 			if _enemy_attacker_expiry:
@@ -146,6 +151,7 @@ func apply_environmental_damage(damage: float) -> void:
 func reset():
 	reset_health()
 	last_attacker = "NONE"
+	last_hit_direction = Vector3.ZERO
 	last_enemy_attacker = "NONE"
 	if _enemy_attacker_expiry:
 		_enemy_attacker_expiry.stop()

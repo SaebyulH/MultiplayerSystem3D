@@ -1,5 +1,5 @@
 extends Control
-class_name ClassSelectUI
+#class_name ClassSelectUI
 
 ## Clean, professional class-selection screen.
 ## Uses a CanvasLayer added directly to the root viewport so it renders

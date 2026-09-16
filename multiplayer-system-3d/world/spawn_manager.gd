@@ -27,6 +27,11 @@ func _sync_existing_players_to_peer(peer_id: int) -> void:
 	for child in spawn_parent.get_children():
 		if child is Player and child.spawned and child.name != str(peer_id):
 			child.rpc_sync_full_state.rpc_id(peer_id, child.global_position, child._loadout_primary_path, child._loadout_secondary_path, child._loadout_melee_path, child._loadout_character_path)
+			# Permanent status-effect markers (wallhacked/health-visible) are no
+			# longer re-broadcast on a 10 Hz timer, so push them explicitly to a
+			# late-joining peer.
+			if child.status_effect_manager:
+				child.status_effect_manager._sync_to_clients(peer_id)
 
 func _peer_disconnected(network_id):
 	if OS.is_debug_build(): print("Peer disconnected: Network ID: %s" % network_id)

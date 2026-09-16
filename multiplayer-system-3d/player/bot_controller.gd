@@ -15,8 +15,15 @@ class_name BotController
 
 @export var player: Player
 
-## Cached head node.  `get_node("%Head")` resolves the unique-name lookup on every
-## call; the bot does this once per physics frame per lookup, so cache it instead.
+## 0.0 = completely useless (huge aim spread, no projectile lead).
+## 1.0 = aimbotter (zero spread, full projectile lead). Default 0.5.
+@export_range(0.0, 1.0) var skill: float = 1.0
+
+## Cached head node.  This is the bot's OWN aim origin + pitch node — the camera
+## head (`%Head` = Body/Recoil/Head), NOT the physical head bone.  `_apply_smooth_aim`
+## pitches `_head_node.rotation.x`, which must rotate the camera/weapon ray, not a
+## ragdoll bone.  (The *target's* head bone is resolved separately in
+## `_get_head_position()`.)
 @onready var _head_node: Node3D = player.get_node("%Head") as Node3D
 
 ## Reused raycast queries — avoids allocating a fresh PhysicsRayQueryParameters3D
@@ -65,9 +72,14 @@ const MEDIC_HEAL_THRESHOLD: float = 0.5
 ## centred on their facing direction.  Matches a human's ~120° peripheral vision.
 const FOV_DEGREES: float = 120.0
 const AIM_SMOOTH: float           = 8.0
+## Path to the target's head bone — the `Physical Bone DEF-spine_006` hurtbox with
+## `is_head = true` in player.tscn.  Bots aim at this bone's live world position
+## rather than a fixed height, so headshots track the model's actual head.
+const HEAD_BONE_PATH: String = "Body/Mannequin/mannequin/Skeleton3D/PhysicalBoneSimulator3D/Physical Bone DEF-spine_006"
 const RECOIL_THRESHOLD: float     = 0.17
 const NOISE_INTERVAL: float       = 0.4
-const AIM_NOISE: float            = 0.08
+## Max aim spread (radians) at skill 0; scaled to 0 at skill 1.
+const AIM_NOISE_MAX: float        = 0.2
 const FIRE_CHOICE_INTERVAL: float = 2.0
 ## Max projectile-lead time so prediction never overshoots on slow projectiles.
 const LEAD_TIME_MAX: float        = 0.6
@@ -152,16 +164,19 @@ func _physics_process(delta: float) -> void:
 	if _weapon_switch_guard > 0.0:
 		_weapon_switch_guard -= delta
 
-	if _force_wander_timer > 0.0:
-		_force_wander_timer -= delta
-		var sd := _steer_toward(_wander_target)
-		_apply_movement(sd)
-		return
-
 	_timer += delta
 	if _timer < PROCESS_INTERVAL:
 		return
 	_timer = 0.0
+
+	# Stuck bots force-wander for a few seconds. Only re-steer at the normal tick
+	# rate — steering every physics frame (~60 Hz) tripled the raycasts for a bot
+	# that is merely walking away from an obstacle.
+	if _force_wander_timer > 0.0:
+		_force_wander_timer -= PROCESS_INTERVAL
+		var sd := _steer_toward(_wander_target)
+		_apply_movement(sd)
+		return
 
 	_tick_stuck_detection()
 	_tick_strafe()
@@ -169,8 +184,9 @@ func _physics_process(delta: float) -> void:
 	_noise_timer += PROCESS_INTERVAL
 	if _noise_timer >= NOISE_INTERVAL:
 		_noise_timer = 0.0
-		_aim_noise_y = randf_range(-AIM_NOISE, AIM_NOISE)
-		_aim_noise_x = randf_range(-AIM_NOISE, AIM_NOISE)
+		var spread := AIM_NOISE_MAX * (1.0 - skill)
+		_aim_noise_y = randf_range(-spread, spread)
+		_aim_noise_x = randf_range(-spread, spread)
 
 	_fire_choice_timer += PROCESS_INTERVAL
 	if _fire_choice_timer >= FIRE_CHOICE_INTERVAL:
@@ -190,16 +206,25 @@ func _steer_toward(target_pos: Vector3) -> Vector2:
 		return Vector2.ZERO
 	flat_desired = flat_desired.normalized()
 
+	# Score the straight-ahead direction first. If it is clear, no wall is within
+	# STEER_DISTANCE, so the 6 side raycasts are wasted — the common case in open
+	# space, where this turns steering from 7 raycasts/tick into 1.
+	var center_score := _score_direction(origin, flat_desired)
+	if center_score >= STEER_DISTANCE:
+		_last_steer_dir = flat_desired
+		_wall_hug_timer = 0.0
+		_wall_hug_side = 0
+		return flat_desired
+
 	var best_dir := flat_desired
-	var best_score := -9999.0
-	var center_score := -9999.0
+	var best_score := center_score + 2.0  # center's forward bias, matches loop below
 
 	for angle in STEER_ANGLES:
+		if angle == 0.0:
+			continue
 		var rad := deg_to_rad(angle)
 		var test_dir := flat_desired.rotated(rad)
 		var score := _score_direction(origin, test_dir)
-		if angle == 0.0:
-			center_score = score
 		score += (1.0 - abs(angle) / 90.0) * 2.0
 		if score > best_score:
 			best_score = score
@@ -482,16 +507,26 @@ func _get_proj_info(fire: WeaponFire) -> Dictionary:
 	return info
 
 
-## Aim at a predicted position: lead moving targets by their velocity so the bot
-## actually hits a strafing player (projectiles only — hitscan is instantaneous).
+## The target's head-bone world position (`Physical Bone DEF-spine_006`, the
+## `is_head` hurtbox).  Falls back to a fixed height above the origin if a custom
+## model lacks the standard mannequin skeleton path.
+func _get_head_position(target: Player) -> Vector3:
+	var head := target.get_node_or_null(HEAD_BONE_PATH) as Node3D
+	if head != null:
+		return head.global_position
+	return target.global_position + Vector3(0, 1.6, 0)
+
+
+## Aim at a predicted position: lead the target's head by their velocity so the
+## bot actually hits a strafing player (projectiles only — hitscan is instantaneous).
 func _predict_target_pos(target: Player, fire: WeaponFire, flat_dist: float) -> Vector3:
-	var pos := target.global_position
+	var pos := _get_head_position(target)
 	if fire != null and fire.bullet_type == WeaponFire.BulletType.PROJECTILE:
 		var speed: float = _get_proj_info(fire).get("speed", 0.0)
 		if speed > 1.0:
 			var t := clampf(flat_dist / speed, 0.0, LEAD_TIME_MAX)
-			pos += target.velocity * t
-	return pos + Vector3(0, 0.3, 0)
+			pos += target.velocity * t * skill
+	return pos
 
 
 func _switch_weapon(wc: WeaponController, index: int) -> bool:
@@ -611,12 +646,11 @@ func _act_combat() -> void:
 
 	_current_body_y = atan2(-flat.x, -flat.z) + _aim_noise_y
 
-	# Aim: lead moving targets for projectiles, head/body offset for hitscan.
-	var aim_pos := _current_target.global_position
+	# Aim at the target's head bone — lead moving targets for projectiles, aim the
+	# bone directly for hitscan (headshots register a crit when the weapon has one).
+	var aim_pos := _get_head_position(_current_target)
 	if fire.bullet_type == WeaponFire.BulletType.PROJECTILE:
 		aim_pos = _predict_target_pos(_current_target, fire, dist)
-	else:
-		aim_pos += (Vector3(0, 0.7, 0) if fire.headshot_multiplier > 1.0 else Vector3(0, 0.2, 0))
 	var to_aim := aim_pos - _head_node.global_position
 	var flat_to_aim := Vector3(to_aim.x, 0, to_aim.z).length()
 	_current_head_x = atan2(to_aim.y, maxf(flat_to_aim, 0.001)) + _aim_noise_x
