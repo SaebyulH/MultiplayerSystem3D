@@ -141,6 +141,9 @@ nodes/InspectAnim/node = SubResource("AnimationNodeAnimation_g4c7l")
 nodes/InspectAnim/position = Vector2(920, -740)
 node_connections = [&"output", 0, &"ShootOneShot", &"ShootTimeScale", 0, &"ShootAnim", &"ReloadEmptyTimeScale", 0, &"ReloadEmptyAnim", &"InspectOneShot", 0, &"HoldAnim", &"InspectOneShot", 1, &"InspectTimeScale", &"ReloadEmptyOneShot", 0, &"ReloadNonemptyOneShot", &"ReloadEmptyOneShot", 1, &"ReloadEmptyTimeScale", &"InspectTimeScale", 0, &"InspectAnim", &"ShootOneShot", 0, &"ReloadEmptyOneShot", &"ShootOneShot", 1, &"ShootTimeScale", &"ReloadNonemptyOneShot", 0, &"PulloutOneShot", &"ReloadNonemptyOneShot", 1, &"ReloadNonemptyTimeScale", &"ReloadNonemptyTimeScale", 0, &"ReloadNonemptyAnim", &"PulloutOneShot", 0, &"PutawayOneShot", &"PulloutOneShot", 1, &"PulloutTimeScale", &"PulloutTimeScale", 0, &"PulloutAnim", &"PutawayOneShot", 0, &"InspectOneShot", &"PutawayOneShot", 1, &"PutawayTimeScale", &"PutawayTimeScale", 0, &"PutawayAnim"]
 
+[sub_resource type="BoxShape3D" id="BoxShape3D_g4v7s"]
+size = Vector3(0.107177734, 0.25976563, 1)
+
 [node name="Ak" type="Node3D" unique_id=1233250200 node_paths=PackedStringArray("anim_player", "anim_tree")]
 script = ExtResource("1_r4bbn")
 anim_player = NodePath("Ak2/AnimationPlayer")
@@ -154,7 +157,7 @@ anim_groups = Array[ExtResource("3_a603s")]([SubResource("Resource_65viv"), SubR
 transform = Transform3D(1, 0, 0, 0, 0.99999964, 0, 0, 0, 0.99999964, 0, 0, 0)
 
 [node name="Skeleton3D" parent="Ak2/Ak" index="0" unique_id=1949791169]
-bones/0/position = Vector3(-0.10229178, 1.5043527, 0.30673563)
+bones/0/position = Vector3(-0.10229178, 1.5014433, 0.30641234)
 bones/0/rotation = Quaternion(-0.003901305, 0.99995303, 0.0061588297, 0.0063979407)
 bones/1/position = Vector3(-6.600763e-09, 0.09451035, -0.11628167)
 bones/2/position = Vector3(-2.7187752e-08, -0.050684985, -0.15147687)
@@ -171,7 +174,7 @@ surface_material_override/0 = ExtResource("5_a603s")
 surface_material_override/0 = ExtResource("5_a603s")
 
 [node name="BoneAttachment3D" type="BoneAttachment3D" parent="Ak2/Ak/Skeleton3D" index="5" unique_id=1431857578]
-transform = Transform3D(-0.9998877, -0.007881046, 0.012747222, -0.007723435, 0.99989325, 0.012366998, -0.012843334, 0.012267153, -0.9998421, -0.10229178, 1.5043527, 0.30673563)
+transform = Transform3D(-0.9998877, -0.007881046, 0.012747222, -0.007723435, 0.99989325, 0.012366998, -0.012843334, 0.012267153, -0.9998421, -0.10229178, 1.5014433, 0.30641234)
 bone_name = "Root"
 bone_idx = 0
 
@@ -206,5 +209,11 @@ parameters/PutawayOneShot/active = false
 parameters/PutawayOneShot/internal_active = false
 parameters/PutawayOneShot/request = 0
 parameters/PutawayTimeScale/scale = 1.0
+
+[node name="BoundingBox" type="Area3D" parent="." unique_id=589162245]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BoundingBox" unique_id=1803030807]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.103881836, 1.5149384, 0.50220335)
+shape = SubResource("BoxShape3D_g4v7s")
 
 [editable path="Ak2"]

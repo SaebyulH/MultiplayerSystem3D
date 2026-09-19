@@ -83,7 +83,6 @@ fadeout_time = 0.06
 [sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_anqxl"]
 
 [sub_resource type="AnimationNodeBlendTree" id="AnimationNodeBlendTree_m1dvp"]
-graph_offset = Vector2(1182.9971, -725.0081)
 nodes/output/position = Vector2(2920, -320)
 nodes/PutawayOneShot/node = SubResource("AnimationNodeOneShot_g4c7l")
 nodes/PutawayOneShot/position = Vector2(1680, -880)
@@ -118,6 +117,9 @@ nodes/Animation/position = Vector2(1660, 80)
 nodes/ShootTimeScale/node = SubResource("AnimationNodeTimeScale_anqxl")
 nodes/ShootTimeScale/position = Vector2(1920, -100)
 node_connections = [&"output", 0, &"ShootOneShot", &"PutawayOneShot", 0, &"InspectOneShot", &"PutawayOneShot", 1, &"PutawayTimeScale", &"InspectOneShot", 0, &"HoldAnim", &"InspectOneShot", 1, &"InspectTimeScale", &"InspectTimeScale", 0, &"InspectAnim", &"PutawayTimeScale", 0, &"PutawayAnim", &"PulloutTimeScale", 0, &"PulloutAnim", &"ReloadOneShot", 0, &"PulloutOneShot", &"ReloadOneShot", 1, &"ReloadTimeScale", &"ReloadTimeScale", 0, &"ReloadAnim", &"PulloutOneShot", 0, &"PutawayOneShot", &"PulloutOneShot", 1, &"PulloutTimeScale", &"ShootOneShot", 0, &"ReloadOneShot", &"ShootOneShot", 1, &"ShootTimeScale", &"ShootTimeScale", 0, &"Animation"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_hbrud"]
+size = Vector3(0.107177734, 0.07293701, 0.06921387)
 
 [node name="CombattKnife" type="Node3D" unique_id=1233250200 node_paths=PackedStringArray("anim_player", "anim_tree")]
 script = ExtResource("1_hxd4e")
@@ -156,5 +158,11 @@ parameters/ShootTimeScale/scale = 1.0
 [node name="Skeleton3D" parent="combat_knife/Knife" parent_id_path=PackedInt32Array(545651624, 1083160410) index="0" unique_id=1617875219]
 bones/0/position = Vector3(-0.18730554, 1.5600106, 0.3906611)
 bones/0/rotation = Quaternion(-0.016130755, -0.12348807, -0.6359203, 0.76164025)
+
+[node name="BoundingBox" type="Area3D" parent="." unique_id=79533858]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BoundingBox" unique_id=2056211782]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.103881836, 1.5669098, 0.3972839)
+shape = SubResource("BoxShape3D_hbrud")
 
 [editable path="combat_knife"]

@@ -1,16 +1,16 @@
-[gd_resource type="Resource" script_class="Weapon" format=3 uid="uid://cteiol02rkdkk"]
+[gd_resource type="Resource" script_class="Weapon" format=3]
 
-[ext_resource type="AudioStream" uid="uid://bwfdsxbmx4ko8" path="res://assets/sounds/empty_gun.mp3" id="1_2ijdx"]
-[ext_resource type="Texture2D" uid="uid://bgeu4an3abm37" path="res://killfeed_icons/bat.png" id="1_yfral"]
-[ext_resource type="Texture2D" uid="uid://b6gktr1vfryte" path="res://defaults/default_damage_falloff_curve.tres" id="2_da3ra"]
-[ext_resource type="Script" uid="uid://yvevtn4dsddy" path="res://player/recoil/recoil_data.gd" id="3_ayegb"]
-[ext_resource type="AudioStream" uid="uid://cqbknmbhlwhu" path="res://assets/sounds/reload.mp3" id="4_w4h84"]
-[ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="5_jqwjd"]
-[ext_resource type="PackedScene" uid="uid://0ao8biac1wwu" path="res://weapon/assistance_weapons/bat.tscn" id="7_2ijdx"]
-[ext_resource type="AudioStream" uid="uid://4v1iw33cexcc" path="res://assets/sounds/freesound_community-knife-slice-41231.mp3" id="7_0341t"]
-[ext_resource type="Script" uid="uid://djg0ti1n45f8b" path="res://weapon/weapon_fire.gd" id="8_0341t"]
-[ext_resource type="AudioStream" uid="uid://dmsu80i3l18h1" path="res://assets/sounds/u_dtbxmnju4i-taking-out-knife-217793.mp3" id="8_yfral"]
-[ext_resource type="Script" uid="uid://bv0g4rnfelqch" path="res://components/status_effect/status_effect.gd" id="9_mghml"]
+[ext_resource type="AudioStream" path="res://assets/sounds/empty_gun.mp3" id="1_2ijdx"]
+[ext_resource type="Texture2D" path="res://killfeed_icons/katana.png" id="1_mghml"]
+[ext_resource type="Texture2D" path="res://defaults/default_damage_falloff_curve.tres" id="2_da3ra"]
+[ext_resource type="Script" path="res://player/recoil/recoil_data.gd" id="3_ayegb"]
+[ext_resource type="AudioStream" path="res://assets/sounds/reload.mp3" id="4_w4h84"]
+[ext_resource type="Script" path="res://weapon/weapon.gd" id="5_jqwjd"]
+[ext_resource type="PackedScene" path="res://weapon/assistance_weapons/bat.tscn" id="7_2ijdx"]
+[ext_resource type="AudioStream" path="res://assets/sounds/freesound_community-knife-slice-41231.mp3" id="7_0341t"]
+[ext_resource type="Script" path="res://weapon/weapon_fire.gd" id="8_0341t"]
+[ext_resource type="AudioStream" path="res://assets/sounds/u_dtbxmnju4i-taking-out-knife-217793.mp3" id="8_yfral"]
+[ext_resource type="Script" path="res://components/status_effect/status_effect.gd" id="9_mghml"]
 
 [sub_resource type="Resource" id="Resource_mey0f"]
 script = ExtResource("3_ayegb")
@@ -69,6 +69,6 @@ mag_current = 100
 player_speed_multiplier = 1.2
 weapon_fires = Array[ExtResource("8_0341t")]([SubResource("Resource_rx36s"), SubResource("Resource_0341t"), SubResource("Resource_yfral")])
 weapon_model = ExtResource("7_2ijdx")
-killfeed_icon = ExtResource("1_yfral")
+killfeed_icon = ExtResource("1_mghml")
 reload_sound = ExtResource("4_w4h84")
 metadata/_custom_type_script = "uid://qjf4ciit3dqy"

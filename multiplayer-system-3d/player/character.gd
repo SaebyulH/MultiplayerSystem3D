@@ -9,6 +9,11 @@ class_name Character
 
 @export var character_scene: PackedScene
 
+@export_group("Visuals")
+## Pre-rendered square portrait of this character.  Generate with
+## player/character_portrait_generator.gd (F6 while its scene is open).
+@export var portrait: Texture2D
+
 # -- Ground Movement --
 @export_group("Movement")
 @export var speed_mult: float = 1.0

@@ -127,6 +127,9 @@ nodes/ShootTimeScale/node = SubResource("AnimationNodeTimeScale_anqxl")
 nodes/ShootTimeScale/position = Vector2(1920, -100)
 node_connections = [&"output", 0, &"ShootOneShot", &"PutawayOneShot", 0, &"InspectOneShot", &"PutawayOneShot", 1, &"PutawayTimeScale", &"InspectOneShot", 0, &"HoldAnim", &"InspectOneShot", 1, &"InspectTimeScale", &"InspectTimeScale", 0, &"InspectAnim", &"PutawayTimeScale", 0, &"PutawayAnim", &"PulloutTimeScale", 0, &"PulloutAnim", &"ReloadOneShot", 0, &"PulloutOneShot", &"ReloadOneShot", 1, &"ReloadTimeScale", &"ReloadTimeScale", 0, &"ReloadAnim", &"PulloutOneShot", 0, &"PutawayOneShot", &"PulloutOneShot", 1, &"PulloutTimeScale", &"ShootOneShot", 0, &"ReloadOneShot", &"ShootOneShot", 1, &"ShootTimeScale", &"ShootTimeScale", 0, &"Animation"]
 
+[sub_resource type="BoxShape3D" id="BoxShape3D_0qarw"]
+size = Vector3(0.107177734, 0.44506836, 1.1463623)
+
 [node name="M4" type="Node3D" unique_id=1233250200 node_paths=PackedStringArray("anim_player", "anim_tree")]
 script = ExtResource("1_2hwsd")
 anim_player = NodePath("M42/AnimationPlayer")
@@ -162,8 +165,8 @@ parameters/ShootTimeScale/scale = 1.0
 [node name="M42" parent="." unique_id=345288316 instance=ExtResource("4_0qarw")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.005859375, -0.05987549, -0.018188477)
 
-[node name="Skeleton3D" parent="M42/M4" parent_id_path=PackedInt32Array(345288316, 2145389248) index="0" unique_id=1072754238]
-bones/0/position = Vector3(-0.10229178, 1.4969639, 0.3059146)
+[node name="Skeleton3D" parent="M42/M4" parent_id_path=PackedInt32Array(345288316, 1448699252) index="0" unique_id=1432863024]
+bones/0/position = Vector3(-0.10229178, 1.5025414, 0.30653438)
 bones/0/rotation = Quaternion(-0.003901305, 0.99995303, 0.0061588297, 0.0063979407)
 bones/1/position = Vector3(-6.6007635e-09, 0.09451035, -0.11628167)
 bones/2/position = Vector3(-2.7187752e-08, -0.050684985, -0.15147687)
@@ -171,11 +174,17 @@ bones/2/rotation = Quaternion(-1.6507511e-07, -3.5466818e-10, 4.362205e-11, 1)
 bones/4/rotation = Quaternion(0.96373206, 0.005978279, 0.0023869204, 0.26679412)
 
 [node name="BoneAttachment3D" type="BoneAttachment3D" parent="M42/M4/Skeleton3D" index="1" unique_id=286427976]
-transform = Transform3D(-0.9998877, -0.007881046, 0.012747222, -0.007723435, 0.99989325, 0.012366998, -0.012843334, 0.012267153, -0.9998421, -0.10229178, 1.4969639, 0.3059146)
+transform = Transform3D(-0.9998877, -0.007881046, 0.012747222, -0.007723435, 0.99989325, 0.012366998, -0.012843334, 0.012267153, -0.9998421, -0.10229178, 1.5025414, 0.30653438)
 bone_name = "Root"
 bone_idx = 0
 
 [node name="Muzzle" type="Node3D" parent="M42/M4/Skeleton3D/BoneAttachment3D" unique_id=1564388886]
 transform = Transform3D(1.0000004, -3.0559022e-10, 1.8626451e-09, 1.4551915e-09, 1.0000004, 0, -2.7939677e-09, -1.8626451e-09, 1.0000004, 0.0040245876, 0.14903247, -0.7252122)
+
+[node name="BoundingBox" type="Area3D" parent="." unique_id=1592331588]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BoundingBox" unique_id=1890973072]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.103881836, 1.4772186, 0.46015012)
+shape = SubResource("BoxShape3D_0qarw")
 
 [editable path="M42"]

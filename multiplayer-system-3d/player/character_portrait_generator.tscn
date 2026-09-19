@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://bow8dm2n011cw"]
+
+[ext_resource type="Script" uid="uid://b8v8we66ln3b5" path="res://player/character_portrait_generator.gd" id="1"]
+
+[node name="CharacterPortraitGenerator" type="Node" unique_id=27574779]
+script = ExtResource("1")

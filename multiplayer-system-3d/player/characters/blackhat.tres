@@ -1,18 +1,20 @@
-[gd_resource type="Resource" script_class="Character" format=3 uid="uid://dk51two052lel"]
+[gd_resource type="Resource" script_class="Character" format=3]
 
-[ext_resource type="Script" uid="uid://nwsvfqljwb2b" path="res://player/abilities/ability.gd" id="1_wvobv"]
-[ext_resource type="Script" uid="uid://deqdkt0xirbqa" path="res://player/abilities/teleport_ability.gd" id="2_unj1j"]
-[ext_resource type="PackedScene" uid="uid://c6puxayhq8we2" path="res://assets/characters/blackhat.tscn" id="3_l8a6s"]
-[ext_resource type="Script" uid="uid://coggjlsesnnph" path="res://player/abilities/wallhack_ability.gd" id="3_s12c6"]
-[ext_resource type="Script" uid="uid://bxv3anwekoggx" path="res://player/character.gd" id="4_cyqsu"]
-[ext_resource type="Script" uid="uid://b5l3ft3hur4q4" path="res://player/abilities/aimbot_ability.gd" id="4_psuq6"]
-[ext_resource type="AudioStream" uid="uid://cdvd2hnuk6uxs" path="res://assets/sounds/vinodadora-male-death-sound-128357.mp3" id="4_unj1j"]
-[ext_resource type="Script" uid="uid://b00vhcpmrm3ko" path="res://player/abilities/cheat_death_ability.gd" id="5_r840o"]
+[ext_resource type="Script" path="res://player/abilities/ability.gd" id="1_wvobv"]
+[ext_resource type="Script" path="res://player/abilities/teleport_ability.gd" id="2_unj1j"]
+[ext_resource type="PackedScene" path="res://assets/characters/blackhat.tscn" id="3_l8a6s"]
+[ext_resource type="Script" path="res://player/abilities/wallhack_ability.gd" id="3_s12c6"]
+[ext_resource type="Script" path="res://player/character.gd" id="4_cyqsu"]
+[ext_resource type="Script" path="res://player/abilities/aimbot_ability.gd" id="4_psuq6"]
+[ext_resource type="AudioStream" path="res://assets/sounds/vinodadora-male-death-sound-128357.mp3" id="4_unj1j"]
+[ext_resource type="Script" path="res://player/abilities/cheat_death_ability.gd" id="5_r840o"]
+[ext_resource type="Texture2D" path="res://character_portraits/blackhat.png" id="8_s12c6"]
 
 [sub_resource type="Resource" id="Resource_qjglq"]
 script = ExtResource("2_unj1j")
 teleport_distance = 7.0
 ability_name = "Teleport"
+cast_mode = 1
 cooldown = 2.0
 metadata/_custom_type_script = "uid://deqdkt0xirbqa"
 
@@ -33,6 +35,7 @@ metadata/_custom_type_script = "uid://b5l3ft3hur4q4"
 script = ExtResource("5_r840o")
 ability_name = "Cheat Death"
 cooldown = 40.0
+can_be_used_while_dead = true
 metadata/_custom_type_script = "uid://b00vhcpmrm3ko"
 
 [resource]
@@ -40,6 +43,7 @@ script = ExtResource("4_cyqsu")
 character_name = "BlackHat"
 description = "Hacker"
 character_scene = ExtResource("3_l8a6s")
+portrait = ExtResource("8_s12c6")
 slide_friction_mult = 1.2
 slide_entry_boost_mult = 0.8
 slope_gravity_mult = 0.8

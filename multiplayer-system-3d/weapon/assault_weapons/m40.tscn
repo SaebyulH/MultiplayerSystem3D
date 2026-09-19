@@ -142,6 +142,9 @@ nodes/InspectAnim/node = SubResource("AnimationNodeAnimation_g4c7l")
 nodes/InspectAnim/position = Vector2(920, -740)
 node_connections = [&"output", 0, &"ShootOneShot", &"ShootTimeScale", 0, &"ShootAnim", &"ReloadEmptyTimeScale", 0, &"ReloadEmptyAnim", &"InspectOneShot", 0, &"HoldAnim", &"InspectOneShot", 1, &"InspectTimeScale", &"ReloadEmptyOneShot", 0, &"ReloadNonemptyOneShot", &"ReloadEmptyOneShot", 1, &"ReloadEmptyTimeScale", &"InspectTimeScale", 0, &"InspectAnim", &"ShootOneShot", 0, &"ReloadEmptyOneShot", &"ShootOneShot", 1, &"ShootTimeScale", &"ReloadNonemptyOneShot", 0, &"PulloutOneShot", &"ReloadNonemptyOneShot", 1, &"ReloadNonemptyTimeScale", &"ReloadNonemptyTimeScale", 0, &"ReloadNonemptyAnim", &"PulloutOneShot", 0, &"PutawayOneShot", &"PulloutOneShot", 1, &"PulloutTimeScale", &"PulloutTimeScale", 0, &"PulloutAnim", &"PutawayOneShot", 0, &"InspectOneShot", &"PutawayOneShot", 1, &"PutawayTimeScale", &"PutawayTimeScale", 0, &"PutawayAnim"]
 
+[sub_resource type="BoxShape3D" id="BoxShape3D_dchj1"]
+size = Vector3(0.107177734, 0.25976563, 1)
+
 [node name="M40" type="Node3D" unique_id=1233250200 node_paths=PackedStringArray("anim_player", "anim_tree")]
 script = ExtResource("1_m8m70")
 anim_player = NodePath("M402/AnimationPlayer")
@@ -184,5 +187,11 @@ parameters/PutawayTimeScale/scale = 1.0
 bones/0/position = Vector3(-0.15359534, 1.4361622, 0.29275334)
 bones/1/position = Vector3(-8.313212e-09, 0.1009775, 0.070872776)
 bones/1/rotation = Quaternion(0.7071068, -3.0908627e-08, 1.3767878e-07, 0.7071068)
+
+[node name="BoundingBox" type="Area3D" parent="." unique_id=22142069]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BoundingBox" unique_id=1407391665]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.103881836, 1.5149384, 0.50220335)
+shape = SubResource("BoxShape3D_dchj1")
 
 [editable path="M402"]

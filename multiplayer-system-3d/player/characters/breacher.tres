@@ -1,21 +1,22 @@
-[gd_resource type="Resource" script_class="Character" format=3 uid="uid://cgi1jrf004ttd"]
+[gd_resource type="Resource" script_class="Character" format=3]
 
-[ext_resource type="PackedScene" uid="uid://cinsq1lv1jv" path="res://assets/characters/flier.tscn" id="1_1m2t5"]
-[ext_resource type="Script" uid="uid://bxv3anwekoggx" path="res://player/character.gd" id="1_char"]
-[ext_resource type="Script" uid="uid://nwsvfqljwb2b" path="res://player/abilities/ability.gd" id="1_ckkow"]
-[ext_resource type="AudioStream" uid="uid://c4hcib02wpb8t" path="res://assets/sounds/flier_death.mp3" id="2_kaefc"]
-[ext_resource type="Script" uid="uid://cqveqjaj5p1jv" path="res://player/abilities/heal_ability.gd" id="2_moh7u"]
-[ext_resource type="Script" uid="uid://lrht2lh1enw5" path="res://player/abilities/weapon_fire_ability.gd" id="3_a2xb3"]
-[ext_resource type="AudioStream" uid="uid://bwfdsxbmx4ko8" path="res://assets/sounds/empty_gun.mp3" id="4_ow7rt"]
-[ext_resource type="Texture2D" uid="uid://b6gktr1vfryte" path="res://defaults/default_damage_falloff_curve.tres" id="5_eak8f"]
-[ext_resource type="PackedScene" uid="uid://bo0edtxgakruc" path="res://weapon/projectiles/scenes/rocket.tscn" id="6_e4ysp"]
-[ext_resource type="Script" uid="uid://yvevtn4dsddy" path="res://player/recoil/recoil_data.gd" id="7_1o6mg"]
-[ext_resource type="Script" uid="uid://djg0ti1n45f8b" path="res://weapon/weapon_fire.gd" id="8_at1ad"]
-[ext_resource type="AudioStream" uid="uid://h5oipa516ci8" path="res://assets/sounds/kalsstockmedia-thunderous-sci-fi-gunshot-sound-341615.mp3" id="9_5qela"]
-[ext_resource type="Script" uid="uid://bv0g4rnfelqch" path="res://components/status_effect/status_effect.gd" id="10_trpmt"]
-[ext_resource type="AudioStream" uid="uid://u24dsvsfmlr2" path="res://assets/sounds/gun_sound.mp3" id="11_moh7u"]
-[ext_resource type="PackedScene" uid="uid://c0plytpiwyh8p" path="res://weapon/projectiles/scenes/nuke.tscn" id="12_ow7rt"]
-[ext_resource type="Script" uid="uid://bgnoupinctd73" path="res://player/abilities/passive_ability.gd" id="12_pasv"]
+[ext_resource type="PackedScene" path="res://assets/characters/flier.tscn" id="1_1m2t5"]
+[ext_resource type="Script" path="res://player/character.gd" id="1_char"]
+[ext_resource type="Script" path="res://player/abilities/ability.gd" id="1_ckkow"]
+[ext_resource type="AudioStream" path="res://assets/sounds/flier_death.mp3" id="2_kaefc"]
+[ext_resource type="Script" path="res://player/abilities/heal_ability.gd" id="2_moh7u"]
+[ext_resource type="Script" path="res://player/abilities/weapon_fire_ability.gd" id="3_a2xb3"]
+[ext_resource type="AudioStream" path="res://assets/sounds/empty_gun.mp3" id="4_ow7rt"]
+[ext_resource type="Texture2D" path="res://defaults/default_damage_falloff_curve.tres" id="5_eak8f"]
+[ext_resource type="PackedScene" path="res://weapon/projectiles/scenes/rocket.tscn" id="6_e4ysp"]
+[ext_resource type="Script" path="res://player/recoil/recoil_data.gd" id="7_1o6mg"]
+[ext_resource type="Script" path="res://weapon/weapon_fire.gd" id="8_at1ad"]
+[ext_resource type="AudioStream" path="res://assets/sounds/kalsstockmedia-thunderous-sci-fi-gunshot-sound-341615.mp3" id="9_5qela"]
+[ext_resource type="Script" path="res://components/status_effect/status_effect.gd" id="10_trpmt"]
+[ext_resource type="AudioStream" path="res://assets/sounds/gun_sound.mp3" id="11_moh7u"]
+[ext_resource type="PackedScene" path="res://weapon/projectiles/scenes/nuke.tscn" id="12_ow7rt"]
+[ext_resource type="Script" path="res://player/abilities/passive_ability.gd" id="12_pasv"]
+[ext_resource type="Texture2D" path="res://character_portraits/flygirl.png" id="16_eak8f"]
 
 [sub_resource type="Resource" id="Resource_x7c3f"]
 script = ExtResource("2_moh7u")
@@ -53,6 +54,7 @@ cooldown = 10.0
 script = ExtResource("12_pasv")
 ability_name = "Low Gravity"
 description = "You fall slowly and drift through the air, making long jumps, air strafing and mid-air control much easier."
+cooldown = 0.0
 
 [sub_resource type="Resource" id="Resource_a2xb3"]
 script = ExtResource("7_1o6mg")
@@ -79,6 +81,7 @@ script = ExtResource("1_char")
 character_name = "FlyGirl"
 description = "A fast assault class with high air control, ideal for explosion jumping."
 character_scene = ExtResource("1_1m2t5")
+portrait = ExtResource("16_eak8f")
 max_stamina = 5
 air_jumps = 2
 air_dashes = 2

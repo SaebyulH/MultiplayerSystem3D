@@ -17,6 +17,7 @@ class_name WeaponModel
 ## AnimationPlayer.
 @export var human_anims: AnimationLibrary
 
+
 ## Weapon <-> human animation pairs, one per slot (Hold/Shoot/Reload/Inspect).
 @export var anim_groups: Array[WeaponAnimGroup] = []
 

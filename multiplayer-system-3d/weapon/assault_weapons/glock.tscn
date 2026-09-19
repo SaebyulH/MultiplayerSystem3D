@@ -147,6 +147,9 @@ nodes/InspectAnim/node = SubResource("AnimationNodeAnimation_g4c7l")
 nodes/InspectAnim/position = Vector2(920, -740)
 node_connections = [&"output", 0, &"ShootOneShot", &"ShootTimeScale", 0, &"ShootAnim", &"ReloadEmptyTimeScale", 0, &"ReloadEmptyAnim", &"InspectOneShot", 0, &"HoldAnim", &"InspectOneShot", 1, &"InspectTimeScale", &"ReloadEmptyOneShot", 0, &"ReloadNonemptyOneShot", &"ReloadEmptyOneShot", 1, &"ReloadEmptyTimeScale", &"InspectTimeScale", 0, &"InspectAnim", &"ShootOneShot", 0, &"ReloadEmptyOneShot", &"ShootOneShot", 1, &"ShootTimeScale", &"ReloadNonemptyOneShot", 0, &"PulloutOneShot", &"ReloadNonemptyOneShot", 1, &"ReloadNonemptyTimeScale", &"ReloadNonemptyTimeScale", 0, &"ReloadNonemptyAnim", &"PulloutOneShot", 0, &"PutawayOneShot", &"PulloutOneShot", 1, &"PulloutTimeScale", &"PulloutTimeScale", 0, &"PulloutAnim", &"PutawayOneShot", 0, &"InspectOneShot", &"PutawayOneShot", 1, &"PutawayTimeScale", &"PutawayTimeScale", 0, &"PutawayAnim"]
 
+[sub_resource type="BoxShape3D" id="BoxShape3D_gif7i"]
+size = Vector3(0.107177734, 0.25976563, 0.30566406)
+
 [node name="Glock" type="Node3D" unique_id=1233250200 node_paths=PackedStringArray("anim_player", "anim_tree")]
 script = ExtResource("1_q6gph")
 anim_player = NodePath("Glock2/AnimationPlayer")
@@ -199,5 +202,11 @@ parameters/PutawayOneShot/active = false
 parameters/PutawayOneShot/internal_active = false
 parameters/PutawayOneShot/request = 0
 parameters/PutawayTimeScale/scale = 1.0
+
+[node name="BoundingBox" type="Area3D" parent="." unique_id=1102691291]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BoundingBox" unique_id=1971354075]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.103881836, 1.5149384, 0.5261291)
+shape = SubResource("BoxShape3D_gif7i")
 
 [editable path="Glock2"]

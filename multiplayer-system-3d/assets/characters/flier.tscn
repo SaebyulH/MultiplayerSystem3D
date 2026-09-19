@@ -246,4 +246,8 @@ transform = Transform3D(1, -1.6940659e-21, 0, -1.4823077e-21, 1, 0, 0, 0, 1, -1.
 [node name="AnimationPlayer2" type="AnimationPlayer" parent="flier" unique_id=808298058]
 libraries/sprint = ExtResource("4_wrw6f")
 
+[node name="Camera3D" type="Camera3D" parent="." unique_id=1829795610]
+transform = Transform3D(-0.9536537, 0, 0.3009064, 0, 1, 0, -0.3009064, 0, -0.9536537, 0.15380776, 1.5987766, -0.52452147)
+fov = 57.495663
+
 [editable path="flier"]

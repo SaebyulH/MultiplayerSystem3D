@@ -1,41 +1,49 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://dlq76o4e0xjve"]
 
-[ext_resource type="Script" path="res://world/hud/panels/domination_panel.gd" id="1_panel"]
+[ext_resource type="Script" uid="uid://bpcpviwh86ehi" path="res://world/hud/panels/domination_panel.gd" id="1_panel"]
 [ext_resource type="PackedScene" path="res://world/hud/components/team_progress_bar.tscn" id="2_team"]
 
-[node name="DominationPanel" type="Control"]
+[node name="DominationPanel" type="Control" unique_id=466632092]
+layout_mode = 3
+anchors_preset = 0
 mouse_filter = 1
 script = ExtResource("1_panel")
 
-[node name="VBox" type="VBoxContainer" parent="."]
+[node name="VBox" type="VBoxContainer" parent="." unique_id=1929770149]
+layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 theme_override_constants/separation = 6
 
-[node name="Header" type="Label" parent="VBox"]
+[node name="Header" type="Label" parent="VBox" unique_id=1130883957]
 visible = false
+layout_mode = 2
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 6
 theme_override_font_sizes/font_size = 20
 text = "── DOMINATION ──"
 horizontal_alignment = 1
 
-[node name="SpiBar" parent="VBox" instance=ExtResource("2_team")]
+[node name="SpiBar" parent="VBox" unique_id=1329586799 instance=ExtResource("2_team")]
 visible = false
+layout_mode = 2
 team_color = Color(0.88, 0.24, 0.24, 1)
 
-[node name="SciBar" parent="VBox" instance=ExtResource("2_team")]
+[node name="SciBar" parent="VBox" unique_id=1362041666 instance=ExtResource("2_team")]
 visible = false
+layout_mode = 2
 team_color = Color(0.2, 0.6, 0.86, 1)
 
-[node name="InfoLabel" type="Label" parent="VBox"]
+[node name="InfoLabel" type="Label" parent="VBox" unique_id=1868228316]
 visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 4
 theme_override_font_sizes/font_size = 16
-theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
 horizontal_alignment = 1
 
-[node name="CpContainer" type="HBoxContainer" parent="VBox"]
+[node name="CpContainer" type="HBoxContainer" parent="VBox" unique_id=1158352243]
+layout_mode = 2
 theme_override_constants/separation = 8
 alignment = 1
