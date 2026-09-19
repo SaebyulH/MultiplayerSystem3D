@@ -22,6 +22,9 @@ albedo_color = Color(1, 0, 0, 1)
 emission_enabled = true
 emission = Color(2.2241454, 0.5043554, 0.41116476, 1)
 
+[sub_resource type="BoxShape3D" id="BoxShape3D_r2n80"]
+size = Vector3(0.107177734, 0.27575684, 0.5233154)
+
 [node name="Scattergun" type="Node3D" unique_id=664585380]
 
 [node name="Muzzle" type="Node3D" parent="." unique_id=2026291909]
@@ -76,5 +79,11 @@ surface_material_override/0 = SubResource("StandardMaterial3D_su2e1")
 transform = Transform3D(-0.04734891, 2.6169258e-09, 1.8093779e-16, -4.1393733e-09, -0.02993414, -4.1393737e-09, -5.1737207e-16, -2.6169258e-09, 0.047348917, 0, 0.108674884, -0.23797342)
 mesh = SubResource("CylinderMesh_l83sh")
 surface_material_override/0 = SubResource("StandardMaterial3D_w1hq1")
+
+[node name="BoundingBox" type="Area3D" parent="." unique_id=1934365128]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BoundingBox" unique_id=73136660]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.103881836, 0.06469011, -0.103339314)
+shape = SubResource("BoxShape3D_r2n80")
 
 [editable path="Sketchfab_Scene"]

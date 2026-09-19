@@ -1,11 +1,15 @@
 extends CanvasLayer
 class_name KillFeed
 
-## Overwatch / TF2 style kill feed in the top-right corner.
-## Format:  [portrait] KILLER  [weapon icon]  KILLEE [portrait]
+## Two-section TF2-style kill feed in the top-right corner.  Newest entry appears
+## at the bottom and older entries are pushed up.
 ##
-## Names are team-coloured.  The local player's own kills are highlighted
-## with a brighter background and gold accent.
+## Each entry is a single horizontal row with two tinted sections side by side:
+##   [killer portrait | killer name | gun icon | HS/BS] [killee name | portrait]
+##   - Killer section: red if the killer is an enemy, gray if a teammate, blue if
+##     you.
+##   - Killee section: the *light* variant of the killee's own relation (enemy /
+##     teammate / you).
 ##
 ## Weapon icons are pre-rendered PNGs (generated once with
 ## weapon/killfeed_icon_generator.gd); character portraits with
@@ -15,7 +19,7 @@ const MAX_VISIBLE := 5
 const ENTRY_LIFETIME: float = 8.0
 const FADE_DURATION: float = 1.5
 const SLIDE_DURATION: float = 0.25
-const ENTRY_HEIGHT: float = 36.0
+const ENTRY_HEIGHT: float = 40.0
 const ENTRY_SEPARATION: float = 3.0
 
 # Layout
@@ -23,17 +27,21 @@ const PANEL_RIGHT: float = 16.0
 const PANEL_TOP: float = 48.0
 const PANEL_MAX_WIDTH: float = 500.0
 
-# Weapon icon display size (matches killfeed_icon_generator.gd output).
-const ICON_WIDTH: float = 128.0
-const ICON_HEIGHT: float = 72.0
-
 # Character portrait display size (square, matches ENTRY_HEIGHT).
-const PORTRAIT_SIZE: float = 36.0
+const PORTRAIT_SIZE: float = ENTRY_HEIGHT
 
-# Team colours (match the HUD / player_ui convention).
-const COLOR_SPI := Color(0.88, 0.24, 0.24)   # red
-const COLOR_SCI := Color(0.25, 0.65, 0.90)   # blue
-const COLOR_FFA := Color(0.038, 0.038, 0.038, 1.0)   # gray
+const NAME_FONT_SIZE := 18
+const TAG_FONT_SIZE := 15
+
+# Section background colours, keyed by the player's relation to the local player.
+const COLOR_ENEMY := Color(0.62, 0.12, 0.12)
+const COLOR_ENEMY_LIGHT := Color(0.80, 0.34, 0.34)
+const COLOR_TEAMMATE := Color(0.30, 0.30, 0.33)
+const COLOR_TEAMMATE_LIGHT := Color(0.52, 0.52, 0.55)
+const COLOR_YOU := Color(0.16, 0.40, 0.72)
+const COLOR_YOU_LIGHT := Color(0.34, 0.56, 0.85)
+
+enum Relationship { YOU, TEAMMATE, ENEMY }
 
 var _panel: Control = null
 var _vbox: VBoxContainer = null
@@ -47,18 +55,15 @@ func _ready() -> void:
 	_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_panel)
 
-	# Semi-transparent dark backdrop behind the feed.
-	var bg := ColorRect.new()
-	bg.name = "Background"
-	bg.color = Color(0.0, 0.0, 0.0, 0.45)
-	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_panel.add_child(bg)
-
 	_vbox = VBoxContainer.new()
 	_vbox.name = "EntryList"
 	_vbox.add_theme_constant_override("separation", ENTRY_SEPARATION)
 	_vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_vbox.alignment = BoxContainer.ALIGNMENT_BEGIN
+	_vbox.anchor_left = 0.0
+	_vbox.anchor_right = 1.0
+	_vbox.anchor_top = 0.0
+	_vbox.anchor_bottom = 1.0
 	_panel.add_child(_vbox)
 
 	# Anchor top-right.
@@ -78,111 +83,61 @@ func _reposition() -> void:
 	# Resize the panel to fit entries, anchored top-right.
 	var count: int = _vbox.get_child_count()
 	var content_h: float = float(count * ENTRY_HEIGHT + max(0, count - 1) * ENTRY_SEPARATION)
-	var padding: float = 8.0
 	var total_w: float = PANEL_MAX_WIDTH
-	var total_h: float = content_h + padding * 2.0
 
 	_panel.offset_left = -(total_w + PANEL_RIGHT)
 	_panel.offset_top = PANEL_TOP
 	_panel.offset_right = -PANEL_RIGHT
-	_panel.offset_bottom = PANEL_TOP + max(total_h, 0.0)
-
-	var bg := _panel.get_node_or_null("Background") as ColorRect
-	if bg:
-		bg.anchor_left = 0.0
-		bg.anchor_right = 1.0
-		bg.anchor_top = 0.0
-		bg.anchor_bottom = 1.0
+	_panel.offset_bottom = PANEL_TOP + max(content_h, 0.0)
 
 
-func _on_kill_event(killer_name: String, victim_name: String, weapon_name: String, icon_path: String) -> void:
-	_add_entry(killer_name, victim_name, weapon_name, icon_path)
+func _on_kill_event(killer_name: String, victim_name: String, weapon_name: String, icon_path: String, is_headshot: bool, is_backshot: bool) -> void:
+	_add_entry(killer_name, victim_name, weapon_name, icon_path, is_headshot, is_backshot)
 
 
-func _add_entry(killer_name: String, victim_name: String, weapon_name: String, icon_path: String) -> void:
-	var my_id := str(multiplayer.get_unique_id())
-	var is_my_kill := (killer_name == my_id)
-
-	var killer_display := _player_display(killer_name)
-	var victim_display := _player_display(victim_name)
-	var killer_team := _player_team(killer_name)
-	var victim_team := _player_team(victim_name)
-
-	# --- Build entry widget ---
+func _add_entry(killer_name: String, victim_name: String, weapon_name: String, icon_path: String, is_headshot: bool, is_backshot: bool) -> void:
 	var entry := Control.new()
 	entry.name = "KillEntry"
 	entry.custom_minimum_size = Vector2(0.0, ENTRY_HEIGHT)
 	entry.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
-	# Background highlight for own kills.
-	if is_my_kill:
-		var hl := ColorRect.new()
-		hl.name = "Highlight"
-		hl.color = Color(1.0, 0.84, 0.0, 0.22)
-		hl.anchor_left = 0.0
-		hl.anchor_right = 1.0
-		hl.anchor_top = 0.0
-		hl.anchor_bottom = 1.0
-		entry.add_child(hl)
-
 	var hbox := HBoxContainer.new()
-	hbox.name = "HBox"
-	hbox.add_theme_constant_override("separation", 4)
+	hbox.name = "MainHBox"
+	hbox.add_theme_constant_override("separation", 0)
 	hbox.anchor_left = 0.0
 	hbox.anchor_right = 1.0
 	hbox.anchor_top = 0.0
 	hbox.anchor_bottom = 1.0
 	hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
-	# Edge padding
-	var spacer_l := Control.new()
-	spacer_l.custom_minimum_size = Vector2(8.0, 0.0)
-	spacer_l.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hbox.add_child(spacer_l)
-
-	# Killer portrait
+	# Killer section: solid colour from the killer's relation.
+	var killer_sec := _make_section(_section_color(_relationship(killer_name), false))
+	hbox.add_child(killer_sec)
+	var killer_hbox: HBoxContainer = killer_sec.get_node("HBox")
 	var killer_portrait := _make_portrait(_player_portrait(killer_name))
 	if killer_portrait:
-		hbox.add_child(killer_portrait)
-
-	# Killer name
-	var kl := _make_name_label(killer_display, killer_team, is_my_kill)
-	hbox.add_child(kl)
-
-	# Weapon icon (pre-rendered PNG) or text fallback
+		killer_hbox.add_child(killer_portrait)
+	killer_hbox.add_child(_make_label(_player_display(killer_name), NAME_FONT_SIZE))
 	var weapon_icon := _make_weapon_icon(icon_path)
 	if weapon_icon:
-		hbox.add_child(weapon_icon)
+		killer_hbox.add_child(weapon_icon)
 	else:
-		# Fallback: text label if no icon is available.
-		var wl := Label.new()
-		wl.text = " " + weapon_name + " "
-		wl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		wl.add_theme_color_override("font_color", Color(0.55, 0.55, 0.60))
-		wl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-		wl.add_theme_constant_override("outline_size", 2)
-		wl.add_theme_font_size_override("font_size", 15)
-		wl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		hbox.add_child(wl)
+		killer_hbox.add_child(_make_label(" " + weapon_name + " ", TAG_FONT_SIZE))
+	var hsbs := _hsbs_text(is_headshot, is_backshot)
+	if not hsbs.is_empty():
+		killer_hbox.add_child(_make_label(hsbs, TAG_FONT_SIZE))
 
-	# Victim name
-	var vl := _make_name_label(victim_display, victim_team, false)
-	hbox.add_child(vl)
-
-	# Victim portrait
+	# Killee section: light colour from the killee's relation.
+	var victim_sec := _make_section(_section_color(_relationship(victim_name), true))
+	hbox.add_child(victim_sec)
+	var victim_hbox: HBoxContainer = victim_sec.get_node("HBox")
+	victim_hbox.add_child(_make_label(_player_display(victim_name), NAME_FONT_SIZE))
 	var victim_portrait := _make_portrait(_player_portrait(victim_name))
 	if victim_portrait:
-		hbox.add_child(victim_portrait)
-
-	# Right padding (stretch to fill)
-	var spacer_r := Control.new()
-	spacer_r.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	spacer_r.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hbox.add_child(spacer_r)
+		victim_hbox.add_child(victim_portrait)
 
 	entry.add_child(hbox)
-	_vbox.add_child(entry)
-	_vbox.move_child(entry, 0)  # Newest entry at the top.
+	_vbox.add_child(entry)  # Append → newest at the bottom, feeding up.
 	_reposition()
 
 	# --- Slide-in animation ---
@@ -195,6 +150,15 @@ func _add_entry(killer_name: String, victim_name: String, weapon_name: String, i
 	# --- Fade-out timer ---
 	var timer := get_tree().create_timer(ENTRY_LIFETIME)
 	timer.timeout.connect(_fade_entry.bind(entry))
+
+
+func _hsbs_text(is_headshot: bool, is_backshot: bool) -> String:
+	var parts: Array[String] = []
+	if is_headshot:
+		parts.append("HS")
+	if is_backshot:
+		parts.append("BS")
+	return " ".join(parts)
 
 
 func _fade_entry(entry: Control) -> void:
@@ -228,29 +192,36 @@ func _prune() -> void:
 	_reposition()
 
 
-func _make_name_label(display_name: String, team: int, is_own_kill: bool) -> Label:
+# ─────────────────────────────────────────────
+#  Section / label builders
+# ─────────────────────────────────────────────
+
+## A tinted PanelContainer holding an HBox of content, sized to its content.
+func _make_section(bg_color: Color) -> PanelContainer:
+	var panel := PanelContainer.new()
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = bg_color
+	sb.content_margin_left = 8.0
+	sb.content_margin_right = 8.0
+	panel.add_theme_stylebox_override("panel", sb)
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	var hbox := HBoxContainer.new()
+	hbox.name = "HBox"
+	hbox.add_theme_constant_override("separation", 4)
+	hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(hbox)
+	return panel
+
+
+## White label, no outline.
+func _make_label(text: String, font_size: int) -> Label:
 	var lbl := Label.new()
-	lbl.text = display_name
+	lbl.text = text
 	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-	lbl.add_theme_constant_override("outline_size", 2)
-	lbl.add_theme_font_size_override("font_size", 16)
+	lbl.add_theme_color_override("font_color", Color.WHITE)
+	lbl.add_theme_font_size_override("font_size", font_size)
 	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-
-	# Team colour
-	var c: Color
-	match team:
-		Player.Team.SPI:  c = COLOR_SPI
-		Player.Team.SCI:  c = COLOR_SCI
-		_:                c = COLOR_FFA
-
-	if is_own_kill:
-		# Make your own name pop a bit brighter.
-		c = c.lightened(0.25)
-		lbl.add_theme_color_override("font_color", c)
-	else:
-		lbl.add_theme_color_override("font_color", c)
-
 	return lbl
 
 
@@ -258,8 +229,9 @@ func _make_name_label(display_name: String, team: int, is_own_kill: bool) -> Lab
 #  Weapon Icon (pre-rendered PNG)
 # ─────────────────────────────────────────────
 
-## Returns a TextureRect displaying the pre-rendered kill-feed icon, or
-## null if the icon path is empty or the PNG can't be loaded.
+## Returns a TextureRect displaying the pre-rendered kill-feed icon, scaled
+## uniformly so its height matches ENTRY_HEIGHT (no non-uniform stretch), or null
+## if the icon path is empty or the PNG can't be loaded.
 func _make_weapon_icon(icon_path: String) -> TextureRect:
 	if icon_path.is_empty():
 		return null
@@ -268,11 +240,13 @@ func _make_weapon_icon(icon_path: String) -> TextureRect:
 	if not tex:
 		return null
 
+	var w: float = float(tex.get_width()) * ENTRY_HEIGHT / float(tex.get_height())
+
 	var rect := TextureRect.new()
 	rect.texture = tex
-	rect.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+	rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	rect.custom_minimum_size = Vector2(ICON_WIDTH, ICON_HEIGHT)
+	rect.custom_minimum_size = Vector2(w, ENTRY_HEIGHT)
 	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return rect
 
@@ -322,3 +296,25 @@ func _player_team(player_name: String) -> int:
 	if p:
 		return p.team
 	return Player.Team.FFA
+
+
+## Classifies a player's relation to the local player.
+func _relationship(player_name: String) -> int:
+	if player_name == str(multiplayer.get_unique_id()):
+		return Relationship.YOU
+	var player_team := _player_team(player_name)
+	var my_team := _player_team(str(multiplayer.get_unique_id()))
+	if player_team != Player.Team.FFA and player_team == my_team:
+		return Relationship.TEAMMATE
+	return Relationship.ENEMY
+
+
+## Solid colour for the killer section, light colour for the killee section.
+func _section_color(rel: int, light: bool) -> Color:
+	match rel:
+		Relationship.YOU:
+			return COLOR_YOU_LIGHT if light else COLOR_YOU
+		Relationship.TEAMMATE:
+			return COLOR_TEAMMATE_LIGHT if light else COLOR_TEAMMATE
+		_:
+			return COLOR_ENEMY_LIGHT if light else COLOR_ENEMY

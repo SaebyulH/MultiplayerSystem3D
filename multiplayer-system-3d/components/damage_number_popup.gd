@@ -18,6 +18,9 @@ var _fade_start: float = 0.4
 var _max_float: float = 0.6   # max Y drift before freezing
 
 const FALLOFF_VISIBLE_THRESHOLD := 0.995
+const BOLD_FONT_PATH := "res://assets/CenturyGothic-Bold - Century Gothic - Bold.ttf"
+
+var _bold_font: Font = null
 
 
 func setup(target: Node3D, value: float, is_heal: bool, is_headshot: bool = false, falloff_mult: float = 1.0, is_backshot: bool = false) -> void:
@@ -69,9 +72,8 @@ func _refresh_label() -> void:
 		color = Color(1.0, 0.2, 0.2)
 
 	lbl.add_theme_color_override("font_color", color)
-	lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-	lbl.add_theme_constant_override("outline_size", 4)
 	lbl.add_theme_font_size_override("font_size", 36)
+	_apply_damage_font(lbl)
 
 
 func _refresh_falloff_label() -> void:
@@ -101,11 +103,24 @@ func _get_falloff_label() -> Label:
 		lbl.name = "FalloffLabel"
 		lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		lbl.add_theme_color_override("font_color", Color.WHITE)
-		lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-		lbl.add_theme_constant_override("outline_size", 3)
 		lbl.add_theme_font_size_override("font_size", 18)
+		_apply_damage_font(lbl)
 		add_child(lbl)
 	return lbl
+
+
+## Apply the bold Century Gothic font and a soft drop shadow (instead of an
+## outline) so damage numbers pop against the world.
+func _apply_damage_font(lbl: Label) -> void:
+	if _bold_font == null:
+		_bold_font = load(BOLD_FONT_PATH) as Font
+	if _bold_font:
+		lbl.add_theme_font_override("font", _bold_font)
+	lbl.add_theme_constant_override("outline_size", 0)
+	lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 1))
+	lbl.add_theme_constant_override("shadow_offset_x", 2)
+	lbl.add_theme_constant_override("shadow_offset_y", 2)
+	lbl.add_theme_constant_override("shadow_outline_size", 1)
 
 
 func _process(delta: float) -> void:

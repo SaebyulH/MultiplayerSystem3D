@@ -316,15 +316,14 @@ func _build_fps() -> void:
 	fps_canvas.add_child(_fps_label)
 
 func _build_health() -> void:
-	# -- Container (bottom-left) --
+	# -- Container (left of the centered ability block) --
 	var container := Control.new()
-	# Left of the centered ability block.
 	container.anchor_left   = 0.5
 	container.anchor_right  = 0.5
 	container.anchor_top    = 1.0
 	container.anchor_bottom = 1.0
 	container.offset_left   = -360.0
-	container.offset_top    = -110.0
+	container.offset_top    = -150.0
 	container.offset_right  = -176.0
 	container.offset_bottom = -16.0
 	container.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -337,10 +336,10 @@ func _build_health() -> void:
 	_health_critical.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	container.add_child(_health_critical)
 
-	# Number + bar, stacked.
+	# Number + bar + team/character, stacked.
 	var vbox := VBoxContainer.new()
 	vbox.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	vbox.add_theme_constant_override("separation", 4)
+	vbox.add_theme_constant_override("separation", 2)
 	vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	container.add_child(vbox)
 
@@ -361,7 +360,7 @@ func _build_health() -> void:
 	_apply_hud_font(_health_max_label, 26, Color(0.75, 0.75, 0.75, 1.0))
 	num_box.add_child(_health_max_label)
 
-	# Health bar (red fill).
+	# Health bar (white fill, red when critical).
 	var bar := Control.new()
 	bar.custom_minimum_size = Vector2(0.0, BAR_HEIGHT)
 	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -374,62 +373,36 @@ func _build_health() -> void:
 	bar.add_child(_health_bar_bg)
 
 	_health_bar_fill = ColorRect.new()
-	_health_bar_fill.color = Color(0.85, 0.20, 0.20)
+	_health_bar_fill.color = Color(1.0, 1.0, 1.0, 1.0)
 	_health_bar_fill.anchor_left   = 0.0
 	_health_bar_fill.anchor_right  = 1.0
 	_health_bar_fill.anchor_top    = 0.0
 	_health_bar_fill.anchor_bottom = 1.0
 	bar.add_child(_health_bar_fill)
 
-	# -- Delta label (above the block) --
+	# Team + character, small, under the bar.
+	_team_label = Label.new()
+	_apply_hud_font(_team_label, 13)
+	vbox.add_child(_team_label)
+
+	_character_label = Label.new()
+	_apply_hud_font(_character_label, 13)
+	vbox.add_child(_character_label)
+
+	# -- Delta label (right over the health block) --
 	_health_delta_label = Label.new()
-	_health_delta_label.anchor_left   = 0.0
-	_health_delta_label.anchor_right  = 0.0
+	_health_delta_label.anchor_left   = 0.5
+	_health_delta_label.anchor_right  = 0.5
 	_health_delta_label.anchor_top    = 1.0
 	_health_delta_label.anchor_bottom = 1.0
-	_health_delta_label.offset_left   = MARGIN
-	_health_delta_label.offset_top    = -(HEALTH_TOP + BAR_HEIGHT + 70.0 + 44.0)
-	_health_delta_label.offset_right  = MARGIN + BAR_WIDTH
-	_health_delta_label.offset_bottom = -(HEALTH_TOP + BAR_HEIGHT + 70.0 + 10.0)
+	_health_delta_label.offset_left   = -360.0
+	_health_delta_label.offset_top    = -174.0
+	_health_delta_label.offset_right  = -176.0
+	_health_delta_label.offset_bottom = -150.0
 	_health_delta_label.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
 	_health_delta_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_apply_hud_font(_health_delta_label, 24)
 	add_child(_health_delta_label)
-
-	# -- Team label (above delta) --
-	_team_label = Label.new()
-	_team_label.anchor_left   = 0.0
-	_team_label.anchor_right  = 0.0
-	_team_label.anchor_top    = 1.0
-	_team_label.anchor_bottom = 1.0
-	_team_label.offset_left   = MARGIN
-	_team_label.offset_top    = -(HEALTH_TOP + BAR_HEIGHT + 70.0 + 44.0 + 28.0)
-	_team_label.offset_right  = MARGIN + BAR_WIDTH
-	_team_label.offset_bottom = -(HEALTH_TOP + BAR_HEIGHT + 70.0 + 44.0)
-	_team_label.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
-	_team_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-	_team_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-	_team_label.add_theme_constant_override("outline_size", 6)
-	_team_label.add_theme_font_size_override("font_size", 18)
-	_update_team()
-	add_child(_team_label)
-
-	# -- Character label (below health block) --
-	_character_label = Label.new()
-	_character_label.anchor_left   = 0.0
-	_character_label.anchor_right  = 0.0
-	_character_label.anchor_top    = 1.0
-	_character_label.anchor_bottom = 1.0
-	_character_label.offset_left   = MARGIN
-	_character_label.offset_top    = -(HEALTH_TOP - 28.0)
-	_character_label.offset_right  = MARGIN + BAR_WIDTH
-	_character_label.offset_bottom = -(HEALTH_TOP - 48.0)
-	_character_label.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
-	_character_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-	_character_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-	_character_label.add_theme_constant_override("outline_size", 4)
-	_character_label.add_theme_font_size_override("font_size", 14)
-	add_child(_character_label)
 
 func _build_ammo() -> void:
 	# -- Ammo count (bottom-right): big current / small max --
@@ -515,16 +488,13 @@ func _build_stamina() -> void:
 	_stamina_feedback.anchor_right  = 0.5
 	_stamina_feedback.anchor_top    = 1.0
 	_stamina_feedback.anchor_bottom = 1.0
-	_stamina_feedback.offset_left   = -150.0
-	_stamina_feedback.offset_right  = 150.0
-	_stamina_feedback.offset_top    = -(DASH_BAR_TOP + DASH_CELL_HEIGHT + 26.0)
-	_stamina_feedback.offset_bottom = -(DASH_BAR_TOP + DASH_CELL_HEIGHT + 4.0)
+	_stamina_feedback.offset_left   = -360.0
+	_stamina_feedback.offset_right  = -176.0
+	_stamina_feedback.offset_top    = -222.0
+	_stamina_feedback.offset_bottom = -206.0
 	_stamina_feedback.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_stamina_feedback.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
-	_stamina_feedback.add_theme_color_override("font_color", Color(0.6, 0.85, 1.0))
-	_stamina_feedback.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-	_stamina_feedback.add_theme_constant_override("outline_size", 6)
-	_stamina_feedback.add_theme_font_size_override("font_size", 20)
+	_apply_hud_font(_stamina_feedback, 16, Color(0.6, 0.85, 1.0))
 	_stamina_feedback.text = ""
 	add_child(_stamina_feedback)
 
@@ -533,10 +503,10 @@ func _build_stamina() -> void:
 	_stamina_container.anchor_right  = 0.5
 	_stamina_container.anchor_top    = 1.0
 	_stamina_container.anchor_bottom = 1.0
-	_stamina_container.offset_left   = -total_w * 0.5
-	_stamina_container.offset_right  = total_w * 0.5
-	_stamina_container.offset_top    = -(DASH_BAR_TOP + DASH_CELL_HEIGHT)
-	_stamina_container.offset_bottom = -DASH_BAR_TOP
+	_stamina_container.offset_left   = -360.0
+	_stamina_container.offset_right  = -360.0 + total_w
+	_stamina_container.offset_top    = -202.0
+	_stamina_container.offset_bottom = -190.0
 	_stamina_container.add_theme_constant_override("separation", int(DASH_CELL_GAP))
 	_stamina_container.alignment = BoxContainer.ALIGNMENT_CENTER
 	add_child(_stamina_container)
@@ -933,6 +903,7 @@ func _update_health() -> void:
 	var pct := clampf(hp / max_hp, 0.0, 1.0)
 
 	_health_bar_fill.anchor_right = pct
+	_health_bar_fill.color = Color(0.85, 0.2, 0.2) if pct < 0.3 else Color(1.0, 1.0, 1.0)
 	_health_value_label.text = "%d" % ceili(hp)
 	_health_max_label.text = "/%d" % int(max_hp)
 

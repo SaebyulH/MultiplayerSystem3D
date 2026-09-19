@@ -99,6 +99,10 @@ func _on_hud_tick() -> void:
 	# not polled here.
 	_timer_bar.set_time(gmc.phase_timer, gmc.round_time)
 
+	# The lobby has no mode signals, so poll the top roster here.
+	if _menu_mode and _deathmatch_panel and _deathmatch_panel.visible:
+		_deathmatch_panel.update_display({})
+
 
 func _process(delta: float) -> void:
 	if not OS.is_debug_build():
@@ -202,30 +206,34 @@ func _switch_to_mode(mode: GameModeComponent.GameMode) -> void:
 		_active_panel.visible = false
 	_deathmatch_panel.visible = false
 
-	# The inert lobby shows no HUD at all.
+	# The inert lobby shows no mode HUD, but keeps the top roster.
 	if mode == GameModeComponent.GameMode.MAIN_MENU:
 		_menu_mode = true
 		_active_panel = null
 		_panel_container.visible = false
 		_round_score_label.visible = false
-		_deathmatch_panel.visible = false
+		_deathmatch_panel.show_kills = false
+		_deathmatch_panel.visible = true
 		_team_spi_bar.visible = false
 		_team_sci_bar.visible = false
 		_overtime_label.visible = false
 		_timer_bar.visible = false
+		_deathmatch_panel.update_display({})
 		return
 
 	_menu_mode = false
 	_timer_bar.visible = true
 
-	# Show new
+	# Top roster shows in every mode; kills only in deathmatch.
+	_deathmatch_panel.visible = true
 	if mode == GameModeComponent.GameMode.DEATHMATCH:
 		_panel_container.visible = false
 		_round_score_label.visible = false
-		_deathmatch_panel.visible = true
+		_deathmatch_panel.show_kills = true
 	else:
 		_panel_container.visible = true
 		_round_score_label.visible = true
+		_deathmatch_panel.show_kills = false
 		_active_panel = _panel_registry.get(mode)
 		if _active_panel:
 			_active_panel.visible = true

@@ -9,13 +9,16 @@ size = Vector3(0.36816406, 1, 0.07421875)
 albedo_color = Color(0.5656037, 0.63941395, 0.5941841, 1)
 metallic = 1.0
 
+[sub_resource type="BoxShape3D" id="BoxShape3D_x5ekv"]
+size = Vector3(0.107177734, 1.0664063, 2.1846924)
+
 [node name="Pistol" type="Node3D" unique_id=664585380]
 
 [node name="Muzzle" type="Node3D" parent="." unique_id=2026291909]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.45227015, -2.1030774)
+transform = Transform3D(0.8559036, 0, 0, 0, 0.8559036, 0, 0, 0, 0.8559036, 0.00029394357, -0.1666646, -1.8155978)
 
 [node name="Sketchfab_Scene" parent="." unique_id=1541398381 instance=ExtResource("1_pnuvv")]
-transform = Transform3D(-1.7484555e-10, 0, -0.004, 0, 0.004, 0, 0.004, 0, -1.7484555e-10, 0, -0.3656423, -1.453975)
+transform = Transform3D(-1.4965094e-10, 0, -0.0034236147, 0, 0.0034236147, 0, 0.0034236147, 0, -1.4965094e-10, 0.00029394357, -0.09251952, -1.2600286)
 
 [node name="Object_12" parent="Sketchfab_Scene/Sketchfab_model/571e29a199c54ee198078e0049274ec7_fbx/RootNode/Armature/Object_9/Skeleton3D" parent_id_path=PackedInt32Array(1541398381, 650578154) index="0" unique_id=1148648916]
 transform = Transform3D(1, -1.625586e-14, -7.1054274e-15, -2.6864666e-16, 1.0000001, 4.2632564e-14, -4.2632564e-14, -8.526513e-14, 0.49255636, 0, -1.9632921e-08, 0.060253143)
@@ -51,13 +54,19 @@ transform = Transform3D(1, -3.8213705e-15, 0, -2.6865852e-16, 1, 2.842171e-14, -
 transform = Transform3D(1, -3.8213705e-15, 0, -2.6865852e-16, 1, 2.842171e-14, -7.1054274e-15, -2.842171e-14, 1, 0, 3.8637268e-08, -0.118576765)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=2007667214]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.33764648, -0.35090703, -1.1875)
+transform = Transform3D(0.8559036, 0, 0, 0, 0.8559036, 0, 0, 0, 0.8559036, -0.2886989, -0.07990754, -1.0319518)
 mesh = SubResource("BoxMesh_g4v7s")
 surface_material_override/0 = SubResource("StandardMaterial3D_yf5fn")
 
 [node name="MeshInstance3D2" type="MeshInstance3D" parent="." unique_id=1598953721]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.34580612, -0.35090703, -1.1875)
+transform = Transform3D(0.8559036, 0, 0, 0, 0.8559036, 0, 0, 0, 0.8559036, 0.29627067, -0.07990754, -1.0319518)
 mesh = SubResource("BoxMesh_g4v7s")
 surface_material_override/0 = SubResource("StandardMaterial3D_yf5fn")
+
+[node name="BoundingBox" type="Area3D" parent="." unique_id=1748450804]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BoundingBox" unique_id=225864064]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.103881836, -0.13434553, -0.7566596)
+shape = SubResource("BoxShape3D_x5ekv")
 
 [editable path="Sketchfab_Scene"]

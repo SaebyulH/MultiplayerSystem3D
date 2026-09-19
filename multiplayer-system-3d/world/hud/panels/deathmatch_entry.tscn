@@ -1,7 +1,7 @@
 [gd_scene format=3]
 
 [node name="DeathmatchEntry" type="Control"]
-custom_minimum_size = Vector2(0, 44)
+custom_minimum_size = Vector2(80, 44)
 
 [node name="Bg" type="ColorRect" parent="."]
 anchor_right = 1.0

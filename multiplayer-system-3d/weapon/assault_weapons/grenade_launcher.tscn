@@ -2,6 +2,9 @@
 
 [ext_resource type="PackedScene" uid="uid://c82fcb12vv8jt" path="res://weapon/tf2/low_poly_gl06.glb" id="1_klw10"]
 
+[sub_resource type="BoxShape3D" id="BoxShape3D_k4tjr"]
+size = Vector3(0.107177734, 0.767334, 1.605835)
+
 [node name="Scattergun" type="Node3D" unique_id=664585380]
 
 [node name="Muzzle" type="Node3D" parent="." unique_id=2026291909]
@@ -9,3 +12,9 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.0054234713, 0.20029949, -0
 
 [node name="Sketchfab_Scene" parent="." unique_id=396881549 instance=ExtResource("1_klw10")]
 transform = Transform3D(8.41, 0, 0, 0, 8.41, 0, 0, 0, 8.41, 0, 0.010338929, 0.16254666)
+
+[node name="BoundingBox" type="Area3D" parent="." unique_id=2031774517]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BoundingBox" unique_id=282558976]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.103881836, 0.11895037, 0.15752494)
+shape = SubResource("BoxShape3D_k4tjr")

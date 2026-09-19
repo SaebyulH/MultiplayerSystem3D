@@ -26,6 +26,9 @@ height = 1.7476196
 albedo_color = Color(0.92791486, 0.8480008, 0.56934804, 1)
 roughness = 0.03
 
+[sub_resource type="BoxShape3D" id="BoxShape3D_milg7"]
+size = Vector3(0.107177734, 0.31921387, 0.16589355)
+
 [node name="Scattergun" type="Node3D" unique_id=664585380]
 
 [node name="Muzzle" type="Node3D" parent="." unique_id=2026291909]
@@ -55,3 +58,9 @@ surface_material_override/0 = SubResource("StandardMaterial3D_tgqsv")
 transform = Transform3D(-1.6611876e-16, 0.0009843723, -0.038818747, 3.04834e-16, 0.015041595, 0.0025404282, 0.035742108, 4.6939224e-26, -6.387787e-17, 0.0071915183, 0.20803063, 0.0065018684)
 mesh = SubResource("PrismMesh_eky8v")
 surface_material_override/0 = SubResource("StandardMaterial3D_tgqsv")
+
+[node name="BoundingBox" type="Area3D" parent="." unique_id=1360625487]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BoundingBox" unique_id=1403485736]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.010354489, 0.08300066, 0.010796428)
+shape = SubResource("BoxShape3D_milg7")

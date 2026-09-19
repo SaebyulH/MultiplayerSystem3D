@@ -17,6 +17,9 @@ const OWN_BG := Color(0.25, 0.5, 0.9, 0.45)  # light blue for the local player
 var _left_entries: Array[Control] = []
 var _right_entries: Array[Control] = []
 
+## Whether to show the kill count next to each portrait (deathmatch only).
+var show_kills := true
+
 func update_display(data: Dictionary) -> void:
 	var ended: bool   = data.get("deathmatch_ended", false)
 	var winner: String = data.get("winner_name", "")
@@ -66,7 +69,9 @@ func _populate(container: HBoxContainer, entries: Array, players: Array) -> void
 		var portrait := entry.get_node("HBox/Portrait") as TextureRect
 		var bg := entry.get_node("Bg") as ColorRect
 
-		kill_label.text = str(Leaderboard.get_kills(players[i]))
+		kill_label.visible = show_kills
+		if show_kills:
+			kill_label.text = str(Leaderboard.get_kills(players[i]))
 		var p := GameManager.find_player(players[i]) as Player
 		var tex: Texture2D = null
 		if p and p._character:

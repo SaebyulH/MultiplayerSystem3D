@@ -111,7 +111,7 @@ func apply_health_delta(delta: float, changer: String, changee: String, is_heads
 							if weapons[idx].killfeed_icon:
 								killfeed_icon_path = weapons[idx].killfeed_icon.resource_path
 
-			Leaderboard.request_add_kill(changer, changee, weapon_name, killfeed_icon_path)
+			Leaderboard.request_add_kill(changer, changee, weapon_name, killfeed_icon_path, is_headshot, is_backshot)
 			Leaderboard.request_add_death(changee)
 			# Heal on kill: restore HP to the killer based on their character.
 			var killer: Player = GameManager.find_player(changer)

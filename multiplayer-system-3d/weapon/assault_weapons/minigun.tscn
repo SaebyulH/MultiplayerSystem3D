@@ -2,10 +2,19 @@
 
 [ext_resource type="PackedScene" uid="uid://b0vde3rddp8k6" path="res://weapon/real/low-poly_m134_minigun.glb" id="1_kpx81"]
 
+[sub_resource type="BoxShape3D" id="BoxShape3D_76fa2"]
+size = Vector3(0.107177734, 0.8442993, 2.2185059)
+
 [node name="Pistol" type="Node3D" unique_id=664585380]
 
 [node name="Muzzle" type="Node3D" parent="." unique_id=2026291909]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.4598744, -3.0640006)
 
 [node name="Sketchfab_Scene" parent="." unique_id=1541398381 instance=ExtResource("1_kpx81")]
-transform = Transform3D(-1.7484555e-10, 0, -0.004, 0, 0.004, 0, 0.004, 0, -1.7484555e-10, 0, -0.3656423, -1.453975)
+transform = Transform3D(-1.0927306e-10, 0, -0.0024998763, 0, 0.0024998763, 0, 0.0024998763, 0, -1.0927306e-10, 0, -0.098032594, -0.87712693)
+
+[node name="BoundingBox" type="Area3D" parent="." unique_id=1646849122]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BoundingBox" unique_id=87313225]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.103881836, -0.10422468, -0.8564521)
+shape = SubResource("BoxShape3D_76fa2")

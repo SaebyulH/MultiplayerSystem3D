@@ -5,6 +5,9 @@
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_s7s8q"]
 albedo_color = Color(0.12716985, 0.09314748, 0.0545512, 1)
 
+[sub_resource type="BoxShape3D" id="BoxShape3D_qr6ea"]
+size = Vector3(0.107177734, 0.3433838, 1.2220459)
+
 [node name="Pistol" type="Node3D" unique_id=664585380]
 
 [node name="Muzzle" type="Node3D" parent="." unique_id=2026291909]
@@ -32,5 +35,11 @@ transform = Transform3D(0.60975796, 0.78794736, -0.08564125, 0.09216857, 0.03682
 [node name="RightHandTarget" type="Marker3D" parent="." unique_id=1277727900]
 unique_name_in_owner = true
 transform = Transform3D(0.9991895, -0.029251486, 0.027649986, -0.03403607, -0.24729936, 0.9683412, -0.021487592, -0.96849775, -0.24809448, 0.026540413, 0.012569547, 0.19226669)
+
+[node name="BoundingBox" type="Area3D" parent="." unique_id=1668661149]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BoundingBox" unique_id=968791564]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.103881836, 0.077385426, 0.16741264)
+shape = SubResource("BoxShape3D_qr6ea")
 
 [editable path="Sketchfab_Scene"]
