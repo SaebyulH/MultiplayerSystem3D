@@ -1,56 +1,60 @@
 extends Control
 class_name TimerBar
 
-## A full-width countdown bar whose fill shrinks and changes colour as time
-## runs out.  Overlaid centre text shows the formatted time.
-##
-## Colours:
-##   green  (> 50 % remaining)
-##   yellow (25–50 %)
-##   red    (< 25 % or overtime)
+## A centered, downward-pointing dark banner showing the remaining match time
+## in white text.  Restyled for the clean HUD (no fill bar, no text outline).
 
-@export var bar_height: float = 32.0
-@export var warning_threshold: float = 0.5   # below this → yellow
-@export var danger_threshold: float  = 0.25  # below this → red
+@export var banner_width: float = 180.0
+@export var banner_height: float = 52.0
 
-@onready var _bg_rect: ColorRect = $BgRect
-@onready var _fill_rect: ColorRect = $FillRect
 @onready var _label: Label = $Label
 
 var _is_overtime: bool = false
 
-func _init() -> void:
-	custom_minimum_size = Vector2(0, bar_height)
 
-# ─────────────────────────────────────────────
-#  Public API
-# ─────────────────────────────────────────────
+func _init() -> void:
+	custom_minimum_size = Vector2(0, banner_height)
+
+
+func _ready() -> void:
+	var font := load("res://assets/CenturyGothic - Century Gothic - Regular.ttf") as Font
+	if font:
+		_label.add_theme_font_override("font", font)
+	_label.add_theme_constant_override("outline_size", 0)
+	_label.add_theme_color_override("font_color", Color(1, 1, 1, 1))
+
 
 ## Call every frame or whenever the remaining time changes.
 func set_time(remaining: float, max_time: float) -> void:
-	var pct := 1.0
-	if max_time > 0.0:
-		pct = clampf(remaining / max_time, 0.0, 1.0)
-
-	_fill_rect.anchor_right = pct
 	_label.text = _fmt(remaining)
-
 	if _is_overtime:
-		_fill_rect.color = Color(0.85, 0.15, 0.15)  # solid red
-	elif pct <= danger_threshold:
-		_fill_rect.color = Color(0.85, 0.15, 0.15)   # red
-	elif pct <= warning_threshold:
-		_fill_rect.color = Color(0.85, 0.75, 0.1)    # yellow
+		_label.add_theme_color_override("font_color", Color(1.0, 0.4, 0.4))
 	else:
-		_fill_rect.color = Color(0.25, 0.75, 0.25)   # green
+		_label.add_theme_color_override("font_color", Color(1, 1, 1, 1))
 
-## Toggle overtime appearance (solid red bar).
+
 func set_overtime(active: bool) -> void:
 	_is_overtime = active
 
-# ─────────────────────────────────────────────
-#  Helpers
-# ─────────────────────────────────────────────
+
+func _draw() -> void:
+	var w := size.x
+	var h := size.y
+	var bw := minf(banner_width, w)
+	var cx := w * 0.5
+	var top_y := (h - banner_height) * 0.5
+	var bot_y := top_y + banner_height
+	# Downward-pointing banner (narrower at the bottom).
+	var half_top := bw * 0.5
+	var half_bot := half_top * 0.7
+	var pts := PackedVector2Array([
+		Vector2(cx - half_top, top_y),
+		Vector2(cx + half_top, top_y),
+		Vector2(cx + half_bot, bot_y),
+		Vector2(cx - half_bot, bot_y),
+	])
+	draw_colored_polygon(pts, Color(0.0, 0.0, 0.0, 0.85))
+
 
 static func _fmt(seconds: float) -> String:
 	if seconds <= 0.0:

@@ -2,13 +2,14 @@ extends CanvasLayer
 class_name KillFeed
 
 ## Overwatch / TF2 style kill feed in the top-right corner.
-## Format:  KILLER  [weapon icon]  ▸  KILLEE
+## Format:  [portrait] KILLER  [weapon icon]  KILLEE [portrait]
 ##
 ## Names are team-coloured.  The local player's own kills are highlighted
 ## with a brighter background and gold accent.
 ##
 ## Weapon icons are pre-rendered PNGs (generated once with
-## weapon/killfeed_icon_generator.gd).  No runtime SubViewport overhead.
+## weapon/killfeed_icon_generator.gd); character portraits with
+## player/character_portrait_generator.gd.  No runtime SubViewport overhead.
 
 const MAX_VISIBLE := 5
 const ENTRY_LIFETIME: float = 8.0
@@ -25,6 +26,9 @@ const PANEL_MAX_WIDTH: float = 500.0
 # Weapon icon display size (matches killfeed_icon_generator.gd output).
 const ICON_WIDTH: float = 128.0
 const ICON_HEIGHT: float = 72.0
+
+# Character portrait display size (square, matches ENTRY_HEIGHT).
+const PORTRAIT_SIZE: float = 36.0
 
 # Team colours (match the HUD / player_ui convention).
 const COLOR_SPI := Color(0.88, 0.24, 0.24)   # red
@@ -136,6 +140,11 @@ func _add_entry(killer_name: String, victim_name: String, weapon_name: String, i
 	spacer_l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hbox.add_child(spacer_l)
 
+	# Killer portrait
+	var killer_portrait := _make_portrait(_player_portrait(killer_name))
+	if killer_portrait:
+		hbox.add_child(killer_portrait)
+
 	# Killer name
 	var kl := _make_name_label(killer_display, killer_team, is_my_kill)
 	hbox.add_child(kl)
@@ -156,20 +165,14 @@ func _add_entry(killer_name: String, victim_name: String, weapon_name: String, i
 		wl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		hbox.add_child(wl)
 
-	# Separator arrow
-	var arrow := Label.new()
-	arrow.text = "▸"
-	arrow.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	arrow.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
-	arrow.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-	arrow.add_theme_constant_override("outline_size", 2)
-	arrow.add_theme_font_size_override("font_size", 15)
-	arrow.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hbox.add_child(arrow)
-
 	# Victim name
 	var vl := _make_name_label(victim_display, victim_team, false)
 	hbox.add_child(vl)
+
+	# Victim portrait
+	var victim_portrait := _make_portrait(_player_portrait(victim_name))
+	if victim_portrait:
+		hbox.add_child(victim_portrait)
 
 	# Right padding (stretch to fill)
 	var spacer_r := Control.new()
@@ -274,19 +277,41 @@ func _make_weapon_icon(icon_path: String) -> TextureRect:
 	return rect
 
 
+# ─────────────────────────────────────────────
+#  Character Portrait (pre-rendered PNG)
+# ─────────────────────────────────────────────
+
+## Returns a TextureRect displaying the character's pre-rendered square
+## portrait, or null if the player has no portrait assigned.
+func _make_portrait(tex: Texture2D) -> TextureRect:
+	if not tex:
+		return null
+
+	var rect := TextureRect.new()
+	rect.texture = tex
+	rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	rect.custom_minimum_size = Vector2(PORTRAIT_SIZE, PORTRAIT_SIZE)
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return rect
+
+
+## Resolves a player's character portrait from their name/id, or null when the
+## player (or their character/portrait) isn't available on this peer.
+func _player_portrait(player_name: String) -> Texture2D:
+	if player_name.is_empty():
+		return null
+	var p: Player = GameManager.find_player(player_name)
+	if p and p._character and p._character.portrait:
+		return p._character.portrait
+	return null
+
+
 func _player_display(player_name: String) -> String:
+	# Show the player ID (str(network_id) for humans, "bot_N" for bots),
+	# not the character name.
 	if player_name.is_empty():
 		return "???"
-	var p: Player = GameManager.find_player(player_name)
-	if p and p._character:
-		# Use character name for a cleaner look when available.
-		return p._character.character_name
-	# Fall back to a short numeric label.
-	if player_name.is_valid_int():
-		var num := player_name.to_int()
-		if num == 1:
-			return "Host"
-		return "P" + player_name
 	return player_name
 
 

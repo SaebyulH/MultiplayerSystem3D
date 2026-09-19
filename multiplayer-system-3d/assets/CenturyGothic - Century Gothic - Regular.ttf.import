@@ -1,0 +1,36 @@
+[remap]
+
+importer="font_data_dynamic"
+type="FontFile"
+uid="uid://fibt75flrb5j"
+path="res://.godot/imported/CenturyGothic - Century Gothic - Regular.ttf-63d0629ede9a0fb509009752b6483e31.fontdata"
+
+[deps]
+
+source_file="res://assets/CenturyGothic - Century Gothic - Regular.ttf"
+dest_files=["res://.godot/imported/CenturyGothic - Century Gothic - Regular.ttf-63d0629ede9a0fb509009752b6483e31.fontdata"]
+
+[params]
+
+Rendering=null
+antialiasing=1
+generate_mipmaps=false
+disable_embedded_bitmaps=true
+multichannel_signed_distance_field=false
+msdf_pixel_range=8
+msdf_size=48
+allow_system_fallback=true
+force_autohinter=false
+modulate_color_glyphs=false
+hinting=3
+subpixel_positioning=4
+keep_rounding_remainders=true
+oversampling=0.0
+Fallbacks=null
+fallbacks=[]
+Compress=null
+compress=true
+preload=[]
+language_support={}
+script_support={}
+opentype_features={}

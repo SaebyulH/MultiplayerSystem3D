@@ -310,8 +310,8 @@ libraries/other_movement = ExtResource("4_3blfl")
 libraries/sprint = ExtResource("5_1jyhg")
 libraries/walk = ExtResource("6_0ftcj")
 
-[node name="Camera3D" type="Camera3D" parent="." unique_id=1737472544]
-transform = Transform3D(-0.9536537, 0, 0.3009064, 0, 1, 0, -0.3009064, 0, -0.9536537, 0.15380776, 1.5987766, -0.52452147)
+[node name="Camera3D" type="Camera3D" parent="." unique_id=824874236]
+transform = Transform3D(-0.95365375, -0.05512711, 0.29581356, 0, 0.983075, 0.18320356, -0.3009064, 0.17471273, -0.9375132, 0.14884579, 1.6341994, -0.5087956)
 fov = 57.495663
 
 [editable path="ghost"]

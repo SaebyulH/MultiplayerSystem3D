@@ -18,13 +18,17 @@ class_name PlayerBodyUI
 
 var _health_bar_bg: ColorRect
 var _health_bar_fill: ColorRect
-var _health_label: Label
+var _health_value_label: Label
+var _health_max_label: Label
+var _health_critical: ColorRect
 
 var _health_delta_label: Label
 var _team_label: Label
 var _character_label: Label
+var _hud_font: Font = null
 
-var _ammo_label: Label
+var _ammo_value_label: Label
+var _ammo_max_label: Label
 var _shield_label: Label
 var _reload_bar_bg: ColorRect
 var _reload_bar_fill: ColorRect
@@ -45,10 +49,10 @@ var _ads_overlay: TextureRect
 var _scope_charge_bar: ProgressBar
 var _scope_charge_label: Label
 
-# Ability display (left-side list) and "USING" prompt under the crosshair.
-var _ability_list: VBoxContainer
+# Ability display (bottom-center row of circles) and "USING" prompt.
+var _ability_container: HBoxContainer
 var _ability_use_label: Label
-var _ability_labels: Array[Label] = []
+var _ability_circles: Array[AbilityCircle] = []
 var _ability_indices: Array[int] = []
 
 # Stamina / dash indicator
@@ -108,6 +112,8 @@ const BAR_WIDTH: float = 260.0
 const BAR_HEIGHT: float = 28.0
 const HEALTH_TOP: float = 120.0  # distance from bottom
 
+const HUD_FONT_PATH := "res://assets/CenturyGothic - Century Gothic - Regular.ttf"
+
 # Stamina / dash indicator layout
 const DASH_CELL_WIDTH: float = 28.0
 const DASH_CELL_HEIGHT: float = 12.0
@@ -132,6 +138,8 @@ func _ready() -> void:
 	visible = should_show
 	if not should_show:
 		return
+
+	_hud_font = load(HUD_FONT_PATH) as Font
 
 	_build_ui()
 
@@ -194,31 +202,28 @@ func _build_ui() -> void:
 	_build_fps()
 	_build_ability_previews()
 
-func _build_crosshair() -> void:
-	# Black outline
-	var outline := ColorRect.new()
-	outline.anchor_left   = 0.5
-	outline.anchor_right  = 0.5
-	outline.anchor_top    = 0.5
-	outline.anchor_bottom = 0.5
-	outline.offset_left   = -3.0
-	outline.offset_top    = -3.0
-	outline.offset_right  = 3.0
-	outline.offset_bottom = 3.0
-	outline.color = Color.BLACK
-	add_child(outline)
 
-	# Green center dot
+## Apply the clean HUD font (Century Gothic), no outline, and a white-ish colour.
+func _apply_hud_font(control: Control, size: int, color: Color = Color(1.0, 1.0, 1.0, 1.0)) -> void:
+	if _hud_font:
+		control.add_theme_font_override("font", _hud_font)
+	control.add_theme_constant_override("outline_size", 0)
+	control.add_theme_color_override("font_color", color)
+	control.add_theme_font_size_override("font_size", size)
+
+
+func _build_crosshair() -> void:
+	# Minimalist crosshair: a single small green dot at the exact center.
 	_crosshair = ColorRect.new()
 	_crosshair.anchor_left   = 0.5
 	_crosshair.anchor_right  = 0.5
 	_crosshair.anchor_top    = 0.5
 	_crosshair.anchor_bottom = 0.5
-	_crosshair.offset_left   = -2.0
-	_crosshair.offset_top    = -2.0
-	_crosshair.offset_right  = 2.0
-	_crosshair.offset_bottom = 2.0
-	_crosshair.color = Color.LIME_GREEN # or Color.GREEN
+	_crosshair.offset_left   = -3.0
+	_crosshair.offset_top    = -3.0
+	_crosshair.offset_right  = 3.0
+	_crosshair.offset_bottom = 3.0
+	_crosshair.color = Color(0.25, 1.0, 0.4)
 	add_child(_crosshair)
 
 func _build_aimbot_circle() -> void:
@@ -311,64 +316,84 @@ func _build_fps() -> void:
 	fps_canvas.add_child(_fps_label)
 
 func _build_health() -> void:
-	# -- Container (bottom-left, fixed size) --
+	# -- Container (bottom-left) --
 	var container := Control.new()
-	container.anchor_left   = 0.0
-	container.anchor_right  = 0.0
+	# Left of the centered ability block.
+	container.anchor_left   = 0.5
+	container.anchor_right  = 0.5
 	container.anchor_top    = 1.0
 	container.anchor_bottom = 1.0
-	container.offset_left   = MARGIN
-	container.offset_top    = -(HEALTH_TOP + BAR_HEIGHT + 4.0)
-	container.offset_right  = MARGIN + BAR_WIDTH
-	container.offset_bottom = -HEALTH_TOP
+	container.offset_left   = -360.0
+	container.offset_top    = -110.0
+	container.offset_right  = -176.0
+	container.offset_bottom = -16.0
+	container.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(container)
 
-	# Background
-	_health_bar_bg = ColorRect.new()
-	_health_bar_bg.color = Color(0.08, 0.08, 0.08, 0.80)
-	_health_bar_bg.anchor_left   = 0.0
-	_health_bar_bg.anchor_right  = 1.0
-	_health_bar_bg.anchor_top    = 0.0
-	_health_bar_bg.anchor_bottom = 1.0
-	container.add_child(_health_bar_bg)
+	# Critical red gradient behind the number (hidden unless health is low).
+	_health_critical = ColorRect.new()
+	_health_critical.color = Color(0.85, 0.15, 0.15, 0.0)
+	_health_critical.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_health_critical.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	container.add_child(_health_critical)
 
-	# Fill
+	# Number + bar, stacked.
+	var vbox := VBoxContainer.new()
+	vbox.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	vbox.add_theme_constant_override("separation", 4)
+	vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	container.add_child(vbox)
+
+	# Big current / small max, bottom-aligned to a shared baseline.
+	var num_box := HBoxContainer.new()
+	num_box.alignment = BoxContainer.ALIGNMENT_END
+	num_box.add_theme_constant_override("separation", 0)
+	num_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vbox.add_child(num_box)
+
+	_health_value_label = Label.new()
+	_health_value_label.text = "100"
+	_apply_hud_font(_health_value_label, 54)
+	num_box.add_child(_health_value_label)
+
+	_health_max_label = Label.new()
+	_health_max_label.text = "/200"
+	_apply_hud_font(_health_max_label, 26, Color(0.75, 0.75, 0.75, 1.0))
+	num_box.add_child(_health_max_label)
+
+	# Health bar (red fill).
+	var bar := Control.new()
+	bar.custom_minimum_size = Vector2(0.0, BAR_HEIGHT)
+	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vbox.add_child(bar)
+
+	_health_bar_bg = ColorRect.new()
+	_health_bar_bg.color = Color(0.08, 0.08, 0.08, 0.70)
+	_health_bar_bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_health_bar_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bar.add_child(_health_bar_bg)
+
 	_health_bar_fill = ColorRect.new()
-	_health_bar_fill.color = Color(0.25, 0.75, 0.25)
+	_health_bar_fill.color = Color(0.85, 0.20, 0.20)
 	_health_bar_fill.anchor_left   = 0.0
 	_health_bar_fill.anchor_right  = 1.0
 	_health_bar_fill.anchor_top    = 0.0
 	_health_bar_fill.anchor_bottom = 1.0
-	container.add_child(_health_bar_fill)
+	bar.add_child(_health_bar_fill)
 
-	# Number overlay
-	_health_label = Label.new()
-	_health_label.anchor_left   = 0.0
-	_health_label.anchor_right  = 1.0
-	_health_label.anchor_top    = 0.0
-	_health_label.anchor_bottom = 1.0
-	_health_label.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
-	_health_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_health_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-	_health_label.add_theme_constant_override("outline_size", 6)
-	_health_label.add_theme_font_size_override("font_size", 22)
-	container.add_child(_health_label)
-
-	# -- Delta label (above bar) --
+	# -- Delta label (above the block) --
 	_health_delta_label = Label.new()
 	_health_delta_label.anchor_left   = 0.0
 	_health_delta_label.anchor_right  = 0.0
 	_health_delta_label.anchor_top    = 1.0
 	_health_delta_label.anchor_bottom = 1.0
 	_health_delta_label.offset_left   = MARGIN
-	_health_delta_label.offset_top    = -(HEALTH_TOP + BAR_HEIGHT + 4.0 + 34.0)
+	_health_delta_label.offset_top    = -(HEALTH_TOP + BAR_HEIGHT + 70.0 + 44.0)
 	_health_delta_label.offset_right  = MARGIN + BAR_WIDTH
-	_health_delta_label.offset_bottom = -(HEALTH_TOP + BAR_HEIGHT + 4.0)
+	_health_delta_label.offset_bottom = -(HEALTH_TOP + BAR_HEIGHT + 70.0 + 10.0)
 	_health_delta_label.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
 	_health_delta_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-	_health_delta_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-	_health_delta_label.add_theme_constant_override("outline_size", 8)
-	_health_delta_label.add_theme_font_size_override("font_size", 24)
+	_apply_hud_font(_health_delta_label, 24)
 	add_child(_health_delta_label)
 
 	# -- Team label (above delta) --
@@ -378,9 +403,9 @@ func _build_health() -> void:
 	_team_label.anchor_top    = 1.0
 	_team_label.anchor_bottom = 1.0
 	_team_label.offset_left   = MARGIN
-	_team_label.offset_top    = -(HEALTH_TOP + BAR_HEIGHT + 4.0 + 34.0 + 28.0)
+	_team_label.offset_top    = -(HEALTH_TOP + BAR_HEIGHT + 70.0 + 44.0 + 28.0)
 	_team_label.offset_right  = MARGIN + BAR_WIDTH
-	_team_label.offset_bottom = -(HEALTH_TOP + BAR_HEIGHT + 4.0 + 34.0)
+	_team_label.offset_bottom = -(HEALTH_TOP + BAR_HEIGHT + 70.0 + 44.0)
 	_team_label.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
 	_team_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_team_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
@@ -389,7 +414,7 @@ func _build_health() -> void:
 	_update_team()
 	add_child(_team_label)
 
-	# -- Character label (below health bar) --
+	# -- Character label (below health block) --
 	_character_label = Label.new()
 	_character_label.anchor_left   = 0.0
 	_character_label.anchor_right  = 0.0
@@ -407,22 +432,30 @@ func _build_health() -> void:
 	add_child(_character_label)
 
 func _build_ammo() -> void:
-	# -- Ammo count (bottom-right) --
-	_ammo_label = Label.new()
-	_ammo_label.anchor_left   = 0.0
-	_ammo_label.anchor_right  = 1.0
-	_ammo_label.anchor_top    = 1.0
-	_ammo_label.anchor_bottom = 1.0
-	_ammo_label.offset_left   = 0.0
-	_ammo_label.offset_top    = -(HEALTH_TOP + 4.0)
-	_ammo_label.offset_right  = -MARGIN
-	_ammo_label.offset_bottom = 0.0
-	_ammo_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_ammo_label.vertical_alignment   = VERTICAL_ALIGNMENT_BOTTOM
-	_ammo_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-	_ammo_label.add_theme_constant_override("outline_size", 12)
-	_ammo_label.add_theme_font_size_override("font_size", 56)
-	add_child(_ammo_label)
+	# -- Ammo count (bottom-right): big current / small max --
+	var num_box := HBoxContainer.new()
+	# Right of the centered ability block.
+	num_box.anchor_left   = 0.5
+	num_box.anchor_right  = 0.5
+	num_box.anchor_top    = 1.0
+	num_box.anchor_bottom = 1.0
+	num_box.offset_left   = 176.0
+	num_box.offset_top    = -110.0
+	num_box.offset_right  = 360.0
+	num_box.offset_bottom = -16.0
+	num_box.alignment = BoxContainer.ALIGNMENT_END
+	num_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(num_box)
+
+	_ammo_value_label = Label.new()
+	_ammo_value_label.text = "30"
+	_apply_hud_font(_ammo_value_label, 54)
+	num_box.add_child(_ammo_value_label)
+
+	_ammo_max_label = Label.new()
+	_ammo_max_label.text = "/30"
+	_apply_hud_font(_ammo_max_label, 26, Color(0.75, 0.75, 0.75, 1.0))
+	num_box.add_child(_ammo_max_label)
 
 	# -- Reload bar (bottom edge of screen) --
 	var reload_container := Control.new()
@@ -546,18 +579,20 @@ func _build_weapon_list() -> void:
 	add_child(_weapon_list)
 
 func _build_abilities() -> void:
-	# Left-side ability list (name + cooldown).
-	_ability_list = VBoxContainer.new()
-	_ability_list.anchor_left   = 0.0
-	_ability_list.anchor_right  = 0.0
-	_ability_list.anchor_top    = 0.5
-	_ability_list.anchor_bottom = 0.5
-	_ability_list.offset_left   = MARGIN
-	_ability_list.offset_top    = -160.0
-	_ability_list.offset_right  = MARGIN + 220.0
-	_ability_list.offset_bottom = 160.0
-	_ability_list.add_theme_constant_override("separation", 4)
-	add_child(_ability_list)
+	# Bottom-center row of ability circles.
+	_ability_container = HBoxContainer.new()
+	_ability_container.anchor_left   = 0.5
+	_ability_container.anchor_right  = 0.5
+	_ability_container.anchor_top    = 1.0
+	_ability_container.anchor_bottom = 1.0
+	_ability_container.offset_left   = -160.0
+	_ability_container.offset_top    = -110.0
+	_ability_container.offset_right  = 160.0
+	_ability_container.offset_bottom = -16.0
+	_ability_container.add_theme_constant_override("separation", 16)
+	_ability_container.alignment = BoxContainer.ALIGNMENT_CENTER
+	_ability_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_ability_container)
 
 	# "USING X" prompt, shown under the crosshair while an ability is equipped.
 	_ability_use_label = Label.new()
@@ -707,6 +742,7 @@ func _process(delta: float) -> void:
 	_update_fps()
 	_update_targeted_previews()
 	_update_aimbot_circle()
+	_update_ability_cooldowns()
 
 
 func _on_ui_tick() -> void:
@@ -716,7 +752,6 @@ func _on_ui_tick() -> void:
 	_update_shield()
 	_update_respawn_timer()
 	_update_bg_reload_bars()
-	_update_ability_cooldowns()
 	_update_ads_overlay()
 
 
@@ -898,14 +933,11 @@ func _update_health() -> void:
 	var pct := clampf(hp / max_hp, 0.0, 1.0)
 
 	_health_bar_fill.anchor_right = pct
-	_health_label.text = "%d" % int(hp)
+	_health_value_label.text = "%d" % ceili(hp)
+	_health_max_label.text = "/%d" % int(max_hp)
 
-	if pct > 0.6:
-		_health_bar_fill.color = Color(0.25, 0.75, 0.25)
-	elif pct > 0.3:
-		_health_bar_fill.color = Color(0.85, 0.75, 0.15)
-	else:
-		_health_bar_fill.color = Color(0.85, 0.20, 0.20)
+	# Red critical gradient behind the number when low.
+	_health_critical.color.a = 0.35 if pct < 0.3 else 0.0
 
 	# Public health bar
 	if _health_bar_public:
@@ -966,17 +998,21 @@ func _update_ammo() -> void:
 		_show_reload(weapon)
 	else:
 		_hide_reload()
-		if weapon.has_infinite_ammo:
-			_ammo_label.text = "INF"
-		else:
-			_ammo_label.text = "%d / %d" % [weapon.mag_current, weapon.mag_size]
+
+	if weapon.has_infinite_ammo:
+		_ammo_value_label.text = "∞"
+		_ammo_max_label.text = ""
+	else:
+		_ammo_value_label.text = "%d" % weapon.mag_current
+		_ammo_max_label.text = "/%d" % weapon.mag_size
 
 	# Public ammo
 	if _ammo_bar_public:
-		_ammo_bar_public.text = _ammo_label.text
+		_ammo_bar_public.text = "INF" if weapon.has_infinite_ammo else "%d / %d" % [weapon.mag_current, weapon.mag_size]
 
 func _show_reload(weapon: Weapon) -> void:
-	_ammo_label.text = "%d / %d" % [weapon.mag_current, weapon.mag_size]
+	_ammo_value_label.text = "%d" % weapon.mag_current
+	_ammo_max_label.text = "/%d" % weapon.mag_size
 
 	var parent := _reload_bar_fill.get_parent() as Control
 	if parent:
@@ -1073,9 +1109,9 @@ func _update_character() -> void:
 		_character_label.text = ""
 
 func _rebuild_abilities() -> void:
-	for child in _ability_list.get_children():
+	for child in _ability_container.get_children():
 		child.queue_free()
-	_ability_labels.clear()
+	_ability_circles.clear()
 	_ability_indices.clear()
 
 	var am: AbilityManager = _owner_player.ability_manager if _owner_player else null
@@ -1084,17 +1120,18 @@ func _rebuild_abilities() -> void:
 		return
 
 	var abilities: Array[Ability] = am.get_abilities()
-	for i in abilities.size():
-		var ability: Ability = abilities[i]
-		if ability == null:
-			continue
-		var label := Label.new()
-		label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-		label.add_theme_constant_override("outline_size", 4)
-		label.add_theme_font_size_override("font_size", 16)
-		_ability_list.add_child(label)
-		_ability_labels.append(label)
-		_ability_indices.append(i)
+	# Always reserve four slots, even for characters with fewer abilities.
+	for i in 4:
+		var circle := AbilityCircle.new()
+		if i < abilities.size() and abilities[i] != null:
+			circle.set_ability_name(abilities[i].ability_name)
+			_apply_hud_font(circle.name_label, 12)
+			_ability_indices.append(i)
+		else:
+			circle.set_ability_name("")
+			_ability_indices.append(-1)
+		_ability_container.add_child(circle)
+		_ability_circles.append(circle)
 
 	_update_ability_cooldowns()
 
@@ -1106,13 +1143,21 @@ func _update_ability_cooldowns() -> void:
 		return
 
 	var abilities: Array[Ability] = am.get_abilities()
-	for j in _ability_labels.size():
+	for j in _ability_circles.size():
 		var i: int = _ability_indices[j]
+		if i < 0 or i >= abilities.size():
+			_ability_circles[j].set_cooldown(0.0, false)
+			_ability_circles[j].set_active(false)
+			continue
 		var ability: Ability = abilities[i]
 		var remaining := am.get_cooldown_remaining(i)
-		var cd_text := "Ready" if remaining <= 0.0 else "%.1fs" % remaining
-		_ability_labels[j].text = "%d  %s   (%s)" % [i + 1, ability.ability_name, cd_text]
-		_ability_labels[j].modulate = Color(0.6, 0.6, 0.6) if remaining > 0.0 else Color(0.9, 0.9, 0.9)
+		var total := ability.cooldown
+		var on_cd := remaining > 0.0
+		var frac := 0.0
+		if total > 0.0:
+			frac = 1.0 - remaining / total
+		_ability_circles[j].set_cooldown(frac, on_cd)
+		_ability_circles[j].set_active(am.equipped_index == i)
 
 	# "USING X" prompt while an ability is in progress — either an equipped
 	# (non-instant) ability, or a burst fire that is still firing its shots.
@@ -1330,29 +1375,34 @@ func _update_weapon_list() -> void:
 	for i in weapons.size():
 		var entry := VBoxContainer.new()
 		entry.add_theme_constant_override("separation", 2)
+		entry.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
-		var label := Label.new()
-		label.text = weapons[i].display_name
-		label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-		label.add_theme_constant_override("outline_size", 4)
-		label.add_theme_font_size_override("font_size", 20)
-		if i == current_index:
-			label.modulate = Color(1.0, 0.85, 0.20)
-			label.add_theme_font_size_override("font_size", 24)
+		var selected := (i == current_index)
+
+		# Killfeed icon (or a text fallback when no icon is assigned).
+		if weapons[i].killfeed_icon:
+			var icon := TextureRect.new()
+			icon.texture = weapons[i].killfeed_icon
+			icon.custom_minimum_size = Vector2(166.0, 94.0)
+			icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			entry.add_child(icon)
 		else:
-			label.modulate = Color(0.65, 0.65, 0.65)
-		entry.add_child(label)
-		_bg_reload_labels.append(label)
+			var fallback := Label.new()
+			fallback.text = weapons[i].display_name
+			_apply_hud_font(fallback, 16)
+			fallback.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			entry.add_child(fallback)
 
-		# Progress bar for background reload (hidden by default).
-		var bar := ProgressBar.new()
-		bar.custom_minimum_size = Vector2(0, 8)
-		bar.size_flags_horizontal = Control.SIZE_FILL
-		bar.max_value = 1.0
-		bar.value = 0.0
-		bar.modulate = Color(0.3, 0.7, 1.0, 0.8)
-		bar.visible = false
-		entry.add_child(bar)
-		_bg_reload_bars.append(bar)
+		if selected:
+			entry.modulate = Color(1.0, 1.0, 1.0, 1.0)
+			var name_label := Label.new()
+			name_label.text = weapons[i].display_name
+			_apply_hud_font(name_label, 20)
+			name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			entry.add_child(name_label)
+		else:
+			entry.modulate = Color(0.5, 0.5, 0.5, 0.4)
 
 		_weapon_list.add_child(entry)

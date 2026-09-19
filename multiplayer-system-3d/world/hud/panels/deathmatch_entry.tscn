@@ -1,39 +1,27 @@
 [gd_scene format=3]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_kill"]
-bg_color = Color(0.06, 0.06, 0.08, 0.75)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.55, 0.55, 0.55, 1)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
+[node name="DeathmatchEntry" type="Control"]
+custom_minimum_size = Vector2(0, 44)
 
-[node name="DeathmatchEntry" type="VBoxContainer"]
-custom_minimum_size = Vector2(50, 42)
-theme_override_constants/separation = 1
-alignment = 1
-
-[node name="NameLabel" type="Label" parent="."]
-theme_override_font_sizes/font_size = 11
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 2
-text = "..."
-horizontal_alignment = 1
-
-[node name="KillSquare" type="Panel" parent="."]
-custom_minimum_size = Vector2(32, 28)
-theme_override_styles/panel = SubResource("StyleBoxFlat_kill")
-
-[node name="KillLabel" type="Label" parent="KillSquare"]
+[node name="Bg" type="ColorRect" parent="."]
 anchor_right = 1.0
 anchor_bottom = 1.0
-theme_override_font_sizes/font_size = 22
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 3
+color = Color(0, 0, 0, 0)
+
+[node name="HBox" type="HBoxContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="Portrait" type="TextureRect" parent="HBox"]
+custom_minimum_size = Vector2(40, 40)
+size_flags_vertical = 4
+expand_mode = 1
+stretch_mode = 5
+
+[node name="KillLabel" type="Label" parent="HBox"]
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(1, 1, 1, 1)
 text = "0"
-horizontal_alignment = 1
 vertical_alignment = 1

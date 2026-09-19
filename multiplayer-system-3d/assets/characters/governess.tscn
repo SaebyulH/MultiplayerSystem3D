@@ -259,7 +259,7 @@ libraries/sprint = ExtResource("3_j26ap")
 libraries/walk = ExtResource("4_jqltn")
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=797880655]
-transform = Transform3D(-0.9536537, 0, 0.3009064, 0, 1, 0, -0.3009064, 0, -0.9536537, 0.15380776, 1.5987766, -0.52452147)
+transform = Transform3D(-0.9536537, 0, 0.3009064, 0, 1, 0, -0.3009064, 0, -0.9536537, 0.15380776, 1.61024, -0.52452147)
 fov = 57.495663
 
 [editable path="governess"]
