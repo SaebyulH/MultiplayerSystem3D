@@ -300,30 +300,6 @@ alignment = 1
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="TeamRow" type="HBoxContainer" parent="LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/ActionBar" unique_id=2005477959]
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="Label" type="Label" parent="LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/ActionBar/TeamRow" unique_id=844157939]
-custom_minimum_size = Vector2(52, 0)
-layout_mode = 2
-theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
-theme_override_font_sizes/font_size = 16
-text = "TEAM"
-vertical_alignment = 1
-
-[node name="TeamOption" type="OptionButton" parent="LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/ActionBar/TeamRow" unique_id=2104046531]
-custom_minimum_size = Vector2(120, 32)
-layout_mode = 2
-theme_override_font_sizes/font_size = 18
-item_count = 3
-popup/item_0/text = "FFA"
-popup/item_0/id = 0
-popup/item_1/text = "SPI"
-popup/item_1/id = 1
-popup/item_2/text = "SCI"
-popup/item_2/id = 2
-
 [node name="RandomizeOnceButton" type="Button" parent="LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/ActionBar" unique_id=1273385815]
 layout_mode = 2
 theme_override_font_sizes/font_size = 16

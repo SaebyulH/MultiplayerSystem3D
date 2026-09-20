@@ -37,6 +37,13 @@ func _ready() -> void:
 		#spawn_manager.spawn_locations = map.spawn_locations
 		add_child(spawn_manager)
 
+		var sm := spawn_manager as SpawnManager
+		if sm:
+			GameManager.spawn_manager = sm
+			# Manual bots that followed the host back from a match.
+			for entry in GameManager.lobby_bots:
+				sm.add_bot_with_loadout(entry)
+
 func _on_main_menu_pressed() -> void:
 	NetworkManager.return_to_lobby()
 

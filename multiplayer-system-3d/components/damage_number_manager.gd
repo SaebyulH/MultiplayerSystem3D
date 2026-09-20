@@ -23,6 +23,14 @@ func _ready() -> void:
 	get_tree().root.add_child(_canvas)
 
 
+func _exit_tree() -> void:
+	# The canvas lives on the root, not under this node, so free it (and any
+	# lingering popups) when the owning player is removed.
+	if _canvas and is_instance_valid(_canvas):
+		_canvas.queue_free()
+		_canvas = null
+
+
 func on_damage_dealt(target_name: String, amount: float, is_headshot: bool = false, falloff_mult: float = 1.0, is_backshot: bool = false) -> void:
 	if not is_multiplayer_authority():
 		return

@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="MapData" format=3]
+
+[ext_resource type="Texture2D" path="res://map_thumbnails/esc_castle.png" id="1_h2ob7"]
+[ext_resource type="PackedScene" path="res://maps/esc_castle.tscn" id="2_urp1u"]
+[ext_resource type="Script" path="res://maps/map_data.gd" id="3_ua2jr"]
+
+[resource]
+script = ExtResource("3_ua2jr")
+display_name = "esc_castle"
+map_scene = ExtResource("2_urp1u")
+map_image = ExtResource("1_h2ob7")
+game_mode = 0

@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="MapData" format=3]
+
+[ext_resource type="Texture2D" path="res://map_thumbnails/courtyard.png" id="1_8es05"]
+[ext_resource type="PackedScene" path="res://maps/courtyard.tscn" id="2_ls8lw"]
+[ext_resource type="Script" path="res://maps/map_data.gd" id="3_4gv2v"]
+
+[resource]
+script = ExtResource("3_4gv2v")
+display_name = "courtyard"
+map_scene = ExtResource("2_ls8lw")
+map_image = ExtResource("1_8es05")
+game_mode = 5

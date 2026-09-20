@@ -124,9 +124,12 @@ func _apply_damage_font(lbl: Label) -> void:
 
 
 func _process(delta: float) -> void:
-	if _target_node != null and is_instance_valid(_target_node):
-		if _target_node.spawned:
-			_world_pos = _target_node.global_position
+	if _target_node != null:
+		if is_instance_valid(_target_node):
+			if _target_node.spawned:
+				_world_pos = _target_node.global_position
+			else:
+				_target_node = null
 		else:
 			_target_node = null
 

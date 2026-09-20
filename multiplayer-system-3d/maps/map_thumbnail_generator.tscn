@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://dbkhmufi7ere8"]
+
+[ext_resource type="Script" uid="uid://dwnoivr7milru" path="res://maps/map_thumbnail_generator.gd" id="1"]
+
+[node name="MapThumbnailGenerator" type="Node" unique_id=705105228]
+script = ExtResource("1")

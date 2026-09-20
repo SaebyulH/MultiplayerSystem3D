@@ -182,6 +182,14 @@ func _lb_team_header(team: int) -> Label:
 	return lbl
 
 
+func _lb_disconnected_header() -> Label:
+	var lbl := Label.new()
+	lbl.text = "DISCONNECTED PLAYERS"
+	lbl.add_theme_font_size_override("font_size", 16)
+	lbl.add_theme_color_override("font_color", LB_HDR_COL)
+	return lbl
+
+
 func _lb_row_color(is_self: bool, team: int, self_team: int) -> Color:
 	if is_self:
 		return LB_SELF
@@ -317,6 +325,12 @@ func _rebuild_leaderboard() -> void:
 		for p in players:
 			if p == player_id:
 				my_streak = Leaderboard.get_killstreak(p)
+
+	var disconnected := Leaderboard.get_disconnected_players()
+	if not disconnected.is_empty():
+		disconnected.sort_custom(func(a, b): return Leaderboard.get_kills(a) > Leaderboard.get_kills(b))
+		_lb_rows.add_child(_lb_disconnected_header())
+		_lb_rows.add_child(_lb_team_grid(disconnected, self_team))
 
 	if has_node("Killstreak"):
 		$Killstreak.text = "%d kills" % my_streak if my_streak > 0 else ""

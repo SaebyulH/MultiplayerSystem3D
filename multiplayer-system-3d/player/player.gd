@@ -67,7 +67,7 @@ const TEAM_COLORS: Dictionary = {
 	Team.SPI: Color.RED,
 }
 
-var team: Team = Team.SPI:
+var team: Team = Team.FFA:
 	set(value):
 		team = value
 		if is_inside_tree():

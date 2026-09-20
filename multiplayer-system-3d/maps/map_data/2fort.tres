@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="MapData" format=3]
+
+[ext_resource type="Texture2D" path="res://map_thumbnails/2fort.png" id="1_kde84"]
+[ext_resource type="PackedScene" path="res://maps/2fort.tscn" id="2_8d21s"]
+[ext_resource type="Script" path="res://maps/map_data.gd" id="3_w76ed"]
+
+[resource]
+script = ExtResource("3_w76ed")
+display_name = "2fort"
+map_scene = ExtResource("2_8d21s")
+map_image = ExtResource("1_kde84")
+game_mode = 5

@@ -117,6 +117,9 @@ func load_match_map(map_path: String) -> void:
 	if sp == null:
 		return
 
+	# Fresh match: clear scores and the disconnected list.
+	Leaderboard.reset()
+
 	var old_map: Node = sp.get_node_or_null("Map")
 	GameManager.game_mode_component = null  # clear dangling ref before removal
 	if old_map:

@@ -9,6 +9,7 @@ var _damage_dealt: Dictionary = {}
 var _self_damage: Dictionary = {}
 var _self_heal: Dictionary = {}
 var _heal_others: Dictionary = {}
+var _disconnected: Dictionary = {}   # player_name -> true
 
 ## Debounce window (seconds) for coalescing rapid score mutations into one sync.
 const LEADERBOARD_SYNC_INTERVAL: float = 0.5
@@ -58,16 +59,12 @@ func _remove_player(player_name: String):
 	if not multiplayer.is_server():
 		return
 
-	_player_kills.erase(player_name)
-	_player_deaths.erase(player_name)
-	_killstreak.erase(player_name)
-	_damage_dealt.erase(player_name)
-	_self_damage.erase(player_name)
-	_self_heal.erase(player_name)
-	_heal_others.erase(player_name)
+	# Keep their scores so a "Disconnected Players" section can show what they
+	# did — just flag them as gone instead of erasing.
+	_disconnected[player_name] = true
 
 	if OS.is_debug_build():
-		print("Player %s removed" % player_name)
+		print("Player %s disconnected" % player_name)
 	_mark_dirty()
 	rpc("_receive_player_removed", player_name)
 
@@ -194,7 +191,38 @@ func _receive_scores(kills: Dictionary,
 
 @rpc("any_peer", "reliable")
 func _receive_player_removed(player_name: String):
+	_disconnected[player_name] = true
 	player_removed.emit(player_name)
+	scores_changed.emit()
+
+
+## Clears all scores and the disconnected set.  Called when a new match map loads.
+func reset() -> void:
+	if not multiplayer.is_server():
+		return
+	_player_kills.clear()
+	_player_deaths.clear()
+	_killstreak.clear()
+	_damage_dealt.clear()
+	_self_damage.clear()
+	_self_heal.clear()
+	_heal_others.clear()
+	_disconnected.clear()
+	scores_changed.emit()
+	rpc("_receive_reset")
+
+
+@rpc("any_peer", "reliable")
+func _receive_reset() -> void:
+	_player_kills.clear()
+	_player_deaths.clear()
+	_killstreak.clear()
+	_damage_dealt.clear()
+	_self_damage.clear()
+	_self_heal.clear()
+	_heal_others.clear()
+	_disconnected.clear()
+	scores_changed.emit()
 
 ## Broadcasts a single kill event to all peers for the kill feed.
 @rpc("any_peer", "call_local", "reliable")
@@ -237,19 +265,29 @@ func get_players() -> Array:
 	var players = {}
 
 	for p in _player_kills.keys():
-		players[p] = true
+		if not _disconnected.has(p):
+			players[p] = true
 	for p in _player_deaths.keys():
-		players[p] = true
+		if not _disconnected.has(p):
+			players[p] = true
 	for p in _damage_dealt.keys():
-		players[p] = true
+		if not _disconnected.has(p):
+			players[p] = true
 	for p in _self_damage.keys():
-		players[p] = true
+		if not _disconnected.has(p):
+			players[p] = true
 	for p in _self_heal.keys():
-		players[p] = true
+		if not _disconnected.has(p):
+			players[p] = true
 	for p in _heal_others.keys():
-		players[p] = true
+		if not _disconnected.has(p):
+			players[p] = true
 
 	return players.keys()
+
+
+func get_disconnected_players() -> Array:
+	return _disconnected.keys()
 
 
 func get_kills(player_name: String) -> int:

@@ -34,9 +34,8 @@ adjustment_color_correction = ExtResource("2_bjhbo")
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rgr3h"]
 albedo_color = Color(0.31925523, 0.31925526, 0.31925526, 1)
 
-[node name="Node3D" type="Node3D" unique_id=1248617452 node_paths=PackedStringArray("spawn_locations", "despawn_location")]
+[node name="Node3D" type="Node3D" unique_id=1248617452 node_paths=PackedStringArray("despawn_location")]
 script = ExtResource("1_p28ue")
-spawn_locations = [NodePath("Spawn Location 1"), NodePath("Spawn Location 2")]
 despawn_location = NodePath("Despawn")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=2069420995]

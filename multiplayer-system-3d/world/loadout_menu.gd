@@ -35,7 +35,6 @@ const _ability_circle := preload("res://player/hud/ability_circle.gd")
 
 # ── Scene nodes (defined in loadout_menu.tscn) ──
 @onready var _canvas: CanvasLayer = $LoadoutMenuCanvas
-@onready var _team_option: OptionButton = $LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/ActionBar/TeamRow/TeamOption
 @onready var _confirm_button: Button = $LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/ActionBar/ConfirmButton
 @onready var _randomize_once_button: Button = $LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/ActionBar/RandomizeOnceButton
 @onready var _randomize_on_death_check: CheckBox = $LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/ActionBar/RandomizeOnDeathCheck
@@ -815,14 +814,6 @@ func _add_stat_group(lines: PackedStringArray, title: String, stats: Array) -> v
 #  Randomize / Confirm
 # ─────────────────────────────────────────────
 
-func _get_selected_team() -> Player.Team:
-	match _team_option.selected:
-		0:  return Player.Team.FFA
-		1:  return Player.Team.SPI
-		2:  return Player.Team.SCI
-	return Player.Team.FFA
-
-
 ## Pick a random character and a random weapon in each column, so the menu
 ## doesn't always open on assault + the first weapon of each category.
 func _select_random_loadout() -> void:
@@ -862,7 +853,6 @@ func _on_confirm_pressed() -> void:
 	if selected_primary == null or selected_secondary == null or selected_melee == null:
 		return
 
-	var team := _get_selected_team()
 	var rand_on_death := _randomize_on_death_check.button_pressed
 	var character_path := selected_character.resource_path
 
@@ -874,9 +864,9 @@ func _on_confirm_pressed() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 
 	if multiplayer.is_server():
-		_request_loadout(player_id, selected_primary.resource_path, selected_secondary.resource_path, selected_melee.resource_path, team, character_path, selected_class.resource_path, rand_on_death)
+		_request_loadout(player_id, selected_primary.resource_path, selected_secondary.resource_path, selected_melee.resource_path, Player.Team.FFA, character_path, selected_class.resource_path, rand_on_death)
 	else:
-		_request_loadout.rpc_id(1, player_id, selected_primary.resource_path, selected_secondary.resource_path, selected_melee.resource_path, team, character_path, selected_class.resource_path, rand_on_death)
+		_request_loadout.rpc_id(1, player_id, selected_primary.resource_path, selected_secondary.resource_path, selected_melee.resource_path, Player.Team.FFA, character_path, selected_class.resource_path, rand_on_death)
 
 # ─────────────────────────────────────────────
 #  RPCs (mirrors ClassSelectUI)
@@ -903,7 +893,6 @@ func _request_loadout(tpid: String, pp: String, sp: String, mp: String, team: Pl
 	var nw: Array[Weapon] = [primary.duplicate(true) as Weapon, secondary.duplicate(true) as Weapon, melee.duplicate(true) as Weapon]
 	ctrl.set_weapons(nw)
 	ctrl.current_weapon_index = 0
-	player.team = team
 	# Apply character.
 	if not cp.is_empty():
 		var char_res: Character = load(cp) as Character
@@ -935,7 +924,6 @@ func _apply_loadout(tpid: String, pp: String, sp: String, mp: String, team: Play
 	var nw: Array[Weapon] = [primary.duplicate(true) as Weapon, secondary.duplicate(true) as Weapon, melee.duplicate(true) as Weapon]
 	ctrl.set_weapons(nw)
 	ctrl.current_weapon_index = 0
-	player.team = team
 	if not cp.is_empty():
 		var char_res: Character = load(cp) as Character
 		if char_res:

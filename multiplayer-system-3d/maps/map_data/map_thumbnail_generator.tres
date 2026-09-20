@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="MapData" format=3]
+
+[ext_resource type="Texture2D" path="res://map_thumbnails/map_thumbnail_generator.png" id="1_b21dk"]
+[ext_resource type="PackedScene" path="res://maps/map_thumbnail_generator.tscn" id="2_wm4l2"]
+[ext_resource type="Script" path="res://maps/map_data.gd" id="3_3dcip"]
+
+[resource]
+script = ExtResource("3_3dcip")
+display_name = "map_thumbnail_generator"
+map_scene = ExtResource("2_wm4l2")
+map_image = ExtResource("1_b21dk")

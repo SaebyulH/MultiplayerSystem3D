@@ -7,11 +7,16 @@ class_name Map
 
 
 @export var despawn_location: Marker3D
-var camera: Camera3D
+@onready var camera: Camera3D = $Camera3D
 
 func _enter_tree() -> void:
 	GameManager.game_mode_component = $GameModeComponent
-	GameManager.spawn_parent.get_parent().get_node("GameMenu/CanvasLayer").setup_gmc()
+
+	var spawn_parent := GameManager.spawn_parent
+	if spawn_parent != null and spawn_parent.get_parent() != null:
+		var hud := spawn_parent.get_parent().get_node_or_null("GameMenu/CanvasLayer")
+		if hud != null and hud.has_method("setup_gmc"):
+			hud.setup_gmc()
 
 	sci_spawn_locations.clear()
 	spi_spawn_locations.clear()

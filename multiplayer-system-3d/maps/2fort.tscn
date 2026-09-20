@@ -84,7 +84,7 @@ spawn_path = NodePath("..")
 script = ExtResource("3_dgob0")
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=542390642]
-transform = Transform3D(-0.5828663, -0.4124095, 0.70013237, -1.9941648e-08, 0.8616291, 0.50753844, -0.8125681, 0.295827, -0.50221455, 41.405437, 47.449898, -17.47307)
+transform = Transform3D(-0.5828663, -0.4124095, 0.70013237, -1.9941648e-08, 0.8616291, 0.50753844, -0.8125681, 0.295827, -0.50221455, 8.386593, 18.674149, -0.67863274)
 
 [node name="GameModeComponent" type="Node" parent="." unique_id=1762082187]
 script = ExtResource("4_imcub")

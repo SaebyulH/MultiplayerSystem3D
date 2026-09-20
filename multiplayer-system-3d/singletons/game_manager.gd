@@ -6,6 +6,11 @@ const RAGDOLL_KNOCKBACK_MULTIPLIER := 20.0
 
 var spawn_parent: Node3D
 var game_mode_component: GameModeComponent
+var spawn_manager: SpawnManager
+
+## Manual bots (team + character/weapon paths) that persist across return_to_lobby.
+## Auto-fill bots are deliberately NOT recorded here, so they're freed on exit.
+var lobby_bots: Array[Dictionary] = []
 
 func find_player(id: String) -> Player:
 	for child in spawn_parent.get_children():
