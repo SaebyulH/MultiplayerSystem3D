@@ -46,7 +46,13 @@ custom_minimum_size = Vector2(420, 24)
 theme_override_colors/font_color = Color(0.878431, 0.4, 0.4, 1)
 theme_override_styles/background = SubResource("StyleBoxFlat_track")
 theme_override_styles/fill = SubResource("StyleBoxFlat_fill")
-show_percentage = true
+show_percentage = false
+
+[node name="PercentLabel" type="Label" parent="Content/VBox"]
+theme_override_colors/font_color = Color(0.878431, 0.4, 0.4, 1)
+theme_override_font_sizes/font_size = 20
+horizontal_alignment = 1
+text = "0%"
 
 [node name="StatusLabel" type="Label" parent="Content/VBox"]
 theme_override_colors/font_color = Color(0.878431, 0.4, 0.4, 1)

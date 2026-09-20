@@ -68,10 +68,13 @@ func enter_existing_game_scene():
 
 func load_game_scene(map_path: String):
 	if OS.is_debug_build(): print("Loading game scene")
+	LoadingScreen.report(0.8, "Loading world...")
+	await get_tree().process_frame
 	game_scene = preload(GAME_SCENE).instantiate()
 	game_scene.map_path = map_path
 	get_tree().current_scene.add_child(game_scene)
 	get_tree().current_scene.hide_main_menu()
+	LoadingScreen.report(0.9, "Spawning players...")
 
 
 # ─────────────────────────────────────────────
@@ -83,7 +86,10 @@ func boot_to_lobby() -> void:
 	if game_scene != null:
 		return  # already booted (guards against double-scheduled boots)
 	create_server()  # offline fallback handled inside
-	load_game_scene(LOBBY_MAP_PATH)
+	Leaderboard.reset()
+	LoadingScreen.report(0.75, "Starting server...")
+	await get_tree().process_frame
+	await load_game_scene(LOBBY_MAP_PATH)
 
 
 ## A player already in their own lobby connects to a host's lobby/match.

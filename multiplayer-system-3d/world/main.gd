@@ -8,10 +8,15 @@ extends Control
 const PRELOAD_PATHS: Array[String] = [
 	"res://maps/main_menu_world.tscn",
 	"res://world/spawn_manager.tscn",
+	"res://world/spawn_bot_menu.tscn",
 	"res://player/player_classes/assault.tres",
 	"res://player/player_classes/assassin.tres",
 	"res://player/player_classes/assistance.tres",
 ]
+
+## Fraction of the loading bar that the resource preload covers; the remaining
+## span is filled by boot-time checkpoints (server start, world load, spawns).
+const PRELOAD_FRACTION := 0.7
 
 
 func _ready() -> void:
@@ -24,9 +29,10 @@ func _boot() -> void:
 	await _preload_resources(loading)
 
 	# Boot straight into the 3D lobby: auto-host a server and load the main-menu
-	# world.  Direct call (not deferred) — we've already awaited frames above, so
-	# the root Control has finished setting up.
-	NetworkManager.boot_to_lobby()
+	# world.  boot_to_lobby is async and reports checkpoints as it goes.
+	await NetworkManager.boot_to_lobby()
+	loading.set_progress(1.0)
+	loading.set_status("")
 
 	# Keep the loading screen up through the first rendered frames so the D3D12
 	# shader compilation happens behind it, then hide.
@@ -44,7 +50,7 @@ func _preload_resources(loading: LoadingScreen) -> void:
 		if err != OK:
 			# Threaded load unavailable — fall back to a synchronous (still cached) load.
 			load(path)
-			loading.set_progress(float(i + 1) / float(count))
+			loading.set_progress(float(i + 1) / float(count) * PRELOAD_FRACTION)
 			continue
 		while true:
 			var progress: Array = []
@@ -57,7 +63,7 @@ func _preload_resources(loading: LoadingScreen) -> void:
 						var stage := int(progress[1])
 						if stages > 0:
 							frac = clampf(float(stage) / float(stages), 0.0, 1.0)
-					loading.set_progress((float(i) + frac) / float(count))
+					loading.set_progress((float(i) + frac) / float(count) * PRELOAD_FRACTION)
 				ResourceLoader.THREAD_LOAD_LOADED:
 					ResourceLoader.load_threaded_get(path)
 					break
@@ -65,7 +71,7 @@ func _preload_resources(loading: LoadingScreen) -> void:
 					push_warning("Preload failed: %s" % path)
 					break
 			await get_tree().process_frame
-		loading.set_progress(float(i + 1) / float(count))
+		loading.set_progress(float(i + 1) / float(count) * PRELOAD_FRACTION)
 	loading.set_status("")
 
 
