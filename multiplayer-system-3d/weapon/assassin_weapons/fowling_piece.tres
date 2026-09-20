@@ -43,8 +43,6 @@ metadata/_custom_type_script = "uid://djg0ti1n45f8b"
 [resource]
 script = ExtResource("3_fik5w")
 display_name = "Fowling Piece"
-mag_size = 3
-mag_current = 3
 reload_individually = true
 reload_time = 0.6
 weapon_fires = Array[ExtResource("4_pyxex")]([SubResource("Resource_vkg1j")])

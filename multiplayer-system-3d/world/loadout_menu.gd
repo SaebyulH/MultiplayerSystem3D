@@ -31,16 +31,15 @@ var selected_melee: Weapon = null
 
 # ── Scene templates (instantiated for repeated elements) ──
 const _weapon_card_scene := preload("res://world/loadout/weapon_card.tscn")
-const _ability_slot_scene := preload("res://world/loadout/ability_slot.tscn")
-const _character_button_scene := preload("res://world/loadout/character_button.tscn")
+const _ability_circle := preload("res://player/hud/ability_circle.gd")
 
 # ── Scene nodes (defined in loadout_menu.tscn) ──
 @onready var _canvas: CanvasLayer = $LoadoutMenuCanvas
-@onready var _team_option: OptionButton = $LoadoutMenuCanvas/Root/Col/ActionBar/TeamRow/TeamOption
-@onready var _confirm_button: Button = $LoadoutMenuCanvas/Root/Col/ActionBar/ConfirmButton
-@onready var _randomize_once_button: Button = $LoadoutMenuCanvas/Root/Col/ActionBar/RandomizeOnceButton
-@onready var _randomize_on_death_check: CheckBox = $LoadoutMenuCanvas/Root/Col/ActionBar/RandomizeOnDeathCheck
-@onready var _leave_party_button: Button = $LoadoutMenuCanvas/Root/Col/ActionBar/LeavePartyButton
+@onready var _team_option: OptionButton = $LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/ActionBar/TeamRow/TeamOption
+@onready var _confirm_button: Button = $LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/ActionBar/ConfirmButton
+@onready var _randomize_once_button: Button = $LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/ActionBar/RandomizeOnceButton
+@onready var _randomize_on_death_check: CheckBox = $LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/ActionBar/RandomizeOnDeathCheck
+@onready var _leave_party_button: Button = $LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/ActionBar/LeavePartyButton
 @onready var _mode_label: Label = $LoadoutMenuCanvas/Root/Col/ModeLabel
 @onready var _info_label: RichTextLabel = $LoadoutMenuCanvas/Root/Col/MainRow/InfoPanel/VBox/InfoLabel
 
@@ -50,12 +49,10 @@ const _character_button_scene := preload("res://world/loadout/character_button.t
 @onready var _character_svc: SubViewportContainer = $LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/Wrap/Svc
 @onready var _change_agent_overlay: Label = $LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/Wrap/ChangeAgentOverlay
 @onready var _character_name_label: Label = $LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/CharacterNameLabel
-@onready var _loadout_class_label: Label = $LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/LoadoutClassLabel
-@onready var _loadout_class_label_title: Label = $LoadoutMenuCanvas/Root/Col/MainRow/LoadoutPanel/VBox/LoadoutClassLabelTitle
-@onready var _character_picker: PopupPanel = $LoadoutMenuCanvas/CharacterPicker
+@onready var _character_picker: PanelContainer = $LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/Wrap/CharacterPicker
 
 # Ability strip
-@onready var _ability_slots_hbox: HBoxContainer = $LoadoutMenuCanvas/Root/Col/AbilitySection/AbilitySlotsHbox
+@onready var _ability_slots_hbox: HBoxContainer = $LoadoutMenuCanvas/AbilitySlotsHbox
 
 var _character_preview_root: Node3D = null
 var _character_preview_model: Node3D = null
@@ -66,15 +63,18 @@ var _character_wrap_style: StyleBoxFlat = null
 var _column_lists: Dictionary = {}       # column key -> inner card VBoxContainer
 var _card_style: Dictionary = {}         # card -> StyleBoxFlat
 var _selected_card: Dictionary = {}      # column key -> selected card
-var _ability_style: Dictionary = {}      # slot -> StyleBoxFlat
+var _section_header_style: StyleBox = null     # blue chip (grabbed from AGENT header)
+var _section_header_font: Font = null          # bold white font (grabbed from AGENT header)
+var _portrait_buttons: Dictionary = {}         # character resource_path -> portrait Button
 
 # ── Card style colours ───────────────────────
+const HIGHLIGHT_COLOR := Color(0.35, 0.65, 1.0, 1)   # blue
 const CARD_BG_NORMAL := Color(0.10, 0.11, 0.15, 1)
 const CARD_BG_HOVER := Color(0.16, 0.18, 0.24, 1)
-const CARD_BG_SELECTED := Color(0.15, 0.20, 0.22, 1)
+const CARD_BG_SELECTED := Color(0.15, 0.25, 0.35, 1)
 const CARD_BORDER_NORMAL := Color(0.30, 0.32, 0.38, 1)
-const CARD_BORDER_HOVER := Color(0.65, 0.85, 1.0, 1)
-const CARD_BORDER_SELECTED := Color(1.0, 0.80, 0.25, 1)
+const CARD_BORDER_HOVER := HIGHLIGHT_COLOR
+const CARD_BORDER_SELECTED := HIGHLIGHT_COLOR
 
 # ─────────────────────────────────────────────
 #  Lifecycle
@@ -113,6 +113,12 @@ func _ready() -> void:
 			loaded_classes.append(c)
 	load_classes(loaded_classes)
 
+	# Grab the blue header chip + bold font from the AGENT header so the picker
+	# section headers match the PRIMARY/SECONDARY/… headers exactly.
+	var agent_header := $LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/Header as PanelContainer
+	_section_header_style = agent_header.get_theme_stylebox("panel")
+	_section_header_font = (agent_header.get_node("Label") as Label).get_theme_font("font")
+
 	_build_character_picker()
 	_populate_mode_info.call_deferred()
 
@@ -123,9 +129,6 @@ func _ready() -> void:
 	_character_svc.gui_input.connect(_on_character_gui_input)
 	_character_svc.mouse_entered.connect(_on_character_hover_enter)
 	_character_svc.mouse_exited.connect(_on_character_hover_exit)
-
-	_character_picker.popup_hide.connect(_on_picker_closed)
-	_character_picker.about_to_popup.connect(_on_picker_opened)
 
 	# Populate the menu. The first load picks a random character + loadout; later
 	# loads fall back to the first character (assault) so we don't re-randomize.
@@ -164,51 +167,105 @@ func _on_leave_party_pressed() -> void:
 # ─────────────────────────────────────────────
 
 func _build_character_picker() -> void:
-	# Group characters by class, one labelled section per class.  The PopupPanel
-	# and its title are defined in loadout_menu.tscn; sections are data-driven.
+	# Populate the in-place picker: a close button, then one section per class
+	# (blue header + a wrap of character portrait buttons).
 	var vb := _character_picker.get_node("VBox") as VBoxContainer
+
+	var close := Button.new()
+	close.text = "✕"
+	close.flat = true
+	close.size_flags_horizontal = Control.SIZE_SHRINK_END
+	close.pressed.connect(_close_picker)
+	vb.add_child(close)
+
 	for cls in available_classes:
 		if not cls or cls.characters.is_empty():
 			continue
-		var accent := _class_accent(cls.class_display_name)
+		vb.add_child(_make_section_header(cls.class_display_name.to_upper()))
 
-		var header := Label.new()
-		header.text = cls.class_display_name.to_upper()
-		header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		header.add_theme_font_size_override("font_size", 16)
-		header.add_theme_color_override("font_color", accent)
-		vb.add_child(header)
-
-		var sep := ColorRect.new()
-		sep.custom_minimum_size = Vector2(0, 1)
-		sep.color = Color(accent.r, accent.g, accent.b, 0.4)
-		sep.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		vb.add_child(sep)
-
-		var row := HBoxContainer.new()
-		row.alignment = BoxContainer.ALIGNMENT_CENTER
-		row.add_theme_constant_override("separation", 10)
-		vb.add_child(row)
+		var flow := HFlowContainer.new()
+		flow.add_theme_constant_override("h_separation", 8)
+		flow.add_theme_constant_override("v_separation", 8)
+		vb.add_child(flow)
 
 		for char in cls.characters:
 			if not char:
 				continue
-			var btn := _character_button_scene.instantiate() as Button
-			btn.text = char.character_name
-			btn.pressed.connect(_on_pick_character.bind(char))
-			row.add_child(btn)
+			flow.add_child(_make_portrait_button(char))
 
 
-func _class_accent(display_name: String) -> Color:
-	match display_name.to_lower():
-		"assault":
-			return Color(1.0, 0.55, 0.25)
-		"assassin":
-			return Color(0.72, 0.45, 1.0)
-		"assistance":
-			return Color(0.35, 0.8, 0.6)
-		_:
-			return Color(0.7, 0.7, 0.7)
+func _make_section_header(text: String) -> PanelContainer:
+	var panel := PanelContainer.new()
+	if _section_header_style:
+		panel.add_theme_stylebox_override("panel", _section_header_style)
+	var label := Label.new()
+	label.text = text
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.add_theme_color_override("font_color", Color.WHITE)
+	if _section_header_font:
+		label.add_theme_font_override("font", _section_header_font)
+	label.add_theme_font_size_override("font_size", 16)
+	panel.add_child(label)
+	return panel
+
+
+func _make_portrait_button(char: Character) -> Button:
+	var btn := Button.new()
+	btn.icon = char.portrait
+	btn.expand_icon = true
+	btn.custom_minimum_size = Vector2(84, 84)
+	btn.tooltip_text = char.character_name
+	btn.focus_mode = Control.FOCUS_NONE
+
+	btn.add_theme_stylebox_override("normal", _portrait_style(CARD_BG_NORMAL, CARD_BORDER_NORMAL))
+	btn.add_theme_stylebox_override("hover", _portrait_style(CARD_BG_NORMAL, CARD_BORDER_HOVER))
+	btn.add_theme_stylebox_override("pressed", _portrait_style(CARD_BG_SELECTED, CARD_BORDER_SELECTED))
+	btn.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+
+	btn.mouse_entered.connect(_on_portrait_hover.bind(char))
+	btn.pressed.connect(_on_pick_character.bind(char))
+	_portrait_buttons[char.resource_path] = btn
+	return btn
+
+
+func _refresh_portrait_selection() -> void:
+	var selected_path := selected_character.resource_path if selected_character else ""
+	for path in _portrait_buttons:
+		var btn: Button = _portrait_buttons[path]
+		var is_selected: bool = path == selected_path
+		btn.add_theme_stylebox_override("normal", _portrait_style(
+			CARD_BG_SELECTED if is_selected else CARD_BG_NORMAL,
+			CARD_BORDER_SELECTED if is_selected else CARD_BORDER_NORMAL))
+
+
+func _portrait_style(bg: Color, border: Color) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = bg
+	style.border_color = border
+	style.set_border_width_all(2)
+	style.content_margin_left = 4.0
+	style.content_margin_top = 4.0
+	style.content_margin_right = 4.0
+	style.content_margin_bottom = 4.0
+	return style
+
+
+func _on_portrait_hover(char: Character) -> void:
+	_show_character_info(char)
+
+
+func _open_picker() -> void:
+	_refresh_portrait_selection()
+	_change_agent_overlay.visible = false
+	_character_svc.visible = false
+	_character_picker.visible = true
+	_on_picker_opened()
+
+
+func _close_picker() -> void:
+	_character_picker.visible = false
+	_character_svc.visible = true
+	_on_picker_closed()
 
 
 func _on_picker_opened() -> void:
@@ -225,39 +282,29 @@ func _on_picker_closed() -> void:
 
 func _on_pick_character(char: Character) -> void:
 	_select_character(char)
-	_character_picker.hide()
+	_close_picker()
 
 
 # ─────────────────────────────────────────────
 #  Weapon cards
 # ─────────────────────────────────────────────
 
-func _make_weapon_card(weapon: Weapon, key: String) -> Button:
-	var card := _weapon_card_scene.instantiate() as Button
+func _make_weapon_card(weapon: Weapon, key: String) -> WeaponCard:
+	var card := _weapon_card_scene.instantiate() as WeaponCard
 	card.set_meta("weapon", weapon)
 	card.set_meta("column", key)
 	card.set_meta("selected", false)
-	_card_style[card] = card.get_theme_stylebox("normal") as StyleBoxFlat
+	_card_style[card] = card.get_theme_stylebox("panel") as StyleBoxFlat
 
-	var icon: TextureRect = card.get_node("Margin/VBox/Icon") as TextureRect
-	var placeholder: ColorRect = card.get_node("Margin/VBox/Placeholder") as ColorRect
-	var name_label: Label = card.get_node("Margin/VBox/NameLabel") as Label
-	if weapon.killfeed_icon:
-		icon.texture = weapon.killfeed_icon
-		icon.visible = true
-		placeholder.visible = false
-	else:
-		icon.visible = false
-		placeholder.visible = true
-	name_label.text = weapon.display_name
-
+	card.setup(weapon)
+	card.card_pressed.connect(_on_card_pressed)
 	card.mouse_entered.connect(_on_card_hover.bind(card))
-	card.pressed.connect(_on_card_pressed.bind(card))
+	card.mouse_exited.connect(_on_card_unhover.bind(card))
 
 	return card
 
 
-func _apply_card_state(card: Button) -> void:
+func _apply_card_state(card: WeaponCard) -> void:
 	var style: StyleBoxFlat = _card_style.get(card)
 	if style == null:
 		return
@@ -266,20 +313,29 @@ func _apply_card_state(card: Button) -> void:
 	style.border_color = CARD_BORDER_SELECTED if selected else CARD_BORDER_NORMAL
 
 
-func _on_card_hover(card: Button) -> void:
+func _on_card_hover(card: WeaponCard) -> void:
 	var weapon: Weapon = card.get_meta("weapon")
 	_show_weapon_info(weapon)
+	var style: StyleBoxFlat = _card_style.get(card)
+	if style and not card.get_meta("selected", false):
+		style.border_color = CARD_BORDER_HOVER
 
 
-func _on_card_pressed(card: Button) -> void:
+func _on_card_unhover(card: WeaponCard) -> void:
+	var style: StyleBoxFlat = _card_style.get(card)
+	if style:
+		_apply_card_state(card)
+
+
+func _on_card_pressed(card: WeaponCard) -> void:
 	_select_card(card)
 
 
-func _select_card(card: Button) -> void:
+func _select_card(card: WeaponCard) -> void:
 	var weapon: Weapon = card.get_meta("weapon")
 	var key: String = card.get_meta("column")
 
-	var prev: Button = _selected_card.get(key)
+	var prev: WeaponCard = _selected_card.get(key)
 	if prev and prev != card:
 		prev.set_meta("selected", false)
 		_apply_card_state(prev)
@@ -302,45 +358,31 @@ func _select_card(card: Button) -> void:
 #  Ability slots
 # ─────────────────────────────────────────────
 
-func _make_ability_slot(index: int, ability: Ability) -> PanelContainer:
-	var slot := _ability_slot_scene.instantiate() as PanelContainer
-	_ability_style[slot] = slot.get_theme_stylebox("panel") as StyleBoxFlat
-
-	var lbl: Label = slot.get_node("Label") as Label
+func _make_ability_slot(index: int, ability: Ability) -> Control:
+	var circle := _ability_circle.new() as AbilityCircle
+	circle.name = "Ability%d" % index
+	circle.mouse_filter = Control.MOUSE_FILTER_STOP
+	circle.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	circle.set_meta("ability", ability)
 	if ability:
-		lbl.text = ability.ability_name
-		lbl.add_theme_color_override("font_color", Color(0.85, 0.85, 0.85))
+		circle.set_ability_name(ability.ability_name)
+		circle.name_label.add_theme_color_override("font_color", Color(0.85, 0.85, 0.85))
 	else:
-		lbl.text = "UNASSIGNED"
-		lbl.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
+		circle.set_ability_name("UNASSIGNED")
+		circle.name_label.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
+	circle.name_label.add_theme_font_size_override("font_size", 12)
 
-	slot.set_meta("ability", ability)
-	slot.set_meta("index", index)
-	slot.mouse_entered.connect(_on_ability_hover.bind(slot))
-	slot.mouse_exited.connect(_on_ability_unhover.bind(slot))
+	circle.mouse_entered.connect(_on_ability_hover.bind(circle))
 
-	return slot
+	return circle
 
 
-func _on_ability_hover(slot: PanelContainer) -> void:
-	var style: StyleBoxFlat = _ability_style.get(slot)
-	if style:
-		var tw := slot.create_tween()
-		tw.tween_property(style, "border_color", Color(0.65, 0.85, 1.0, 1), 0.12)
-		tw.parallel().tween_property(style, "bg_color", Color(0.16, 0.18, 0.24, 1), 0.12)
-	var ability: Ability = slot.get_meta("ability")
+func _on_ability_hover(circle: Control) -> void:
+	var ability: Ability = circle.get_meta("ability")
 	if ability:
 		_show_ability_info(ability)
 	else:
 		_show_info("Unassigned", "No ability is assigned to this slot.")
-
-
-func _on_ability_unhover(slot: PanelContainer) -> void:
-	var style: StyleBoxFlat = _ability_style.get(slot)
-	if style:
-		var tw := slot.create_tween()
-		tw.tween_property(style, "border_color", Color(0.30, 0.32, 0.38, 1), 0.12)
-		tw.parallel().tween_property(style, "bg_color", Color(0.10, 0.11, 0.15, 1), 0.12)
 
 # ─────────────────────────────────────────────
 #  Info panel
@@ -407,10 +449,6 @@ func _select_character(char: Character) -> void:
 
 	if _character_name_label:
 		_character_name_label.text = char.character_name if char else ""
-	if _loadout_class_label:
-		_loadout_class_label.text = selected_class.class_display_name if selected_class else ""
-	if _loadout_class_label_title:
-		_loadout_class_label_title.text = "LOADOUT — %s" % (selected_class.class_display_name if selected_class else "")
 
 	_rebuild_weapon_columns()
 	_refresh_abilities()
@@ -472,7 +510,7 @@ func _auto_select_first(key: String, weapons: Array[Weapon]) -> void:
 	var list: VBoxContainer = _column_lists.get(key)
 	if list == null or list.get_child_count() == 0:
 		return
-	var first_card: Button = list.get_child(0) as Button
+	var first_card := list.get_child(0) as WeaponCard
 	_select_card(first_card)
 
 
@@ -482,7 +520,6 @@ func _refresh_abilities() -> void:
 	for c in _ability_slots_hbox.get_children():
 		_ability_slots_hbox.remove_child(c)
 		c.queue_free()
-	_ability_style.clear()
 	for i in 4:
 		var ability: Ability = null
 		if selected_character and i < selected_character.abilities.size():
@@ -499,6 +536,8 @@ func _on_character_hover_enter() -> void:
 		var tw := create_tween()
 		tw.tween_property(_character_wrap_style, "border_color", Color(1.0, 0.85, 0.4, 1), 0.15)
 	_change_agent_overlay.visible = true
+	if selected_character:
+		_show_character_info(selected_character)
 
 
 func _on_character_hover_exit() -> void:
@@ -519,7 +558,7 @@ func _on_character_gui_input(event: InputEvent) -> void:
 			else:
 				_character_dragging = false
 				if not _character_drag_moved:
-					_character_picker.popup_centered()
+					_open_picker()
 	elif event is InputEventMouseMotion and _character_dragging:
 		var mm := event as InputEventMouseMotion
 		if absf(mm.relative.x) > 0.01:
@@ -813,7 +852,7 @@ func _randomize_column(key: String, weapons: Array[Weapon]) -> void:
 		return
 	var idx := randi() % weapons.size()
 	if idx >= 0 and idx < list.get_child_count():
-		var card: Button = list.get_child(idx) as Button
+		var card := list.get_child(idx) as WeaponCard
 		_select_card(card)
 
 

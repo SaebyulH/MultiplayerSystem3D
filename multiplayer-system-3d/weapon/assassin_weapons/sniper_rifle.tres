@@ -36,12 +36,13 @@ metadata/_custom_type_script = "uid://djg0ti1n45f8b"
 script = ExtResource("3_yhfpo")
 
 [sub_resource type="Resource" id="Resource_b7nwq"]
+resource_local_to_scene = true
 script = ExtResource("7_b7nwq")
 action_type = 1
+zoom_fov = 30.0
 ads_image = ExtResource("9_pr4o7")
-scope_in_time = 0.3
+scope_out_time = 0.5
 force_unscope_during_post_shoot_delay = true
-scoped_damage_amp_max = 3.0
 scoped_damage_amp_time = 1.0
 recoil_data = SubResource("Resource_btwad")
 shoot_sound = ExtResource("6_onw8i")

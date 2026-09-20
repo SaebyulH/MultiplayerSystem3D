@@ -36,16 +36,16 @@ const PITCH_E2  := pow(2.0, 12.0 / 12.0)
 # reference tab's feel.
 const TEMPO_SCALE := 1.3
 
-# Column widths
-const COL_RANK := 40
-const COL_NAME := 130
-const COL_CHAR := 110
-const COL_K   := 36
-const COL_D   := 36
-const COL_STRK := 50
-const COL_DMG := 64
-const COL_SD  := 64
-const COL_HO  := 56
+# Leaderboard column layout
+const LB_COLS := 9
+const LB_PORTRAIT := 48.0
+const LB_NAME := 240.0
+const LB_NUM := 96.0
+
+const LB_HDR_COL := Color(0.55, 0.55, 0.6)
+const LB_SELF := Color(0.35, 0.65, 1.0)    # blue
+const LB_TEAM := Color(0.72, 0.72, 0.74)   # grey
+const LB_ENEMY := Color(0.95, 0.42, 0.42)  # red
 
 
 # A single "note" in a killstreak sting: one or more simultaneous pitches
@@ -117,14 +117,119 @@ func _ready() -> void:
 	_build_leaderboard_ui()
 
 
-func _make_label(text: String, width: float, font_size: int, col: Color) -> Label:
+func _lb_cell(text: String, width: float, align: int, col: Color, font_size: int, expand: bool = false, clip: bool = false, tooltip: String = "") -> Label:
 	var lbl: Label = Label.new()
 	lbl.text = text
 	lbl.custom_minimum_size = Vector2(width, 0)
-	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER if width <= 50 else HORIZONTAL_ALIGNMENT_LEFT
+	lbl.horizontal_alignment = align
+	if expand:
+		lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	lbl.add_theme_font_size_override("font_size", font_size)
 	lbl.add_theme_color_override("font_color", col)
+	if clip:
+		lbl.clip_text = true
+		lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	if not tooltip.is_empty():
+		lbl.tooltip_text = tooltip
 	return lbl
+
+
+func _lb_portrait(portrait: Texture2D) -> TextureRect:
+	var rect: TextureRect = TextureRect.new()
+	rect.custom_minimum_size = Vector2(LB_PORTRAIT, LB_PORTRAIT)
+	rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	rect.texture = portrait
+	return rect
+
+
+func _lb_header_grid() -> GridContainer:
+	var grid: GridContainer = GridContainer.new()
+	grid.columns = LB_COLS
+	grid.add_theme_constant_override("h_separation", 10)
+	grid.add_theme_constant_override("v_separation", 2)
+	grid.add_child(_lb_cell("", LB_PORTRAIT, HORIZONTAL_ALIGNMENT_CENTER, LB_HDR_COL, 15))
+	grid.add_child(_lb_cell("PLAYER", LB_NAME, HORIZONTAL_ALIGNMENT_LEFT, LB_HDR_COL, 15, true))
+	grid.add_child(_lb_cell("K", LB_NUM, HORIZONTAL_ALIGNMENT_RIGHT, LB_HDR_COL, 15, false, false, "Kills"))
+	grid.add_child(_lb_cell("D", LB_NUM, HORIZONTAL_ALIGNMENT_RIGHT, LB_HDR_COL, 15, false, false, "Deaths"))
+	grid.add_child(_lb_cell("Streak", LB_NUM, HORIZONTAL_ALIGNMENT_RIGHT, LB_HDR_COL, 15, false, false, "Killstreak"))
+	grid.add_child(_lb_cell("DMG", LB_NUM, HORIZONTAL_ALIGNMENT_RIGHT, LB_HDR_COL, 15, false, false, "Damage Dealt"))
+	grid.add_child(_lb_cell("Self DMG", LB_NUM, HORIZONTAL_ALIGNMENT_RIGHT, LB_HDR_COL, 15, false, false, "Self Damage"))
+	grid.add_child(_lb_cell("Self Heal", LB_NUM, HORIZONTAL_ALIGNMENT_RIGHT, LB_HDR_COL, 15, false, false, "Heal Self"))
+	grid.add_child(_lb_cell("Heal Other", LB_NUM, HORIZONTAL_ALIGNMENT_RIGHT, LB_HDR_COL, 15, false, false, "Heal Others"))
+	return grid
+
+
+func _lb_team_name(team: int) -> String:
+	match team:
+		Player.Team.SPI: return "SPI"
+		Player.Team.SCI: return "SCI"
+		_: return "FFA"
+
+
+func _lb_team_color(team: int) -> Color:
+	match team:
+		Player.Team.SPI: return Color(0.95, 0.5, 0.5)
+		Player.Team.SCI: return Color(0.5, 0.7, 1.0)
+		_: return Color(0.7, 0.7, 0.7)
+
+
+func _lb_team_header(team: int) -> Label:
+	var lbl: Label = Label.new()
+	lbl.text = _lb_team_name(team)
+	lbl.add_theme_font_size_override("font_size", 16)
+	lbl.add_theme_color_override("font_color", _lb_team_color(team))
+	return lbl
+
+
+func _lb_row_color(is_self: bool, team: int, self_team: int) -> Color:
+	if is_self:
+		return LB_SELF
+	if self_team == Player.Team.FFA or team != self_team:
+		return LB_ENEMY
+	return LB_TEAM
+
+
+func _lb_add_row(grid: GridContainer, player_name: String, self_team: int) -> void:
+	var is_self: bool = player_name == player_id
+	var pnode: Player = GameManager.find_player(player_name)
+	var team: int = pnode.team if pnode else Player.Team.FFA
+	var col: Color = _lb_row_color(is_self, team, self_team)
+
+	var portrait: Texture2D = null
+	if pnode and pnode._character:
+		portrait = pnode._character.portrait
+
+	grid.add_child(_lb_portrait(portrait))
+	grid.add_child(_lb_cell(str(player_name), LB_NAME, HORIZONTAL_ALIGNMENT_LEFT, col, 16, true, true))
+	grid.add_child(_lb_cell(str(Leaderboard.get_kills(player_name)), LB_NUM, HORIZONTAL_ALIGNMENT_RIGHT, col, 16))
+	grid.add_child(_lb_cell(str(Leaderboard.get_deaths(player_name)), LB_NUM, HORIZONTAL_ALIGNMENT_RIGHT, col, 16))
+	grid.add_child(_lb_cell(str(Leaderboard.get_killstreak(player_name)), LB_NUM, HORIZONTAL_ALIGNMENT_RIGHT, col, 16))
+	grid.add_child(_lb_cell(str(int(abs(Leaderboard.get_damage(player_name)))), LB_NUM, HORIZONTAL_ALIGNMENT_RIGHT, col, 16))
+	grid.add_child(_lb_cell(str(int(abs(Leaderboard.get_self_damage(player_name)))), LB_NUM, HORIZONTAL_ALIGNMENT_RIGHT, col, 16))
+	grid.add_child(_lb_cell(str(int(Leaderboard.get_self_heal(player_name))), LB_NUM, HORIZONTAL_ALIGNMENT_RIGHT, col, 16))
+	grid.add_child(_lb_cell(str(int(Leaderboard.get_heal_others(player_name))), LB_NUM, HORIZONTAL_ALIGNMENT_RIGHT, col, 16))
+
+
+func _lb_team_grid(players: Array, self_team: int) -> GridContainer:
+	var grid: GridContainer = GridContainer.new()
+	grid.columns = LB_COLS
+	grid.add_theme_constant_override("h_separation", 10)
+	grid.add_theme_constant_override("v_separation", 2)
+	for p in players:
+		_lb_add_row(grid, p, self_team)
+	return grid
+
+
+func _get_team(player_name: String) -> int:
+	var pnode: Player = GameManager.find_player(player_name)
+	if pnode:
+		return pnode.team
+	return Player.Team.FFA
+
+
+func _get_self_team() -> int:
+	return _get_team(player_id)
 
 
 func _build_leaderboard_ui() -> void:
@@ -134,113 +239,50 @@ func _build_leaderboard_ui() -> void:
 	_lb_canvas.name = "LeaderboardCanvas"
 	get_tree().root.add_child(_lb_canvas)
 
-	# Dim backdrop
 	var dim: ColorRect = ColorRect.new()
 	dim.color = Color(0.0, 0.02, 0.06, 0.78)
-	dim.anchor_left   = 0.0
-	dim.anchor_right  = 1.0
-	dim.anchor_top    = 0.0
-	dim.anchor_bottom = 1.0
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_lb_canvas.add_child(dim)
 
-	# Centered container
 	var center: CenterContainer = CenterContainer.new()
-	center.anchor_left   = 0.0
-	center.anchor_right  = 1.0
-	center.anchor_top    = 0.0
-	center.anchor_bottom = 1.0
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_lb_canvas.add_child(center)
 
-	# Outer VBox (title + scroll area)
-	var outer: VBoxContainer = VBoxContainer.new()
-	outer.add_theme_constant_override("separation", 0)
-	center.add_child(outer)
-
-	# Dark panel background
-	var panel: Panel = Panel.new()
-	panel.custom_minimum_size = Vector2(900, 400)
+	var panel: PanelContainer = PanelContainer.new()
+	panel.custom_minimum_size = Vector2(1080, 600)
 	var pstyle: StyleBoxFlat = StyleBoxFlat.new()
 	pstyle.bg_color = Color(0.05, 0.05, 0.08, 0.94)
-	pstyle.border_width_left = 2
-	pstyle.border_width_right = 2
-	pstyle.border_width_top = 2
-	pstyle.border_width_bottom = 2
+	pstyle.set_border_width_all(2)
 	pstyle.border_color = Color(0.3, 0.3, 0.4, 0.8)
-	pstyle.corner_radius_top_left = 8
-	pstyle.corner_radius_top_right = 8
-	pstyle.corner_radius_bottom_left = 8
-	pstyle.corner_radius_bottom_right = 8
+	pstyle.content_margin_left = 20.0
+	pstyle.content_margin_top = 14.0
+	pstyle.content_margin_right = 20.0
+	pstyle.content_margin_bottom = 14.0
 	panel.add_theme_stylebox_override("panel", pstyle)
-	outer.add_child(panel)
+	center.add_child(panel)
 
-	# VBox inside panel
 	var vbox: VBoxContainer = VBoxContainer.new()
-	vbox.anchor_left   = 0.0
-	vbox.anchor_right  = 1.0
-	vbox.anchor_top    = 0.0
-	vbox.anchor_bottom = 1.0
-	vbox.add_theme_constant_override("separation", 0)
+	vbox.add_theme_constant_override("separation", 6)
 	panel.add_child(vbox)
 
-	# Title
 	var title: Label = Label.new()
 	title.text = "LEADERBOARD  (hold Tab)"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 20)
+	title.add_theme_font_size_override("font_size", 24)
 	title.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9))
 	vbox.add_child(title)
 
-	# Separator
-	var sep: HSeparator = HSeparator.new()
-	vbox.add_child(sep)
+	vbox.add_child(HSeparator.new())
 
-	# Header row
-	var header_hbox: HBoxContainer = HBoxContainer.new()
-	header_hbox.add_theme_constant_override("separation", 2)
-	var hdr_col: Color = Color(0.55, 0.55, 0.6)
-	header_hbox.add_child(_make_label("#", COL_RANK, 12, hdr_col))
-	header_hbox.add_child(_make_label("Player", COL_NAME, 12, hdr_col))
-	header_hbox.add_child(_make_label("Character", COL_CHAR, 12, hdr_col))
-	header_hbox.add_child(_make_label("K", COL_K, 12, hdr_col))
-	header_hbox.add_child(_make_label("D", COL_D, 12, hdr_col))
-	header_hbox.add_child(_make_label("Strk", COL_STRK, 12, hdr_col))
-	header_hbox.add_child(_make_label("DMG", COL_DMG, 12, hdr_col))
-	header_hbox.add_child(_make_label("Self DMG", COL_SD, 12, hdr_col))
-	header_hbox.add_child(_make_label("Heal Self", COL_HO, 12, hdr_col))
-	header_hbox.add_child(_make_label("Heal Oth.", COL_HO, 12, hdr_col))
-	vbox.add_child(header_hbox)
-
-	# Separator
-	var sep2: HSeparator = HSeparator.new()
-	vbox.add_child(sep2)
-
-	# Scrollable player rows
 	var scroll: ScrollContainer = ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	vbox.add_child(scroll)
 
 	_lb_rows = VBoxContainer.new()
-	_lb_rows.add_theme_constant_override("separation", 0)
+	_lb_rows.add_theme_constant_override("separation", 6)
 	_lb_rows.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(_lb_rows)
-
-
-func _build_row(rank: String, name: String, char_name: String, kills: String, deaths: String, streak: String, dmg: String, self_dmg: String, heal_self: String, heal_oth: String, is_self: bool) -> HBoxContainer:
-	var hbox: HBoxContainer = HBoxContainer.new()
-	hbox.add_theme_constant_override("separation", 2)
-	var col: Color = Color(1.0, 0.84, 0.0) if is_self else Color(0.82, 0.82, 0.82)
-	hbox.add_child(_make_label(rank,      COL_RANK, 13, col))
-	hbox.add_child(_make_label(name,      COL_NAME, 13, col))
-	hbox.add_child(_make_label(char_name, COL_CHAR, 13, col))
-	hbox.add_child(_make_label(kills,     COL_K,   13, col))
-	hbox.add_child(_make_label(deaths,    COL_D,   13, col))
-	hbox.add_child(_make_label(streak,    COL_STRK, 13, col))
-	hbox.add_child(_make_label(dmg,       COL_DMG, 13, col))
-	hbox.add_child(_make_label(self_dmg,  COL_SD,  13, col))
-	hbox.add_child(_make_label(heal_self, COL_HO,  13, col))
-	hbox.add_child(_make_label(heal_oth,  COL_HO,  13, col))
-	return hbox
 
 
 func _on_scores_changed(_player_name = null) -> void:
@@ -253,51 +295,29 @@ func _rebuild_leaderboard() -> void:
 	if Leaderboard == null:
 		return
 
-	var players = Leaderboard.get_players()
-	players.sort_custom(func(a, b):
-		return Leaderboard.get_kills(a) > Leaderboard.get_kills(b)
-	)
-
-	# Clear old rows
 	for child in _lb_rows.get_children():
 		child.queue_free()
 
-	var rank: int = 0
+	_lb_rows.add_child(_lb_header_grid())
+
+	var self_team: int = _get_self_team()
+	var teams := {Player.Team.SPI: [], Player.Team.SCI: [], Player.Team.FFA: []}
+	for p in Leaderboard.get_players():
+		var t: int = _get_team(p)
+		teams[t].append(p)
+
 	var my_streak: int = 0
+	for team in [Player.Team.SPI, Player.Team.SCI, Player.Team.FFA]:
+		var players: Array = teams[team]
+		if players.is_empty():
+			continue
+		players.sort_custom(func(a, b): return Leaderboard.get_kills(a) > Leaderboard.get_kills(b))
+		_lb_rows.add_child(_lb_team_header(team))
+		_lb_rows.add_child(_lb_team_grid(players, self_team))
+		for p in players:
+			if p == player_id:
+				my_streak = Leaderboard.get_killstreak(p)
 
-	for player in players:
-		rank += 1
-		var kills: int = Leaderboard.get_kills(player)
-		var deaths: int = Leaderboard.get_deaths(player)
-		var streak: int = Leaderboard.get_killstreak(player)
-		var damage: int = int(abs(Leaderboard.get_damage(player)))
-		var self_dam: int = int(abs(Leaderboard.get_self_damage(player)))
-		var heal_others: int = int(Leaderboard.get_heal_others(player))
-		var heal_self: int = int(Leaderboard.get_self_heal(player))
-
-		var is_self: bool = (player == player_id)
-		if is_self:
-			my_streak = streak
-
-		# Character name
-		var char_name: String = ""
-		var pnode: Player = GameManager.find_player(player)
-		if pnode and pnode._character:
-			char_name = pnode._character.character_name
-
-		# Truncate long names
-		var short_name: String = str(player)
-		if short_name.length() > 14:
-			short_name = short_name.substr(0, 13) + "."
-
-		_lb_rows.add_child(_build_row(
-			str(rank), short_name, char_name,
-			str(kills), str(deaths), str(streak),
-			str(damage), str(self_dam), str(heal_self), str(heal_others),
-			is_self
-		))
-
-	# Update killstreak display
 	if has_node("Killstreak"):
 		$Killstreak.text = "%d kills" % my_streak if my_streak > 0 else ""
 

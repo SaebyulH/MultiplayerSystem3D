@@ -22,6 +22,7 @@ func _ready() -> void:
 	body_exited.connect(_on_body_exited)
 	prompt_label.visible = false
 	_build_popup()
+	_detected_ips = ConnectionUtils.detect_ips()
 
 
 func _exit_tree() -> void:
@@ -134,7 +135,6 @@ func _build_popup() -> void:
 
 
 func _open_popup() -> void:
-	_detected_ips = ConnectionUtils.detect_ips()
 	_shown_ip_index = 0
 	_update_ip_display()
 	_status_label.text = ""

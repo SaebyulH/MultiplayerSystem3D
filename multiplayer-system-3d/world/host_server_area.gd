@@ -137,7 +137,6 @@ func _populate_map_list() -> void:
 
 
 func _open_popup() -> void:
-	_populate_map_list()
 	_status_label.text = ""
 	_popup_layer.visible = true
 	PlayerInput.ui_open = true
