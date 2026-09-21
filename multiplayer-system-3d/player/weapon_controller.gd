@@ -51,6 +51,8 @@ var _bullet_hole_scene: PackedScene = preload("res://effects/bullet_hole.tscn")
 var _scratch_scene: PackedScene = preload("res://effects/scratch.tscn")
 var _tracer_scene: PackedScene = preload("res://weapon/tracer.tscn")
 var _bullet_impact_scene: PackedScene = preload("res://effects/bullet_impact.tscn")
+var _bullet_hole_texture: Texture2D = preload("res://effects/bullet_hole.png")
+var _scratch_texture: Texture2D = preload("res://assets/scratch.png")
 var _hit_sound: AudioStream = preload("res://assets/sounds/Hitsound.wav")
 var _hit_heal_sound: AudioStream = preload("res://assets/sounds/medkit_sound.mp3")
 var _crit_sound: AudioStream = preload("res://assets/sounds/Crit_received1.wav")
@@ -184,6 +186,15 @@ signal signal_activated(target: Vector3, player_transform: Vector3)
 @export var shoot_animation: AnimationPlayer
 
 var current_weapon_model: Node3D = null
+
+# Cached node refs + reusable fire-path buffers.  These were per-shot `$`-path
+# lookups / fresh allocations; caching them removes that churn (see #5 in
+# docs/05-known-issues.md).
+@onready var _muzzle_flash: MuzzleFlash = $MuzzleFlash
+@onready var _hurt_component2: HurtComponent = $"../HurtComponent2"
+var _recoil_data: Dictionary = {}
+var _exclude_rids: Array[RID] = []
+var _ray_query := PhysicsRayQueryParameters3D.new()
 
 # Muzzle nodes on the current weapon model, discovered recursively by name.
 # Weapons with multiple muzzles (twin barrels, etc.) fire them alternately.
@@ -1769,12 +1780,10 @@ func _try_fire(weapon_fire_index: int) -> void:
 
 	var data: RecoilData = _weapons[current_weapon_index].weapon_fires[weapon_fire_index].recoil_data
 
-	var data_dict := {
-		"recoil": data.recoil,
-		"aim_recoil": data.aim_recoil,
-		"snappiness": data.snappiness,
-		"return_speed": data.return_speed
-	}
+	_recoil_data["recoil"] = data.recoil
+	_recoil_data["aim_recoil"] = data.aim_recoil
+	_recoil_data["snappiness"] = data.snappiness
+	_recoil_data["return_speed"] = data.return_speed
 
 	var r: Vector3      = recoil.recoil
 	var rolled: Vector3 = Vector3(
@@ -1783,7 +1792,7 @@ func _try_fire(weapon_fire_index: int) -> void:
 		randf_range(-r.z, r.z)
 	)
 
-	_apply_recoil_rpc.rpc(data_dict, rolled)
+	_apply_recoil_rpc.rpc(_recoil_data, rolled)
 
 
 	# Mark the start of the fire cycle so speed multipliers stay active.
@@ -2148,25 +2157,25 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 
 		var space_state: PhysicsDirectSpaceState3D = _parent_player.get_world_3d().direct_space_state
 		var origin: Vector3 = camera.global_position
-		var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
-			origin,
-			origin + world_dir * weapon_fire.hitscan_range
-		)
+		var query: PhysicsRayQueryParameters3D = _ray_query
+		query.from = origin
+		query.to = origin + world_dir * weapon_fire.hitscan_range
 		
 		
 		
 		
-		var exclude_rids := [_parent_player.get_rid()] #,$"../HeadHurtbox".get_rid(), $"../BodyHurtbox".get_rid(), $"../BodyHurtbox2".get_rid()]
-		for hurtbox_component in $"../HurtComponent2".hurtbox_components:
-			exclude_rids.append(hurtbox_component.get_rid())
+		_exclude_rids.clear()
+		_exclude_rids.append(_parent_player.get_rid())
+		for hurtbox_component in _hurt_component2.hurtbox_components:
+			_exclude_rids.append(hurtbox_component.get_rid())
 		
 		
 		# Also exclude the player's own shield so they can't damage it.
 		if _parent_player.shield_instance and is_instance_valid(_parent_player.shield_instance):
 			var shield_area := _parent_player.shield_instance.get_node_or_null("ShieldArea") as Area3D
 			if shield_area:
-				exclude_rids.append(shield_area.get_rid())
-		query.exclude = exclude_rids
+				_exclude_rids.append(shield_area.get_rid())
+		query.exclude = _exclude_rids
 		query.collide_with_areas = true
 		query.collision_mask = (1 << 0) | (1 << 2) | (1 << 7)
 		var result: Dictionary = space_state.intersect_ray(query)
@@ -2427,7 +2436,7 @@ func _is_backshot(victim: Player) -> bool:
 func _flash_muzzle_flash(start_position: Vector3, flash_color: Color, direction: Vector3) -> void:
 	if not _is_ready():
 		return
-	var muzzle_flash = $MuzzleFlash
+	var muzzle_flash := _muzzle_flash
 	# Aim the flash along the shot direction instead of copying the weapon
 	# model's rotation (the model is now skeleton-oriented, not raycast-aligned).
 	if direction.length_squared() > 0.0001:
@@ -2439,33 +2448,32 @@ func _flash_muzzle_flash(start_position: Vector3, flash_color: Color, direction:
 func _on_hitscan_hit(hit_position: Vector3, hit_normal: Vector3, start_position: Vector3, flash_color: Color, melee: bool = false, orientation_dir: Vector3 = Vector3.ZERO, surface_hit: bool = true) -> void:
 	# Melee hits leave a scratch decal instead of a bullet hole, and no tracer.
 	var decal_scene: PackedScene = _scratch_scene if melee else _bullet_hole_scene
-	var decal: Node3D = decal_scene.instantiate() as Node3D
+	var decal_texture: Texture2D = _scratch_texture if melee else _bullet_hole_texture
+	var decal := BulletDecal.acquire()
+	if decal == null:
+		decal = decal_scene.instantiate() as BulletDecal
 	projectile_spawn_parent.add_child(decal)
 	decal.global_position = hit_position
 	if melee:
 		decal.global_transform.basis = _melee_decal_basis(hit_normal, orientation_dir)
 	else:
 		decal.global_transform.basis = Basis(Quaternion(Vector3.UP, hit_normal))
-	# Timer is a child of the decal Ã¢â‚¬â€ if the decal is freed (parent cleanup),
-	# the timer is freed too, so the timeout never fires with a stale reference.
-	var timer := Timer.new()
-	timer.one_shot = true
-	timer.wait_time = 7.0
-	timer.timeout.connect(decal.queue_free)
-	decal.add_child(timer)
-	timer.start()
-
+	decal.place(decal_texture)
 	if not melee:
-		var tracer: Tracer = _tracer_scene.instantiate() as Tracer
+		var tracer := Tracer.acquire()
+		if tracer == null:
+			tracer = _tracer_scene.instantiate() as Tracer
 		projectile_spawn_parent.add_child(tracer)
 		tracer.fire(start_position, hit_position, flash_color)
 
 		# Bullet-impact particles on the struck surface.  Skipped for the "far
 		# miss" path (surface_hit == false), which still needs a tracer but has
-		# no surface to impact.  The impact frees itself once its one-shot
-		# particles finish (see BulletImpact.fire).
+		# no surface to impact.  The impact returns itself to the pool once its
+		# one-shot particles finish (see BulletImpact.fire).
 		if surface_hit:
-			var impact: BulletImpact = _bullet_impact_scene.instantiate() as BulletImpact
+			var impact := BulletImpact.acquire()
+			if impact == null:
+				impact = _bullet_impact_scene.instantiate() as BulletImpact
 			projectile_spawn_parent.add_child(impact)
 			impact.global_position = hit_position
 			if hit_normal.length_squared() > 0.0001:

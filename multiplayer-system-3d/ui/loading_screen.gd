@@ -33,6 +33,24 @@ static func report(v: float, text: String = "") -> void:
 			current.set_status(text)
 
 
+## Show the active loading screen — used by transitions that boot already closed
+## it for, e.g. joining a party.  No-ops when no loading screen is active.
+static func show_screen(progress: float = 0.0, status: String = "") -> void:
+	if current == null:
+		return
+	current.visible = true
+	if progress >= 0.0:
+		current.set_progress(progress)
+	if status != "":
+		current.set_status(status)
+
+
+## Hide the active loading screen.  No-ops when no loading screen is active.
+static func hide_screen() -> void:
+	if current:
+		current.visible = false
+
+
 func _ready() -> void:
 	current = self
 	_progress.value = 0.0

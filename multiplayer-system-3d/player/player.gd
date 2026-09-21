@@ -363,6 +363,16 @@ var _teammate_occluded_time: Dictionary = {}
 ## damage numbers and the health bar.
 var _seen_by_local := true
 
+## Occlusion raycasts + the players-group query are the only per-frame cost in
+## `_update_visibility`, and they cascade O(N²) across clients.  Throttle both to
+## a fixed interval and reuse cached results in between (see #2 in
+## docs/05-known-issues.md).
+const OCCLUSION_REFRESH_INTERVAL := 0.1
+var _occlusion_timer := 0.0
+## Player list + last occlusion result, refreshed every OCCLUSION_REFRESH_INTERVAL.
+var _visibility_players: Array[Player] = []
+var _occlusion_cache: Dictionary = {}  # player name -> bool
+
 # ── Ghost abilities (invisibility / noclip) ───────────────────────────────
 ## Materials applied as material_override to the model + weapon while a ghost
 ## effect is active.  Client-side rendering, driven by the synced effect mirror.
@@ -2388,9 +2398,26 @@ func _update_visibility(delta: float) -> void:
 		self_tier = GhostTier.GLASS
 	set_ghost_tier(self_tier)
 
-	for node in get_tree().get_nodes_in_group("players"):
-		var other := node as Player
-		if other == null or other == self:
+	# Occlusion raycasts (and the players-group query) are the only per-frame
+	# cost here, and they cascade O(N²) across clients.  Throttle both to a fixed
+	# interval and reuse the cached results in between (see #2 in
+	# docs/05-known-issues.md).
+	_occlusion_timer += delta
+	if _occlusion_timer >= OCCLUSION_REFRESH_INTERVAL:
+		_occlusion_timer = 0.0
+		_visibility_players.clear()
+		_occlusion_cache.clear()
+		for node in get_tree().get_nodes_in_group("players"):
+			if node == self:
+				continue
+			var p := node as Player
+			if p == null:
+				continue
+			_visibility_players.append(p)
+			_occlusion_cache[p.name] = _is_occluded_by_wall(p)
+
+	for other in _visibility_players:
+		if not is_instance_valid(other):
 			continue
 
 		var show_outline := false
@@ -2420,7 +2447,7 @@ func _update_visibility(delta: float) -> void:
 				outline_allowed = true
 				outline_color = ENEMY_OUTLINE_COLOR
 
-			var occluded := _is_occluded_by_wall(other)
+			var occluded: bool = _occlusion_cache.get(other.name, false)
 
 			# Outline shows only while occluded.  Teammate outlines fade out
 			# after being behind a wall for a while to reduce distraction.

@@ -59,11 +59,19 @@ func create_client(host_ip: String = "localhost", host_port: int = SERVER_PORT) 
 #  Scene entry
 # ─────────────────────────────────────────────
 
-func enter_existing_game_scene():
+func enter_existing_game_scene() -> void:
 	if OS.is_debug_build(): print("Entering game scene")
+	LoadingScreen.report(0.6, "Loading world...")
 	game_scene = preload(GAME_SCENE).instantiate()
 	get_tree().current_scene.add_child(game_scene)
 	get_tree().current_scene.hide_main_menu()
+	LoadingScreen.report(0.9, "Spawning players...")
+	# Keep the loading screen up through the first rendered frames so the
+	# connect-time map/player replication and D3D12 shader compilation happen
+	# behind it (same rationale as boot in world/main.gd).
+	await get_tree().process_frame
+	await get_tree().process_frame
+	LoadingScreen.hide_screen()
 
 
 func load_game_scene(map_path: String):
@@ -94,6 +102,7 @@ func boot_to_lobby() -> void:
 
 ## A player already in their own lobby connects to a host's lobby/match.
 func join_party(host_ip: String, host_port: int = SERVER_PORT) -> void:
+	LoadingScreen.show_screen(0.1, "Connecting...")
 	_remove_game_scene()
 	var err := create_client(host_ip, host_port)
 	if err != OK:
@@ -104,6 +113,7 @@ func join_party(host_ip: String, host_port: int = SERVER_PORT) -> void:
 func return_to_lobby() -> void:
 	if OS.is_debug_build(): print("Returning to lobby...")
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	LoadingScreen.hide_screen()  # in case a join failed mid-connect and left it up
 	_terminate_connection()  # close peer FIRST so port 8080 frees for re-host
 	_remove_game_scene()
 	# Re-host on a deferred call.  A synchronous teardown+rehost is invisible to

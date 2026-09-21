@@ -132,9 +132,10 @@ The menu's `CanvasLayer` starts visible, so the loadout screen covers the world 
 
 `world/join_party_area.gd:176-196` — `_on_join_pressed()` (IP or 6-char code via `ConnectionUtils.code_to_ip`) and `_on_join_local_pressed()` (`127.0.0.1`) → `NetworkManager.join_party(address)`.
 
-`network/network_manager.gd:96-100` — `join_party(host_ip, port)`:
+`network/network_manager.gd:104-109` — `join_party(host_ip, port)`:
+- `LoadingScreen.show_screen(0.1, "Connecting…")` — re-shows the boot loading screen to mask the connect-time spike (see Stage 8 / `05-known-issues.md` #18).
 - `_remove_game_scene()` **first** (frees the joiner's solo world1, SpawnManager, players, lobby map + its spawner).
-- `create_client(host_ip, port)`; on error, `return_to_lobby()`.
+- `create_client(host_ip, port)`; on error, `return_to_lobby()` (which hides the loading screen).
 
 `network/network_manager.gd:46-55` — `create_client()`: `is_hosting_game = false`, `_terminate_connection()` (stop NetworkTime + close/null old peer), `ENetMultiplayerPeer.create_client`, set peer.
 
@@ -144,7 +145,7 @@ The menu's `CanvasLayer` starts visible, so the loadout screen covers the world 
 
 ## Stage 8 — `enter_existing_game_scene()` + map replication
 
-`network/network_manager.gd:62-66` — `enter_existing_game_scene()`: instantiate `world1.tscn`, add as child of `current_scene`, `hide_main_menu()`. **No `map_path`, no map load, no SpawnManager** — because `world_1.gd:24`'s `if is_hosting_game:` is false on a client.
+`network/network_manager.gd:62-74` — `enter_existing_game_scene()`: instantiate `world1.tscn`, add as child of `current_scene`, `hide_main_menu()`, report loading checkpoints, then **hide the loading screen after two `process_frame`s** — the same "keep it up through the first rendered frames" pattern as boot (`world/main.gd:39-41`), so connect-time map/player replication + D3D12 shader compilation happen behind it. **No `map_path`, no map load, no SpawnManager** — because `world_1.gd:24`'s `if is_hosting_game:` is false on a client.
 
 The client's own `MultiplayerSpawner` (`world1.tscn:95-97`) then receives the host's replicated `"Map"` node and existing `Player` nodes into its `SpawnParent`.
 

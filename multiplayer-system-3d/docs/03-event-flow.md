@@ -92,6 +92,8 @@ On the client, `NetworkManager._on_connected_to_server` (connected in autoload 1
 
 Consequence: `enter_existing_game_scene()` builds the client `world1.tscn` (and receives replicated nodes) *before* `NetworkTime.start()` begins the client's initial clock sync. In practice players arrive but don't tick until `after_sync`; any re-ordering of autoloads, or a change to `NetworkEvents._set_enabled` timing, could race this. Fragile by construction.
 
+When this ordering races the spawner, the client's rollback history can be seeded from a tick far from the server's, producing the "past the history limit" warning + low-FPS spike on join (`05-known-issues.md` #18).
+
 ---
 
 ## Full fragile / order-dependent list

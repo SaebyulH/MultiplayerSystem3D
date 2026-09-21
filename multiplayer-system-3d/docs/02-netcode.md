@@ -57,6 +57,11 @@ Also excluded: the local ability-staging vars `queued_charge_trigger_dir` / `que
 4. `RollbackSynchronizer` records input after each tick and restores recorded state before each `_rollback_tick`. `enable_input_broadcast = true` (default).
 5. `Player._rollback_tick(delta, tick, is_fresh)` (`player/player.gd:968-1052`) re-simulates movement, consuming the rollback input properties. Netfox calls `_rollback_tick` on every rollback-aware node under `root`.
 
+> **Tick desync** (`05-known-issues.md` #18): when a peer's render FPS drops below the
+> tickrate, its `NetworkTime.tick` falls behind the other peer's (the tick loop is capped
+> by `max_ticks_per_frame`), so rollback inputs are stamped too old and rejected, and
+> movement renders seconds late. Fixed by raising `max_ticks_per_frame` (8 → 60).
+
 ### Determinism requirements (explicit in code)
 
 - **Rising-edge detection** so presses replay deterministically: `_apply_movement_from_input` (`player.gd:1493`) computes `jump_pressed`/`dash_pressed`/`crouch_pressed` against `*_held_prev` and updates those held-prev flags — which are themselves in `state_properties`.
@@ -176,7 +181,7 @@ Other modes follow the same shape: `koth_mode.gd:23-39` and `domination_mode.gd:
 1. **Camera-relative movement with unsynced camera** (`player.gd:1493, 1864`; `body.gd:26-57` + commented `sync_rotation`).
 2. **`_sync_mag` unreliable** (`weapon_controller.gd:2015`).
 3. **`fire_intent` lacks sender validation** (`weapon_controller.gd:1948`) vs `request_reload` (`1459`).
-4. **Health regen simulates on every peer** (`attribute_component.gd:160-180`, no `is_server()` gate) and calls `apply_health_delta`, triggering kill/score bookkeeping. The server's value wins via `MultiplayerSynchronizer` (always), but the client duplicate-simulates death/score side effects on negative regen.
+4. **Health regen simulates on every peer** (`attribute_component.gd:160-180`, no `is_server()` gate) and calls `apply_health_delta`, triggering kill/score bookkeeping. The server's value wins via `MultiplayerSynchronizer` (always), but the client duplicate-simulates death/score side effects on negative regen. **`[FIXED 2026-09-20]` — regen is now `is_server()`-gated and self-heal stat reporting is throttled.**
 5. **Two overlapping 10 Hz control-point syncs** — `ControlPoint._rpc_sync_state` unreliable (`control_point.gd:242`) vs `GameModeComponent._rpc_sync_state` reliable (`game_mode_component.gd:128`). Intentional redundancy, easy to mistake for a duplicate.
 6. **Manual state kept in sync against netfox rollback** — `scale` re-derived each tick (`player.gd:969-972`); `_spawn_pending_position`/`pinned_charger_name` persist across re-sim.
 7. **Server-side randomness is fine, rollback randomness is not** — `_get_spawn_position` uses `randi()` but runs server-side via RPC; fire spread `randf()` runs only in server-side `_fire_single_shot`. Neither is inside `_rollback_tick`.

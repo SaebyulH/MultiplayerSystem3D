@@ -40,6 +40,7 @@ var _crosshair: ColorRect
 var _respawn_label: Label
 var _respawn_label_bg: ColorRect
 var _fps_label: Label
+var _fps_canvas: CanvasLayer
 var _fps_low: bool = false
 
 # Full-screen scope overlay shown over the HUD while ADS is active.
@@ -105,6 +106,12 @@ var _ui_timer: Timer
 # Targeted-ability preview labels (projected over candidate enemies).
 var _preview_layer: CanvasLayer
 var _preview_labels: Array[Label] = []
+## Candidate discovery (players-group query + LOS raycast + sort) is throttled to
+## 10 Hz; results are cached per ability and only the cheap label re-projection
+## runs every frame (see #3 in docs/05-known-issues.md).
+const PREVIEW_REFRESH_INTERVAL := 0.1
+var _preview_timer := 0.0
+var _preview_candidates: Dictionary = {}  # ability -> Array[Player]
 
 # Layout constants
 const MARGIN: float = 20.0
@@ -294,10 +301,10 @@ func _build_fps() -> void:
 	# over every other HUD/menu.  Built only for the owning peer.
 	if not (is_multiplayer_authority() and not _owner_player.is_bot):
 		return
-	var fps_canvas := CanvasLayer.new()
-	fps_canvas.name = "FPSCanvas"
-	fps_canvas.layer = 100
-	get_tree().root.add_child(fps_canvas)
+	_fps_canvas = CanvasLayer.new()
+	_fps_canvas.name = "FPSCanvas"
+	_fps_canvas.layer = 100
+	get_tree().root.add_child(_fps_canvas)
 
 	_fps_label = Label.new()
 	_fps_label.anchor_left   = 1.0
@@ -313,7 +320,16 @@ func _build_fps() -> void:
 	_fps_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
 	_fps_label.add_theme_constant_override("outline_size", 4)
 	_fps_label.add_theme_color_override("font_color", Color(0.3, 0.9, 0.3))
-	fps_canvas.add_child(_fps_label)
+	_fps_canvas.add_child(_fps_label)
+
+
+## Free the FPS canvas when this HUD is freed.  It is parented to the tree root
+## (so it renders above every other layer), which means it is NOT freed alongside
+## this node — without this, each return-to-lobby re-hosts another overlapping
+## counter.
+func _exit_tree() -> void:
+	if _fps_canvas:
+		_fps_canvas.queue_free()
 
 func _build_health() -> void:
 	# -- Container (left of the centered ability block) --
@@ -710,7 +726,7 @@ func _process(delta: float) -> void:
 	_update_stamina()
 	_update_scope_charge_ui()
 	_update_fps()
-	_update_targeted_previews()
+	_update_targeted_previews(delta)
 	_update_aimbot_circle()
 	_update_ability_cooldowns()
 
@@ -734,7 +750,7 @@ func _build_ability_previews() -> void:
 
 ## Draw a column of ability-name labels over each candidate enemy for every
 ## active targeted ability.  Locked (would-hit) targets are coloured red.
-func _update_targeted_previews() -> void:
+func _update_targeted_previews(delta: float) -> void:
 	if _owner_player == null:
 		return
 	# While a menu (loadout / join / host popup) is open the 3D world is dimmed;
@@ -750,21 +766,50 @@ func _update_targeted_previews() -> void:
 			lbl.visible = false
 		return
 
-	# Build entries: one per (candidate, active targeted ability).
+	# Candidate discovery does a players-group query + a line-of-sight raycast + a
+	# sort per enemy — the per-frame cost this function is known for (#3 in
+	# docs/05-known-issues.md).  Throttle it to 10 Hz and reuse the cached list in
+	# between; only the cheap label re-projection below runs every frame.
+	var abilities := am.get_abilities()
+	_preview_timer += delta
+	if _preview_timer >= PREVIEW_REFRESH_INTERVAL:
+		_preview_timer = 0.0
+		_preview_candidates.clear()
+		for i in abilities.size():
+			var ability := abilities[i] as TargetedAbility
+			if ability == null:
+				continue
+			# No preview while the ability is on cooldown.
+			if am.get_cooldown_remaining(i) > 0.0:
+				continue
+			# INSTANT abilities are always active; EQUIP only while equipped.
+			if ability.cast_type == Ability.CastType.EQUIP and am.equipped_index != i:
+				continue
+			_preview_candidates[ability] = ability.find_candidates(_owner_player)
+
+	# Build entries (one per candidate × active targeted ability) from the cached
+	# candidate lists.
 	var entries: Array[Dictionary] = []
 	var stacks: Dictionary = {}  # candidate name -> next column slot
-	var abilities := am.get_abilities()
 	for i in abilities.size():
 		var ability := abilities[i] as TargetedAbility
 		if ability == null:
 			continue
-		# No preview while the ability is on cooldown.
 		if am.get_cooldown_remaining(i) > 0.0:
 			continue
-		# INSTANT abilities are always active; EQUIP only while equipped.
 		if ability.cast_type == Ability.CastType.EQUIP and am.equipped_index != i:
 			continue
-		var candidates := ability.find_candidates(_owner_player)
+			
+					#TODO
+		#
+		#E 0:04:12:419   PlayerBodyUI._update_targeted_previews: Trying to assign an array of type "Array" to a variable of type "Array[Player]".
+  #<GDScript Source>player_ui.gd:802 @ PlayerBodyUI._update_targeted_previews()
+  #<Stack Trace> player_ui.gd:802 @ _update_targeted_previews()
+				#player_ui.gd:729 @ _process()
+
+		var candidates: Array[Player] = _preview_candidates.get(ability, []) 
+		
+
 		var locked: Dictionary = {}
 		var limit := mini(candidates.size(), ability.max_targets)
 		for k in limit:

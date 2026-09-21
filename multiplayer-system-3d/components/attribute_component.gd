@@ -18,8 +18,13 @@ var _enemy_attacker_expiry: Timer
 @export var passive_heal_per_sec: float = 10.0
 
 var _time_since_last_damage: float = 0.0
+## Accumulated self-heal waiting to be reported (throttled to avoid an RPC +
+## scores_changed emit every frame while regenerating).
+var _pending_self_heal: float = 0.0
+var _regen_stat_timer: Timer
 const HEAL_DELAY := 5.0
 const ENEMY_ATTACKER_EXPIRY := 30.0
+const REGEN_STAT_INTERVAL := 0.5
 
 @export var starting_health := 100.0
 
@@ -43,9 +48,25 @@ func _ready() -> void:
 	_enemy_attacker_expiry.timeout.connect(_on_enemy_attacker_expired)
 	add_child(_enemy_attacker_expiry)
 
+	_regen_stat_timer = Timer.new()
+	_regen_stat_timer.name = "RegenStatTimer"
+	_regen_stat_timer.wait_time = REGEN_STAT_INTERVAL
+	_regen_stat_timer.one_shot = true
+	_regen_stat_timer.timeout.connect(_flush_regen_stat)
+	add_child(_regen_stat_timer)
+
 
 func _on_enemy_attacker_expired() -> void:
 	last_enemy_attacker = "NONE"
+
+
+## Report accumulated self-heal to the leaderboard.  Called on a throttle timer
+## so regenerating players don't emit an RPC + scores_changed every frame.
+func _flush_regen_stat() -> void:
+	if _pending_self_heal <= 0.0:
+		return
+	Leaderboard.request_add_self_heal(get_parent().name, _pending_self_heal)
+	_pending_self_heal = 0.0
 
 
 func apply_health_delta(delta: float, changer: String, changee: String, is_headshot: bool = false, falloff_mult: float = 1.0, is_backshot: bool = false):
@@ -156,8 +177,18 @@ func reset():
 	if _enemy_attacker_expiry:
 		_enemy_attacker_expiry.stop()
 	_time_since_last_damage = 0.0
+	_pending_self_heal = 0.0
+	if _regen_stat_timer:
+		_regen_stat_timer.stop()
 
 func _process(delta: float) -> void:
+	# Health is server-authoritative; clients mirror it via the
+	# MultiplayerSynchronizer. Running regen on every peer duplicated the
+	# find_player scan, sent an RPC every frame, and (for negative regen)
+	# duplicated death/score bookkeeping.
+	if not multiplayer.is_server():
+		return
+
 	# Character regen overrides base values when set (non-null character).
 	var heal_rate: float = passive_heal_per_sec
 	var heal_delay: float = HEAL_DELAY
@@ -167,8 +198,8 @@ func _process(delta: float) -> void:
 		heal_delay = p._character.regen_delay
 
 	if heal_rate < 0.0:
-		# Negative regen = damage over time.  Applied directly, bypasses
-		# the heal-delay gate and can kill the player (setter emits no_health).
+		# Negative regen = damage over time.  Applied directly, bypasses the
+		# heal-delay gate and can kill the player (setter emits no_health).
 		health = health + heal_rate * delta
 		return
 
@@ -177,4 +208,11 @@ func _process(delta: float) -> void:
 		return
 	if _time_since_last_damage < heal_delay:
 		return
-	apply_health_delta(heal_rate * delta, get_parent().name, get_parent().name)
+
+	# Apply the heal directly (no find_player / per-frame RPC) and accumulate
+	# the self-heal stat, reporting it on a throttle timer instead of every frame.
+	var old_health := health
+	health = clamp(old_health + heal_rate * delta, 0.0, starting_health)
+	_pending_self_heal += health - old_health
+	if _regen_stat_timer.is_stopped():
+		_regen_stat_timer.start()

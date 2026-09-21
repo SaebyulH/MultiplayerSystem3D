@@ -42,10 +42,9 @@ Treat a missing doc update as an incomplete change.
 3. **`_sync_mag` is unreliable** (`@rpc("any_peer","call_local")`), unlike `_sync_all_mags`/`_confirm_reload_done`. Authoritative ammo can drop and client mag diverges. `weapon_controller.gd:2015`.
 4. **Movement is camera-relative but the camera basis is not synced** — remote simulation of movement/dash/charge uses a stale basis and relies on netfox state correction. `player.gd:1493`, `1864`; `body.gd:26-57`.
 5. **Health regen runs on every peer, un-gated** (`attribute_component.gd:160-180`), sending an RPC + doing linear `find_player` scans every frame per healing player. This is the #1 perf hotspot. `05-known-issues.md`.
-6. **Per-frame raycast cascades** in `_update_visibility` and targeted-ability previews (N−1 raycasts/frame/player). `player.gd:2374`; `targeted_ability.gd:29`.
-7. **Use `queue_free`, never `free()`, when swapping maps** — the spawner needs the removal event to despawn on peers. `network_manager.gd:133`.
-8. **`spawnable_scenes` requirement:** any map the scanner returns must have its scene uid in `world1.tscn`'s `MultiplayerSpawner._spawnable_scenes`, or it won't replicate.
-9. **Godot shares `Resource`/sub-resource instances across scene instances.** Per-player mutable state must be `duplicate(true)`'d (weapons, `Shape3D`s, `AnimationTree.tree_root`, team-tint materials).
-10. **Never use `:=` on an untyped `Variant` source** (e.g. `%UniqueName` node refs are typed `Node`). Cast first or use an explicit type.
+6. **Use `queue_free`, never `free()`, when swapping maps** — the spawner needs the removal event to despawn on peers. `network_manager.gd:133`.
+7. **`spawnable_scenes` requirement:** any map the scanner returns must have its scene uid in `world1.tscn`'s `MultiplayerSpawner._spawnable_scenes`, or it won't replicate.
+8. **Godot shares `Resource`/sub-resource instances across scene instances.** Per-player mutable state must be `duplicate(true)`'d (weapons, `Shape3D`s, `AnimationTree.tree_root`, team-tint materials).
+9. **Never use `:=` on an untyped `Variant` source** (e.g. `%UniqueName` node refs are typed `Node`). Cast first or use an explicit type.
 
 See `03-event-flow.md` for the full ordering invariants and `05-known-issues.md` for the actionable backlog.

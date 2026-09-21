@@ -22,19 +22,21 @@ There is no profiler-friendly budget configured; the game runs `_process` (rende
 
 ## The big three hot spots (fix first — see `05-known-issues.md`)
 
-### 1. Per-frame raycast + group-query cascade in visibility/wallhack
+### 1. Per-frame raycast + group-query cascade in visibility/wallhack — `[FIXED 2026-09-20]`
 
-`player/player.gd` `_update_visibility(delta)` (`2374`) runs every rendered frame from `_process` (`1488`). It loops `get_tree().get_nodes_in_group("players")` (`2391`) and, per other player, calls `_is_occluded_by_wall` (`2322`) → `PhysicsRayQueryParameters3D.create` + `space.intersect_ray` (`2328-2330`).
+`player/player.gd` `_update_visibility(delta)` (`2384`) runs every rendered frame from `_process` (`1488`). It loops the cached `_visibility_players` list and, per other player, reads the cached occlusion result (`_occlusion_cache`); the raycasts and `get_nodes_in_group("players")` are throttled to 10 Hz (`OCCLUSION_REFRESH_INTERVAL`).
 
-**Cost:** N−1 unthrottled raycasts/frame + one group query/frame, per client. No caching, throttling, or occlusion reuse. This is likely the single biggest render-frame cost with many players.
+**Cost (before fix):** N−1 unthrottled raycasts/frame + one group query/frame, per client — likely the single biggest render-frame cost with many players. Now reduced to N−1 raycasts + one group query at 10 Hz, with results cached in between.
 
-### 2. Per-frame raycast + sort + dictionary alloc in targeted-ability previews
+### 2. Per-frame raycast + sort + dictionary alloc in targeted-ability previews — `[FIXED 2026-09-20]`
 
-`player/player_ui.gd` `_process` (`698`) → `_update_targeted_previews` (`737`) → `ability.find_candidates(_owner_player)` (`767`). `targeted_ability.gd` `find_candidates` (`29`): `get_nodes_in_group("players")` (`43`), `has_line_of_sight_to` raycast per enemy (`56`), `cam.unproject_position` (`58`), `scored.append({...})` dictionary (`60`), `sort_custom` (`62`).
+`player/player_ui.gd` `_update_targeted_previews` now throttles `ability.find_candidates` (the group query + `has_line_of_sight_to` raycast per enemy + `sort_custom`) to 10 Hz (`PREVIEW_REFRESH_INTERVAL`), caching the result per ability in `_preview_candidates`. Between refreshes only the cheap label re-projection runs.
 
-**Cost:** for every equipped targeted ability (cooldown 0), a group query + raycast per enemy + screen projection + dictionary allocation + sort **every frame**. Combined with #1, this is multiple raycasts per enemy per frame.
+**Cost (before fix):** for every equipped targeted ability (cooldown 0), a group query + raycast per enemy + screen projection + dictionary allocation + sort **every frame**. Now reduced to 10 Hz.
 
-### 3. Un-gated per-frame regen → RPC + linear scans + signal emit
+### 3. Un-gated per-frame regen → RPC + linear scans + signal emit — `[FIXED 2026-09-20]`
+
+> Fixed: regen is now gated behind `is_server()` and the self-heal stat is throttled (see `05-known-issues.md` #1). Kept here for context on the pattern.
 
 `components/attribute_component.gd` `_process(delta)` (`160`) has **no `is_server()` gate**. Every physics frame for every below-full-health player it calls `apply_health_delta(...)` (`180`), which:
 - calls `GameManager.find_player(changer)` (`game_manager.gd:15`, a **linear scan** over `spawn_parent` children) — twice per call (`attribute_component.gd:64,131`),
@@ -44,13 +46,13 @@ There is no profiler-friendly budget configured; the game runs `_process` (rende
 
 ---
 
-## Per-shot churn (hitscan fire path)
+## Per-shot churn (hitscan fire path) — effects + allocations `[FIXED 2026-09-20]`
 
-The automatic-weapon fire path allocates heavily per shot:
+The automatic-weapon fire path no longer allocates per shot:
 
-- **Unpooled hitscan effects** — `weapon_controller.gd` `_on_hitscan_hit` (`2439`): `decal_scene.instantiate()` (`2442`) + `Timer.new()` (`2451`), `_tracer_scene.instantiate()` (`2459`), `_bullet_impact_scene.instantiate()` (`2468`). `weapon/tracer.gd` `fire` (`20`): `CylinderMesh.new()` (`29`), `StandardMaterial3D.new()` (`35`), `get_tree().create_tween()` (`69`) with a lambda closure. None pooled — the project already built `effects/audio_pool.gd` to avoid exactly this churn for audio, but tracers/impacts/decals were not.
-- **Per-shot dict/array + node-path lookups** — `weapon_controller.gd` `_try_fire` (`1755`): `data_dict := {...}` per shot (`1772`) + `_apply_recoil_rpc.rpc` per shot (`1786`). `_fire_single_shot` (`2097`): `exclude_rids := [...]` array per shot (`2159`), `$"../HurtComponent2"` node-path lookup per shot (`2160`), `get_node_or_null("ShieldArea")` (`2166`), `PhysicsRayQueryParameters3D.create` (`2151`) + `intersect_ray` (`2172`). `_flash_muzzle_flash` (`2427`): `$MuzzleFlash` lookup per shot (`2430`).
-- **Per-shot RPC burst** — `_apply_recoil_rpc`, `_play_shoot_sound`, `_sync_mag`, `_flash_muzzle_flash`, `_on_hitscan_hit`, `fire_intent`, `_change_health_on_server`. At automatic fire rates this is a large RPC burst across all peers.
+- **Pooled hitscan effects** — `weapon_controller.gd` `_on_hitscan_hit` now acquires tracers, impacts, and decals from node pools (`Tracer.acquire`, `BulletImpact.acquire`, `BulletDecal.acquire`). `Tracer` reuses a single `CylinderMesh` + `StandardMaterial3D` and drives its shrink in `_process` (no `create_tween()`); `BulletImpact`/`BulletDecal` track their one-shot lifetime in `_process` (no `Timer.new()`/`create_timer`).
+- **No per-shot dict/array + node-path lookups** — `weapon_controller.gd` `_try_fire` reuses a member `_recoil_data` Dictionary; `_fire_single_shot` reuses a member `_ray_query` + `_exclude_rids` array; `$MuzzleFlash` and `$"../HurtComponent2"` are cached `@onready`.
+- **Per-shot RPC burst** — `_apply_recoil_rpc`, `_play_shoot_sound`, `_sync_mag`, `_flash_muzzle_flash`, `_on_hitscan_hit`, `fire_intent`, `_change_health_on_server`. At automatic fire rates this is a large RPC burst across all peers. *(Not addressed — RPC count is unchanged.)*
 
 ---
 
@@ -98,3 +100,7 @@ The automatic-weapon fire path allocates heavily per shot:
 6. **Keep `_rollback_tick` deterministic and cheap** — no physics queries, no RNG, no group scans, no `global_position` reads from non-synced nodes. Re-simulation multiplies its cost.
 7. **Avoid per-frame `duplicate()` / string formatting** in HUD paths — only rebuild on change (dirty flag / signal), not every frame.
 8. **`queue_free`, never `free()`, on replicated nodes** — the spawner must observe the removal event.
+
+## Frame rate & vsync
+
+The rendered FPS is capped only by **VSync** — there is no `max_fps`/`Engine.max_fps` anywhere in the project. Godot 4 enables vsync by default (`display/window/vsync/vsync_mode = 1`), which locks FPS to the display refresh rate. The project now sets `window/vsync/vsync_mode=0` in `project.godot` (vsync disabled) so there is no artificial cap; `Engine.max_fps` stays at its default `0` (uncapped). To re-cap later, re-enable vsync or set `Engine.max_fps`.
