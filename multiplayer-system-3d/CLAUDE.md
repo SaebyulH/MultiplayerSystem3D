@@ -2,6 +2,14 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Documentation (read first)
+
+The authoritative technical documentation lives in [`docs/`](docs/README.md) — it is the source of truth for boot flow, netcode, event flow, optimization, and the known-issues backlog.
+
+- **First action every session:** read `docs/README.md` (the index). It is injected at session start by a `SessionStart` hook, then read the parts relevant to your task before touching code.
+- **Every code change must update the docs.** Update the matching `docs/*.md` part; if the change introduces a bug, fragility, or perf risk, add a TODO to `docs/05-known-issues.md` (file:line + symptom + suggested fix). A change without a docs update is incomplete.
+- When `CLAUDE.md` and `docs/` disagree, **`docs/` wins** — fix `CLAUDE.md` to match.
+
 ## Overview
 
 Class-based team FPS (TF2-style hero shooter) built in **Godot 4.7** (Forward Plus renderer) using the **netfox 1.35.3** addon for rollback netcode. There are no tests or linter — validation is done by running the game.
@@ -112,7 +120,7 @@ This is the subtle part — read carefully before touching `network_manager.gd`.
 
 ### Boot (become host)
 
-1. `world/main.gd._ready()` → `NetworkManager.call_deferred("boot_to_lobby")`.
+1. `world/main.gd:_ready()` → `_boot()` → `await NetworkManager.boot_to_lobby()` (a **direct `await`**, not `call_deferred` — the deferred call lives in `return_to_lobby()`).
 2. `boot_to_lobby()` → `create_server()` (ENet server, `is_hosting_game = true`) then `load_game_scene("res://maps/main_menu_world.tscn")`.
 3. `load_game_scene()` instantiates `world/world1.tscn`, sets `game_scene.map_path`, and adds it as a child of `get_tree().current_scene` (the `Main` Control root).
 4. `world_1.gd._ready()`: sets `GameManager.spawn_parent = %SpawnParent`, opens the loadout menu (`PlayerInput.ui_open = true`), and — because `is_hosting_game` — loads the lobby map into `SpawnParent` (named `"Map"`) and creates a `SpawnManager` (which adds player id 1).
@@ -129,7 +137,7 @@ This is the subtle part — read carefully before touching `network_manager.gd`.
 
 ### Leave / disconnect
 
-`return_to_lobby()` is the single exit path, called by the "Leave Party" buttons (`world_1.gd`, `loadout_menu.gd`, `class_select.gd`), `_on_connection_failed()`, and `_server_disconnected()`:
+`return_to_lobby()` is the single exit path, called by the "Leave Party" buttons (`world_1.gd`, `loadout_menu.gd`), `_on_connection_failed()`, and `_server_disconnected()`:
 
 1. `Input.set_mouse_mode(VISIBLE)`.
 2. `_terminate_connection()` — full `NetworkTime.stop()`, then close + null the peer (frees port 8080 for the re-host).

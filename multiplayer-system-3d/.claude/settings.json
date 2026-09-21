@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell.exe",
+            "args": ["-NoProfile", "-File", ".claude/hooks/session_start.ps1"],
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

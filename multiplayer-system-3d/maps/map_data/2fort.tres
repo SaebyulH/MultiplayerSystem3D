@@ -1,8 +1,8 @@
-[gd_resource type="Resource" script_class="MapData" format=3]
+[gd_resource type="Resource" script_class="MapData" format=3 uid="uid://cyqcwbt0hutrq"]
 
-[ext_resource type="Texture2D" path="res://map_thumbnails/2fort.png" id="1_kde84"]
-[ext_resource type="PackedScene" path="res://maps/2fort.tscn" id="2_8d21s"]
-[ext_resource type="Script" path="res://maps/map_data.gd" id="3_w76ed"]
+[ext_resource type="Texture2D" uid="uid://j6guj6jpo67d" path="res://map_thumbnails/2fort.png" id="1_kde84"]
+[ext_resource type="PackedScene" uid="uid://d38ra5avw5usb" path="res://maps/2fort.tscn" id="2_8d21s"]
+[ext_resource type="Script" uid="uid://bo6nug35cwptb" path="res://maps/map_data.gd" id="3_w76ed"]
 
 [resource]
 script = ExtResource("3_w76ed")

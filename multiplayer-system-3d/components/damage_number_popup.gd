@@ -146,7 +146,7 @@ func _process(delta: float) -> void:
 		return
 	# Hide when the target isn't currently "seen" by the viewer — occluded and
 	# not revealed through a wallhack.
-	var p := _target_node as Player
+	var p := _target_node as Player # FIX TODO when disconnect causes isue
 	if p != null and not p._seen_by_local:
 		visible = false
 		return
