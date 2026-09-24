@@ -6,7 +6,7 @@ The project deliberately splits simulation responsibility. Getting this wrong (e
 
 - Peer 1 is always the server (and the host player). Humans connect with ENet ids > 1. `network/network_manager.gd:27-55`.
 - Autoloads: `NetworkManager`, `Leaderboard`, `NetworkTime`, `NetworkTimeSynchronizer`, `NetworkRollback`, `NetworkEvents`, `NetworkPerformance`, `GameManager` (`project.godot:22-32`).
-- `[netfox] time/sync_to_physics = false` (`project.godot:216-218`); Jolt physics; collision layers WORLD=1, PLAYER_COLLISION=2, HURTBOX=3, HITBOX=4, RAGDOLLS=8 (`project.godot:208-214`).
+- `[netfox] time/tickrate = 90`, `time/sync_to_physics = false` (`project.godot:217-220`); Jolt physics; collision layers WORLD=1, PLAYER_COLLISION=2, HURTBOX=3, HITBOX=4, RAGDOLLS=8 (`project.godot:208-214`). The rollback tick runs at **90 Hz** (the addon default was 30); `knockback_multiplier` is scaled for it (see `player/character.gd:59-62`).
 
 ---
 

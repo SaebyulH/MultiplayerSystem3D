@@ -799,15 +799,7 @@ func _update_targeted_previews(delta: float) -> void:
 			continue
 		if ability.cast_type == Ability.CastType.EQUIP and am.equipped_index != i:
 			continue
-			
-					#TODO
-		#
-		#E 0:04:12:419   PlayerBodyUI._update_targeted_previews: Trying to assign an array of type "Array" to a variable of type "Array[Player]".
-  #<GDScript Source>player_ui.gd:802 @ PlayerBodyUI._update_targeted_previews()
-  #<Stack Trace> player_ui.gd:802 @ _update_targeted_previews()
-				#player_ui.gd:729 @ _process()
-
-		var candidates: Array[Player] = _preview_candidates.get(ability, []) 
+		var candidates: Array[Player] = _preview_candidates.get(ability, []) as Array[Player]
 		
 
 		var locked: Dictionary = {}

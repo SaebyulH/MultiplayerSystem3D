@@ -43,35 +43,45 @@ func _boot() -> void:
 
 func _preload_resources(loading: LoadingScreen) -> void:
 	var count := PRELOAD_PATHS.size()
-	for i in count:
-		var path: String = PRELOAD_PATHS[i]
-		loading.set_status("Loading %s…" % path.get_file())
-		var err := ResourceLoader.load_threaded_request(path)
-		if err != OK:
+	loading.set_status("Loading resources…")
+	# Kick off every threaded load up front so Godot's worker pool loads their
+	# dependency trees concurrently (shared sub-resources are de-duplicated by the
+	# resource cache).  Sequential loading made boot time the *sum* of these
+	# loads; requesting them together makes it roughly the *max*.
+	var pending: Array[String] = []
+	for path in PRELOAD_PATHS:
+		if ResourceLoader.load_threaded_request(path) == OK:
+			pending.append(path)
+		else:
 			# Threaded load unavailable — fall back to a synchronous (still cached) load.
 			load(path)
-			loading.set_progress(float(i + 1) / float(count) * PRELOAD_FRACTION)
-			continue
-		while true:
+
+	while not pending.is_empty():
+		var done: Array[String] = []
+		# Sync-loaded (or previously-finished) resources count as complete.
+		var completed_frac := float(count - pending.size())
+		for path in pending:
 			var progress: Array = []
 			var status := ResourceLoader.load_threaded_get_status(path, progress)
 			match status:
 				ResourceLoader.THREAD_LOAD_IN_PROGRESS:
-					var frac := 0.0
 					if progress.size() >= 2:
 						var stages := int(progress[0])
 						var stage := int(progress[1])
 						if stages > 0:
-							frac = clampf(float(stage) / float(stages), 0.0, 1.0)
-					loading.set_progress((float(i) + frac) / float(count) * PRELOAD_FRACTION)
+							completed_frac += clampf(float(stage) / float(stages), 0.0, 1.0)
 				ResourceLoader.THREAD_LOAD_LOADED:
 					ResourceLoader.load_threaded_get(path)
-					break
+					completed_frac += 1.0
+					done.append(path)
 				ResourceLoader.THREAD_LOAD_FAILED, ResourceLoader.THREAD_LOAD_INVALID_RESOURCE:
 					push_warning("Preload failed: %s" % path)
-					break
-			await get_tree().process_frame
-		loading.set_progress(float(i + 1) / float(count) * PRELOAD_FRACTION)
+					completed_frac += 1.0
+					done.append(path)
+		for path in done:
+			pending.erase(path)
+		loading.set_progress(completed_frac / float(count) * PRELOAD_FRACTION)
+		await get_tree().process_frame
 	loading.set_status("")
 
 

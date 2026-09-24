@@ -45,11 +45,12 @@ Because `NetworkEvents` ignores `OfflineMultiplayerPeer`, `create_server()` must
 
 ## Boot (become host)
 
-1. `world/main.gd:_ready()` → `_boot()` → `await NetworkManager.boot_to_lobby()` (`world/main.gd:22-33`).
-2. `boot_to_lobby()` → `create_server()` (ENet server, `is_hosting_game = true`) then `load_game_scene("res://maps/main_menu_world.tscn")` (`network_manager.gd:85-92`).
-3. `load_game_scene()` instantiates `world1.tscn`, sets `game_scene.map_path`, adds it as child of `current_scene` (`69-77`).
-4. `world_1.gd:_ready()`: sets `GameManager.spawn_parent`, opens loadout (`PlayerInput.ui_open = true`), and — because `is_hosting_game` — loads the lobby map into `SpawnParent` (named `"Map"`) and creates a `SpawnManager` (which adds player 1).
-5. `NetworkEvents._process` sees the server → `on_server_start` → `NetworkTime.start()` → rollback loop runs → movement works after the player confirms a loadout and spawns.
+1. `world/main.gd:_ready()` → `_boot()` (`world/main.gd:22-23`).
+2. `_boot()` → `await _preload_resources(...)` (parallel threaded load) → `await NetworkManager.boot_to_lobby()`.
+3. `boot_to_lobby()` → `create_server()` (ENet server, `is_hosting_game = true`) then `load_game_scene("res://maps/main_menu_world.tscn")` (`network_manager.gd:93-100`).
+4. `load_game_scene()` instantiates `world1.tscn`, sets `game_scene.map_path`, adds it as child of `current_scene` (`77-83`).
+5. `world_1.gd:_ready()`: sets `GameManager.spawn_parent`, opens loadout (`PlayerInput.ui_open = true`), and — because `is_hosting_game` — loads the lobby map into `SpawnParent` (named `"Map"`) and creates a `SpawnManager` (which adds player 1).
+6. `NetworkEvents._process` sees the server → `on_server_start` → `NetworkTime.start()` → rollback loop runs → movement works after the player confirms a loadout and spawns.
 
 ---
 

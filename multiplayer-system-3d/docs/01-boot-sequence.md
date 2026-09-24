@@ -30,7 +30,7 @@ The engine then loads the main scene `res://world/main.tscn` (a `Control` root `
 
 `world/main.gd:26-41` — `_boot()`:
 1. `$LoadingScreen` shown.
-2. `await _preload_resources(...)` — threaded-loads 6 heavy paths (`main_menu_world.tscn`, `spawn_manager.tscn`, `spawn_bot_menu.tscn`, the 3 `.tres` class resources) so later `load()` calls are cache hits (`world/main.gd:44-75`).
+2. `await _preload_resources(...)` (`world/main.gd:44-85`) — **parallel** threaded-loads all 6 heavy paths up front (`main_menu_world.tscn`, `spawn_manager.tscn`, `spawn_bot_menu.tscn`, the 3 `.tres` class resources) so later `load()` calls are cache hits. Requesting them together makes boot time roughly the *max* load instead of the sum.
 3. **`await NetworkManager.boot_to_lobby()`** (line 33). Note: this is a **direct `await`**, *not* `call_deferred` — older `CLAUDE.md` text describing a deferred call is stale.
 4. Sets progress 1.0, waits two `process_frame`s (lines 39-40, to let D3D12 shaders compile behind the screen), hides the loading screen.
 
@@ -40,10 +40,10 @@ The engine then loads the main scene `res://world/main.tscn` (a `Control` root `
 
 ## Stage 2 — `boot_to_lobby()`: become host (or offline fallback)
 
-`network/network_manager.gd:85-92` — `boot_to_lobby()`:
+`network/network_manager.gd:93-100` — `boot_to_lobby()`:
 - Guard `if game_scene != null: return` (anti-double-boot).
 - `create_server()`, `Leaderboard.reset()`, `LoadingScreen.report(0.75)`.
-- `await get_tree().process_frame` (line 91) — **this frame lets `NetworkEvents._process` observe the server** (see Stage 2b).
+- `await get_tree().process_frame` (line 99) — **this frame lets `NetworkEvents._process` observe the server** (see Stage 2b).
 - `await load_game_scene(LOBBY_MAP_PATH)`.
 
 `network/network_manager.gd:27-43` — `create_server()`:
@@ -55,7 +55,7 @@ The engine then loads the main scene `res://world/main.tscn` (a `Control` root `
 
 `NetworkEvents._process` (`addons/netfox/network-events.gd:93-107`) polls `is_server()` **once per frame**. The first frame after `create_server()` sets the peer, it sees the `false → true` transition and emits `on_server_start` → `NetworkTime.start()`.
 
-`NetworkTime.start()` (`addons/netfox/network-time.gd:409-461`) resets `_tick`, marks peer 1 synced (`_synced_peers[1] = true`), starts `NetworkTimeSynchronizer`, and — because we are the server — goes straight to active state without awaiting initial sync. This runs during the `await process_frame` at line 91, i.e. **before** `world1.tscn` is instantiated.
+`NetworkTime.start()` (`addons/netfox/network-time.gd:409-461`) resets `_tick`, marks peer 1 synced (`_synced_peers[1] = true`), starts `NetworkTimeSynchronizer`, and — because we are the server — goes straight to active state without awaiting initial sync. This runs during the `await process_frame` at line 99, i.e. **before** `world1.tscn` is instantiated.
 
 ---
 

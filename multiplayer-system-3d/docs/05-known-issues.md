@@ -48,6 +48,7 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 ### 3. Per-frame raycast + sort + dictionary alloc in targeted-ability previews — `[FIXED 2026-09-20]`
 - **Files:** `player/player_ui.gd:747-815` (`_update_targeted_previews`), `player/abilities/targeted_ability.gd:29-66`
 - **Resolution:** `_update_targeted_previews` now throttles `find_candidates` (the group query + LOS raycast + sort) to a 10 Hz interval (`PREVIEW_REFRESH_INTERVAL`), caching the ordered candidate list per ability in `_preview_candidates`; between refreshes the per-frame loop only re-projects labels from the cached list. `find_candidates` itself is unchanged — it remains the live one-shot cast path in `ability_manager.gd:206`.
+- **Follow-up (2026-09-24):** the throttling exposed a runtime type error — when an ability's key was missing from `_preview_candidates` (first frame, or an ability that came off cooldown between refreshes), `_preview_candidates.get(ability, [])` fell back to an **untyped** `[]`, which fails the `Array[Player]` assignment and spammed `Trying to assign an array of type "Array" to a variable of type "Array[Player]"`. Fixed by casting the default: `_preview_candidates.get(ability, []) as Array[Player]` (`player_ui.gd:802`).
 - **Symptom:** for every equipped targeted ability (cooldown 0), each frame: group query + per-enemy `has_line_of_sight_to` raycast + `unproject_position` + `scored.append({...})` dict + `sort_custom`.
 - **Why:** multiple raycasts + allocations + sort per enemy per frame; stacks with #2.
 - **Suggested fix:** only recompute when the ability is selected/held (dirty flag), throttle to ~10 Hz, and reuse arrays instead of allocating.
@@ -134,7 +135,12 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
   - `display/window/vsync/vsync_mode=1` — cap both instances to reduce CPU/GPU contention.
   - Join guarded behind the existing `LoadingScreen`.
 - **Tried & reverted:** raising `netfox/rollback/history_limit` (64 → 256) made the per-frame rollback re-sim worse and caused a connect timeout — do **not** re-raise it.
-- **Follow-up if insufficient:** `netfox/time/sync_to_physics=true` fully decouples the tick from render (fixed 60 Hz) but changes tickrate 30→60 and needs re-tuning of movement/dash/charge.
+- **Follow-up if insufficient:** `netfox/time/sync_to_physics=true` fully decouples the tick from render (fixed 60 Hz). Note: as of 2026-09-24 tickrate is **90** (`time/tickrate=90`), so switching `sync_to_physics=true` would now *lower* the tick to the 60 Hz physics rate — not applicable while 90 Hz is intended.
+
+### 19. Tickrate raised 30→90 — watch rollback CPU
+- **Files:** `project.godot` `[netfox]` (`time/tickrate=90`), `player/character.gd:62` (`knockback_multiplier` 2.0→0.667)
+- **Symptom/risk:** `_rollback_tick` now runs 3× as often (90 vs 30 Hz), tripling movement-sim cost per player on the shared single core. Knockback was re-scaled to keep 60-Hz-equivalent feel, but any future tickrate change must re-visit this multiplier (`60 / tickrate`).
+- **Watch for:** frame-time creep with many players/bots; if it regresses, consider `sync_to_physics=true` (60 Hz) or reverting to 30 Hz.
 
 ---
 

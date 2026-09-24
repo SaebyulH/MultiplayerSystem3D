@@ -56,10 +56,10 @@ class_name Character
 @export var regen_per_sec: float = 5.0      # if set, overrides base passive heal rate
 @export var regen_delay: float = 5.0        # if set, overrides base heal delay (seconds)
 @export var heal_on_kill: float = 0.0       # HP restored on kill
-## Multiplier on all knockback received.  Defaults to 2.0 to compensate for the
-## 30 Hz rollback tickrate (movement simulates half as often, so knockback
-## impulses must be doubled to feel identical to 60 Hz).
-@export var knockback_multiplier: float = 2.0
+## Multiplier on all knockback received.  Defaults to 0.667 (60/90) to compensate for
+## the 90 Hz rollback tickrate (movement simulates ~1.5x as often as 60 Hz, so
+## knockback impulses are scaled down to feel identical to 60 Hz).
+@export var knockback_multiplier: float = 0.667
 
 # --
 @export_group("Sound")

@@ -6,6 +6,8 @@ This explains *why* the game can drop frames and where the pressure is, so you c
 
 There is no profiler-friendly budget configured; the game runs `_process` (render frame), `_physics_process` (fixed Jolt physics step), **and** netfox's rollback re-simulation (multiple `_rollback_tick` calls per frame) on the **same single core**. Three pressures stack:
 
+> **Tickrate 90 Hz (2026-09-24):** the rollback tick loop now runs at 90 Hz (`netfox/time/tickrate=90`, up from the addon default 30), so `_rollback_tick` fires **3×** as often per player. Movement-sim cost is tripled relative to 30 Hz; the rollback hot paths below (`player/player.gd:968`, `_apply_movement_from_input` at `1503`) are the ones most sensitive to this.
+
 1. **Rollback re-simulation** — netfox re-runs `_rollback_tick` for several past ticks each frame to reconcile state. Anything expensive inside `_rollback_tick` is multiplied by the number of re-simulated ticks, **and** must be deterministic (no physics queries, no RNG, no `get_nodes_in_group`, no raycasts — all of these break determinism *and* cost CPU).
 2. **Per-frame work** — every `_process`/`_physics_process` runs 60+ times/second *per node*. A node that exists once per player multiplies by player count; a node that exists once per projectile multiplies by projectile count.
 3. **Allocation / GC churn** — GDScript `Dictionary`/`Array` literals, `instantiate()`, `Node.new()`, `Material.new()`, `Tween` creation all hit the allocator and later the GC. Churn in per-frame/per-shot paths is the classic cause of hitches.
