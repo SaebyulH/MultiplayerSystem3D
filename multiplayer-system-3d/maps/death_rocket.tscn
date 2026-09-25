@@ -4,9 +4,9 @@
 [ext_resource type="Texture2D" uid="uid://c4ln0bpu3tmo3" path="res://assets/environment/kloppenheim_06_puresky_4k.exr" id="2_y7aj6"]
 [ext_resource type="Material" uid="uid://b6l23ihtcguc1" path="res://assets/environment/grid_material.tres" id="3_ug54f"]
 [ext_resource type="Script" uid="uid://ccrf5bdka2m35" path="res://player/auto_projectile_spawner.gd" id="4_miwlu"]
-[ext_resource type="PackedScene" uid="uid://bi1d3ydf18ng1" path="res://assets/props/forklift.tscn" id="4_y7aj6"]
+[ext_resource type="PackedScene" uid="uid://bi1d3ydf18ng1" path="res://assets/map_models/props/forklift.tscn" id="4_y7aj6"]
 [ext_resource type="Script" uid="uid://r6rneeolnvra" path="res://components/game_mode_component.gd" id="5_hhhpi"]
-[ext_resource type="VoxelGIData" uid="uid://cemsevph2d36m" path="res://maps/voxel_GI/death_castle.VoxelGI_data.res" id="6_chyi6"]
+[ext_resource type="VoxelGIData" uid="uid://dir8jfmm6llm0" path="res://maps/voxel_GI/death_rocket.VoxelGI_data.res" id="7_y7aj6"]
 
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_wnf2b"]
 panorama = ExtResource("2_y7aj6")
@@ -269,6 +269,6 @@ game_mode = 5
 metadata/_custom_type_script = "uid://r6rneeolnvra"
 
 [node name="VoxelGI" type="VoxelGI" parent="." unique_id=1076066901]
-transform = Transform3D(13.882382, 0, 0, 0, 13.882382, 0, 0, 0, 13.882382, -1.2228851, 16.783552, 0.012649536)
-size = Vector3(60.89038, 44.23074, 60.421875)
-data = ExtResource("6_chyi6")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.2228851, 7.898923, 0.012649536)
+size = Vector3(155.25, 62, 132.5)
+data = ExtResource("7_y7aj6")
