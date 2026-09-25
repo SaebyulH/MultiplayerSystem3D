@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="MapData" format=3 uid="uid://b1a172x5d73so"]
+
+[ext_resource type="Texture2D" uid="uid://bumscd8xbqybp" path="res://map_thumbnails/death_castle.png" id="1_ot2gr"]
+[ext_resource type="Script" uid="uid://bo6nug35cwptb" path="res://maps/map_data.gd" id="3_vkj0a"]
+
+[resource]
+script = ExtResource("3_vkj0a")
+display_name = "death_rocket"
+map_scene_path = "uid://peiyk82tnqon"
+map_image = ExtResource("1_ot2gr")
+game_mode = 5
