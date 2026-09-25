@@ -653,7 +653,9 @@ func _build_status_effects() -> void:
 		_add_border_material("gravity_flip", border_shader, Color(0.8, 0.3, 1.0, 0.6), 3.5, 0.5, 40.0)
 		_add_border_material("invincible", border_shader, Color(1.0, 0.85, 0.2, 0.6), 2.0, 0.15, 12.0)
 		_add_border_material("pinned", border_shader, Color(0.65, 0.45, 0.25, 0.6), 0.8, 0.1, 10.0)
-		_add_border_material("enlarge", border_shader, Color(1.0, 0.4, 0.1, 0.6), 4.0, 0.3, 25.0)
+		# Covers both directions of the size change (size_mult > 1 grows, < 1 shrinks);
+		# the HUD text distinguishes them via the effect's display_name.
+		_add_border_material("size_change", border_shader, Color(1.0, 0.4, 0.1, 0.6), 4.0, 0.3, 25.0)
 		_add_border_material("wallhacking", border_shader, Color(0.0, 0.0, 0.0, 0.6), 4.0, 0.3, 25.0)
 
 	# -- Top-center labels (existing) --

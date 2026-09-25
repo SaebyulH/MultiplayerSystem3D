@@ -40,6 +40,9 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 | 30 | 🟡 Medium | Netcode | `SimpleProjectile.hide_model` is `@rpc("any_peer")` |
 | 31 | 🔴 Critical | Crash | ✅ FIXED — Stack overflow: dying while enlarged (existing TODO) |
 | 32 | 🟡 Medium | Fragility | `Player.no_health()` is not idempotent |
+| 33 | 🟡 Medium | Netcode | `blocks_actions` is a client-side courtesy — not enforced on movement |
+| 34 | 🟡 Medium | Netcode | ✅ FIXED — Late joiner renders size-changed players at 1.0× |
+| 35 | 🟠 High | Security | ✅ FIXED — Size RPC was `@rpc("any_peer")` while writing `starting_health` |
 
 ---
 
@@ -277,8 +280,9 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 - **Suggested fix:** change to `@rpc("authority", "call_local", "reliable")`. It is only ever called from `start_explode()`, which is already authority-gated.
 
 ### 31. Status-effect teardown re-entered itself — stack overflow on death while enlarged — `[FIXED 2026-09-25]`
-- **Files:** `components/status_effect/status_effect_manager.gd` (`remove_effect`, `_tick_server`), `components/status_effect/effects/enlarge_effect.gd:32-40`
+- **Files:** `components/status_effect/status_effect_manager.gd` (`remove_effect`, `_tick_server`), `components/status_effect/effects/size_change_effect.gd` (`_on_remove`)
 - **Symptom:** the host crashed with `Stack overflow (stack size: 1024). Check for infinite recursion in your script.` It was reproducible: **be enlarged (Rampage) and die.** The old TODO at `status_effect_manager.gd:159` had already flagged the line as the suspect without diagnosing it.
+- **Naming note:** when this was found the effect was `EnlargeEffect` (`enlarge_effect.gd`) with id `enlarge`, applied by `RampageAbility`. It has since been generalized to `SizeChangeEffect` / id `size_change` / the `Size Change` ability (see #34). The trace below keeps the names it had at the time; only the paths are current.
 - **Why:** `remove_effect` called `_on_remove` **before** erasing the effect from `_active_effects`, so the effect was still registered for the whole duration of its own teardown. `EnlargeEffect._on_remove` then wrote `attribute_component.health = minf(health, base_max)` — and `AttributeComponent.health` is a **setter** that emits `no_health` whenever the assigned value lands at `<= 0`:
 
   ```
@@ -293,16 +297,42 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
   Dying while enlarged is the *common* case — the buff doubles max health, it doesn't stop you dying — so the assignment always ran with `health == 0`. Exactly one effect writes health in its teardown, which is why only enlarge could trigger it.
 - **Fix applied (two layers, deliberately):**
   1. **`remove_effect` and `_tick_server` now deregister before tearing down.** The id is erased from `_active_effects` (and the client mirror) *before* `_on_remove` runs, so any re-entry finds nothing and returns. This fixes the class of bug for every effect, present and future, not just the one that crashed.
-  2. **`EnlargeEffect._on_remove` no longer writes a non-positive health.** It still always restores `starting_health` (skipping that would leave the next life at double max HP), but only clamps `health` **downward** and only when it exceeds the restored max — so the dead case writes nothing.
+  2. **`EnlargeEffect._on_remove` no longer writes a non-positive health.** It still always restores `starting_health` (skipping that would leave the next life at double max HP), but only clamps `health` **downward** and only when it exceeds the restored max — so the dead case writes nothing. `SizeChangeEffect._on_remove` carries the same guard forward (every health write is behind `if ac.health > 0.0`) — **if you add a health write to any effect teardown, you must do the same.**
 - **Also corrected while in there:** `_tick_server` iterated the live `_active_effects` dictionary. An effect's teardown can remove other effects through this manager, which invalidates that iteration. It now walks a `keys()` snapshot and skips ids removed earlier in the same pass.
-- **Verification:** get the enlarge effect (Rampage ability), take lethal damage while it is active. Before: instant stack overflow on the host. After: normal death, ragdoll spawns once, respawn at base max health.
+- **Verification:** get the enlarge effect (Size Change ability), take lethal damage while it is active. Before: instant stack overflow on the host. After: normal death, ragdoll spawns once, respawn at base max health.
 - **Residual risk:** see #32.
 
 ### 32. `Player.no_health()` is not idempotent
 - **Files:** `player/player.gd:670-692` (`no_health`), `components/attribute_component.gd` (`health` setter)
 - **Symptom:** none observed after #31. But the death path has no re-entry guard: any second `no_health` on the same life re-runs `clear_all_effects()`, `_spawn_ragdoll.rpc(...)` and `rpc_reset.rpc(...)` — a second ragdoll and a second respawn reset.
-- **Why it matters:** the `health` setter emits `no_health` on *every* assignment that lands at `<= 0`, not on a transition into death. Any code that writes health while the player is already dead (a new status effect doing what EnlargeEffect used to, an environmental damage tick, a clamp) re-enters the whole death path. #31 closed the one path that reached it; the shape of the hazard is unchanged.
+- **Why it matters:** the `health` setter emits `no_health` on *every* assignment that lands at `<= 0`, not on a transition into death. Any code that writes health while the player is already dead (a new status effect doing what EnlargeEffect used to, an environmental damage tick, a clamp) re-enters the whole death path. #31 closed the one path that reached it; the shape of the hazard is unchanged. `SizeChangeEffect` is the current live example of code that has to be careful here — it writes `health` in *both* `_on_apply` and `_on_remove`.
 - **Suggested fix:** guard the server branch on a transition — e.g. an `_is_dead` flag set at the top of `no_health()` and cleared in `rpc_reset` — or track the previous health in `AttributeComponent.apply_health_delta` (which already computes `old_health`) and only emit when `old_health > 0.0 and new_health <= 0.0`.
+
+### 33. The `blocks_actions` channel lock is not enforced on movement
+- **Files:** `components/status_effect/status_effect_manager.gd` (`_client_blocks_actions`, `is_action_blocked`), `player/player_input.gd:84-97` / `:115-121`, `player/abilities/ability_manager.gd` (`_input`, `_cast_ability`), `player/weapon_controller.gd:1966-1971`, `player/bot_controller.gd:196-201`
+- **Introduced by:** the heal-over-time action lock (`HealAbility.block_actions_during_heal`). Recorded rather than fixed — the movement half is a deliberate trade-off, but it should be a known one.
+- **Symptom:** a player channeling a locked heal can still be *moving* for the first ~100 ms of the channel, and a modified client can keep moving for the entire channel.
+- **Why:** `blocks_actions` is applied server-side on cast, but the gate that reads it runs on the **owning client**, and the flag only reaches that client with the next effect-mirror push — up to `TICK_INTERVAL` (0.1 s) later. That latency is inherited from `stun`/`pinned`, which have it too.
+- **What *is* enforced:** casting and firing both have server backstops (`AbilityManager._cast_ability`, `WeaponController.fire_intent` reject while `is_action_blocked()`), so a client cannot cheat an ability or a shot out of the lock — the ~100 ms window only leaks *input*, not effects. **Movement is the exception**, and cannot cheaply be otherwise: movement is rollback-simulated from client-authored input, so the server has no independent notion of "this player's input should be zero" — rejecting movement input mid-rollback would fight the netfox state correction and desync the very thing rollback exists to keep smooth.
+- **Why it matters:** for a self-cast, self-inflicted heal the exploit is close to worthless (you are only cheating yourself out of a heal you already cast), which is why this is Medium and not High. It becomes a real problem the moment the lock is used for something an enemy applies — a "revive channel", a "capture hold" — where movement is exactly what the victim wants to keep.
+- **Suggested fix (if it is ever needed):** make the *server* the gate for movement too, by having the movement path read a server-authoritative lock rather than the client mirror — either replicate the lock as a `Player` property inside the existing `MultiplayerSynchronizer` (so the server's own value is the one `_gather` reads via `is_multiplayer_authority()`), or drop the client-side `_gather` gate entirely and let the server zero the player's `input_dir` in `_rollback_tick`. Both are more invasive than the current design and should only be done for a lock whose bypass actually matters.
+
+### 34. Late joiners rendered size-changed players at 1.0× — `[FIXED 2026-09-25]`
+- **Files:** `player/player.gd` (`rpc_sync_full_state`, `_rpc_size_change`), `world/spawn_manager.gd` (`_sync_existing_players_to_peer`)
+- **Found while:** generalizing the Rampage ability into `SizeChangeEffect`. Pre-existing since the effect was written.
+- **Symptom:** a player who joined a server **while someone was enlarged** saw that player at normal size, while their own HUD status bar and effect list correctly read "Enlarged". No desync, no error — just a wrong-looking model until the buff expired.
+- **Why:** the size and buffed max health are carried by `_rpc_size_change`, which is a **one-shot broadcast** fired the moment the effect is applied. A peer that connects afterwards never receives it, so its freshly instantiated copy of that `Player` keeps the `_size_scale = 1.0` default. The late-join path did push the *effect mirror* (`_sync_to_clients(peer_id)` in `spawn_manager.gd`), which is exactly why the HUD was right and the model was wrong — a good reminder that the mirror is UI state, not simulation state.
+- **Fix:** `rpc_sync_full_state` — already the designated "full state for a late joiner" hook, and already called per-player from `_sync_existing_players_to_peer` — now carries `size_mult` and `max_health` too. Both are read **live** off the player (`_size_scale`, `attribute_component.starting_health`) rather than derived from the effect, so they are correct with or without a buff active. The block is applied **after** the character block, because `set_character()` derives `starting_health` from the character's `health_mult` and would otherwise clobber the buffed value.
+- **Verification:** host casts Size Change, then a second instance joins. Before: joiner saw a normal-sized host. After: correct doubled size, and the joiner's HP-bar ratio for that player is right.
+
+### 35. The size/shrink RPC was `@rpc("any_peer")` while writing `starting_health` — `[FIXED 2026-09-25]`
+- **Files:** `player/player.gd:1377-1390` (`_rpc_size_change`, formerly `_rpc_enlarge`)
+- **Found while:** the same generalization as #34.
+- **Symptom:** none exploitable in practice — but any client could call this RPC on any player and set `AttributeComponent.starting_health`, i.e. grant itself (or another player) an arbitrary max HP. Max health is otherwise server-authoritative, so this was a hole in that invariant.
+- **Why it matters:** a `@rpc("any_peer")` function that writes authoritative state is the same defect class as #7 (`fire_intent` has no sender validation) and #3 (`_sync_mag`). It is easy to miss because the RPC is *only ever called by the server* in normal operation — the annotation, not the call sites, is what grants the permission.
+- **Fix:** `@rpc("any_peer", ...)` → `@rpc("authority", ...)`. Behaviour is unchanged: `SizeChangeEffect` only calls it from `_on_apply`/`_on_remove`, which run server-side, and the server applies the change to itself via `set_size_scale()` *before* the `.rpc()` — which under `call_remote` does not execute on the caller anyway.
+- **Also fixed:** the `SizeChangeEffect._on_remove` path used to broadcast unconditionally, including for a dead player; it still does (the scale and max must revert), but it no longer writes `health` when `health == 0`. See #31/#32.
+- **Verification:** enlarge and shrink a player from the host, confirm both the host's and a client's view of the scale and max HP track correctly; a client calling the RPC directly is now rejected.
 
 ---
 

@@ -37,7 +37,11 @@ func _sync_existing_players_to_peer(peer_id: int) -> void:
 	await get_tree().process_frame
 	for child in spawn_parent.get_children():
 		if child is Player and child.spawned and child.name != str(peer_id):
-			child.rpc_sync_full_state.rpc_id(peer_id, child.global_position, child._loadout_primary_path, child._loadout_secondary_path, child._loadout_melee_path, child._loadout_character_path)
+			# `_size_scale` / `starting_health` are read live rather than derived
+			# from the effect, so they are correct whether or not a size buff is
+			# active — and they carry the character-resolved max either way.
+			var max_health: float = child.attribute_component.starting_health if child.attribute_component else 100.0
+			child.rpc_sync_full_state.rpc_id(peer_id, child.global_position, child._loadout_primary_path, child._loadout_secondary_path, child._loadout_melee_path, child._loadout_character_path, child._size_scale, max_health)
 			# Permanent status-effect markers (wallhacked/health-visible) are no
 			# longer re-broadcast on a 10 Hz timer, so push them explicitly to a
 			# late-joining peer.

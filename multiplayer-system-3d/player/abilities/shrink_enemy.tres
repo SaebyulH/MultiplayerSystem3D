@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ShrinkEnemyAbility" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://player/abilities/shrink_enemy_ability.gd" id="1"]
+[ext_resource type="Resource" path="res://defaults/status_effects/shrink.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+shrink_effect = ExtResource("2")
+max_targets = 1
+locked_color = Color(0.3, 1, 0.7, 1)
+ability_name = "Shrink Enemy"
+description = "Shrink the visible enemy nearest your crosshair to half size and half health for 5 seconds."
+cooldown = 15.0

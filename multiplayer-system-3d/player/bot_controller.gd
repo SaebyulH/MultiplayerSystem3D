@@ -193,8 +193,8 @@ func _physics_process(delta: float) -> void:
 	if not player.spawned:
 		return
 
-	# Stunned or pinned bots cannot move, aim, or fire.
-	if player.status_effect_manager and (player.status_effect_manager.is_stunned() or player.status_effect_manager.is_pinned()):
+	# Stunned, pinned, or mid-channel bots cannot move, aim, or fire.
+	if player.status_effect_manager and (player.status_effect_manager.is_stunned() or player.status_effect_manager.is_pinned() or player.status_effect_manager.is_action_blocked()):
 		player.player_input.input_dir = Vector2.ZERO
 		player.player_input.jump_input = false
 		_clear_fire_inputs()

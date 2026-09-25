@@ -37,7 +37,7 @@ linear_velocity = Vector3(0, 0, -27)
 lifetime = 2.3
 explode_on_timeout = true
 hurtbox_hit_mode = 2
-world_hit_mode = 1
+world_hit_mode = 2
 align_to_velocity = false
 falloff_start = 10.0
 falloff_end = 30.0
@@ -57,6 +57,7 @@ shape = SubResource("CylinderShape3D_kbhll")
 splash_health_delta = -90
 explosion_color = Color(0.43137255, 0.19215687, 0.7882353, 1)
 status_effects = Array[ExtResource("2_caexi")]([SubResource("Resource_173x6")])
+tick_count = 20
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." index="4" unique_id=706373036]
 transform = Transform3D(-2.1170417e-15, -7.2127504e-09, -0.40753546, 3.3446413e-15, 0.1650085, -1.7813942e-08, 0.40753555, -3.054718e-30, -6.6918504e-16, -0.0039893766, 0.080174655, 0.0065018684)

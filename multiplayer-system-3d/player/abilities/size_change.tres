@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="SelfEffectAbility" load_steps=3 format=3 uid="uid://d3yv8ta033nvs"]
+
+[ext_resource type="Script" uid="uid://b51c5s6xw6j01" path="res://player/abilities/self_effect_ability.gd" id="1"]
+[ext_resource type="Resource" path="res://defaults/status_effects/size_change.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+effect = ExtResource("2")
+ability_name = "Size Change"
+description = "Changes your size and max health.  Tune size_mult / health_mult on the effect."
+cooldown = 20.0

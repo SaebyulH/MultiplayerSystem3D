@@ -7,7 +7,7 @@
 [ext_resource type="Resource" uid="uid://b8guv2doanh4m" path="res://player/abilities/heal.tres" id="3_abil"]
 [ext_resource type="Resource" uid="uid://bkofte7pvpmh5" path="res://player/abilities/shoulder_charge.tres" id="4_j6qkh"]
 [ext_resource type="Resource" path="res://player/abilities/bashdown.tres" id="6_abil"]
-[ext_resource type="Resource" uid="uid://d3yv8ta033nvs" path="res://player/abilities/rampage.tres" id="7_abil"]
+[ext_resource type="Resource" uid="uid://d3yv8ta033nvs" path="res://player/abilities/size_change.tres" id="7_abil"]
 [ext_resource type="Texture2D" uid="uid://bcqyioegejkc6" path="res://character_portraits/gyenyeral_boldbaatar.png" id="8_glh1a"]
 
 [resource]

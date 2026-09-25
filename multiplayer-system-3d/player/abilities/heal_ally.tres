@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="HealAllyAbility" load_steps=2 format=3]
+
+[ext_resource type="Script" uid="uid://rg8domftfy2q" path="res://player/abilities/heal_ally_ability.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+target_team = 1
+max_targets = 1
+locked_color = Color(0.35, 0.9, 0.45, 1)
+heal_amount = 100.0
+heal_duration = 8.0
+ability_name = "Field Dressing"
+description = "Heal the ally nearest your crosshair for 100 health over 8 seconds."
+cooldown = 12.0

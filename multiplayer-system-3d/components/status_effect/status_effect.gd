@@ -34,6 +34,15 @@ class_name StatusEffect
 ## Interval in seconds between _on_tick calls.  0 = no automatic ticking.
 @export var tick_interval: float = 0.5
 
+## If true, the player cannot move, jump, crouch, dash, fire, or cast abilities
+## for as long as this effect is active.  Used by channeled effects such as the
+## heal-over-time in heal_ability.gd.
+##
+## Read through [method StatusEffectManager.is_action_blocked], which the
+## manager mirrors to clients alongside the remaining time — the gate in
+## [PlayerInput] runs on the owning client, so it needs the flag there.
+@export var blocks_actions: bool = false
+
 
 # ----------------------------------------------------------- trigger condition
 ## Controls *when* this effect is applied, based on how the hit landed.

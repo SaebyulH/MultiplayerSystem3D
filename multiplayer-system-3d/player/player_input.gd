@@ -81,9 +81,10 @@ func _gather() -> void:
 		teleport_trigger_dir = Vector3.ZERO
 		queued_teleport_trigger_dir = Vector3.ZERO
 		return
-	# Stunned or pinned players cannot move, jump, crouch, dash, or cast.
+	# Stunned, pinned, or mid-channel (a blocks_actions status effect, e.g. the
+	# heal-over-time) players cannot move, jump, crouch, dash, or cast.
 	var status_manager := get_parent().status_effect_manager as StatusEffectManager
-	if status_manager and (status_manager.is_stunned() or status_manager.is_pinned()):
+	if status_manager and (status_manager.is_stunned() or status_manager.is_pinned() or status_manager.is_action_blocked()):
 		input_dir  = Vector2.ZERO
 		jump_input = false
 		crouch     = false
@@ -112,9 +113,9 @@ func _input(event: InputEvent) -> void:
 	if not is_multiplayer_authority():
 		return
 
-	# Stunned or pinned players cannot take any actions.
+	# Stunned, pinned, or mid-channel players cannot take any actions.
 	var status_manager := get_parent().status_effect_manager as StatusEffectManager
-	if status_manager and (status_manager.is_stunned() or status_manager.is_pinned()):
+	if status_manager and (status_manager.is_stunned() or status_manager.is_pinned() or status_manager.is_action_blocked()):
 		primary_fire_held   = false
 		secondary_fire_held = false
 		tertiary_fire_held  = false

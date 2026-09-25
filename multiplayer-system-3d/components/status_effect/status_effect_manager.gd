@@ -32,6 +32,16 @@ var _client_effects: Dictionary = {}
 ## can show human-readable effect names without holding the effect resources.
 var _client_effect_names: Dictionary = {}
 
+## { effect_id : bool } — mirror of StatusEffect.blocks_actions.  The input gate
+## runs on the *owning client* (PlayerInput._gather/_input), which does not hold
+## the effect resources, so the flag has to travel with the remaining times.
+var _client_blocks_actions: Dictionary = {}
+
+## Count of mirrored effects with blocks_actions set.  Kept as a counter because
+## is_action_blocked() is called from the per-tick input gather, where a scan of
+## the mirror dictionary would be pure overhead.
+var _client_blocking_count: int = 0
+
 var _player: Player = null
 
 ## How often (seconds) the server ticks active effects and pushes remaining
@@ -164,7 +174,7 @@ func remove_effect(effect_id: String) -> void:
 	if not _active_effects.has(effect_id):
 		return
 	# Deregister *before* running the teardown, then tear down.  `_on_remove` can
-	# re-enter this manager: EnlargeEffect writes the player's health back, and
+	# re-enter this manager: SizeChangeEffect writes the player's health back, and
 	# AttributeComponent's `health` setter emits `no_health` whenever the value
 	# lands at <= 0, which calls clear_all_effects().  While the id was still
 	# registered that re-entry ran `_on_remove` again, unbounded — the stack
@@ -174,6 +184,7 @@ func remove_effect(effect_id: String) -> void:
 	_active_effects.erase(effect_id)
 	_client_effects.erase(effect_id)
 	_client_effect_names.erase(effect_id)
+	_client_blocks_actions.erase(effect_id)
 	data["effect"]._on_remove(_player, data.get("state", {}))
 	effect_removed.emit(effect_id)
 	_sync_to_clients()
@@ -225,6 +236,13 @@ func is_pinned() -> bool:
 	return _client_effects.has("pinned")
 
 
+## Whether any active effect locks the player's input out — i.e. is running a
+## channel (StatusEffect.blocks_actions).  Deliberately narrower than stun/pinned:
+## those are written into the gates by name, this one is data-driven per effect.
+func is_action_blocked() -> bool:
+	return _client_blocking_count > 0
+
+
 ## Returns the per-instance state dictionary for an effect, if it's active.
 ## Only available on the authority.
 func get_effect_state(effect_id: String) -> Dictionary:
@@ -259,35 +277,50 @@ func _sync_to_clients(target_peer: int = 0) -> void:
 	var ids: Array = []
 	var names: Array = []
 	var times: Array = []
+	var blocking: Array = []
 	for id in _client_effects:
 		ids.append(id)
 		names.append(_client_effect_names.get(id, id))
 		times.append(_client_effects[id])
+		blocking.append(_client_blocks_actions.get(id, false))
 	if target_peer > 0:
-		_rpc_sync_effects.rpc_id(target_peer, ids, names, times)
+		_rpc_sync_effects.rpc_id(target_peer, ids, names, times, blocking)
 	else:
-		_rpc_sync_effects.rpc(ids, names, times)
+		_rpc_sync_effects.rpc(ids, names, times, blocking)
 	client_effects_changed.emit()
 
 
-## Rebuild [_client_effects] / [_client_effect_names] from [_active_effects].
+## Rebuild [_client_effects] / [_client_effect_names] / [_client_blocks_actions]
+## (and [_client_blocking_count]) from [_active_effects].
 ## Poison is hidden until its 3 s drain delay elapses (drain_started == true).
 func _refresh_client_mirror() -> void:
 	_client_effects.clear()
 	_client_effect_names.clear()
+	_client_blocks_actions.clear()
+	_client_blocking_count = 0
 	for id in _active_effects:
 		var data: Dictionary = _active_effects[id]
 		if id == "poison" and not data.get("state", {}).get("drain_started", false):
 			continue
+		var effect: StatusEffect = data["effect"]
 		_client_effects[id] = data["remaining"]
-		_client_effect_names[id] = data["effect"].display_name
+		_client_effect_names[id] = effect.display_name
+		_client_blocks_actions[id] = effect.blocks_actions
+		if effect.blocks_actions:
+			_client_blocking_count += 1
 
 
 @rpc("authority", "call_remote", "reliable")
-func _rpc_sync_effects(effect_ids: Array, effect_names: Array, remaining_times: Array) -> void:
+func _rpc_sync_effects(effect_ids: Array, effect_names: Array, remaining_times: Array, blocks_actions: Array) -> void:
 	_client_effects.clear()
 	_client_effect_names.clear()
+	_client_blocks_actions.clear()
+	_client_blocking_count = 0
 	for i in effect_ids.size():
 		_client_effects[effect_ids[i]] = remaining_times[i]
 		_client_effect_names[effect_ids[i]] = effect_names[i]
+		var blocking: bool = blocks_actions[i] if i < blocks_actions.size() else false
+		_client_blocks_actions[effect_ids[i]] = blocking
+		if blocking:
+			_client_blocking_count += 1
 	client_effects_changed.emit()

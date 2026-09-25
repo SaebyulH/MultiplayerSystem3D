@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SizeChangeEffect" load_steps=2 format=3]
+
+[ext_resource type="Script" uid="uid://iydbp7voeyf8" path="res://components/status_effect/effects/size_change_effect.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+effect_id = "size_change"
+display_name = "Enlarged"
+is_negative = false
+base_duration = 10.0
+tick_interval = 0.0
+size_mult = 2.0
+health_mult = 2.0

@@ -57,6 +57,10 @@ func _input(event: InputEvent) -> void:
 	# While a shoulder charge or bashdown is active, no other ability can be cast.
 	if _parent_player.is_charging() or _parent_player.is_bashing():
 		return
+	# A channel (StatusEffect.blocks_actions, e.g. a heal-over-time) locks
+	# abilities out for its duration too.
+	if _is_action_blocked():
+		return
 
 	# Ability keys 1-4.
 	for i in 4:
@@ -81,6 +85,13 @@ func _start_cooldown(index: int, seconds: float) -> void:
 
 func _is_on_cooldown(index: int) -> bool:
 	return index >= 0 and index < _cooldowns.size() and _cooldowns[index] > Time.get_ticks_msec()
+
+## True while a channel is locking the player's input out.  Reads the effect
+## mirror, so it answers the same on the server and on the owning client.
+func _is_action_blocked() -> bool:
+	var sem: StatusEffectManager = _parent_player.status_effect_manager if _parent_player else null
+	return sem != null and sem.is_action_blocked()
+
 
 ## True when this node belongs to the local peer's own (non-bot) player.
 func _is_owning_client() -> bool:
@@ -183,6 +194,10 @@ func _cast_ability(index: int, mode: int, target_names: Array = []) -> void:
 	# Server backstop: reject casts while despawned unless the ability opts in.
 	if not _parent_player.spawned and not ability.can_be_used_while_dead:
 		return
+	# Server backstop for the channel lock — the client gate in _input is what
+	# makes the HUD feel right, this is what actually enforces it.
+	if _is_action_blocked():
+		return
 	if _is_on_cooldown(index):
 		return
 	print("[Ability] server casting ", ability.ability_name, " mode=", mode)
@@ -210,14 +225,17 @@ func _compute_target_names(ability: TargetedAbility) -> Array[String]:
 	return names
 
 
-## Resolve and validate target names on the server (enemy, spawned, in range, LOS).
+## Resolve and validate target names on the server (team, spawned, in range, LOS).
+## The team check is the ability's own (`is_valid_target`), not a hardcoded
+## enemy test — otherwise an ally-targeted ability would be previewed correctly
+## and then rejected here.
 func _resolve_targets(ability: TargetedAbility, names: Array) -> Array[Player]:
 	var targets: Array[Player] = []
 	for n in names:
 		var p: Player = GameManager.find_player(n)
 		if p == null or not p.spawned or p == _parent_player:
 			continue
-		if not _parent_player._is_enemy_of(p):
+		if not ability.is_valid_target(_parent_player, p):
 			continue
 		if _parent_player.global_position.distance_to(p.global_position) > ability.max_range:
 			continue

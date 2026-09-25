@@ -18,9 +18,39 @@ extends Ability
 @export var preview_color: Color = Color(0.85, 0.85, 0.85, 1.0)
 @export var locked_color: Color = Color(1.0, 0.25, 0.25, 1.0)
 
+## Who this ability may lock onto.  Defaults to ENEMIES, which is what every
+## offensive target ability wants; set ALLIES for support abilities such as the
+## field medic's ally heal.
+enum TargetTeam {
+	ENEMIES,
+	ALLIES,
+	BOTH,
+}
+@export var target_team: TargetTeam = TargetTeam.ENEMIES
+
 ## Server-side: apply the effect to the chosen targets.  Subclasses override.
 func apply_to_targets(player: Player, targets: Array[Player]) -> void:
 	pass
+
+
+## Whether [param other] is a legal target for this ability, given [param caster].
+##
+## Deliberately one predicate shared by the client-side candidate search and the
+## server-side validation, so the HUD preview can never highlight a target the
+## server would reject — or miss one it would accept.
+##
+## Note ALLIES yields nothing in FFA: `is_teammate_of` is false between every
+## pair there, so an ally-only ability simply has no valid targets and (because
+## AbilityManager refuses a targeted cast with an empty target list) cannot be
+## cast and does not consume its cooldown.
+func is_valid_target(caster: Player, other: Player) -> bool:
+	match target_team:
+		TargetTeam.ALLIES:
+			return caster.is_teammate_of(other)
+		TargetTeam.BOTH:
+			return true
+		_:
+			return caster._is_enemy_of(other)
 
 
 ## Client-side: every valid candidate (enemy, spawned, in range, inside the view
@@ -44,7 +74,7 @@ func find_candidates(player: Player) -> Array[Player]:
 		var other := node as Player
 		if other == null or other == player or not other.spawned:
 			continue
-		if not player._is_enemy_of(other):
+		if not is_valid_target(player, other):
 			continue
 		var center := other.global_position + Vector3(0, 1.2, 0)
 		var to := center - cam_pos

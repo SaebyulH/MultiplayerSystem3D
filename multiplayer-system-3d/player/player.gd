@@ -331,12 +331,13 @@ var pinned_offset: Vector3 = Vector3.ZERO
 ## the charger's charge).  Rollback state so the charger reads it deterministically.
 var pinned_at_wall: bool = false
 
-# ── Enlarge (Rampage) state ────────────────────────
-# Persistent across rollback: set via RPC by EnlargeEffect and read inside
+# ── Size change (SizeChangeEffect) state ───────────
+# Persistent across rollback: set via RPC by SizeChangeEffect and read inside
 # _rollback_tick (like _spawn_pending_position, it persists across re-simulation).
 # Scaling the root node directly would be overwritten by netfox's rollback state
 # (global_transform), so the scale is re-derived from this multiplier every tick.
-var _enlarge_scale: float = 1.0
+# 1.0 = normal, > 1.0 = enlarged, < 1.0 = shrunk.
+var _size_scale: float = 1.0
 
 # ── Wallhack reveal state (client-side rendering) ──
 # Each client toggles the outline / health bar on its own copies of other
@@ -543,11 +544,16 @@ func rpc_reset(pos: Vector3) -> void:
 	if multiplayer.is_server() and _randomize_on_death and not _loadout_class_path.is_empty():
 		_randomize_weapons_from_class()
 
-## Full-state sync for a late-joining peer.  Handles visibility and weapon
-## loadout in one atomic RPC so the player does not flicker into view with
-## wrong weapon models.
+## Full-state sync for a late-joining peer.  Handles visibility, weapon loadout
+## and size-change state in one atomic RPC so the player does not flicker into
+## view with wrong weapon models or at the wrong size.
+##
+## [param size_mult] / [param max_health] exist because the size buff is a
+## one-shot broadcast (_rpc_size_change) from the moment it was cast: a peer
+## joining mid-buff never received it, and rendered the player at 1.0x while its
+## own HUD mirror said "Enlarged".  See known-issues #34.
 @rpc("authority", "call_remote", "reliable")
-func rpc_sync_full_state(pos: Vector3, pp: String, sp: String, mp: String = "", cp: String = "") -> void:
+func rpc_sync_full_state(pos: Vector3, pp: String, sp: String, mp: String = "", cp: String = "", size_mult: float = 1.0, max_health: float = 100.0) -> void:
 	# -- Weapons first (before spawn, so correct model is visible) --
 	if not pp.is_empty() and not sp.is_empty():
 		var ctrl: WeaponController = $WeaponController
@@ -572,6 +578,13 @@ func rpc_sync_full_state(pos: Vector3, pp: String, sp: String, mp: String = "", 
 		if char_res:
 			set_character(char_res)
 			_loadout_character_path = cp
+
+	# -- Size change --
+	# After the character: set_character() derives `starting_health` from the
+	# character's health_mult and would otherwise clobber the buffed value.
+	set_size_scale(size_mult)
+	if attribute_component:
+		attribute_component.starting_health = max_health
 
 	# -- Visibility --
 	if spawned:
@@ -976,10 +989,10 @@ func _play_footstep() -> void:
 	)
 
 func _rollback_tick(delta, tick, is_fresh):
-	# Re-derive the player scale from the enlarge multiplier every tick.  This is
-	# the only reliable place to set it: netfox re-applies global_transform from
-	# its rollback history each tick, so a one-off scale write elsewhere is lost.
-	scale = Vector3.ONE * _enlarge_scale
+	# Re-derive the player scale from the size multiplier every tick.  This is the
+	# only reliable place to set it: netfox re-applies global_transform from its
+	# rollback history each tick, so a one-off scale write elsewhere is lost.
+	scale = Vector3.ONE * _size_scale
 
 	# ── Respawn / teleport handling ────────────────
 	# _spawn_pending_position persists across re-simulation because it is
@@ -1361,20 +1374,26 @@ func _rpc_unpin() -> void:
 	pinned_at_wall = false
 
 
-## RPC: apply the enlarged player scale and max health on every peer.
-## Called by EnlargeEffect (server-side) to sync the buff's visual/attribute
+## RPC: apply the size-change scale and max health on every peer.
+## Called by SizeChangeEffect (server-side) to sync the buff's visual/attribute
 ## changes, which are otherwise not replicated.
-@rpc("any_peer", "call_remote", "reliable")
-func _rpc_enlarge(scale_mult: float, max_health: float) -> void:
-	set_enlarge_scale(scale_mult)
+##
+## "authority", not "any_peer": this writes `starting_health`, so allowing any
+## peer to call it let a client set its own max HP to anything (same defect class
+## as known-issues #7).  The effect only ever calls it from the server, and the
+## server applies locally via set_size_scale() *before* the .rpc() — which under
+## "call_remote" does not run on the caller — so nothing else changes.
+@rpc("authority", "call_remote", "reliable")
+func _rpc_size_change(scale_mult: float, max_health: float) -> void:
+	set_size_scale(scale_mult)
 	if attribute_component:
 		attribute_component.starting_health = max_health
 
-## Set the enlarge scale multiplier (Rampage).  1.0 = normal size, 2.0 = doubled.
+## Set the size multiplier.  1.0 = normal size, 2.0 = doubled, 0.5 = halved.
 ## The multiplier is stored persistently so _rollback_tick re-applies it every
 ## tick; `scale` is also set immediately for the current frame.
-func set_enlarge_scale(mult: float) -> void:
-	_enlarge_scale = mult
+func set_size_scale(mult: float) -> void:
+	_size_scale = mult
 	scale = Vector3.ONE * mult
 
 ## Reset all stamina / dash / air-action state on respawn.

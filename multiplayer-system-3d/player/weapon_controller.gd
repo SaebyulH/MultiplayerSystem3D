@@ -1963,6 +1963,12 @@ func fire_intent(weapon_index: int, weapon_fire_index: int) -> void:
 	# that lands just after death).
 	if not _parent_player.spawned:
 		return
+	# Server backstop for the channel lock (StatusEffect.blocks_actions): the
+	# client gate in PlayerInput._input is what the player feels, this is what
+	# actually holds — and unlike movement, firing is enforceable here.
+	var sem := _parent_player.status_effect_manager
+	if sem != null and sem.is_action_blocked():
+		return
 	if not _is_ready():
 		return
 	if is_switching():

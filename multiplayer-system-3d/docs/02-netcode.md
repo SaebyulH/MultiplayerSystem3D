@@ -66,8 +66,8 @@ Also excluded: the local ability-staging vars `queued_charge_trigger_dir` / `que
 ### Determinism requirements (explicit in code)
 
 - **Rising-edge detection** so presses replay deterministically: `_apply_movement_from_input` (`player.gd:1493`) computes `jump_pressed`/`dash_pressed`/`crouch_pressed` against `*_held_prev` and updates those held-prev flags — which are themselves in `state_properties`.
-- **State that persists across re-simulation**: `_spawn_pending_position` is consumed only in `_physics_process`, never inside `_rollback_tick`, so re-simulated ticks see the same flag (`player.gd:317-322, 975-982`). Same pattern for `pinned_charger_name` (`328-332, 1004-1016`) and `_enlarge_scale` (`334-339`).
-- **`scale` re-derived every tick**: because netfox re-applies `global_transform` from rollback history each tick, `_rollback_tick` sets `scale = Vector3.ONE * _enlarge_scale` at the top (`player.gd:969-972`).
+- **State that persists across re-simulation**: `_spawn_pending_position` is consumed only in `_physics_process`, never inside `_rollback_tick`, so re-simulated ticks see the same flag (declared `player.gd:321`, consumed `883-885`, safely re-read `998-1002`). Same pattern for `pinned_charger_name` (`328`, re-read `1027-1039`) and `_size_scale` (`334-340`).
+- **`scale` re-derived every tick**: because netfox re-applies `global_transform` from rollback history each tick, `_rollback_tick` sets `scale = Vector3.ONE * _size_scale` at the top (`player.gd:995`). That multiplier is the only copy of the size-change state that survives — a one-off `scale` write anywhere else (`set_size_scale` also sets `scale` directly, `1395-1397`, for the current frame) is lost on the next tick.
 - **Real-frame-only work** (sound, footsteps, fall damage) is kept **out** of `_rollback_tick` and placed in `_physics_process` (`player.gd:896-898, 901-905`).
 - **`NetworkTime.physics_factor` must wrap everything `move_and_slide()` integrates — and nothing else.** `move_and_slide()` advances by whatever delta is current when it is called, and the rollback tick runs from `_process`, so it integrates with the *frame* delta (`network-time.gd:248-253` returns `ticktime / _process_delta` outside a physics frame; `move_and_slide()` reads the same delta). Every velocity term fed into it must therefore be multiplied by the factor, and the persistent `velocity` divided back out — otherwise that term is silently scaled by the client's frame rate. Knockback is the term that got this wrong historically; see §8.
 
@@ -174,12 +174,90 @@ Other modes follow the same shape: `koth_mode.gd:23-39` and `domination_mode.gd:
 
 `components/status_effect/status_effect_manager.gd`:
 - Header (4-15): effects applied and ticked **entirely on the server**; clients do no local ticking; remaining times pushed on apply/remove and at ~10 Hz.
-- `TICK_INTERVAL = 0.1` (40). `_on_tick_timeout` (55-62) returns unless `multiplayer.is_server()`. `_tick_server` (65-126) decrements `remaining`, fires `_on_tick` at `tick_interval`, removes expired, and calls `_sync_to_clients()` only if a timed effect exists or one just expired (avoids re-broadcasting permanent wallhack/health markers).
-- **An effect is deregistered *before* its `_on_remove` runs** — in both `_tick_server` (natural expiry) and `remove_effect` (forced). This is load-bearing, not stylistic: `_on_remove` can re-enter the manager, and a still-registered id would run the teardown again, unbounded. `EnlargeEffect._on_remove` writes the player's health back, and `AttributeComponent.health`'s setter emits `no_health` at `<= 0` → `clear_all_effects()` → back into the same teardown. That was the stack overflow at 1024 frames (known-issues #31). `_tick_server` also walks a `keys()` snapshot for the same reason.
-- `apply_effect` (128-159): server-only; negative effects extend duration; permanent effects use `INF`; calls `_on_apply` then `_sync_to_clients`. Note it inserts into `_active_effects` *before* `_on_apply`, so a teardown triggered from `_on_apply` sees the new effect as already registered.
-- `_sync_to_clients` (254-273) rebuilds the client mirror and pushes via `_rpc_sync_effects` (`@rpc("authority","call_remote","reliable")`, 287-293) — three parallel arrays: `effect_ids`, `effect_names`, `remaining_times`. Poison hidden until `drain_started` (275-284).
-- `has_effect`/`is_stunned`/`is_pinned` read the client mirror `_client_effects` (185-186, 214-224).
+- `TICK_INTERVAL = 0.1` (50). `_on_tick_timeout` (65-72) returns unless `multiplayer.is_server()`. `_tick_server` (75-133) decrements `remaining`, fires `_on_tick` at `tick_interval`, removes expired, and calls `_sync_to_clients()` only if a timed effect exists or one just expired (avoids re-broadcasting permanent wallhack/health markers).
+- **Expiry is checked before the tick**, so the last tick of any duration is *not* delivered — a 5 s / 0.5 s effect fires 9 times, not 10. Effects that must pay out an exact total have to reconcile the remainder in `_on_remove`; `HealOverTimeEffect` does (see below). Do not assume `base_duration / tick_interval` ticks reach `_on_tick`.
+- **An effect is deregistered *before* its `_on_remove` runs** — in both `_tick_server` (natural expiry) and `remove_effect` (forced). This is load-bearing, not stylistic: `_on_remove` can re-enter the manager, and a still-registered id would run the teardown again, unbounded. `SizeChangeEffect._on_remove` writes the player's health back, and `AttributeComponent.health`'s setter emits `no_health` at `<= 0` → `clear_all_effects()` → back into the same teardown. That was the stack overflow at 1024 frames (known-issues #31). `_tick_server` also walks a `keys()` snapshot for the same reason.
+- `apply_effect` (138-168): server-only; negative effects extend duration; permanent effects use `INF`; calls `_on_apply` then `_sync_to_clients`. Note it inserts into `_active_effects` *before* `_on_apply`, so a teardown triggered from `_on_apply` sees the new effect as already registered. Re-applying a **non-negative** effect of the same id *replaces* the entry without running the outgoing one's `_on_remove` — so a positive effect holding per-cast state (a queued remainder payout, say) loses it on recast. That is accepted, not an oversight: a recast is a fresh channel.
+- `_sync_to_clients` (272-290) rebuilds the client mirror and pushes via `_rpc_sync_effects` (`@rpc("authority","call_remote","reliable")`, 313-324) — four parallel arrays: `effect_ids`, `effect_names`, `remaining_times`, and `blocks_actions`. Poison hidden until `drain_started` (296-309).
+- `has_effect`/`is_stunned`/`is_pinned` read the client mirror `_client_effects` (29, 196-236).
+- **The action lock (`StatusEffect.blocks_actions`) travels with that same sync.** The gate that consumes it — `PlayerInput._gather` / `._input`, `AbilityManager._input`, `BotController._physics_process` — runs on the *owning client*, which holds no effect resources, so the boolean is mirrored into `_client_blocks_actions` and read through `is_action_blocked()` (239-243), which is an O(1) compare against `_client_blocking_count`. Do not collapse `blocks_actions` into an effect *id* the gates check by name (the way `stun`/`pinned` work): the flag is per-cast data (`HealAbility.block_actions_during_heal`), not per-effect-type. See known-issues #33 for the latency window this creates.
 - Late joiners get an explicit `_sync_to_clients(peer_id)` from `SpawnManager._sync_existing_players_to_peer` (`spawn_manager.gd:44-45`).
+
+### HealAbility — instant vs. channeled (`player/abilities/heal_ability.gd`)
+
+`HealAbility` has two modes, switched by `heal_over_time` (default **false** = the original instant heal; `heal.tres`, `breacher.tres` and `governess.tres` all keep that default, so this changed nothing for existing characters).
+
+- **Instant:** `change_health(heal_amount, player.name)` — one `apply_health_delta`, one self-heal credit.
+- **Over time:** builds a `HealOverTimeEffect.new()` **per cast** and hands it to `apply_effect`. It is not authored as a `.tres` under `defaults/status_effects/`: `total_heal`, `base_duration`, `tick_interval` and `blocks_actions` are per-cast values taken off the ability, and an ability is a `Resource` shared by every player of that class (CLAUDE.md — duplicate mutable per-instance state).
+- Past that point it is an ordinary effect: server-ticked, client-mirrored, so the HUD countdown and the effect list pick it up with no extra work, and `clear_all_effects()` on death/respawn tears it down. A lock can therefore never outlive a life.
+- **`_on_remove` reconciles the dropped final tick** (see the expiry bullet above) — `total_heal` is paid out exactly, not `ticks × per_tick`. It is guarded on `attribute_component.health > 0.0` because `no_health()` runs `clear_all_effects()` *while health is still <= 0*, and a positive write there would revive the player and re-enter the death path (#32). On respawn the reset has already restored full health, so the write clamps to a zero delta — it can never credit a heal that was not received.
+- Degenerate configs degrade rather than break: `heal_duration = 0` or `heal_tick_interval = 0` pays the whole amount out at once via `_on_remove`. That is intended, not a bug to "fix".
+- **`activate()` must stay server-side** (`Ability.CastMode.SERVER`, the default — do not flip it). `apply_effect` is a silent no-op off-server, so a `CLIENT` cast mode would burn the cooldown and heal nothing.
+- The action lock (`block_actions_during_heal`) is enforced in **six** places, all reading `is_action_blocked()`: `PlayerInput._gather` (movement/jump/crouch/dash), `PlayerInput._input` (fire + weapon switch/reload), `BotController._physics_process` (bots) — all client-side, and the two **server backstops** `AbilityManager._cast_ability` (casting) and `WeaponController.fire_intent` (firing), which are the ones that actually hold. Both backstops are one guard in a function that already rejected on a gameplay condition, which is why they were cheap to add; both mirror the existing `spawned` check directly above them. See #33 for the one thing it does *not* cover — movement.
+
+**The ally-targeted twin** is `HealAllyAbility` (`player/abilities/heal_ally_ability.gd`, resource `heal_ally.tres`) — same `HealOverTimeEffect`, same per-cast build, but applied to *other* players through a `TargetedAbility`. Two things differ from the self-heal, both deliberate:
+
+- **`blocks_actions` is left false.** The target is someone else; an action lock there would be a griefing tool rather than a commitment.
+- **The applier is the medic, not the target.** `apply_health_delta` routes `changee != changer` into `Leaderboard.request_add_heal_other`, so the heal credits the medic's scoreboard line — which is also why the effect's `_on_remove` remainder uses the applier stored in its state rather than `player.name`.
+
+### TargetedAbility — the `target_team` filter
+
+`player/abilities/targeted_ability.gd` used to hardcode an enemy test in **two** places — its own
+`find_candidates` (client-side preview) and `AbilityManager._resolve_targets` (server-side
+validation). Ally targeting needs both, so they now share one predicate,
+`TargetedAbility.is_valid_target(caster, other)`, selected by `target_team` (`ENEMIES` /
+`ALLIES` / `BOTH`, defaulting to `ENEMIES` so every existing offensive ability is unaffected):
+
+- **Never re-inline the team test into either call site.** If the two disagree the failure is
+  silent and confusing in a specific way: the HUD previews a target the server then rejects
+  (cast refused, no cooldown burned, nothing visible happens), or the reverse.
+- `ALLIES` uses the existing `Player.is_teammate_of()` (`player.gd:2356`), which is
+  `team != FFA and other.team == team` — so **an ally-only ability has no valid targets in FFA
+  mode at all** and cannot be cast there. That is intended, and falls out of the predicate rather
+  than a special case.
+- The filter is also what keeps the Shrink Enemy ability honest: it stays `ENEMIES`, so an
+  ally-targeted heal and an enemy-targeted shrink on the same character can't cross wires.
+
+### SizeChangeEffect — one effect, both directions
+
+`components/status_effect/effects/size_change_effect.gd` scales the player's root node and max
+health. `size_mult` and `health_mult` are plain `@export`s, so **enlarging and shrinking are one
+code path** — there is no separate shrink effect, just `size_mult < 1.0`. The two authored ends
+live in `defaults/status_effects/`: `size_change.tres` (2.0, what Rampage used to be) and
+`shrink.tres` (0.5).
+- **`is_negative` is per-`.tres`, not per-class**, precisely because the effect is bidirectional:
+  `size_change.tres` is a buff (`false`) and `shrink.tres` is a debuff (`true`), which is what makes
+  a shrink cleansable by `InvincibleEffect` and makes a re-cast extend the duration instead of
+  replacing it. Do not "simplify" this by hardcoding it in `_init()`.
+
+- **Health is scaled proportionally**, so the HP bar keeps its ratio across both transitions:
+  enlarge `20/100 → 40/200`, shrink `100/100 → 50/50`, and exactly back on expiry. `health_mult = 1.0`
+  means **size only** — the health branch is skipped entirely. That skip is load-bearing: the
+  pre-generalization effect ended in `reset_health()`, so a size-only buff built on the old shape
+  would have been a free full heal.
+- **Every health write is `if ac.health > 0.0`-guarded.** Dying mid-effect is the common case and
+  `clear_all_effects()` runs `_on_remove` while health is still 0; writing there re-enters the whole
+  death path. See known-issues #31 and #32 — this is the live example of that hazard.
+- **The scale is rollback state, not a one-off write.** `_on_apply`/`_on_remove` call
+  `Player.set_size_scale()`, which stores `Player._size_scale` and is re-derived as
+  `scale = Vector3.ONE * _size_scale` at the top of `_rollback_tick` (`player.gd:995`) — netfox
+  re-applies `global_transform` from history every tick, so anything else is lost.
+- **The visual/attribute sync is a one-shot RPC** (`Player._rpc_size_change`, `@rpc("authority")`),
+  which a late joiner never sees. That is why `rpc_sync_full_state` carries `size_mult` /
+  `max_health` — see known-issues #34, and #35 for why that RPC is `authority` rather than `any_peer`.
+- Applied by the generic `SelfEffectAbility` (`player/abilities/self_effect_ability.gd`) via
+  `player/abilities/size_change.tres`; the ability duplicates the effect resource per cast, so the
+  `.tres` is never mutated by a caster. Any other effect can be applied to yourself the same way.
+- The **enemy** direction is `ShrinkEnemyAbility` (`player/abilities/shrink_enemy_ability.gd`, resource
+  `shrink_enemy.tres`) — a `TargetedAbility` like `BurnAbility`, so it inherits crosshair-based
+  candidate selection, the HUD preview, and server-side re-validation for free. It duplicates
+  `shrink.tres` **per target** and stamps `shrink_duration` onto the copy, for the same
+  shared-resource reason. Net effect is a temporary nerf, not a permanent cut — the damage the target
+  takes while shrunk is kept in proportion:
+
+  ```
+  100/100 --cast--> 50/50 --25 dmg--> 25/50 --expires--> 50/100
+  ```
 
 ---
 

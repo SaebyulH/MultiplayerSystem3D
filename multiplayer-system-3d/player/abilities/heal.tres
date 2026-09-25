@@ -4,7 +4,10 @@
 
 [resource]
 script = ExtResource("1")
-heal_amount = 200.0
-ability_name = "Heal"
-description = "Instantly restores 40 health."
+heal_amount = 300.0
+heal_over_time = true
+block_actions_during_heal = true
+ability_name = "Heal 300"
+description = "Restores 300 health over 5 sec
+"
 cooldown = 10.0

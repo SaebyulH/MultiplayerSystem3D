@@ -185,7 +185,17 @@ This is the subtle part — read carefully before touching `network_manager.gd`.
 
 ## Status effects
 
-`components/status_effect/status_effect_manager.gd` (`StatusEffectManager`) is server-authoritative: effects tick only on the server, remaining times are pushed to clients via RPC. Effect types (`bleed`, `burn`, `stun`, `slow`, `gravity_flip`, `invincible`, `pinned`, `poison`, `enlarge`, etc.) are subclasses of `StatusEffect` under `components/status_effect/effects/`.
+`components/status_effect/status_effect_manager.gd` (`StatusEffectManager`) is server-authoritative: effects tick only on the server, remaining times are pushed to clients via RPC. Effect types (`bleed`, `burn`, `stun`, `slow`, `gravity_flip`, `invincible`, `pinned`, `poison`, `size_change`, `heal_over_time`, etc.) are subclasses of `StatusEffect` under `components/status_effect/effects/`.
+
+Effects that are applied by an **ability** rather than a weapon are usually just a `.tres` under `defaults/status_effects/` referenced from a generic `SelfEffectAbility` (`player/abilities/self_effect_ability.gd` — `effect`, plus an optional duration override). `SizeChangeEffect` is the worked example: `size_mult` / `health_mult` are `@export`s, so enlarging (`size_change.tres`, 2.0) and shrinking (`shrink.tres`, 0.5) are the same code path, and `health_mult = 1.0` means "size only, don't touch health". Its scale has to be re-derived every tick in `_rollback_tick` from `Player._size_scale` — see `02-netcode.md` §2. `is_negative` is per-`.tres` (the shrink is a debuff, the enlarge is a buff), not fixed on the class.
+
+The **enemy**-applied counterpart is a `TargetedAbility` (`BurnAbility`'s shape — crosshair targeting, HUD preview, server validation): `ShrinkEnemyAbility` / `shrink_enemy.tres` halves an enemy's size and max health for 5 s, and the damage they take while shrunk is kept in proportion when it expires.
+
+`TargetedAbility` picks its targets through a single shared predicate, `is_valid_target(caster, other)`, selected by its `target_team` export (`ENEMIES` default / `ALLIES` / `BOTH`). The client-side preview (`find_candidates`) and the server-side validation (`AbilityManager._resolve_targets`) must both go through it — inlining a team test at either site makes the HUD preview and the server disagree. `ALLIES` is built on `Player.is_teammate_of()`, so ally-only abilities have no valid targets in FFA. `HealAllyAbility` / `heal_ally.tres` (the field medic's ally heal) is the ally-side example.
+
+`StatusEffect.blocks_actions` locks the player's input out for the effect's duration. It is **per-cast data**, not per-effect-type, so unlike `stun`/`pinned` it is mirrored to clients as a boolean alongside the remaining time and read via `StatusEffectManager.is_action_blocked()`. Consumers: `PlayerInput._gather`/`._input`, `BotController._physics_process` (client-side), and the server backstops in `AbilityManager._cast_ability` / `WeaponController.fire_intent`. Movement is **not** server-enforced — see `05-known-issues.md` #33.
+
+The channeled heal is the only current user: `HealAbility` (`player/abilities/heal_ability.gd`) is instant by default and switches to a `HealOverTimeEffect` when `heal_over_time` is set, with `heal_duration`, `heal_tick_interval`, and `block_actions_during_heal`. Its `activate()` must stay `CastMode.SERVER`.
 
 ## Maps
 
