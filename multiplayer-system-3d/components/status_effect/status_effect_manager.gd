@@ -156,7 +156,7 @@ func remove_effect(effect_id: String) -> void:
 	if not _active_effects.has(effect_id):
 		return
 	var data: Dictionary = _active_effects[effect_id]
-	data["effect"]._on_remove(_player, data.get("state", {}))
+	data["effect"]._on_remove(_player, data.get("state", {})) #TODO INFINITE RECURSION CAN CAUSE EERS Stack overflow (stack size: 1024). Check for infinite recursion in your script.
 	_active_effects.erase(effect_id)
 	_client_effects.erase(effect_id)
 	_client_effect_names.erase(effect_id)
