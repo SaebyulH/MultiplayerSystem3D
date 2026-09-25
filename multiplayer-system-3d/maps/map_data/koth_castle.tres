@@ -1,11 +1,11 @@
 [gd_resource type="Resource" script_class="MapData" format=3]
 
-[ext_resource type="Texture2D" path="res://map_thumbnails/koth_castle.png" id="1_uw2pb"]
-[ext_resource type="Script" path="res://maps/map_data.gd" id="3_w1bna"]
+[ext_resource type="Texture2D" path="res://map_thumbnails/koth_castle.png" id="1_0f3vs"]
+[ext_resource type="Script" path="res://maps/map_data.gd" id="2_uw2pb"]
 
 [resource]
-script = ExtResource("3_w1bna")
+script = ExtResource("2_uw2pb")
 display_name = "koth_castle"
 map_scene_path = "res://maps/koth_castle.tscn"
-map_image = ExtResource("1_uw2pb")
+map_image = ExtResource("1_0f3vs")
 game_mode = 2

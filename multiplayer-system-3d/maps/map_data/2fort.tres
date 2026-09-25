@@ -1,11 +1,11 @@
-[gd_resource type="Resource" script_class="MapData" format=3 uid="uid://cyqcwbt0hutrq"]
+[gd_resource type="Resource" script_class="MapData" format=3]
 
-[ext_resource type="Texture2D" uid="uid://j6guj6jpo67d" path="res://map_thumbnails/2fort.png" id="1_kde84"]
-[ext_resource type="Script" uid="uid://bo6nug35cwptb" path="res://maps/map_data.gd" id="3_w76ed"]
+[ext_resource type="Texture2D" path="res://map_thumbnails/2fort.png" id="1_4v4p5"]
+[ext_resource type="Script" path="res://maps/map_data.gd" id="2_kde84"]
 
 [resource]
-script = ExtResource("3_w76ed")
+script = ExtResource("2_kde84")
 display_name = "2fort"
 map_scene_path = "res://maps/2fort.tscn"
-map_image = ExtResource("1_kde84")
+map_image = ExtResource("1_4v4p5")
 game_mode = 5

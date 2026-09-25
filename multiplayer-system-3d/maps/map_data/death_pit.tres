@@ -1,11 +1,11 @@
 [gd_resource type="Resource" script_class="MapData" format=3]
 
-[ext_resource type="Texture2D" path="res://map_thumbnails/death_pit.png" id="1_4cldu"]
-[ext_resource type="Script" path="res://maps/map_data.gd" id="3_t3825"]
+[ext_resource type="Texture2D" path="res://map_thumbnails/death_pit.png" id="1_sgnhf"]
+[ext_resource type="Script" path="res://maps/map_data.gd" id="2_4cldu"]
 
 [resource]
-script = ExtResource("3_t3825")
+script = ExtResource("2_4cldu")
 display_name = "death_pit"
 map_scene_path = "res://maps/death_pit.tscn"
-map_image = ExtResource("1_4cldu")
+map_image = ExtResource("1_sgnhf")
 game_mode = 5

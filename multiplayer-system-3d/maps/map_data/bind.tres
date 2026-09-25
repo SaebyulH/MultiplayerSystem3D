@@ -1,11 +1,11 @@
 [gd_resource type="Resource" script_class="MapData" format=3]
 
-[ext_resource type="Texture2D" path="res://map_thumbnails/bind.png" id="1_q2ofq"]
-[ext_resource type="Script" path="res://maps/map_data.gd" id="3_kkou6"]
+[ext_resource type="Texture2D" path="res://map_thumbnails/bind.png" id="1_ebgjv"]
+[ext_resource type="Script" path="res://maps/map_data.gd" id="2_q2ofq"]
 
 [resource]
-script = ExtResource("3_kkou6")
+script = ExtResource("2_q2ofq")
 display_name = "bind"
 map_scene_path = "res://maps/bind.tscn"
-map_image = ExtResource("1_q2ofq")
+map_image = ExtResource("1_ebgjv")
 game_mode = 5

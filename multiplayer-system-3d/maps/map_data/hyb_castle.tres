@@ -1,11 +1,11 @@
 [gd_resource type="Resource" script_class="MapData" format=3]
 
-[ext_resource type="Texture2D" path="res://map_thumbnails/hyb_castle.png" id="1_1udb5"]
-[ext_resource type="Script" path="res://maps/map_data.gd" id="3_qafvt"]
+[ext_resource type="Texture2D" path="res://map_thumbnails/hyb_castle.png" id="1_va1l0"]
+[ext_resource type="Script" path="res://maps/map_data.gd" id="2_1udb5"]
 
 [resource]
-script = ExtResource("3_qafvt")
+script = ExtResource("2_1udb5")
 display_name = "hyb_castle"
 map_scene_path = "res://maps/hyb_castle.tscn"
-map_image = ExtResource("1_1udb5")
+map_image = ExtResource("1_va1l0")
 game_mode = 3

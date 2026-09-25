@@ -1,11 +1,11 @@
-[gd_resource type="Resource" script_class="MapData" format=3 uid="uid://b1a172x5d73so"]
+[gd_resource type="Resource" script_class="MapData" format=3]
 
-[ext_resource type="Texture2D" uid="uid://bumscd8xbqybp" path="res://map_thumbnails/death_castle.png" id="1_ot2gr"]
-[ext_resource type="Script" uid="uid://bo6nug35cwptb" path="res://maps/map_data.gd" id="3_vkj0a"]
+[ext_resource type="Texture2D" path="res://map_thumbnails/death_rocket.png" id="1_6dl24"]
+[ext_resource type="Script" path="res://maps/map_data.gd" id="2_08iem"]
 
 [resource]
-script = ExtResource("3_vkj0a")
+script = ExtResource("2_08iem")
 display_name = "death_rocket"
-map_scene_path = "uid://peiyk82tnqon"
-map_image = ExtResource("1_ot2gr")
+map_scene_path = "res://maps/death_rocket.tscn"
+map_image = ExtResource("1_6dl24")
 game_mode = 5
