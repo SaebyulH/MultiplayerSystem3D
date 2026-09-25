@@ -14,6 +14,8 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.4598744, -3.0640006)
 transform = Transform3D(-1.0927306e-10, 0, -0.0024998763, 0, 0.0024998763, 0, 0.0024998763, 0, -1.0927306e-10, 0, -0.098032594, -0.87712693)
 
 [node name="BoundingBox" type="Area3D" parent="." unique_id=1646849122]
+collision_layer = 0
+collision_mask = 0
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="BoundingBox" unique_id=87313225]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.103881836, -0.10422468, -0.8564521)

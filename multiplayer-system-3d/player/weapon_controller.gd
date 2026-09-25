@@ -186,11 +186,17 @@ signal signal_activated(target: Vector3, player_transform: Vector3)
 
 var current_weapon_model: Node3D = null
 
+## Cap on how many bodies one hitscan shot may travel through before it gives
+## up (see `_hitscan_passes_through`).  Each pass excludes one more collider, so
+## the loop is already bounded by the number of bodies in the line; this is only
+## a belt for a collider whose RID somehow fails to take effect, which would
+## otherwise spin the ray forever on the game's main thread.
+const MAX_HITSCAN_PASSES := 16
+
 # Cached node refs + reusable fire-path buffers.  These were per-shot `$`-path
 # lookups / fresh allocations; caching them removes that churn (see #5 in
 # docs/05-known-issues.md).
 @onready var _muzzle_flash: MuzzleFlash = $MuzzleFlash
-@onready var _hurt_component2: HurtComponent = $"../HurtComponent2"
 var _recoil_data: Dictionary = {}
 var _exclude_rids: Array[RID] = []
 var _ray_query := PhysicsRayQueryParameters3D.new()
@@ -2174,25 +2180,54 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 		
 		
 		
+		# Exclude EVERYTHING the shooter owns, by walking the player's subtree for
+		# collision objects rather than trusting a hand-maintained list.  The
+		# previous version appended only the 20 hurtboxes from
+		# `HurtComponent2.hurtbox_components` plus the shield, which is a list
+		# somebody has to remember to update -- and it missed exactly the kind of
+		# collider that caused the invisible-impact bug: each weapon model carries
+		# an authoring `BoundingBox` Area3D, parented under the player's skeleton
+		# with the model, so a ray hit an invisible box that moved with the player
+		# and drew its impact in mid-air.  This sweep cannot go stale.
+		#
+		# `owned = false` so colliders inside instanced sub-scenes (weapon models,
+		# the shield scene) are included too -- they are not "owned" by this scene.
 		_exclude_rids.clear()
 		_exclude_rids.append(_parent_player.get_rid())
-		for hurtbox_component in _hurt_component2.hurtbox_components:
-			_exclude_rids.append(hurtbox_component.get_rid())
-		
-		
-		# Also exclude the player's own shield so they can't damage it.
-		if _parent_player.shield_instance and is_instance_valid(_parent_player.shield_instance):
-			var shield_area := _parent_player.shield_instance.get_node_or_null("ShieldArea") as Area3D
-			if shield_area:
-				_exclude_rids.append(shield_area.get_rid())
+		for node in _parent_player.find_children("*", "CollisionObject3D", true, false):
+			_exclude_rids.append((node as CollisionObject3D).get_rid())
 		query.exclude = _exclude_rids
 		query.collide_with_areas = true
 		query.collision_mask = (1 << 0) | (1 << 2) | (1 << 7)
 		var result: Dictionary = space_state.intersect_ray(query)
 
+		# Bullets travel *through* bodies they cannot hurt: the shooter's own, and
+		# a teammate's (friendly fire is 0.0, so such a hit deals nothing — but it
+		# used to stop the ray and draw an impact anyway, on a body tinted the same
+		# colour as your own, which reads as shooting yourself).
+		#
+		# `intersect_ray` only ever returns the FIRST hit, so passing through means
+		# re-casting with each ignored collider added to the exclude list.  This
+		# also subsumes the `HurtComponent2` registry assumption above: a hurtbox
+		# that was never registered there is still recognised here as "mine", so a
+		# shot cannot stop on its own owner even if the list is incomplete
+		# (`05-known-issues.md` #39).
+		var passes: int = 0
+		while not result.is_empty() and passes < MAX_HITSCAN_PASSES:
+			var blocking: CollisionObject3D = result.collider as CollisionObject3D
+			if blocking == null or not _hitscan_passes_through(blocking):
+				break
+			var rid := blocking.get_rid()
+			if not rid.is_valid() or _exclude_rids.has(rid):
+				break
+			_exclude_rids.append(rid)
+			query.exclude = _exclude_rids
+			result = space_state.intersect_ray(query)
+			passes += 1
+
 		if not result.is_empty():
-			_on_hitscan_hit.rpc(result.position, result.normal, muzzle_pos, flash_color, is_melee, orientation_dir)
 			var collider: Node3D = result.collider
+			_on_hitscan_hit.rpc(result.position, result.normal, muzzle_pos, flash_color, is_melee, orientation_dir)
 			if collider is HurtboxComponent:
 				if shape_hits != null:
 					var player_name: String = (collider as HurtboxComponent).get_owner_player().name
@@ -2404,6 +2439,40 @@ func _spawn_projectile(fire: WeaponFire, world_dir: Vector3, shooter_name: Strin
 		if ec.splash_health_delta < 0.0:
 			ec.splash_health_delta *= amp
 	spawn_parent.add_child(projectile_scene, true)
+
+
+## True when a hitscan ray must travel *through* [param collider] instead of
+## stopping on it.
+##
+## The rule mirrors the damage rule in `_fire_single_shot` exactly, so a bullet is
+## never blocked by a body it could not hurt:
+##
+## - **The shooter's own hurtboxes** always pass.  A shot can never land on the
+##   shooter, and this is checked against the hurtbox's owner rather than the
+##   `exclude` list, so it holds even if a hurtbox is missing from
+##   `HurtComponent2.hurtbox_components`.
+## - **A teammate's**, but only while friendly fire is actually off
+##   (`Player.FRIENDLY_FIRE_MULTIPLIER` is 0.0) and only outside FFA — in FFA the
+##   same team value is not friendly, and such a hit really does deal damage, so
+##   it must still stop the bullet.
+##
+## A deployed shield is deliberately *not* passed through: it is a physical
+## barrier and still absorbs (the shooter's own shield is excluded by RID before
+## the cast, so it never reaches here).
+func _hitscan_passes_through(collider: CollisionObject3D) -> bool:
+	if not (collider is HurtboxComponent):
+		return false
+	var hurtbox := collider as HurtboxComponent
+	var victim := hurtbox.get_owner_player()
+	if victim == null:
+		return false
+	if victim == _parent_player:
+		return true
+	if hurtbox.get_hurtbox_owner() is PlayerShield:
+		return false
+	if not is_zero_approx(Player.FRIENDLY_FIRE_MULTIPLIER):
+		return false
+	return victim.team == _parent_player.team and _parent_player.team != Player.Team.FFA
 
 
 ## A shooter's character damage-amp multiplier; 1.0 when the player or its

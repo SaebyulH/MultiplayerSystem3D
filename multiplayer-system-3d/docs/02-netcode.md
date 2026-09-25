@@ -131,14 +131,50 @@ Four **per-scene** exports on that node decide eligibility, and they are set in 
 - The syringe (`weapon/projectiles/scenes/syringe.tscn`) is the worked example: `health_delta = 5.0`, `can_hit_other_teamates = true`, `enemy_delta_multiplier = -2.0` — heals allies, damages enemies, and (since 2026-09-25) `can_hit_shooter` is left at its `false` default so a medic's own syringe passes through them instead of self-healing. The `healthpack` and `poisoned_healthpack` scenes still set `can_hit_shooter = true` deliberately.
 - The gate itself has **no** authority check, so it runs on every peer holding a copy of the projectile — but only one of them can act on it. `HurtboxComponent.hurt_or_heal` is consumed by `HurtComponent._on_hurt_or_heal` (`hurt_component.gd:14`), which returns early unless it has authority, and `HurtComponent2` is a direct child of the Player root whose authority `Player._enter_tree` pins to `1` (`player.gd:434`). So the damage/heal lands on the **server**; on a client the overlap fires, the emitted result is dropped, and the projectile's own free/stick path is likewise server-gated (`SimpleProjectile._on_hit_hurtbox`, `simple_projectile.gd:142`), leaving the despawn to the `ProjectileSpawner`. `_on_ragdoll_body_entered` is the one branch that checks `is_multiplayer_authority()` itself.
 
+### Hitscan targeting: a body you cannot hurt does not stop the bullet
+
+Hitscan never resolves through `HurtComponent` at all — the shot is a single `intersect_ray` in `_fire_single_shot` (`weapon_controller.gd:2122-2298`) that names its victim directly. **The shooter's own hurtboxes, and a teammate's, are travelled *through* rather than stopped on.** A bullet is never blocked by a body it could not damage:
+
+| Collider | Behaviour |
+|---|---|
+| The shooter's own hurtboxes | passed through, always |
+| A teammate's hurtboxes — `victim.team == shooter.team` and not `FFA` | passed through, **only while `Player.FRIENDLY_FIRE_MULTIPLIER` is 0.0** |
+| Same team value in **FFA** | **stops and deals full damage** — same team isn't friendly there |
+| An enemy | stops |
+| A deployed shield | stops (a physical barrier; it still absorbs) |
+| World geometry | stops |
+
+Two mechanisms produce that, and both are load-bearing:
+
+1. **`query.exclude`, rebuilt every shot from the shooter's own subtree** (`weapon_controller.gd:2195-2199`): the player's body RID plus **every** `CollisionObject3D` under it — all 20 physical-bone hurtboxes, the deployed shield's area, and the weapon models with their authoring `BoundingBox` areas. This is the cheap first-line filter, and it is what lets the shot fly past the shooter *without* a re-cast. It was a hand-written list of just the registered hurtboxes until 2026-09-25, when an unlisted area on the weapon model turned out to be stopping shots — see `05-known-issues.md` #40, which also records why the registry version was a trap.
+2. **A re-cast loop driven by `_hitscan_passes_through()`** (`weapon_controller.gd:2209-2236`, predicate at `:2462`): `intersect_ray` only returns the *first* hit, so the loop adds each ignored collider's RID to the exclude list and casts again, until it finds something it can hurt or runs out. Bounded by `MAX_HITSCAN_PASSES = 16` (`weapon_controller.gd:194`) — each pass excludes one more body, so the loop is already bounded by the queue of bodies in the line; the constant only guards against a collider whose RID fails to take effect.
+
+The predicate is deliberately derived from the *damage* rule rather than duplicating a team check (`weapon_controller.gd:2266`, `2325`), so "travelled through" and "would have dealt nothing" can never disagree — if friendly fire is ever turned back on, bullets stop on teammates again with no second edit.
+
+Mechanism (2) is what catches a collider that (1) missed. That mattered when (1) was a hand-maintained registry of the 20 hurtboxes (`05-known-issues.md` #39) and it still matters for anything parented under the player *after* the walk — and for a hurtbox whose owner resolves to the shooter by player rather than by parentage.
+
+Contrast with **projectiles**, whose targeting is a *per-scene* `HitboxComponent.can_hit_shooter` flag — a weapon can deliberately opt in to hitting its own shooter (the `healthpack` scenes do). Hitscan has no such flag.
+
+**How it was verified (2026-09-25, Godot 4.7.2, real rigs, real ENet server peer).** Because a friendly hit already deals nothing (`FRIENDLY_FIRE_MULTIPLIER` = 0.0), "the teammate took no damage" cannot tell *stopped on them* from *travelled through them* — so each case aimed at a second body aligned bone-exactly behind the first, and asserted which one the server registered:
+
+| Case | Expected | Measured |
+|---|---|---|
+| Teammate in line, enemy behind (both controls confirm geometry) | enemy hit | `_hit_player='3'`, mate ±0.0, enemy −33 |
+| Same, in **FFA** | teammate hit | `_hit_player='2'`, mate −33, enemy untouched |
+| Shot at one's **own** hurtbox, registry emptied so only the predicate can catch it | travels through | travelled through **3** of the shooter's own hurtboxes, `_hit_player=''`, shooter ±0.0 |
+
+**Not covered:** teammate *ragdoll corpses* still stop a bullet. They are on the RAGDOLLS layer (which the hitscan mask includes) and `player.gd:676` strips their `HurtboxComponent`, so they are neither damageable nor identifiable as a teammate by owner — passing through them needs a `find_ragdoll_corpse` check, which nobody has asked for yet.
+
+Two things do change the *shooter's own* health when a shot lands, and both look like a self-hit if you are watching your HP bar — see #39 for the full note: `WeaponFire.self_health_delta_on_hit` (Katana +35, Poison Syringe +100, applied to the shooter) and `Character.lifesteal_percent` (Stalker 0.3, applied to the shooter per landed hit).
+
 ### Damage amp (`Character.damage_amp_mult`)
 
 `Character.damage_amp_mult` (`player/character.gd:48`; Stalker `0.17`, Nerd `0.9`, everyone else `1.0`) scales everything the shooter hits, and reaches damage by **two different routes** depending on how the shot resolves:
 
-- **Hitscan** — `_apply_damage_direct` multiplies the delta inline (`weapon_controller.gd:2447`), and also derives lifesteal from the amped value.
-- **Projectiles** — folded into the projectile's **base** damage at spawn in `_spawn_projectile` (`weapon_controller.gd:2392-2405`): `hb.health_delta` and `ec.splash_health_delta` are each multiplied by the amp. A projectile never passes through `_apply_damage_direct`, so without this it dealt fully un-amped damage — which is exactly what made a `0.17` Stalker's Shurikens and Bow hit like anyone else's.
+- **Hitscan** — `_apply_damage_direct` multiplies the delta inline (`weapon_controller.gd:2461`), and also derives lifesteal from the amped value.
+- **Projectiles** — folded into the projectile's **base** damage at spawn in `_spawn_projectile` (`weapon_controller.gd:2406-2419`): `hb.health_delta` and `ec.splash_health_delta` are each multiplied by the amp. A projectile never passes through `_apply_damage_direct`, so without this it dealt fully un-amped damage — which is exactly what made a `0.17` Stalker's Shurikens and Bow hit like anyone else's.
 
-Both go through `_damage_amp_of(player)` (`weapon_controller.gd:2412`), which returns `1.0` when the shooter or its character can't be resolved.
+Both go through `_damage_amp_of(player)` (`weapon_controller.gd:2426`), which returns `1.0` when the shooter or its character can't be resolved.
 
 Rules that fall out of where the stamp is applied:
 

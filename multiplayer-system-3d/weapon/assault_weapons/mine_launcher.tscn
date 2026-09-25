@@ -81,6 +81,8 @@ mesh = SubResource("CylinderMesh_l83sh")
 surface_material_override/0 = SubResource("StandardMaterial3D_w1hq1")
 
 [node name="BoundingBox" type="Area3D" parent="." unique_id=1934365128]
+collision_layer = 0
+collision_mask = 0
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="BoundingBox" unique_id=73136660]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.103881836, 0.06469011, -0.103339314)

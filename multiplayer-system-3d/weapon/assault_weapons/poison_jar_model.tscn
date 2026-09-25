@@ -145,6 +145,8 @@ mesh = SubResource("BoxMesh_ettra")
 surface_material_override/0 = SubResource("StandardMaterial3D_gmfia")
 
 [node name="BoundingBox" type="Area3D" parent="." unique_id=1789574628]
+collision_layer = 0
+collision_mask = 0
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="BoundingBox" unique_id=443108930]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.051513672, 0.118584156, -0.025550008)

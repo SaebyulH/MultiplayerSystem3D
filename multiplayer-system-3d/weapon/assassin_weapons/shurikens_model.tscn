@@ -107,6 +107,8 @@ unique_name_in_owner = true
 transform = Transform3D(-0.47283837, -0.7357998, 0.48479173, -0.44239572, 0.6740493, 0.5915607, -0.7620436, 0.065242775, -0.64423084, 0.050397664, -0.10863948, 0.005126506)
 
 [node name="BoundingBox" type="Area3D" parent="." unique_id=2010404744]
+collision_layer = 0
+collision_mask = 0
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="BoundingBox" unique_id=683442264]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.028442847, 0.005905628, -0.005625114)

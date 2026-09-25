@@ -160,6 +160,8 @@ bones/0/position = Vector3(-0.18730554, 1.5600106, 0.3906611)
 bones/0/rotation = Quaternion(-0.016130755, -0.12348807, -0.6359203, 0.76164025)
 
 [node name="BoundingBox" type="Area3D" parent="." unique_id=79533858]
+collision_layer = 0
+collision_mask = 0
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="BoundingBox" unique_id=2056211782]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.103881836, 1.5669098, 0.3972839)
