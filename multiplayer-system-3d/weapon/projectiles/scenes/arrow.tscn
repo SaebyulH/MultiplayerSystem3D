@@ -5,11 +5,11 @@
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_7rxcs"]
 radius = 0.22558594
-height = 1.2081909
+height = 0.667572
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_eq6sh"]
-radius = 0.3618164
-height = 0.7236328
+radius = 0.47607422
+height = 2.0454102
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_1tiyg"]
 height = 26.752
@@ -29,7 +29,7 @@ height = 26.752
 
 [node name="SimpleProjectile" unique_id=1706686187 instance=ExtResource("1_1tiyg")]
 mass = 0.458
-linear_velocity = Vector3(0, 0, -60)
+linear_velocity = Vector3(0, 0, -50)
 script = ExtResource("2_s8rlu")
 hurtbox_hit_mode = 3
 world_hit_mode = 3
@@ -37,7 +37,7 @@ align_to_velocity = true
 falloff_enabled = false
 
 [node name="CollisionShape3D" parent="." index="0" unique_id=1810742212]
-transform = Transform3D(-0.3480795, 3.0430073e-08, 1.3301409e-15, 5.4054674e-23, -1.5215036e-08, 0.3480795, 3.0430073e-08, 0.3480795, 1.5215036e-08, 1.6954402e-08, -8.477201e-09, 0.19393578)
+transform = Transform3D(-0.3480795, 3.0430073e-08, 1.3301409e-15, 5.4054674e-23, -1.5215036e-08, 0.3480795, 3.0430073e-08, 0.3480795, 1.5215036e-08, 2.5179938e-08, -1.2589969e-08, 0.28802496)
 shape = SubResource("CapsuleShape3D_7rxcs")
 
 [node name="HitboxComponent" parent="." index="2" unique_id=1963592485]
@@ -45,7 +45,7 @@ health_delta = -100.0
 headshot_multiplier = 3.0
 
 [node name="CollisionShape3D" parent="HitboxComponent" index="0" unique_id=1314331169]
-transform = Transform3D(-0.5297596, 4.6313055e-08, 2.024408e-15, -8.2268505e-23, -2.3156527e-08, 0.5297596, 4.6313055e-08, 0.5297596, 2.3156527e-08, -1.7876205e-08, 8.938103e-09, -0.35722375)
+transform = Transform3D(-0.5297596, 4.6313055e-08, 2.024408e-15, -8.2268505e-23, -2.3156527e-08, 0.5297596, 4.6313055e-08, 0.5297596, 2.3156527e-08, -1.5761817e-08, 7.880908e-09, -0.03966716)
 shape = SubResource("CapsuleShape3D_eq6sh")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." index="4" unique_id=1059727496]

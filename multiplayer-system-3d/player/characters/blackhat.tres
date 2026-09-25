@@ -12,7 +12,7 @@
 
 [sub_resource type="Resource" id="Resource_qjglq"]
 script = ExtResource("2_unj1j")
-teleport_distance = 7.0
+teleport_distance = 15.0
 ability_name = "Teleport"
 cast_mode = 1
 cooldown = 2.0
@@ -21,20 +21,21 @@ metadata/_custom_type_script = "uid://deqdkt0xirbqa"
 [sub_resource type="Resource" id="Resource_x4sq6"]
 script = ExtResource("3_s12c6")
 ability_name = "Wallhacks"
-cooldown = 15.0
+cooldown = 20.0
 metadata/_custom_type_script = "uid://coggjlsesnnph"
 
 [sub_resource type="Resource" id="Resource_q30ng"]
 script = ExtResource("4_psuq6")
-max_angle_deg = 12.0
+duration = 10.0
+max_angle_deg = 20.0
 ability_name = "Aimbot"
-cooldown = 10.0
+cooldown = 20.0
 metadata/_custom_type_script = "uid://b5l3ft3hur4q4"
 
 [sub_resource type="Resource" id="Resource_mb7bb"]
 script = ExtResource("5_r840o")
 ability_name = "Cheat Death"
-cooldown = 40.0
+cooldown = 10.0
 can_be_used_while_dead = true
 metadata/_custom_type_script = "uid://b00vhcpmrm3ko"
 

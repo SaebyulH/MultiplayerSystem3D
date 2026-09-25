@@ -65,6 +65,62 @@ The automatic-weapon fire path no longer allocates per shot:
 - `player/player.gd` `aimbot_find_target` (`1970`): group query (`1980`) every frame while firing; `_aimbot_rotate_to` (`2047`) does `target.get_node(".../Physical Bone DEF-spine_006")` (`2048`) every frame.
 - `weapon/projectiles/explosion_component.gd` `_apply_explosion_tick` (`74`): group query (`78`), per-player raycast (`98`,`104`), `find_player` scans via `apply_health_delta` (`129`), and `get_nodes_in_group("ragdolls")` (`152`) — per explosion tick (explosions can pulse).
 
+## Charged-weapon draw (per-frame, all peers) — negligible
+
+Added 2026-09-25 with the `Weapon.charged` feature. Recorded here so it is not mistaken for a new hot path later.
+
+- **Per tick, per peer, only while a draw is running:** a null/bounds check and one `minf`/`+` on `_charge_time` inside the existing `_tick_timers` (`player/weapon_controller.gd:515`, the new block after the scoped-amp accumulator). No allocation, no node lookup, no physics query. Zero cost when nothing is drawing.
+- **`get_active_fire_speed_mult()` (`714`)** gained one comparison and one multiply. This function is called **twice per player per tick** (`player/player.gd:1127` in `_noclip_move`, `:1736` inside `_apply_movement_from_input`, i.e. *inside the rollback tick*) — so the multiply is multiplied by the re-simulation count. It is a multiply on a value already in registers, which is why it was chosen over any per-peer state lookup.
+- **HUD:** the left-hand charge bar (`player/player_ui.gd`) is updated from `_process` (line 732) rather than the 10 Hz `_on_ui_tick`, because a stepped fill looks broken. Two property writes plus one `%.2f` format per rendered frame **for the owner only, while drawing** — the same shape and cost as the scoped bar beside it. If the HUD ever becomes the bottleneck, this pair is the thing to dirty-flag (see #11 in `05-known-issues.md`).
+- **Per shot:** one extra multiply on the launch-speed line and one on the damage scalar in `_spawn_projectile` (`2674`), plus one on each of the two hitscan damage sites.
+- **Deliberately NOT in the rollback path.** `_charge_active`/`_charge_time` are broadcast state, never `RollbackSynchronizer` properties — the same rule as the fire flags (`02-netcode.md` §1). Adding them there would re-simulate the draw and multiply this cost by the tick count for no benefit.
+
+## Ability charge pool (per-frame, owner only) — negligible
+
+Added 2026-09-25 with the charged-ability feature (`Ability.max_charges` / `charge_interval`).
+Recorded here so it is not mistaken for a new hot path later. See `02-netcode.md`.
+
+- **`AbilityManager` still does zero `_process` work.** This was the design constraint, and it is
+  why the pool is derived lazily from `_charge_stamp_ms` rather than accumulated: a peer that never
+  casts or reads pays nothing at all, and no per-player `_process` was added for a feature most
+  abilities do not use.
+- **`_bank_at` is O(1)**, with a full-pool early-out before any arithmetic. Deliberately *not* a
+  step loop — `cooldown = 0.0` is legal and would spin forever. An hour-long gap costs the same as a
+  millisecond.
+- **HUD, owner only:** `_update_ability_cooldowns` gained three O(1) getter calls per slot per
+  frame (no allocation, no Dictionary return — it already ran per frame, so this is added work on
+  an existing path, not a new one).
+- **Drawing:** up to `max_charges` `draw_rect` pairs inside `AbilityCircle._draw()`, which already
+  ran every frame — the bars add no `queue_redraw` and no child nodes. The strip is skipped
+  entirely (`charge_count < 2`, or a bar under 1 px wide) so an absurd `max_charges` degrades to
+  "draw nothing" rather than sub-pixel noise.
+- **`max_charges == 1` is explicitly zero extra cost:** `set_charges` early-returns before touching
+  any state, so every existing ability draws exactly what it drew before.
+
+### Metered-ability pool (per-frame, owner only) — negligible, and off unless used
+
+Added 2026-09-25 with `MeteredAbility` / the noclip rework. Same reasoning as above.
+
+- **The `_physics_process` exists but is disarmed by default.** It is the *only* per-frame callback
+  `AbilityManager` has ever had, and it does one thing: end a metered ability whose pool has run dry.
+  `_refresh_meter_tick()` recomputes `set_physics_process(any_meter_running)` on every transition, so
+  a peer using no metered ability — which is every ability in the game except noclip — still costs
+  **nothing at all**, and a peer that is not mid-noclip costs the same.
+- **Every writer must end with that call**, including the ones that clear the whole array
+  (`_resize_state`, `reset_meters`). One that forgets leaves the callback armed for the rest of the
+  session, which is the failure mode to watch for if this ever shows up in a profile.
+- **`_meter_at` is O(1)** in both directions, with an early-out at each end — a full pool and an
+  empty one both return before any arithmetic. Deliberately *not* a step loop, for the same reason
+  `_bank_at` is not.
+- **While a meter is running**, the callback walks at most four booleans and calls `_meter_at` on the
+  ones that are set. `Time.get_ticks_msec()` derives everything, so the `delta` argument is unused
+  and the check is identical at 30 fps and 300.
+- **HUD, owner only:** `_update_ability_cooldowns` gained two more O(1) getter calls per slot per
+  frame (`get_meter_fraction`, `is_meter_active`) on a path that already ran per frame.
+- **Drawing:** one `draw_rect` pair inside `AbilityCircle._draw()` for a metered slot — no child
+  nodes, no extra `queue_redraw` (`set_meter` early-returns when nothing changed, which is what keeps
+  it off the per-frame redraw list). A charged slot draws no meter bar and vice versa.
+
 ## Per-frame HUD / leaderboard rebuilds
 
 - `components/domination_mode.gd` `tick` (`72`): `points_updated.emit(points)` (`80`) every frame while active.

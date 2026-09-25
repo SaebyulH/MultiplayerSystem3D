@@ -4,6 +4,9 @@
 
 [resource]
 script = ExtResource("1")
+wall_stun_duration = 1.0
+impact_damage = 20.0
+wall_damage = 30.0
 ability_name = "Shoulder Charge"
 description = "Charge forward, pinning enemies and slamming them into walls."
 cast_mode = 1

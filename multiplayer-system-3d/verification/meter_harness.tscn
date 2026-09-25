@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://cq4mv8nx2p7dh"]
+
+[ext_resource type="Script" path="res://verification/meter_harness.gd" id="1_harn"]
+
+[node name="MeterHarness" type="Node"]
+script = ExtResource("1_harn")

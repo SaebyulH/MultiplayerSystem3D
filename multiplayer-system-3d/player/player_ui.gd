@@ -50,6 +50,12 @@ var _ads_overlay: TextureRect
 var _scope_charge_bar: ProgressBar
 var _scope_charge_label: Label
 
+# Charged-weapon draw UI (progress bar + min-charge tick + multiplier), left of
+# the crosshair — the mirror of the scoped bar above.
+var _charge_bar: ProgressBar
+var _charge_label: Label
+var _charge_min_tick: ColorRect
+
 # Ability display (bottom-center row of circles) and "USING" prompt.
 var _ability_container: HBoxContainer
 var _ability_use_label: Label
@@ -206,6 +212,7 @@ func _build_ui() -> void:
 	_build_status_effects()
 	_build_ads_overlay()
 	_build_scope_charge_ui()
+	_build_charge_ui()
 	_build_fps()
 	_build_ability_previews()
 
@@ -295,6 +302,57 @@ func _build_scope_charge_ui() -> void:
 	_scope_charge_label.add_theme_font_size_override("font_size", 22)
 	_scope_charge_label.visible = false
 	add_child(_scope_charge_label)
+
+func _build_charge_ui() -> void:
+	# Mirror of _build_scope_charge_ui, on the other side of the crosshair.
+	_charge_bar = ProgressBar.new()
+	_charge_bar.anchor_left   = 0.5
+	_charge_bar.anchor_right  = 0.5
+	_charge_bar.anchor_top    = 0.5
+	_charge_bar.anchor_bottom = 0.5
+	_charge_bar.offset_left   = -114.0
+	_charge_bar.offset_top    = -5.0
+	_charge_bar.offset_right  = -14.0
+	_charge_bar.offset_bottom = 5.0
+	_charge_bar.min_value = 0.0
+	_charge_bar.max_value = 1.0
+	_charge_bar.value = 0.0
+	_charge_bar.show_percentage = false
+	_charge_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_charge_bar.visible = false
+	add_child(_charge_bar)
+
+	# Minimum-charge threshold tick.  Without it min_charge is invisible: a
+	# release below it costs no ammo, starts no cooldown and hides the bar, so
+	# the player has no way to tell "released too early" from "nothing happened".
+	# Anchored as a fraction of the bar so it tracks any future resize.
+	_charge_min_tick = ColorRect.new()
+	_charge_min_tick.color = Color(1.0, 0.9, 0.3, 0.9)
+	_charge_min_tick.anchor_top    = 0.0
+	_charge_min_tick.anchor_bottom = 1.0
+	_charge_min_tick.offset_left   = -1.0
+	_charge_min_tick.offset_right  = 1.0
+	_charge_min_tick.mouse_filter  = Control.MOUSE_FILTER_IGNORE
+	_charge_min_tick.visible = false
+	_charge_bar.add_child(_charge_min_tick)
+
+	# Multiplier readout to the left of the bar (e.g. "0.75").
+	_charge_label = Label.new()
+	_charge_label.anchor_left   = 0.5
+	_charge_label.anchor_right  = 0.5
+	_charge_label.anchor_top    = 0.5
+	_charge_label.anchor_bottom = 0.5
+	_charge_label.offset_left   = -192.0
+	_charge_label.offset_top    = -14.0
+	_charge_label.offset_right  = -122.0
+	_charge_label.offset_bottom = 14.0
+	_charge_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_charge_label.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
+	_charge_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+	_charge_label.add_theme_constant_override("outline_size", 6)
+	_charge_label.add_theme_font_size_override("font_size", 22)
+	_charge_label.visible = false
+	add_child(_charge_label)
 
 func _build_fps() -> void:
 	# FPS counter (top-right), drawn on its own high CanvasLayer so it renders
@@ -730,6 +788,7 @@ func _process(delta: float) -> void:
 	_update_border_shader_time()
 	_update_stamina()
 	_update_scope_charge_ui()
+	_update_charge_ui()
 	_update_fps()
 	_update_targeted_previews(delta)
 	_update_aimbot_circle()
@@ -784,8 +843,10 @@ func _update_targeted_previews(delta: float) -> void:
 			var ability := abilities[i] as TargetedAbility
 			if ability == null:
 				continue
-			# No preview while the ability is on cooldown.
-			if am.get_cooldown_remaining(i) > 0.0:
+			# No preview unless the cast would actually be accepted — this is
+			# `is_ability_ready`, not a cooldown check, because a charged ability
+			# can be off cooldown with an empty charge pool (see AbilityManager).
+			if not am.is_ability_ready(i):
 				continue
 			# INSTANT abilities are always active; EQUIP only while equipped.
 			if ability.cast_type == Ability.CastType.EQUIP and am.equipped_index != i:
@@ -800,7 +861,7 @@ func _update_targeted_previews(delta: float) -> void:
 		var ability := abilities[i] as TargetedAbility
 		if ability == null:
 			continue
-		if am.get_cooldown_remaining(i) > 0.0:
+		if not am.is_ability_ready(i):
 			continue
 		if ability.cast_type == Ability.CastType.EQUIP and am.equipped_index != i:
 			continue
@@ -935,6 +996,28 @@ func _update_scope_charge_ui() -> void:
 	if show:
 		_scope_charge_bar.value = weapon_controller.get_scoped_charge_progress()
 		_scope_charge_label.text = "%.1f" % weapon_controller.get_scoped_damage_multiplier()
+
+func _update_charge_ui() -> void:
+	if not weapon_controller:
+		_charge_bar.visible = false
+		_charge_label.visible = false
+		return
+	# Shown only while a draw is in progress, mirroring the scoped bar's
+	# is_scoped_in() gate.
+	var show := weapon_controller.is_charging_weapon()
+	_charge_bar.visible = show
+	_charge_label.visible = show
+	if not show:
+		return
+	_charge_bar.value = weapon_controller.get_charge_ratio()
+	# Two decimals rather than the scoped bar's one: the bow ramps 0.5 -> 1.0, so
+	# a single decimal would collapse the whole readout to five values.
+	_charge_label.text = "%.2f" % weapon_controller.get_charge_damage_multiplier()
+	var min_ratio: float = weapon_controller.get_charge_min_ratio()
+	_charge_min_tick.visible = min_ratio > 0.0
+	if _charge_min_tick.visible:
+		_charge_min_tick.anchor_left  = min_ratio
+		_charge_min_tick.anchor_right = min_ratio
 
 func _update_fps() -> void:
 	if not _fps_label:
@@ -1148,6 +1231,7 @@ func _rebuild_abilities() -> void:
 		if i < abilities.size() and abilities[i] != null:
 			circle.set_ability_name(abilities[i].ability_name)
 			_apply_hud_font(circle.name_label, 12)
+			circle.set_charges(0.0, abilities[i].max_charges)
 			_ability_indices.append(i)
 		else:
 			circle.set_ability_name("")
@@ -1170,15 +1254,19 @@ func _update_ability_cooldowns() -> void:
 		if i < 0 or i >= abilities.size():
 			_ability_circles[j].set_cooldown(0.0, false)
 			_ability_circles[j].set_active(false)
+			_ability_circles[j].set_meter(0.0, false, false)
 			continue
 		var ability: Ability = abilities[i]
-		var remaining := am.get_cooldown_remaining(i)
-		var total := ability.cooldown
-		var on_cd := remaining > 0.0
-		var frac := 0.0
-		if total > 0.0:
-			frac = 1.0 - remaining / total
-		_ability_circles[j].set_cooldown(frac, on_cd)
+		# The pie shows whichever gate is the bottleneck — the inter-cast interval
+		# while a charge is in hand, otherwise the recharge.  get_cast_progress
+		# owns that choice; the HUD only reports it.
+		var ready := am.is_ability_ready(i)
+		_ability_circles[j].set_cooldown(1.0 if ready else am.get_cast_progress(i), not ready)
+		_ability_circles[j].set_charges(am.get_charge_bank_fraction(i), ability.max_charges)
+		# Only a metered ability draws a meter bar (a slot is charged or metered,
+		# never both, so this and the charge bars above never both show).
+		_ability_circles[j].set_meter(am.get_meter_fraction(i), am.is_meter_active(i),
+			ability is MeteredAbility)
 		_ability_circles[j].set_active(am.equipped_index == i)
 
 	# "USING X" prompt while an ability is in progress — either an equipped

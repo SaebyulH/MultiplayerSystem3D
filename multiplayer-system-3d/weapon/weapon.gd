@@ -58,6 +58,44 @@ func reset():
 @export var spread_decay: float = 20.0
 
 
+@export_group("Charge")
+## Hold-to-fire (bow-style).  While fire is held the weapon charges and does not
+## shoot; releasing it looses the shot.  Charge lerps every "uncharged" value
+## below up to the weapon's normal authored stat at full charge, so a weapon with
+## all of them at 1.0/0.0 behaves exactly like an ordinary one.
+##
+## Only meaningful for a weapon with a SHOOT fire mode.  Do not combine with
+## pre_shoot_delay — the charged path fires on release, and a delayed shot would
+## need a second release path.
+@export var charged: bool = false:
+	set(value):
+		charged = value
+		notify_property_list_changed()
+		emit_changed()
+
+## Seconds of held fire needed to reach a full charge.
+@export var charge_time: float = 1.0
+## Minimum charge (0..1) required to be allowed to fire.  Releasing below it
+## cancels the draw: no ammo is spent and no cooldown starts.
+@export var min_charge: float = 0.0
+## Damage multiplier at zero charge, lerped to 1.0 at full charge.
+@export var uncharged_damage_mult: float = 1.0
+## Multiplier on the projectile's authored launch speed at zero charge, lerped
+## to 1.0 at full charge.  Projectile speed lives on the projectile scene's
+## RigidBody3D.linear_velocity, not on WeaponFire, so this scales that value.
+@export var uncharged_projectile_speed_mult: float = 1.0
+## Extra spread in degrees at zero charge, added on top of the weapon's normal
+## spread (min_spread / unscoped_spread), lerped to 0.0 at full charge.
+@export var uncharged_extra_spread: float = 0.0
+## Movement speed multiplier applied for as long as a charge is in progress —
+## not charge-dependent.  Compounds with player_speed_multiplier and with the
+## fire mode's move_speed_mult_while_shooting.
+@export var charge_move_speed_mult: float = 1.0
+## Loose the shot automatically the instant the draw completes, instead of
+## letting the player hold at full charge until they release.
+@export var auto_fire_at_full_charge: bool = false
+
+
 @export_group("Visuals")
 ## The 3D model scene to spawn and attach to the weapon holder.
 @export var weapon_model: PackedScene
@@ -79,6 +117,15 @@ var weapon_rotation: Vector3 = Vector3.ZERO
 # Sound played when a reload begins.
 @export var reload_sound: AudioStream = load("res://assets/sounds/reload.mp3")
 
+## True when at least one fire mode actually shoots.  A charge only means
+## something on a weapon that shoots, so the editor greys the toggle out
+## otherwise (an ADS/shield/signal-only weapon has nothing to charge).
+func has_shoot_fire() -> bool:
+	for fire: WeaponFire in weapon_fires:
+		if fire != null and fire.action_type == WeaponFire.ActionType.SHOOT:
+			return true
+	return false
+
 func _validate_property(property: Dictionary) -> void:
 	# Grey out ammo/reload props when infinite ammo is on
 	if property.name in ["mag_size", "mag_current", "reload_individually", "reload_time"]:
@@ -89,3 +136,17 @@ func _validate_property(property: Dictionary) -> void:
 	if property.name == "auto_switch_when_empty":
 		if not reload_in_background:
 			property.usage |= PROPERTY_USAGE_READ_ONLY
+
+	# ---- Charge: the toggle itself, then everything it gates ----
+	# `charged` is checked first because it gates the block below; the ammo rules
+	# above have already run by this point, so returning here is safe.
+	if property.name == "charged" and not has_shoot_fire():
+		property.usage |= PROPERTY_USAGE_READ_ONLY
+		return
+	const CHARGE_ONLY: Array[String] = [
+		"charge_time", "min_charge", "uncharged_damage_mult",
+		"uncharged_projectile_speed_mult", "uncharged_extra_spread",
+		"charge_move_speed_mult", "auto_fire_at_full_charge",
+	]
+	if property.name in CHARGE_ONLY and not charged:
+		property.usage = PROPERTY_USAGE_NO_EDITOR

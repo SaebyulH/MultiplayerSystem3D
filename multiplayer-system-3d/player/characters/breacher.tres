@@ -20,8 +20,8 @@
 
 [sub_resource type="Resource" id="Resource_x7c3f"]
 script = ExtResource("2_moh7u")
-heal_amount = 20.0
-ability_name = "Heal 40 Health"
+heal_amount = 100.0
+ability_name = "Heal 100 Health"
 cooldown = 3.0
 
 [sub_resource type="Resource" id="Resource_ur13p"]
@@ -48,7 +48,8 @@ metadata/_custom_type_script = "uid://djg0ti1n45f8b"
 script = ExtResource("3_a2xb3")
 weapon_fire = SubResource("Resource_qisbw")
 ability_name = "Carpet Bomb"
-cooldown = 10.0
+cooldown = 15.0
+max_charges = 3
 
 [sub_resource type="Resource" id="Resource_lowg"]
 script = ExtResource("12_pasv")
@@ -73,7 +74,7 @@ script = ExtResource("3_a2xb3")
 weapon_fire = SubResource("Resource_23iyw")
 ability_name = "Davy Crockett"
 description = "Drop a nuke below you."
-cooldown = 30.0
+cooldown = 25.0
 metadata/_custom_type_script = "uid://lrht2lh1enw5"
 
 [resource]

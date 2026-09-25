@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://wfsegp8hq16a"]
+
+[ext_resource type="Script" path="res://verification/charge_harness.gd" id="1_harn"]
+
+[node name="ChargeHarness" type="Node"]
+script = ExtResource("1_harn")

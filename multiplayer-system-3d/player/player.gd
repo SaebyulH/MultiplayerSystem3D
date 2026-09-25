@@ -551,6 +551,12 @@ func rpc_reset(pos: Vector3) -> void:
 	weapon_controller.reset()
 	if status_effect_manager:
 		status_effect_manager.clear_all_effects()
+	# Refill the metered-ability pools.  clear_all_effects() has just torn down any
+	# effect a running meter was holding up, and respawning does not re-apply the
+	# character, so AbilityManager._resize_state() never runs here — without this a
+	# death mid-noclip would leave the meter draining with nothing behind it.
+	if ability_manager:
+		ability_manager.reset_meters()
 
 	# Randomize weapons on death if the option is enabled.
 	if multiplayer.is_server() and _randomize_on_death and not _loadout_class_path.is_empty():

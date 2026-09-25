@@ -386,7 +386,13 @@ func _start_fire_pulse() -> void:
 		return
 	_fire_pulse_held = true
 	_fire_pulse_timer = FIRE_PULSE_HOLD
-	match _chosen_fire_index:
+	_hold_fire(_chosen_fire_index)
+
+## Press (or release) the trigger flag for fire mode [param index].  Note this
+## only touches the flag — dropping it is a *release*, which a charged weapon
+## fires on, so "stop shooting" and "shoot" are the same event there.
+func _hold_fire(index: int) -> void:
+	match index:
 		0: player.player_input.primary_fire_held = true
 		1: player.player_input.secondary_fire_held = true
 		2: player.player_input.tertiary_fire_held = true
@@ -994,16 +1000,27 @@ func _try_fire_current_weapon(wc: WeaponController) -> void:
 		_bot_find_ammo_or_reload(wc)
 		return
 
+	# Charged weapons (bow) fire on trigger *release*, so neither path below
+	# works: the automatic path would hold the trigger forever without ever
+	# releasing, and the semi-auto pulse holds for a single think interval, which
+	# is a few percent of a draw.  Hold instead until the draw is complete, then
+	# let go for a tick — that release is the shot.  Reading the draw's own
+	# progress also means a bot that starts holding during the previous shot's
+	# cooldown simply keeps holding until the draw actually begins.
+	if weapon.charged and _chosen_fire_index < weapon.weapon_fires.size() \
+			and weapon.weapon_fires[_chosen_fire_index].action_type == WeaponFire.ActionType.SHOOT:
+		_clear_fire_inputs()
+		if wc.get_charge_ratio() < 1.0:
+			_hold_fire(_chosen_fire_index)
+		return
+
 	var is_auto := false
 	if _chosen_fire_index < weapon.weapon_fires.size():
 		is_auto = weapon.weapon_fires[_chosen_fire_index].automatic
 
 	if is_auto:
 		_clear_fire_inputs()
-		match _chosen_fire_index:
-			0: player.player_input.primary_fire_held = true
-			1: player.player_input.secondary_fire_held = true
-			2: player.player_input.tertiary_fire_held = true
+		_hold_fire(_chosen_fire_index)
 	else:
 		_clear_fire_inputs()
 		_start_fire_pulse()

@@ -149,6 +149,27 @@ var _current_shot_amp_mult: float = 1.0
 ## Captured before any force-unscope, so the shot keeps scoped accuracy/damage.
 var _shot_was_scoped: bool = false
 
+#region Charge (hold-to-fire) state — see Weapon.charged
+## True while a draw is in progress on a charged weapon.  Replicated to every
+## peer by _begin_charge_synced/_cancel_charge_synced rather than derived
+## locally, because `get_active_fire_speed_mult()` reads it inside the rollback
+## tick on every peer.
+##
+## Named to avoid `Player.is_charging()`, which is the unrelated shoulder charge.
+var _charge_active: bool = false
+## Seconds spent charging.  Only ever zeroed by the start of a draw or by
+## `fire_intent` consuming a shot — **never by a cancel** (see
+## `_cancel_charge_synced`).
+var _charge_time: float = 0.0
+## Which entry of `weapon_fires` the current draw belongs to (-1 when idle).
+var _charging_fire_index: int = -1
+## Charge ratio captured for the current shot on the server, 0..1 (1.0 = full
+## charge / not a charged weapon).  A separate field from `_current_shot_amp_mult`
+## because hitscan damage reads that one while projectiles read `_damage_amp_of()`
+## — and because the ability fire path resets both to "full power" in one place.
+var _current_charge_ratio: float = 1.0
+#endregion
+
 signal mag_changed(current: int, mag_max: int)
 signal weapon_changed(index: int, weapon: Weapon)
 ## Emitted when a SIGNAL-type fire mode is activated.  Projectiles can
@@ -313,6 +334,69 @@ func has_scoped_amp() -> bool:
 	var fire := _get_ads_fire()
 	return fire != null and fire.scoped_damage_amp_max > 1.0
 
+## The currently equipped Weapon, or null when the controller isn't ready to
+## index one.  Centralises the bounds checks the fire path used to inline.
+func _current_weapon() -> Weapon:
+	if not _is_ready():
+		return null
+	return _weapons[current_weapon_index]
+
+## True while a charged weapon is being drawn.  Read by the HUD (owner) and by
+## `get_active_fire_speed_mult()` (every peer, inside the rollback tick).
+func is_charging_weapon() -> bool:
+	return _charge_active
+
+## Live draw progress 0..1 for the HUD.  Returns 0.0 the moment the draw ends,
+## so the bar empties on release.
+func get_charge_ratio() -> float:
+	if not _charge_active:
+		return 0.0
+	return get_charge_ratio_for(_current_weapon())
+
+## Draw fraction 0..1 of [param weapon], read from `_charge_time` ALONE.
+##
+## Deliberately independent of `_charge_active`.  `fire_intent` scores a shot
+## from this, and gating that read on the flag would make the shot's strength
+## depend on whether `_cancel_charge_synced` had been processed yet rather than
+## on how long the player actually held the button — which is precisely the
+## hazard the cancel's no-zero rule exists to remove.  Returns 1.0 for anything
+## that isn't a charged weapon, so every existing shot path is unchanged.
+func get_charge_ratio_for(weapon: Weapon) -> float:
+	if weapon == null or not weapon.charged or weapon.charge_time <= 0.0:
+		return 1.0
+	return clampf(_charge_time / weapon.charge_time, 0.0, 1.0)
+
+## Damage multiplier for the draw in progress (1.0 at full charge).  HUD readout.
+func get_charge_damage_multiplier() -> float:
+	var weapon := _current_weapon()
+	if weapon == null or not weapon.charged:
+		return 1.0
+	return lerpf(weapon.uncharged_damage_mult, 1.0, get_charge_ratio())
+
+## The active weapon's min_charge (0.0 for anything that isn't charged).  The HUD
+## draws its threshold tick at this fraction of the bar.
+func get_charge_min_ratio() -> float:
+	var weapon := _current_weapon()
+	if weapon == null or not weapon.charged:
+		return 0.0
+	return clampf(weapon.min_charge, 0.0, 1.0)
+
+## Damage multiplier for the shot currently being resolved, derived from the
+## ratio the server captured in `fire_intent`.  Used by the hitscan and
+## projectile damage sites so they cannot drift apart.
+func _charge_damage_mult() -> float:
+	var weapon := _current_weapon()
+	if weapon == null or not weapon.charged:
+		return 1.0
+	return lerpf(weapon.uncharged_damage_mult, 1.0, _current_charge_ratio)
+
+## Projectile launch-speed multiplier for the shot being resolved.
+func _charge_projectile_speed_mult() -> float:
+	var weapon := _current_weapon()
+	if weapon == null or not weapon.charged:
+		return 1.0
+	return lerpf(weapon.uncharged_projectile_speed_mult, 1.0, _current_charge_ratio)
+
 ## Current camera FOV, accounting for an in-progress scope transition.  While
 ## idle this is the steady-state FOV (zoom_fov when ADS, 90.0 otherwise); during
 ## a transition it interpolates from the start FOV to the target FOV.  The
@@ -461,6 +545,19 @@ func _tick_timers(delta: float) -> void:
 	else:
 		_scoped_charge_time = 0.0
 
+	# Charge draw — ticks on every peer so they all agree on the ratio.  Only the
+	# server's copy decides how strong the shot is (see fire_intent); only the
+	# owner's copy drives the HUD bar.
+	if _charge_active:
+		var charge_weapon := _current_weapon()
+		if charge_weapon == null or not charge_weapon.charged \
+				or _charging_fire_index >= charge_weapon.weapon_fires.size():
+			_clear_charge_local()  # safety net; the switch paths clear it too
+		else:
+			# Clamped at the source so a long hold can't grow it without bound.
+			# Only the ratio is ever read, so this loses nothing.
+			_charge_time = minf(_charge_time + delta, maxf(charge_weapon.charge_time, 0.0))
+
 	# Spread decay when not actively firing.
 	if _is_ready():
 		var weapon: Weapon = _weapons[current_weapon_index]
@@ -531,6 +628,11 @@ func reset() -> void:
 	_cancel_scope()
 	_scoped_charge_time = 0.0
 	_current_shot_amp_mult = 1.0
+	# Death / respawn: drop any draw in progress.  `_process_fire` bails out as
+	# soon as the player is despawned, so nothing else would end it — and a
+	# charge that outlives a life would keep its movement penalty applied.
+	_clear_charge_local()
+	_current_charge_ratio = 1.0
 	_switch_phase = SwitchPhase.IDLE
 	_switch_timer = 0.0
 	_switch_pullout_time = 0.0
@@ -592,6 +694,8 @@ func set_weapons(new_weapons: Array[Weapon]) -> void:
 	_pending_fire   = false
 	_fire_cooldown  = 0.0
 	_current_spread = 0.0
+	_clear_charge_local()
+	_current_charge_ratio = 1.0
 	_bg_reload_timers.clear()
 	_bg_reload_active.clear()
 	_ensure_bg_arrays()
@@ -603,13 +707,22 @@ func get_weapons() -> Array[Weapon]:
 	return _weapons
 
 ## Returns the active fire mode's movement-speed multiplier (1.0 = normal).
-## Stays active while _fire_cooldown > 0 or during burst-firing.
+## Stays active while _is_firing (which is set by _start_firing and lasts the
+## whole fire cycle), not for the whole of _fire_cooldown.
 func get_active_fire_speed_mult() -> float:
-	if not _is_ready() or not _is_firing:
-		return 1.0
-	if _firing_fire_index >= 0 and _firing_fire_index < _weapons[current_weapon_index].weapon_fires.size():
-		return _weapons[current_weapon_index].weapon_fires[_firing_fire_index].move_speed_mult_while_shooting
-	return 1.0
+	var mult: float = 1.0
+	if _is_ready() and _is_firing:
+		if _firing_fire_index >= 0 and _firing_fire_index < _weapons[current_weapon_index].weapon_fires.size():
+			mult = _weapons[current_weapon_index].weapon_fires[_firing_fire_index].move_speed_mult_while_shooting
+	# A draw compounds on top of the fire cycle's own multiplier.  This is read
+	# from the rollback tick on every peer (player.gd:1127, :1736) alongside
+	# Weapon.player_speed_multiplier, which is applied separately on the line
+	# above each — so the three multiply together, as intended.
+	if _charge_active:
+		var weapon := _current_weapon()
+		if weapon != null:
+			mult *= weapon.charge_move_speed_mult
+	return mult
 
 ## True while the weapon is in any part of its fire cycle (pre-delay, burst,
 ## or post-delay).  Read by the weapon-tilt shake so it can stop the instant
@@ -1226,6 +1339,9 @@ func _on_weapon_index_changed(previous_index: int = -1) -> void:
 	_any_fire_was_held = false
 	_is_firing = false
 	_firing_remaining = 0.0
+	# A draw does not survive a weapon switch.  Local only — see
+	# _clear_charge_local().
+	_clear_charge_local()
 	if shoot_animation:
 		shoot_animation.stop()
 	# Abort the reload one-shots so the reload anim doesn't bleed over to the next
@@ -1464,6 +1580,14 @@ func start_reload() -> void:
 		return
 	if is_switching():
 		return
+	# Reloading ends a draw.  This sits above the guards below on purpose: an
+	# infinite-ammo or full-magazine weapon still returns early, and a draw must
+	# not survive that — the trigger is about to be released and would otherwise
+	# loose the shot.  start_reload is the single choke point for every reload
+	# entry (client, server, bot, and the auto-reload in fire_intent), so this is
+	# the only place that needs it.
+	if _charge_active:
+		_cancel_charge_synced.rpc()
 	var weapon: Weapon = _weapons[current_weapon_index]
 	if _is_reloading or weapon.has_infinite_ammo:
 		return
@@ -1635,21 +1759,27 @@ func _confirm_reload_done(new_mag: int) -> void:
 func _process_fire() -> void:
 	# Disable firing while despawned (dead / awaiting respawn).
 	if not _parent_player.spawned:
+		_end_charge_if_active()
 		return
 	if not _is_ready():
+		_end_charge_if_active()
 		return
 	if is_switching():
+		_end_charge_if_active()
 		return
 	# While a shoulder charge or bashdown is active, weapons cannot be fired.
 	if _parent_player.is_charging() or _parent_player.is_bashing():
+		_end_charge_if_active()
 		return
 	# While an ability is equipped (EQUIP-cast), fire buttons cast the ability
 	# instead of firing the weapon.
 	if _parent_player.ability_manager and _parent_player.ability_manager.is_equipped():
+		_end_charge_if_active()
 		return
 	# While an ability-triggered fire is ongoing (e.g. a burst), suppress normal
 	# fire unless the ability opted out (interrupt_shooting_weapon = false).
 	if _ability_fire_interrupt:
+		_end_charge_if_active()
 		return
 
 	var weapon: Weapon = _weapons[current_weapon_index]
@@ -1668,10 +1798,13 @@ func _handle_fire_input(weapon: Weapon, fire_index: int, input_held: bool) -> vo
 		return
 	if not input_held:
 		_fired_this_press.erase(fire_index)
-		# Hold-to-shield: retract when the button is released.
 		var released_fire: WeaponFire = weapon.weapon_fires[fire_index]
+		# Hold-to-shield: retract when the button is released.
 		if released_fire.action_type == WeaponFire.ActionType.SHIELD:
 			retract_shield_synced.rpc()
+		# Hold-to-charge: the release *is* the shot.
+		elif weapon.charged and _charge_active and _charging_fire_index == fire_index:
+			_release_charge(weapon, fire_index)
 		return
 	if _fired_this_press.get(fire_index, false):
 		return
@@ -1708,6 +1841,17 @@ func _handle_fire_input(weapon: Weapon, fire_index: int, input_held: bool) -> vo
 		if _parent_player.shield_blocks_shooting():
 			return
 
+		# Hold-to-charge weapons never fire on press — the press starts a draw
+		# and the release looses it.  This branch deliberately does NOT latch
+		# `_fired_this_press`, so every held frame comes back through here and
+		# the full-charge auto-fire below gets a chance to run.
+		if weapon.charged:
+			if not _charge_active:
+				_start_charge(weapon, fire_index)
+			elif weapon.auto_fire_at_full_charge and get_charge_ratio() >= 1.0:
+				_release_charge(weapon, fire_index)
+			return
+
 		# Queue an interrupt for individual-reload weapons when fire is
 		# newly pressed mid-reload (not a continued hold from before
 		# the reload started).  The reload stops after the current
@@ -1729,6 +1873,75 @@ func _handle_fire_input(weapon: Weapon, fire_index: int, input_held: bool) -> vo
 
 	if not weapon.weapon_fires[fire_index].automatic:
 		_fired_this_press[fire_index] = true
+
+
+## Drop a draw the owner can no longer continue (went down, got equipped an
+## ability, an ability burst took over).  These are owner-side conditions the
+## server cannot observe — it never runs `_process_fire` for someone else's
+## player — so this *must* broadcast: the server's copy is what the rollback
+## movement uses, and a stale one would simulate the player at the charge's
+## movement penalty while the client predicts full speed.
+##
+## Guarded on `_charge_active` because `_process_fire` runs every frame and the
+## condition may persist for seconds; the first call clears it (call_local), so
+## this costs exactly one broadcast per transition.
+func _end_charge_if_active() -> void:
+	if _charge_active:
+		_cancel_charge_synced.rpc()
+
+
+## Performs the action-block check that `PlayerInput` applies to the fire flags.
+## A stunned/channel-locked player has its held flags forced false, which would
+## otherwise look exactly like a deliberate release — so the charge path has to
+## ask the same question the input layer asked, rather than trusting the edge.
+func _fire_is_blocked() -> bool:
+	var sem := _parent_player.status_effect_manager
+	return sem != null and (sem.is_stunned() or sem.is_action_blocked())
+
+
+## Begin a draw on a charged weapon.  The ammo pre-check lives here rather than
+## in the press branch so an empty weapon clicks once per press instead of every
+## held frame.
+func _start_charge(weapon: Weapon, fire_index: int) -> void:
+	# A blocked player cannot start (or continue) a draw.
+	if _fire_is_blocked():
+		return
+
+	var required := _get_fire_ammo_cost(weapon, fire_index)
+	if not weapon.has_infinite_ammo and weapon.mag_current < required:
+		_play_empty.rpc(fire_index)
+		_fired_this_press[fire_index] = true
+		return
+
+	# Wait out the previous shot's cooldown rather than starting a draw that
+	# `_try_fire` would refuse to release — the held frame comes straight back
+	# here, so the draw begins by itself the moment the weapon is ready.
+	if _fire_cooldown > 0.0 or _is_reloading or _pending_fire or _is_firing or is_switching():
+		return
+
+	_stop_inspect()
+	# Set locally as well as firing the RPC, so the owner's HUD and movement
+	# penalty take effect on the same frame the trigger is pulled.  `call_local`
+	# makes the RPC idempotent here.
+	_charge_active = true
+	_charge_time = 0.0
+	_charging_fire_index = fire_index
+	_begin_charge_synced.rpc(fire_index)
+
+
+## Loose a charged shot, or drop the draw if it never reached min_charge.
+##
+## Ordering matters: on the host `_try_fire` reaches `fire_intent` synchronously
+## and `fire_intent` reads `_charge_time`, so the local reset must happen *after*
+## it.  On a pure client the reset is local-only state (the server keeps its own
+## timer), and the RPC here only tells the other peers the draw is over.
+func _release_charge(weapon: Weapon, fire_index: int) -> void:
+	if _fire_is_blocked() or get_charge_ratio_for(weapon) < weapon.min_charge:
+		# Blocked mid-draw, or released too early: no ammo, no cooldown.
+		_cancel_charge_synced.rpc()
+		return
+	_try_fire(fire_index)
+	_cancel_charge_synced.rpc()
 #endregion
 
 
@@ -1745,6 +1958,41 @@ func toggle_ads_synced():
 		_begin_scope_in()
 	else:
 		_begin_scope_out()
+
+
+## Start a draw on a charged weapon.  Reliable and broadcast, like the ADS
+## toggle: `_charge_active` feeds `get_active_fire_speed_mult()`, which the
+## rollback tick reads on every peer.
+@rpc("any_peer", "call_local", "reliable")
+func _begin_charge_synced(fire_index: int) -> void:
+	_charge_active = true
+	_charge_time = 0.0
+	_charging_fire_index = fire_index
+
+
+## End a draw without firing (released below min_charge, stunned, switched away).
+##
+## **This deliberately does not zero `_charge_time`.**  `_charge_time` is the
+## clock `fire_intent` scores a shot from, and the two RPCs are separate calls
+## whose arrival order is not part of the contract — a cancel is sent on release
+## right after the fire intent, and today's transfer modes happen to preserve
+## that order, but that is a one-word annotation away from changing.  Keeping
+## `_charge_time` writable from exactly two sites (`_begin_charge_synced`, and
+## `fire_intent` after it has read it) makes the shot's strength independent of
+## arrival order and of the transfer mode.  Do not add a third writer.
+@rpc("any_peer", "call_local", "reliable")
+func _cancel_charge_synced() -> void:
+	_clear_charge_local()
+
+
+## End a draw on this peer without broadcasting.  For the transitions every peer
+## already observes for itself — weapon switch, death, loadout swap — where the
+## replicated state change carries the news and an RPC would instead be one
+## broadcast *per peer*.  Owner-driven ends (release, auto-fire) use
+## `_cancel_charge_synced` instead, because nothing else would tell the others.
+func _clear_charge_local() -> void:
+	_charge_active = false
+	_charging_fire_index = -1
 
 
 @rpc("any_peer", "call_local")
@@ -1855,6 +2103,10 @@ func fire_weapon_fire(fire: WeaponFire, interrupt_shooting: bool = true, ability
 	# Ability-fired shots never inherit the scoped damage amp.
 	_current_shot_amp_mult = 1.0
 	_shot_was_scoped = _parent_player.ads
+	# ...nor any draw that happened to be in flight: this path reaches
+	# _execute_fire / _spawn_projectile without passing through fire_intent, so
+	# an ability-fired arrow is always a full-power one.
+	_current_charge_ratio = 1.0
 
 	if fire.bullet_type == WeaponFire.BulletType.PROJECTILE:
 		if fire.multishot_mode == WeaponFire.MultishotMode.BURST and fire.multishot_data.size() > 1:
@@ -1990,6 +2242,28 @@ func fire_intent(weapon_index: int, weapon_fire_index: int) -> void:
 	if total_cost > 0 and weapon.mag_current < total_cost:
 		return
 
+	# Consume the charge draw, and enforce min_charge.  Both happen before ANY
+	# other state is touched, so a below-minimum release is a pure no-op: no
+	# cooldown, no ammo, no fire cycle (the client does not even send the intent
+	# — see _release_charge; this is the backstop that makes the rule real).
+	#
+	# This is the *only* place the server reads the draw, and it reads its own
+	# `_charge_time` rather than anything the client reported — the same
+	# authority model as the scoped amp below.  Note it reads via
+	# get_charge_ratio_for() and NOT the HUD's get_charge_ratio(): the latter is
+	# gated on `_charge_active`, so a cancel landing first would score a
+	# full-power shot as an uncharged one.  `_charge_time` is zeroed here and
+	# nowhere else on the server, which is what makes the read order-independent.
+	if weapon.charged:
+		var charge_ratio: float = get_charge_ratio_for(weapon)
+		if charge_ratio < weapon.min_charge:
+			return
+		_current_charge_ratio = charge_ratio
+	else:
+		_current_charge_ratio = 1.0
+	_clear_charge_local()
+	_charge_time = 0.0
+
 	_fire_cooldown = fire.post_shoot_delay * (_parent_player._character.shoot_delay_mult if _parent_player._character else 1.0)
 	_start_firing(weapon, weapon_fire_index)
 
@@ -1998,6 +2272,7 @@ func fire_intent(weapon_index: int, weapon_fire_index: int) -> void:
 	_current_shot_amp_mult = get_scoped_damage_multiplier()
 	_shot_was_scoped = _parent_player.ads
 	_scoped_charge_time = 0.0
+
 	# Force-unscope weapons drop out of ADS the moment a shot is fired.
 	if _parent_player.ads and _ads_forces_unscope():
 		toggle_ads_synced.rpc()
@@ -2141,6 +2416,13 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 	var eff_min_spread: float = weapon.min_spread
 	if not _shot_was_scoped:
 		eff_min_spread = maxf(weapon.min_spread, weapon.unscoped_spread)
+	# A part-drawn charged weapon is looser.  Added after the unscoped override so
+	# it applies on both branches, and it is exactly 0.0 at full charge and for
+	# every non-charged weapon — a full-charge shot is byte-identical to before.
+	# Folding it into the floor (rather than a separate cone term) keeps the
+	# max_spread clamp meaningful and lets _current_spread decay normally after.
+	if weapon.charged:
+		eff_min_spread += weapon.uncharged_extra_spread * (1.0 - _current_charge_ratio)
 	if weapon.spread_per_shot > 0.0 or eff_min_spread > 0.0:
 		_current_spread = minf(maxf(_current_spread, eff_min_spread) + weapon.spread_per_shot, weapon.max_spread)
 		var spread_rad: float = deg_to_rad(_current_spread)
@@ -2243,7 +2525,7 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 				else:
 					var distance := origin.distance_to(result.position)
 					var mult := _compute_falloff_multiplier(weapon, weapon_fire_index, distance)
-					var damage := weapon_fire.hitscan_damage * mult * _current_shot_amp_mult
+					var damage := weapon_fire.hitscan_damage * mult * _current_shot_amp_mult * _charge_damage_mult()
 					var is_headshot := false
 					if (collider as HurtboxComponent).is_head and not is_equal_approx(weapon_fire.headshot_multiplier, 1.0):
 						damage *= weapon_fire.headshot_multiplier
@@ -2303,7 +2585,7 @@ func _apply_shape_damage(weapon: Weapon, weapon_fire_index: int, shape_hits: Dic
 		var collider: HurtboxComponent = hit["collider"]
 		var distance: float = hit["distance"]
 		var mult: float = _compute_falloff_multiplier(weapon, weapon_fire_index, distance)
-		var damage: float = weapon_fire.hitscan_damage * mult * _current_shot_amp_mult
+		var damage: float = weapon_fire.hitscan_damage * mult * _current_shot_amp_mult * _charge_damage_mult()
 		var is_headshot := false
 		if hit["is_head"] and not is_equal_approx(weapon_fire.headshot_multiplier, 1.0):
 			damage *= weapon_fire.headshot_multiplier
@@ -2397,7 +2679,10 @@ func _spawn_projectile(fire: WeaponFire, world_dir: Vector3, shooter_name: Strin
 	projectile_scene.global_transform = %Head.global_transform#weapon_model_parent.global_transform
 	projectile_scene.shooter_name     = shooter_name
 
-	var speed: float = projectile_scene.linear_velocity.length()
+	# The launch speed is authored on the projectile scene (RigidBody3D.linear_velocity);
+	# a charged weapon scales it here.  1.0 for every uncharged weapon, so this is a
+	# no-op for the rest of the arsenal.
+	var speed: float = projectile_scene.linear_velocity.length() * _charge_projectile_speed_mult()
 	# Inherit only the shooter's velocity component along the aim direction, so
 	# projectiles pick up forward momentum but never veer off the crosshair — and
 	# moving against the aim can never slow the shot down.
@@ -2424,7 +2709,7 @@ func _spawn_projectile(fire: WeaponFire, world_dir: Vector3, shooter_name: Strin
 	# Per-target scaling (`enemy_delta_multiplier`, `self_health_delta_multiplier`,
 	# distance falloff) composes on top, and self-damage is amped too -- the same
 	# rule hitscan already follows.
-	var amp: float = _damage_amp_of(GameManager.find_player(shooter_name))
+	var amp: float = _damage_amp_of(GameManager.find_player(shooter_name)) * _charge_damage_mult()
 	var hb: HitboxComponent = projectile_scene.get_node_or_null("HitboxComponent") as HitboxComponent
 	if hb:
 		hb.hit_knockback = fire.hit_knockback

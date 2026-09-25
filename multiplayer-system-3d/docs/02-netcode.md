@@ -81,36 +81,83 @@ On remote peers the camera basis for that player's copy is stale, so camera-rela
 
 ## 3. `fire_intent` RPC round-trip (server-authoritative firing)
 
+> **Line cites in this section were refreshed 2026-09-25** after the charged-weapon
+> feature added ~300 lines to `weapon_controller.gd`. Cites elsewhere in this file
+> that point into that file (and into `player.gd`) may still predate the shift —
+> re-grep the symbol rather than trusting the number.
+
 ### Polling (owning peer only)
 
-`WeaponController._physics_process` (`weapon_controller.gd:403-412`) calls `_process_fire()` only when: this is a bot (server drives it) **or** `my_id == _parent_player.name.to_int()` (the owning human). Everyone else's weapon controller is idle.
+`WeaponController._physics_process` (`weapon_controller.gd:504-513`) calls `_process_fire()` only when: this is a bot (server drives it) **or** `my_id == _parent_player.name.to_int()` (the owning human). Everyone else's weapon controller is idle.
 
-`_process_fire` (`1613-1642`) → `_handle_fire_input` per fire button (`1636-1638`). `_handle_fire_input` (`1645-1710`) dispatches by `ActionType`:
-- `ADS` → `toggle_ads_synced.rpc()` (1671)
-- `SHIELD` → `deploy_shield_synced.rpc(fire_index)` (1676)
-- `SIGNAL` → `_send_signal.rpc()` (1681)
-- `SHOOT` → ammo pre-check (1697-1705) then `_try_fire(fire_index)` (1707)
+`_process_fire` (`1761-1888`) → `_handle_fire_input` per fire button (`1798`). `_handle_fire_input` (`1798-1882`) dispatches by `ActionType`:
+- `ADS` → `toggle_ads_synced.rpc()`
+- `SHIELD` → `deploy_shield_synced.rpc(fire_index)`
+- `SIGNAL` → `_send_signal.rpc()`
+- `SHOOT` → ammo pre-check, then `_try_fire(fire_index)` — or the charge path, see below
 
-`_try_fire` (`1755-1814`): gates on cooldown/reload/pending/switching. If `pre_shoot_delay > 0`, sets `_pending_fire` + `_pre_fire_timer` (1802-1805), resolved in `_tick_timers` (480-497). Otherwise:
-- Server (host): `fire_intent(...)` directly (1808).
-- Client: sets optimistic `_fire_cooldown` for responsiveness, then `fire_intent.rpc_id(1, current_weapon_index, weapon_fire_index)` (1813-1814).
+`_try_fire` (`2026-2085`): gates on cooldown/reload/pending/switching. If `pre_shoot_delay > 0` **and the fire is not charged**, sets `_pending_fire` + `_pre_fire_timer`, resolved in `_tick_timers`. Otherwise:
+- Server (host): `fire_intent(...)` directly.
+- Client: sets optimistic `_fire_cooldown` for responsiveness, then `fire_intent.rpc_id(1, current_weapon_index, weapon_fire_index)`.
+
+> A charged fire deliberately never takes the `pre_shoot_delay` path. The trigger-up *is* the shot, and `hold_required_for_pre_shoot_delay` cancels a pending fire on release — so routing a charged release through it would cancel the shot on the same frame it was armed. Charged weapons should leave `pre_shoot_delay` at 0.
 
 ### Server validation and ammo
 
-`fire_intent` (`@rpc("any_peer")`, `1948-2011`):
-1. Backstop reject: `not spawned`, `not _is_ready()`, `is_switching()` (1951-1956).
-2. Re-validate ammo via `_get_fire_ammo_cost` (1960-1966) — the only authoritative deduction point.
-3. Set `_fire_cooldown` + `_start_firing` (1968-1969); capture scoped amp; force-unscope if configured (1973-1978).
-4. Self damage/heal on shoot (1981-1982).
-5. Deduct ammo (burst vs non-burst), `_sync_mag.rpc(...)` (1991-2003), then `_execute_fire` + `_play_shoot_sound.rpc` (1995-2000), auto-reload/auto-switch (2006-2011).
+`fire_intent` (`@rpc("any_peer")`, `2221-2312`):
+1. Backstop reject: `not spawned`, action lock, `not _is_ready()`, `is_switching()`.
+2. Re-validate ammo via `_get_fire_ammo_cost` (`767`) — the only authoritative deduction point.
+3. **Charged weapons only:** score the draw and enforce `min_charge` (`2243-2262`) — see the charged-weapons section below. This runs *before* step 4 so a below-minimum release is a pure no-op.
+4. Set `_fire_cooldown` + `_start_firing`; capture scoped amp; force-unscope if configured.
+5. Self damage/heal on shoot.
+6. Deduct ammo (burst vs non-burst), `_sync_mag.rpc(...)`, then `_execute_fire` + `_play_shoot_sound.rpc`, auto-reload/auto-switch.
 
 ### Actual shot + visuals
 
-`_execute_fire` (`2022-2043`) applies recoil/knockback, then by `MultishotMode` → `_fire_burst` / `_fire_all_shots` / shape. `_fire_single_shot` (`2097-2243`):
-- HITSCAN: raycast from the shooter's camera, `_flash_muzzle_flash.rpc` (2147), then on hit `_on_hitscan_hit.rpc(...)` (2188) which spawns decal/tracer/impact **on every peer** (`_on_hitscan_hit`, 2466-2504). Damage: server path `_apply_damage_direct` (2213-2220) → `change_health`; client path `_change_health_on_server.rpc_id(1, ...)` (2222).
-- PROJECTILE: `_spawn_projectile_on_server.rpc_id(1, ...)` (2251-2254) → `_spawn_projectile` (2349-2376) instantiates under the **world's** `ProjectilesParent` (server-authoritative) and the world's `ProjectileSpawner` replicates it — see §6.
+`_execute_fire` (`2324-2345`) applies recoil/knockback, then by `MultishotMode` → `_fire_burst` / `_fire_all_shots` / shape. `_fire_single_shot` (`2399-2581`):
+- HITSCAN: raycast from the shooter's camera, `_flash_muzzle_flash.rpc`, then on hit `_on_hitscan_hit.rpc(...)` which spawns decal/tracer/impact **on every peer**. Damage: server path `_apply_damage_direct` (`2798`) → `change_health`; client path `_change_health_on_server.rpc_id(1, ...)`.
+- PROJECTILE: `_spawn_projectile_on_server.rpc_id(1, ...)` (`2649`) → `_spawn_projectile` (`2674`) instantiates under the **world's** `ProjectilesParent` (server-authoritative) and the world's `ProjectileSpawner` replicates it — see §6.
 
-Ammo correction to clients: `_sync_mag` (2015) clamps and re-emits `mag_changed`. Reload completion uses `_confirm_reload_done` (1595-1610).
+Ammo correction to clients: `_sync_mag` (`2317`) clamps and re-emits `mag_changed`. Reload completion uses `_confirm_reload_done`.
+
+### Charged weapons (bow): the draw is broadcast state, the shot is scored server-side
+
+`Weapon.charged` (`weapon/weapon.gd`, the `Charge` group) turns a weapon into hold-to-fire: holding the trigger draws it, releasing looses it. The draw scales damage, projectile speed and spread, and applies a movement multiplier. Full charge is the weapon's authored stats; every `uncharged_*` export is the other end of its ramp, so a charged weapon with all of them at `1.0`/`0.0` behaves exactly like an ordinary one.
+
+**Why the draw is broadcast rather than derived locally.** Holding is a *non-rollback* client input (`primary_fire_held` is deliberately absent from the `RollbackSynchronizer` — §1), so the server cannot observe it. But `get_active_fire_speed_mult()` (`714`) is read by `_apply_movement_from_input` on **every** peer, inside the rollback tick (`player/player.gd:1127`, `:1736`). So the draw is a *movement* input on observers too, and a local-only flag would desync remote movement permanently. Two `@rpc("any_peer", "call_local", "reliable")` broadcasts carry it: `_begin_charge_synced(fire_index)` (`1969`) and `_cancel_charge_synced()` (`1986`). This is strictly better than the status quo it sits beside — `_is_firing`, which feeds the same function, is never synced at all.
+
+**The shot is scored from the server's own clock, not from anything the client sends.** `fire_intent` calls `get_charge_ratio_for(weapon)` (`365`) against its own `_charge_time`. This is the same authority model as the scoped damage amp above it.
+
+**The invariant that makes the score order-independent.** `_charge_time` has exactly **two** writers: `_begin_charge_synced` (a new draw starts) and `fire_intent` (after it has read the value). `_cancel_charge_synced` clears `_charge_active` and **never touches `_charge_time`**. The two RPCs are separate sends whose arrival order is not part of the contract — today's transfer modes happen to preserve it, but that is a one-word annotation away from changing. Because the cancel cannot move the clock, a cancel that overtakes a fire cannot downgrade a full-power shot to an uncharged one. Two corollaries, both load-bearing:
+
+- **`fire_intent` must read `get_charge_ratio_for()`, never the HUD's `get_charge_ratio()` (`351`).** The latter is gated on `_charge_active`, so scoring through it would reintroduce exactly the hazard the invariant removes.
+- **Never zero `_charge_time` locally before `_try_fire` returns.** On the host, client and server are one process and `fire_intent` runs *synchronously* inside `_try_fire`; `_release_charge` (`1940`) therefore cancels *after* it. On a pure client the local value is HUD state only.
+
+**Every end-of-draw path.** Owner-driven ends that the server cannot observe broadcast `_cancel_charge_synced` — release (`_release_charge`), and the `_process_fire` gates via `_end_charge_if_active()` (`1890`): despawn, `is_switching()`, shoulder charge/bashing, ability equipped, ability burst. Ends that every peer observes for itself clear **locally** via `_clear_charge_local()` (`1995`) with no RPC — weapon switch (`_on_weapon_index_changed`), death/respawn (`reset`), loadout swap (`set_weapons`) — because broadcasting there would be one packet *per peer* for news the replicated state already carries. `start_reload` (`1580`) aborts a draw too, above its own early-returns, since `start_reload` is the single choke point for every reload entry.
+
+**A stun mid-draw must drop the shot, not loose it.** `PlayerInput._input`/`_gather` force the fire flags false while `is_stunned()`/`is_action_blocked()`, which reaches `_handle_fire_input`'s `not input_held` branch — indistinguishable from a deliberate release. `_release_charge` therefore re-asks the question via `_fire_is_blocked()` (`1899`) and cancels instead of firing. Without that guard, being stunned mid-draw fires the arrow.
+
+**`min_charge` is enforced twice**: client-side in `_release_charge` (which sends no intent at all below it) and authoritatively in `fire_intent` before any state is mutated. The server gate is the one that counts; note it measures the *server's* clock, which starts when `_begin_charge_synced` lands (~½ RTT late), so a release very close to the threshold can be refused — see `05-known-issues.md` #43.
+
+**Where the charge is applied.** `fire_intent` captures `_current_charge_ratio` (`388`, `395`) once; the consumers are the two hitscan damage sites, the projectile damage amp in `_spawn_projectile`, that function's launch-speed line, and the `eff_min_spread` fold in `_fire_single_shot`. `_current_charge_ratio` is deliberately a **separate field from `_current_shot_amp_mult`**: hitscan reads the latter while projectiles read `_damage_amp_of()` — two different mechanisms — and the ability fire path (`fire_weapon_fire`) sets both to "full power" in one place, so an ability-fired arrow is never nerfed by a draw that happened to be in flight.
+
+**How this was verified (2026-09-25, Godot 4.7.2, headless harness).** `res://verification/charge_harness.tscn` drives the real `Player` / `WeaponController` / `bow.tres` with no ENet peer (the same shape the damage-amp verification used) — 111 checks, exit code = failures. Run it with `"C:/tools/godot/godot_console.exe" --path . res://verification/charge_harness.tscn`:
+
+| Case | Expected | Measured |
+|---|---|---|
+| Zero-charge arrow (release immediately) | 12 u/s (0.2 × 60), −50 dmg (0.5 × −100) | 12.0 / −50.0 |
+| Full-charge arrow | 60 u/s, −100 dmg | 60.0 / −100.0 |
+| `uncharged_extra_spread` | +5° floor at ratio 0, exactly 0° at ratio 1 | 5.0 / 0.0 |
+| Cancel *then* fire vs fire *then* cancel | identical score | both 0.6 → mult 0.8 |
+| Below `min_charge` | no cooldown, no ammo, cycle not started | all three held |
+| `charge_move_speed_mult` 0.5 × `move_speed_mult_while_shooting` 2.0 | compounds to 1.0 | 1.0 |
+| Hold → release | exactly one arrow, full power | one, 60.0 |
+| Hold through the 1.5 s post-shoot cooldown | next draw starts with **no** re-press | passed |
+| Stun mid-draw | no arrow, no cooldown, draw ended | passed |
+| Bot with the bow | draws to full, looses at ~frame 60, repeats | frame 61, then repeats |
+| HUD bar placement | mirrored left of the crosshair, threshold tick parented to the bar | all offsets and the `min_charge` tick |
+
+**Not exercised:** a real two-peer session (the harness has no ENet peer), and `_validate_property` in an actual inspector — the harness asserts the rule by calling it directly over every `.tres` under `res://weapon`.
 
 ### Which targets a projectile can hit
 
@@ -304,6 +351,210 @@ validation). Ally targeting needs both, so they now share one predicate,
 - The filter is also what keeps the Shrink Enemy ability honest: it stays `ENEMIES`, so an
   ally-targeted heal and an enemy-targeted shrink on the same character can't cross wires.
 
+### Charged abilities — the charge pool and the inter-cast gate
+
+Added 2026-09-25. An ability may hold **several charges**, spent one per cast and regenerating
+over time, so a player can bank casts and dump them back to back. Opt-in and additive: nothing
+authored changed, and every ability in the game is still at one charge.
+
+**Scoping — an ability is "charged" iff `max_charges > 1` (`Ability.is_charged()`).** Both new
+fields live on `Ability` (`player/abilities/ability.gd`): `max_charges` (default 1) and
+`charge_interval` (default 1.0 s, hidden in the inspector unless charged). `cooldown` keeps its
+meaning but is now *"seconds to regenerate one charge"*.
+
+**Two gates, both `AbilityManager`'s (`player/abilities/ability_manager.gd`).** A cast is accepted
+only when:
+
+| Gate | Condition | Applies |
+|---|---|---|
+| 1 — charges | pool ≥ 1 | always |
+| 2 — interval | `now >= _cooldowns[i]` | `max_charges > 1`; for a 1-charge ability this is the plain `cooldown` it always was |
+
+**`charge_interval` is deliberately NOT applied at one charge.** With a single charge the pool is
+itself the gate and `cooldown` serves that role, so consulting the interval there would silently
+add a 1 s floor to every ability in the game — including the `cooldown = 0.0` ones, which are legal
+and instant. That is the whole reason the scoping rule exists rather than defaulting the interval
+into everything.
+
+**The pool is a continuous fractional counter, the same shape as `Player.stamina`** — integer part
+is banked charges, fraction is progress toward the next. It refills at `1 / cooldown` per second
+up to `max_charges`, and a cast spends exactly 1. `set_abilities()` fills every slot, which is the
+"you start off with all charges" contract.
+
+**The refill is O(1) and is never a step loop** (`_bank_at`). `Ability.cooldown` may legally be
+`0.0` — nothing shipped authors it, but it is a legal value — and a `while elapsed >= step: bank += 1`
+loop spins forever on it. It is one multiply-and-clamp against `_charge_stamp_ms`, which also makes a
+read after an hour away cost the same as a read after a millisecond.
+
+**There is no `_process`.** The pool is derived lazily on read and only written when a cast spends
+from it, so none of this costs a peer anything per frame. (The single `_physics_process` the class
+does own belongs to *metered* abilities and is disabled unless a meter is actually running — see
+below.)
+
+**The pie shows whichever gate is the bottleneck**, and that selector lives in the manager
+(`get_cast_progress`), not the HUD, so the pie and the targeted-ability preview gate cannot
+disagree:
+
+```
+pool >= 1  ->  pie = interval progress   (you have a charge; the timer is the bottleneck)
+pool <  1  ->  pie = recharge progress   (no charge; the regen is the bottleneck)
+```
+
+For `max_charges == 1` this degenerates to exactly the old arithmetic: the pool reaches 1 at the
+cooldown deadline, and `1 - remaining / cooldown` is algebraically the same fraction the HUD has
+always drawn.
+
+**Gate and consume are one function (`_begin_ability_gate`).** All four cast paths — the
+client-deterministic branch, the client-optimistic branch, and both server branches of
+`_cast_ability` — must do both. Splitting them into "start the cooldown" and "spend a charge" is
+how one path quietly drifts into spending without gating, or gating without spending.
+
+**`_cast_ability`'s guard order is load-bearing**: `is_server → bounds → null → spawned →
+_is_action_blocked → gate → targets → gate+consume → effect`. Moving the gate above the
+action-block check would let a stunned player spend a charge.
+
+**Nothing is networked, and that is the same trade the cooldowns already made.** The pool and the
+interval are **local per peer**, never reconciled: the owning client's copy is optimistic and the
+server's is authoritative, so they drift by ~½ RTT. The server still re-validates in
+`_cast_ability`, so the anti-cheat posture is unchanged from every other ability. The consequence
+is `05-known-issues.md` #46.
+
+**HUD.** `AbilityCircle` (`player/hud/ability_circle.gd`) draws one bar per charge above the disc,
+inside the `_draw()` that already ran every frame, with `charge_bar_geometry()` split out so the
+layout is assertable without a renderer. Bars are drawn rather than built from child `ColorRect`s
+so they stay welded to the disc through the 64 px → 76 px `set_active()` resize for free. A bar
+still filling is dim grey; a banked one is amber (the `_ability_use_label` colour), deliberately
+not the stamina bar's cyan.
+
+**Bots never cast abilities** — `bot_controller.gd` has no `ability_manager` reference — so a
+charged ability on a bot's character simply never fires. The AI was not extended.
+
+**Verification (2026-09-25, Godot 4.7.2, headless harness).** `res://verification/ability_charge_harness.tscn`
+drives the real `AbilityManager` and a real `PlayerUI` on a real `Player`, with no ENet peer — 123
+checks, exit code = failures. Run it with
+`"C:/tools/godot/godot_console.exe" --path . res://verification/ability_charge_harness.tscn`:
+
+| Case | Expected | Measured |
+|---|---|---|
+| `Ability` defaults | `max_charges 1`, `charge_interval 1.0` | both |
+| All 17 authored ability `.tres` | `max_charges == 1` (nothing shipped charged) | all 1 |
+| 1-charge cast | `get_cast_progress` equals the old `1 - remaining/cooldown` to 1e-9 | equal |
+| 3 charges, 10 s bars, 0.3 s interval | 1st cast accepted, 2nd in the same instant refused, charge not spent | held |
+| 3 charges, 0.3 s bars, no interval | 3 casts accepted, 4th refused, accepted again after ~0.35 s | held |
+| Regen | monotonic, never above `max_charges`, settles at **exactly** the cap | held |
+| The two-phase pie | charge in hand → interval fraction; drained → recharge fraction | held |
+| `cooldown == 0.0` | pool stays full, no NaN, gated by the interval alone | held |
+| Long gap | one read clamps to the cap in < 1 ms | held |
+| Server backstop | 2nd same-instant cast refused; a blocked cast spends nothing | held |
+| HUD bars | 1 charge draws none; 3 fit inside the disc at **both** 64 px and 76 px | held |
+
+**Not exercised:** a real two-peer session (no ENet peer in the harness), and the movement half of
+the action lock (#33).
+
+*(Note: `res://verification/ability_charge_harness.tscn` is no longer in the tree — the table above
+records a run that cannot currently be reproduced. `verification/` holds only the bow harness and
+the metered-ability one below.)*
+
+### Metered abilities — a pool of seconds, and a toggle
+
+Added 2026-09-25. `MeteredAbility` (`player/abilities/metered_ability.gd`) is a third ability shape
+beside the one-shot and the charged one: it **drains a meter while it is running and refills it while
+it is not**, and switches itself off when the meter runs dry. Noclip
+(`player/abilities/noclip_ability.gd` / `noclip.tres`) is the first and only user — 5 s of meter,
+7 s to refill, 1 s between toggles.
+
+**The pool is measured in seconds of use**, and it is the charge pool's twin in every structural
+respect: `AbilityManager` owns it (`_meter`, `_meter_stamp_ms`, `_meter_active`), `_meter_at` derives
+it lazily from the timestamp with a single multiply-and-clamp and **never a step loop**, an early-out
+at each end keeps a read after an hour as cheap as a read after a millisecond, and nothing lives on
+the `Ability` resource (which is shared by every player holding it). The one difference is that it
+integrates in **both** directions: an active meter drains at 1 s/s, an inactive one refills at
+`max_meter / recharge_seconds`.
+
+**`cooldown` is the toggle delay.** With the default single charge the pool gate and the `_cooldowns`
+deadline expire at the same instant, so `cooldown = 1.0` already means "one press per second" and the
+anti-spam gate needed no new machinery. `MeteredAbility._init()` pins it, along with `cast_type =
+INSTANT`, `max_charges = 1` and `cast_mode = SERVER` — each other value is silently broken: EQUIP is
+never cast from the ability key at all (the key only toggles `equipped_index`) and unequips itself via
+`_cast_equipped`; `max_charges > 1` would route the gate through `charge_interval`; CLIENT would run
+the hooks off-server, where the `StatusEffectManager` calls they need are no-ops, so the meter would
+burn down with nothing happening.
+
+**`min_activate_meter` is a real gate, not a nicety.** Requiring only "meter > 0" has a fixed point:
+with refill rate `r = max_meter / recharge_seconds` and a press as soon as the pool is non-empty, a
+tapping player settles at `meter = r / (1 + r)` — about **0.42 s on, 0.58 s off, forever** at these
+numbers. The average uptime is identical to holding one long burst (both are `r / (1 + r)`), but the
+*grain* is not: 0.42 s bursts are strictly better for dodging sustained fire than a single 5 s window,
+so the degenerate play beats the intended play. Any `min_activate_meter` above that attractor kills
+it. **Do not author one below `recharge / (1 + recharge)`.**
+
+**The toggle direction rides with the cast.** A toggle is its own inverse, so two peers whose on/off
+flags disagree flip in *opposite* directions and stay inverted. `_request_cast` therefore resolves
+`want_on` once from the pool and threads it through `_cast_ability.rpc_id(..., want_on)` and
+`_run_ability(..., want_on)`, and `_set_meter` is **idempotent** — asking for the state the slot is
+already in does nothing. Without that, a press landing in the ~½ RTT window where the client's gate
+has opened but the server's has not leaves the client believing it is on while the server rejected
+the turn-on, and the player's next press (meaning "off") switches noclip *on*. There is no authority
+hole either way: `want_on = true` still passes the server's own `is_ability_ready`, and `activate()`
+/ `deactivate()` do nothing unless the caller is the server.
+
+**Exhaustion bypasses every cast guard, deliberately** (`_physics_process`). An auto-off is a
+consequence of elapsed time, not a player action: routing it through `_cast_ability`'s `!spawned` /
+`_is_action_blocked` checks would mean a player whose meter empties while stunned keeps noclip
+forever, because the off-press is blocked by the same guards in `_input` and nothing else could ever
+end it. It also must not spend a charge or reopen the toggle delay — it is not a cast. The callback
+is armed by `_refresh_meter_tick()` and disabled whenever no meter is running, so the "no per-frame
+work" property above still holds for every ability that is not metered.
+
+**One bottleneck selector, as before.** `_meter_gate_fraction` is the single answer to "is the meter
+the bottleneck", and `is_ability_ready`, `get_cast_progress` and `get_cooldown_remaining` all read
+it. Checking the meter in `is_ability_ready` alone would give the HUD a **complete pie on a dimmed
+circle** — the ready visual for an ability that cannot be cast — because `get_cast_progress` would
+still be reporting the already-elapsed charge gates.
+
+**An off-press is never gated by the pool** (only by the 1 s delay): an exhausted meter that is still
+running reports 1.0 from the gate, which is what lets the player switch it off rather than being
+locked into it until it expires.
+
+**Resets.** `AbilityManager.reset_meters()` is called from `Player.rpc_reset()` next to
+`weapon_controller.reset()` and `clear_all_effects()`. `rpc_reset` does not re-apply the character,
+so `_resize_state()` never runs on a respawn — without the call, dying mid-noclip would leave the
+meter draining with nothing behind it. `_resize_state()` runs the same sweep before it rebuilds, and
+both go **through `deactivate()`** rather than clearing the flag: dropping the flag alone would
+strand the ability's effect, leaving a player flying through walls with no ability left to cancel it.
+
+**HUD.** `AbilityCircle` draws a single full-width meter bar in the same strip the charge bars use (a
+slot is metered or charged, never both), with its own `meter_enabled` / `meter_fraction` /
+`meter_active` fields — deliberately **not** routed through `set_active()`, which also drives the
+64 → 76 px resize and would resize the disc every time noclip was switched on. Grey while refilling,
+amber once there is something to spend, matching the charge bars.
+
+**Verification (2026-09-25, Godot 4.7.2, headless harness).**
+`res://verification/meter_harness.tscn` — 70 checks, exit code = failures. Run it with
+`"C:/tools/godot/godot_console.exe" --path . res://verification/meter_harness.tscn`:
+
+| Case | Expected | Measured |
+|---|---|---|
+| `MeteredAbility` defaults | INSTANT, SERVER, 1 charge, `cooldown` 1.0, not "charged" | all |
+| Fresh slot | full pool, not running, castable | held |
+| Drain | 2 s of use costs 2 of 5 | held |
+| Refill | runs at `max_meter / recharge_seconds`; empty → full in `recharge_seconds` | held |
+| Clamps | draining past empty stops at 0.0; refilling past full stops at `max_meter` | held |
+| Long gap | one read clamps, still < 1 ms | held |
+| Readiness | empty + idle refused; empty + **running** castable (off is never gated); opens at `min_activate_meter` | held |
+| The pie | partial (not 1.0) while the meter, not the charge gate, is the bottleneck | held |
+| Toggle | `activate()` once, repeat presses no-ops, `deactivate()` once | held |
+| Toggle delay | a cast closes it; it reopens after 1 s | held |
+| Exhaustion | tick armed only while running; auto-off calls `deactivate()` once; tick disarms; no charge spent | held |
+| Resets | `reset_meters()` and `set_abilities()` both stop a running meter *through the hook* and refill | held |
+| The flicker attractor | shipped `min_activate_meter` is above `r / (1 + r)` | held |
+| Degenerate config | `max_meter = 0` reads 0, no NaN, and is never ready; a non-metered slot reports nothing | held |
+| Noclip end-to-end | a metered cast applies `NoclipEffect`; exhaustion removes it **and arms the 999-damage exit pulse**; manual off and respawn both clear it | held |
+
+**Not exercised:** a real two-peer session (the harness opens a local loopback server peer to make
+`StatusEffectManager` accept effects, but there is no second peer), and the movement/gameplay half of
+noclip itself, which is unchanged by this feature.
+
 ### SizeChangeEffect — one effect, both directions
 
 `components/status_effect/effects/size_change_effect.gd` scales the player's root node and max
@@ -438,3 +689,5 @@ History: the old `0.667` default was not really `60 / tickrate`. Adding knockbac
 8. **Map swap ordering** — `remove_child` + `queue_free` (not `free`) so the spawner emits the removal event; teardown+rehost deferred a frame (`network_manager.gd:return_to_lobby`).
 9. **The client's `NetworkTime` start is project-owned, not netfox-owned** — `NetworkManager._take_over_client_time()` disconnects netfox's `on_client_start` listener, so anything else relying on that signal (including a future listener) is on its own. `03-event-flow.md`.
 10. **The tick domain is monotonic and only repairable by a full re-seed** — never apply a tick rate after `NetworkTime.start()`, and never let the watchdog resync the host. §8, `05-known-issues.md` #18.
+11. **Ability charges are per-peer and never reconciled** — the pool and the inter-cast interval are tracked independently on the client (optimistic) and the server (authoritative), exactly like the cooldowns beside them, so they drift by ~½ RTT and a boundary cast can be refused with no refund. `05-known-issues.md` #46.
+12. **A metered ability's pool is per-peer too, and its *toggle* makes that worse than a refused cast** — a refused charge merely delays a cast, but two peers whose on/off flags disagree would flip in opposite directions and stay inverted, so the direction is carried with the cast (`want_on`) and `_set_meter` is idempotent. A refused turn-on still leaves the client draining a bar for something that is not running until the local pool empties and it corrects itself. `05-known-issues.md` #47.

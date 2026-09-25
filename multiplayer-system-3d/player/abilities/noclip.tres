@@ -1,9 +1,8 @@
-[gd_resource type="Resource" script_class="NoclipAbility" format=3]
+[gd_resource type="Resource" script_class="NoclipAbility" format=3 uid="uid://xrrm4w8afl8r"]
 
-[ext_resource type="Script" path="res://player/abilities/noclip_ability.gd" id="1"]
+[ext_resource type="Script" uid="uid://455q5li48s1q" path="res://player/abilities/noclip_ability.gd" id="1"]
 
 [resource]
 script = ExtResource("1")
 ability_name = "Noclip"
-description = "Pass through walls and players. Re-cast to exit and deal 999 damage to anyone inside you."
-cooldown = 0.0
+description = "Pass through walls and players for as long as your meter lasts (5s, recharging over 7s). Re-cast to exit, or let it run out — either way you deal 999 damage to anyone inside you."

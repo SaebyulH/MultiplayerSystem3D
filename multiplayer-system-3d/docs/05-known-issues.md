@@ -48,6 +48,14 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 | 38 | 🟡 Medium | Netcode | Projectile damage amp lives only on the server's projectile copy → shield absorption diverges per peer |
 | 39 | 🟡 Medium | Correctness | ✅ FIXED — Hitscan stopped on bodies it could not hurt (yourself, teammates) instead of passing through |
 | 40 | 🔴 Critical | Correctness | ✅ FIXED — Invisible weapon `BoundingBox` areas stopped every shot → impacts in mid-air |
+| 41 | 🟡 Medium | Netcode | A charged weapon's movement penalty reaches observers one RTT late (the draw is broadcast state, not rollback state) |
+| 42 | 🟡 Medium | Netcode | A duplicated `fire_intent` on a charged weapon spends a full shot at **zero** charge |
+| 43 | 🟡 Medium | Netcode | `min_charge` is measured against the server's clock, which starts ~½ RTT after the player's |
+| 44 | 🟡 Medium | Fragility | A bot stuck mid-draw holds the charge and its movement penalty through the whole force-wander |
+| 45 | 🟡 Medium | UX | A draw cancelled below `min_charge` is completely silent |
+| 46 | 🟡 Medium | Netcode | Ability charges are per-peer with no reconciliation; a boundary cast is refused and not refunded |
+| 47 | 🟡 Medium | Netcode | A metered ability's pool is per-peer; a refused turn-on leaves the bar draining an ability that is not running |
+| 47b | 🟡 Medium | Correctness | Noclip can expire inside geometry, where it re-enables collision |
 
 ---
 
@@ -474,6 +482,120 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
   2. **`_fire_single_shot` now excludes every collision object the shooter owns**, by walking the player's subtree — `_parent_player.find_children("*", "CollisionObject3D", true, false)` — instead of appending only the 20 registered hurtboxes from `HurtComponent2.hurtbox_components` plus the shield. `owned = false` so colliders inside instanced sub-scenes (the weapon models, the shield scene) are included; the registry loop it replaces could only ever be as complete as whoever last added a collider to the rig. `_hurt_component2` is no longer referenced by the fire path. Cost is one subtree walk per shot (~300 nodes), not per frame.
 - **Verified (Godot 4.7.2 headless):** fresh instances of `ak.tscn` / `minigun.tscn` / `shielded_minigun.tscn` report `layer=0 mask=0` on their `BoundingBox`; firing excludes the weapon model's area RID alongside the body and all 20 hurtboxes (22 RIDs).
 - **Trap found while fixing it — never write `#` comments into a `.tscn`.** The first patch inserted explanatory `#` lines above the property; Godot's text resource format comments with **`;`**, so the `#` lines were parsed as garbage and **silently swallowed the `collision_layer = 0` line right after them** while the `collision_mask = 0` line survived — the file looked correct in an editor and in `git diff`, and the property simply did not apply. If a `.tscn` edit appears not to take effect, check for non-`;` comment lines above the property.
+
+---
+
+### 41. A charged weapon's movement penalty reaches observers one RTT late
+- **Files:** `player/weapon_controller.gd:1969` (`_begin_charge_synced`), `:1986` (`_cancel_charge_synced`), `:714` (`get_active_fire_speed_mult`); `player/player.gd:1127`, `:1736` (the two `calc_speed` sites)
+- **Symptom:** while another player draws a bow, the draw's speed penalty starts and ends a network-latency late on your copy of them (and on the *server's* copy of a remote client). The movement is briefly mis-predicted and corrected by rollback.
+- **Why it's inherent:** the draw is not rollback state — `_charge_active`/`_charge_time` cannot go in the `RollbackSynchronizer` for the same reason the fire flags cannot (`02-netcode.md` §1: netfox stomps them on re-simulation ticks). `get_active_fire_speed_mult()` runs inside `_apply_movement_from_input`, which *is* re-simulated, so the two are structurally mismatched. The nearest existing thing, `_is_firing`, feeds the very same function and is never synced at all — so this is strictly better than the status quo, not a new class of problem.
+- **Suggested fix:** none attempted. Moving the draw into `Player`-level rollback state would need a determinism review of `get_active_fire_speed_mult()` first, and it would still be re-simulated against a *broadcast* flag.
+
+### 42. A duplicated `fire_intent` on a charged weapon spends a full shot at zero charge
+- **Files:** `player/weapon_controller.gd:2264-2265` (the `_charge_time = 0.0` reset in `fire_intent`)
+- **Symptom:** if `fire_intent` is delivered twice for one release, the first scores the draw and zeroes the clock; the second is scored at ratio 0, i.e. a 0.2×-speed / 0.5×-damage arrow for a full magazine round.
+- **Why:** this is #7 (`fire_intent` has no sender validation, `@rpc("any_peer")`) with a sharper symptom than a mere double-tap — on an ordinary weapon a duplicate costs a second bullet at full power; here it also wastes the draw. Nothing in the current code can produce the duplicate (the client sends one intent per release), so this is a consequence of #7's exposure rather than an independent bug.
+- **Suggested fix:** sender validation on `fire_intent` (#7), or a per-release nonce. Do not "fix" it by removing the reset — `_charge_time` must be zeroed after scoring or the next shot inherits it.
+
+### 43. `min_charge` is measured against the server's clock, which starts late
+- **Files:** `player/weapon_controller.gd:2243-2262` (`fire_intent`), `:1940` (`_release_charge`)
+- **Symptom:** with `min_charge > 0` and a high-latency client, a release the player made exactly at the threshold can be refused server-side: no ammo spent, no cooldown, no shot, no feedback. The client's own gate passed, so it looks like the weapon misfired.
+- **Why:** the server's `_charge_time` starts accumulating when `_begin_charge_synced` *arrives*, ~½ RTT after the player pressed. Every ratio the server computes is therefore slightly lower than the one the player watched fill the bar.
+- **Bounded by** ½ RTT, and it vanishes entirely at full charge (the ratio clamps at 1.0, so only a partial-charge release is affected). The bow is unaffected — `min_charge = 0.0`, and `ratio < 0.0` is never true.
+- **Suggested fix if it ever bites:** add half of `ENetPacketPeer.PEER_ROUND_TRIP_TIME` to the score at `fire_intent`, or carry the client's ratio and take `min(client, server)` — the latter is a small trust regression for a small fairness gain, which is why it isn't done.
+
+### 44. A bot stuck mid-draw holds the charge through the whole force-wander
+- **Files:** `player/bot_controller.gd:217-221` (the `_force_wander_timer` early return), `:997-1004` (the charged branch in `_try_fire_current_weapon`)
+- **Symptom:** a bot that gets stuck while drawing keeps `primary_fire_held` true until the force-wander expires, because that branch returns before reaching `_try_fire_current_weapon`. It wanders at the draw's movement penalty for the duration, holding a full charge it never looses.
+- **Why:** every other non-firing path in the controller calls `_clear_fire_inputs()` first (`:200`, `:953`, `:962`, `:1088`); this one returns early.
+- **Suggested fix:** call `_clear_fire_inputs()` in that branch (it is one line, and it also matches the other paths). Note that clearing the flag on a charged weapon is a *release* — it looses the arrow rather than cancelling it, which is what the bot's disengage paths already do and is intended.
+
+### 45. A draw cancelled below `min_charge` is completely silent
+- **Files:** `player/weapon_controller.gd:1940` (`_release_charge`); `player/player_ui.gd` (`_update_charge_ui`)
+- **Symptom:** releasing early costs no ammo and starts no cooldown, and the charge bar hides instantly — so the player cannot tell "I released too early" from "my shot did nothing". The bow is unaffected (`min_charge = 0.0`), but any weapon that sets it will feel broken without feedback.
+- **Mitigated** by the HUD's min-charge threshold tick (`player_ui.gd`, shown when `min_charge > 0`), which states the rule *before* the failure. That was the cheap half of the fix.
+- **Suggested fix:** a short cue on a dropped draw — reuse `WeaponFire.empty_sound`, or hold the bar visible ~0.25 s tinted red. Needs a new timer + state, so it was left out.
+
+### 46. Ability charges are per-peer with no reconciliation — a boundary cast is refused and not refunded
+
+- **Files:** `player/abilities/ability_manager.gd` (`_begin_ability_gate`, `_is_on_cooldown` /
+  `is_ability_ready`, `_cast_ability`), `player/abilities/ability.gd` (`max_charges`,
+  `charge_interval`)
+- **Introduced by:** the charged-ability feature, 2026-09-25. **Recorded, not fixed** — see the
+  scope note below, because the behaviour is inherited rather than invented.
+- **Symptom:** with `charge_interval` tuned tight (or any charged ability cast right at the
+  interval boundary), a client's cast can be accepted locally and **silently refused by the
+  server**. The client has already spent the charge and started its own interval, so the ability
+  briefly reads as unavailable even though nothing happened — no effect, no feedback.
+- **Why:** the charge pool and the inter-cast interval are tracked **locally on each peer and never
+  networked**, exactly like the `_cooldowns` beside them: the owning client's copy is optimistic
+  (`_request_cast` spends before the RPC leaves) and the server's is authoritative (`_cast_ability`
+  re-checks its own state). The server's interval starts when the RPC *arrives*, ~½ RTT after the
+  client's, so the two disagree by half a round trip at the boundary. Nothing reconciles them, and a
+  server-side rejection does not refund the client's optimistic charge.
+- **Scope — this is the pre-existing cooldown model, not a new class of bug.** Every ability has
+  always worked this way: cooldowns are per-peer, and a rejected cast (target died, range lost,
+  action-locked) has never rolled back the client's timer. Charges inherit the identical shape, so
+  the feature adds no new authority hole — a modified client still cannot cast more than the server
+  allows. The only thing that is new is that a **charged** ability makes the window easier to hit,
+  because `charge_interval` can be authored short enough that a ½ RTT difference matters.
+- **Bounded by** ½ RTT, and it vanishes for a 1-charge ability (`charge_interval` is not consulted
+  there — see `02-netcode.md`), so nothing that shipped is affected.
+- **Suggested fix if it ever bites:** carry the client's request time with the RPC and have the
+  server accept a cast made within ½ RTT of its own deadline (mirroring the note in #43 for
+  `min_charge`), or mirror the remaining interval to the owning client alongside the status-effect
+  sync so the two start from the same instant. Both are more invasive than the current design and
+  should only be done for an ability whose `charge_interval` is authored tight enough to feel it.
+
+### 47. A metered ability's pool is per-peer, and a refused turn-on leaves the bar draining nothing
+
+- **Files:** `player/abilities/ability_manager.gd` (`_meter_at`, `_set_meter`, `_request_cast`,
+  `_cast_ability`, `_physics_process`), `player/abilities/metered_ability.gd`, `player/hud/ability_circle.gd`
+- **Introduced by:** the metered-ability feature, 2026-09-25. **Recorded, not fixed** — the residual
+  is the same per-peer trade #46 already makes, and the worse variant is already closed.
+- **Symptom:** a client turns noclip on, the server refuses (its own toggle delay had not elapsed
+  yet — a ~½ RTT window), and the client's meter bar starts draining and reads "in use" for up to
+  five seconds for an ability that is not actually running. Nothing about the player's *state* is
+  wrong, and it self-corrects: the local pool hits empty, the exhaustion tick clears the flag, the
+  bar refills, and the two peers converge on the next successful toggle.
+- **Why:** the meter pool is tracked locally on each peer and never networked, exactly like the
+  charge pool beside it (`_meter_stamp_ms` is local, the client's copy is optimistic and the
+  server's is authoritative). The server additionally only begins its own drain when the RPC
+  *arrives*, so the two clocks are half a round trip apart for the whole activation — the bar leads
+  the true state by that much even on the happy path.
+- **The sharp version of this was already designed out, and that is the part to not regress.** A
+  toggle is its own inverse, so a naive implementation that flipped a local bit would not merely
+  desync: two peers whose flags disagreed would flip in *opposite* directions and stay inverted, and
+  the player's press-to-turn-**off** would switch noclip back **on**. That is why the direction is
+  resolved once in `_request_cast` and carried with the cast (`want_on`), and why `_set_meter` is
+  idempotent — asking for the state the slot is already in does nothing, so the redundant press is a
+  no-op rather than an inversion. **If someone ever "simplifies" `want_on` away in favour of each
+  peer re-deriving the direction from its own flag, this entry becomes a real bug.**
+- **Scope — no authority hole.** `want_on = true` still has to pass the server's own
+  `is_ability_ready` (toggle delay + pool) before anything happens, and `activate()` / `deactivate()`
+  are silent no-ops unless the caller is the server. A modified client can mis-draw its own HUD bar
+  and nothing else.
+- **Bounded by** ½ RTT, and it only bites when a press lands exactly on the 1 s toggle boundary. A
+  second metered ability would inherit the same model.
+- **Suggested fix if it ever bites:** mirror the pool and the on/off flag to the owning client
+  alongside the status-effect sync so both copies start from the same instant — the same fix #46
+  suggests for the charge interval, and the same reason it was not done up front.
+
+### 47b. Noclip can expire inside geometry
+
+- **Files:** `player/player.gd` (`_noclip_move`, `_apply_movement_from_input`),
+  `player/abilities/ability_manager.gd` (`_physics_process`)
+- **Introduced by:** the metered-ability feature, 2026-09-25. **Recorded, not fixed.**
+- **Symptom:** the meter runs out while the player is inside a wall, noclip ends, `move_and_slide()`
+  resumes with the capsule embedded in geometry — the player is depenetrated or briefly stuck.
+- **Why:** `_noclip_move` integrates `global_position` directly with no `move_and_slide()` at all
+  ("nothing blocks the body"), so being inside geometry is the normal state during flight.
+- **This is not new — it is what already happens on a manual exit.** Today the player solves it
+  socially, by choosing a clear spot before switching off; the meter removes that choice by making
+  the exit involuntary. Deliberately *not* "fixed" by refusing to auto-off while embedded: that would
+  re-enter the infinite-retry loop that `_physics_process` bypasses the cast guards to avoid.
+- **Suggested fix if it bites:** push the player to the last known clear position, or refuse the
+  auto-off for a bounded grace period (not indefinitely) and drain a little more for it.
 
 ---
 

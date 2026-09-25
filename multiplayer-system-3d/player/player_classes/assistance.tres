@@ -14,12 +14,13 @@
 [ext_resource type="Resource" uid="uid://bvuyr21fdqjfj" path="res://player/characters/guardian.tres" id="11_char"]
 [ext_resource type="Resource" uid="uid://bo5mmptgi1bud" path="res://player/characters/field_medic.tres" id="12_char"]
 [ext_resource type="Resource" uid="uid://um5inrkt6m7b" path="res://weapon/assistance_weapons/short_shotgun.tres" id="15_53yu8"]
+[ext_resource type="Resource" path="res://weapon/other/ball_gun.tres" id="15_rvbcw"]
 
 [resource]
 script = ExtResource("5_i8pk4")
 class_display_name = "Assistance"
 primary_weapons = Array[ExtResource("1_pw5jr")]([ExtResource("6_i8pk4"), ExtResource("8_rqw2m"), ExtResource("9_bmfqs")])
-secondary_weapons = Array[ExtResource("1_pw5jr")]([ExtResource("3_otbgs"), ExtResource("7_pw5jr"), ExtResource("15_53yu8")])
+secondary_weapons = Array[ExtResource("1_pw5jr")]([ExtResource("3_otbgs"), ExtResource("7_pw5jr"), ExtResource("15_53yu8"), ExtResource("15_rvbcw")])
 melee_weapons = Array[ExtResource("1_pw5jr")]([ExtResource("5_rqw2m"), ExtResource("7_rvbcw")])
 characters = Array[ExtResource("10_char")]([ExtResource("11_char"), ExtResource("12_char"), ExtResource("4_5heyn")])
 metadata/_custom_type_script = "uid://cbg4mqtqfaara"

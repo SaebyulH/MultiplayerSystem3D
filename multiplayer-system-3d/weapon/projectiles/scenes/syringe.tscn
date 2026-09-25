@@ -42,9 +42,9 @@ align_to_velocity = true
 shape = SubResource("CapsuleShape3D_7rxcs")
 
 [node name="HitboxComponent" parent="." index="2" unique_id=1963592485]
-health_delta = 5.0
+health_delta = 8.0
 can_hit_other_teamates = true
-enemy_delta_multiplier = -2.0
+enemy_delta_multiplier = -1.0
 
 [node name="CollisionShape3D" parent="HitboxComponent" index="0" unique_id=1314331169]
 transform = Transform3D(-0.5297596, 4.6313055e-08, 2.024408e-15, -8.2268505e-23, -2.3156527e-08, 0.5297596, 4.6313055e-08, 0.5297596, 2.3156527e-08, -1.7876205e-08, 8.938103e-09, -0.20447996)
