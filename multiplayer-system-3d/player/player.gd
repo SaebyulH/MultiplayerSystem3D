@@ -247,7 +247,7 @@ var _pose_map: PackedInt32Array = PackedInt32Array()
 
 @onready var animation_tree: AnimationTree = $Body/AnimationTree
 
-@export var crouch_height: float = 1.0
+@export var crouch_height: float = 1.3333
 @export var stand_height: float = 2.0
 @export var crouch_transition_speed: float = 40.0
 
@@ -1527,8 +1527,8 @@ func _apply_movement_from_input(delta):
 		var target_height: float = crouch_height if is_crouching else _stand_collider_height
 		shape.height = target_height
 		# Keep the capsule bottom fixed so the body doesn't bob up/down.
-		collider.position.y = _stand_collider_y - (_stand_collider_height - target_height) * 0.5
-		#%Recoil.position.y = _stand_recoil_y - (_stand_collider_height - target_height) * 0.5
+		collider.position.y = _stand_collider_y - (_stand_collider_height - target_height) * 0.67
+		%Recoil.position.y = _stand_recoil_y - (_stand_collider_height - target_height) * 0.67
 		crouch_factor = 1.0 if is_crouching else 0.0
 
 	# Track grounded time so a minimum contact time can gate re-jumping.
