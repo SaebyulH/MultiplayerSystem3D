@@ -2369,16 +2369,50 @@ func _spawn_projectile(fire: WeaponFire, world_dir: Vector3, shooter_name: Strin
 	var forward_boost: float = maxf(_parent_player.velocity.dot(world_dir), 0.0)
 	projectile_scene.linear_velocity = world_dir * speed + world_dir * forward_boost
 	projectile_scene.shooter_team = shooter_team
-	# Copy status effects and knockback from the WeaponFire to the projectile.
+	# Copy status effects and knockback from the WeaponFire to the projectile, and
+	# fold the shooter's character damage amp into the projectile's *base* damage.
+	#
+	# A projectile never reaches `_apply_damage_direct` -- the only other place the
+	# amp is applied -- because it deals damage through `HitboxComponent` ->
+	# `HurtComponent` and `ExplosionComponent.explode()`, which read these plain
+	# deltas.  Scaling them here is also what keeps `PlayerShield` consistent:
+	# `shield.gd:207` absorbs `hitbox.health_delta` directly.
+	#
+	# Damage only: a positive delta is a heal (syringe, healthpack, heal grenade)
+	# and keeps its authored value, so a damage amp can't silently shrink a heal.
+	#
+	# This MUST run before `add_child()`: `SimpleProjectile._ready()` snapshots
+	# `health_delta` as `_base_hitbox_damage` and rewrites it every frame as
+	# `base * falloff`, so an amp applied after `_ready()` would be wiped on the
+	# first physics frame.
+	#
+	# Per-target scaling (`enemy_delta_multiplier`, `self_health_delta_multiplier`,
+	# distance falloff) composes on top, and self-damage is amped too -- the same
+	# rule hitscan already follows.
+	var amp: float = _damage_amp_of(GameManager.find_player(shooter_name))
 	var hb: HitboxComponent = projectile_scene.get_node_or_null("HitboxComponent") as HitboxComponent
 	if hb:
 		hb.hit_knockback = fire.hit_knockback
 		if not fire.status_effects.is_empty():
 			hb.status_effects = fire.status_effects
+		if hb.health_delta < 0.0:
+			hb.health_delta *= amp
 	var ec: ExplosionComponent = projectile_scene.get_node_or_null("ExplosionComponent") as ExplosionComponent
-	if ec and not fire.status_effects.is_empty():
-		ec.status_effects = fire.status_effects
+	if ec:
+		if not fire.status_effects.is_empty():
+			ec.status_effects = fire.status_effects
+		if ec.splash_health_delta < 0.0:
+			ec.splash_health_delta *= amp
 	spawn_parent.add_child(projectile_scene, true)
+
+
+## A shooter's character damage-amp multiplier; 1.0 when the player or its
+## character can't be resolved.  Applied to hitscan in `_apply_damage_direct` and
+## to projectile base damage at spawn in `_spawn_projectile`.
+func _damage_amp_of(shooter: Player) -> float:
+	if shooter and shooter._character:
+		return shooter._character.damage_amp_mult
+	return 1.0
 
 
 ## Apply on-hit effects (self-heal / self-damage) from a WeaponFire to the
@@ -2410,7 +2444,7 @@ func _apply_damage_direct(collider_name: String, delta: float, parent_player_nam
 	if target:
 		# Apply shooter's damage amp.
 		var shooter: Player = GameManager.find_player(parent_player_name)
-		var dmg_mult: float = shooter._character.damage_amp_mult if shooter and shooter._character else 1.0
+		var dmg_mult: float = _damage_amp_of(shooter)
 		target.change_health(delta * dmg_mult, parent_player_name, is_headshot, falloff_mult, is_backshot)
 		# Lifesteal: heal shooter for a percentage of damage dealt.
 		if delta < 0.0 and shooter and shooter._character:

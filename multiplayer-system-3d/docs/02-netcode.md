@@ -112,6 +112,56 @@ On remote peers the camera basis for that player's copy is stale, so camera-rela
 
 Ammo correction to clients: `_sync_mag` (2015) clamps and re-emits `mag_changed`. Reload completion uses `_confirm_reload_done` (1595-1610).
 
+### Which targets a projectile can hit
+
+A projectile's `HitboxComponent` (`components/hitbox_component.gd`, an `Area3D` on the projectile) is the **single** gate that turns an overlap into damage or healing — `_process_hurtbox_hit` (`hitbox_component.gd:42-73`), reached from `area_entered` (shield / shape hurtboxes) and from `body_entered` (a living player's physical-bone hurtbox, or a ragdoll corpse bone, which is knocked instead). Nothing downstream re-checks teams, so this is the only place to change targeting.
+
+Four **per-scene** exports on that node decide eligibility, and they are set in the `.tscn`, never at runtime (`_spawn_projectile` writes only `hit_knockback` / `status_effects` / the damage amp onto the hitbox, `weapon_controller.gd:2393-2405`):
+
+| Export | Default | Meaning |
+|---|---|---|
+| `can_hit_shooter` | `false` | whether the projectile may hit the player who fired it |
+| `can_hit_other_teamates` | `false` | whether it may hit *allied* players (explicitly not the shooter) |
+| `can_hit_enemy` | `true` | whether it may hit the opposing team at all |
+| `enemy_delta_multiplier` | `1.0` | scales `health_delta` for enemy hits (Crusader's-Crossbow-style reversal at `-2.0`) |
+
+- `hit_self` is `get_parent().shooter_name == owner_player.name`. `shooter_name` is stamped by `WeaponController._spawn_projectile` **before** `add_child` (`weapon_controller.gd:2363`), which is what makes the very first overlap check valid on every peer.
+- `hit_ally` is `owner_player.team == shooter_team`, except in FFA where same-team isn't friendly, so it degrades to name equality with the shooter.
+- The **sign** is on `health_delta` in the same node: positive heals, negative damages.
+- The syringe (`weapon/projectiles/scenes/syringe.tscn`) is the worked example: `health_delta = 5.0`, `can_hit_other_teamates = true`, `enemy_delta_multiplier = -2.0` — heals allies, damages enemies, and (since 2026-09-25) `can_hit_shooter` is left at its `false` default so a medic's own syringe passes through them instead of self-healing. The `healthpack` and `poisoned_healthpack` scenes still set `can_hit_shooter = true` deliberately.
+- The gate itself has **no** authority check, so it runs on every peer holding a copy of the projectile — but only one of them can act on it. `HurtboxComponent.hurt_or_heal` is consumed by `HurtComponent._on_hurt_or_heal` (`hurt_component.gd:14`), which returns early unless it has authority, and `HurtComponent2` is a direct child of the Player root whose authority `Player._enter_tree` pins to `1` (`player.gd:434`). So the damage/heal lands on the **server**; on a client the overlap fires, the emitted result is dropped, and the projectile's own free/stick path is likewise server-gated (`SimpleProjectile._on_hit_hurtbox`, `simple_projectile.gd:142`), leaving the despawn to the `ProjectileSpawner`. `_on_ragdoll_body_entered` is the one branch that checks `is_multiplayer_authority()` itself.
+
+### Damage amp (`Character.damage_amp_mult`)
+
+`Character.damage_amp_mult` (`player/character.gd:48`; Stalker `0.17`, Nerd `0.9`, everyone else `1.0`) scales everything the shooter hits, and reaches damage by **two different routes** depending on how the shot resolves:
+
+- **Hitscan** — `_apply_damage_direct` multiplies the delta inline (`weapon_controller.gd:2447`), and also derives lifesteal from the amped value.
+- **Projectiles** — folded into the projectile's **base** damage at spawn in `_spawn_projectile` (`weapon_controller.gd:2392-2405`): `hb.health_delta` and `ec.splash_health_delta` are each multiplied by the amp. A projectile never passes through `_apply_damage_direct`, so without this it dealt fully un-amped damage — which is exactly what made a `0.17` Stalker's Shurikens and Bow hit like anyone else's.
+
+Both go through `_damage_amp_of(player)` (`weapon_controller.gd:2412`), which returns `1.0` when the shooter or its character can't be resolved.
+
+Rules that fall out of where the stamp is applied:
+
+- **Damage only.** A positive delta is a heal (syringe, healthpack, heal grenade), so the guard is `if hb.health_delta < 0.0` — a damage amp must never shrink a heal.
+- **It must precede `add_child()`.** `SimpleProjectile._ready()` snapshots `health_delta` as `_base_hitbox_damage` and rewrites it every frame as `base * falloff` (`simple_projectile.gd:132-138`); an amp applied after `_ready()` is wiped on the first physics frame. This is the same ordering the existing `hit_knockback` / `status_effects` copies already rely on.
+- **Per-target scaling composes on top.** `enemy_delta_multiplier`, `self_health_delta_multiplier`, headshot/backshot and both falloffs all multiply afterwards, so an amped rocket's self-damage and splash falloff are amped too — the same blanket rule hitscan already follows.
+- **Both damage fields must be `float`.** `HitboxComponent.health_delta` always was; `ExplosionComponent.splash_health_delta` was declared `:= -75`, which infers **`int`**, so `-90 × 0.17` was stored as `-15` instead of `-15.3` (a 2 % under-count, and worse for smaller amps). It is now `: float = -75.0`; the `.tscn` values stay written as integer literals and coerce fine. Any new per-projectile damage export must be explicitly typed `float` for the same reason.
+- **`PlayerShield` reads the amped value for free**, because `shield.gd:207` absorbs `hitbox.health_delta` directly. That is a consistency win on the server and a divergence on clients — see `05-known-issues.md` #38.
+- **It is not replicated.** The projectile's `MultiplayerSynchronizer` carries only `global_transform` and `shooter_name`, so a client's copy holds the authored damage. Irrelevant for player damage (server-authoritative), but see #38 for the shield.
+
+**How this was verified (2026-09-25).** A throwaway headless harness drove the real chain — `_spawn_projectile` → `HitboxComponent._on_hurtbox_entered` / `ExplosionComponent.explode` → `HurtComponent._on_hurt_or_heal` → `AttributeComponent.apply_health_delta` — against real `Player` nodes and real weapon resources, once per character, comparing a Mannequin (`1.0`) shooter against a Stalker (`0.17`):
+
+| Case | amp 1.0 | amp 0.17 | ratio |
+|---|---|---|---|
+| Shuriken direct hit (−30) | −30.00 | −5.10 | **0.170** |
+| Rocket splash (−90 @ 1.0 m) | −75.00 | −12.75 | **0.170** |
+| Syringe on an ally (+5) | +5.00 | +5.00 | 1.000 |
+| Syringe on an enemy (×−2.0) | −10.00 | −10.00 | 1.000 |
+
+The `amp 0.17` column is the fix: it read full damage before. The harness also asserted `health_delta` is unchanged after 5 physics frames (the falloff-rewrite ordering above) and, re-run with the amp forced to `1.0`, reproduced the original bug exactly — the two damage rows fail while the two heal rows still pass.
+
+**Not exercised:** the `Area3D`/`PhysicalBone3D` overlap itself (the handler was called directly), `PlayerShield` absorption, and a real two-peer session.
+
 ### Fire-path fragilities
 
 - **`_sync_mag` is unreliable** (`@rpc("any_peer","call_local")` at `2015` — no `"reliable"`), while `_sync_all_mags` and `_confirm_reload_done` are reliable. An authoritative mag value can be dropped; the optimistic client mag then diverges until the next reliable correction. **TODO.**
@@ -225,26 +275,64 @@ health. `size_mult` and `health_mult` are plain `@export`s, so **enlarging and s
 code path** — there is no separate shrink effect, just `size_mult < 1.0`. The two authored ends
 live in `defaults/status_effects/`: `size_change.tres` (2.0, what Rampage used to be) and
 `shrink.tres` (0.5).
-- **`is_negative` is per-`.tres`, not per-class**, precisely because the effect is bidirectional:
-  `size_change.tres` is a buff (`false`) and `shrink.tres` is a debuff (`true`), which is what makes
-  a shrink cleansable by `InvincibleEffect` and makes a re-cast extend the duration instead of
-  replacing it. Do not "simplify" this by hardcoding it in `_init()`.
+- **`is_negative` and `effect_id` are per-`.tres`, not per-class**, precisely because the effect is
+  bidirectional. `size_change.tres` is the buff (`enlarge`, `is_negative = false`) and `shrink.tres`
+  is the debuff (`shrink`, `is_negative = true`) — which is what makes a shrink cleansable by
+  `InvincibleEffect` and makes a re-cast extend the duration instead of replacing it. Do not
+  "simplify" either by hardcoding it in `_init()`: `_init`'s `is_negative = false` is invisible in a
+  `.tres` that agrees with it, which is exactly how the field medic's inline shrink ended up as a
+  non-cleansable buff that took the replace path.
 
-- **Health is scaled proportionally**, so the HP bar keeps its ratio across both transitions:
-  enlarge `20/100 → 40/200`, shrink `100/100 → 50/50`, and exactly back on expiry. `health_mult = 1.0`
-  means **size only** — the health branch is skipped entirely. That skip is load-bearing: the
-  pre-generalization effect ended in `reset_health()`, so a size-only buff built on the old shape
-  would have been a free full heal.
-- **Every health write is `if ac.health > 0.0`-guarded.** Dying mid-effect is the common case and
-  `clear_all_effects()` runs `_on_remove` while health is still 0; writing there re-enters the whole
-  death path. See known-issues #31 and #32 — this is the live example of that hazard.
-- **The scale is rollback state, not a one-off write.** `_on_apply`/`_on_remove` call
-  `Player.set_size_scale()`, which stores `Player._size_scale` and is re-derived as
+- **The effect never touches health.** It registers two multipliers —
+  `Player.add_size_multiplier(key, size_mult)` and
+  `AttributeComponent.add_max_health_multiplier(key, health_mult)` — and those two systems derive
+  the scale and the live max from them. This is the whole design, and it is load-bearing: the
+  previous version captured `attribute_component.starting_health` as its "base" and wrote the scaled
+  value back into it, which corrupted max health **permanently** whenever a second size effect
+  replaced the first without the first's teardown running. With no captured state there is nothing
+  to lose, so that failure mode is impossible rather than merely unlikely — known-issues **#36**.
+- **Multipliers are registries, keyed by effect id, and they compose.** Shrunk to 0.25 then grown by
+  2.0 leaves the player at 0.5 scale and 0.5× max health; removing either factor leaves the other
+  exactly as it was. Both removals are idempotent, so a teardown that runs twice is harmless.
+- **`max_health` is DERIVED, never assigned.** `AttributeComponent` computes
+  `max_health = starting_health * product`, and `starting_health` is the character's base — written
+  only by `Player.set_character()`. Its setter recomputes, so `_ready()` and `set_character()` are
+  the only two entry points that need to think about it. **Do not write `max_health` from outside.**
+- **Health follows the ratio, not the absolute.** `recompute_max_health()` scales current health by
+  `new_max / old_max`, so the bar never jumps:
+  `100/100 --shrink--> 50/50 --25 dmg--> 25/50 --expire--> 50/100`. It writes only when the value
+  actually moves, and **never while `health <= 0`** — the `health` setter emits `no_health` on every
+  assignment landing at `<= 0`, so a resize of a dead player would re-enter the whole death path
+  (#31/#32).
+- **The scale is rollback state, not a one-off write.** `_recompute_size_scale()` calls
+  `Player.set_size_scale()`, which stores `Player._size_scale`, re-derived as
   `scale = Vector3.ONE * _size_scale` at the top of `_rollback_tick` (`player.gd:995`) — netfox
   re-applies `global_transform` from history every tick, so anything else is lost.
-- **The visual/attribute sync is a one-shot RPC** (`Player._rpc_size_change`, `@rpc("authority")`),
-  which a late joiner never sees. That is why `rpc_sync_full_state` carries `size_mult` /
-  `max_health` — see known-issues #34, and #35 for why that RPC is `authority` rather than `any_peer`.
+- **The sync is a one-shot RPC** (`Player._rpc_size_change(scale_mult, health_mult)`, `@rpc("authority")`)
+  carrying the server's already-multiplied **results**, not factors — a client holds no registry,
+  because effects never tick off-server. It carries multipliers rather than absolutes so each peer
+  derives max health from its own `starting_health`, which `set_character()` has already set
+  identically, so the two cannot drift. A late joiner never sees this RPC, which is why
+  `rpc_sync_full_state` carries the same two values — known-issues #34, and #35 for why that RPC is
+  `authority` rather than `any_peer`.
+- **A shrink needs a different `effect_id` from an enlarge** (`shrink` vs `enlarge`).
+  `StatusEffectManager._active_effects` is keyed by id, so two effects sharing one would replace
+  each other instead of stacking — that collision is what turned the old corruption into a loop.
+  *Different* effects stack by having different ids; *repeat applications of the same effect* stack
+  through the `stacks` flag below.
+- **`stacks` — repeating the same effect compounds rather than extends.** `SizeChangeEffect` sets
+  `StatusEffect.stacks = true` in `_init()`, so two shrinks give `0.25 × 0.25 = 0.0625` instead of
+  one merely lasting longer. In `apply_effect` the check sits **before** the negative-effect merge
+  branch (which would otherwise swallow every application after the first), duplicates the effect,
+  and stamps a per-application id (`shrink#<instance_id>`) — the id is what `_on_apply` passes to
+  `add_size_multiplier`, so each application owns its own registry key and its own duration.
+  - **Duplicate before stamping, never after.** Stamping a shared `.tres` in place would rewrite the
+    resource on disk for a weapon that applies its `status_effects` entry directly.
+  - Ids with a suffix must be looked up by base id: `has_effect()` falls back to a base-id match and
+    the HUD material lookup normalizes through `StatusEffectManager.base_effect_id()`. Write new
+    lookups the same way.
+  - Everything that does *not* opt in keeps the old behaviour — one id, extend on re-apply — which is
+    what `burn`, `slow`, `poison` and `stun` all want.
 - Applied by the generic `SelfEffectAbility` (`player/abilities/self_effect_ability.gd`) via
   `player/abilities/size_change.tres`; the ability duplicates the effect resource per cast, so the
   `.tres` is never mutated by a caster. Any other effect can be applied to yourself the same way.

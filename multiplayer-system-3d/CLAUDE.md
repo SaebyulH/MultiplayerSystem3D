@@ -20,13 +20,22 @@ The game now boots into a **3D lobby** (`maps/main_menu_world.tscn`) instead of 
 
 There is no build step, test suite, or lint command. The project is opened and run in the Godot editor, or launched headless/from the CLI:
 
+**Godot 4.7.2 is installed at `C:\tools\godot\` and is NOT on PATH** — a bare `godot` fails with "command not found". Always invoke it by full path. `godot_console.exe` is the variant that attaches a console, so use it for CLI/headless runs; plain `godot.exe` is the one to open the editor with. Older engines are also present on this machine (4.4.1, 4.5, 4.5.1 under `Desktop/`, `Downloads/`, `Documents/`) — do **not** use them; the project targets 4.7 (`project.godot` `config/features`).
+
 ```sh
 # Launch the game (main scene is res://world/main.tscn)
-godot --path .
+"C:/tools/godot/godot_console.exe" --path .
 
 # Headless server (for dedicated-server testing)
-godot --path . --headless
+"C:/tools/godot/godot_console.exe" --path . --headless
+
+# Boot smoke test — run N frames, then exit on its own.  Grep the output for
+# `SCRIPT ERROR` / `Parse Error` / `Invalid call` to catch a broken script
+# without sitting through a manual launch.
+"C:/tools/godot/godot_console.exe" --path . --headless --quit-after 240
 ```
+
+A one-off scene can be run directly by passing its path as the final argument — `godot_console.exe --path . res://some/scene.tscn` — which is how a standalone verification harness is driven (the process exit code is that script's `get_tree().quit(code)`).
 
 On boot the game **auto-hosts**: it creates an ENet server on port `8080` (`NetworkManager.SERVER_PORT`) and loads the lobby map. The old 2D menu (`ui/main_menu.tscn`) still exists on disk but is **bypassed** — `world/main.tscn` no longer instances it.
 
@@ -187,7 +196,11 @@ This is the subtle part — read carefully before touching `network_manager.gd`.
 
 `components/status_effect/status_effect_manager.gd` (`StatusEffectManager`) is server-authoritative: effects tick only on the server, remaining times are pushed to clients via RPC. Effect types (`bleed`, `burn`, `stun`, `slow`, `gravity_flip`, `invincible`, `pinned`, `poison`, `size_change`, `heal_over_time`, etc.) are subclasses of `StatusEffect` under `components/status_effect/effects/`.
 
-Effects that are applied by an **ability** rather than a weapon are usually just a `.tres` under `defaults/status_effects/` referenced from a generic `SelfEffectAbility` (`player/abilities/self_effect_ability.gd` — `effect`, plus an optional duration override). `SizeChangeEffect` is the worked example: `size_mult` / `health_mult` are `@export`s, so enlarging (`size_change.tres`, 2.0) and shrinking (`shrink.tres`, 0.5) are the same code path, and `health_mult = 1.0` means "size only, don't touch health". Its scale has to be re-derived every tick in `_rollback_tick` from `Player._size_scale` — see `02-netcode.md` §2. `is_negative` is per-`.tres` (the shrink is a debuff, the enlarge is a buff), not fixed on the class.
+Effects that are applied by an **ability** rather than a weapon are usually just a `.tres` under `defaults/status_effects/` referenced from a generic `SelfEffectAbility` (`player/abilities/self_effect_ability.gd` — `effect`, plus an optional duration override). `SizeChangeEffect` is the worked example: `size_mult` / `health_mult` are `@export`s, so enlarging (`size_change.tres`, 2.0) and shrinking (`shrink.tres`, 0.5) are the same code path, and `health_mult = 1.0` means "size only, don't touch health". Its scale has to be re-derived every tick in `_rollback_tick` from `Player._size_scale` — see `02-netcode.md` §2. `is_negative` **and `effect_id`** are per-`.tres` (the shrink is a debuff `shrink`, the enlarge a buff `enlarge`), not fixed on the class.
+
+**Max health is a derived value — never assign `AttributeComponent.max_health`.** It is `starting_health * the product of a multiplier registry keyed by effect id`; `starting_health` is the character's base and is written only by `Player.set_character()`. Effects contribute multipliers (`AttributeComponent.add_max_health_multiplier` / `Player.add_size_multiplier`) and never touch health, so overlapping effects **stack** and a missed teardown cannot corrupt anything permanently. Current health follows the max's *ratio*, so the HP bar never jumps. This replaced a design where effects captured and restored `starting_health` as a "base" — which compounded into permanent corruption (`05-known-issues.md` #36).
+
+**Stacking, two ways.** By default `StatusEffectManager` keeps **one instance per `effect_id`** and re-applying the same id *extends its duration* — what `burn`/`slow`/`poison`/`stun` want, and why two *different* effects need different ids. An effect that should **compound on repeat** instead sets `StatusEffect.stacks = true`; the manager then duplicates it and stamps a per-application id (`shrink#<instance_id>`) before the merge branch, giving each application its own duration and registry key. `SizeChangeEffect` opts in (in `_init()`), so two shrinks are `0.25 × 0.25`. Suffixed ids must be resolved via `StatusEffectManager.base_effect_id()` — `has_effect()` already falls back to a base-id match.
 
 The **enemy**-applied counterpart is a `TargetedAbility` (`BurnAbility`'s shape — crosshair targeting, HUD preview, server validation): `ShrinkEnemyAbility` / `shrink_enemy.tres` halves an enemy's size and max health for 5 s, and the damage they take while shrunk is kept in proportion when it expires.
 

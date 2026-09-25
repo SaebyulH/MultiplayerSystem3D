@@ -54,7 +54,7 @@ transform = Transform3D(-0.5297595, 4.631305e-08, 2.0244077e-15, -4.631305e-08, 
 shape = SubResource("CylinderShape3D_kbhll")
 
 [node name="ExplosionComponent" parent="." index="3" unique_id=473826993]
-splash_health_delta = -90
+splash_health_delta = -75.0
 explosion_color = Color(0.43137255, 0.19215687, 0.7882353, 1)
 status_effects = Array[ExtResource("2_caexi")]([SubResource("Resource_173x6")])
 tick_count = 20

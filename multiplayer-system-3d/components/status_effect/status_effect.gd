@@ -27,6 +27,20 @@ class_name StatusEffect
 ## effects are still cleared by clear_all_effects() on respawn.
 @export var is_permanent: bool = false
 
+## If true, every *application* is its own instance instead of merging into an
+## existing one with the same id.
+##
+## Default false — the normal rule for both positive and negative effects is that
+## re-applying the same id **extends the duration** of the one already running
+## (see [method StatusEffectManager.apply_effect]).  Size effects opt in so that
+## two shrinks *compound* (0.25 x 0.25) rather than one merely lasting longer,
+## and likewise for two enlarges.
+##
+## The manager gives each application a unique instance id, so such effects must
+## not be looked up by their literal [member effect_id] — see
+## [method StatusEffectManager.has_effect].
+@export var stacks: bool = false
+
 ## Base duration in seconds applied when the effect is first added.
 ## Stacking extends the remaining time by this amount.
 @export var base_duration: float = 4.0

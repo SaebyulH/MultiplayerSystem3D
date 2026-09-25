@@ -4,7 +4,7 @@
 
 [resource]
 script = ExtResource("1")
-effect_id = "size_change"
+effect_id = "shrink"
 display_name = "Shrunk"
 is_negative = true
 base_duration = 5.0

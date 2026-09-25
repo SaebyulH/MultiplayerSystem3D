@@ -337,6 +337,18 @@ var pinned_at_wall: bool = false
 # Scaling the root node directly would be overwritten by netfox's rollback state
 # (global_transform), so the scale is re-derived from this multiplier every tick.
 # 1.0 = normal, > 1.0 = enlarged, < 1.0 = shrunk.
+
+## Active size multipliers, keyed by the contributing effect's id.  A registry
+## rather than a single value, so overlapping effects compose instead of
+## overwriting: shrunk to 0.25 then grown by 2.0 is 0.5, not 2.0.
+##
+## Server-side only — effects never run on a client, which instead receives the
+## already-multiplied result through _rpc_size_change.
+var _size_multipliers: Dictionary = {}
+
+## The effective size multiplier.  DERIVED from [member _size_multipliers] on the
+## server, assigned directly by the RPC on a client.  _rollback_tick re-applies
+## it every tick, so this is the only copy of the state that survives.
 var _size_scale: float = 1.0
 
 # ── Wallhack reveal state (client-side rendering) ──
@@ -548,12 +560,12 @@ func rpc_reset(pos: Vector3) -> void:
 ## and size-change state in one atomic RPC so the player does not flicker into
 ## view with wrong weapon models or at the wrong size.
 ##
-## [param size_mult] / [param max_health] exist because the size buff is a
+## [param size_mult] / [param health_mult] exist because the size buff is a
 ## one-shot broadcast (_rpc_size_change) from the moment it was cast: a peer
 ## joining mid-buff never received it, and rendered the player at 1.0x while its
 ## own HUD mirror said "Enlarged".  See known-issues #34.
 @rpc("authority", "call_remote", "reliable")
-func rpc_sync_full_state(pos: Vector3, pp: String, sp: String, mp: String = "", cp: String = "", size_mult: float = 1.0, max_health: float = 100.0) -> void:
+func rpc_sync_full_state(pos: Vector3, pp: String, sp: String, mp: String = "", cp: String = "", size_mult: float = 1.0, health_mult: float = 1.0) -> void:
 	# -- Weapons first (before spawn, so correct model is visible) --
 	if not pp.is_empty() and not sp.is_empty():
 		var ctrl: WeaponController = $WeaponController
@@ -581,10 +593,10 @@ func rpc_sync_full_state(pos: Vector3, pp: String, sp: String, mp: String = "", 
 
 	# -- Size change --
 	# After the character: set_character() derives `starting_health` from the
-	# character's health_mult and would otherwise clobber the buffed value.
+	# character's health_mult, so the multiplier has to land on top of that.
 	set_size_scale(size_mult)
 	if attribute_component:
-		attribute_component.starting_health = max_health
+		attribute_component.apply_synced_max_health_mult(health_mult)
 
 	# -- Visibility --
 	if spawned:
@@ -696,12 +708,21 @@ func no_health() -> void:
 
 	# State reset is handled inside rpc_reset so it runs on every peer.
 	if multiplayer.is_server():
+		# Read the corpse transform BEFORE the cleanse below, not at the RPC.
+		# Clearing the size effect runs `set_size_scale(1.0)`, so sampling
+		# `mannequin.global_transform` after it handed the ragdoll an unscaled
+		# transform and a shrunk/enlarged player's corpse spawned at normal size.
+		# The mannequin is a child of the scaled root, so its global transform
+		# already carries the size multiplier — which is also why the corpse is
+		# scaled simply by passing it along (see _spawn_ragdoll).
+		var corpse_transform: Transform3D = mannequin.global_transform
+
 		# Cleanse status effects the moment of death so nothing leaks to the next
 		# life.  (rpc_reset clears again below; this guards the death frame itself.)
 		if status_effect_manager:
 			status_effect_manager.clear_all_effects()
 		var death_impulse := attribute_component.last_hit_direction * RAGDOLL_DEATH_IMPULSE
-		_spawn_ragdoll.rpc(mannequin.global_transform, death_impulse)
+		_spawn_ragdoll.rpc(corpse_transform, death_impulse)
 		rpc_reset.rpc(_get_spawn_position())
 
 
@@ -892,7 +913,7 @@ func _physics_process(delta: float) -> void:
 	# Fall out of the world - kill and respawn (server-authoritative), crediting
 	# the last enemy who damaged the player.
 	if multiplayer.is_server() and spawned and global_position.y < fall_kill_y:
-		attribute_component.apply_environmental_damage(attribute_component.starting_health)
+		attribute_component.apply_environmental_damage(attribute_component.max_health)
 
 	_track_fall_damage()
 
@@ -1374,24 +1395,59 @@ func _rpc_unpin() -> void:
 	pinned_at_wall = false
 
 
-## RPC: apply the size-change scale and max health on every peer.
+## RPC: apply the size-change scale and max-health multiplier on every peer.
 ## Called by SizeChangeEffect (server-side) to sync the buff's visual/attribute
 ## changes, which are otherwise not replicated.
 ##
-## "authority", not "any_peer": this writes `starting_health`, so allowing any
-## peer to call it let a client set its own max HP to anything (same defect class
-## as known-issues #7).  The effect only ever calls it from the server, and the
+## Both arguments are the server's already-multiplied *results*, not per-effect
+## factors: a client holds no effect registry (effects never tick off-server), so
+## there is nothing for it to recompute from.  They are multipliers rather than
+## absolutes so the client derives max health from its own `starting_health`,
+## which `set_character()` has already set identically — the two cannot drift.
+##
+## "authority", not "any_peer": this drives max health, so allowing any peer to
+## call it let a client resize or buff itself at will (same defect class as
+## known-issues #7).  The effect only ever calls it from the server, and the
 ## server applies locally via set_size_scale() *before* the .rpc() — which under
 ## "call_remote" does not run on the caller — so nothing else changes.
 @rpc("authority", "call_remote", "reliable")
-func _rpc_size_change(scale_mult: float, max_health: float) -> void:
+func _rpc_size_change(scale_mult: float, health_mult: float) -> void:
 	set_size_scale(scale_mult)
 	if attribute_component:
-		attribute_component.starting_health = max_health
+		attribute_component.apply_synced_max_health_mult(health_mult)
 
-## Set the size multiplier.  1.0 = normal size, 2.0 = doubled, 0.5 = halved.
+## Register (or replace) the size multiplier contributed by [param key].
+## Idempotent for a given key, so an effect re-applied over its own id cannot
+## double up.
+func add_size_multiplier(key: String, mult: float) -> void:
+	if key.is_empty():
+		return
+	_size_multipliers[key] = mult
+	_recompute_size_scale()
+
+
+## Drop the multiplier contributed by [param key].  An unknown key is a no-op,
+## which makes a teardown that runs twice harmless.
+func remove_size_multiplier(key: String) -> void:
+	if _size_multipliers.erase(key):
+		_recompute_size_scale()
+
+
+## Re-derive [_size_scale] as the product of every registered multiplier.
+func _recompute_size_scale() -> void:
+	var product := 1.0
+	for key in _size_multipliers:
+		product *= float(_size_multipliers[key])
+	set_size_scale(product)
+
+
+## Set the size multiplier absolutely.  1.0 = normal size, 2.0 = doubled,
+## 0.5 = halved.
+##
 ## The multiplier is stored persistently so _rollback_tick re-applies it every
-## tick; `scale` is also set immediately for the current frame.
+## tick; `scale` is also set immediately for the current frame.  The server
+## reaches this through _recompute_size_scale(); a client is assigned the
+## server's product directly by _rpc_size_change.
 func set_size_scale(mult: float) -> void:
 	_size_scale = mult
 	scale = Vector3.ONE * mult

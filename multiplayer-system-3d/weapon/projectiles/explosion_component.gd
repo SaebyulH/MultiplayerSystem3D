@@ -3,7 +3,12 @@ class_name ExplosionComponent
 
 var exploded := false
 
-@export var splash_health_delta := -75
+## Damage (negative) or healing (positive) applied to each player in the blast.
+## Deliberately `float`: declared as `:= -75` this infers `int`, and every
+## fractional multiplier applied to it -- the travel-time falloff and the
+## shooter's `damage_amp_mult` (see WeaponController._spawn_projectile) -- would
+## be truncated.  The `.tscn` values stay written as integers and coerce fine.
+@export var splash_health_delta: float = -75.0
 @export var splash_radius := 3.0
 @export var explosion_color := Color.WHITE
 

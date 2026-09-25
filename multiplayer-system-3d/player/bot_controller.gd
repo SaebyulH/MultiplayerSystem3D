@@ -446,9 +446,9 @@ func _think() -> void:
 		elif holding_heal or heal_index >= 0:
 			# Friendly heal candidate — only teammates who actually need HP.
 			var ac := p.attribute_component
-			if ac == null or ac.health >= ac.starting_health:
+			if ac == null or ac.health >= ac.max_health:
 				continue
-			var ratio := ac.health / ac.starting_health
+			var ratio := ac.health / ac.max_health
 			if dist_sq < heal_dist_sq and ratio < heal_best_ratio and _has_line_of_sight_to_player(p):
 				heal_best_ratio = ratio
 				_heal_target = p
@@ -459,7 +459,7 @@ func _think() -> void:
 		_switch_weapon(wc, _first_damage_weapon_index(wc))
 	elif not holding_heal and heal_index >= 0 and _heal_target != null:
 		var ac := _heal_target.attribute_component
-		if ac != null and ac.health / ac.starting_health < MEDIC_HEAL_THRESHOLD:
+		if ac != null and ac.health / ac.max_health < MEDIC_HEAL_THRESHOLD:
 			if _switch_weapon(wc, heal_index):
 				_current_target = null  # don't fight while healing
 
@@ -508,7 +508,7 @@ func _targets_valid() -> bool:
 		if not is_instance_valid(_heal_target) or not _heal_target.spawned:
 			return false
 		var ac := _heal_target.attribute_component
-		if ac == null or ac.health >= ac.starting_health:
+		if ac == null or ac.health >= ac.max_health:
 			return false
 		return _has_line_of_sight_to_player(_heal_target)
 	return false

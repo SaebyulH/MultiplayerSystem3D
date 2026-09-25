@@ -43,6 +43,9 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 | 33 | 🟡 Medium | Netcode | `blocks_actions` is a client-side courtesy — not enforced on movement |
 | 34 | 🟡 Medium | Netcode | ✅ FIXED — Late joiner renders size-changed players at 1.0× |
 | 35 | 🟠 High | Security | ✅ FIXED — Size RPC was `@rpc("any_peer")` while writing `starting_health` |
+| 36 | 🔴 Critical | Correctness | ✅ FIXED — Size effects corrupted max health permanently ("1/0" or unbounded HP) |
+| 37 | 🟡 Medium | Visuals | ✅ FIXED — Ragdoll spawned at normal size for a shrunk/enlarged player |
+| 38 | 🟡 Medium | Netcode | Projectile damage amp lives only on the server's projectile copy → shield absorption diverges per peer |
 
 ---
 
@@ -69,7 +72,7 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 - **Fix (`player_ui.gd:809-811`):** skip uncached abilities rather than defaulting to a literal —
   ```gdscript
   if not _preview_candidates.has(ability):
-      continue
+	  continue
   var candidates: Array[Player] = _preview_candidates[ability]
   ```
   They would produce no entries anyway, so this is behaviour-preserving.
@@ -245,10 +248,10 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 - **Symptom:** the debugger fills with
   ```
   ERROR: Parameter "node" is null.
-     at: get_node (scene/animation/animation_blend_tree.cpp:1526)
-     [0] _play_tree_oneshot  (weapon/weapon_model.gd:196)
-     [1] play_anim_scaled    (weapon/weapon_model.gd:158)
-     [2] _play_weapon_shoot_anim (weapon_controller.gd:855)
+	 at: get_node (scene/animation/animation_blend_tree.cpp:1526)
+	 [0] _play_tree_oneshot  (weapon/weapon_model.gd:196)
+	 [1] play_anim_scaled    (weapon/weapon_model.gd:158)
+	 [2] _play_weapon_shoot_anim (weapon_controller.gd:855)
   ```
   once per shot — 26 times in one session — alongside a bare `print(nodes["anim"])` that dumps the slot name.
 - **Why:** both sites did `var node := tree.get_node(name)` and then checked the result for null. But `AnimationNodeBlendTree.get_node()` is an `ERR_FAIL_V_MSG` for a name that isn't on the tree — it raises a hard error and aborts the call, so **the null check could never run**. The "node not found in blend tree" branch in `weapon_controller.gd` was written for exactly this case and was dead code.
@@ -261,7 +264,7 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 - **Symptom:** a joining client saw projectile nodes that existed and were `visible = true` but had **no `MeshInstance3D` children at all** — not hidden, never created. Reproduced for the rocket launcher and the syringe gun; every other weapon was fine.
 - **Why:** `MultiplayerSpawner` does not send a scene over the wire — it sends an **index into `_spawnable_scenes`**, which it resolves by matching the spawned node's `scene_file_path` against each entry's `Resource.get_path()`. Those two weapons stored their projectile as an **inline `SubResource` `PackedScene`** (`PackedScene_ws514` / `PackedScene_pqaa0`) rather than a scene file. Both bundles are `base_scene: 0` inherited-scene packs whose base is `res://weapon/projectiles/scenes/simple_projectile.tscn` — **the one projectile scene in the folder with zero visual nodes** (its only children are `CollisionShape3D`, `MultiplayerSynchronizer`, `HitboxComponent`, `ExplosionComponent`). A sub-resource has no `res://….tscn` path, so the index that reached the wire resolved the receiving peer to the mesh-less base. The shooter's own peer rendered correctly because it instantiates the bundle locally.
 - **Fix applied:** both `.tres` repointed at the real scenes — `rocket.tscn` (`uid://bo0edtxgakruc`) and `syringe.tscn` (`uid://daan6liu8ej2`). Both already existed, carry matching root overrides (same `node_ids`; rocket's `gravity_scale` / `linear_velocity` / hit modes / `align_to_velocity` are identical to the bundle's), and were already in the spawnable list. The bundles and their orphaned shape/mesh sub-resources were deleted.
-- **Behaviour delta:** the syringe bundle was a *stale* snapshot of the scene — `linear_velocity` `(0,0,-20)`, no `align_to_velocity`, no `can_hit_shooter`. `syringe.tscn` has `(0,0,-25)`, `align_to_velocity = true` and `can_hit_shooter = true`. The scene file wins, so the syringe now flies 25 % faster, orients along its velocity, and can heal its own shooter. This makes the shooter's local projectile match what peers actually receive — before, the two could never agree.
+- **Behaviour delta:** the syringe bundle was a *stale* snapshot of the scene — `linear_velocity` `(0,0,-20)`, no `align_to_velocity`, no `can_hit_shooter`. `syringe.tscn` has `(0,0,-25)`, `align_to_velocity = true` and `can_hit_shooter = true`. The scene file wins, so the syringe now flies 25 % faster, orients along its velocity, and could heal its own shooter (**since removed** — `syringe.tscn`'s `HitboxComponent` no longer sets `can_hit_shooter`, so a syringe passes through the medic who fired it; see `02-netcode.md` §3 "Which targets a projectile can hit"). This makes the shooter's local projectile match what peers actually receive — before, the two could never agree.
 - **Side effect (fixed):** `player/bot_controller.gd:585` keys its projectile-prediction cache on `fire.projectile_scene.resource_path`, which was `""` for both of these — so rocket and syringe collided in one cache entry and bot lead prediction was wrong for both.
 - **Superseded:** the earlier `[FIXED 2026-09-24]` dedup of `_spawnable_scenes` was correct hygiene but was **not** the cause of this symptom. Its "resolves by position" claim never applied to it; the resolution is by **path**, which is what makes a sub-resource unresolvable at all.
 - **Earlier fix, still valid:** `auto_projectile_spawner.gd`'s `@tool` `scan_projectiles` setter used to call `add_spawnable_scene()` for every file on every run, guarded only by a plain `_registered` member that resets each editor session — so each generation appended another full pass, and the list reached 96 entries for 17 distinct scenes. `_scan_and_register()` now collects into a local array, **sorts it**, calls `clear_spawnable_scenes()`, and re-adds, so the result is deduped, deterministic and immune to filesystem enumeration order.
@@ -322,7 +325,7 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 - **Found while:** generalizing the Rampage ability into `SizeChangeEffect`. Pre-existing since the effect was written.
 - **Symptom:** a player who joined a server **while someone was enlarged** saw that player at normal size, while their own HUD status bar and effect list correctly read "Enlarged". No desync, no error — just a wrong-looking model until the buff expired.
 - **Why:** the size and buffed max health are carried by `_rpc_size_change`, which is a **one-shot broadcast** fired the moment the effect is applied. A peer that connects afterwards never receives it, so its freshly instantiated copy of that `Player` keeps the `_size_scale = 1.0` default. The late-join path did push the *effect mirror* (`_sync_to_clients(peer_id)` in `spawn_manager.gd`), which is exactly why the HUD was right and the model was wrong — a good reminder that the mirror is UI state, not simulation state.
-- **Fix:** `rpc_sync_full_state` — already the designated "full state for a late joiner" hook, and already called per-player from `_sync_existing_players_to_peer` — now carries `size_mult` and `max_health` too. Both are read **live** off the player (`_size_scale`, `attribute_component.starting_health`) rather than derived from the effect, so they are correct with or without a buff active. The block is applied **after** the character block, because `set_character()` derives `starting_health` from the character's `health_mult` and would otherwise clobber the buffed value.
+- **Fix:** `rpc_sync_full_state` — already the designated "full state for a late joiner" hook, and already called per-player from `_sync_existing_players_to_peer` — now carries `size_mult` and `health_mult` too. Both are read **live** off the player (`_size_scale`, `attribute_component.max_health_mult`) rather than derived from the effect, so they are correct with or without a buff active (both are `1.0` when none is). The block is applied **after** the character block, because `set_character()` derives `starting_health` from the character's `health_mult`. *(The second parameter became a multiplier rather than an absolute max health in #36.)*
 - **Verification:** host casts Size Change, then a second instance joins. Before: joiner saw a normal-sized host. After: correct doubled size, and the joiner's HP-bar ratio for that player is right.
 
 ### 35. The size/shrink RPC was `@rpc("any_peer")` while writing `starting_health` — `[FIXED 2026-09-25]`
@@ -333,6 +336,114 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 - **Fix:** `@rpc("any_peer", ...)` → `@rpc("authority", ...)`. Behaviour is unchanged: `SizeChangeEffect` only calls it from `_on_apply`/`_on_remove`, which run server-side, and the server applies the change to itself via `set_size_scale()` *before* the `.rpc()` — which under `call_remote` does not execute on the caller anyway.
 - **Also fixed:** the `SizeChangeEffect._on_remove` path used to broadcast unconditionally, including for a dead player; it still does (the scale and max must revert), but it no longer writes `health` when `health == 0`. See #31/#32.
 - **Verification:** enlarge and shrink a player from the host, confirm both the host's and a client's view of the scale and max HP track correctly; a client calling the RPC directly is now rejected.
+
+### 36. Size effects corrupted max health permanently — `[FIXED 2026-09-25]`
+- **Files:** `components/status_effect/effects/size_change_effect.gd`,
+  `components/attribute_component.gd`, `player/player.gd` (`_size_scale` / `_size_multipliers`)
+- **Symptom:** two distinct reports that turned out to be one bug. A player's HUD showed
+  **`1/0`** health and they were effectively dead/unkillable-degenerate; or their max health grew
+  without bound so they read as **invincible**. Both were **permanent** — they survived death,
+  respawn, and every subsequent life.
+- **Why — `starting_health` was both the character's base health *and* the live max:**
+
+  ```gdscript
+  var base_max: float = ac.starting_health   # captures the LIVE max, not the base
+  ac.starting_health = new_max               # overwrites the base with a derived value
+  ```
+
+  `_on_remove` wrote the captured value back, which is correct only if every effect expires
+  cleanly. They don't: `apply_effect` **replaces** the `_active_effects` entry when a non-negative
+  effect of the same id arrives, and the outgoing effect's `_on_remove` **never runs** — so the
+  captured base is lost and the incoming effect captures an already-scaled max as its new base.
+  Every replace compounds.
+- **Why the two symptoms differ:** only the direction. Reproduced by porting the effect and
+  `apply_effect` verbatim:
+
+  ```
+  shrink lands, enlarge replaces it          enlarge lands, shrink replaces it
+	start     max=100.0                        start     max=100.0
+	cycle 1   max= 25.0                        cycle 1   max= 200.0
+	cycle 2   max=  6.25                       cycle 2   max= 400.0
+	cycle 3   max=  1.5625                     cycle 3   max= 800.0
+	cycle 4   max=  0.3906  HUD="1/0"          cycle 4   max=1600.0  <-- "invincible"
+  ```
+
+  `1/0` specifically is the HUD's formatting: `player_ui.gd:955` is `"%d" % ceili(hp)` and `:956` is
+  `"/%d" % int(max_hp)`, so `0.39` renders as `1` on top and `0` underneath.
+- **What made it loop:** `size_change.tres` (enlarge, ×2) and the shrink shared
+  `effect_id = "size_change"`. `StatusEffectManager._active_effects` is keyed by id, so the second
+  one **replaced** the first rather than coexisting — the replace path is what dropped the teardown.
+  The field medic's inline shrink was additionally `is_negative = false` (Godot omits the field
+  because it matches `_init()`'s default), so it took the replace path too and was never cleansed.
+- **Fix — the effect no longer touches health at all.**
+  1. `AttributeComponent` gained a **registry** of max-health multipliers keyed by effect id
+     (`add_max_health_multiplier` / `remove_max_health_multiplier`), with `max_health` **derived** as
+	 `starting_health * product`. `starting_health` is now the character's base and is written only
+	 by `Player.set_character()`. `Player` got the same shape for size (`_size_multipliers`).
+  2. Because the base is immutable and the registry is keyed, **removing a missed teardown can no
+	 longer corrupt anything** — the factor is simply absent and the derived value is right. The
+	 replace path is now harmless.
+  3. `size_change_effect.gd` registers/removes the two multipliers and nothing else. The entire
+	 `state["base_max_health"]` capture/restore and every health write are gone.
+  4. Enlarge and shrink were split onto **distinct effect ids** (`enlarge` / `shrink`) so they can
+	 coexist and **stack multiplicatively** — shrunk to 0.25 and grown by 2.0 is 0.5. That is what
+	 the user asked for, and it also removes the replace-collision entirely.
+  5. Current health **follows the ratio** across a max change (`new_max / old_max`), which is the
+	 agreed behaviour: `100/100 → 50/50 → 25 dmg → 25/50 → expire → 50/100`. It writes only when the
+	 value moves and **never while `health <= 0`**, so it also stays clear of #31/#32.
+- **Verification:** a standalone `AttributeComponent` harness replays the corrupting sequence —
+  200 alternating add/remove cycles — and `max_health` returns to exactly `100.0` every cycle
+  (previously: 0.0244 or 1600). Also asserted: stacking to 0.5, exact restoration on removal,
+  the ratio table above, no write for `health_mult = 1.0`, no revive/re-emit for a dead player, and
+  `reset()` clearing the registry. All pass.
+- **Follow-up (same day) — stacking.** The first cut of this fix left same-id applications still
+  *extending* duration rather than compounding (verified: two shrinks produced one entry with
+  `remaining` 10.0, and the second effect object was discarded entirely). That is the normal rule
+  for negative effects, but it is wrong for size. `StatusEffect` gained an opt-in
+  **`stacks`** flag; `apply_effect` duplicates the effect and stamps a per-application id
+  (`shrink#<instance_id>`) *before* the merge branch, so each application holds its own duration and
+  registers its own multiplier key. `SizeChangeEffect` sets `stacks = true` in `_init()`, so both
+  directions compound: two 0.25 shrinks → 0.0625, two ×2 enlarges → 400 on a 100 base.
+  - Because the id now carries a suffix, lookups by literal id go through
+	`StatusEffectManager.base_effect_id()` (`has_effect` falls back to a base-id match; the HUD
+	material lookup normalizes). Every existing `has_effect`/`remove_effect` call site uses a
+	non-stacking id, so none changed behaviour — `burn`/`slow`/`poison`/`stun` still extend.
+  - `apply_effect` duplicates **before** stamping, so the shared `.tres` an ability or weapon holds
+	is never mutated — a weapon applying its `status_effects` entry directly would otherwise rewrite
+	the resource on disk. Asserted in the harness.
+
+### 37. Ragdoll spawned at normal size for a shrunk/enlarged player — `[FIXED 2026-09-25]`
+- **Files:** `player/player.gd` (`no_health`, `_spawn_ragdoll`)
+- **Found while:** adding ragdoll scaling for the size effect — it turned out to be an ordering bug rather than a missing feature.
+- **Symptom:** die while shrunk or enlarged and the corpse flopped out at **normal size**. Reproduced directly: `player.scale` was `0.5` when alive, `1.0` by the time the ragdoll was built.
+- **Why:** `no_health()` cleansed status effects *before* sampling the corpse transform:
+
+  ```gdscript
+  status_effect_manager.clear_all_effects()          # -> SizeChangeEffect._on_remove
+													 # -> remove_size_multiplier -> set_size_scale(1.0)
+  _spawn_ragdoll.rpc(mannequin.global_transform, …)  # sampled too late: scale already 1.0
+  ```
+
+  `mannequin` is `$Body/Mannequin` — a child of the scaled Player root, with no `top_level` anywhere in the chain — so its `global_transform` *does* carry the size multiplier. `_spawn_ragdoll` assigns that transform straight to the corpse root, which is exactly the mechanism that should have scaled it. Nothing was missing; the value was just read one step too late.
+- **Fix:** capture `mannequin.global_transform` into a local **before** the cleanse and pass that to the RPC. Two lines, no new state. Works on remote peers unchanged — they receive the server's captured transform over the RPC.
+- **Verification:** a harness drives the real effect → cleanse → `_spawn_ragdoll` order for four cases — none, `shrink` (0.5), `size_change` (2.0), and a double shrink (0.25) — and asserts the corpse's scale (root *and* mesh, i.e. what the player actually sees) matches. All four pass. The residual ±0.001 is the mannequin's own animated node scale, present pre-fix at normal size too.
+- **Note:** the ordering hazard is general — anything that samples the player's transform *after* `clear_all_effects()` in the death path will read a reset size. `despawn()`/`spawn()` also cleanse, but neither samples a transform.
+- **Residual — the scale reaches the drawn model, not the bone colliders.** Scaling the corpse root scales the whole subtree, so every `MeshInstance3D` is correct and the proportions look right. But `PhysicalBone3D` does not scale its physics collider (Godot does not support scale on physics bodies), so only the bone *spacing* shrinks — the collider *sizes* stay at full size. Measured world-space AABB of a 0.5× corpse:
+
+  | | normal | shrunk 0.5 | ratio |
+  |---|---|---|---|
+  | drawn (meshes) | `0.89 × 1.77 × 0.38` | `0.45 × 0.89 × 0.19` | **exactly 0.5** |
+  | physics (colliders) | `0.61 × 1.78 × 1.28` | `0.51 × 1.18 × 0.80` | 0.67, not 0.5 |
+
+  So a shrunk corpse carries oversized invisible colliders relative to its model and may settle slightly high; an enlarged one may sink slightly. **The mismatch is pre-existing in kind** — even at normal size the colliders are far fatter than the mesh (1.28 deep vs 0.38 drawn), because they are per-bone shapes that bulge past the skin. Acceptable for a 25 s cosmetic prop that only collides with world geometry; revisit only if shrunk corpses resting on the floor starts looking wrong.
+
+### 38. Projectile damage amp is stamped server-side only, so shield absorption diverges per peer
+- **Files:** `player/weapon_controller.gd:2398-2405` (`_spawn_projectile`), `player/shield.gd:202-217` (`_on_hurt_or_heal`, `_on_area_entered`)
+- **Introduced by:** the change that made `Character.damage_amp_mult` apply to projectiles (previously it only reached hitscan, via `_apply_damage_direct`).
+- **Symptom:** none observed yet. A projectile fired by a character with `damage_amp_mult != 1.0` (Stalker `0.17`, Nerd `0.9`) absorbs a different amount of shield HP on the shooter's/victim's machine than on the host's.
+- **Why:** the amp is folded into `HitboxComponent.health_delta` / `ExplosionComponent.splash_health_delta` **at spawn**, and `_spawn_projectile` only ever runs on the server — `_fire_projectile` early-returns unless `multiplayer.is_server()` (`weapon_controller.gd:1926`), and `_spawn_projectile_on_server` is only ever invoked as `rpc_id(1, …)` (`weapon_controller.gd:2257`), though it validates neither sender nor authority itself (the `any_peer` hole in #7). The projectile's `MultiplayerSynchronizer` replicates only `global_transform` and `shooter_name` (`weapon/projectiles/scenes/simple_projectile.tscn`), so every other peer instantiates the scene with the **authored, un-amped** damage. That is harmless for *player* damage — `HurtComponent` is gated on authority, so only the server applies it — but `PlayerShield.absorb_damage` has **no authority gate at all**: it mutates a purely local `hp` mirrored into `fire.shield_current_hp`, so whichever peer sees the overlap absorbs with its own copy of `health_delta`.
+- **Scope:** it widens an inconsistency that already exists rather than creating one — `shield.gd` also ignores `enemy_delta_multiplier` (the syringe's `-2.0` never reaches it), and shield HP is per-peer state either way (its regen in `_process` is un-gated too).
+- **Suggested fix:** the real one is to make the shield server-authoritative — gate `absorb_damage` on `multiplayer.is_server()` and have clients mirror `shield_current_hp` the way they mirror player health. If that is too invasive, the cheap mitigation is to keep the amp out of the *projectile* and apply it on the hurt side instead (`HurtComponent`), which is where the other per-target multipliers already live — but note that requires teaching `shield.gd` the same multiplier to stay consistent.
 
 ---
 

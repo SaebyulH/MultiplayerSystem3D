@@ -26,7 +26,42 @@ const HEAL_DELAY := 5.0
 const ENEMY_ATTACKER_EXPIRY := 30.0
 const REGEN_STAT_INTERVAL := 0.5
 
-@export var starting_health := 100.0
+# Declared before `starting_health` on purpose: that variable's setter calls
+# recompute_max_health(), so everything it reads must already be initialized.
+
+## Active max-health multipliers, keyed by the contributing effect's id.
+##
+## A *registry* rather than a single value, so overlapping effects compose
+## instead of overwriting: a shrink (0.25) plus an enlarge (2.0) yields 0.5,
+## and removing either one leaves the other exactly as it was.  Server-side
+## only — effects never run on a client (see [method apply_synced_max_health_mult]).
+var _max_health_mults: Dictionary = {}
+
+## Registry key used by [method apply_synced_max_health_mult].  Clients have no
+## real per-effect registry, so the mirrored product lives under this one.
+const CLIENT_MIRROR_KEY := "__synced"
+
+## Product of [member _max_health_mults].  1.0 = unbuffed.  This is the value
+## that peers mirror, rather than an absolute, because `starting_health` is
+## already identical on every peer — so the two can never drift apart.
+var max_health_mult: float = 1.0
+
+## The LIVE maximum health.  DERIVED — never assign it; write
+## [member starting_health] or the multiplier registry and let
+## [method recompute_max_health] recompute it.
+var max_health: float = 100.0
+
+## The character's BASE max health.  Set once per life from
+## `Character.health_mult` (see `Player.set_character`); nothing else should
+## write it.  The live cap is [member max_health], which is this value times
+## every active [member _max_health_mults] entry.
+##
+## The setter recomputes, so callers can write the base directly without
+## remembering to refresh anything.
+@export var starting_health := 100.0:
+	set(value):
+		starting_health = value
+		recompute_max_health()
 
 @export var health: float = 100.0:
 	set(value):
@@ -36,11 +71,67 @@ const REGEN_STAT_INTERVAL := 0.5
 			no_health.emit()
 
 
+## Register (or replace) the multiplier contributed by [param key].  Idempotent
+## for a given key, so an effect re-applied over its own id cannot double up.
+func add_max_health_multiplier(key: String, mult: float) -> void:
+	if key.is_empty():
+		return
+	_max_health_mults[key] = mult
+	recompute_max_health()
+
+
+## Drop the multiplier contributed by [param key].  Removing an unknown key is a
+## no-op, which makes a teardown that runs twice harmless.
+func remove_max_health_multiplier(key: String) -> void:
+	if _max_health_mults.erase(key):
+		recompute_max_health()
+
+
+## Client-side mirror of the server's already-multiplied value.  Clients hold no
+## registry — `StatusEffectManager.apply_effect` is server-only, so an effect's
+## `_on_apply`/`_on_remove` never run on one — so this is the whole registry here.
+func apply_synced_max_health_mult(mult: float) -> void:
+	_max_health_mults.clear()
+	if not is_equal_approx(mult, 1.0):
+		_max_health_mults[CLIENT_MIRROR_KEY] = mult
+	recompute_max_health()
+
+
+func recompute_max_health() -> void:
+	var product := 1.0
+	for key in _max_health_mults:
+		product *= float(_max_health_mults[key])
+	max_health_mult = product
+
+	var old_max := max_health
+	max_health = starting_health * product
+
+	# Preserve the health *ratio* across the change, so the bar never jumps:
+	#   100/100 --shrink 0.5--> 50/50 --25 dmg--> 25/50 --expire--> 50/100
+	# Only writes when the value actually moves, and never while the player is
+	# dead — `health` is a setter that emits `no_health` on *every* assignment
+	# landing at <= 0, not on a transition into death, so writing there would
+	# re-enter the whole death path (known-issues #31/#32).
+	if health <= 0.0:
+		return
+	var target := health
+	if old_max > 0.0:
+		target = health * (max_health / old_max)
+	target = clampf(target, 0.0, max_health)
+	if not is_equal_approx(target, health):
+		health = target
+
+
 func reset_health():
-	health = starting_health
+	health = max_health
 
 
 func _ready() -> void:
+	# Establish max_health from the base even if nothing has written
+	# starting_health yet (the declaration initializer does not route through the
+	# setter, so this is the one guaranteed recompute per life).
+	recompute_max_health()
+
 	_enemy_attacker_expiry = Timer.new()
 	_enemy_attacker_expiry.name = "EnemyAttackerExpiryTimer"
 	_enemy_attacker_expiry.wait_time = ENEMY_ATTACKER_EXPIRY
@@ -72,7 +163,7 @@ func _flush_regen_stat() -> void:
 func apply_health_delta(delta: float, changer: String, changee: String, is_headshot: bool = false, falloff_mult: float = 1.0, is_backshot: bool = false):
 
 	var old_health := health
-	var new_health :float = clamp(old_health + delta, 0.0, starting_health)
+	var new_health :float = clamp(old_health + delta, 0.0, max_health)
 	var applied_delta := new_health - old_health
 
 	if is_zero_approx(applied_delta):
@@ -170,6 +261,12 @@ func apply_environmental_damage(damage: float) -> void:
 
 
 func reset():
+	# Drop every max-health multiplier first, so `reset_health()` fills to the
+	# character's real base and not a buffed/shrunk cap.  Normally
+	# clear_all_effects() has already removed the contributing effects, but a
+	# teardown that was ever missed must not leak into the next life.
+	_max_health_mults.clear()
+	recompute_max_health()
 	reset_health()
 	last_attacker = "NONE"
 	last_hit_direction = Vector3.ZERO
@@ -204,7 +301,7 @@ func _process(delta: float) -> void:
 		return
 
 	_time_since_last_damage += delta
-	if health <= 0.0 or health >= starting_health:
+	if health <= 0.0 or health >= max_health:
 		return
 	if _time_since_last_damage < heal_delay:
 		return
@@ -212,7 +309,7 @@ func _process(delta: float) -> void:
 	# Apply the heal directly (no find_player / per-frame RPC) and accumulate
 	# the self-heal stat, reporting it on a throttle timer instead of every frame.
 	var old_health := health
-	health = clamp(old_health + heal_rate * delta, 0.0, starting_health)
+	health = clamp(old_health + heal_rate * delta, 0.0, max_health)
 	_pending_self_heal += health - old_health
 	if _regen_stat_timer.is_stopped():
 		_regen_stat_timer.start()

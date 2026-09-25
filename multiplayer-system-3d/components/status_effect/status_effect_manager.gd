@@ -49,6 +49,16 @@ var _player: Player = null
 ## plenty, and it cuts the sync RPC from render-rate to ~10 Hz.
 const TICK_INTERVAL: float = 0.1
 
+## Separates an effect's base id from the per-application instance suffix that
+## stacking effects get (see [member StatusEffect.stacks]), e.g. `shrink#12345`.
+const STACK_KEY_SEPARATOR := "#"
+
+
+## Strip the per-application suffix from a stacking effect's key.  Ids that were
+## never stacked pass through unchanged.
+static func base_effect_id(effect_id: String) -> String:
+	return effect_id.get_slice(STACK_KEY_SEPARATOR, 0)
+
 var _tick_timer: Timer
 
 
@@ -142,8 +152,20 @@ func apply_effect(effect: StatusEffect, applier: String) -> void:
 	if not multiplayer.is_server():
 		return
 
-	# Negative effects extend duration when already active.
-	if effect.is_negative and _active_effects.has(effect.effect_id):
+	if effect.stacks:
+		# Stacking effects never merge: each application gets its own id, so it
+		# holds its own duration and contributes its own multiplier.  That is what
+		# makes two shrinks compound (0.25 x 0.25) instead of one merely lasting
+		# longer.  Checked *before* the merge branch below, which would otherwise
+		# swallow every application after the first.
+		#
+		# Duplicated first so stamping the id can never mutate the shared .tres an
+		# ability or weapon holds — without this, a weapon applying its
+		# `status_effects` entry directly would rewrite the resource on disk.
+		effect = effect.duplicate(true)
+		effect.effect_id = "%s%s%d" % [effect.effect_id, STACK_KEY_SEPARATOR, effect.get_instance_id()]
+	elif effect.is_negative and _active_effects.has(effect.effect_id):
+		# Negative effects extend duration when already active.
 		_active_effects[effect.effect_id]["remaining"] += effect.base_duration
 		_sync_to_clients()
 		return
@@ -193,8 +215,28 @@ func remove_effect(effect_id: String) -> void:
 
 
 ## Returns true if an effect with the given id is currently active.
+##
+## Stacking effects (see [member StatusEffect.stacks]) are mirrored under
+## `"<id>#<instance>"` keys, one per application, so a literal id has to fall
+## back to a base-id match.  The scan only runs on a miss, and a player holds a
+## handful of effects at most.
 func has_effect(effect_id: String) -> bool:
-	return _client_effects.has(effect_id)
+	if _client_effects.has(effect_id):
+		return true
+	for id in _client_effects:
+		if base_effect_id(id) == effect_id:
+			return true
+	return false
+
+
+## How many instances of [param effect_id] are active — 2 for a doubly-shrunk
+## player.  0 or 1 for anything that does not stack.
+func get_effect_stacks(effect_id: String) -> int:
+	var count := 0
+	for id in _client_effects:
+		if base_effect_id(id) == effect_id:
+			count += 1
+	return count
 
 
 ## Remove all effects marked is_negative.
@@ -300,7 +342,7 @@ func _refresh_client_mirror() -> void:
 	_client_blocking_count = 0
 	for id in _active_effects:
 		var data: Dictionary = _active_effects[id]
-		if id == "poison" and not data.get("state", {}).get("drain_started", false):
+		if base_effect_id(id) == "poison" and not data.get("state", {}).get("drain_started", false):
 			continue
 		var effect: StatusEffect = data["effect"]
 		_client_effects[id] = data["remaining"]

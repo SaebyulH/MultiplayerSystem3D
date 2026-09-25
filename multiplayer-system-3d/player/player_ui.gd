@@ -653,9 +653,12 @@ func _build_status_effects() -> void:
 		_add_border_material("gravity_flip", border_shader, Color(0.8, 0.3, 1.0, 0.6), 3.5, 0.5, 40.0)
 		_add_border_material("invincible", border_shader, Color(1.0, 0.85, 0.2, 0.6), 2.0, 0.15, 12.0)
 		_add_border_material("pinned", border_shader, Color(0.65, 0.45, 0.25, 0.6), 0.8, 0.1, 10.0)
-		# Covers both directions of the size change (size_mult > 1 grows, < 1 shrinks);
-		# the HUD text distinguishes them via the effect's display_name.
-		_add_border_material("size_change", border_shader, Color(1.0, 0.4, 0.1, 0.6), 4.0, 0.3, 25.0)
+		# One entry per size-change direction.  They are separate effect ids
+		# (enlarge / shrink) so that they can stack, which means the border has to
+		# be registered under both; the HUD text distinguishes them too, via the
+		# effect's display_name.
+		_add_border_material("enlarge", border_shader, Color(1.0, 0.4, 0.1, 0.6), 4.0, 0.3, 25.0)
+		_add_border_material("shrink", border_shader, Color(0.35, 0.65, 1.0, 0.6), 2.0, 0.2, 15.0)
 		_add_border_material("wallhacking", border_shader, Color(0.0, 0.0, 0.0, 0.6), 4.0, 0.3, 25.0)
 
 	# -- Top-center labels (existing) --
@@ -947,7 +950,7 @@ func _update_health() -> void:
 	if not attribute_component or not is_inside_tree():
 		return
 	var hp := attribute_component.health
-	var max_hp := attribute_component.starting_health
+	var max_hp := attribute_component.max_health
 	var pct := clampf(hp / max_hp, 0.0, 1.0)
 
 	_health_bar_fill.anchor_right = pct
@@ -1268,7 +1271,10 @@ func _rebuild_status_effects() -> void:
 		if _border_overlays.has(id):
 			_border_overlays[id].visible = true
 			continue
-		var mat = _effect_materials.get(id, null)
+		# Stacking effects mirror as "<id>#<instance>", one entry per application,
+		# but share one look — so match on the base id. `get_slice` returns the
+		# whole string when there is no separator, so non-stacking ids are unchanged.
+		var mat = _effect_materials.get(StatusEffectManager.base_effect_id(id), null)
 		if not mat:
 			# No custom on-screen effect defined — render no border for this effect.
 			continue

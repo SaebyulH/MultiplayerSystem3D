@@ -48,27 +48,32 @@ script = ExtResource("2_ibsv8")
 weapon_fire = SubResource("Resource_offpl")
 ability_name = "Poison Cloud"
 description = "Shoot out a "
+cooldown = 5.0
 metadata/_custom_type_script = "uid://lrht2lh1enw5"
 
 [sub_resource type="Resource" id="Resource_h41pr"]
 script = ExtResource("7_4k4dh")
 heal_amount = 1000.0
 heal_over_time = true
-heal_duration = 10.0
+heal_tick_interval = 0.05
 ability_name = "Rejuvination"
 description = "Heal a ton per sec over time"
+cooldown = 14.0
 metadata/_custom_type_script = "uid://cqveqjaj5p1jv"
 
 [sub_resource type="Resource" id="Resource_44bl7"]
 script = ExtResource("9_glyba")
 size_mult = 0.25
 health_mult = 0.25
+effect_id = "shrink"
+display_name = "Shrunk"
 base_duration = 5.0
 metadata/_custom_type_script = "uid://iydbp7voeyf8"
 
 [sub_resource type="Resource" id="Resource_ruhws"]
 script = ExtResource("8_m65y7")
 shrink_effect = SubResource("Resource_44bl7")
+cooldown = 15.0
 
 [resource]
 script = ExtResource("1_char")
