@@ -5,6 +5,15 @@ extends Node
 const RAGDOLL_KNOCKBACK_MULTIPLIER := 20.0
 
 var spawn_parent: Node3D
+
+## Where projectiles (and the tracer / decal / impact effects that ride the same
+## parent) are added.  Lives on the world scene, not on the Player: a Player can be
+## hidden or freed on death/disconnect, and `despawn()`'s `hide()` would cascade to
+## anything parented under it.  Set by `world_1.gd`, which also owns its
+## `ProjectileSpawner` -- the two must stay together, since the spawner replicates
+## whatever lands under this node.
+var projectile_parent: Node3D
+
 var game_mode_component: GameModeComponent
 var spawn_manager: SpawnManager
 

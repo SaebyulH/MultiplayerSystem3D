@@ -178,7 +178,6 @@ signal signal_activated(target: Vector3, player_transform: Vector3)
 		_emit_weapon_changed()
 
 @export var weapon_model_parent: Node3D
-@export var projectile_spawn_parent: Node3D
 @export var player_input: PlayerInput
 @export var recoil: Recoil
 @export var _parent_player: Player
@@ -954,9 +953,14 @@ func _play_weapon_human_reload_anim(duration: float) -> void:
 	if root == null:
 		print("[reload-debug] animation_tree has no blend tree root")
 		return
+	# has_node() first: get_node() raises a hard error on a missing name, so the
+	# guard below could never fire -- the diagnostic was unreachable.
+	if not root.has_node(anim_node_name):
+		print("[reload-debug] '", anim_node_name, "' node not found in blend tree")
+		return
 	var reload_anim_node := root.get_node(anim_node_name) as AnimationNodeAnimation
 	if reload_anim_node == null:
-		print("[reload-debug] '", anim_node_name, "' node not found in blend tree")
+		print("[reload-debug] '", anim_node_name, "' exists but is not an AnimationNodeAnimation")
 		return
 	reload_anim_node.animation = reload_path
 
@@ -2329,10 +2333,24 @@ func _spawn_projectile_on_server(weapon_fire_index, shot_dir, basis, parent_play
 	_spawn_projectile(weapon.weapon_fires[weapon_fire_index], world_dir, parent_player_name, team)
 
 
+## The node projectiles and hit visuals are parented to: the world's
+## `ProjectilesParent`, which is also where the replicating `ProjectileSpawner`
+## sits.  Deliberately *not* under the Player -- `Player.despawn()` hides (and
+## disconnect frees) the Player, which would take in-flight projectiles with it.
+func _projectile_parent() -> Node3D:
+	var parent: Node3D = GameManager.projectile_parent
+	if parent == null:
+		push_error("GameManager.projectile_parent is null - world scene not ready?")
+	return parent
+
+
 ## Spawn a projectile from [param fire] along [param world_dir].  Shared by the
 ## normal fire pipeline and the ability fire path (see fire_weapon_fire).
 func _spawn_projectile(fire: WeaponFire, world_dir: Vector3, shooter_name: String, shooter_team) -> void:
 	if not fire or not fire.projectile_scene:
+		return
+	var spawn_parent := _projectile_parent()
+	if spawn_parent == null:
 		return
 	var projectile_scene: Node3D = fire.projectile_scene.instantiate() as Node3D
 	projectile_scene.global_transform = %Head.global_transform#weapon_model_parent.global_transform
@@ -2354,7 +2372,7 @@ func _spawn_projectile(fire: WeaponFire, world_dir: Vector3, shooter_name: Strin
 	var ec: ExplosionComponent = projectile_scene.get_node_or_null("ExplosionComponent") as ExplosionComponent
 	if ec and not fire.status_effects.is_empty():
 		ec.status_effects = fire.status_effects
-	projectile_spawn_parent.add_child(projectile_scene, true)
+	spawn_parent.add_child(projectile_scene, true)
 
 
 ## Apply on-hit effects (self-heal / self-damage) from a WeaponFire to the
@@ -2446,13 +2464,16 @@ func _flash_muzzle_flash(start_position: Vector3, flash_color: Color, direction:
 
 @rpc("any_peer", "call_local")
 func _on_hitscan_hit(hit_position: Vector3, hit_normal: Vector3, start_position: Vector3, flash_color: Color, melee: bool = false, orientation_dir: Vector3 = Vector3.ZERO, surface_hit: bool = true) -> void:
+	var spawn_parent := _projectile_parent()
+	if spawn_parent == null:
+		return
 	# Melee hits leave a scratch decal instead of a bullet hole, and no tracer.
 	var decal_scene: PackedScene = _scratch_scene if melee else _bullet_hole_scene
 	var decal_texture: Texture2D = _scratch_texture if melee else _bullet_hole_texture
 	var decal := BulletDecal.acquire()
 	if decal == null:
 		decal = decal_scene.instantiate() as BulletDecal
-	projectile_spawn_parent.add_child(decal)
+	spawn_parent.add_child(decal)
 	decal.global_position = hit_position
 	if melee:
 		decal.global_transform.basis = _melee_decal_basis(hit_normal, orientation_dir)
@@ -2463,7 +2484,7 @@ func _on_hitscan_hit(hit_position: Vector3, hit_normal: Vector3, start_position:
 		var tracer := Tracer.acquire()
 		if tracer == null:
 			tracer = _tracer_scene.instantiate() as Tracer
-		projectile_spawn_parent.add_child(tracer)
+		spawn_parent.add_child(tracer)
 		tracer.fire(start_position, hit_position, flash_color)
 
 		# Bullet-impact particles on the struck surface.  Skipped for the "far
@@ -2474,7 +2495,7 @@ func _on_hitscan_hit(hit_position: Vector3, hit_normal: Vector3, start_position:
 			var impact := BulletImpact.acquire()
 			if impact == null:
 				impact = _bullet_impact_scene.instantiate() as BulletImpact
-			projectile_spawn_parent.add_child(impact)
+			spawn_parent.add_child(impact)
 			impact.global_position = hit_position
 			if hit_normal.length_squared() > 0.0001:
 				impact.global_transform.basis = Basis.looking_at(hit_normal.normalized(), Vector3.UP)

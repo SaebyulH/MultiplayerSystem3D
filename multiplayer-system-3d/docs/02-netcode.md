@@ -107,8 +107,8 @@ On remote peers the camera basis for that player's copy is stale, so camera-rela
 ### Actual shot + visuals
 
 `_execute_fire` (`2022-2043`) applies recoil/knockback, then by `MultishotMode` → `_fire_burst` / `_fire_all_shots` / shape. `_fire_single_shot` (`2097-2243`):
-- HITSCAN: raycast from the shooter's camera, `_flash_muzzle_flash.rpc` (2147), then on hit `_on_hitscan_hit.rpc(...)` (2175) which spawns decal/tracer/impact **on every peer** (2439-2473). Damage: server path `_apply_damage_direct` (2213-2220) → `change_health`; client path `_change_health_on_server.rpc_id(1, ...)` (2222).
-- PROJECTILE: `_spawn_projectile_on_server.rpc_id(1, ...)` (2238-2241) → `_spawn_projectile` (2325-2348) instantiates under `ProjectilesParent` (server-authoritative).
+- HITSCAN: raycast from the shooter's camera, `_flash_muzzle_flash.rpc` (2147), then on hit `_on_hitscan_hit.rpc(...)` (2188) which spawns decal/tracer/impact **on every peer** (`_on_hitscan_hit`, 2466-2504). Damage: server path `_apply_damage_direct` (2213-2220) → `change_health`; client path `_change_health_on_server.rpc_id(1, ...)` (2222).
+- PROJECTILE: `_spawn_projectile_on_server.rpc_id(1, ...)` (2251-2254) → `_spawn_projectile` (2349-2376) instantiates under the **world's** `ProjectilesParent` (server-authoritative) and the world's `ProjectileSpawner` replicates it — see §6.
 
 Ammo correction to clients: `_sync_mag` (2015) clamps and re-emits `mag_changed`. Reload completion uses `_confirm_reload_done` (1595-1610).
 
@@ -162,7 +162,11 @@ Other modes follow the same shape: `koth_mode.gd:23-39` and `domination_mode.gd:
 - The world's `MultiplayerSpawner` is `world/world1.tscn:95-97`: `spawn_path = "../SpawnParent"`, `_spawnable_scenes` = 13 uids (player + all maps + lobby). It replicates whatever node named `"Map"` is in `SpawnParent`, plus every `Player` node `SpawnManager` adds there.
 - Map swap is server-authoritative with no RPC — see `01-boot-sequence.md` Stage 11.
 - **`spawnable_scenes` requirement:** any scene spawned under a spawner's `spawn_path` must have its uid in `_spawnable_scenes`, or it won't replicate. Any map the scanner returns must be in the list.
-- Projectiles use a **separate** `MultiplayerSpawner` per map (`maps/*.tscn` `ProjectilesParent/ProjectileSpawner`, `spawn_path = ".."`) and one inside `player/player.tscn:503-505`. `player/auto_projectile_spawner.gd` extends `MultiplayerSpawner` to auto-scan the projectiles folder.
+- **Resolution is by scene file path, not by index arithmetic.** `MultiplayerSpawner` matches the spawned node's `scene_file_path` against each entry's `Resource.get_path()` to pick the index that goes on the wire. A scene that is not a file on disk — notably an **inline `SubResource` `PackedScene`** — can never match, so it either fails to replicate or resolves to whatever its base scene is. That is known-issues #28: `rocket_launcher.tres` and `syringe_gun.tres` stored their projectiles as inline bundles whose base was the mesh-less `simple_projectile.tscn`, so remote peers instantiated an invisible projectile.
+- **Projectiles** are replicated by a **single world-level** `MultiplayerSpawner`: `world/world1.tscn` `ProjectilesParent/ProjectileSpawner` (`spawn_path = ".."`, 17 uids), reached through `GameManager.projectile_parent` (set in `world_1.gd:_ready()`, resolved in `WeaponController._projectile_parent()`). Projectiles are **not** parented to the Player that fired them — `Player.despawn()`'s `hide()` would cascade to them and a disconnect would free them.
+- The tracer / bullet-decal / bullet-impact nodes from `_on_hitscan_hit` ride the **same** parent. They are local, non-networked nodes; their scenes are absent from `_spawnable_scenes`, so the spawner ignores them (true before this change too).
+- `player/auto_projectile_spawner.gd` extends `MultiplayerSpawner` to auto-scan the projectiles folder — it is a `@tool` script, inert at runtime.
+- The `ProjectilesParent`/`ProjectileSpawner` pair that still exists in all 10 maps is **dead** — nothing parents under it. See known-issues #29.
 
 ---
 

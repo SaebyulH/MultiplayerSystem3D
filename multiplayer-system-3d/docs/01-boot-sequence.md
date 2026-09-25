@@ -10,7 +10,7 @@ A precise, ordered walkthrough of everything that happens from pressing Play to 
 
 `project.godot:22-32` instantiates 9 autoloads **in order**; `_ready` runs in the same order, which matters:
 
-1. `NetworkManager` (`network/network_manager.gd:11-20`) — connects the three session-lifetime `SceneMultiplayer` signals **once** (`connected_to_server`, `server_disconnected`, `connection_failed`), guarded by `is_connected()` so they survive peer teardown.
+1. `NetworkManager` (`network/network_manager.gd`) — connects the three session-lifetime `SceneMultiplayer` signals **once** (`connected_to_server`, `server_disconnected`, `connection_failed`), guarded by `is_connected()` so they survive peer teardown.
 2. `Console`
 3. `Leaderboard` — server-authoritative score autoload.
 4. `NetworkTime` / 5. `NetworkTimeSynchronizer` / 6. `NetworkRollback` — netfox core.
@@ -40,7 +40,7 @@ The engine then loads the main scene `res://world/main.tscn` (a `Control` root `
 
 ## Stage 2 — `boot_to_lobby()`: become host (or offline fallback)
 
-`network/network_manager.gd:93-100` — `boot_to_lobby()`:
+`network/network_manager.gd` — `boot_to_lobby()`:
 - Guard `if game_scene != null: return` (anti-double-boot).
 - `create_server()`, `Leaderboard.reset()`, `LoadingScreen.report(0.75)`.
 - `await get_tree().process_frame` (line 99) — **this frame lets `NetworkEvents._process` observe the server** (see Stage 2b).
@@ -62,7 +62,7 @@ The engine then loads the main scene `res://world/main.tscn` (a `Control` root `
 
 ## Stage 3 — `load_game_scene()` → `world1.tscn` `_ready` (host/client split)
 
-`network/network_manager.gd:69-77` — `load_game_scene(map_path)`:
+`network/network_manager.gd` — `load_game_scene(map_path)`:
 - `LoadingScreen.report(0.8)`, `await process_frame`.
 - `game_scene = preload(GAME_SCENE).instantiate()`, set `game_scene.map_path = map_path`.
 - `get_tree().current_scene.add_child(game_scene)`, `hide_main_menu()`.
@@ -133,20 +133,22 @@ The menu's `CanvasLayer` starts visible, so the loadout screen covers the world 
 
 `world/join_party_area.gd:176-196` — `_on_join_pressed()` (IP or 6-char code via `ConnectionUtils.code_to_ip`) and `_on_join_local_pressed()` (`127.0.0.1`) → `NetworkManager.join_party(address)`.
 
-`network/network_manager.gd:104-109` — `join_party(host_ip, port)`:
+`network/network_manager.gd` — `join_party(host_ip, port)`:
 - `LoadingScreen.show_screen(0.1, "Connecting…")` — re-shows the boot loading screen to mask the connect-time spike (see Stage 8 / `05-known-issues.md` #18).
 - `_remove_game_scene()` **first** (frees the joiner's solo world1, SpawnManager, players, lobby map + its spawner).
 - `create_client(host_ip, port)`; on error, `return_to_lobby()` (which hides the loading screen).
 
-`network/network_manager.gd:46-55` — `create_client()`: `is_hosting_game = false`, `_terminate_connection()` (stop NetworkTime + close/null old peer), `ENetMultiplayerPeer.create_client`, set peer.
+`network/network_manager.gd` — `create_client()`: `is_hosting_game = false`, `_terminate_connection()` (stop NetworkTime + close/null old peer), `ENetMultiplayerPeer.create_client`, set peer.
 
-`network/network_manager.gd:159-161` — `_on_connected_to_server()` → `enter_existing_game_scene()`.
+`network/network_manager.gd` — `_on_connected_to_server()` is a **coroutine** that runs the whole client start-up in order: `await enter_existing_game_scene()`, `await _await_settled()`, `await _adopt_server_tick_rate()`, then `NetworkTime.start()` and a poll for the initial sync, then `LoadingScreen.hide_screen()`. See `03-event-flow.md` for why that order is load-bearing — the clock sync must happen on the far side of the world-load stall, not during it.
 
 ---
 
 ## Stage 8 — `enter_existing_game_scene()` + map replication
 
-`network/network_manager.gd:62-74` — `enter_existing_game_scene()`: instantiate `world1.tscn`, add as child of `current_scene`, `hide_main_menu()`, report loading checkpoints, then **hide the loading screen after two `process_frame`s** — the same "keep it up through the first rendered frames" pattern as boot (`world/main.gd:39-41`), so connect-time map/player replication + D3D12 shader compilation happen behind it. **No `map_path`, no map load, no SpawnManager** — because `world_1.gd:24`'s `if is_hosting_game:` is false on a client.
+`network/network_manager.gd` — `enter_existing_game_scene()`: instantiate `world1.tscn`, add as child of `current_scene`, `hide_main_menu()`, report loading checkpoints, then await two `process_frame`s — the same "keep it up through the first rendered frames" pattern as boot (`world/main.gd:39-41`), so connect-time map/player replication + D3D12 shader compilation happen behind the screen. **No `map_path`, no map load, no SpawnManager** — because `world_1.gd:24`'s `if is_hosting_game:` is false on a client.
+
+**It does not hide the loading screen.** That moved to the end of `_on_connected_to_server()` when the tick-domain work landed (`05-known-issues.md` #18), so that the world build, the settle wait, the tick-rate handover and the clock sync all complete before the screen comes down. Every early return in that coroutine must hide the screen itself — one that doesn't is an unrecoverable hang, because nothing else will.
 
 The client's own `MultiplayerSpawner` (`world1.tscn:95-97`) then receives the host's replicated `"Map"` node and existing `Player` nodes into its `SpawnParent`.
 
@@ -183,9 +185,9 @@ The one-frame defer is fragile: existing players' `rpc_reset` already fired befo
 
 ## Stage 10 — Leave flow: `return_to_lobby()` (full ordering)
 
-Entry points: `world/world_1.gd:47-48` (Main Menu button), `world/loadout_menu.gd:160-162` (Leave Party), `network_manager.gd:164-166` (`_on_connection_failed`), `network_manager.gd:169-171` (`_server_disconnected`).
+Entry points: `world/world_1.gd:47-48` (Main Menu button), `world/loadout_menu.gd:160-162` (Leave Party), `network_manager.gd` (`_on_connection_failed`), `network_manager.gd` (`_server_disconnected`).
 
-`network/network_manager.gd:104-114` — `return_to_lobby()`, in exact order:
+`network/network_manager.gd` — `return_to_lobby()`, in exact order:
 1. line 106: `Input.set_mouse_mode(MOUSE_MODE_VISIBLE)`.
 2. line 107: `_terminate_connection()` (`174-180`): `NetworkTime.stop()` (full stop, resets `_state` to INACTIVE), `mp.multiplayer_peer.close()`, `mp.multiplayer_peer = null`. Closing the peer first frees port 8080.
 3. line 108: `_remove_game_scene()` (`146-152`): `remove_child` + `queue_free` + `game_scene = null`.
@@ -201,7 +203,7 @@ Entry points: `world/world_1.gd:47-48` (Main Menu button), `world/loadout_menu.g
 
 `world/host_menu.gd:509-524` — `_on_start_pressed()`: applies team assignments to each `Player.team`, `_autofill_bots()` if checked, `close()`, then `NetworkManager.load_match_map(_selected_map.map_scene.resource_path)`.
 
-`network/network_manager.gd:119-143` — `load_match_map()`:
+`network/network_manager.gd` — `load_match_map()`:
 - guard `multiplayer.is_server()` (120).
 - `Leaderboard.reset()`.
 - `GameManager.game_mode_component = null` (130, clears dangling ref before free).
@@ -223,20 +225,20 @@ Entry points: `world/world_1.gd:47-48` (Main Menu button), `world/loadout_menu.g
 | `world/loadout_menu.gd:863-864` (confirm) | `false` | `CAPTURED` |
 | `world/join_party_area.gd:142-143 / 150-151` | `true` / `false` | `VISIBLE` / `CAPTURED` |
 | `world/host_menu.gd:65-66 / 71-72` | `true` / `false` | `VISIBLE` / `CAPTURED` |
-| `network/network_manager.gd:106` (return_to_lobby) | (unchanged) | `VISIBLE` |
+| `network/network_manager.gd` (return_to_lobby) | (unchanged) | `VISIBLE` |
 | `player/player_input.gd:123-132` (click-to-capture / Esc-to-release) | read-only gate | `CAPTURED` / `VISIBLE` |
 
 ---
 
 ## Fragile / order-dependent items (see `03-event-flow.md` for the full list)
 
-1. **Deferred re-host is load-bearing** (`network_manager.gd:114`).
-2. **Offline fallback needs the manual `NetworkTime.start()`** (`network_manager.gd:39`).
+1. **Deferred re-host is load-bearing** (`network_manager.gd`).
+2. **Offline fallback needs the manual `NetworkTime.start()`** (`network_manager.gd`).
 3. **`CLAUDE.md` was stale** — boot is now `await NetworkManager.boot_to_lobby()` (direct, `world/main.gd:33`), and `class_select.gd` no longer exists outside `backup/`.
 4. **Peer-1 hardcoding everywhere** — `spawn_manager.gd:15`, `131`; `leaderboard_singleton.gd:236-258`; `loadout_menu.gd:869`; `host_server_area.gd:53-54`. Collapses if the server is ever not peer 1.
 5. **`NetworkManager` owns the client's `NetworkTime.start()`** — netfox's `on_client_start` listener is disconnected in `join_party()`, and the start lives at the end of the `_on_connected_to_server()` coroutine, after the settle wait and the tick-rate adoption.
 6. **`_sync_existing_players_to_peer` one-frame defer** (`spawn_manager.gd:37`).
-7. **`map_path` only set on the host path** (`network_manager.gd:74`).
+7. **`map_path` only set on the host path** (`network_manager.gd`).
 8. **`_request_loadout` sender validation** (`loadout_menu.gd:879-881`) depends on human ids always being `str(network_id)`.
 9. **First spawn ~1 s delay** (`player.gd:17`, `503`).
 10. **`loadout_menu.gd:859-860` comment drift** — the sync is via `visibility_changed`, not `_process`.

@@ -91,27 +91,33 @@ Because `NetworkEvents` ignores `OfflineMultiplayerPeer`, `create_server()` must
 
 ## Ordering invariant: when the client starts its clock
 
-`NetworkManager._on_connected_to_server` (autoload 1's `_ready`) runs **before** `NetworkEvents._handle_connected_to_server` (autoload 7's `_ready`) — Godot emits in connection order. The first calls `enter_existing_game_scene()` **without `await`**, so it runs the heavy synchronous `preload(world1.tscn)` and then suspends at `await get_tree().process_frame`, where the renderer still has two frames of D3D12 shader compilation ahead of it.
+`NetworkManager._on_connected_to_server` (autoload 1's `_ready`) runs **before** `NetworkEvents._handle_connected_to_server` (autoload 7's `_ready`) — Godot emits in connection order. The first builds the client world synchronously (`preload(world1.tscn)`) and then suspends for two frames, where the renderer still has D3D12 shader compilation ahead of it.
 
 netfox used to start `NetworkTime` during that suspension. The clock-sync request went out *before* the stall and its reply was applied *after* it, and because that initial timestamp has no RTT compensation (`network-time-synchronizer.gd:267-276`) while `NetworkTime.tick` is monotonic, the joiner's entire tick origin was seeded from a clock reading seconds out of date. That is `05-known-issues.md` #18.
 
-**The fix is timing, not ordering:** the scene build still happens first (deferring it even one frame risks `MultiplayerSpawner` spawn messages arriving before the spawner exists), but the clock sync now happens after the stall, on the far side of it:
+**The fix is timing, not ordering.** The scene build still happens first — deferring it even one frame risks `MultiplayerSpawner` spawn messages arriving before the spawner exists — but the clock sync now happens on the **far side** of the stall:
 
 ```
-_on_connected_to_server()
-  await enter_existing_game_scene()   # world built; the big stall is behind us
-  await _await_settled()              # 2 consecutive frames under SETTLE_FRAME_SECONDS
-  await _adopt_server_tick_rate()     # reliable RPC; falls back to the local default
-  NetworkTime.start()                 # short round trip -> a correct seed
+_on_connected_to_server()                        # coroutine; cannot be cancelled
+  await enter_existing_game_scene()              # world built; the big stall is behind us
+  await _await_settled()                         # 2 consecutive frames under SETTLE_FRAME_SECONDS
+  await _adopt_server_tick_rate()                # host-pushed; see below
+  if not _can_resync():                          # re-check: return_to_lobby() may have run
+      LoadingScreen.hide_screen(); return
+  NetworkTime.start()                            # short round trip -> a correct seed
+  while not NetworkTime.is_initial_sync_done() and <deadline>: await process_frame
+  _client_time_ready = NetworkTime.is_initial_sync_done()
   LoadingScreen.hide_screen()
 ```
 
 Invariants that follow, and are easy to break:
 
-- `_on_connected_to_server` is now a coroutine that cannot be cancelled. It re-checks `_can_resync()` before starting, because `_server_disconnected` → `return_to_lobby()` can re-host us while it is parked in one of those waits.
-- `LoadingScreen.hide_screen()` belongs to this sequence, not to `enter_existing_game_scene()`.
-- The watchdog (`_evaluate_resync`) stays silent until `_client_time_ready`, which is only set here. Between sessions `NetworkTime.tick` still holds the previous session's value, and comparing it against a fresh host sample reads as an enormous offset.
-- The tick rate must be applied before `start()`. A late-arriving rate reply is handled by restarting the loop, not by mutating the rate underneath it (see `02-netcode.md` §8).
+- **`NetworkTime.start()` suspends on a client** — it awaits the initial sync and returns before the loop is actually ticking. Do not set `_client_time_ready` (or anything else meaning "the loop is up") on the line after it; poll `is_initial_sync_done()`, or a late tick-rate reply will see "already running" and try to restart a start that has not finished, aborting the in-flight sync and colliding with its continuation.
+- **`LoadingScreen.hide_screen()` must not be skippable.** It now runs on the `_can_resync()` bail-out too. Before #18 it lived inside `enter_existing_game_scene()` and always ran; moving it into the tail means every early return has to hide the screen itself, and one that doesn't is an unrecoverable hang.
+- **The waits are bounded and deliberately short** — `SETTLE_TIMEOUT_SECONDS` 1.5 s, `TICK_RATE_TIMEOUT_SECONDS` 1.5 s, and `RESYNC_TIMEOUT_SECONDS` (also the post-start sync poll) 2 s. Each is a fallback; the healthy path finishes in a frame or two. A generous budget turns any hiccup into a visibly hung join.
+- **The tick rate is pushed by the host on `peer_connected`, not only pulled.** A joiner's frames are long right after connecting, so a pull-only round trip can miss the wait window entirely and time the join out. The reply arriving after the loop is up is handled by restarting it, not by mutating the rate underneath it (see `02-netcode.md` §8).
+- **Applying *no* tick rate is worse than applying the wrong one.** `apply_tick_rate()` also derives netfox's tick-count limits; skipping it on the timeout path leaves `max_ticks_per_frame` at netfox's default of 8, which is the documented route to "the client can be kicked back to its own lobby" (`05-known-issues.md` #18). `_adopt_server_tick_rate()` applies the local default on a miss for exactly this reason.
+- The watchdog (`_evaluate_resync`) stays silent until `_client_time_ready`. Between sessions `NetworkTime.tick` still holds the previous session's value, and comparing it against a fresh host sample reads as an enormous offset.
 
 ---
 

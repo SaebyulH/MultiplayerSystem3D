@@ -11,6 +11,11 @@ var map_path
 
 func _ready() -> void:
 	GameManager.spawn_parent = %SpawnParent
+	# Projectiles live under the world, not under the Player that fired them: the
+	# Player is hidden on death and freed on disconnect, either of which would take
+	# its in-flight projectiles with it.  Set before SpawnManager is added below, so
+	# no Player can fire before this exists.  Runs on host and client alike.
+	GameManager.projectile_parent = %ProjectilesParent
 
 	# Global kill feed — one per peer, cleaned up with the scene.
 	var kill_feed := KillFeed.new()

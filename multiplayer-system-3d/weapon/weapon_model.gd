@@ -192,7 +192,14 @@ func _play_tree_oneshot(slot: WeaponAnimGroup.AnimSlot, duration: float) -> bool
 	if nodes.is_empty() or not nodes.has("oneshot"):
 		return false
 	
-	print(nodes["anim"])
+	# has_node() FIRST.  AnimationNodeBlendTree.get_node() raises a hard
+	# `Parameter "node" is null.` error for a name that isn't on the tree, so the
+	# null check below never gets a chance to run -- the call aborts the script
+	# instead.  Returning false here is the intended behaviour anyway: the caller
+	# falls back to legacy playback.  (A weapon whose tree has some slots but not
+	# others will now simply use the legacy path for the missing slot.)
+	if not tree.has_node(nodes["anim"]):
+		return false
 	var anim_node := tree.get_node(nodes["anim"]) as AnimationNodeAnimation
 	if anim_node == null:
 		return false

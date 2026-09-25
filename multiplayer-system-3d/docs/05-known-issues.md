@@ -34,6 +34,10 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 | 24 | 🟡 Medium | Netcode | `RollbackSynchronizer.get_last_known_input()` throws (bad call in the addon) |
 | 25 | 🔴 Critical | Perf | ✅ FIXED — Lobby instantiation parsed ~50 MB of map scenes (8–9.5 s main-thread stall) |
 | 26 | 🟠 High | Perf | Residual ~1.6 s lobby-load stall (CSG + VoxelGI + environment) |
+| 27 | 🟡 Medium | Anim | ✅ FIXED — `AnimationNodeBlendTree.get_node()` hard error every shot (dead guard) |
+| 28 | 🔴 Critical | Netcode | ✅ FIXED — Rocket/syringe projectiles replicated as the mesh-less base scene (inline `SubResource` bundles) |
+| 29 | 🟡 Medium | Hygiene | Dead `ProjectilesParent`/`ProjectileSpawner` in all 10 maps |
+| 30 | 🟡 Medium | Netcode | `SimpleProjectile.hide_model` is `@rpc("any_peer")` |
 
 ---
 
@@ -56,7 +60,15 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 ### 3. Per-frame raycast + sort + dictionary alloc in targeted-ability previews — `[FIXED 2026-09-20]`
 - **Files:** `player/player_ui.gd:747-815` (`_update_targeted_previews`), `player/abilities/targeted_ability.gd:29-66`
 - **Resolution:** `_update_targeted_previews` now throttles `find_candidates` (the group query + LOS raycast + sort) to a 10 Hz interval (`PREVIEW_REFRESH_INTERVAL`), caching the ordered candidate list per ability in `_preview_candidates`; between refreshes the per-frame loop only re-projects labels from the cached list. `find_candidates` itself is unchanged — it remains the live one-shot cast path in `ability_manager.gd:206`.
-- **Follow-up (2026-09-24):** the throttling exposed a runtime type error — when an ability's key was missing from `_preview_candidates` (first frame, or an ability that came off cooldown between refreshes), `_preview_candidates.get(ability, [])` fell back to an **untyped** `[]`, which fails the `Array[Player]` assignment and spammed `Trying to assign an array of type "Array" to a variable of type "Array[Player]"`. Fixed by casting the default: `_preview_candidates.get(ability, []) as Array[Player]` (`player_ui.gd:802`).
+- **Follow-up (2026-09-24):** the throttling exposed a runtime type error — when an ability's key was missing from `_preview_candidates` (`_preview_timer` starts at `0.0`, so on the first frame the throttle has not refreshed yet and the cache is still empty), `_preview_candidates.get(ability, [])` fell back to an **untyped** `[]`, which fails the `Array[Player]` assignment and spammed `Trying to assign an array of type "Array" to a variable of type "Array[Player]"`.
+- **Fix (`player_ui.gd:809-811`):** skip uncached abilities rather than defaulting to a literal —
+  ```gdscript
+  if not _preview_candidates.has(ability):
+      continue
+  var candidates: Array[Player] = _preview_candidates[ability]
+  ```
+  They would produce no entries anyway, so this is behaviour-preserving.
+- ⚠️ **Do not "fix" this by casting the default** — i.e. `_preview_candidates.get(ability, []) as Array[Player]` does **not** work. `as` performs a type check, not a conversion, so an untyped `Array` stays untyped and the assignment still throws. An earlier revision of this entry recommended exactly that; it was wrong. Checking `has()` first (or building a correctly-typed default with `Array([], TYPE_OBJECT, "RefCounted", Player)`) is the way.
 - **Symptom:** for every equipped targeted ability (cooldown 0), each frame: group query + per-enemy `has_line_of_sight_to` raycast + `unproject_position` + `scored.append({...})` dict + `sort_custom`.
 - **Why:** multiple raycasts + allocations + sort per enemy per frame; stacks with #2.
 - **Suggested fix:** only recompute when the ability is selected/held (dirty flag), throttle to ~10 Hz, and reuse arrays instead of allocating.
@@ -223,7 +235,50 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 - **Suggested fix:** re-author the lobby as static meshes instead of CSG; consider dropping SDFGI/SSIL for the lobby. Alternatively raise `netfox/time/stall_threshold` to ~2.5 s so a load hitch is not misread as a pause — but that also delays genuine stall recovery, so prefer fixing the content.
 - **Not the cost** (measured/checked, do not chase): `loadout_menu`'s character preview (`[DEBUG PREVIEW] spawned … in 4.01 ms`) and the 3 class `.tres` parse.
 
+### 27. `AnimationNodeBlendTree.get_node()` errors on every shot — `[FIXED 2026-09-24]`
+- **Files:** `weapon/weapon_model.gd:196` (`_play_tree_oneshot`), `player/weapon_controller.gd:957` (`_play_weapon_human_reload_anim`)
+- **Symptom:** the debugger fills with
+  ```
+  ERROR: Parameter "node" is null.
+     at: get_node (scene/animation/animation_blend_tree.cpp:1526)
+     [0] _play_tree_oneshot  (weapon/weapon_model.gd:196)
+     [1] play_anim_scaled    (weapon/weapon_model.gd:158)
+     [2] _play_weapon_shoot_anim (weapon_controller.gd:855)
+  ```
+  once per shot — 26 times in one session — alongside a bare `print(nodes["anim"])` that dumps the slot name.
+- **Why:** both sites did `var node := tree.get_node(name)` and then checked the result for null. But `AnimationNodeBlendTree.get_node()` is an `ERR_FAIL_V_MSG` for a name that isn't on the tree — it raises a hard error and aborts the call, so **the null check could never run**. The "node not found in blend tree" branch in `weapon_controller.gd` was written for exactly this case and was dead code.
+- **Underlying cause (still open):** at least one weapon's `AnimationTree` blend tree has *some* slots but not others — observed: `PulloutAnim` resolved fine while `ShootAnim` did not, for the same weapon. That weapon now silently uses the legacy playback path for the missing slot instead of erroring. **The weapon's animation tree resource should be fixed**; the new guard only stops it polluting the debugger.
+- **Fix applied:** `if not tree.has_node(...)` before `get_node(...)` at both sites, returning false / printing the existing diagnostic.
+- **Also seen but left alone:** the bare `print(nodes["anim"])` at `weapon_model.gd:195` and the `[reload-debug]` prints in `weapon_controller.gd` look like deliberate debug instrumentation — remove them when the animation work is finished.
+
+### 28. Rocket + syringe projectiles replicate as the mesh-less base scene — `[FIXED 2026-09-25]`
+- **Files:** `weapon/assault_weapons/rocket_launcher.tres:81`, `weapon/assistance_weapons/syringe_gun.tres:83` (the actual cause); `player/weapon_controller.gd`, `world/world1.tscn`, `player/player.tscn` (the parent move, change #2 below)
+- **Symptom:** a joining client saw projectile nodes that existed and were `visible = true` but had **no `MeshInstance3D` children at all** — not hidden, never created. Reproduced for the rocket launcher and the syringe gun; every other weapon was fine.
+- **Why:** `MultiplayerSpawner` does not send a scene over the wire — it sends an **index into `_spawnable_scenes`**, which it resolves by matching the spawned node's `scene_file_path` against each entry's `Resource.get_path()`. Those two weapons stored their projectile as an **inline `SubResource` `PackedScene`** (`PackedScene_ws514` / `PackedScene_pqaa0`) rather than a scene file. Both bundles are `base_scene: 0` inherited-scene packs whose base is `res://weapon/projectiles/scenes/simple_projectile.tscn` — **the one projectile scene in the folder with zero visual nodes** (its only children are `CollisionShape3D`, `MultiplayerSynchronizer`, `HitboxComponent`, `ExplosionComponent`). A sub-resource has no `res://….tscn` path, so the index that reached the wire resolved the receiving peer to the mesh-less base. The shooter's own peer rendered correctly because it instantiates the bundle locally.
+- **Fix applied:** both `.tres` repointed at the real scenes — `rocket.tscn` (`uid://bo0edtxgakruc`) and `syringe.tscn` (`uid://daan6liu8ej2`). Both already existed, carry matching root overrides (same `node_ids`; rocket's `gravity_scale` / `linear_velocity` / hit modes / `align_to_velocity` are identical to the bundle's), and were already in the spawnable list. The bundles and their orphaned shape/mesh sub-resources were deleted.
+- **Behaviour delta:** the syringe bundle was a *stale* snapshot of the scene — `linear_velocity` `(0,0,-20)`, no `align_to_velocity`, no `can_hit_shooter`. `syringe.tscn` has `(0,0,-25)`, `align_to_velocity = true` and `can_hit_shooter = true`. The scene file wins, so the syringe now flies 25 % faster, orients along its velocity, and can heal its own shooter. This makes the shooter's local projectile match what peers actually receive — before, the two could never agree.
+- **Side effect (fixed):** `player/bot_controller.gd:585` keys its projectile-prediction cache on `fire.projectile_scene.resource_path`, which was `""` for both of these — so rocket and syringe collided in one cache entry and bot lead prediction was wrong for both.
+- **Superseded:** the earlier `[FIXED 2026-09-24]` dedup of `_spawnable_scenes` was correct hygiene but was **not** the cause of this symptom. Its "resolves by position" claim never applied to it; the resolution is by **path**, which is what makes a sub-resource unresolvable at all.
+- **Earlier fix, still valid:** `auto_projectile_spawner.gd`'s `@tool` `scan_projectiles` setter used to call `add_spawnable_scene()` for every file on every run, guarded only by a plain `_registered` member that resets each editor session — so each generation appended another full pass, and the list reached 96 entries for 17 distinct scenes. `_scan_and_register()` now collects into a local array, **sorts it**, calls `clear_spawnable_scenes()`, and re-adds, so the result is deduped, deterministic and immune to filesystem enumeration order.
+- **Related change:** projectile parenting moved off the Player. `ProjectilesParent` + `ProjectileSpawner` now live on the world (`world/world1.tscn`), reached through `GameManager.projectile_parent`. Two reasons: `Player.despawn()` calls `hide()`, which cascaded to the `top_level` `ProjectilesParent` and made a dead player's in-flight projectiles invisible; and a Player is freed on disconnect, taking its projectiles with it.
+
+### 29. All 10 maps still carry a dead `ProjectilesParent`/`ProjectileSpawner`
+- **Files:** `maps/2fort.tscn:78-83`, `main_menu_world.tscn:281-286`, `castle`, `koth_castle`, `hyb_castle`, `esc_castle`, `dom_castle`, `death_pit`, `death_castle`, `bind.tscn:13635-13640`
+- **Symptom:** none today — nothing adds a node under a map's `ProjectilesParent`, so the spawner never fires. But each one still holds the stale **12-entry / 7-distinct** list (only 7 of the 17 projectile scenes), the same shape that produced #28.
+- **Why it matters:** they are a trap. Anyone who repoints a projectile parent at a map gets a spawner whose list is short, duplicated and unsorted — i.e. exactly the failure mode #28 describes.
+- **Suggested fix:** delete the two nodes from each map, or at minimum regenerate their `_spawnable_scenes` with the same sorted 17-entry list. `bind.tscn` is 47 MB, so this is not a cheap diff — hence left out of the #28 change.
+
+### 30. `SimpleProjectile.hide_model` is `@rpc("any_peer")`
+- **File:** `weapon/projectiles/simple_projectile.gd:155-159`
+- **Symptom:** none observed. `start_explode()` calls `hide_model.rpc()`; because the config is `any_peer`, **any** peer can hide the meshes of **any** projectile in the session.
+- **Why it matters:** a remote-triggerable visual kill switch, and it targets meshes specifically — the same visible symptom as #28, which makes it a plausible red herring during future debugging.
+- **Suggested fix:** change to `@rpc("authority", "call_local", "reliable")`. It is only ever called from `start_explode()`, which is already authority-gated.
+
 ---
+
+## Not bugs, but worth knowing
+
+- **`ERROR: Couldn't create an ENet host. / Parameter "host" is null.` is the expected second-instance path.** `enet_host_create()` returns NULL when UDP `NetworkManager.SERVER_PORT` (8080) is already bound, and Godot logs the C++ failure *before* returning the code that `create_server()` catches on the next line — so it prints on the way into a handled branch and reads like a crash. Whichever instance prints `Server created!` is the host; the one printing this is the joiner and should use "Join Local". Confirmed across every two-instance run: the error appears in every second-instance log and no first-instance log, always paired with `Port 8080 in use — falling back to offline peer.`  To check for a real conflict (another instance or a leftover process), use `netstat -ano -p UDP | findstr :8080` — a **TCP** check will not show it, ENet is UDP.
 
 ## Lower priority (recorded, not blocking)
 
