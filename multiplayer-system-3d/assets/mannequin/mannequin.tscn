@@ -2,11 +2,11 @@
 
 [ext_resource type="Script" uid="uid://b4ohd0sroqg5d" path="res://player/player_model.gd" id="1_13r4p"]
 [ext_resource type="PackedScene" uid="uid://cmm3olbw82kre" path="res://assets/mannequin/mannequin.glb" id="1_q4k74"]
-[ext_resource type="AnimationLibrary" uid="uid://ct8c4qs0yx4o3" path="res://assets/human/crouch.glb" id="3_2lwhn"]
-[ext_resource type="AnimationLibrary" uid="uid://cv55yvfohsp02" path="res://assets/ak_test/Human Ak.glb" id="3_13r4p"]
-[ext_resource type="AnimationLibrary" uid="uid://ch1fkaujvdl85" path="res://assets/human/walk.glb" id="3_v6ho6"]
-[ext_resource type="AnimationLibrary" uid="uid://dd783w6dpe1gq" path="res://assets/human/other_movement.glb" id="4_13r4p"]
-[ext_resource type="AnimationLibrary" uid="uid://cl3hr20wvwixe" path="res://assets/human/sprint.glb" id="5_lairg"]
+[ext_resource type="AnimationLibrary" uid="uid://ct8c4qs0yx4o3" path="res://assets/character_models/human/crouch.glb" id="3_2lwhn"]
+[ext_resource type="AnimationLibrary" uid="uid://cv55yvfohsp02" path="res://assets/weapon_models/ak_test/Human Ak.glb" id="3_13r4p"]
+[ext_resource type="AnimationLibrary" uid="uid://ch1fkaujvdl85" path="res://assets/character_models/human/walk.glb" id="3_v6ho6"]
+[ext_resource type="AnimationLibrary" uid="uid://dd783w6dpe1gq" path="res://assets/character_models/human/other_movement.glb" id="4_13r4p"]
+[ext_resource type="AnimationLibrary" uid="uid://cl3hr20wvwixe" path="res://assets/character_models/human/sprint.glb" id="5_lairg"]
 
 [node name="Mannequin" type="Node3D" unique_id=1846830220]
 script = ExtResource("1_13r4p")

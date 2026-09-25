@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://b0ku6r3myhkwa"]
 
-[ext_resource type="PackedScene" uid="uid://o65k71hjglw5" path="res://assets/uzi/uzi.glb" id="1_1co2j"]
+[ext_resource type="PackedScene" uid="uid://o65k71hjglw5" path="res://assets/weapon_models/uzi/uzi.glb" id="1_1co2j"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_n3c3k"]
 size = Vector3(0.107177734, 0.26361084, 0.5046387)

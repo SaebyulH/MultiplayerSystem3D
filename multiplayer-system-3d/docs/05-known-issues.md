@@ -38,6 +38,8 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 | 28 | 🔴 Critical | Netcode | ✅ FIXED — Rocket/syringe projectiles replicated as the mesh-less base scene (inline `SubResource` bundles) |
 | 29 | 🟡 Medium | Hygiene | Dead `ProjectilesParent`/`ProjectileSpawner` in all 10 maps |
 | 30 | 🟡 Medium | Netcode | `SimpleProjectile.hide_model` is `@rpc("any_peer")` |
+| 31 | 🔴 Critical | Crash | ✅ FIXED — Stack overflow: dying while enlarged (existing TODO) |
+| 32 | 🟡 Medium | Fragility | `Player.no_health()` is not idempotent |
 
 ---
 
@@ -273,6 +275,34 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 - **Symptom:** none observed. `start_explode()` calls `hide_model.rpc()`; because the config is `any_peer`, **any** peer can hide the meshes of **any** projectile in the session.
 - **Why it matters:** a remote-triggerable visual kill switch, and it targets meshes specifically — the same visible symptom as #28, which makes it a plausible red herring during future debugging.
 - **Suggested fix:** change to `@rpc("authority", "call_local", "reliable")`. It is only ever called from `start_explode()`, which is already authority-gated.
+
+### 31. Status-effect teardown re-entered itself — stack overflow on death while enlarged — `[FIXED 2026-09-25]`
+- **Files:** `components/status_effect/status_effect_manager.gd` (`remove_effect`, `_tick_server`), `components/status_effect/effects/enlarge_effect.gd:32-40`
+- **Symptom:** the host crashed with `Stack overflow (stack size: 1024). Check for infinite recursion in your script.` It was reproducible: **be enlarged (Rampage) and die.** The old TODO at `status_effect_manager.gd:159` had already flagged the line as the suspect without diagnosing it.
+- **Why:** `remove_effect` called `_on_remove` **before** erasing the effect from `_active_effects`, so the effect was still registered for the whole duration of its own teardown. `EnlargeEffect._on_remove` then wrote `attribute_component.health = minf(health, base_max)` — and `AttributeComponent.health` is a **setter** that emits `no_health` whenever the assigned value lands at `<= 0`:
+
+  ```
+  lethal damage          -> health = 0 -> no_health.emit()
+  Player.no_health()     -> status_effect_manager.clear_all_effects()
+  clear_all_effects()    -> remove_effect("enlarge")
+  remove_effect()        -> enlarge._on_remove()      [still registered!]
+  _on_remove()           -> health = minf(0, 100) = 0 -> no_health.emit()
+  ...                    -> unbounded
+  ```
+
+  Dying while enlarged is the *common* case — the buff doubles max health, it doesn't stop you dying — so the assignment always ran with `health == 0`. Exactly one effect writes health in its teardown, which is why only enlarge could trigger it.
+- **Fix applied (two layers, deliberately):**
+  1. **`remove_effect` and `_tick_server` now deregister before tearing down.** The id is erased from `_active_effects` (and the client mirror) *before* `_on_remove` runs, so any re-entry finds nothing and returns. This fixes the class of bug for every effect, present and future, not just the one that crashed.
+  2. **`EnlargeEffect._on_remove` no longer writes a non-positive health.** It still always restores `starting_health` (skipping that would leave the next life at double max HP), but only clamps `health` **downward** and only when it exceeds the restored max — so the dead case writes nothing.
+- **Also corrected while in there:** `_tick_server` iterated the live `_active_effects` dictionary. An effect's teardown can remove other effects through this manager, which invalidates that iteration. It now walks a `keys()` snapshot and skips ids removed earlier in the same pass.
+- **Verification:** get the enlarge effect (Rampage ability), take lethal damage while it is active. Before: instant stack overflow on the host. After: normal death, ragdoll spawns once, respawn at base max health.
+- **Residual risk:** see #32.
+
+### 32. `Player.no_health()` is not idempotent
+- **Files:** `player/player.gd:670-692` (`no_health`), `components/attribute_component.gd` (`health` setter)
+- **Symptom:** none observed after #31. But the death path has no re-entry guard: any second `no_health` on the same life re-runs `clear_all_effects()`, `_spawn_ragdoll.rpc(...)` and `rpc_reset.rpc(...)` — a second ragdoll and a second respawn reset.
+- **Why it matters:** the `health` setter emits `no_health` on *every* assignment that lands at `<= 0`, not on a transition into death. Any code that writes health while the player is already dead (a new status effect doing what EnlargeEffect used to, an environmental damage tick, a clamp) re-enters the whole death path. #31 closed the one path that reached it; the shape of the hazard is unchanged.
+- **Suggested fix:** guard the server branch on a transition — e.g. an `_is_dead` flag set at the top of `no_health()` and cleared in `rpc_reset` — or track the previous health in `AttributeComponent.apply_health_delta` (which already computes `old_health`) and only emit when `old_health > 0.0 and new_health <= 0.0`.
 
 ---
 

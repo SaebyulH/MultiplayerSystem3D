@@ -2,8 +2,8 @@
 
 [ext_resource type="Script" uid="uid://b3gtcm614wpi8" path="res://maps/map.gd" id="1_4t2r1"]
 [ext_resource type="Texture2D" uid="uid://c4ln0bpu3tmo3" path="res://assets/environment/kloppenheim_06_puresky_4k.exr" id="2_4t2r1"]
-[ext_resource type="PackedScene" uid="uid://bi1d3ydf18ng1" path="res://assets/props/forklift.tscn" id="5_h1wh8"]
-[ext_resource type="PackedScene" uid="uid://b1stq4e4vox5h" path="res://assets/props/truck.tscn" id="5_odqa7"]
+[ext_resource type="PackedScene" uid="uid://bi1d3ydf18ng1" path="res://assets/map_models/props/forklift.tscn" id="5_h1wh8"]
+[ext_resource type="PackedScene" uid="uid://b1stq4e4vox5h" path="res://assets/map_models/props/truck.tscn" id="5_odqa7"]
 [ext_resource type="Script" uid="uid://r6rneeolnvra" path="res://components/game_mode_component.gd" id="5_si2p5"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_e2o6t"]

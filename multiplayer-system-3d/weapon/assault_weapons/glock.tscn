@@ -1,9 +1,9 @@
 [gd_scene format=3 uid="uid://dd5gc4xdpc1as"]
 
 [ext_resource type="Script" uid="uid://c0ut5ljnvunfk" path="res://weapon/weapon_model.gd" id="1_q6gph"]
-[ext_resource type="AnimationLibrary" uid="uid://dfs0oyh312cvc" path="res://assets/glock/Human Glock.glb" id="2_gif7i"]
+[ext_resource type="AnimationLibrary" uid="uid://dfs0oyh312cvc" path="res://assets/weapon_models/glock/Human Glock.glb" id="2_gif7i"]
 [ext_resource type="Script" uid="uid://cutc4qk6eibrf" path="res://weapon/weapon_anim_group.gd" id="3_26y7a"]
-[ext_resource type="PackedScene" uid="uid://c764w7juj8fho" path="res://assets/glock/Glock.glb" id="6_rucvb"]
+[ext_resource type="PackedScene" uid="uid://c764w7juj8fho" path="res://assets/weapon_models/glock/Glock.glb" id="6_rucvb"]
 
 [sub_resource type="Resource" id="Resource_65viv"]
 script = ExtResource("3_26y7a")

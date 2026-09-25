@@ -1,14 +1,14 @@
-[gd_resource type="Resource" script_class="Character" format=3]
+[gd_resource type="Resource" script_class="Character" format=3 uid="uid://b8wpr5hk3etay"]
 
-[ext_resource type="PackedScene" path="res://assets/characters/ghost.tscn" id="1_85qva"]
-[ext_resource type="Script" path="res://player/character.gd" id="1_char"]
-[ext_resource type="AudioStream" path="res://assets/sounds/female_pain.mp3" id="2_85qva"]
-[ext_resource type="Script" path="res://player/abilities/ability.gd" id="2_abil"]
-[ext_resource type="Resource" path="res://player/abilities/wallhack.tres" id="3_abil"]
+[ext_resource type="PackedScene" uid="uid://ckqx4woyqsg2o" path="res://assets/character_models/characters/ghost.tscn" id="1_85qva"]
+[ext_resource type="Script" uid="uid://bxv3anwekoggx" path="res://player/character.gd" id="1_char"]
+[ext_resource type="AudioStream" uid="uid://b201yyyuo4tan" path="res://assets/sounds/female_pain.mp3" id="2_85qva"]
+[ext_resource type="Script" uid="uid://nwsvfqljwb2b" path="res://player/abilities/ability.gd" id="2_abil"]
+[ext_resource type="Resource" uid="uid://d2d4m0f7c28x3" path="res://player/abilities/wallhack.tres" id="3_abil"]
 [ext_resource type="Resource" path="res://player/abilities/teleport.tres" id="4_abil"]
 [ext_resource type="Resource" path="res://player/abilities/invisibility.tres" id="5_abil"]
 [ext_resource type="Resource" path="res://player/abilities/noclip.tres" id="6_abil"]
-[ext_resource type="Texture2D" path="res://character_portraits/ghost.png" id="8_02f1x"]
+[ext_resource type="Texture2D" uid="uid://d1fkhi7e25f87" path="res://character_portraits/ghost.png" id="8_02f1x"]
 
 [resource]
 script = ExtResource("1_char")

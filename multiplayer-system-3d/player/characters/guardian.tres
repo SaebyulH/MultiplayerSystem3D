@@ -1,10 +1,10 @@
-[gd_resource type="Resource" script_class="Character" format=3]
+[gd_resource type="Resource" script_class="Character" format=3 uid="uid://bvuyr21fdqjfj"]
 
-[ext_resource type="Script" path="res://player/character.gd" id="1_char"]
-[ext_resource type="PackedScene" path="res://assets/characters/nerd.tscn" id="1_lls2m"]
-[ext_resource type="Script" path="res://player/abilities/ability.gd" id="1_rf8w2"]
-[ext_resource type="AudioStream" path="res://assets/sounds/nerd_death.mp3" id="2_slv88"]
-[ext_resource type="Texture2D" path="res://character_portraits/nerd.png" id="4_h7pxl"]
+[ext_resource type="Script" uid="uid://bxv3anwekoggx" path="res://player/character.gd" id="1_char"]
+[ext_resource type="PackedScene" uid="uid://c25ral6vey0g" path="res://assets/character_models/characters/nerd.tscn" id="1_lls2m"]
+[ext_resource type="Script" uid="uid://nwsvfqljwb2b" path="res://player/abilities/ability.gd" id="1_rf8w2"]
+[ext_resource type="AudioStream" uid="uid://cj8jpcm1bfpio" path="res://assets/sounds/nerd_death.mp3" id="2_slv88"]
+[ext_resource type="Texture2D" uid="uid://ji2su8tybj8d" path="res://character_portraits/nerd.png" id="4_h7pxl"]
 
 [resource]
 script = ExtResource("1_char")

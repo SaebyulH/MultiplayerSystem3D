@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://bndefnuqb0koh"]
 
-[ext_resource type="PackedScene" uid="uid://3vrafas8ntke" path="res://assets/colt/colt_revolver_-_free.glb" id="1_nbojq"]
+[ext_resource type="PackedScene" uid="uid://3vrafas8ntke" path="res://assets/weapon_models/colt/colt_revolver_-_free.glb" id="1_nbojq"]
 
 [node name="Revolver" type="Node3D" unique_id=1503666704]
 

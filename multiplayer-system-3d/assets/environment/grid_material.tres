@@ -1,8 +1,8 @@
 [gd_resource type="ShaderMaterial" format=3 uid="uid://b6l23ihtcguc1"]
 
-[ext_resource type="Shader" uid="uid://bp4ttwkoy6jus" path="res://assets/greybox/greybox_tiled.gdshader" id="1_ao4fd"]
-[ext_resource type="Texture2D" uid="uid://bawen40eodg2a" path="res://assets/greybox/greybox_light_grid.png" id="2_lnkgs"]
-[ext_resource type="Texture2D" uid="uid://b41rnikyq4teg" path="res://assets/greybox/greybox_orange_grid.png" id="3_awsgq"]
+[ext_resource type="Shader" uid="uid://bp4ttwkoy6jus" path="res://assets/images/greybox/greybox_tiled.gdshader" id="1_ao4fd"]
+[ext_resource type="Texture2D" uid="uid://bawen40eodg2a" path="res://assets/images/greybox/greybox_light_grid.png" id="2_lnkgs"]
+[ext_resource type="Texture2D" uid="uid://b41rnikyq4teg" path="res://assets/images/greybox/greybox_orange_grid.png" id="3_awsgq"]
 
 [resource]
 render_priority = 0

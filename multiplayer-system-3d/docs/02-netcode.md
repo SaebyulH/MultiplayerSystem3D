@@ -174,10 +174,11 @@ Other modes follow the same shape: `koth_mode.gd:23-39` and `domination_mode.gd:
 
 `components/status_effect/status_effect_manager.gd`:
 - Header (4-15): effects applied and ticked **entirely on the server**; clients do no local ticking; remaining times pushed on apply/remove and at ~10 Hz.
-- `TICK_INTERVAL = 0.1` (40). `_on_tick_timeout` (55-62) returns unless `multiplayer.is_server()`. `_tick_server` (65-114) decrements `remaining`, fires `_on_tick` at `tick_interval`, removes expired, and calls `_sync_to_clients()` only if a timed effect exists or one just expired (avoids re-broadcasting permanent wallhack/health markers).
-- `apply_effect` (120-149): server-only; negative effects extend duration; permanent effects use `INF`; calls `_on_apply` then `_sync_to_clients`.
-- `_sync_to_clients` (239-255) rebuilds the client mirror and pushes via `_rpc_sync_effects` (`@rpc("authority","call_remote","reliable")`, 271-278) — three parallel arrays: `effect_ids`, `effect_names`, `remaining_times`. Poison hidden until `drain_started` (260-268).
-- `has_effect`/`is_stunned`/`is_pinned` read the client mirror `_client_effects` (170-171, 199-210).
+- `TICK_INTERVAL = 0.1` (40). `_on_tick_timeout` (55-62) returns unless `multiplayer.is_server()`. `_tick_server` (65-126) decrements `remaining`, fires `_on_tick` at `tick_interval`, removes expired, and calls `_sync_to_clients()` only if a timed effect exists or one just expired (avoids re-broadcasting permanent wallhack/health markers).
+- **An effect is deregistered *before* its `_on_remove` runs** — in both `_tick_server` (natural expiry) and `remove_effect` (forced). This is load-bearing, not stylistic: `_on_remove` can re-enter the manager, and a still-registered id would run the teardown again, unbounded. `EnlargeEffect._on_remove` writes the player's health back, and `AttributeComponent.health`'s setter emits `no_health` at `<= 0` → `clear_all_effects()` → back into the same teardown. That was the stack overflow at 1024 frames (known-issues #31). `_tick_server` also walks a `keys()` snapshot for the same reason.
+- `apply_effect` (128-159): server-only; negative effects extend duration; permanent effects use `INF`; calls `_on_apply` then `_sync_to_clients`. Note it inserts into `_active_effects` *before* `_on_apply`, so a teardown triggered from `_on_apply` sees the new effect as already registered.
+- `_sync_to_clients` (254-273) rebuilds the client mirror and pushes via `_rpc_sync_effects` (`@rpc("authority","call_remote","reliable")`, 287-293) — three parallel arrays: `effect_ids`, `effect_names`, `remaining_times`. Poison hidden until `drain_started` (275-284).
+- `has_effect`/`is_stunned`/`is_pinned` read the client mirror `_client_effects` (185-186, 214-224).
 - Late joiners get an explicit `_sync_to_clients(peer_id)` from `SpawnManager._sync_existing_players_to_peer` (`spawn_manager.gd:44-45`).
 
 ---

@@ -1,11 +1,11 @@
 [gd_scene format=3 uid="uid://ccapjs1b2aucy"]
 
 [ext_resource type="Script" uid="uid://c0ut5ljnvunfk" path="res://weapon/weapon_model.gd" id="1_1upqi"]
-[ext_resource type="AnimationLibrary" uid="uid://cv55yvfohsp02" path="res://assets/ak_test/Human Ak.glb" id="2_6ascw"]
-[ext_resource type="PackedScene" uid="uid://cdyvtxpvcjv7m" path="res://assets/ak_test/Ak.glb" id="2_bwsua"]
-[ext_resource type="Material" uid="uid://ilfyvcnruqii" path="res://assets/ak_test/ak.tres" id="3_foqhv"]
+[ext_resource type="AnimationLibrary" uid="uid://cv55yvfohsp02" path="res://assets/weapon_models/ak_test/Human Ak.glb" id="2_6ascw"]
+[ext_resource type="PackedScene" uid="uid://cdyvtxpvcjv7m" path="res://assets/weapon_models/ak_test/Ak.glb" id="2_bwsua"]
+[ext_resource type="Material" uid="uid://ilfyvcnruqii" path="res://assets/weapon_models/ak_test/ak.tres" id="3_foqhv"]
 [ext_resource type="Script" uid="uid://cutc4qk6eibrf" path="res://weapon/weapon_anim_group.gd" id="3_x7rho"]
-[ext_resource type="PackedScene" uid="uid://butpcai3lpusg" path="res://assets/models/ImageToStl.com_c_sniperrifle/c_sniperrifle.glb" id="6_1upqi"]
+[ext_resource type="PackedScene" uid="uid://butpcai3lpusg" path="res://assets/weapon_models/models/ImageToStl.com_c_sniperrifle/c_sniperrifle.glb" id="6_1upqi"]
 
 [sub_resource type="Resource" id="Resource_iberb"]
 script = ExtResource("3_x7rho")

@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://0ao8biac1wwu"]
 
-[ext_resource type="PackedScene" uid="uid://dq5hjlj4ymwei" path="res://assets/models/ImageToStl.com_c_bat/c_bat.glb" id="1_dary7"]
+[ext_resource type="PackedScene" uid="uid://dq5hjlj4ymwei" path="res://assets/weapon_models/models/ImageToStl.com_c_bat/c_bat.glb" id="1_dary7"]
 [ext_resource type="PackedScene" uid="uid://wnm8gmua6ve3" path="res://weapon/tf2/low-poly_scifi_katana.glb" id="2_6ko4h"]
 
 [node name="Scattergun" type="Node3D" unique_id=664585380]

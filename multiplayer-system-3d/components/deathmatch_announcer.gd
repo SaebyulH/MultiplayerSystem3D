@@ -16,14 +16,14 @@ class_name DeathmatchAnnouncer
 #  SOUND ASSETS
 # ─────────────────────────────────────────────
 
-const SOUND_ANNOUNCE := preload("res://assets/deathmatch_sounds/deathmatch_announce.mp3")
-const SOUND_KILLS_10 := preload("res://assets/deathmatch_sounds/10_kills_remain.mp3")
-const SOUND_KILLS_5  := preload("res://assets/deathmatch_sounds/5_kills_remain.mp3")
-const SOUND_KILLS_1  := preload("res://assets/deathmatch_sounds/1_kill_remain.mp3")
-const SOUND_FIRST    := preload("res://assets/deathmatch_sounds/first_place.mp3")
-const SOUND_SECOND   := preload("res://assets/deathmatch_sounds/second_place.mp3")
-const SOUND_THIRD    := preload("res://assets/deathmatch_sounds/third_place.mp3")
-const SOUND_DEFEAT   := preload("res://assets/deathmatch_sounds/match_over_defeat.mp3")
+const SOUND_ANNOUNCE := preload("res://assets/sounds/deathmatch_sounds/deathmatch_announce.mp3")
+const SOUND_KILLS_10 := preload("res://assets/sounds/deathmatch_sounds/10_kills_remain.mp3")
+const SOUND_KILLS_5  := preload("res://assets/sounds/deathmatch_sounds/5_kills_remain.mp3")
+const SOUND_KILLS_1  := preload("res://assets/sounds/deathmatch_sounds/1_kill_remain.mp3")
+const SOUND_FIRST    := preload("res://assets/sounds/deathmatch_sounds/first_place.mp3")
+const SOUND_SECOND   := preload("res://assets/sounds/deathmatch_sounds/second_place.mp3")
+const SOUND_THIRD    := preload("res://assets/sounds/deathmatch_sounds/third_place.mp3")
+const SOUND_DEFEAT   := preload("res://assets/sounds/deathmatch_sounds/match_over_defeat.mp3")
 
 const BUS_NAME := "Announcer"
 

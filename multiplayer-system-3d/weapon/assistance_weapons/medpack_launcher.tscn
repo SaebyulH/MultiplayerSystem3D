@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://d3smja8hfgqx1"]
 
-[ext_resource type="PackedScene" uid="uid://dbvire4mf15ag" path="res://assets/models/ImageToStl.com_c_syringegun/c_syringegun.glb" id="1_borxq"]
+[ext_resource type="PackedScene" uid="uid://dbvire4mf15ag" path="res://assets/weapon_models/models/ImageToStl.com_c_syringegun/c_syringegun.glb" id="1_borxq"]
 
 [node name="Pistol" type="Node3D" unique_id=664585380]
 

@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://yh8k5dx8kf7b"]
 
-[ext_resource type="PackedScene" uid="uid://bfk3qey52sg40" path="res://assets/models/ImageToStl.com_flamethrower/flamethrower.glb" id="1_38hti"]
+[ext_resource type="PackedScene" uid="uid://bfk3qey52sg40" path="res://assets/weapon_models/models/ImageToStl.com_flamethrower/flamethrower.glb" id="1_38hti"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_hajml"]
 size = Vector3(0.107177734, 1.0664063, 2.996582)

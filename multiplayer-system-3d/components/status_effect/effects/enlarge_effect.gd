@@ -34,7 +34,18 @@ func _on_remove(player: Player, _state: Dictionary) -> void:
 		return
 	var base_max: float = _state.get("base_max_health", 100.0)
 	player.set_enlarge_scale(1.0)
-	if player.attribute_component:
-		player.attribute_component.starting_health = base_max
-		player.attribute_component.health = minf(player.attribute_component.health, base_max)
+	var ac: AttributeComponent = player.attribute_component
+	if ac:
+		# Always restore the max: `reset_health()` respawns to `starting_health`,
+		# so leaving the doubled value here would hand the next life double HP.
+		ac.starting_health = base_max
+		# Clamp current health back under the restored max — downward only, and
+		# never write a non-positive value.  `AttributeComponent.health` is a
+		# setter that emits `no_health` whenever the value lands at <= 0, and
+		# dying while enlarged is the *common* case (the buff doubles max health,
+		# it does not stop you dying).  Writing health = 0 there re-entered
+		# Player.no_health() -> clear_all_effects() -> back here, which recursed
+		# until the stack overflowed.  See StatusEffectManager.remove_effect.
+		if ac.health > base_max:
+			ac.health = base_max
 	player._rpc_enlarge.rpc(1.0, base_max)

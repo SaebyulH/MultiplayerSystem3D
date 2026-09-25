@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://dfotdh4bqalud"]
 
-[ext_resource type="PackedScene" uid="uid://diyn21atog7xt" path="res://assets/models/ImageToStl.com_c_scattergun/c_scattergun.glb" id="2_kc585"]
+[ext_resource type="PackedScene" uid="uid://diyn21atog7xt" path="res://assets/weapon_models/models/ImageToStl.com_c_scattergun/c_scattergun.glb" id="2_kc585"]
 
 [node name="Scattergun" type="Node3D" unique_id=664585380]
 

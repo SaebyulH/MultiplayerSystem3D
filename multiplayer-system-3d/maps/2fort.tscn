@@ -4,7 +4,7 @@
 [ext_resource type="Texture2D" uid="uid://c4ln0bpu3tmo3" path="res://assets/environment/kloppenheim_06_puresky_4k.exr" id="2_nytf2"]
 [ext_resource type="Script" uid="uid://ccrf5bdka2m35" path="res://player/auto_projectile_spawner.gd" id="3_dgob0"]
 [ext_resource type="Script" uid="uid://r6rneeolnvra" path="res://components/game_mode_component.gd" id="4_imcub"]
-[ext_resource type="PackedScene" uid="uid://cbonxqwx4pkes" path="res://assets/valorant_spike_plant_tutorial_map/scene.gltf" id="6_dgob0"]
+[ext_resource type="PackedScene" uid="uid://cbonxqwx4pkes" path="res://assets/map_models/valorant_spike_plant_tutorial_map/scene.gltf" id="6_dgob0"]
 [ext_resource type="Material" uid="uid://b6l23ihtcguc1" path="res://assets/environment/grid_material.tres" id="6_imcub"]
 [ext_resource type="Shader" uid="uid://c27khwu6mxn41" path="res://assets/environment/grid_shader.gdshader" id="7_imcub"]
 

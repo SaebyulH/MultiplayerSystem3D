@@ -218,7 +218,6 @@ toggle_camera={
 
 time/tickrate=90
 time/sync_to_physics=false
-rollback/history_limit=100
 time/max_ticks_per_frame=90
 
 [physics]

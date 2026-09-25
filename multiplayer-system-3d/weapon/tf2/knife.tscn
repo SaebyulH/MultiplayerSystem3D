@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://dv3kpihd8amww"]
 
-[ext_resource type="PackedScene" uid="uid://cjsh8f2788g1b" path="res://assets/models/ImageToStl.com_c_knife/c_knife.glb" id="1_ks6iq"]
+[ext_resource type="PackedScene" uid="uid://cjsh8f2788g1b" path="res://assets/weapon_models/models/ImageToStl.com_c_knife/c_knife.glb" id="1_ks6iq"]
 
 [node name="Pistol" type="Node3D" unique_id=664585380]
 

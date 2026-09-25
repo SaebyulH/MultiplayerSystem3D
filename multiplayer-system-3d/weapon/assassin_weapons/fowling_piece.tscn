@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://884wdu1fnmxp"]
 
 [ext_resource type="PackedScene" uid="uid://cxy8nj1aglh2w" path="res://player/player_classes/low-poly_spas-15.glb" id="1_1yqkc"]
-[ext_resource type="PackedScene" uid="uid://diyn21atog7xt" path="res://assets/models/ImageToStl.com_c_scattergun/c_scattergun.glb" id="2_dw0ov"]
+[ext_resource type="PackedScene" uid="uid://diyn21atog7xt" path="res://assets/weapon_models/models/ImageToStl.com_c_scattergun/c_scattergun.glb" id="2_dw0ov"]
 
 [node name="Scattergun" type="Node3D" unique_id=664585380]
 
