@@ -65,7 +65,11 @@ func _on_tick_timeout() -> void:
 func _tick_server(delta: float) -> void:
 	var expired: Array[String] = []
 
-	for id in _active_effects:
+	# Iterate a key snapshot: an effect's teardown can remove other effects (and
+	# itself) through this manager, which would invalidate a live iteration.
+	for id in _active_effects.keys():
+		if not _active_effects.has(id):
+			continue  # removed by an earlier teardown in this same pass
 		var data: Dictionary = _active_effects[id]
 		var effect: StatusEffect = data["effect"]
 		var remaining: float = data["remaining"]
@@ -78,6 +82,10 @@ func _tick_server(delta: float) -> void:
 		data["remaining"] = remaining
 
 		if remaining <= 0.0:
+			# Deregister before the teardown, for the same re-entrancy reason as
+			# remove_effect(): `_on_remove` may run clear_all_effects() from
+			# inside itself, and running it twice on one expiry is never right.
+			_active_effects.erase(id)
 			effect._on_remove(_player, data.get("state", {}))
 			expired.append(id)
 			continue
@@ -155,11 +163,18 @@ func remove_effect(effect_id: String) -> void:
 		return
 	if not _active_effects.has(effect_id):
 		return
+	# Deregister *before* running the teardown, then tear down.  `_on_remove` can
+	# re-enter this manager: EnlargeEffect writes the player's health back, and
+	# AttributeComponent's `health` setter emits `no_health` whenever the value
+	# lands at <= 0, which calls clear_all_effects().  While the id was still
+	# registered that re-entry ran `_on_remove` again, unbounded — the stack
+	# overflow at 1024 frames.  Erasing first makes any re-entry a no-op, so this
+	# holds for every current and future effect, not just the one that bit us.
 	var data: Dictionary = _active_effects[effect_id]
-	data["effect"]._on_remove(_player, data.get("state", {})) #TODO INFINITE RECURSION CAN CAUSE EERS Stack overflow (stack size: 1024). Check for infinite recursion in your script.
 	_active_effects.erase(effect_id)
 	_client_effects.erase(effect_id)
 	_client_effect_names.erase(effect_id)
+	data["effect"]._on_remove(_player, data.get("state", {}))
 	effect_removed.emit(effect_id)
 	_sync_to_clients()
 	if _active_effects.is_empty():

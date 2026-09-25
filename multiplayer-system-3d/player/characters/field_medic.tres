@@ -1,10 +1,10 @@
-[gd_resource type="Resource" script_class="Character" format=3]
+[gd_resource type="Resource" script_class="Character" format=3 uid="uid://bo5mmptgi1bud"]
 
-[ext_resource type="Script" path="res://player/character.gd" id="1_char"]
-[ext_resource type="Script" path="res://player/abilities/ability.gd" id="1_hkw1k"]
-[ext_resource type="PackedScene" path="res://assets/characters/scientist.tscn" id="1_oowlt"]
-[ext_resource type="AudioStream" path="res://assets/sounds/vinodadora-male-death-sound-128357.mp3" id="2_tjccu"]
-[ext_resource type="Texture2D" path="res://character_portraits/dr_schweizerstein.png" id="4_8pcb8"]
+[ext_resource type="Script" uid="uid://bxv3anwekoggx" path="res://player/character.gd" id="1_char"]
+[ext_resource type="Script" uid="uid://nwsvfqljwb2b" path="res://player/abilities/ability.gd" id="1_hkw1k"]
+[ext_resource type="PackedScene" uid="uid://d2he4ism8ghgs" path="res://assets/character_models/characters/scientist.tscn" id="1_oowlt"]
+[ext_resource type="AudioStream" uid="uid://cdvd2hnuk6uxs" path="res://assets/sounds/vinodadora-male-death-sound-128357.mp3" id="2_tjccu"]
+[ext_resource type="Texture2D" uid="uid://41uuwi58i8e4" path="res://character_portraits/dr_schweizerstein.png" id="4_8pcb8"]
 
 [resource]
 script = ExtResource("1_char")

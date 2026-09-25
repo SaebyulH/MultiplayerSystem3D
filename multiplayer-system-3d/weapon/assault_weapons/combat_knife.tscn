@@ -1,9 +1,9 @@
 [gd_scene format=3 uid="uid://34eeant5qeu2"]
 
 [ext_resource type="Script" uid="uid://c0ut5ljnvunfk" path="res://weapon/weapon_model.gd" id="1_hxd4e"]
-[ext_resource type="AnimationLibrary" uid="uid://blkowmq6y8gqs" path="res://assets/combat_knife/Human_combat_knife.glb" id="2_hxwus"]
+[ext_resource type="AnimationLibrary" uid="uid://blkowmq6y8gqs" path="res://assets/weapon_models/combat_knife/Human_combat_knife.glb" id="2_hxwus"]
 [ext_resource type="Script" uid="uid://cutc4qk6eibrf" path="res://weapon/weapon_anim_group.gd" id="3_qlblj"]
-[ext_resource type="PackedScene" uid="uid://cnb0cgxekajmm" path="res://assets/combat_knife/combat_knife.glb" id="6_hxwus"]
+[ext_resource type="PackedScene" uid="uid://cnb0cgxekajmm" path="res://assets/weapon_models/combat_knife/combat_knife.glb" id="6_hxwus"]
 
 [sub_resource type="Resource" id="Resource_f0yui"]
 script = ExtResource("3_qlblj")

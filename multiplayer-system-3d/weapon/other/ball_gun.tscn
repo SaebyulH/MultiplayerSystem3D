@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://bqasbas7al3kg"]
 
-[ext_resource type="PackedScene" uid="uid://dkh0xpm6y7tat" path="res://assets/plasma_rifle/plasma_rifle_doom_2016.glb" id="1_k7oex"]
+[ext_resource type="PackedScene" uid="uid://dkh0xpm6y7tat" path="res://assets/weapon_models/plasma_rifle/plasma_rifle_doom_2016.glb" id="1_k7oex"]
 
 [node name="Scattergun" type="Node3D" unique_id=664585380]
 

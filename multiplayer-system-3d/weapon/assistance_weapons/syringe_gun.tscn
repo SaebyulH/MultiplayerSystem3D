@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://b10rhr5f0qk1u"]
 
-[ext_resource type="PackedScene" uid="uid://dbvire4mf15ag" path="res://assets/models/ImageToStl.com_c_syringegun/c_syringegun.glb" id="1_i5af1"]
+[ext_resource type="PackedScene" uid="uid://dbvire4mf15ag" path="res://assets/weapon_models/models/ImageToStl.com_c_syringegun/c_syringegun.glb" id="1_i5af1"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_i5af1"]
 transparency = 1

@@ -1,14 +1,14 @@
-[gd_resource type="Resource" script_class="Character" format=3]
+[gd_resource type="Resource" script_class="Character" format=3 uid="uid://rqbtee8x1try"]
 
-[ext_resource type="PackedScene" path="res://assets/characters/juggernaut.tscn" id="1_3mk60"]
-[ext_resource type="Script" path="res://player/character.gd" id="1_char"]
-[ext_resource type="AudioStream" path="res://assets/sounds/jugger_death.mp3" id="2_655ax"]
-[ext_resource type="Script" path="res://player/abilities/ability.gd" id="2_abil"]
-[ext_resource type="Resource" path="res://player/abilities/heal.tres" id="3_abil"]
-[ext_resource type="Resource" path="res://player/abilities/shoulder_charge.tres" id="4_j6qkh"]
+[ext_resource type="PackedScene" uid="uid://dhjvq4a6i2do" path="res://assets/character_models/characters/juggernaut.tscn" id="1_3mk60"]
+[ext_resource type="Script" uid="uid://bxv3anwekoggx" path="res://player/character.gd" id="1_char"]
+[ext_resource type="AudioStream" uid="uid://bnrnae70a3isv" path="res://assets/sounds/jugger_death.mp3" id="2_655ax"]
+[ext_resource type="Script" uid="uid://nwsvfqljwb2b" path="res://player/abilities/ability.gd" id="2_abil"]
+[ext_resource type="Resource" uid="uid://b8guv2doanh4m" path="res://player/abilities/heal.tres" id="3_abil"]
+[ext_resource type="Resource" uid="uid://bkofte7pvpmh5" path="res://player/abilities/shoulder_charge.tres" id="4_j6qkh"]
 [ext_resource type="Resource" path="res://player/abilities/bashdown.tres" id="6_abil"]
-[ext_resource type="Resource" path="res://player/abilities/rampage.tres" id="7_abil"]
-[ext_resource type="Texture2D" path="res://character_portraits/gyenyeral_boldbaatar.png" id="8_glh1a"]
+[ext_resource type="Resource" uid="uid://d3yv8ta033nvs" path="res://player/abilities/rampage.tres" id="7_abil"]
+[ext_resource type="Texture2D" uid="uid://bcqyioegejkc6" path="res://character_portraits/gyenyeral_boldbaatar.png" id="8_glh1a"]
 
 [resource]
 script = ExtResource("1_char")
