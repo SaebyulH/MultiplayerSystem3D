@@ -11,9 +11,11 @@ This documents the subtle, order-dependent parts of the connection lifecycle. **
 | Event | Effect |
 |---|---|
 | `on_server_start` | `NetworkTime.start()` |
-| `on_client_start` | `NetworkTime.start()` |
+| `on_client_start` | ~~`NetworkTime.start()`~~ — **taken over by `NetworkManager`**, see below |
 | `on_server_stop` | `NetworkTime.stop()` |
 | `on_client_stop` | `NetworkTime.stop()` |
+
+**Exception: the client start is project-owned.** `NetworkEvents` wires `on_client_start → NetworkTime.start()` in its `_ready` (`network-events.gd:84`), but that fires the instant the ENet connection is up — across the join's own stall. `NetworkManager._take_over_client_time()`, called from `join_party()`, disconnects that listener, and `_on_connected_to_server()` starts the loop itself once the join has settled. The other three wires are untouched. **Do not add another listener to `NetworkEvents.on_client_start`** — `_take_over_client_time()` removes every listener on that signal.
 
 `NetworkEvents` detects server start/stop by **polling `is_server()` once per frame in `_process`** (`network-events.gd:93-107`), tracking a private `_is_server` boolean. It also explicitly treats `OfflineMultiplayerPeer` as "not a server" (`network-events.gd:64-65`).
 
@@ -87,25 +89,44 @@ Because `NetworkEvents` ignores `OfflineMultiplayerPeer`, `create_server()` must
 
 ---
 
-## Ordering invariant: `_on_connected_to_server` vs `NetworkTime.start()`
+## Ordering invariant: when the client starts its clock
 
-On the client, `NetworkManager._on_connected_to_server` (connected in autoload 1's `_ready`) fires **before** `NetworkEvents._handle_connected_to_server` (connected in autoload 7's `_ready`) — Godot emits in connection order.
+`NetworkManager._on_connected_to_server` (autoload 1's `_ready`) runs **before** `NetworkEvents._handle_connected_to_server` (autoload 7's `_ready`) — Godot emits in connection order. The first calls `enter_existing_game_scene()` **without `await`**, so it runs the heavy synchronous `preload(world1.tscn)` and then suspends at `await get_tree().process_frame`, where the renderer still has two frames of D3D12 shader compilation ahead of it.
 
-Consequence: `enter_existing_game_scene()` builds the client `world1.tscn` (and receives replicated nodes) *before* `NetworkTime.start()` begins the client's initial clock sync. In practice players arrive but don't tick until `after_sync`; any re-ordering of autoloads, or a change to `NetworkEvents._set_enabled` timing, could race this. Fragile by construction.
+netfox used to start `NetworkTime` during that suspension. The clock-sync request went out *before* the stall and its reply was applied *after* it, and because that initial timestamp has no RTT compensation (`network-time-synchronizer.gd:267-276`) while `NetworkTime.tick` is monotonic, the joiner's entire tick origin was seeded from a clock reading seconds out of date. That is `05-known-issues.md` #18.
 
-When this ordering races the spawner, the client's rollback history can be seeded from a tick far from the server's, producing the "past the history limit" warning + low-FPS spike on join (`05-known-issues.md` #18).
+**The fix is timing, not ordering:** the scene build still happens first (deferring it even one frame risks `MultiplayerSpawner` spawn messages arriving before the spawner exists), but the clock sync now happens after the stall, on the far side of it:
+
+```
+_on_connected_to_server()
+  await enter_existing_game_scene()   # world built; the big stall is behind us
+  await _await_settled()              # 2 consecutive frames under SETTLE_FRAME_SECONDS
+  await _adopt_server_tick_rate()     # reliable RPC; falls back to the local default
+  NetworkTime.start()                 # short round trip -> a correct seed
+  LoadingScreen.hide_screen()
+```
+
+Invariants that follow, and are easy to break:
+
+- `_on_connected_to_server` is now a coroutine that cannot be cancelled. It re-checks `_can_resync()` before starting, because `_server_disconnected` → `return_to_lobby()` can re-host us while it is parked in one of those waits.
+- `LoadingScreen.hide_screen()` belongs to this sequence, not to `enter_existing_game_scene()`.
+- The watchdog (`_evaluate_resync`) stays silent until `_client_time_ready`, which is only set here. Between sessions `NetworkTime.tick` still holds the previous session's value, and comparing it against a fresh host sample reads as an enormous offset.
+- The tick rate must be applied before `start()`. A late-arriving rate reply is handled by restarting the loop, not by mutating the rate underneath it (see `02-netcode.md` §8).
 
 ---
 
 ## Full fragile / order-dependent list
 
-1. **Deferred re-host is load-bearing** (`network_manager.gd:114`). Any synchronous teardown + re-`create_server()` kills `NetworkTime` and thus movement.
-2. **Offline fallback needs manual `NetworkTime.start()`** (`network_manager.gd:39`).
+1. **Deferred re-host is load-bearing** (`network_manager.gd:return_to_lobby`). Any synchronous teardown + re-`create_server()` kills `NetworkTime` and thus movement.
+2. **Offline fallback needs manual `NetworkTime.start()`** (`network_manager.gd:create_server`).
 3. **Peer-1 hardcoding is everywhere** — `spawn_manager.gd:15` (adds player 1), `spawn_manager.gd:131` (bot authority 1), `leaderboard_singleton.gd:236-258` (`rpc_id(1)`), `loadout_menu.gd:869` (`rpc_id(1)`), `host_server_area.gd:53-54` (`get_unique_id() == 1`). The whole "party leader = peer 1 = server" model collapses if the server is ever not peer 1.
-4. **`_on_connected_to_server` ordering vs `NetworkTime.start()`** — autoload order 1 vs 7 (see above).
-5. **`_sync_existing_players_to_peer` one-frame defer** (`spawn_manager.gd:37`) — late joiners rely on a single `await process_frame` before full-state RPCs. If the spawner's tree sync isn't settled in one frame (slow connection, large map), existing players replicate despawned/invisible.
-6. **`map_path` only set on the host path** (`network_manager.gd:74`) — `world_1.gd:27` does `load(map_path)` guarded by `is_hosting_game`; a client's `map_path` is empty and harmless, but it's an implicit assumption the client never hits the map-loading branch.
-7. **`_request_loadout` sender validation** (`loadout_menu.gd:879-881`) — `if sid != 0 and str(sid) != tpid and not tpid.begins_with("bot_"): return`. The `sid != 0` branch is only reachable on the server via `rpc_id(1)`; the server's own direct call has `sid == 0`. Depends on the server validating, and on human ids always being `str(network_id)`.
-8. **First spawn is delayed ~1 s** (`player.gd:17` `respawn_time = 1.0` applied in `rpc_reset` at `503`) — "confirm loadout → visible player" is not instant.
-9. **`loadout_menu.gd:859-860` comment drift** — the comment says `visible = false` triggers `_process()` → `_canvas.visible = false`, but the sync is via the `visibility_changed` signal (`loadout_menu.gd:101`, `143-157`), not `_process`. Cosmetic but means the mechanism is one degree more indirect than the comment suggests.
-10. **`_terminate_connection` must do the full `NetworkTime.stop()`** — not the low-level synchronizer stop — or a subsequent `start()` won't cleanly reset.
+4. **`NetworkManager` owns the client's `NetworkTime.start()`** — netfox's `on_client_start` listener is disconnected in `join_party()`, and the replacement lives at the end of the `_on_connected_to_server()` coroutine (see above). Both halves are required: reconnecting the netfox listener, or starting before `_adopt_server_tick_rate()`, reintroduces #18.
+5. **`_reinit_time()` must reset rollback history *after* `start()`, not before** — the recorder seeds its tick cursors from `NetworkTime.tick`, so resetting first stamps them with the dying domain's tick (a host restarts at 0, so they would sit `old_tick` ticks in the future).
+6. **Tick-rate changes are all-peers-at-once** — `_reinit_time()` stops, re-rates and restarts the loop. A peer that applies a rate without restarting has a tick origin seeded with a different multiplier and no way to fix it.
+7. **`_sync_existing_players_to_peer` one-frame defer** (`spawn_manager.gd:37`) — late joiners rely on a single `await process_frame` before full-state RPCs. If the spawner's tree sync isn't settled in one frame (slow connection, large map), existing players replicate despawned/invisible.
+8. **`map_path` only set on the host path** (`network_manager.gd:load_game_scene`) — `world_1.gd:27` does `load(map_path)` guarded by `is_hosting_game`; a client's `map_path` is empty and harmless, but it's an implicit assumption the client never hits the map-loading branch.
+9. **`_request_loadout` sender validation** (`loadout_menu.gd:879-881`) — `if sid != 0 and str(sid) != tpid and not tpid.begins_with("bot_"): return`. The `sid != 0` branch is only reachable on the server via `rpc_id(1)`; the server's own direct call has `sid == 0`. Depends on the server validating, and on human ids always being `str(network_id)`.
+10. **First spawn is delayed ~1 s** (`player.gd:17` `respawn_time = 1.0` applied in `rpc_reset` at `503`) — "confirm loadout → visible player" is not instant.
+11. **`loadout_menu.gd:859-860` comment drift** — the comment says `visible = false` triggers `_process()` → `_canvas.visible = false`, but the sync is via the `visibility_changed` signal (`loadout_menu.gd:101`, `143-157`), not `_process`. Cosmetic but means the mechanism is one degree more indirect than the comment suggests.
+12. **`_terminate_connection` must do the full `NetworkTime.stop()`** — not the low-level synchronizer stop — or a subsequent `start()` won't cleanly reset. It also clears `_client_time_ready` / `_host_tick_valid`, so the watchdog stays quiet across the transition.
+13. **`ui/main_menu.gd` still calls `create_client()` / `enter_existing_game_scene()` directly** — dead today (the 2D menu is bypassed), but those entry points no longer start a tick loop or hide the loading screen on their own. Anything that revives them must go through `join_party()` instead.

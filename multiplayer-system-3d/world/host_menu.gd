@@ -507,7 +507,7 @@ func _make_player_card(p: Player, team: Player.Team) -> PlayerCard:
 # ─────────────────────────────────────────────────────────────
 
 func _on_start_pressed() -> void:
-	if _selected_map == null or _selected_map.map_scene == null or not multiplayer.is_server():
+	if _selected_map == null or _selected_map.map_scene_path.is_empty() or not multiplayer.is_server():
 		return
 
 	# 1. Apply teams (replicated via the .:team MultiplayerSynchronizer).
@@ -521,7 +521,7 @@ func _on_start_pressed() -> void:
 		_autofill_bots()
 
 	close()
-	NetworkManager.load_match_map(_selected_map.map_scene.resource_path)
+	NetworkManager.load_match_map(_selected_map.map_scene_path)
 
 
 func _autofill_bots() -> void:

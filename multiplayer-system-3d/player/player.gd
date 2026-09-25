@@ -1104,11 +1104,14 @@ func _noclip_move(delta: float) -> void:
 		velocity.y = move_toward(velocity.y, target.y, accel * delta)
 		velocity.z = move_toward(velocity.z, target.z, accel * delta)
 
-	# Integrate directly — no move_and_slide, so nothing blocks the body.
-	velocity *= NetworkTime.physics_factor
+	# Integrate directly — no move_and_slide, so nothing blocks the body.  This
+	# path advances by the tick delta itself (delta == NetworkTime.ticktime), so
+	# velocity must NOT be scaled by physics_factor: that factor converts between
+	# the tick delta and move_and_slide()'s own delta, which is not used here.
+	# Scaling it anyway made noclip fly at 2/3 speed at 90 Hz / 60 fps.  The
+	# knockback term is added un-scaled, matching what the normal path stores.
 	velocity += knockback_velocity
 	global_position += velocity * delta
-	velocity /= NetworkTime.physics_factor
 
 	var knockback_decay: float = velocity.length() ** 2 * 10
 	knockback_velocity = knockback_velocity.move_toward(Vector3.ZERO, knockback_decay * delta)
@@ -1158,7 +1161,10 @@ func _update_noclip_exit_pulse() -> void:
 func apply_knockback(force: Vector3) -> void:
 	if force.length() < 0.01:
 		return
-	var mult: float = _character.knockback_multiplier if _character else 2.0
+	# The only impulse write to knockback_velocity — every other reference is a
+	# reset.  No tick-domain conversion happens here: the impulse is converted
+	# where it is integrated, so this is a pure per-character feel multiplier.
+	var mult: float = _character.knockback_multiplier if _character else 1.0
 	knockback_velocity += force * mult
 
 # ── Shoulder charge (server-authoritative carry/stun) ──────────────────
@@ -1753,8 +1759,14 @@ func _apply_movement_from_input(delta):
 		velocity = bashdown_dir * (_bashdown_ability.lunge_speed if _bashdown_ability else 20.0)
 		velocity.y += (_bashdown_ability.launch_up_speed if _bashdown_ability else 6.0)
 
+	# move_and_slide() advances by its own delta (the frame delta when the tick
+	# loop runs from _process), so everything it integrates has to be scaled the
+	# same way — knockback included.  Adding knockback *outside* the sandwich made
+	# it frame-delta scaled, roughly 1.5x too strong at 60 fps and 3.6x at 25 fps;
+	# Character.knockback_multiplier's old 0.667 hid half of that at a nominal
+	# 60 fps.  Both terms now scale identically and cancel exactly.
 	velocity *= NetworkTime.physics_factor
-	velocity += knockback_velocity
+	velocity += knockback_velocity * NetworkTime.physics_factor
 	move_and_slide()
 	velocity /= NetworkTime.physics_factor
 

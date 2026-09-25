@@ -799,8 +799,17 @@ func _update_targeted_previews(delta: float) -> void:
 			continue
 		if ability.cast_type == Ability.CastType.EQUIP and am.equipped_index != i:
 			continue
-		var candidates: Array[Player] = _preview_candidates.get(ability, []) as Array[Player]
-		
+		# The cache above is only rebuilt every PREVIEW_REFRESH_INTERVAL, and
+		# _preview_timer starts at 0.0 -- so on the first frame this runs, nothing
+		# is cached yet.  `_preview_candidates.get(ability, [])` would then hand
+		# back an *untyped* [] literal, which `as Array[Player]` does not convert
+		# and which therefore fails to assign ("Trying to assign an array of type
+		# Array to a variable of type Array[Player]").  Skip uncached abilities:
+		# they would produce no entries anyway.
+		if not _preview_candidates.has(ability):
+			continue
+		var candidates: Array[Player] = _preview_candidates[ability]
+
 
 		var locked: Dictionary = {}
 		var limit := mini(candidates.size(), ability.max_targets)

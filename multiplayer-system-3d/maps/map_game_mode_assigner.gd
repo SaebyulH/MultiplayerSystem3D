@@ -76,14 +76,14 @@ func _process_next() -> void:
 		_process_next.call_deferred()
 		return
 
-	if data.map_scene == null:
-		print("  SKIP %s (no map_scene)" % path)
+	if data.map_scene_path.is_empty():
+		print("  SKIP %s (no map_scene_path)" % path)
 		_process_next.call_deferred()
 		return
 
 	# Instantiate without adding to the tree, so _enter_tree/_ready never run —
 	# the exported game_mode is available right after instantiate().
-	var map := data.map_scene.instantiate()
+	var map := (load(data.map_scene_path) as PackedScene).instantiate()
 	var gmc := map.get_node_or_null("GameModeComponent") as GameModeComponent
 	var mode := int(gmc.game_mode) if gmc else -1
 	map.free()

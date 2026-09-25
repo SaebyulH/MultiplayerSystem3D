@@ -6,7 +6,7 @@ The project deliberately splits simulation responsibility. Getting this wrong (e
 
 - Peer 1 is always the server (and the host player). Humans connect with ENet ids > 1. `network/network_manager.gd:27-55`.
 - Autoloads: `NetworkManager`, `Leaderboard`, `NetworkTime`, `NetworkTimeSynchronizer`, `NetworkRollback`, `NetworkEvents`, `NetworkPerformance`, `GameManager` (`project.godot:22-32`).
-- `[netfox] time/tickrate = 90`, `time/sync_to_physics = false` (`project.godot:217-220`); Jolt physics; collision layers WORLD=1, PLAYER_COLLISION=2, HURTBOX=3, HITBOX=4, RAGDOLLS=8 (`project.godot:208-214`). The rollback tick runs at **90 Hz** (the addon default was 30); `knockback_multiplier` is scaled for it (see `player/character.gd:59-62`).
+- `[netfox] time/tickrate = 90`, `time/sync_to_physics = false` (`project.godot:217-220`); Jolt physics; collision layers WORLD=1, PLAYER_COLLISION=2, HURTBOX=3, HITBOX=4, RAGDOLLS=8 (`project.godot:208-214`). `time/tickrate` is only the **default**: the live rate is a per-session, server-chosen value applied by `NetworkManager.apply_tick_rate()`. See §8.
 
 ---
 
@@ -57,10 +57,11 @@ Also excluded: the local ability-staging vars `queued_charge_trigger_dir` / `que
 4. `RollbackSynchronizer` records input after each tick and restores recorded state before each `_rollback_tick`. `enable_input_broadcast = true` (default).
 5. `Player._rollback_tick(delta, tick, is_fresh)` (`player/player.gd:968-1052`) re-simulates movement, consuming the rollback input properties. Netfox calls `_rollback_tick` on every rollback-aware node under `root`.
 
-> **Tick desync** (`05-known-issues.md` #18): when a peer's render FPS drops below the
-> tickrate, its `NetworkTime.tick` falls behind the other peer's (the tick loop is capped
-> by `max_ticks_per_frame`), so rollback inputs are stamped too old and rejected, and
-> movement renders seconds late. Fixed by raising `max_ticks_per_frame` (8 → 60).
+> **Tick desync** (`05-known-issues.md` #18): the two peers' `NetworkTime.tick` counters
+> drift apart and nothing re-converges them, so one peer's inputs are stamped outside the
+> other's 64-tick history window, get rejected, and movement renders seconds late. The
+> cause is *when the joiner starts its clock sync*, not the tick loop's catch-up rate —
+> the 2026-09-21 `max_ticks_per_frame` bump was aimed at the wrong thing. See §8.
 
 ### Determinism requirements (explicit in code)
 
@@ -68,6 +69,7 @@ Also excluded: the local ability-staging vars `queued_charge_trigger_dir` / `que
 - **State that persists across re-simulation**: `_spawn_pending_position` is consumed only in `_physics_process`, never inside `_rollback_tick`, so re-simulated ticks see the same flag (`player.gd:317-322, 975-982`). Same pattern for `pinned_charger_name` (`328-332, 1004-1016`) and `_enlarge_scale` (`334-339`).
 - **`scale` re-derived every tick**: because netfox re-applies `global_transform` from rollback history each tick, `_rollback_tick` sets `scale = Vector3.ONE * _enlarge_scale` at the top (`player.gd:969-972`).
 - **Real-frame-only work** (sound, footsteps, fall damage) is kept **out** of `_rollback_tick` and placed in `_physics_process` (`player.gd:896-898, 901-905`).
+- **`NetworkTime.physics_factor` must wrap everything `move_and_slide()` integrates — and nothing else.** `move_and_slide()` advances by whatever delta is current when it is called, and the rollback tick runs from `_process`, so it integrates with the *frame* delta (`network-time.gd:248-253` returns `ticktime / _process_delta` outside a physics frame; `move_and_slide()` reads the same delta). Every velocity term fed into it must therefore be multiplied by the factor, and the persistent `velocity` divided back out — otherwise that term is silently scaled by the client's frame rate. Knockback is the term that got this wrong historically; see §8.
 
 ### Determinism hazard (the single most fragile assumption)
 
@@ -176,6 +178,47 @@ Other modes follow the same shape: `koth_mode.gd:23-39` and `domination_mode.gd:
 
 ---
 
+## 8. The tick domain and the session tick rate
+
+`NetworkTime.tick` is the shared clock every rollback stamp is written against, but it is **not** synchronised between peers — it is a local counter, and netfox only ever sets it absolutely in three places (`network-time.gd:427`, `:440`, `:552`). Everything else is `_tick += 1`.
+
+- **The host** starts at `_tick = 0` when `NetworkTime.start()` runs, at the same instant `NetworkTimeSynchronizer.start()` zeroes the reference clock (`network-time-synchronizer.gd:141`). So the host's tick is always `seconds_to_ticks(its reference clock)`.
+- **A client** seeds itself once, at `network-time.gd:440`, from that same reference clock — and the sample it uses carries **no RTT or elapsed-time compensation** (`network-time-synchronizer.gd:267-276`). The periodic NTP-style ping/pong that *is* properly compensated only begins afterwards.
+- **Nothing re-converges the two.** The only coupling is the clock-stretch servo (`network-time.gd:523-537`), which pulls at most ±25 %, so a 10 s offset needs ~40 s to heal. `NetworkTime.tick` is monotonic; the only way to move it is `NetworkTime.stop()` + `NetworkTime.start()`.
+
+### The host↔client tick bias (measured)
+
+Worth knowing when reasoning about the rollback window: **the host's tick does not track its own reference clock.** Measured on a solo host at 90 Hz, `[NTSYNC]` settles at a steady `offset ≈ +23` — i.e. `NetworkTime.tick` sits ~23 ticks (0.26 s) *below* `seconds_to_ticks(reference clock)` — and stays there. The clock-stretch servo ran at `0.800` through boot, the tick accumulator followed it down, and nothing repays the deficit (netfox's `_was_paused` re-anchor only fires on a frame longer than `stall_threshold`, 1 s).
+
+Since a client is seeded to `seconds_to_ticks(reference clock)`, a **correctly-seeded client therefore runs ~23 ticks ahead of the host's actual tick** — a third of the 63-tick window at 90 Hz, before any real divergence. Rollback still works (the client's stamps are inside the host's window and vice versa), but this is netfox's inherent bias, not something the project can fix from outside the addon.
+
+It is also why **the watchdog measures drift against the reference clock, not against the host's tick**: comparing against the host's reported tick would read a constant `+23` in a perfectly healthy session. See `NetworkManager.get_tick_offset_ticks()`.
+
+**Consequence: the client's seed is only as good as the moment it is measured.** If the clock-sync round trip spans a stall, the client's whole tick origin is short by the stall — and until it heals, `history_start = tick - history_limit` has moved past the host's live inputs, so they are discarded as too old, the host sees no input for those ticks, stops sending state for that player, and `RollbackSynchronizer._notify_resim()` pins `_resim_from` to a frozen cursor — the `Trying to run rollback for ticks X to Y, past the history limit` warning, thousands of frames of it. This is why `NetworkManager` now owns the client's start (see `03-event-flow.md`), and why it waits for the join to settle first.
+
+### Session tick rate
+
+The rate is a property of the session, chosen by the host and adopted by clients:
+
+- `NetworkManager.server_tick_rate`, applied by `apply_tick_rate(rate)`.
+- netfox **latches** its rate from `ProjectSettings` when the autoload is constructed (`network-time.gd:368`) and its `tickrate` setter is a `push_error` no-op (`:17-18`), so `apply_tick_rate()` writes `NetworkTime._tickrate` directly. Nothing caches a rate at `_ready` — `ticktime`, `tick_factor` and `physics_factor` are all derived per use — so the write is complete.
+- **It must happen before `NetworkTime.start()`.** The client's seed is `seconds_to_ticks(...)` evaluated with the live rate, and the tick is monotonic, so a wrong multiplier at seed time can only be undone by a full re-seed. That is why `_rpc_set_tick_rate(rate, restart = false)` is only allowed to apply while the client's loop is still down, and does a real restart otherwise.
+- netfox's own `NetworkTickrateHandshake` cannot do this job: its `ADJUST` branch calls `ProjectSettings.set_setting` long after the latch, which is inert (`network-tickrate-handshake.gd:87-88`), and it only raises the mismatch signal when the rates *differ* — so a peer whose default happens to match would never be told the value.
+- Changing the rate mid-session stops the loop on every peer, applies, and restarts (`NetworkManager._reinit_time`). Clients restart after the host, so they seed from the host's already-running clock. Expect a brief movement freeze.
+- **Tick-count limits are derived from seconds.** `history_limit` and `max_ticks_per_frame` are counts of ticks, so their wall-clock meaning scales with the rate (netfox's default 64 is 2.13 s at 30 Hz but 0.71 s at 90 Hz). `NetworkManager.HISTORY_SECONDS` / `CATCHUP_SECONDS` are the single source of truth and `apply_tick_rate()` computes the counts — do not also set them in `project.godot`.
+
+### Knockback is tick-rate independent by construction
+
+`knockback_multiplier` (`player/character.gd:65`) is a pure per-character feel knob, default `1.0`. It carries **no** tick-rate compensation. The impulse is converted where it is integrated:
+
+- `_apply_movement_from_input` (`player.gd:1764-1772`) adds `knockback_velocity * NetworkTime.physics_factor` **inside** the `physics_factor` sandwich, alongside `velocity`, so `move_and_slide()` integrates it with the same delta as everything else and the factor cancels exactly.
+- `_noclip_move` (`player.gd:1107-1113`) integrates manually with the tick delta, so it applies **no** `physics_factor` at all.
+- `knockback_decay = velocity.length() ** 2 * 10` is applied as `decay * delta` with `delta == ticktime`, so `tickrate × ticktime == 1` — it is already tick-rate independent. Do not "fix" it.
+
+History: the old `0.667` default was not really `60 / tickrate`. Adding knockback *outside* the sandwich made `move_and_slide()` scale it by the frame delta, and `0.667` happened to cancel that at a nominal 60 fps — which is why the constant looked like a tick-rate compensation and why it survived. It was 1.5× too strong at 60 fps and 3.6× at 25 fps before the fix.
+
+---
+
 ## Consolidated fragility list (cross-referenced to `05-known-issues.md`)
 
 1. **Camera-relative movement with unsynced camera** (`player.gd:1493, 1864`; `body.gd:26-57` + commented `sync_rotation`).
@@ -185,4 +228,6 @@ Other modes follow the same shape: `koth_mode.gd:23-39` and `domination_mode.gd:
 5. **Two overlapping 10 Hz control-point syncs** — `ControlPoint._rpc_sync_state` unreliable (`control_point.gd:242`) vs `GameModeComponent._rpc_sync_state` reliable (`game_mode_component.gd:128`). Intentional redundancy, easy to mistake for a duplicate.
 6. **Manual state kept in sync against netfox rollback** — `scale` re-derived each tick (`player.gd:969-972`); `_spawn_pending_position`/`pinned_charger_name` persist across re-sim.
 7. **Server-side randomness is fine, rollback randomness is not** — `_get_spawn_position` uses `randi()` but runs server-side via RPC; fire spread `randf()` runs only in server-side `_fire_single_shot`. Neither is inside `_rollback_tick`.
-8. **Map swap ordering** — `remove_child` + `queue_free` (not `free`) so the spawner emits the removal event; teardown+rehost deferred a frame (`network_manager.gd:104-114`).
+8. **Map swap ordering** — `remove_child` + `queue_free` (not `free`) so the spawner emits the removal event; teardown+rehost deferred a frame (`network_manager.gd:return_to_lobby`).
+9. **The client's `NetworkTime` start is project-owned, not netfox-owned** — `NetworkManager._take_over_client_time()` disconnects netfox's `on_client_start` listener, so anything else relying on that signal (including a future listener) is on its own. `03-event-flow.md`.
+10. **The tick domain is monotonic and only repairable by a full re-seed** — never apply a tick rate after `NetworkTime.start()`, and never let the watchdog resync the host. §8, `05-known-issues.md` #18.

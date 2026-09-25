@@ -41,10 +41,10 @@ Bots can be added at runtime via the `add_bot_spi` / `add_bot_sci` / `add_bot_ff
 
 Defined in `project.godot` under `[autoload]`:
 
-- **NetworkManager** (`network/network_manager.gd`) — owns the whole connection lifecycle and scene transitions. Now exposes `boot_to_lobby()`, `join_party(ip)`, `return_to_lobby()`, and `load_match_map(path)` in addition to the peer primitives `create_server()` / `create_client()`. It connects the session-lifetime `multiplayer` signals once in `_ready()`.
+- **NetworkManager** (`network/network_manager.gd`) — owns the whole connection lifecycle, scene transitions, **the session's tick rate**, and the health of the netfox tick domain. Exposes `boot_to_lobby()`, `join_party(ip)`, `return_to_lobby()`, `load_match_map(path)`, `apply_tick_rate(rate)` / `set_tick_rate(rate)`, and the peer primitives `create_server()` / `create_client()`. It connects the session-lifetime `multiplayer` signals once in `_ready()`, and **starts the client's `NetworkTime` itself** (see below).
 - **Leaderboard** (`ui/leaderboard_singleton.gd`) — server-authoritative score tracking (kills/deaths/damage/heals/killstreaks). Clients never write directly; they call `request_*()` which sends an RPC to peer 1.
 - **GameManager** (`singletons/game_manager.gd`) — a tiny global holder: `spawn_parent` (node all Players live under) and `game_mode_component`. `Map` populates these on `_enter_tree`.
-- **NetworkTime, NetworkTimeSynchronizer, NetworkRollback, NetworkEvents, NetworkPerformance** — provided by netfox (see `addons/netfox/`). Do not edit. **NetworkEvents is what auto-starts/stops `NetworkTime`** on server/client start/stop (see the event-flow section below).
+- **NetworkTime, NetworkTimeSynchronizer, NetworkRollback, NetworkEvents, NetworkPerformance** — provided by netfox (see `addons/netfox/`). Do not edit. **`NetworkEvents` auto-starts/stops `NetworkTime` on server start/stop** — but the *client* start has been taken over by `NetworkManager` (see the event-flow section below).
 - **Console** — in-game console addon (`addons/console/`).
 
 Note: **`ConnectionUtils`** (`network/connection_utils.gd`, `class_name ConnectionUtils`) is **not** an autoload — it is a stateless `static` class shared by the interaction popups (and, conceptually, the bypassed 2D menu).
@@ -58,7 +58,7 @@ The project deliberately splits simulation responsibility:
 
 Consequence: fire-held flags must **never** be added to the `RollbackSynchronizer` input properties — netfox stomps them on re-simulation ticks. See the header comments in `player/player_input.gd` and `player/weapon_controller.gd`.
 
-**Movement only works while the netfox rollback tick loop is running.** That loop is driven by `NetworkTime` (started by `NetworkEvents`). If you see "can look + shoot but not move", the rollback tick loop is dead — usually a `NetworkTime` start/stop bug (see "Connection lifecycle & event flow" below).
+**Movement only works while the netfox rollback tick loop is running.** That loop is driven by `NetworkTime` (started by `NetworkEvents` on the server, and by `NetworkManager` on the client). If you see "can look + shoot but not move", the rollback tick loop is dead — usually a `NetworkTime` start/stop bug (see "Connection lifecycle & event flow" below).
 
 Other conventions:
 
@@ -105,18 +105,20 @@ This is the subtle part — read carefully before touching `network_manager.gd`.
 
 ### netfox time management (why movement can break)
 
-`NetworkTime` (which drives the rollback tick loop) is **not** started/stopped by `NetworkManager` directly. It is managed by netfox's **`NetworkEvents`** autoload (`addons/netfox/network-events.gd`):
+`NetworkTime` (which drives the rollback tick loop) is managed by netfox's **`NetworkEvents`** autoload (`addons/netfox/network-events.gd`):
 
 - `on_server_start`  → `NetworkTime.start()`  (emitted when `is_server()` becomes true)
-- `on_client_start`  → `NetworkTime.start()`  (emitted directly on `connected_to_server`)
+- `on_client_start`  → ~~`NetworkTime.start()`~~ — **taken over by `NetworkManager`**, see below
 - `on_server_stop` / `on_client_stop` → `NetworkTime.stop()`
+
+**The client start is the exception.** netfox fires it the instant `connected_to_server` arrives, which is *across* this project's join stall (the synchronous `preload(world1.tscn)` plus two frames of D3D12 shader compilation). The clock-sync request goes out before the stall and its reply lands after it, and since that initial timestamp carries no RTT compensation while `NetworkTime.tick` is monotonic, the joiner seeds its **entire tick origin** from a reading seconds out of date — then heals at only 25 %/s, which is `05-known-issues.md` #18 (thousands of frames of `past the history limit`). So `NetworkManager._take_over_client_time()` (called from `join_party()`) disconnects that one listener, and `_on_connected_to_server()` starts the loop itself after the join settles. **Do not add another listener to `NetworkEvents.on_client_start`** — it removes every listener on that signal.
 
 `NetworkEvents` detects server start/stop by **polling `is_server()` once per frame in `_process`**. It also explicitly treats `OfflineMultiplayerPeer` as "not a server" (its `is_server()` returns false for it). Two consequences for our code:
 
 1. **A synchronous teardown + re-host is invisible to `NetworkEvents`.** If you close the peer and immediately `create_server()` again *in the same frame*, `NetworkEvents` never sees the intermediate "stopped" state, so `on_server_start` never re-fires and `NetworkTime.start()` never runs — the rollback tick loop dies and movement stops (while look/shoot, which don't use rollback, keep working). **This is why `return_to_lobby()` defers the re-host with `call_deferred("boot_to_lobby")`** — giving `NetworkEvents` one frame to observe the stop transition before the re-host re-triggers `on_server_start`.
 2. **The offline fallback won't auto-start `NetworkTime`.** Because `NetworkEvents` ignores `OfflineMultiplayerPeer`, `create_server()` must call `NetworkTime.start()` **manually** when it falls back to an offline peer (otherwise the second local instance's lobby can't move).
 
-`NetworkManager._terminate_connection()` calls the **full `NetworkTime.stop()`** (not the low-level `NetworkTimeSynchronizer.stop()`) before nulling the peer — this resets `NetworkTime`'s internal `_state` to INACTIVE so a subsequent `NetworkTime.start()` (via `NetworkEvents`) succeeds cleanly on re-host/re-join.
+`NetworkManager._terminate_connection()` calls the **full `NetworkTime.stop()`** (not the low-level `NetworkTimeSynchronizer.stop()`) before nulling the peer — this resets `NetworkTime`'s internal `_state` to INACTIVE so a subsequent `NetworkTime.start()` succeeds cleanly on re-host/re-join. Note it does **not** clear `_tick`, `_initial_sync_done` or the reference clock, which is why the tick-domain watchdog gates itself on `NetworkManager._client_time_ready` rather than on netfox's state (between sessions `_tick` still holds the previous session's value).
 
 ### Boot (become host)
 
@@ -131,8 +133,8 @@ This is the subtle part — read carefully before touching `network_manager.gd`.
 1. The joiner is already their own host (offline or real server). They walk into `JoinParty` and press `E`.
 2. `join_party(ip)` → `_remove_game_scene()` (free the solo world) → `create_client(ip)`.
 3. `create_client()` → `_terminate_connection()` (stop `NetworkTime`, close + null the old peer) → create an ENet client → set `multiplayer_peer`.
-4. On connect, `NetworkManager._on_connected_to_server()` → `enter_existing_game_scene()` (a fresh client `world1.tscn` with **no** map; the map replicates from the host).
-5. In parallel, `NetworkEvents._handle_connected_to_server()` → `on_client_start` → `NetworkTime.start()` (the client awaits `on_initial_sync`, then ticks).
+4. On connect, `NetworkManager._on_connected_to_server()` → `await enter_existing_game_scene()` (a fresh client `world1.tscn` with **no** map; the map replicates from the host).
+5. Then, still inside that coroutine: `await _await_settled()` → `await _adopt_server_tick_rate()` → `NetworkTime.start()`. netfox's own client-start listener has been disconnected (see above), so this is the **only** thing that starts the client's tick loop — the ordering is load-bearing, not incidental.
 6. The host's `SpawnManager._peer_connected()` → `_add_player_to_game(client_id)` adds the joiner's `Player` node; the `MultiplayerSpawner` replicates the map + existing players to the joiner.
 
 ### Leave / disconnect
@@ -198,7 +200,8 @@ This is the subtle part — read carefully before touching `network_manager.gd`.
 
 - **Base-62 join code**: `ip_to_code(ip)`, `code_to_ip(code)`, `looks_like_code(text)` (6 chars, `0-9A-Za-z`, encodes an IPv4 quad; port is always `8080`). Originally in `ui/main_menu.gd`.
 - **`detect_ips()`**: returns local IPv4 addresses ordered best-first (scores LAN ranges up, virtual/VPN adapters down), with `127.0.0.1` appended last.
-- **`scan_maps()`**: returns `[{ "display_name": ..., "path": ... }]` for every `*.tscn` under `res://maps` **excluding `main_menu_world.tscn`**, sorted by display name. This is the HostServer map list source (replaces the old hardcoded `OptionButton` list).
+- **`scan_maps()`**: legacy — returns `[{ "display_name": ..., "path": ... }]` for every `*.tscn` under `res://maps` **excluding `main_menu_world.tscn`**, sorted by display name. Nothing calls it; the host menu uses `scan_map_data()`.
+- **`scan_map_data()`**: loads every `MapData` `.tres` under `res://maps/map_data` and returns them sorted by display name. **This is the live HostServer map list source** (`world/host_menu.gd:_load_maps`). It loads the resources eagerly, so anything they reference inherits that cost — see the `MapData` gotcha above.
 
 ## Key conventions & gotchas
 
@@ -208,6 +211,10 @@ This is the subtle part — read carefully before touching `network_manager.gd`.
 - **Never use `:=` on a value with an untyped `Variant` source.** `%UniqueName` node references (e.g. `@onready var camera := %Camera3D`) are typed `Node`, so any property access off them (`camera.global_position`, `camera.fov`) yields `Variant` and `var x := camera.global_position` fails with "Cannot infer the type". Cast first (`var cam := camera as Camera3D`) or use an explicit type (`var pos: Vector3 = camera.global_position`).
 - **Defer re-hosts across a frame.** Any teardown + re-`create_server()` must not happen synchronously in one frame, or `NetworkEvents` misses the transition and movement (rollback) dies. `return_to_lobby()` uses `call_deferred("boot_to_lobby")`.
 - **The offline fallback needs a manual `NetworkTime.start()`.** `NetworkEvents` ignores `OfflineMultiplayerPeer`, so `create_server()` starts `NetworkTime` itself when it falls back.
+- **`NetworkManager` owns the client's `NetworkTime.start()`.** netfox's `on_client_start` listener is disconnected in `join_party()`; if you add one back — or start the loop before `_adopt_server_tick_rate()` — a joiner seeds its whole tick origin from a clock reading taken across the join stall, which is a 40-second desync. `03-event-flow.md`, `05-known-issues.md` #18.
+- **`NetworkTime.tick` is monotonic; only a full stop/start moves it.** Never apply a tick rate after `start()` — the client's seed is `seconds_to_ticks(...)` evaluated with the live rate, so a wrong multiplier there is unrecoverable. The session tick rate lives in `NetworkManager.apply_tick_rate()`, and it also derives netfox's *tick-count* limits from seconds (`HISTORY_SECONDS` / `CATCHUP_SECONDS`), so do not also set `history_limit` / `max_ticks_per_frame` in `project.godot`.
+- **`physics_factor` must wrap everything `move_and_slide()` integrates, and nothing else.** The rollback tick runs from `_process`, so `move_and_slide()` advances by the frame delta; any velocity term added outside the `*= physics_factor` / `/=` sandwich is silently scaled by the client's frame rate. `_noclip_move` is the opposite case — it integrates by the tick delta itself and must apply no factor. `02-netcode.md` §8.
+- **Never reference a map scene from a resource the lobby loads eagerly.** `MapData` stores `map_scene_path: String`, not a `PackedScene`. It used to hold a `PackedScene`, and because `ConnectionUtils.scan_map_data()` loads every `MapData` (from the host menu, which `HostServer` builds on every peer), each one parsed its whole map — ~50 MB, `maps/bind.tscn` alone at 47.7 MB, on every lobby instantiation including a joining client's. That was an 8–9.5 s main-thread stall and it also desynced netfox (it re-anchors the tick on any frame past `stall_threshold`). `05-known-issues.md` #25.
 - **Use `queue_free`, not `free()`, when swapping maps** — the `MultiplayerSpawner` must receive the node-removal event to despawn it on peers.
 - **HUD must tolerate `MAIN_MENU` and map swaps.** `hud_controller.gd` has a `_menu_mode` flag (hides the whole HUD in the lobby), an idempotent `_create_panel_registry()` (it re-runs when the match map replaces the lobby), and an `is_instance_valid(gmc)` guard in `_on_hud_tick` (the `GameModeComponent` is freed during a map swap).
 - `.claude/Strafing.txt` contains the original design note for the Quake/Source air-strafe movement math.

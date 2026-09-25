@@ -46,8 +46,9 @@ The engine then loads the main scene `res://world/main.tscn` (a `Control` root `
 - `await get_tree().process_frame` (line 99) — **this frame lets `NetworkEvents._process` observe the server** (see Stage 2b).
 - `await load_game_scene(LOBBY_MAP_PATH)`.
 
-`network/network_manager.gd:27-43` — `create_server()`:
+`network/network_manager.gd:create_server()`:
 - `is_hosting_game = true`.
+- `apply_tick_rate(...)` — **always**, before the peer is assigned, because this is also what derives the tick-count limits (`NetworkRollback._history_limit`, `NetworkTime._max_ticks_per_frame`) from `HISTORY_SECONDS`/`CATCHUP_SECONDS`. The offline fallback below needs those as much as a real server does. See `02-netcode.md` §8.
 - `ENetMultiplayerPeer.create_server(8080)`; on success set `multiplayer_peer`.
 - On failure (port 8080 already taken by another local instance) it sets an **`OfflineMultiplayerPeer`** and **manually calls `NetworkTime.start()`** (line 39). This is required because `NetworkEvents.is_server()` returns `false` for `OfflineMultiplayerPeer` (`network-events.gd:64-65`), so `on_server_start` never fires and the rollback loop would never run — the second local instance's lobby would be unable to move without this manual start.
 
@@ -153,9 +154,20 @@ The client's own `MultiplayerSpawner` (`world1.tscn:95-97`) then receives the ho
 
 `world/hud/hud_controller.gd:127-139` — `setup_gmc()`: awaits a frame, grabs `game_mode_component`, wires signals, builds the panel registry, `_switch_to_mode`. In the lobby `game_mode == MAIN_MENU` (enum 6) → `_menu_mode = true` (210-222) so no mode HUD shows.
 
-### Client `NetworkTime.start()` ordering (implicit, fragile)
+### Client `NetworkTime.start()` — now `NetworkManager`-owned
 
-`NetworkManager._on_connected_to_server` (connected in autoload 1's `_ready`) fires **before** `NetworkEvents._handle_connected_to_server` (connected in autoload 7's `_ready`) — Godot emits in connection order. So `enter_existing_game_scene()` builds the client world1 *before* `on_client_start → NetworkTime.start()` (`network-events.gd:127-128`). The client's `NetworkTime.start()` then awaits `NetworkTimeSynchronizer.on_initial_sync` before emitting ticks — replicated players arrive but don't tick until the clock syncs.
+`NetworkManager._on_connected_to_server` (connected in autoload 1's `_ready`) runs **before** `NetworkEvents._handle_connected_to_server` (connected in autoload 7's `_ready`) — Godot emits in connection order. netfox used to start `NetworkTime` from its own `on_client_start` listener, which fired *inside* the join stall; `join_party()` disconnects that listener and `_on_connected_to_server()` starts the loop itself once the join has settled:
+
+```
+_on_connected_to_server()
+  await enter_existing_game_scene()   # world1 built; the big stall is behind us
+  await _await_settled()              # 2 consecutive frames under SETTLE_FRAME_SECONDS
+  await _adopt_server_tick_rate()     # reliable RPC; falls back to the local default
+  NetworkTime.start()                 # short round trip -> a correct tick origin
+  LoadingScreen.hide_screen()         # moved here from enter_existing_game_scene()
+```
+
+The client's `NetworkTime.start()` then awaits `NetworkTimeSynchronizer.on_initial_sync` before emitting ticks — replicated players arrive but don't tick until the clock syncs. Starting the clock sync *after* the stall is what keeps the seeded tick origin correct; see `03-event-flow.md` and `05-known-issues.md` #18.
 
 ---
 
@@ -222,7 +234,7 @@ Entry points: `world/world_1.gd:47-48` (Main Menu button), `world/loadout_menu.g
 2. **Offline fallback needs the manual `NetworkTime.start()`** (`network_manager.gd:39`).
 3. **`CLAUDE.md` was stale** — boot is now `await NetworkManager.boot_to_lobby()` (direct, `world/main.gd:33`), and `class_select.gd` no longer exists outside `backup/`.
 4. **Peer-1 hardcoding everywhere** — `spawn_manager.gd:15`, `131`; `leaderboard_singleton.gd:236-258`; `loadout_menu.gd:869`; `host_server_area.gd:53-54`. Collapses if the server is ever not peer 1.
-5. **`_on_connected_to_server` ordering vs `NetworkTime.start()`** — autoload order 1 vs 7.
+5. **`NetworkManager` owns the client's `NetworkTime.start()`** — netfox's `on_client_start` listener is disconnected in `join_party()`, and the start lives at the end of the `_on_connected_to_server()` coroutine, after the settle wait and the tick-rate adoption.
 6. **`_sync_existing_players_to_peer` one-frame defer** (`spawn_manager.gd:37`).
 7. **`map_path` only set on the host path** (`network_manager.gd:74`).
 8. **`_request_loadout` sender validation** (`loadout_menu.gd:879-881`) depends on human ids always being `str(network_id)`.

@@ -17,8 +17,25 @@ func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 	body_exited.connect(_on_body_exited)
 	prompt_label.visible = false
+	# The menu is deliberately NOT built here.  host_menu._ready() scans every
+	# MapData, and each of those used to force Godot to parse its whole referenced
+	# map scene as an ext_resource -- ~50 MB of synchronous work, 47.7 MB of it
+	# maps/bind.tscn, on every lobby instantiation, on every peer, joining clients
+	# included.  Only the party leader can ever open this, so it is built on
+	# demand.  See docs/05-known-issues.md.
+
+
+## Build the host menu on first use.  Returns true when the menu exists.
+func _ensure_menu() -> bool:
+	if _menu != null and is_instance_valid(_menu):
+		return true
+	if not _is_leader():
+		return false
 	_menu = HOST_MENU_SCENE.instantiate()
+	if _menu == null:
+		return false
 	get_tree().root.add_child(_menu)
+	return true
 
 
 func _exit_tree() -> void:
@@ -67,11 +84,12 @@ func _refresh_prompt() -> void:
 # ─────────────────────────────────────────────
 
 func _unhandled_input(event: InputEvent) -> void:
-	if _menu and _menu.is_open():
+	if _menu != null and is_instance_valid(_menu) and _menu.is_open():
 		if event.is_action_pressed("ui_cancel") or (event.is_action_pressed("interact") and not event.is_echo()):
 			_menu.close()
 		return
 	if not _local_player_inside():
 		return
 	if event.is_action_pressed("interact") and not event.is_echo() and _is_leader():
-		_menu.open()
+		if _ensure_menu():
+			_menu.open()

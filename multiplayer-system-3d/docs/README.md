@@ -41,10 +41,13 @@ Treat a missing doc update as an incomplete change.
 2. **The offline fallback needs a manual `NetworkTime.start()`.** `NetworkEvents` treats `OfflineMultiplayerPeer` as "not a server", so the second local instance's lobby can't move without it. `network_manager.gd:27-43`.
 3. **`_sync_mag` is unreliable** (`@rpc("any_peer","call_local")`), unlike `_sync_all_mags`/`_confirm_reload_done`. Authoritative ammo can drop and client mag diverges. `weapon_controller.gd:2015`.
 4. **Movement is camera-relative but the camera basis is not synced** — remote simulation of movement/dash/charge uses a stale basis and relies on netfox state correction. `player.gd:1493`, `1864`; `body.gd:26-57`.
-5. **Health regen runs on every peer, un-gated** (`attribute_component.gd:160-180`), sending an RPC + doing linear `find_player` scans every frame per healing player. This is the #1 perf hotspot. `05-known-issues.md`.
+5. **Health regen used to run on every peer, un-gated** — fixed 2026-09-20, `_process` is now behind `multiplayer.is_server()`. See `05-known-issues.md` #16.
 6. **Use `queue_free`, never `free()`, when swapping maps** — the spawner needs the removal event to despawn on peers. `network_manager.gd:133`.
 7. **`spawnable_scenes` requirement:** any map the scanner returns must have its scene uid in `world1.tscn`'s `MultiplayerSpawner._spawnable_scenes`, or it won't replicate.
 8. **Godot shares `Resource`/sub-resource instances across scene instances.** Per-player mutable state must be `duplicate(true)`'d (weapons, `Shape3D`s, `AnimationTree.tree_root`, team-tint materials).
 9. **Never use `:=` on an untyped `Variant` source** (e.g. `%UniqueName` node refs are typed `Node`). Cast first or use an explicit type.
+10. **`NetworkManager` owns the client's `NetworkTime.start()`, not `NetworkEvents`.** netfox's own client-start listener is disconnected in `join_party()`; if you add one back, a joiner seeds its entire tick origin from a clock reading taken across the join stall. `03-event-flow.md`.
+11. **A peer's `NetworkTime.tick` is monotonic and can only be moved by a full stop/start.** netfox's clock-stretch servo closes an offset at 25 %/s, so nothing self-heals quickly. Never let a tick rate be applied after `start()`. `02-netcode.md`.
+12. **The session tick rate lives in `NetworkManager.apply_tick_rate()`, not `project.godot`.** It is server-chosen and client-adopted; it also derives netfox's tick-count limits (`history_limit`, `max_ticks_per_frame`) from *seconds*, so do not also set those in `project.godot`.
 
 See `03-event-flow.md` for the full ordering invariants and `05-known-issues.md` for the actionable backlog.

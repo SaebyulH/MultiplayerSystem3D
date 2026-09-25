@@ -6,7 +6,7 @@ This explains *why* the game can drop frames and where the pressure is, so you c
 
 There is no profiler-friendly budget configured; the game runs `_process` (render frame), `_physics_process` (fixed Jolt physics step), **and** netfox's rollback re-simulation (multiple `_rollback_tick` calls per frame) on the **same single core**. Three pressures stack:
 
-> **Tickrate 90 Hz (2026-09-24):** the rollback tick loop now runs at 90 Hz (`netfox/time/tickrate=90`, up from the addon default 30), so `_rollback_tick` fires **3×** as often per player. Movement-sim cost is tripled relative to 30 Hz; the rollback hot paths below (`player/player.gd:968`, `_apply_movement_from_input` at `1503`) are the ones most sensitive to this.
+> **Tickrate is per-session and scales rollback cost linearly (2026-09-24):** the rollback tick loop runs at `NetworkManager.server_tick_rate` (default 90 Hz, `netfox/time/tickrate=90`, up from the addon default 30), so `_rollback_tick` fires **3×** as often per player at 90 than at 30. Movement-sim cost is proportional to the rate; the rollback hot paths below (`player/player.gd:968`, `_apply_movement_from_input` at `1503`) are the ones most sensitive. A server that picks a high rate pays for it on every peer, and `NetworkManager.MAX_TICK_RATE` is the cap for that reason.
 
 1. **Rollback re-simulation** — netfox re-runs `_rollback_tick` for several past ticks each frame to reconcile state. Anything expensive inside `_rollback_tick` is multiplied by the number of re-simulated ticks, **and** must be deterministic (no physics queries, no RNG, no `get_nodes_in_group`, no raycasts — all of these break determinism *and* cost CPU).
 2. **Per-frame work** — every `_process`/`_physics_process` runs 60+ times/second *per node*. A node that exists once per player multiplies by player count; a node that exists once per projectile multiplies by projectile count.
@@ -105,4 +105,12 @@ The automatic-weapon fire path no longer allocates per shot:
 
 ## Frame rate & vsync
 
-The rendered FPS is capped only by **VSync** — there is no `max_fps`/`Engine.max_fps` anywhere in the project. Godot 4 enables vsync by default (`display/window/vsync/vsync_mode = 1`), which locks FPS to the display refresh rate. The project now sets `window/vsync/vsync_mode=0` in `project.godot` (vsync disabled) so there is no artificial cap; `Engine.max_fps` stays at its default `0` (uncapped). To re-cap later, re-enable vsync or set `Engine.max_fps`.
+The rendered FPS is capped only by **VSync**, and that is Godot's *default* — this project sets no vsync key at all. `project.godot`'s `[display]` section contains only `window/size/viewport_width`, `window/size/viewport_height` and `window/stretch/mode`; there is no `display/window/vsync/vsync_mode` anywhere in the repo, so the effective value is Godot's default `1` (vsync **on**, locking FPS to the display refresh rate). `application/run/max_fps` and `Engine.max_fps` are likewise unset (default `0`, uncapped).
+
+So there is already a refresh-rate cap in place. Setting `window/vsync/vsync_mode=1` explicitly would be a no-op; setting it to `0` would *remove* the cap and let the two local test instances contend for the GPU harder. If you want a tighter cap for local two-instance testing, set `Engine.max_fps` — it is independent of vsync.
+
+*(Two earlier revisions of this doc claimed the project set the key, once as `0` and once as `1`. Neither was ever true.)*
+
+## Cost of the tick-domain watchdog
+
+`NetworkManager._process` runs every frame on every peer. In release it does one float add plus a 4 Hz integer comparison on clients (and a 1 Hz RPC on the host, ~4 bytes/s/peer); its debug logging is behind `OS.is_debug_build()`. The expensive part — `_reset_rollback_history()` — only runs on a re-seed, which is cooldown-limited to one per 5 s and should be rare now that the root cause is fixed.

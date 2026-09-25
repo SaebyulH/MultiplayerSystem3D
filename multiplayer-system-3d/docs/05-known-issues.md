@@ -25,7 +25,15 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 | 15 | 🟡 Medium | Crash | Damage-number popup derefs player on disconnect (existing `FIX TODO`) |
 | 16 | 🟡 Medium | Correctness | ✅ FIXED — Health regen runs on every peer (no `is_server()` gate) |
 | 17 | 🟡 Medium | UI | ✅ FIXED — FPS counter `CanvasLayer` leaked on tree root across return-to-lobby |
-| 18 | 🟠 High | Netcode | Client/server tick desync → host movement delayed by seconds (client tick falls behind) |
+| 18 | 🔴 Critical | Netcode | ✅ FIXED — Tick-domain divergence → movement delayed by seconds (joiner's tick origin seeded across the join stall) |
+| 19 | 🟠 High | Perf | Tick rate is per-session and scales rollback CPU linearly |
+| 20 | 🟠 High | Determinism | ✅ FIXED — Knockback was scaled by the render frame rate (not the tick rate) |
+| 21 | 🟡 Medium | Determinism | ✅ FIXED — Noclip integrated with `physics_factor` on a manual tick-delta path |
+| 22 | 🟡 Medium | Netcode | `netfox/rollback/input_redundancy` is dead config in 1.35.3 |
+| 23 | 🟡 Medium | Netcode | `diff_ack_interval = 0` → a full state send every tick |
+| 24 | 🟡 Medium | Netcode | `RollbackSynchronizer.get_last_known_input()` throws (bad call in the addon) |
+| 25 | 🔴 Critical | Perf | ✅ FIXED — Lobby instantiation parsed ~50 MB of map scenes (8–9.5 s main-thread stall) |
+| 26 | 🟠 High | Perf | Residual ~1.6 s lobby-load stall (CSG + VoxelGI + environment) |
 
 ---
 
@@ -125,22 +133,23 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 - **Why:** recursive subtree walk + material allocation every frame during an active state.
 - **Suggested fix:** cache the mesh/material list once, update material params in place instead of rebuilding.
 
-### 18. Client/server tick desync → host movement delayed by seconds
-- **Files:** `addons/netfox/network-time.gd:557` (tick catch-up loop), `addons/netfox/encoder/redundant-history-encoder.gd:90-96` (rejects old input), `addons/netfox/rollback/network-rollback.gd:327-332` (clamp + warning), `project.godot` `[netfox]` (`time/max_ticks_per_frame`), `network/network_manager.gd:46-55,62-66,96-100` (join path)
-- **Symptom:** the client sees the host player's movement delayed by seconds (look stays smooth). Console shows `RedundantHistoryEncoder: Received data for 1768, rejecting because older than 64 frames` and/or `NetworkRollback: Trying to run rollback for ticks 1680 to 3284, past the history limit of 64`. On a bad connect the client can be kicked back to its own lobby.
-- **Why:** the client's `NetworkTime.tick` drifts **behind** the server's. netfox's tick loop runs in `_process` (render FPS, since `sync_to_physics=false`) and catches up at most `max_ticks_per_frame` ticks per frame (`network-time.gd:557`). The default **8** can only stay in step above ~3.75 fps; the client's FPS dips below that during connect (shader compilation + map/player replication) and in heavy scenes (two instances on one machine), so its tick falls behind. Once behind, its inputs are stamped old and rejected by the server (`redundant-history-encoder.gd:90-96`), and the host player's rollback-synced movement renders late. Look is unaffected because it isn't rollback-synced (local camera; `body.gd:59-68` `sync_rotation` commented out).
-- **Fix applied (2026-09-21):**
-  - `netfox/time/max_ticks_per_frame` 8 → **60** — the tick loop can now catch up to real time after a severe FPS drop (keeps up down to ~0.5 fps; below that the netfox stall detection resets). Applies to both peers.
-  - `application/run/disable_low_processor_usage_mode=true` — keep the host ticking when unfocused (a separate earlier contributor).
-  - `display/window/vsync/vsync_mode=1` — cap both instances to reduce CPU/GPU contention.
-  - Join guarded behind the existing `LoadingScreen`.
-- **Tried & reverted:** raising `netfox/rollback/history_limit` (64 → 256) made the per-frame rollback re-sim worse and caused a connect timeout — do **not** re-raise it.
-- **Follow-up if insufficient:** `netfox/time/sync_to_physics=true` fully decouples the tick from render (fixed 60 Hz). Note: as of 2026-09-24 tickrate is **90** (`time/tickrate=90`), so switching `sync_to_physics=true` would now *lower* the tick to the 60 Hz physics rate — not applicable while 90 Hz is intended.
+### 18. Tick-domain divergence → movement delayed by seconds — `[FIXED 2026-09-24]`
+- **Files:** `addons/netfox/network-time.gd:427,440` (the only absolute tick writes), `addons/netfox/network-time-synchronizer.gd:267-276` (the uncompensated initial timestamp), `addons/netfox/encoder/redundant-history-encoder.gd:90-96` (rejects old input), `addons/netfox/rollback/network-rollback.gd:327-332` (clamp + warning), `network/network_manager.gd` (`_take_over_client_time`, `_on_connected_to_server`)
+- **Symptom:** the host player's movement renders seconds late (look stays smooth). Console logs, for thousands of consecutive frames: `NetworkRollback: Trying to run rollback for ticks 1968 to 2925, past the history limit of 64` and `RedundantHistoryEncoder: Received data for 1999, rejecting because older than 64 frames`. Note `B@2920|2857>2921` on the first line — the *previous* frame's span, which is clamped to exactly 64, i.e. the loop has been re-clamping every frame. On a bad connect the client can be kicked back to its own lobby.
+- **Why (this is a tick *origin* bug, not a tick *rate* bug):** `NetworkTime.tick` is a purely local counter, set absolutely only at `start()` — to `0` on a host, and on a client to `seconds_to_ticks(NetworkTimeSynchronizer.get_time())` exactly once (`network-time.gd:440`). That clock sample carries **no RTT or elapsed-time compensation** (`network-time-synchronizer.gd:267-276`); the properly-compensated NTP ping/pong only starts afterwards. And the sample was taken *across the join stall*: `_on_connected_to_server` calls `enter_existing_game_scene()` without `await`, so it runs the synchronous `preload(world1.tscn)` and then suspends at `await process_frame` — and it was *during that suspension* that netfox's `on_client_start` listener fired the clock-sync request. The reply landed after two frames of D3D12 shader compilation, so the joiner seeded its whole tick origin from a reading seconds out of date. `NetworkTime.tick` is monotonic and netfox's clock-stretch servo closes the gap at only 25 %/s (`network-time.gd:523-537`), so a 10 s stall took ~40 s to heal — the "thousands of frames". Until it healed, `history_start = tick - history_limit` had moved past the host's live inputs, so they were discarded; the host then treated those ticks as predicted, stopped sending state for that player (`rollback-history-transmitter.gd:119-122`), freezing the client's `_latest_state_tick` at its spawn value — that frozen number is the constant `1968` in the log — which pinned `_resim_from` and clamped every rollback to 64. Look was unaffected because it is not rollback-synced (`body.gd:59-68`, `sync_rotation` commented out).
+- **Not the cause** (both were checked and ruled out): `history_limit` — 64 is only where the divergence becomes *visible*; and `max_ticks_per_frame` — the tick loop's accumulator is bounded, and it fully catches up every frame it can, so it does not accrue a permanent deficit.
+- **Fix applied (2026-09-24):**
+  - `NetworkManager._take_over_client_time()` disconnects netfox's `on_client_start → NetworkTime.start()` listener; `_on_connected_to_server()` starts the loop itself, after `enter_existing_game_scene()` and a settle wait, so the clock round trip is short and the seed is correct. See `03-event-flow.md`.
+  - A tick-domain watchdog (`NetworkManager._evaluate_resync` / `request_resync`) detects and repairs divergence as a safety net: the host broadcasts its tick at 1 Hz, the client compares and does a full `NetworkTime.stop()`/`start()` re-seed when the offset exceeds a quarter of the rollback window. It never resyncs the host.
+  - The `max_ticks_per_frame` 8 → 60 bump from 2026-09-21 was aimed at the wrong mechanism and is now derived from `NetworkManager.CATCHUP_SECONDS` instead.
+- **Tried & reverted:** raising `netfox/rollback/history_limit` (64 → 256) made the per-frame rollback re-sim worse and caused a connect timeout. That is explained by the pinning above — while `_resim_from` was pinned, the clamp replayed `history_limit` ticks every frame, so a bigger limit was 4× the work. With the origin fixed, a wider window is only memory; re-evaluate if more latency tolerance is needed.
+- **`display/window/vsync/vsync_mode=1` was listed here as an applied fix. It was never set** — see the note in `04-optimization.md`. The effective value is Godot's default (vsync on).
 
-### 19. Tickrate raised 30→90 — watch rollback CPU
-- **Files:** `project.godot` `[netfox]` (`time/tickrate=90`), `player/character.gd:62` (`knockback_multiplier` 2.0→0.667)
-- **Symptom/risk:** `_rollback_tick` now runs 3× as often (90 vs 30 Hz), tripling movement-sim cost per player on the shared single core. Knockback was re-scaled to keep 60-Hz-equivalent feel, but any future tickrate change must re-visit this multiplier (`60 / tickrate`).
-- **Watch for:** frame-time creep with many players/bots; if it regresses, consider `sync_to_physics=true` (60 Hz) or reverting to 30 Hz.
+### 19. Tickrate is per-session and scales rollback CPU
+- **Files:** `network/network_manager.gd` (`server_tick_rate`, `apply_tick_rate`, `HISTORY_SECONDS`/`CATCHUP_SECONDS`), `project.godot` `[netfox]` (`time/tickrate` — the *default* only)
+- **Symptom/risk:** `_rollback_tick` runs once per tick, so movement-sim cost per player is **proportional to the tick rate** (3× at 90 Hz vs 30 Hz) on the shared single core. A server choosing a high rate pays for it on every peer. `NetworkManager.MAX_TICK_RATE` (240) is the cap.
+- **Watch for:** frame-time creep with many players/bots. If it regresses, lower the session rate (`tickrate <n>` in the console) rather than editing `project.godot`.
+- **Superseded:** the old rule here was "any future tickrate change must re-visit `knockback_multiplier` (`60 / tickrate`)". That is no longer true — the knockback impulse is converted inside the physics-factor sandwich where it is integrated, so it is tick-rate independent and `knockback_multiplier` is a pure feel knob. See `02-netcode.md` §8.
 
 ---
 
@@ -164,6 +173,56 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 - **Symptom:** the FPS `CanvasLayer` ("FPSCanvas") is added to `get_tree().root` and never freed. Each `return_to_lobby()` → `boot_to_lobby()` rebuild frees the `PlayerUI` but not the root-level canvas, so another FPS counter is stacked each time (stale frozen numbers layered over the live one).
 - **Resolution:** `_fps_canvas` is stored as a member and `queue_free()`d in `_exit_tree()`.
 
+### 20. Knockback was scaled by the render frame rate — `[FIXED 2026-09-24]`
+- **Files:** `player/player.gd:1764-1772` (`_apply_movement_from_input`), `player/character.gd:65`
+- **Symptom:** the same explosion or recoil impulse moved a player further the lower their frame rate — ~1.5× too strong at 60 fps, ~3.6× at 25 fps — so two players on one server disagreed.
+- **Why:** `move_and_slide()` advances by whatever delta is current where it is called, and the rollback tick runs from `_process`, so it integrates with the *frame* delta. `velocity` was correctly wrapped in the `NetworkTime.physics_factor` sandwich to convert, but `knockback_velocity` was added *outside* it and so was left frame-delta scaled. `Character.knockback_multiplier`'s `0.667` default happened to cancel that at a nominal 60 fps, which is why it survived — it was never really `60 / tickrate`.
+- **Resolution:** `velocity += knockback_velocity * NetworkTime.physics_factor`, and `knockback_multiplier` is now a pure per-character feel knob with default `1.0`. Knockback is unchanged at 90 Hz / 60 fps and correct at every other rate. `knockback_decay` was checked and left alone: it is applied as `decay * delta` with `delta == ticktime`, so `tickrate × ticktime == 1` already.
+
+### 21. Noclip integrated with the wrong delta — `[FIXED 2026-09-24]`
+- **Files:** `player/player.gd:1107-1113` (`_noclip_move`)
+- **Symptom:** noclip flew at ~2/3 speed at 90 Hz / 60 fps, and its speed varied with both the tick rate and the frame rate.
+- **Why:** the path integrates manually with the tick delta (`global_position += velocity * delta`) yet also applied the `physics_factor` multiply/divide, which exists only to convert between the tick delta and `move_and_slide()`'s delta — a delta this path never uses.
+- **Resolution:** dropped both the multiply and the divide. `knockback_velocity` stays un-scaled here, matching what the normal path now stores. **This makes noclip ~1.5× faster at 60 fps than it was** — the old speed was the bug.
+
+### 22. `netfox/rollback/input_redundancy` is dead config
+- **Files:** `addons/netfox/rollback/network-rollback.gd:104-108`, `addons/netfox/encoder/redundant-history-encoder.gd:4`
+- **Symptom:** setting `netfox/rollback/input_redundancy` changes nothing. The encoder's `redundancy` is hardcoded to `4` and nothing calls `set_redundancy()`; the setting is read but never wired. Effective loss tolerance is 4 ticks (44 ms at 90 Hz).
+- **Why:** an unwired 1.35.3 gap. Worth knowing before anyone tunes it to fix packet loss.
+- **Suggested fix:** none available without editing the addon. If loss tolerance becomes a problem, prefer `NetworkRollback.input_delay` (also a tick count — scale it by the rate) or lower the session tick rate.
+
+### 23. `diff_ack_interval` is 0 → a full state send every tick
+- **Files:** `player/player.tscn:446-452` (unset → `rollback-synchronizer.gd:53` default 0), `addons/netfox/rollback/composite/rollback-history-transmitter.gd:152-157`
+- **Symptom:** because no peer ever acknowledges a diff, `_ackd_state` stays empty and the transmitter falls back to `_send_full_state` on every transmit — diff states are configured on but never actually used.
+- **Why:** wasted bandwidth that scales with player count; not tick-domain related, but it interacts with join-time jitter.
+- **Suggested fix:** set `diff_ack_interval` to ~16 on the Player's `RollbackSynchronizer` and measure with `NetworkPerformance.get_sent_state_props_ratio()` before/after.
+
+### 24. `RollbackSynchronizer.get_last_known_input()` throws — bad call in netfox 1.35.3
+- **Files:** `addons/netfox/rollback/rollback-synchronizer.gd:214`
+- **Symptom:** calling it raises `Invalid call. Nonexistent function 'keys' in base 'RefCounted (_PropertyHistoryBuffer)'` and the caller gets a hard error instead of a tick. Hit from `NetworkManager._print_status()` on 2026-09-24.
+- **Why:** the method returns `_inputs.keys().max()`, but `_inputs` is a `_PropertyHistoryBuffer`, which `extends _HistoryBuffer` — and `_HistoryBuffer` exposes `ticks()`, not `keys()`. (`_HistoryBuffer.ticks()` is itself `return _buffer.keys()`, so the addon's author reached one level too shallow.) Nothing inside netfox calls it, so the bug is dormant until project code does.
+- **Resolution:** worked around in `network_manager.gd` — the same value is derived as `NetworkRollback.tick - get_input_age()`, which uses only the API that works.
+- **Suggested fix if the addon is ever updated:** it should read `_inputs.ticks().max()`.
+
+### 25. Lobby instantiation parsed ~50 MB of map scenes — `[FIXED 2026-09-24]`
+- **Files:** `world/host_server_area.gd` (`_ready`), `world/host_menu.gd:257` (`_load_maps`), `network/connection_utils.gd:161-175` (`scan_map_data`), `maps/map_data.gd:10`, `maps/map_data/*.tres`
+- **Symptom:** every lobby instantiation — boot, **join**, and every `return_to_lobby()` — stalled the main thread for **8–9.5 s**. Measured in the engine logs (`%APPDATA%\Godot\app_userdata\MultiplayerSystem3D\logs\`): `Game stalled for 9.1100s, assuming it was a pause`, alongside `FPS 123.6 | proc 7979.09ms | phys 0.68ms | drawCalls 0 | objs 0`. `phys 0.68 ms` against `proc 7979 ms` with zero draw calls rules out physics and rendering — pure main-thread script/resource work. Joins went from near-instant to many seconds.
+- **Why:** `HostServer`'s `_ready()` unconditionally instantiated the host menu and added it to the root — **on every peer, including joining clients that can never host**. `host_menu._ready()` calls `ConnectionUtils.scan_map_data()`, which `load()`s all 11 `maps/map_data/*.tres`. Each of those declared `map_scene` as a **`PackedScene` ext_resource**, so `load()`ing the metadata parsed the referenced map's entire scene. `maps/bind.tscn` alone is **47.7 MB** (1233 `CollisionShape3D`, 2466 inline `ConcavePolygonShape3D`, 2466 `StaticBody3D`). Total ≈50 MB parsed synchronously, of which 47.7 MB was a map that was not even being loaded.
+- **Why it also broke netfox sync:** the stall exceeded netfox's `stall_threshold` (1.0 s), so `network-time.gd:542-552` set `_was_paused` and **re-anchored `NetworkTime.tick`** — the only code path that moves the tick origin. The same stall also spanned the client's initial clock-sync round trip, so its seed landed stale. One stall, both symptoms.
+- **Fix applied (2026-09-24):**
+  - `MapData.map_scene: PackedScene` → **`map_scene_path: String`** (`maps/map_data.gd`), and all 11 `maps/map_data/*.tres` rewritten to store the path. Nothing ever needed the loaded scene: the only runtime consumer was `host_menu.gd` passing `_selected_map.map_scene.resource_path` to `NetworkManager.load_match_map()`.
+  - `world/host_server_area.gd` now builds the host menu **on demand** (`_ensure_menu()`, leader-gated) instead of in `_ready()`.
+  - `maps/map_game_mode_assigner.gd` and `maps/map_thumbnail_generator.gd` (both editor tools) updated for the path field.
+- **Result:** the stall went **8–9.5 s → 1.648 s** measured headless. Steady-state `proc` is now 1.5–6.7 ms. The residual is entry #26.
+- **Note:** `map_scene_path` is a plain string, so a typo now fails silently at "Start server" instead of crashing the editor. `ConnectionUtils.scan_map_data()` still does not validate that the path resolves.
+
+### 26. Residual ~1.6 s lobby-load stall
+- **Files:** `maps/main_menu_world.tscn` (157 `CSGBox3D` under 3 `CSGCombiner3D`; a `VoxelGI` with 474 KB of data; an `Environment` with SDFGI + SSAO + SSIL + SSR + glow + volumetric fog + panorama sky)
+- **Symptom:** after #25, a single ~1.6 s frame remains at lobby instantiation (the frame that prints `MAP ADDED res://maps/main_menu_world.tscn` / `Player 1 added`). It still exceeds netfox's 1 s `stall_threshold`, so netfox still logs `Game stalled for 1.6480s` and re-anchors the tick once, and the first rollback after it clamps (`Trying to run rollback for ticks 0 to 149, past the history limit of 63`) before settling.
+- **Why:** CSG combiners rebuild their mesh on dirtiness, and 157 boxes is a known-slow CSG tree; the VoxelGI and the SDFGI/SSAO/SSIL/SSR environment add pipeline and IBL setup. Headless cannot see the D3D12 shader compilation that a real client also pays here, so the on-GPU figure is likely higher.
+- **Suggested fix:** re-author the lobby as static meshes instead of CSG; consider dropping SDFGI/SSIL for the lobby. Alternatively raise `netfox/time/stall_threshold` to ~2.5 s so a load hitch is not misread as a pause — but that also delays genuine stall recovery, so prefer fixing the content.
+- **Not the cost** (measured/checked, do not chase): `loadout_menu`'s character preview (`[DEBUG PREVIEW] spawned … in 4.01 ms`) and the 3 class `.tres` parse.
+
 ---
 
 ## Lower priority (recorded, not blocking)
@@ -177,3 +236,5 @@ These are real but not current bottlenecks — revisit only if profiling flags t
 - `weapon/projectiles/simple_projectile.gd:90-138` — per-physics-frame curve sample + distance math per projectile.
 - `player/weapon_controller.gd:737,756` / `player/player.gd:2364,600-635` — `find_children` recursive scans on spawn/tier-change (not per-frame).
 - `player/bot_controller.gd:628`, `maps/map_game_mode_assigner.gd:89` — raw `free()` (safe today: unparented / editor-only, but fragile).
+- `ui/main_menu.gd:236,241,248-250` — calls `NetworkManager.create_client()` / `enter_existing_game_scene()` directly. Dead today (the 2D menu is bypassed), but those entry points no longer start a tick loop or hide the loading screen on their own; a revived menu would produce a client that can look and shoot but not move. Route it through `NetworkManager.join_party()`.
+- `network/network_manager.gd` `_await_settled()` — on a machine that never gets two consecutive frames under `SETTLE_FRAME_SECONDS` (10 fps), a join waits the full `SETTLE_TIMEOUT_SECONDS` (5 s) behind the loading screen before starting the tick loop. It logs a debug warning when it gives up; tune the threshold if this ever bites.

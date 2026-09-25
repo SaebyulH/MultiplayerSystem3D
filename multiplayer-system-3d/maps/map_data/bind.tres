@@ -1,12 +1,11 @@
 [gd_resource type="Resource" script_class="MapData" format=3]
 
 [ext_resource type="Texture2D" path="res://map_thumbnails/bind.png" id="1_q2ofq"]
-[ext_resource type="PackedScene" path="res://maps/bind.tscn" id="2_n3g6l"]
 [ext_resource type="Script" path="res://maps/map_data.gd" id="3_kkou6"]
 
 [resource]
 script = ExtResource("3_kkou6")
 display_name = "bind"
-map_scene = ExtResource("2_n3g6l")
+map_scene_path = "res://maps/bind.tscn"
 map_image = ExtResource("1_q2ofq")
 game_mode = 5

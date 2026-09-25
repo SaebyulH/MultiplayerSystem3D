@@ -166,7 +166,9 @@ func _capture_deferred(vp: SubViewport, display_name: String, map_scene: PackedS
 	var map_data := MapData.new()
 	map_data.display_name = display_name
 	map_data.game_mode = game_mode
-	map_data.map_scene = map_scene
+	# Store the path, not the scene: see maps/map_data.gd.  This tool has already
+	# paid to load the scene deliberately, so taking its path is free.
+	map_data.map_scene_path = map_scene.resource_path
 	map_data.map_image = image_tex
 
 	if ResourceSaver.save(map_data, map_data_path) != OK:

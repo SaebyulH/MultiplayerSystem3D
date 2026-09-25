@@ -12,6 +12,7 @@ var _popup_layer: CanvasLayer = null
 var _address_input: LineEdit
 var _ip_button: Button
 var _status_label: Label
+var _join_local_btn: Button
 
 var _detected_ips: Array[String] = []
 var _shown_ip_index: int = 0
@@ -123,10 +124,10 @@ func _build_popup() -> void:
 	join_btn.pressed.connect(_on_join_pressed)
 	vbox.add_child(join_btn)
 
-	var join_local_btn := Button.new()
-	join_local_btn.text = "Join Local (This Computer)"
-	join_local_btn.pressed.connect(_on_join_local_pressed)
-	vbox.add_child(join_local_btn)
+	_join_local_btn = Button.new()
+	_join_local_btn.text = "Join Local (This Computer)"
+	_join_local_btn.pressed.connect(_on_join_local_pressed)
+	vbox.add_child(_join_local_btn)
 
 	var close_btn := Button.new()
 	close_btn.text = "Close (Esc)"
@@ -137,7 +138,21 @@ func _build_popup() -> void:
 func _open_popup() -> void:
 	_shown_ip_index = 0
 	_update_ip_display()
-	_status_label.text = ""
+
+	# "Join Local" is for a SECOND instance.  On the instance that owns UDP 8080,
+	# join_party() -> create_client() -> _terminate_connection() closes that very
+	# peer before dialling the port it just released, so the connect can never
+	# succeed: the loading screen parks at 10% ("Connecting...") until the connect
+	# times out, then the player is dumped back into their own lobby.  Disable it
+	# rather than let them walk into that.
+	# NetworkManager.is_network_host(), NOT multiplayer.is_server(): the latter is
+	# also true for the OfflineMultiplayerPeer a second local instance falls back
+	# to, which would wrongly disable Join Local on the one instance that needs it.
+	var hosting_here := NetworkManager.is_network_host()
+	_join_local_btn.disabled = hosting_here
+	_join_local_btn.tooltip_text = "Already hosting on this computer." if hosting_here else ""
+	_status_label.text = "You are hosting here — run a second instance to test joining." if hosting_here else ""
+
 	_popup_layer.visible = true
 	PlayerInput.ui_open = true
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
@@ -192,5 +207,10 @@ func _on_join_pressed() -> void:
 
 
 func _on_join_local_pressed() -> void:
+	if NetworkManager.is_network_host():
+		# Belt and braces alongside the disabled button: joining ourselves would
+		# close the only listener on this machine.  See _open_popup().
+		_status_label.text = "You are hosting here — run a second instance to test joining."
+		return
 	_close_popup()
 	NetworkManager.join_party("127.0.0.1")
