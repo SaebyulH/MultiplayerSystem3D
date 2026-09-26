@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <title>FuncGodot Manual</title>
+    <link rel="icon" type="image/x-icon" href="../images/godot_ranger.svg">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="main">
+    <div class="main">
+        <h1>FuncGodot FGD Resources</h1>
+
+        <h2 id="File">FuncGodotFGDFile</h2>
+        <!--<p><img src="../images/ref_fgd_file.png"></p>-->
+        <p>
+            Resource file used to express a set of <i>FuncGodotFGDEntity</i> definitions. Can be exported as an FGD file for use with a Quake map editor. 
+            Used in conjunction with a <a href="ref_func_godot_map.html#MapSettings" target="main">FuncGodotMapSettings</a> resource to generate nodes 
+            in a <a href="ref_func_godot_map.html" target="main">FuncGodotMap</a> node.
+        </p>
+        <p>
+            <a href="https://book.leveldesignbook.com/appendix/resources/formats/fgd" target="_blank">Level Design Book FGD Chapter</a><br>
+            <a href="https://developer.valvesoftware.com/wiki/FGD" target="_blank">Valve Developer Wiki FGD Article</a>
+        </p>
+        <br>
+        <table class="props">
+            <tr class="header">
+                <td>Property</td>
+                <td>Type</td>
+                <td>Description</td>
+            </tr>
+            <tr>
+                <td>Export FGD</td>
+                <td>Button</td>
+                <td>Used as a button to build and export the FGD file. Automatically sets to off after exporting.</td>
+            </tr>
+
+            <tr class="header"><td>Map Editor</td><td></td><td></td></tr>
+            <tr>
+                <td>Target Map Editor</td>
+                <td>FuncGodotTargetMapEditor</td>
+                <td>
+                    Some map editors do not support the features found in others (ex: TrenchBroom supports the "model" key word while others require "studio", 
+                    J.A.C.K. uses the "shader" key word while others use "material", etc...). If you get errors in your map editor, try changing this setting and re-exporting. 
+                    This setting is overridden when the FGD is built via a game config resource.
+                </td>
+            </tr>
+            
+            <tr class="header"><td>FGD</td><td></td><td></td></tr>
+            <tr>
+                <td>Fgd Name</td>
+                <td>String</td>
+                <td>FGD output filename without the extension.</td>
+            </tr>
+            <tr>
+                <td>Base Fgd Files</td>
+                <td>Array[Resource]</td>
+                <td>
+                    Array of <i>FuncGodotFGDFile</i> resources to include in FGD file output. All of the entities included with these FuncGodotFGDFile resources will be 
+                    prepended to the outputted FGD file.
+                </td>
+            </tr>
+            <tr>
+                <td>Entity Definitions</td>
+                <td>Array[Resource]</td>
+                <td>
+                    Array of resources that inherit from <i>FuncGodotFGDEntityClass</i>. This array defines the entities that will be added to the exported FGD file 
+                    and the nodes that will be generated in a <i>FuncGodotMap</i>.
+                </td>
+            </tr>
+			<tr>
+                <td>Generate Model Point Class</td>
+                <td>Bool</td>
+                <td>
+                    Toggles whether <i>FuncGodotFGDModelPointClass</i> resources will generate models from their <i>PackedScene</i> files.
+                </td>
+            </tr>
+        </table>
+
+        <br><hr>
+
+        <h2 id="Entity">FuncGodotFGDEntityClass</h2>
+        <!--<p><img src="../images/ref_fgd_entity.png"></p>-->
+        <p>
+            Base entity definition class. Not to be used directly, use <i>FuncGodotFGDBaseClass</i>, <i>FuncGodotFGDSolidClass</i>, or <i>FuncGodotFGDPointClass</i> instead.
+        </p>
+        <p>
+            <a href="https://quakewiki.org/wiki/Entity" target="_blank">Quake Wiki Entity Article</a><br>
+            <a href="https://book.leveldesignbook.com/appendix/resources/formats/fgd#entity-types-and-settings-basic" target="_blank">Level Design Book: Entity Types and Settings</a><br>
+            <a href="https://developer.valvesoftware.com/wiki/FGD#Class_Types_and_Properties" target="_blank">Valve Developer Wiki FGD Article</a><br>
+            <a href="https://developer.valvesoftware.com/wiki/FGD#Entity_Description" target="_blank">Valve Developer Wiki Entity Descriptions</a>
+        </p>
+        <br>
+        <table class="props">
+            <tr class="header">
+                <td>Property</td>
+                <td>Type</td>
+                <td>Description</td>
+            </tr>
+
+            <tr class="header"><td>Entity Definition</td><td></td><td></td></tr>
+            <tr>
+                <td>Classname</td>
+                <td>String</td>
+                <td>Entity classname. <b><i>This is a required field in all entity types</i></b> as it is parsed by both the map editor and by FuncGodot on map build.</td>
+            </tr>
+            <tr>
+                <td>Description</td>
+                <td>String</td>
+                <td>Entity description that appears in the map editor. Not required.</td>
+            </tr>
+            <tr>
+                <td>Func Godot Internal</td>
+                <td>Bool</td>
+                <td>Entity does not get written to the exported FGD. Entity is only used for <i>FuncGodotMap</i> build process.</td>
+            </tr>
+            <tr>
+                <td>Base Classes</td>
+                <td>Array[Resource]</td>
+                <td><i>FuncGodotFGDBaseClass</i> resources to inherit <i>Class Properties</i> and <i>Class Descriptions</i> from.</td>
+            </tr>
+            <tr>
+                <td>Class Properties</td>
+                <td>Dictionary</td>
+                <td>
+                    Key value pair properties that will appear in the map editor. After building the <i>FuncGodotMap</i> in Godot, these properties will be 
+                    added to a <i>func_godot_properties</i> Dictionary that gets applied to the generated node, as long as that node is a <i>@tool</i> script 
+                    with an exported <i>func_godot_properties</i> Dictionary. See <a href="guide_key_value_pairs.html" target="main">Entity Key Value Pairs</a> 
+                    for more information.
+                </td>
+            </tr>
+            <tr>
+                <td>Class Property Descriptions</td>
+                <td>Dictionary</td>
+                <td>Map editor descriptions for the previously defined key value pair properties. Optional but recommended.</td>
+            </tr>
+            <tr>
+                <td>Auto Apply To Matching Node Properties</td>
+                <td>Bool</td>
+                <td>
+                    Automatically applies entity class properties to matching properties in the generated node. 
+                    When using this feature, class properties need to be the correct type or you may run into errors on map build.
+                </td>
+            </tr>
+            <tr>
+                <td>Meta Properties</td>
+                <td>Dictionary</td>
+                <td>
+                    Appearance properties for the map editor. Supports <i>String</i> entries literally. 
+                    Will <a href="https://docs.godotengine.org/en/stable/classes/class_json.html#class-json-method-stringify" target="_blank">JSON.stringify()</a> <i>Dictionary</i> entries.
+                    See the <a href="https://developer.valvesoftware.com/wiki/FGD#Entity_Description" target="_blank">Valve Developer Wiki</a> 
+                    and <a href="https://trenchbroom.github.io/manual/latest/#display-models-for-entities" target="_blank">TrenchBroom</a> documentation for more information.
+                </td>
+            </tr>
+            
+            <tr class="header"><td>Node Generation</td><td></td><td></td></tr>
+            <tr>
+                <td>Node Class</td>
+                <td>String</td>
+                <td>
+                    Node to generate on map build. This can be a built-in Godot class, a GDScript class, or a GDExtension class.
+                    <br><br>
+                    For Point Class entities that use Scene File instantiation leave this blank.
+                    <br><br>
+                    There is no restriction on what Node Classes can be generated.
+                </td>
+            </tr>
+            <tr>
+                <td>Name Property</td>
+                <td>String</td>
+                <td>
+                    Optional class property to use in naming the generated node. Overrides FuncGodotMapSettings' <i>name_property</i>. 
+                    Naming occurs before adding to the SceneTree and applying properties. 
+                    Nodes will be named <i>"entity_" + name_property</i>. 
+                    An entity's name should be unique, otherwise you may run into unexpected behavior.
+                </td>
+            </tr>
+            <tr>
+                <td>Node Groups</td>
+                <td>Array[String]</td>
+                <td>
+                    Optional array of node groups to add the generated node to.
+                </td>
+            </tr>
+        </table>
+        
+        <br><hr>
+
+        <h2 id="Base">FuncGodotFGDBaseClass</h2>
+        <p>
+            Special inheritance class for <i>Solid Class</i> and <i>Point Class</i> entity definitions. Useful for adding shared or common properties and descriptions. 
+            Does not have any unique properties on its own but is defined separately to facilitate FGD building and lookup.
+        </p>
+        <p>
+            <a href="https://quakewiki.org/wiki/Entity" target="_blank">Quake Wiki Entity Article</a><br>
+            <a href="https://book.leveldesignbook.com/appendix/resources/formats/fgd#entity-types-and-settings-basic" target="_blank">Level Design Book: Entity Types and Settings</a><br>
+            <a href="https://developer.valvesoftware.com/wiki/FGD#Class_Types_and_Properties" target="_blank">Valve Developer Wiki FGD Article</a>
+        </p>
+
+        <br><hr>
+
+        <h2 id="Solid">FuncGodotFGDSolidClass</h2>
+        <!--<p><img src="../images/ref_fgd_solid.png"></p>-->
+        <p>
+            FGD SolidClass entity definition that generates a mesh from <a href="ref_data.html#brush" target="main">Brush Data</a><br>.<br><br>
+
+            A <i>MeshInstance3D</i> will be generated by FuncGodotMap according to this definition's Visual Build settings. 
+            If <i>node_class</i> inherits <i>CollisionObject3D</i> then one or more <i>CollisionShape3D</i> nodes will be 
+            generated according to Collision Build settings.
+        </p>
+        <p>
+            <a href="https://quakewiki.org/wiki/Entity" target="_blank">Quake Wiki Entity Article</a><br>
+            <a href="https://book.leveldesignbook.com/appendix/resources/formats/fgd#entity-types-and-settings-basic" target="_blank">Level Design Book: Entity Types and Settings</a><br>
+            <a href="https://developer.valvesoftware.com/wiki/FGD#Class_Types_and_Properties" target="_blank">Valve Developer Wiki FGD Article</a><br>
+            <a href="https://developer.valvesoftware.com/wiki/FGD#Entity_Description" target="_blank">Valve Developer Wiki Entity Descriptions</a><br>
+            <a href="https://www.youtube.com/watch?v=gtL9f6_N2WM" target="_blank">dumptruck_ds' Quake Mapping Entities Tutorial</a>
+        </p>
+        <br>
+        <table class="props">
+            <tr class="header">
+                <td>Property</td>
+                <td>Type</td>
+                <td>Description</td>
+            </tr>
+            <tr>
+                <td>Spawn Type</td>
+                <td>SpawnType</td>
+                <td>
+                    Controls whether this Solid Class is the worldspawn, is combined with the worldspawn, or is spawned as its own free-standing entity.<br>
+                    <ul>
+                        <li>
+                            <b>WORLDSPAWN : </b>Builds the geometry of this entity relative to the FuncGodotMap position.
+                        </li>
+                        <li>
+                            <b>MERGE WORLDSPAWN : </b>This entity's geometry is merged with the <i>worldspawn</i> entity and this entity is removed. 
+                            Behavior mimics <i>func_group</i> in modern Quake compilers.
+                        </li>
+                        <li>
+                            <b>ENTITY : </b>This entity is built as its own object. It finds the origin of the entity based on <i>origin_type</i>.
+                        </li>
+                    </ul>
+                </td>
+            </tr>
+            <tr>
+                <td>Origin Type</td>
+                <td>OriginType</td>
+                <td>
+                    Controls how this Solid Class determines its center position. Only valid if <i>Spawn Type</i> is set to ENTITY.<br>
+                    <ul>
+                        <li>
+                            <b>AVERAGED : </b>Use averaged brush vertices for center position. This is the old Qodot behavior.
+                        </li>
+                        <li>
+                            <b>ABSOLUTE : </b>Use <code>origin</code> class property in global coordinates as the center position.
+                        </li>
+                        <li>
+                            <b>RELATIVE : </b>Calculate center position using <code>origin</code> class property as an offset to the entity's bounding box center.
+                        </li>
+                        <li>
+                            <b>BRUSH : </b>Calculate center position based on the bounding box center of all brushes using the <a href="guide_textures.html#Origin" target="main">origin texture</a> specified in the 
+                            <a href="ref_func_godot_map.html#MapSettings" target="main">FuncGodotMapSettings</a>. If no Origin Brush is found, fall back to BOUNDS_CENTER. This is the default option and recommended for most entities.
+                        </li>
+                        <li>
+                            <b>BOUNDS_CENTER : </b>Use the center of the entity's bounding box for center position.
+                        </li>
+                        <li>
+                            <b>BOUNDS_MINS : </b>Use the lowest bounding box coordinates for center position. This is standard Quake and Half-Life brush entity behavior.
+                        </li>
+                        <li>
+                            <b>BOUNDS_MAXS : </b>Use the highest bounding box coordinates for center position.
+                        </li>
+                    </ul>
+                </td>
+            </tr>
+            
+            <tr class="header"><td>Visual Build</td><td></td><td></td></tr>
+            <tr>
+                <td>Build Visuals</td>
+                <td>Bool</td>
+                <td>Controls whether a MeshInstance3D is built for this Solid Class.</td>
+            </tr>
+            <tr>
+                <td>Global Illumination Mode</td>
+                <td><a href="https://docs.godotengine.org/en/stable/classes/class_geometryinstance3d.html#enum-geometryinstance3d-gimode" target="_blank">GIMode</a></td>
+                <td>
+                    Global illumination mode for the generated <i>MeshInstance3D</i>. Setting to <b>GI_MODE_STATIC</b> will unwrap the mesh's UV2 during build. See the 
+                    <a href="https://docs.godotengine.org/en/stable/classes/class_geometryinstance3d.html#enum-geometryinstance3d-gimode" target="_blank">Godot documentation</a> 
+                    for more information.
+                </td>
+            </tr>
+            <!--<tr>
+                <td>Use In Baked Light</td>
+                <td>Bool</td>
+                <td>
+                    Sets generated MeshInstance3D to be available for UV2 unwrapping after FuncGodotMap build. Utilized in baked lightmapping.
+                </td>
+            </tr>-->
+            <tr>
+                <td>Shadow Casting Setting</td>
+                <td><a href="https://docs.godotengine.org/en/stable/classes/class_geometryinstance3d.html#enum-geometryinstance3d-shadowcastingsetting" target="_blank">ShadowCastingSetting</a></td>
+                <td>
+                    Shadow casting setting allows for further lightmapping customization. See the 
+                    <a href="https://docs.godotengine.org/en/stable/classes/class_geometryinstance3d.html#enum-geometryinstance3d-shadowcastingsetting" target="_blank">Godot documentation</a> 
+                    for more information.
+                </td>
+            </tr>
+            <tr>
+                <td>Build Occlusion</td>
+                <td>Bool</td>
+                <td>
+                    Automatically build <a href="https://docs.godotengine.org/en/stable/classes/class_occluderinstance3d.html" target="_blank">OccluderInstance3D nodes</a> for this entity. 
+                    See the <a href="https://docs.godotengine.org/en/stable/tutorials/3d/occlusion_culling.html" target="_blank">Godot documentation on Occlusion Culling</a> for more information.
+                </td>
+            </tr>
+            <tr>
+                <td>Render Layers</td>
+                <td>Int, 3D Render Flags</td>
+                <td>This Solid Class' MeshInstance3D will only be visible for Camera3Ds whose cull mask includes any of these render layers.</td>
+            </tr>
+            
+            <tr class="header"><td>Collision Build</td><td></td><td></td></tr>
+            <tr>
+                <td>Collision Shape Type</td>
+                <td>CollisionShapeType</td>
+                <td>
+                    Controls how collisions are built for this Solid Class.<br>
+                    <ul>
+                        <li><b>None : </b> No collision shape is built. Useful for decorative geometry like vines, hanging wires, grass, etc...</li>
+                        <li>
+                            <b><a href="https://docs.godotengine.org/en/stable/tutorials/physics/collision_shapes_3d.html#convex-collision-shapes" target="_blank">Convex</a> : </b> 
+                            Will build a Convex CollisionShape3D for each brush used to make this Solid Class. Required for non-StaticBody3D nodes like Area3D and RigidBody3D.
+                        </li>
+                        <li>
+                            <b><a href="https://docs.godotengine.org/en/stable/tutorials/physics/collision_shapes_3d.html#concave-or-trimesh-collision-shapes" target="_blank">Concave</a> : </b> 
+                            Will build a single Concave CollisionShape3D from the entire set of brushes. Skips brush faces textured with the FuncGodotMapSettings' <i>Skip Texture</i>.
+                        </li>
+                    </ul><br>
+                    See <a href="https://docs.godotengine.org/en/stable/tutorials/physics/collision_shapes_3d.html#performance-caveats" target="_blank">the Godot documentation</a> 
+                    to make an informed decision on what collision type would work best for this entity for your game's needs.
+                </td>
+            </tr>
+            <tr>
+                <td>Collision Layer</td>
+                <td>Int, 3D Physics Flags</td>
+                <td>The physics layers this Solid Class can be detected in.</td>
+            </tr>
+            <tr>
+                <td>Collision Mask</td>
+                <td>Int, 3D Physics Flags</td>
+                <td>The physics layers this Solid Class scans.</td>
+            </tr>
+            <tr>
+                <td>Collision Priority</td>
+                <td>Float</td>
+                <td>
+                    The priority used to solve colliding when penetration occurs. The higher the priority is, the lower the penetration into the SolidClass will be. 
+                    This can for example be used to prevent the player from breaking through the boundaries of a level.
+                </td>
+            </tr>
+            <tr>
+                <td>Collision Shape Margin</td>
+                <td>Float</td>
+                <td>
+                    The collision margin for the Solid Class' collision shapes. Not used in Godot Physics. 
+                    See <a href="https://docs.godotengine.org/en/stable/classes/class_shape3d.html#class-shape3d-property-margin" target="_blank">Shape3D documentation</a> 
+                    for details.
+                </td>
+            </tr>
+            
+            <tr class="header">
+                <td>Mesh Metadata</td>
+                <td></td>
+                <td>
+                    The following properties tell FuncGodot to add a <i>"func_godot_mesh_data"</i> Dictionary to the metadata of the generated node upon build. 
+                    This data is parallelized, so that each element of the array is ordered to reference the same face in the mesh.
+                </td>
+            </tr>
+            <tr>
+                <td>Add Textures Metadata</td>
+                <td>Bool</td>
+                <td>
+                    Add a texture lookup table to the generated node's metadata on build.<br><br> 
+                    The data is split between an Array of <a href="https://docs.godotengine.org/en/stable/classes/class_stringname.html" target="_blank">StringName</a> 
+                    called <i>"texture_names"</i> containing all currently used texture materials and a 
+                    <a href="https://docs.godotengine.org/en/stable/classes/class_packedint32array.html" target="_blank">PackedInt32Array</a> 
+                    called <i>"textures"</i> where each element is an index corresponding to the <i>"texture_names"</i> entries.
+                </td>
+            </tr>
+            <tr>
+                <td>Add Vertex Metadata</td>
+                <td>Bool</td>
+                <td>
+                    Add a <a href="https://docs.godotengine.org/en/stable/classes/class_packedvector3array.html" target="_blank">PackedVector3Array</a> 
+                    called <i>"vertices"</i> to the generated node's metadata on build.<br><br> 
+                    This is a list of every vertex in the generated node's <i>MeshInstance3D</i>. Every 3 vertices represent a single face.
+                </td>
+            </tr>
+            <tr>
+                <td>Add Face Position Metadata</td>
+                <td>Bool</td>
+                <td>
+                    Add a <i>PackedVector3Array</i> called <i>"positions"</i> to the generated node's metadata on build.<br><br> 
+                    This is a list of positions for each face, local to the generated node, calculated by averaging the face's vertices to find its center.
+                </td>
+            </tr>
+            <tr>
+                <td>Add Face Normal Metadata</td>
+                <td>Bool</td>
+                <td>
+                    Add a <i>PackedVector3Array</i> called <i>"normals"</i> in the generated node's metadata on build.<br><br> 
+                    Contains a list of each face's normal.
+                </td>
+            </tr>
+            <tr>
+                <td>Add Collision Shape Face Indices Metadata</td>
+                <td>Bool</td>
+                <td>
+                    Add a <i>Dictionary</i> called <i>"collision_shape_to_face_indices_map"</i> to the generated node's metadata on build.<br><br> 
+                    Contains keys of <i>Strings</i>, which are the names of child <i>CollisionShape3D</i> nodes, and values of 
+                    <a href="https://docs.godotengine.org/en/stable/classes/class_packedint32array.html" target="_blank">PackedInt32Array</a>, 
+                    , containing indices of that child's faces.<br><br>
+                    For example, an element of<br>
+                    <code>{ "entity_1_brush_0_collision_shape" : [0, 1, 3] }</code><br>
+                    shows that this solid class has been generated with one child collision shape named 
+                    <i>entity_1_brush_0_collision_shape</i> which handles 3 faces of the mesh with collision, at indices 0, 1, and 3.
+                </td>
+            </tr>
+
+            <tr class="header"><td>Scripting</td><td></td><td></td></tr>
+            <tr>
+                <td>Script Class</td>
+                <td><a href="https://docs.godotengine.org/en/stable/classes/class_script.html" target="_blank">Script</a></td>
+                <td>An optional Script file to attach to the node generated on map build.</td>
+            </tr>
+        </table>
+
+        <br><hr>
+
+        <h2 id="Point">FuncGodotFGDPointClass</h2>
+        <!--<p><img src="../images/ref_fgd_point.png"></p>-->
+        <p>
+            A resource used to define an FGD PointClass entity. PointClass entities can use either the <i>Node Class</i> or the 
+            <i>Scene File</i> property to tell a <i>FuncGodotMap</i> what to generate on map build.
+        </p>
+        <p>
+            <a href="https://quakewiki.org/wiki/Entity" target="_blank">Quake Wiki Entity Article</a><br>
+            <a href="https://book.leveldesignbook.com/appendix/resources/formats/fgd#entity-types-and-settings-basic" target="_blank">Level Design Book: Entity Types and Settings</a><br>
+            <a href="https://developer.valvesoftware.com/wiki/FGD#Class_Types_and_Properties" target="_blank">Valve Developer Wiki FGD Article</a><br>
+            <a href="https://www.youtube.com/watch?v=gtL9f6_N2WM" target="_blank">dumptruck_ds' Quake Mapping Entities Tutorial</a><br>
+            <a href="https://book.leveldesignbook.com/appendix/resources/formats/fgd#display-models-for-entities" target="_blank">Level Design Book: Display Models for Entities</a><br>
+            <a href="https://developer.valvesoftware.com/wiki/FGD#Entity_Description" target="_blank">Valve Developer Wiki FGD Article: Entity Description Section</a><br>
+            <a href="https://trenchbroom.github.io/manual/latest/#display-models-for-entities" target="_blank">TrenchBroom Manual: Display Models for Entities</a><br>
+        </p>
+        <br>
+        <table class="props">
+            <tr class="header">
+                <td>Property</td>
+                <td>Type</td>
+                <td>Description</td>
+            </tr>
+
+            <tr class="header"><td>Scene</td><td></td><td></td></tr>
+            <tr>
+                <td>Scene File</td>
+                <td><a href="https://docs.godotengine.org/en/stable/classes/class_packedscene.html" target="_blank">PackedScene</a></td>
+                <td>An optional scene file to instantiate on map build. Overrides <i>Node Class</i> and <i>Script Class</i>.</td>
+            </tr>
+
+            <tr class="header"><td>Scripting</td><td></td><td></td></tr>
+            <tr>
+                <td>Script Class</td>
+                <td><a href="https://docs.godotengine.org/en/stable/classes/class_script.html" target="_blank">Script</a></td>
+                <td>
+                    An optional <i>Script</i> resource to attach to the node generated on map build. 
+                    Ignored if <i>scene_file</i> is specified.
+                </td>
+            </tr>
+
+            <tr class="header"><td>Build</td><td></td><td></td></tr>
+            <tr>
+                <td>Apply Rotation On Map Build</td>
+                <td>Bool</td>
+                <td>
+                    Toggles whether entity will use <i>angles</i>, <i>mangle</i>, or <i>angle</i> to determine rotations on FuncGodotMap build, 
+                    prioritizing the key value pairs in that order. Set to <i>false</i> if you would like to define how the generated node is rotated yourself.
+                </td>
+            </tr>
+            <tr>
+                <td>Apply Scale On Map Build</td>
+                <td>Bool</td>
+                <td>
+                    Toggles whether entity will use `scale` to determine the generated node or scene's scale. 
+                    This is performed on the top level node. The property can be a <i>float</i>, <i>Vector3</i>, or <i>Vector2</i>. 
+                    Set to <i>false</i> if you would like to define how the generated node is scaled yourself.
+                </td>
+            </tr>
+			<tr>
+                <td>Display Descriptors</td>
+                <td>Array[FuncGodotFGDPointClassDisplayDescriptor]</td>
+                <td>
+                    An optional [Array] of <i>FuncGodotFGDPointClassDisplayDescriptor</i> that describes how this Point Entity should appear in the map editor. 
+					When using multiple display descriptors, only the first element found without a <i>FuncGodotFGDPointClassDisplayDescriptor.conditional</i> 
+					will be used as the default display asset. If no descriptor is found without a condition, the last descriptor will become the default.[br][br] 
+					Conditional display descriptors will be written to the FGD in the order set in the array.<br><br>
+					<b>WARNING:</b> Multiple descriptors are only supported by TrenchBroom! They will be omitted on export when 
+					<i>FuncGodotFGDFile.target_map_editor</i> is not set to <i>TRENCHBROOM</i>.
+                </td>
+            </tr>
+        </table>
+
+		<br><hr>
+
+        <h2 id="DisplayDescriptor">FuncGodotFGDPointClassDisplayDescriptor</h2>
+        <!--<p><img src="../images/ref_fgd_modelpoint.png"></p>-->
+        <p>
+            A resource for <i>FuncGodotFGDPointClass</i> that describes how to display a point entity in a map editor. 
+			Values entered into the different options are taken literally: paths should be enclosed within quotation marks, 
+			while class property keys and integer values should omit them.
+			<br><br>
+			Most editors only support the <i>display_asset</i> option. Exporting an FGD compatible with these editors will 
+			automatically omit the unsupported options introduced by TrenchBroom when exporting from their respective game configuration resources 
+			or setting <i>FuncGodotFGDFile.target_map_editor</i> away from <i>TRENCHBROOM</i>.
+			<br><br>
+			The extra options are considered advanced features and are unable to be evaluated by FuncGodot to ensure they were input correctly. 
+			Exercise caution, care, and patience when attempting to use these, especially the <i>conditional</i> option.
+        </p>
+        <p>
+            <a href="https://book.leveldesignbook.com/appendix/resources/formats/fgd#display-models-for-entities" target="_blank">Level Design Book: Display Models for Entities</a><br>
+            <a href="https://developer.valvesoftware.com/wiki/FGD#Entity_Description" target="_blank">Valve Developer Wiki FGD Article: Entity Description Section</a><br>
+            <a href="https://trenchbroom.github.io/manual/latest/#display-models-for-entities" target="_blank">TrenchBroom Manual: Display Models for Entities</a><br>
+            <a href="https://trenchbroom.github.io/manual/latest/#expression_language" target="_blank">TrenchBroom Manual: Expression Language</a><br>
+        </p>
+        <br>
+        <table class="props">
+            <tr class="header">
+                <td>Property</td>
+                <td>Type</td>
+                <td>Description</td>
+            </tr>
+            <tr>
+                <td>Display Asset Path</td>
+                <td>String</td>
+                <td>
+					Either a file path to the asset that will be displayed for this point entity, relative to the map editor's game path, 
+					or a class property key that can contain the path.
+					<br><br>
+					For paths, you must surround the path with quotes, e.g: <code>"models/marsfrog.glb"</code>. 
+					For properties, you must omit the quotes, e.g: <code>display_model_path</code>.
+					<br><br>
+					Different editors support different file types: common ones include MDL, GLB, SPR, and PNG. 
+				</td>
+            </tr>
+
+            <tr class="header"><td>TrenchBroom Options</td><td></td><td></td></tr>
+            <tr>
+                <td>Scale</td>
+                <td>String</td>
+                <td>
+                    Optional string that determines the scale of the display asset. This can be a number, a class property key, or 
+					a scale expression in accordance with TrenchBroom's Expression Language. Leave blank to use the game configuration's default scale expression.
+					<br><br>
+					<b>WARNING: </b> Only utilized by TrenchBroom!
+                </td>
+            </tr>
+			<tr>
+                <td>Skin</td>
+                <td>String</td>
+                <td>
+                    Optional string that determines which skin the display asset should use. This can be either a number or a class property key.
+					<br><br>
+					<b>WARNING: </b> Only utilized by TrenchBroom!
+                </td>
+            </tr>
+			<tr>
+                <td>Frame</td>
+                <td>String</td>
+                <td>
+                    Optional string that determines the appearance of a display asset based on its file type. This can be either a number or a class property key.
+					<br><br> 
+					Traditional Quake MDL files will set the display to that frame of its animations (all animations in a Quake MDL are compiled into a single animation). 
+					GLBs meanwhile seem to set themselves to the animation assigned to an index that matches the <code>frame</code> value.
+					<br><br>
+					<b>WARNING: </b> Only utilized by TrenchBroom!
+                </td>
+            </tr>
+			<tr>
+                <td>Conditional</td>
+                <td>String</td>
+                <td>
+                    Optional evaluation string that, when true, will force the Point Class to display the asset defined by <i>display_asset_path</i>.
+					Format should be <code>property == value</code> or some other valid expression in accordance with TrenchBroom's Expression Language.
+					<br><br>
+					<b>WARNING: </b> Only utilized by TrenchBroom!
+                </td>
+            </tr>
+        </table>
+
+        <br><hr>
+
+        <h2 id="ModelPoint">FuncGodotFGDModelPointClass</h2>
+        <!--<p><img src="../images/ref_fgd_modelpoint.png"></p>-->
+        <p>
+            A special type of <a href="ref_fgd_resources.html#Point" target="main">FuncGodotFGDPointClass</a> entity that automatically generates 
+            a special simplified, scaled, and reoriented GLB model file for the map editor display. Only supported in map editors that support GLTF or GLB.
+        </p>
+        <p>
+            <a href="https://quakewiki.org/wiki/Entity" target="_blank">Quake Wiki Entity Article</a><br>
+            <a href="https://book.leveldesignbook.com/appendix/resources/formats/fgd#entity-types-and-settings-basic" target="_blank">Level Design Book: Entity Types and Settings</a><br>
+            <a href="https://developer.valvesoftware.com/wiki/FGD#Class_Types_and_Properties" target="_blank">Valve Developer Wiki FGD Article</a><br>
+            <a href="https://www.youtube.com/watch?v=gtL9f6_N2WM" target="_blank">dumptruck_ds' Quake Mapping Entities Tutorial</a><br>
+            <a href="https://book.leveldesignbook.com/appendix/resources/formats/fgd#display-models-for-entities" target="_blank">Level Design Book: Display Models for Entities</a><br>
+            <a href="https://developer.valvesoftware.com/wiki/FGD#Entity_Description" target="_blank">Valve Developer Wiki FGD Article: Entity Description Section</a><br>
+            <a href="https://trenchbroom.github.io/manual/latest/#display-models-for-entities" target="_blank">TrenchBroom Manual: Display Models for Entities</a>
+        </p>
+        <br>
+        <table class="props">
+            <tr class="header">
+                <td>Property</td>
+                <td>Type</td>
+                <td>Description</td>
+            </tr>
+            <tr>
+                <td>Target Map Editor</td>
+                <td>TargetMapEditor</td>
+                <td>
+                    Determines how the entity definition defines the display model.<br><br>
+                    <b>GENERIC: </b>Entity definition uses the <b>@studio</b> key word. <b>scale_expression</b> is ignored. Supported by all map editors.<br><br>
+                    <b>TRENCHBROOM: </b>Entity definition uses the <b>@model</b> key word. <b>scale_expression</b> is applied if set.
+                </td>
+            </tr>
+            <tr>
+                <td>Models Sub Folder</td>
+                <td>String</td>
+                <td>
+                    Display model export folder relative to <a href="ref_local_config.html" target="main">ProjectSettings</a> 
+                    <b>func_godot/model_point_class_save_path</b>.
+                </td>
+            </tr>
+            <tr>
+                <td>Scale Expression</td>
+                <td>String</td>
+                <td>
+                    Scale expression applied to model. Only used by TrenchBroom. If left empty, uses <a href="ref_local_config.html" target="main">ProjectSettings</a> 
+                    <b>func_godot/default_inverse_scale_factor</b>.<br><br>
+                    See the <a href="https://trenchbroom.github.io/manual/latest/#display-models-for-entities" target="_blank">TrenchBroom Documentation</a> 
+                    for more information.<br>
+                </td>
+            </tr>
+            <tr>
+                <td>Generate Size Property</td>
+                <td>Bool</td>
+                <td>
+                    Model Point Class can override the <i>size</i> meta property by auto-generating a value from the meshes' 
+                    <a href="https://docs.godotengine.org/en/stable/classes/class_aabb.html" target="_blank">AABB</a>. 
+                    Proper generation requires <i>scale_expression</i> set to a float or Vector3.<br><br>
+                    <b>WARNING:</b> Generated size property unlikely to align cleanly to grid!
+                </td>
+            </tr>
+            <tr>
+                <td>Rotation Offset</td>
+                <td>Vector3</td>
+                <td>
+                    Degrees to rotate model prior to export. 
+                    Different editors may handle GLTF transformations differently. 
+                    If your model isn't oriented correctly, try modifying this property.
+                </td>
+            </tr>
+            <tr>
+                <td>Generate GD Ignore File</td>
+                <td>Button</td>
+                <td>
+                    Creates a .gdignore file in the model export folder to prevent Godot importing the display models. 
+                    Only needs to be generated once.
+                </td>
+            </tr>
+        </table>
+    </div>
+    <br><br><br>
+</body>
+</html>

@@ -1,0 +1,6 @@
+[gd_resource type="Resource" script_class="FuncGodotLocalConfig" format=3 uid="uid://dhuaq3wimjg03"]
+
+[ext_resource type="Script" uid="uid://xsjnhahhyein" path="res://addons/func_godot/src/util/func_godot_local_config.gd" id="1_7nvsu"]
+
+[resource]
+script = ExtResource("1_7nvsu")

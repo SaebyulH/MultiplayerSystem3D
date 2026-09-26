@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="FuncGodotFGDFile" format=3 uid="uid://d2s6d1uyrn0gs"]
+
+[ext_resource type="Resource" uid="uid://crgpdahjaj" path="res://addons/func_godot/fgd/func_godot_fgd.tres" id="1_rlg72"]
+[ext_resource type="Script" uid="uid://drlmgulwbjwqu" path="res://addons/func_godot/src/fgd/func_godot_fgd_file.gd" id="2_0byee"]
+
+[resource]
+script = ExtResource("2_0byee")
+fgd_name = "MultiplayerSystem3D"
+base_fgd_files = Array[Resource]([ExtResource("1_rlg72")])
+metadata/_custom_type_script = "uid://drlmgulwbjwqu"
