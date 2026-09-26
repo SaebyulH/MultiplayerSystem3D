@@ -104,7 +104,7 @@ layout_mode = 2
 size_flags_vertical = 3
 
 [node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="." unique_id=267556738]
-_spawnable_scenes = PackedStringArray("uid://cmix6q8a6hgcu", "uid://bhsrnwae043e1", "uid://7ccxfopdhtv8", "uid://x64r4as832eo", "uid://ohyji3hlfle6", "uid://ubib085fbj7w", "uid://cpdne6lbfqxh", "uid://oidyxhn6wjax", "uid://bvkjbsfmhw2yf", "uid://dctramwntmghr", "uid://d38ra5avw5usb", "uid://cgnm6fpurb2b2", "uid://tvv5xjtm8fwk", "uid://peiyk82tnqon")
+_spawnable_scenes = PackedStringArray("uid://cmix6q8a6hgcu", "uid://bhsrnwae043e1", "uid://7ccxfopdhtv8", "uid://x64r4as832eo", "uid://ohyji3hlfle6", "uid://ubib085fbj7w", "uid://cpdne6lbfqxh", "uid://oidyxhn6wjax", "uid://bvkjbsfmhw2yf", "uid://dctramwntmghr", "uid://d38ra5avw5usb", "uid://cgnm6fpurb2b2", "uid://tvv5xjtm8fwk", "uid://peiyk82tnqon", "uid://b2sjsbv2m7v31")
 spawn_path = NodePath("../SpawnParent")
 
 [connection signal="pressed" from="GameMenu/VBoxContainer/HBoxContainer/MainMenu" to="." method="_on_main_menu_pressed"]
