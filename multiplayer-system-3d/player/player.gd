@@ -2268,10 +2268,20 @@ func _spawn_character_model() -> void:
 	_rebuild_skins()
 	team = team
 
-	# Our own model: strip the rim light and hide the head so it doesn't clip the
-	# first-person camera (shown again if the local player is in third person).
-	if own and model_script != null:
-		model_script.disable_rim_layer()
+	# Rim light (render layer 10): the RimPivot spotlights are culled to that layer
+	# only, and character model scenes are authored on layer 1, so every world model
+	# has to opt in explicitly — the built-in mannequin does it via the `layers = 513`
+	# overrides in player.tscn.  Everyone else's model opts in; our own is stripped
+	# instead, because our head and torso sit right in front of the camera.
+	if model_script != null:
+		if own:
+			model_script.disable_rim_layer()
+		else:
+			model_script.enable_rim_layer()
+
+	# Our own model: hide the head so it doesn't clip the first-person camera
+	# (shown again if the local player is in third person).
+	if own:
 		_set_own_head_visible(third_person)
 
 

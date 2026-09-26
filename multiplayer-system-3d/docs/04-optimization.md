@@ -134,7 +134,7 @@ Added 2026-09-25 with `MeteredAbility` / the noclip rework. Same reasoning as ab
 - `player/shield.gd` `_process` (`130`): while regen active, `_update_visual` (`153`) → `_apply_material` (`180`) recursively walks `node.get_children()` (`193`) and `StandardMaterial3D.new()` (`184`) every frame.
 - `player/animation_tree.gd` `_process` (`23`): `$".."` (`24`) and `$"../.."` (`25`) node lookups + string-keyed `set("parameters/...")` + `basis.inverse()` every frame.
 - `player/skin.gd` `_process` (`119`): no own-model gate; recomputes local velocity + blend smoothing every frame for every replicated player.
-- `player/rim_pivot.gd` `_process` (`24`): `get_viewport().get_camera_3d()` + `look_at` every frame per non-own model.
+- `player/rim_pivot.gd` `_process` (`24`): `get_viewport().get_camera_3d()` + `look_at` every frame per non-own model. Since #51 this actually drives lit geometry on the normal path (it previously did nothing unless the character had no `character_scene`), so the cost is no longer hypothetical — still small, since it is one `look_at` per remote player.
 - `world/payload/payload.gd` `_physics_process` (`121`): `_update_label()` string formats every frame; `_tick_healing` (`217`) calls `p.change_health(...)` every frame per pusher (feeding hotspot #3).
 
 ---

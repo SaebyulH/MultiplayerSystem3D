@@ -1,0 +1,15 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://cuqybdjiaj6b1"]
+
+[ext_resource type="Texture2D" uid="uid://cd2nvd7tg8dj" path="res://trenchbroom/textures/Material-LIB/FloorTiles/FloorTiles.png" id="1_4d6ay"]
+[ext_resource type="Texture2D" uid="uid://bxhqugeywtw8d" path="res://trenchbroom/textures/Material-LIB/FloorTiles/FloorTiles_metallic.png" id="2_lcvel"]
+[ext_resource type="Texture2D" uid="uid://23wclavybmi5" path="res://trenchbroom/textures/Material-LIB/FloorTiles/FloorTiles_normal.png" id="3_cg6xd"]
+[ext_resource type="Texture2D" uid="uid://bp54xicucgngd" path="res://trenchbroom/textures/Material-LIB/FloorTiles/FloorTiles_roughness.png" id="4_ohcht"]
+
+[resource]
+albedo_texture = ExtResource("1_4d6ay")
+metallic_specular = 0.0
+metallic_texture = ExtResource("2_lcvel")
+roughness_texture = ExtResource("4_ohcht")
+normal_enabled = true
+normal_texture = ExtResource("3_cg6xd")
+texture_filter = 2

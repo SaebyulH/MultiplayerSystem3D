@@ -1,0 +1,8 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://decbaqppsg44q"]
+
+[ext_resource type="Texture2D" uid="uid://d00p8k1uxpxva" path="res://trenchbroom/textures/Material-LIB/MetalCracked/MetalCracked[Silver].png" id="1_vx508"]
+
+[resource]
+albedo_texture = ExtResource("1_vx508")
+metallic_specular = 0.0
+texture_filter = 2

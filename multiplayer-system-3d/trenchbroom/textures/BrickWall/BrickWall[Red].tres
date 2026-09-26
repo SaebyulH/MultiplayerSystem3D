@@ -1,0 +1,8 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://da1ptqt0jdmt7"]
+
+[ext_resource type="Texture2D" uid="uid://cbctu227a5uqs" path="res://trenchbroom/textures/BrickWall/BrickWall[Red].png" id="1_pftcv"]
+
+[resource]
+albedo_texture = ExtResource("1_pftcv")
+metallic_specular = 0.0
+texture_filter = 2

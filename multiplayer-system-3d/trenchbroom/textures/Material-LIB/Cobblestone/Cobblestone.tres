@@ -1,0 +1,15 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://b22slbo74lkig"]
+
+[ext_resource type="Texture2D" uid="uid://bkerxonmnpxci" path="res://trenchbroom/textures/Material-LIB/Cobblestone/Cobblestone.png" id="1_pniim"]
+[ext_resource type="Texture2D" uid="uid://ccrd3xh848iqb" path="res://trenchbroom/textures/Material-LIB/Cobblestone/Cobblestone_metallic.png" id="2_lo6sd"]
+[ext_resource type="Texture2D" uid="uid://cr8uluvvt0ugg" path="res://trenchbroom/textures/Material-LIB/Cobblestone/Cobblestone_normal.png" id="3_hfeqw"]
+[ext_resource type="Texture2D" uid="uid://b84cjn8nl612v" path="res://trenchbroom/textures/Material-LIB/Cobblestone/Cobblestone_roughness.png" id="4_y337k"]
+
+[resource]
+albedo_texture = ExtResource("1_pniim")
+metallic_specular = 0.0
+metallic_texture = ExtResource("2_lo6sd")
+roughness_texture = ExtResource("4_y337k")
+normal_enabled = true
+normal_texture = ExtResource("3_hfeqw")
+texture_filter = 2
