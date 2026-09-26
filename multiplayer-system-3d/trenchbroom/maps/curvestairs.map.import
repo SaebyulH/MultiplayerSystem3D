@@ -1,0 +1,14 @@
+[remap]
+
+importer="func_godot.map"
+type="Resource"
+uid="uid://c164gp8858jj2"
+path="res://.godot/imported/curvestairs.map-51392b01295df170c14940310afec3de.tres"
+
+[deps]
+
+source_file="res://trenchbroom/maps/curvestairs.map"
+dest_files=["res://.godot/imported/curvestairs.map-51392b01295df170c14940310afec3de.tres"]
+
+[params]
+
