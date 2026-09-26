@@ -1,11 +1,11 @@
-[gd_resource type="Resource" script_class="MapData" format=3]
+[gd_resource type="Resource" script_class="MapData" format=3 uid="uid://bao4oi5a5llq2"]
 
-[ext_resource type="Texture2D" path="res://map_thumbnails/death_stairs.png" id="1_1e2i6"]
-[ext_resource type="Script" path="res://maps/map_data.gd" id="2_qd63k"]
+[ext_resource type="Texture2D" uid="uid://cqlexmw0k7h8d" path="res://map_thumbnails/death_stairs.png" id="1_1e2i6"]
+[ext_resource type="Script" uid="uid://bo6nug35cwptb" path="res://maps/map_data.gd" id="2_qd63k"]
 
 [resource]
 script = ExtResource("2_qd63k")
 display_name = "death_stairs"
-map_scene_path = "res://maps/death_stairs.tscn"
+map_scene_path = "uid://b2sjsbv2m7v31"
 map_image = ExtResource("1_1e2i6")
 game_mode = 5
