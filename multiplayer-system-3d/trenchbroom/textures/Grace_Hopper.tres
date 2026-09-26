@@ -1,7 +1,0 @@
-[gd_resource type="StandardMaterial3D" format=3 uid="uid://rm4w1vx1p3ae"]
-
-[ext_resource type="Texture2D" uid="uid://cbbsgspvk6dq1" path="res://trenchbroom/textures/Grace_Hopper.jpg" id="1_ealc0"]
-
-[resource]
-albedo_texture = ExtResource("1_ealc0")
-metallic_specular = 0.0

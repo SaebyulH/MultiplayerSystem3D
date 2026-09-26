@@ -1,0 +1,19 @@
+// Game: MultiplayerSystem3D
+// Format: Valve
+// Generator: TrenchBroom 2026.2 (Build v2026.2 Release Win64)
+// entity 0
+{
+"mapversion" "220"
+"wad" ""
+"classname" "worldspawn"
+"_tb_mod" "trenchbroom"
+// brush 0
+{
+( -64 -64 0 ) ( -64 -61 0 ) ( -64 -64 4 ) Material-LIB/Material-LIB/Thatch/Thatch-B [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 1 1
+( -64 -64 0 ) ( -64 -64 4 ) ( -63 -64 0 ) Material-LIB/Material-LIB/Thatch/Thatch-B [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 1 1
+( -64 -64 0 ) ( -63 -64 0 ) ( -64 -61 0 ) Material-LIB/Material-LIB/Thatch/Thatch-B [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 1 1
+( 64 320 64 ) ( 64 323 64 ) ( 65 320 64 ) Material-LIB/Material-LIB/Thatch/Thatch-B [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 1 1
+( 64 320 64 ) ( 65 320 64 ) ( 64 320 68 ) Material-LIB/Material-LIB/Thatch/Thatch-B [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 1 1
+( 64 320 64 ) ( 64 320 68 ) ( 64 323 64 ) Material-LIB/Material-LIB/Thatch/Thatch-B [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 1 1
+}
+}
