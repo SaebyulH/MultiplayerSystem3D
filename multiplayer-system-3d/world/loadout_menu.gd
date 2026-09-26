@@ -883,6 +883,9 @@ func _request_loadout(tpid: String, pp: String, sp: String, mp: String, team: Pl
 	var secondary: Weapon = load(sp) as Weapon
 	var melee: Weapon = load(mp) as Weapon
 	if primary == null or secondary == null or melee == null:
+		# A dropped loadout is indistinguishable from a successful one further
+		# down, so say so here instead of returning in silence.
+		push_error("_request_loadout: unresolvable weapon path (pp=%s sp=%s mp=%s) — loadout not applied" % [pp, sp, mp])
 		return
 	var player := GameManager.find_player(tpid)
 	if player == null:
@@ -891,8 +894,11 @@ func _request_loadout(tpid: String, pp: String, sp: String, mp: String, team: Pl
 	if ctrl == null:
 		return
 	var nw: Array[Weapon] = [primary.duplicate(true) as Weapon, secondary.duplicate(true) as Weapon, melee.duplicate(true) as Weapon]
-	ctrl.set_weapons(nw)
-	ctrl.current_weapon_index = 0
+	# apply_loadout, not set_weapons: it also lands on slot 0 with that slot's
+	# model in hand.  A bare set_weapons() + index write leaves the swap pending
+	# on a put-away timer that the rpc_reset() below cancels — see the doc comment
+	# on WeaponController.apply_loadout.
+	ctrl.apply_loadout(nw)
 	# Apply character.
 	if not cp.is_empty():
 		var char_res: Character = load(cp) as Character
@@ -914,6 +920,9 @@ func _apply_loadout(tpid: String, pp: String, sp: String, mp: String, team: Play
 	var secondary: Weapon = load(sp) as Weapon
 	var melee: Weapon = load(mp) as Weapon
 	if primary == null or secondary == null or melee == null:
+		# Silent bail here desyncs this peer from the server permanently: the
+		# server already applied the loadout it broadcast.
+		push_error("_apply_loadout: unresolvable weapon path (pp=%s sp=%s mp=%s) — peer keeps its previous weapons" % [pp, sp, mp])
 		return
 	var player := GameManager.find_player(tpid)
 	if player == null:
@@ -922,8 +931,7 @@ func _apply_loadout(tpid: String, pp: String, sp: String, mp: String, team: Play
 	if ctrl == null:
 		return
 	var nw: Array[Weapon] = [primary.duplicate(true) as Weapon, secondary.duplicate(true) as Weapon, melee.duplicate(true) as Weapon]
-	ctrl.set_weapons(nw)
-	ctrl.current_weapon_index = 0
+	ctrl.apply_loadout(nw)
 	if not cp.is_empty():
 		var char_res: Character = load(cp) as Character
 		if char_res:

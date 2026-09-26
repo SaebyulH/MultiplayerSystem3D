@@ -113,9 +113,13 @@ The menu's `CanvasLayer` starts visible, so the loadout screen covers the world 
 - `PlayerInput.ui_open = false`, `Input.set_mouse_mode(MOUSE_MODE_CAPTURED)` (863-864).
 - Server: `_request_loadout(...)` directly (867); client: `_request_loadout.rpc_id(1, ...)` (869).
 
-`world/loadout_menu.gd:875-909` — `_request_loadout()` (server):
-- validates sender id vs `tpid`; `GameManager.find_player(tpid)`; `WeaponController.set_weapons(...)`; `player.set_character(...)`; stores loadout paths.
-- **`player.rpc_reset.rpc(player._get_spawn_position())`** (909).
+`world/loadout_menu.gd:876-915` — `_request_loadout()` (server):
+- validates sender id vs `tpid`; `GameManager.find_player(tpid)`; `WeaponController.apply_loadout(...)`; `player.set_character(...)`; stores loadout paths.
+- **`player.rpc_reset.rpc(player._get_spawn_position())`** (915).
+
+> **A loadout must be applied with `WeaponController.apply_loadout()`, never `set_weapons()` + `current_weapon_index = 0`.** The bare pair looks equivalent but is not: assigning `_weapons` spawns the model for the *old* index, the index write then starts a 0.1 s put-away animation, and the `rpc_reset()` above calls `reset()`, which zeroes `_switch_phase` before that timer can elapse — so the model swap never happens and the previous slot's gun stays in hand while every other value is already on the new one. `apply_loadout()` is the only place that sequences array → index → model spawn correctly. See `05-known-issues.md` #48.
+
+The same rule governs the other apply sites — `_apply_loadout` (client, `:918-934`), `Player._randomize_weapons_from_class` / `_rpc_sync_randomized_loadout` (`player/player.gd:862-908`), `rpc_sync_full_state` (`player/player.gd:574-592`) and `SpawnManager._apply_bot_weapons` (`world/spawn_manager.gd:226-237`). `set_weapons()` remains the only correct *assignment* primitive (`_ready()` uses it directly, deliberately unadorned).
 
 `player/player.gd:501-534` — `rpc_reset(pos)`: `despawn()`, `respawn_timer = respawn_time` (**default 1.0 s**, `player/player.gd:17`), `_spawn_pending_position = pos`, resets health/weapons/effects.
 

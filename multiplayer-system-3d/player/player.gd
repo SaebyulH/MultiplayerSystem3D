@@ -2,8 +2,8 @@ extends CharacterBody3D
 class_name Player
 
 
-const NORMAL_SPEED: float = 5
-const ADS_SPEED: float = 3.0
+const NORMAL_SPEED: float = 3.0
+const ADS_SPEED: float = 1.5
 const FALL_GRAVITY: float = 9.8
 const FALL_DAMAGE_SOUND: AudioStream = preload("res://assets/sounds/universfield-fast-body-fall-impact-352725.mp3")
 
@@ -587,8 +587,9 @@ func rpc_sync_full_state(pos: Vector3, pp: String, sp: String, mp: String = "", 
 					var melee: Weapon = load(mp) as Weapon
 					if melee:
 						nw.append(melee.duplicate(true) as Weapon)
-				ctrl.set_weapons(nw)
-				ctrl.current_weapon_index = 0
+				# apply_loadout, not set_weapons: it also lands on slot 0 with
+				# that slot's model in hand (and tolerates the 2-element array).
+				ctrl.apply_loadout(nw)
 
 	# -- Character --
 	if not cp.is_empty():
@@ -865,15 +866,30 @@ func _randomize_weapons_from_class() -> void:
 		return
 	if cls.primary_weapons.is_empty() or cls.secondary_weapons.is_empty() or cls.melee_weapons.is_empty():
 		return
-	var primary: Weapon = cls.primary_weapons.pick_random().duplicate(true) as Weapon
-	var secondary: Weapon = cls.secondary_weapons.pick_random().duplicate(true) as Weapon
-	var melee: Weapon = cls.melee_weapons.pick_random().duplicate(true) as Weapon
-	var nw: Array[Weapon] = [primary, secondary, melee]
-	weapon_controller.set_weapons(nw)
-	weapon_controller.current_weapon_index = 0
-	_loadout_primary_path = primary.resource_path
-	_loadout_secondary_path = secondary.resource_path
-	_loadout_melee_path = melee.resource_path
+	# Keep the ORIGINALS and read the paths off those.  Resource.duplicate() does
+	# not carry resource_path (it is registered PROPERTY_USAGE_EDITOR only), so a
+	# duplicate's path is always "".  Reading it off the duplicate stored three
+	# empty strings, every receiver's load("") then returned null, and
+	# _rpc_sync_randomized_loadout bailed in silence — leaving remote peers on the
+	# previous loadout while the server played the randomized one.  It also
+	# permanently blanked _loadout_*_path, which is what rpc_sync_full_state sends
+	# to late joiners.
+	var primary_res: Weapon = cls.primary_weapons.pick_random()
+	var secondary_res: Weapon = cls.secondary_weapons.pick_random()
+	var melee_res: Weapon = cls.melee_weapons.pick_random()
+	_loadout_primary_path = primary_res.resource_path
+	_loadout_secondary_path = secondary_res.resource_path
+	_loadout_melee_path = melee_res.resource_path
+	if _loadout_primary_path.is_empty() or _loadout_secondary_path.is_empty() or _loadout_melee_path.is_empty():
+		push_error("_randomize_weapons_from_class: blank resource_path; loadout not applied and peers left desynced")
+		return
+
+	var nw: Array[Weapon] = [
+		primary_res.duplicate(true) as Weapon,
+		secondary_res.duplicate(true) as Weapon,
+		melee_res.duplicate(true) as Weapon,
+	]
+	weapon_controller.apply_loadout(nw)
 	_rpc_sync_randomized_loadout.rpc(name, _loadout_primary_path, _loadout_secondary_path, _loadout_melee_path)
 
 
@@ -883,10 +899,13 @@ func _rpc_sync_randomized_loadout(tpid: String, pp: String, sp: String, mp: Stri
 	var secondary: Weapon = load(sp) as Weapon
 	var melee: Weapon = load(mp) as Weapon
 	if not primary or not secondary or not melee:
+		# The server has already installed this loadout.  Bailing here leaves this
+		# peer on its previous weapons: it fires the server's gun with its own
+		# recoil, and nothing downstream can detect the split.
+		push_error("_rpc_sync_randomized_loadout: unresolvable path (pp=%s sp=%s mp=%s); peer keeps its previous weapons" % [pp, sp, mp])
 		return
 	var nw: Array[Weapon] = [primary.duplicate(true) as Weapon, secondary.duplicate(true) as Weapon, melee.duplicate(true) as Weapon]
-	weapon_controller.set_weapons(nw)
-	weapon_controller.current_weapon_index = 0
+	weapon_controller.apply_loadout(nw)
 
 
 func _copy_mannequin_pose() -> void:

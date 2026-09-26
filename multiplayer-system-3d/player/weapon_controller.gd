@@ -186,6 +186,11 @@ signal signal_activated(target: Vector3, player_transform: Vector3)
 		if value == _weapons:
 			return
 		_weapons = value
+		# The array can be replaced by a shorter one (see rpc_sync_full_state's
+		# 2-element fallback), and current_weapon_index is only clamped by its own
+		# setter — which does not re-run when the array changes.  Left out of
+		# range, _emit_weapon_changed() and spawn_weapon_model() deref null.
+		current_weapon_index = clampi(current_weapon_index, 0, maxi(_weapons.size() - 1, 0))
 		_on_weapon_index_changed()
 		_emit_weapon_changed()
 
@@ -701,6 +706,36 @@ func set_weapons(new_weapons: Array[Weapon]) -> void:
 	_ensure_bg_arrays()
 
 	_emit_weapon_changed()
+
+
+## Runtime loadout change: land on [param index] and leave THAT slot's model in
+## hand, with no switch in flight.
+##
+## [method set_weapons] alone cannot do this.  Assigning [member _weapons] spawns
+## the model for the *current* (old) index, and the `current_weapon_index = 0`
+## that used to follow it starts an animated put-away — every Weapon ships
+## put_away_time = 0.1 (weapon/weapon.gd) and none override it, so _begin_switch()
+## always takes its PUT_AWAY branch and defers the swap to _advance_switch_phase().
+## The `rpc_reset()` that follows every loadout change calls [method reset], which
+## zeroes `_switch_phase` before that timer can elapse — so the swap never ran and
+## the previous slot's model was left standing while `current_weapon_index` read 0.
+## Spawning outright takes the timer out of the sequence entirely.
+func apply_loadout(new_weapons: Array[Weapon], index: int = 0) -> void:
+	set_weapons(new_weapons)
+	if _weapons.is_empty():
+		return
+	current_weapon_index = clampi(index, 0, _weapons.size() - 1)
+
+	# Index first, phase second: setting the index above may have re-armed a
+	# put-away.  A loadout change is not a weapon switch, so void whatever the two
+	# assignments started and spawn now.  Mirrors the initial-load path
+	# (old_weapon == null) and the finished-pullout path.
+	_switch_phase = SwitchPhase.IDLE
+	_switch_timer = 0.0
+	_switch_pullout_time = 0.0
+	_do_swap_model()
+	_restart_hold_anims()
+	_finish_switch()
 
 
 func get_weapons() -> Array[Weapon]:

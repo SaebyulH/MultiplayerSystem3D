@@ -102,6 +102,8 @@ On remote peers the camera basis for that player's copy is stale, so camera-rela
 
 > A charged fire deliberately never takes the `pre_shoot_delay` path. The trigger-up *is* the shot, and `hold_required_for_pre_shoot_delay` cancels a pending fire on release — so routing a charged release through it would cancel the shot on the same frame it was armed. Charged weapons should leave `pre_shoot_delay` at 0.
 
+> **`_weapons` is per-peer and is populated *only* by loadout RPCs.** `player.tscn`'s replication config carries `.:current_weapon_index` and nothing else, so two peers can agree on the index while holding different arrays. `fire_intent` trusts the client's index and resolves the shot against **the server's** array (`2269`), while the client computed recoil and spread from **its own** (`_try_fire`, `2074`). A dropped loadout sync is therefore undetectable from the index alone — the client fires the server's weapon with its own weapon's recoil, which is exactly `05-known-issues.md` #49. Two rules follow: apply a loadout through `WeaponController.apply_loadout()` (never `set_weapons()` + an index write — see `01-boot-sequence.md` Stage 6), and never let a loadout RPC `return` silently on an unresolvable path. Do **not** add a `weapon_index` cross-check here: it would not have caught #49 (both peers were on index 0) and the replicated index legitimately lags, so a hard reject would eat real shots right after a switch.
+
 ### Server validation and ammo
 
 `fire_intent` (`@rpc("any_peer")`, `2221-2312`):

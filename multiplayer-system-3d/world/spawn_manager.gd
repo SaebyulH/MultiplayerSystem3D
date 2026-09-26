@@ -232,8 +232,9 @@ func _apply_bot_weapons(player: Player, primary: Weapon, secondary: Weapon, mele
 	new_weapons.append(secondary.duplicate(true) as Weapon)
 	if melee:
 		new_weapons.append(melee.duplicate(true) as Weapon)
-	controller.set_weapons(new_weapons)
-	controller.current_weapon_index = 0
+	# apply_loadout, not set_weapons: the bots' rpc_reset() below would otherwise
+	# cancel the pending model swap and leave the previous weapon in hand.
+	controller.apply_loadout(new_weapons)
 
 
 ## Pick the rarest character across all classes for a bot joining [param team].

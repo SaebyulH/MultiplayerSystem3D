@@ -183,10 +183,13 @@ parameters/PutawayTimeScale/scale = 1.0
 
 [node name="M402" parent="." unique_id=1698511860 instance=ExtResource("4_dchj1")]
 
-[node name="Skeleton3D" parent="M402/M40" parent_id_path=PackedInt32Array(1698511860, 724157813) index="0" unique_id=1192464230]
+[node name="Skeleton3D" parent="M402/M40" parent_id_path=PackedInt32Array(1698511860, 576777167) index="0" unique_id=1432179270]
 bones/0/position = Vector3(-0.15359534, 1.4361622, 0.29275334)
 bones/1/position = Vector3(-8.313212e-09, 0.1009775, 0.070872776)
 bones/1/rotation = Quaternion(0.7071068, -3.0908627e-08, 1.3767878e-07, 0.7071068)
+
+[node name="Muzzle" type="Node3D" parent="M402/M40/Skeleton3D" index="1" unique_id=2143881498]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.15471056, 1.5381173, 1.1524801)
 
 [node name="BoundingBox" type="Area3D" parent="." unique_id=22142069]
 collision_layer = 0
