@@ -1,0 +1,28 @@
+// Game: MultiplayerSystem3D
+// Format: Valve
+// Generator: TrenchBroom 2026.2 (Build v2026.2 Release Win64)
+// entity 0
+{
+"mapversion" "220"
+"wad" ""
+"classname" "worldspawn"
+"_tb_mod" "trenchbroom"
+// brush 0
+{
+( -1024 -1024 -64 ) ( -1024 -1008 -64 ) ( -1024 -1024 -56 ) Material-LIB/Material-LIB/Thatch/Thatch-B [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 1 1
+( -1024 -1024 -64 ) ( -1024 -1024 -56 ) ( -1008 -1024 -64 ) Material-LIB/Material-LIB/Thatch/Thatch-B [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 1 1
+( -1024 -1024 -64 ) ( -1008 -1024 -64 ) ( -1024 -1008 -64 ) Material-LIB/Material-LIB/Thatch/Thatch-B [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 1 1
+( 1024 1024 64 ) ( 1024 1040 64 ) ( 1040 1024 64 ) Material-LIB/Material-LIB/BrickWall[Damaged]/BrickWall[Damaged]-B [ 1 0 0 1024 ] [ 0 -1 0 1024 ] 0 1 1
+( 1024 1024 64 ) ( 1040 1024 64 ) ( 1024 1024 72 ) Material-LIB/Material-LIB/Thatch/Thatch-B [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 1 1
+( 1024 1024 64 ) ( 1024 1024 72 ) ( 1024 1040 64 ) Material-LIB/Material-LIB/Thatch/Thatch-B [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 1 1
+}
+// brush 1
+{
+( 1024 -1024 -64 ) ( 1024 -1008 -64 ) ( 1024 -1024 -56 ) Material-LIB/Material-LIB/Thatch/Thatch-B [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 1 1
+( 1024 -1024 -64 ) ( 1024 -1024 -56 ) ( 1040 -1024 -64 ) Material-LIB/Material-LIB/Thatch/Thatch-B [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 1 1
+( 1024 -1024 -64 ) ( 1040 -1024 -64 ) ( 1024 -1008 -64 ) Material-LIB/Material-LIB/Thatch/Thatch-B [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 1 1
+( 3072 1024 64 ) ( 3072 1040 64 ) ( 3088 1024 64 ) Material-LIB/Material-LIB/BrickWall[Damaged]/BrickWall[Damaged]-B [ 1 0 0 1024 ] [ 0 -1 0 1024 ] 0 1 1
+( 3072 1024 64 ) ( 3088 1024 64 ) ( 3072 1024 72 ) Material-LIB/Material-LIB/Thatch/Thatch-B [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 1 1
+( 3072 1024 64 ) ( 3072 1024 72 ) ( 3072 1040 64 ) Material-LIB/Material-LIB/Thatch/Thatch-B [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 1 1
+}
+}

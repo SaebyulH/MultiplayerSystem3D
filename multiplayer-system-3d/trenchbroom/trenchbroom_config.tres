@@ -11,5 +11,7 @@
 script = ExtResource("6_lhd7s")
 game_name = "MultiplayerSystem3D"
 textures_root_folder = "trenchbroom/textures"
+palette_path = "trenchbroom/textures/palette.lmp"
 fgd_file = ExtResource("4_xdkvf")
+default_uv_scale = Vector2(0.063, 0.063)
 metadata/_custom_type_script = "uid://cx44c4vnq8bt5"

@@ -1,0 +1,16 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://6u4u6u1cxxy6"]
+
+[ext_resource type="Texture2D" uid="uid://dolifl87qkunw" path="res://trenchbroom/textures/FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k.png" id="1_k6800"]
+[ext_resource type="Texture2D" uid="uid://b2ckofttv03uh" path="res://trenchbroom/textures/FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_height_2k.png" id="2_b5yna"]
+[ext_resource type="Texture2D" uid="uid://cqsqq34pdemmj" path="res://trenchbroom/textures/FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_normal_gl_2k.png" id="3_yis8k"]
+[ext_resource type="Texture2D" uid="uid://b1ixynm1onujw" path="res://trenchbroom/textures/FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_roughness_2k.png" id="4_ppusj"]
+
+[resource]
+albedo_texture = ExtResource("1_k6800")
+metallic_specular = 0.0
+roughness_texture = ExtResource("4_ppusj")
+normal_enabled = true
+normal_texture = ExtResource("3_yis8k")
+heightmap_scale = 2.277
+heightmap_texture = ExtResource("2_b5yna")
+texture_filter = 2

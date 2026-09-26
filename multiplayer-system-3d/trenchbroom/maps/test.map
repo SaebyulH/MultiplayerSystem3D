@@ -9,11 +9,20 @@
 "_tb_mod" "trenchbroom"
 // brush 0
 {
-( -64 -64 0 ) ( -64 -63 0 ) ( -64 -64 4 ) Material-LIB/Material-LIB/Thatch/Thatch-B [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 1 1
-( -64 -64 0 ) ( -64 -64 4 ) ( -63 -64 0 ) Material-LIB/Material-LIB/Thatch/Thatch-B [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 1 1
-( -64 -64 0 ) ( -63 -64 0 ) ( -64 -63 0 ) Material-LIB/Material-LIB/Thatch/Thatch-B [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 1 1
-( 64 64 64 ) ( 64 65 64 ) ( 65 64 64 ) Material-LIB/Material-LIB/Thatch/Thatch-B [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 1 1
-( 64 64 64 ) ( 65 64 64 ) ( 64 64 68 ) Material-LIB/Material-LIB/Thatch/Thatch-B [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 1 1
-( 64 64 64 ) ( 64 64 68 ) ( 64 65 64 ) Material-LIB/Material-LIB/Thatch/Thatch-B [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 1 1
+( -64 0 -64 ) ( -64 1 -64 ) ( -64 0 -56 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.0625 0.0625
+( -64 0 -64 ) ( -64 0 -56 ) ( -63 0 -64 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.0625 0.0625
+( -64 0 -64 ) ( -63 0 -64 ) ( -64 1 -64 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.0625 0.0625
+( 64 128 64 ) ( 64 129 64 ) ( 65 128 64 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 1024 ] [ 0 -1 0 1024 ] 0 0.0625 0.0625
+( 64 128 64 ) ( 65 128 64 ) ( 64 128 72 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.0625 0.0625
+( 64 128 64 ) ( 64 128 72 ) ( 64 129 64 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.0625 0.0625
+}
+// brush 1
+{
+( 64 -176 80 ) ( 64 -175 80 ) ( 64 -176 81 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 64 -176 80 ) ( 64 -176 81 ) ( 65 -176 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 64 -176 80 ) ( 65 -176 80 ) ( 64 -175 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 224 -64 96 ) ( 224 -63 96 ) ( 225 -64 96 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 224 -64 96 ) ( 225 -64 96 ) ( 224 -64 97 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 224 -64 96 ) ( 224 -64 97 ) ( 224 -63 96 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 }
 }
