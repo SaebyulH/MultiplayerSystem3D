@@ -1,0 +1,19 @@
+// Game: MultiplayerSystem3D
+// Format: Valve
+// Generator: TrenchBroom 2026.2 (Build v2026.2 Release Win64)
+// entity 0
+{
+"mapversion" "220"
+"wad" ""
+"classname" "worldspawn"
+"_tb_mod" "trenchbroom"
+// brush 0
+{
+( -176 -160 0 ) ( -176 -157.9230769230769 0 ) ( -176 -160 10 ) Material-LIB/Material-LIB/MedievalTiles/MedievalTiles[Red]-B [ 0 -0.5909090909090912 0 0 ] [ 0 0 -0.25 0 ] 270 0.06 0.02
+( -176 -160 0 ) ( -176 -160 10 ) ( -173.25 -160 0 ) Material-LIB/Material-LIB/BrickWall/BrickWall[Blue]-B [ 0.36363636363636365 0 0 290.9091 ] [ 0 0 -0.25 0 ] 270 0.02 0.02
+( -176 -160 0 ) ( -173.25 -160 0 ) ( -176 -157.9230769230769 0 ) Material-LIB/Material-LIB/BrickWall/BrickWall[Blue]-B [ -0.36363636363636365 0 0 -290.9091 ] [ 0 -0.5909090909090912 0 0 ] 270 0.02 0.02
+( 176 272 160 ) ( 176 274.0769230769231 160 ) ( 178.75 272 160 ) Material-LIB/Material-LIB/BrickWall/BrickWall[Blue]-B [ 0.36363636363636365 0 0 290.9091 ] [ 0 -0.5909090909090912 0 0 ] 270 0.02 0.02
+( 176 272 160 ) ( 178.75 272 160 ) ( 176 272 170 ) Material-LIB/Material-LIB/BrickWall[Damaged]/BrickWall[Damaged]-B [ -0.36363636363636365 0 0 -290.9091 ] [ 0 0 -0.25 0 ] 270 0.02 0.02
+( 176 272 160 ) ( 176 272 170 ) ( 176 274.0769230769231 160 ) Material-LIB/Material-LIB/BrickWall/BrickWall[Blue]-B [ 0 0.5909090909090912 0 0 ] [ 0 0 -0.25 0 ] 270 0.02 0.02
+}
+}

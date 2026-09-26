@@ -620,6 +620,15 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 
 ---
 
+### 50. `trenchbroom/` is 844 MB and `.gitignore` excludes none of it
+- **Files:** `.gitignore:1-8`; `trenchbroom/textures/Material-LIB.zip` (412 MB), `trenchbroom/textures/Free Painterly Textures 1k.zip` (42 MB), `trenchbroom/textures/Material-LIB/Material-LIB/Material-LIB.blend` + `.blend1` (8.2 MB each), `trenchbroom/textures/Material-LIB/Material-LIB/**/*.txt` + `.txt~`
+- **Symptom:** the whole 844 MB tree is eligible to be committed. `.gitignore` only carries `.godot/`, `/android/`, `.DS_Store` and `*.tmp`. Only 13 files under `trenchbroom/textures/` are tracked today (all from `8540936 add trenchbroom`), so the risk is latent until someone runs `git add -A` — at which point 455 MB of source archives land in history permanently and cannot be pruned without a rewrite.
+- **Also in the tree:** `Material-LIB/Material-LIB/RoofTiles/RoofTiles-N.png~` is a stray editor backup sitting inside the texture root, so Godot's importer walks it; `blender_assets.cats.txt~` is the same for the asset catalog. Both are inert today (Godot ignores the `png~` extension) but they are clutter in a directory FuncGodot scans wholesale.
+- **Suggested fix:** add `trenchbroom/textures/*.zip`, `trenchbroom/textures/**/*.blend*`, `trenchbroom/textures/**/*~` to `.gitignore`, and delete the two `*.blend` files from disk — the `Material-LIB/` folder is already fully extracted beside its zip (409 MB extracted vs 412 MB archived), so that archive is redundant. The 42 MB `Free Painterly Textures 1k.zip` has **no** matching extracted folder, so check before removing it.
+- **Related:** `tools/resize_textures.gd` rewrites any image under `trenchbroom/textures/` whose longest edge exceeds 2048 (today: 8 files, the `-B/-M/-N/-R` sets for `Cobblestone` and `StoneTiles`), backing the originals up under `backup/trenchbroom/textures/`. It never upscales, so the 64×64 TrenchBroom sentinels (`clip`/`origin`/`skip`/`default_texture`) are skipped by construction.
+
+---
+
 ## Not bugs, but worth knowing
 
 - **Property overrides written into an instanced sub-scene are never saved.** Godot serializes overrides only on an instance's *root*. In `maps/koth_castle.tscn` every piece of geometry is `instance=ExtResource(<glb>)`, and each GLB's root is a `Node3D` with the `MeshInstance3D` one level **inside** it — `Block_16x16x2__col2` → `Block 16x16x2` → `StaticBody3D` → `CollisionShape3D`. So a `material_override` set on one of those 106 meshes is dropped on save: the edit looks like it worked right up until you reopen the map. Only properties on the map's *own* nodes survive, which is why `MaterialReplacer`'s `material` (the `ExtResource("7_hufvf")` on `Geometry`) round-trips fine while everything derived from it does not. Any future editor tool that mutates descendants of an instance hits the same wall.

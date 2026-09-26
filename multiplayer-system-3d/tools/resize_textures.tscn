@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://bgwkeo0xfdnrg"]
+
+[ext_resource type="Script" uid="uid://dq2slt7i2t31" path="res://tools/resize_textures.gd" id="1"]
+
+[node name="ResizeTextures" type="Node" unique_id=864268542]
+script = ExtResource("1")
