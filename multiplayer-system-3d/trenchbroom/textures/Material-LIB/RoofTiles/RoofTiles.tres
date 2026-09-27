@@ -1,0 +1,15 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://behks6t6ggftw"]
+
+[ext_resource type="Texture2D" uid="uid://d3x42dh7wpcfy" path="res://trenchbroom/textures/Material-LIB/RoofTiles/RoofTiles.png" id="1_2j50s"]
+[ext_resource type="Texture2D" uid="uid://bs1p78idag6nr" path="res://trenchbroom/textures/Material-LIB/RoofTiles/RoofTiles_metallic.png" id="2_ch735"]
+[ext_resource type="Texture2D" uid="uid://ctb8h6lwmw6iu" path="res://trenchbroom/textures/Material-LIB/RoofTiles/RoofTiles_normal.png" id="3_0pqp2"]
+[ext_resource type="Texture2D" uid="uid://dpj1xa0en2c8y" path="res://trenchbroom/textures/Material-LIB/RoofTiles/RoofTiles_roughness.png" id="4_fxass"]
+
+[resource]
+albedo_texture = ExtResource("1_2j50s")
+metallic_specular = 0.0
+metallic_texture = ExtResource("2_ch735")
+roughness_texture = ExtResource("4_fxass")
+normal_enabled = true
+normal_texture = ExtResource("3_0pqp2")
+texture_filter = 2

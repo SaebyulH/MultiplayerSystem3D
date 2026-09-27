@@ -25,39 +25,39 @@
 }
 // brush 2
 {
-( -384 288 -16 ) ( -384 289 -16 ) ( -384 288 -15 ) Material-LIB/Cobblestone/Cobblestone [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -384 288 -16 ) ( -384 288 -15 ) ( -383 288 -16 ) Material-LIB/Cobblestone/Cobblestone [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -384 288 -16 ) ( -383 288 -16 ) ( -384 289 -16 ) Material-LIB/Cobblestone/Cobblestone [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
-( 640 544 224 ) ( 640 545 224 ) ( 641 544 224 ) Material-LIB/Cobblestone/Cobblestone [ 1 0 0 0 ] [ 0 -1 0 0 ] 270 0.063 0.063
-( 640 800 448 ) ( 641 800 448 ) ( 640 800 449 ) Material-LIB/Cobblestone/Cobblestone [ -1 0 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
-( -32 544 448 ) ( -32 544 449 ) ( -32 545 448 ) Material-LIB/Cobblestone/Cobblestone [ 0 1 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
+( -384 288 -16 ) ( -384 289 -16 ) ( -384 288 -15 ) Material-LIB/RoofTiles/RoofTiles [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -384 288 -16 ) ( -384 288 -15 ) ( -383 288 -16 ) Material-LIB/RoofTiles/RoofTiles [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -384 288 -16 ) ( -383 288 -16 ) ( -384 289 -16 ) Material-LIB/RoofTiles/RoofTiles [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 640 544 224 ) ( 640 545 224 ) ( 641 544 224 ) Material-LIB/RoofTiles/RoofTiles [ 1 0 0 0 ] [ 0 -1 0 0 ] 270 0.063 0.063
+( 640 800 448 ) ( 641 800 448 ) ( 640 800 449 ) Material-LIB/RoofTiles/RoofTiles [ -1 0 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
+( -32 544 448 ) ( -32 544 449 ) ( -32 545 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0 1 0 0 ] [ 0 0 -1 0 ] 180 -0.047 -0.507
 }
 // brush 3
 {
-( 288 288 -16 ) ( 288 289 -16 ) ( 288 288 -15 ) Material-LIB/Cobblestone/Cobblestone [ 0 -1 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
-( 256 288 -16 ) ( 256 288 -15 ) ( 257 288 -16 ) Material-LIB/Cobblestone/Cobblestone [ 1 0 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
-( 256 288 -16 ) ( 257 288 -16 ) ( 256 289 -16 ) Material-LIB/Cobblestone/Cobblestone [ -1 0 0 0 ] [ 0 -1 0 0 ] 270 0.063 0.063
-( 1280 544 224 ) ( 1280 545 224 ) ( 1281 544 224 ) Material-LIB/Cobblestone/Cobblestone [ 1 0 0 0 ] [ 0 -1 0 0 ] 180 0.063 0.063
-( 1280 800 448 ) ( 1281 800 448 ) ( 1280 800 449 ) Material-LIB/Cobblestone/Cobblestone [ -1 0 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
-( 640 544 448 ) ( 640 544 449 ) ( 640 545 448 ) Material-LIB/Cobblestone/Cobblestone [ 0 1 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
+( 288 288 -16 ) ( 288 289 -16 ) ( 288 288 -15 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 180 -0.047 -0.507
+( 256 288 -16 ) ( 256 288 -15 ) ( 257 288 -16 ) Material-LIB/RoofTiles/RoofTiles [ 1 0 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
+( 256 288 -16 ) ( 257 288 -16 ) ( 256 289 -16 ) Material-LIB/RoofTiles/RoofTiles [ -1 0 0 0 ] [ 0 -1 0 0 ] 270 0.063 0.063
+( 1280 544 224 ) ( 1280 545 224 ) ( 1281 544 224 ) Material-LIB/RoofTiles/RoofTiles [ 1 0 0 0 ] [ 0 -1 0 0 ] 180 0.063 0.063
+( 1280 800 448 ) ( 1281 800 448 ) ( 1280 800 449 ) Material-LIB/RoofTiles/RoofTiles [ -1 0 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
+( 640 544 448 ) ( 640 544 449 ) ( 640 545 448 ) Material-LIB/RoofTiles/RoofTiles [ 0 1 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
 }
 // brush 4
 {
-( -32 288 -16 ) ( -32 289 -16 ) ( -32 288 -15 ) Material-LIB/Cobblestone/Cobblestone [ 0 -1 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
-( -64 704 -16 ) ( -64 704 -15 ) ( -63 704 -16 ) Material-LIB/Cobblestone/Cobblestone [ 1 0 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
-( -64 288 -16 ) ( -63 288 -16 ) ( -64 289 -16 ) Material-LIB/Cobblestone/Cobblestone [ -1 0 0 0 ] [ 0 -1 0 0 ] 90 0.063 0.063
-( 960 544 224 ) ( 960 545 224 ) ( 961 544 224 ) Material-LIB/Cobblestone/Cobblestone [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
-( 960 800 448 ) ( 961 800 448 ) ( 960 800 449 ) Material-LIB/Cobblestone/Cobblestone [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( 288 544 448 ) ( 288 544 449 ) ( 288 545 448 ) Material-LIB/Cobblestone/Cobblestone [ 0 1 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
+( -32 288 -16 ) ( -32 289 -16 ) ( -32 288 -15 ) Material-LIB/RoofTiles/RoofTiles [ 0 -1 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
+( -64 704 -16 ) ( -64 704 -15 ) ( -63 704 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 0 -1 0 ] 270 -0.047 -0.507
+( -64 288 -16 ) ( -63 288 -16 ) ( -64 289 -16 ) Material-LIB/RoofTiles/RoofTiles [ -1 0 0 0 ] [ 0 -1 0 0 ] 90 0.063 0.063
+( 960 544 224 ) ( 960 545 224 ) ( 961 544 224 ) Material-LIB/RoofTiles/RoofTiles [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 960 800 448 ) ( 961 800 448 ) ( 960 800 449 ) Material-LIB/RoofTiles/RoofTiles [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 288 544 448 ) ( 288 544 449 ) ( 288 545 448 ) Material-LIB/RoofTiles/RoofTiles [ 0 1 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
 }
 // brush 5
 {
-( -32 -96 -16 ) ( -32 -95 -16 ) ( -32 -96 -15 ) Material-LIB/Cobblestone/Cobblestone [ 0 -1 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
-( -64 288 -16 ) ( -64 288 -15 ) ( -63 288 -16 ) Material-LIB/Cobblestone/Cobblestone [ 1 0 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
-( -64 -96 -16 ) ( -63 -96 -16 ) ( -64 -95 -16 ) Material-LIB/Cobblestone/Cobblestone [ -1 0 0 0 ] [ 0 -1 0 0 ] 270 0.063 0.063
-( 960 160 224 ) ( 960 161 224 ) ( 961 160 224 ) Material-LIB/Cobblestone/Cobblestone [ 1 0 0 0 ] [ 0 -1 0 0 ] 180 0.063 0.063
-( 960 384 448 ) ( 961 384 448 ) ( 960 384 449 ) Material-LIB/Cobblestone/Cobblestone [ -1 0 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
-( 288 160 448 ) ( 288 160 449 ) ( 288 161 448 ) Material-LIB/Cobblestone/Cobblestone [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -32 -96 -16 ) ( -32 -95 -16 ) ( -32 -96 -15 ) Material-LIB/RoofTiles/RoofTiles [ 0 -1 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( -64 288 -16 ) ( -64 288 -15 ) ( -63 288 -16 ) Material-LIB/RoofTiles/RoofTiles [ 1 0 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
+( -64 -96 -16 ) ( -63 -96 -16 ) ( -64 -95 -16 ) Material-LIB/RoofTiles/RoofTiles [ -1 0 0 0 ] [ 0 -1 0 0 ] 270 0.063 0.063
+( 960 160 224 ) ( 960 161 224 ) ( 961 160 224 ) Material-LIB/RoofTiles/RoofTiles [ 1 0 0 0 ] [ 0 -1 0 0 ] 180 0.063 0.063
+( 960 384 448 ) ( 961 384 448 ) ( 960 384 449 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 0 -1 0 ] 90 -0.047 -0.507
+( 288 160 448 ) ( 288 160 449 ) ( 288 161 448 ) Material-LIB/RoofTiles/RoofTiles [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 }
 // brush 6
 {
@@ -225,6 +225,15 @@
 ( -384 1568 960 ) ( -384 1569 960 ) ( -383 1568 960 ) BrickWall/BrickWall[Orange] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
 ( -384 1568 448 ) ( -383 1568 448 ) ( -384 1568 449 ) BrickWall/BrickWall[Orange] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 ( -384 1568 448 ) ( -384 1568 449 ) ( -384 1569 448 ) BrickWall/BrickWall[Orange] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 26
+{
+( -32 368 -660.5714285714275 ) ( -32 371.28571428571433 -660.5714285714275 ) ( -32 368 -660.2857142857133 ) Material-LIB/Nature/Water/Water[shallow] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -32 368 -660.5714285714275 ) ( -32 368 -660.2857142857133 ) ( -29.142857142857153 368 -660.5714285714275 ) Material-LIB/Nature/Water/Water[shallow] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -32 368 -660.5714285714275 ) ( -29.142857142857153 368 -660.5714285714275 ) ( -32 371.28571428571433 -660.5714285714275 ) Material-LIB/Nature/Water/Water[shallow] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 288 736 -656 ) ( 288 739.2857142857142 -656 ) ( 290.85714285714295 736 -656 ) Material-LIB/Nature/Water/Water[shallow] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 288 736 -656 ) ( 290.85714285714295 736 -656 ) ( 288 736 -655.7142857142858 ) Material-LIB/Nature/Water/Water[shallow] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 288 736 -656 ) ( 288 736 -655.7142857142858 ) ( 288 739.2857142857142 -656 ) Material-LIB/Nature/Water/Water[shallow] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
 }
 }
 // entity 1
@@ -1327,82 +1336,82 @@
 // brush 0
 {
 ( 256 -224 16 ) ( 248 -144 -16 ) ( 248 -144 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 4.677050100851671e-16 1 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
-( 248 -144 -16 ) ( 256 -112 16 ) ( 248 -144 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865472 -0.7071067811865478 0 0.17662048 ] [ 0 0 -1 0 ] 270 0.063 0.063
+( 248 -144 -16 ) ( 256 -112 16 ) ( 248 -144 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865472 -0.7071067811865478 0 0.17662048 ] [ 0 0 -1 0 ] 270 0.285 0.215
 ( 256 -224 -16 ) ( 256 -112 -16 ) ( 248 -144 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 -0.99998474 ] [ 0 -1 0 0 ] 90 0.063 0.063
-( 256 -112 448 ) ( 256 -224 448 ) ( 248 -144 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0.99998474 ] [ 0 -1 0 0 ] 270 0.063 0.063
+( 256 -112 448 ) ( 256 -224 448 ) ( 248 -144 448 ) Material-LIB/RoofTiles/RoofTiles [ -1 0 0 0.99998474 ] [ 0 -1 0 0 ] 270 0.063 0.063
 ( 256 -112 16 ) ( 256 -224 -16 ) ( 256 -224 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -3.1339616320458145e-16 1 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 }
 // brush 1
 {
 ( 256 -224 16 ) ( 232 -176 -16 ) ( 232 -176 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -2.7817808468846267e-16 1 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
-( 232 -176 -16 ) ( 248 -144 16 ) ( 232 -176 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865472 -0.7071067811865478 0 0.17661285 ] [ 0 0 -1 0 ] 270 0.063 0.063
+( 232 -176 -16 ) ( 248 -144 16 ) ( 232 -176 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865472 -0.7071067811865478 0 0.17661285 ] [ 0 0 -1 0 ] 270 0.285 0.215
 ( 256 -224 -16 ) ( 248 -144 -16 ) ( 232 -176 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 -0.99998474 ] [ 0 -1 0 0 ] 90 0.063 0.063
-( 248 -144 448 ) ( 256 -224 448 ) ( 232 -176 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0.99998474 ] [ 0 -1 0 0 ] 270 0.063 0.063
+( 248 -144 448 ) ( 256 -224 448 ) ( 232 -176 448 ) Material-LIB/RoofTiles/RoofTiles [ -1 0 0 0.99998474 ] [ 0 -1 0 0 ] 270 0.063 0.063
 ( 248 -144 16 ) ( 256 -224 -16 ) ( 256 -224 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 4.677050100851671e-16 1 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
 }
 // brush 2
 {
-( 208 -200 -16 ) ( 232 -176 16 ) ( 208 -200 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 0.7071067811865476 0 -0.019338608 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( 208 -200 -16 ) ( 232 -176 16 ) ( 208 -200 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 0.7071067811865476 0 -0.019338608 ] [ 0 0 -1 0 ] 90 0.285 0.215
 ( 256 -224 16 ) ( 208 -200 -16 ) ( 208 -200 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( 256 -224 -16 ) ( 232 -176 -16 ) ( 208 -200 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 -1 0 0 ] 90 0.063 0.063
-( 232 -176 448 ) ( 256 -224 448 ) ( 208 -200 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 -1 0 0 ] 270 0.063 0.063
+( 232 -176 448 ) ( 256 -224 448 ) ( 208 -200 448 ) Material-LIB/RoofTiles/RoofTiles [ -1 0 0 0 ] [ 0 -1 0 0 ] 270 0.063 0.063
 ( 232 -176 16 ) ( 256 -224 -16 ) ( 256 -224 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -2.7817808468846267e-16 1 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
 }
 // brush 3
 {
-( 176 -216 -16 ) ( 208 -200 16 ) ( 176 -216 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 0.7071067811865476 0 -0.019330025 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( 176 -216 -16 ) ( 208 -200 16 ) ( 176 -216 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 0.7071067811865476 0 -0.019330025 ] [ 0 0 -1 0 ] 90 0.285 0.215
 ( 256 -224 16 ) ( 176 -216 -16 ) ( 176 -216 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 -1.9967346175427393e-16 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( 256 -224 -16 ) ( 208 -200 -16 ) ( 176 -216 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 -0.99998474 ] [ 0 -1 0 0 ] 90 0.063 0.063
-( 208 -200 448 ) ( 256 -224 448 ) ( 176 -216 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0.99998474 ] [ 0 -1 0 0 ] 270 0.063 0.063
+( 208 -200 448 ) ( 256 -224 448 ) ( 176 -216 448 ) Material-LIB/RoofTiles/RoofTiles [ -1 0 0 0.99998474 ] [ 0 -1 0 0 ] 270 0.063 0.063
 ( 208 -200 16 ) ( 256 -224 -16 ) ( 256 -224 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
 }
 // brush 4
 {
-( 144 -224 -16 ) ( 176 -216 16 ) ( 144 -224 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 0.7071067811865476 0 -0.019332886 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( 144 -224 -16 ) ( 176 -216 16 ) ( 144 -224 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 0.7071067811865476 0 -0.019332886 ] [ 0 0 -1 0 ] 90 0.285 0.215
 ( 256 -224 16 ) ( 144 -224 -16 ) ( 144 -224 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( 256 -224 -16 ) ( 176 -216 -16 ) ( 144 -224 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 -1 0 0 ] 90 0.063 0.063
-( 176 -216 448 ) ( 256 -224 448 ) ( 144 -224 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 -1 0 0 ] 270 0.063 0.063
+( 176 -216 448 ) ( 256 -224 448 ) ( 144 -224 448 ) Material-LIB/RoofTiles/RoofTiles [ -1 0 0 0 ] [ 0 -1 0 0 ] 270 0.063 0.063
 ( 176 -216 16 ) ( 256 -224 -16 ) ( 256 -224 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 -1.9967346175427393e-16 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
 }
 // brush 5
 {
 ( 0 -112 16 ) ( 0 -224 16 ) ( 0 -224 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 3.1339616320458145e-16 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 ( 0 -224 -16 ) ( 8 -144 -16 ) ( 0 -112 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
-( 0 -112 448 ) ( 8 -144 448 ) ( 0 -224 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 -1 0 0 ] 180 0.063 0.063
-( 8 -144 -16 ) ( 8 -144 16 ) ( 0 -112 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865472 -0.7071067811865478 0 -0.84272003 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 0 -112 448 ) ( 8 -144 448 ) ( 0 -224 448 ) Material-LIB/RoofTiles/RoofTiles [ 1 0 0 0 ] [ 0 -1 0 0 ] 180 0.063 0.063
+( 8 -144 -16 ) ( 8 -144 16 ) ( 0 -112 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865472 -0.7071067811865478 0 -0.84272003 ] [ 0 0 -1 0 ] 0 0.285 0.215
 ( 0 -224 16 ) ( 8 -144 16 ) ( 8 -144 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -4.677050100851671e-16 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 }
 // brush 6
 {
 ( 8 -144 16 ) ( 0 -224 16 ) ( 0 -224 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -4.677050100851671e-16 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 ( 0 -224 -16 ) ( 24 -176 -16 ) ( 8 -144 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
-( 8 -144 448 ) ( 24 -176 448 ) ( 0 -224 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 -1 0 0 ] 180 0.063 0.063
+( 8 -144 448 ) ( 24 -176 448 ) ( 0 -224 448 ) Material-LIB/RoofTiles/RoofTiles [ 1 0 0 0 ] [ 0 -1 0 0 ] 180 0.063 0.063
 ( 0 -224 16 ) ( 24 -176 16 ) ( 24 -176 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 2.7817808468846267e-16 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( 24 -176 -16 ) ( 24 -176 16 ) ( 8 -144 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865472 -0.7071067811865478 0 -0.84272003 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 24 -176 -16 ) ( 24 -176 16 ) ( 8 -144 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865472 -0.7071067811865478 0 -0.84272003 ] [ 0 0 -1 0 ] 0 0.285 0.215
 }
 // brush 7
 {
 ( 24 -176 16 ) ( 0 -224 16 ) ( 0 -224 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 2.7817808468846267e-16 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 ( 0 -224 -16 ) ( 48 -200 -16 ) ( 24 -176 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
-( 24 -176 448 ) ( 48 -200 448 ) ( 0 -224 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 -1 0 0 ] 180 0.063 0.063
+( 24 -176 448 ) ( 48 -200 448 ) ( 0 -224 448 ) Material-LIB/RoofTiles/RoofTiles [ 1 0 0 0 ] [ 0 -1 0 0 ] 180 0.063 0.063
 ( 0 -224 16 ) ( 48 -200 16 ) ( 48 -200 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( 48 -200 -16 ) ( 48 -200 16 ) ( 24 -176 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 0.7071067811865476 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 48 -200 -16 ) ( 48 -200 16 ) ( 24 -176 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 0.7071067811865476 0 0 ] [ 0 0 -1 0 ] 0 0.285 0.215
 }
 // brush 8
 {
 ( 48 -200 16 ) ( 0 -224 16 ) ( 0 -224 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 ( 0 -224 -16 ) ( 80 -216 -16 ) ( 48 -200 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
-( 48 -200 448 ) ( 80 -216 448 ) ( 0 -224 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 -1 0 0 ] 180 0.063 0.063
+( 48 -200 448 ) ( 80 -216 448 ) ( 0 -224 448 ) Material-LIB/RoofTiles/RoofTiles [ 1 0 0 0 ] [ 0 -1 0 0 ] 180 0.063 0.063
 ( 0 -224 16 ) ( 80 -216 16 ) ( 80 -216 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 -1.9967346175427393e-16 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( 80 -216 -16 ) ( 80 -216 16 ) ( 48 -200 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 0.7071067811865476 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 80 -216 -16 ) ( 80 -216 16 ) ( 48 -200 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 0.7071067811865476 0 0 ] [ 0 0 -1 0 ] 0 0.285 0.215
 }
 // brush 9
 {
 ( 80 -216 16 ) ( 0 -224 16 ) ( 0 -224 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 -1.9967346175427393e-16 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 ( 0 -224 16 ) ( 112 -224 16 ) ( 112 -224 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 ( 0 -224 -16 ) ( 112 -224 -16 ) ( 80 -216 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
-( 80 -216 448 ) ( 112 -224 448 ) ( 0 -224 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 -1 0 0 ] 180 0.063 0.063
-( 112 -224 -16 ) ( 112 -224 16 ) ( 80 -216 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 0.7071067811865476 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 80 -216 448 ) ( 112 -224 448 ) ( 0 -224 448 ) Material-LIB/RoofTiles/RoofTiles [ 1 0 0 0 ] [ 0 -1 0 0 ] 180 0.063 0.063
+( 112 -224 -16 ) ( 112 -224 16 ) ( 80 -216 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 0.7071067811865476 0 0 ] [ 0 0 -1 0 ] 0 0.285 0.215
 }
 // brush 10
 {
@@ -1414,7 +1423,7 @@
 ( -144 160 112 ) ( -144 160 80 ) ( -176 168 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.9701425001453319 0.24253562503633302 0 -0.16217041 ] [ 0 0 -1 0 ] 180 0.063 0.063
 ( -144 160 112 ) ( -128 160 112 ) ( -128 160 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.5 3.061616997868383e-17 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 ( -144 160 80 ) ( -128 160 80 ) ( -128 288 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 3.061616997868383e-17 0.5 0 0 ] [ 0.5 -3.061616997868383e-17 0 0 ] 0 0.063 0.063
-( -144 160 224 ) ( -176 168 224 ) ( -208 184 224 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -3.061616997868383e-17 -0.5 0 0 ] [ 0.5 -3.061616997868383e-17 0 0 ] 90 0.063 0.063
+( -144 160 224 ) ( -176 168 224 ) ( -208 184 224 ) Material-LIB/RoofTiles/RoofTiles [ -3.061616997868383e-17 -0.5 0 0 ] [ 0.5 -3.061616997868383e-17 0 0 ] 90 0.063 0.063
 ( -128 288 112 ) ( -256 288 112 ) ( -256 288 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.5 -3.061616997868383e-17 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( 128 160 112 ) ( 128 288 112 ) ( 128 288 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -3.061616997868383e-17 -0.5 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 }
@@ -1423,7 +1432,7 @@
 ( 128 160 112 ) ( 128 288 80 ) ( 128 288 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 3.061616997868383e-17 -0.5 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
 ( 400 160 112 ) ( 384 160 80 ) ( 384 160 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.5 3.061616997868383e-17 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( 400 160 80 ) ( 384 288 80 ) ( 384 160 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -3.061616997868383e-17 0.5 0 0 ] [ -0.5 -3.061616997868383e-17 0 0 ] 270 0.063 0.063
-( 400 160 224 ) ( 464 184 224 ) ( 432 168 224 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 3.061616997868383e-17 -0.5 0 0 ] [ -0.5 -3.061616997868383e-17 0 0 ] 0 0.063 0.063
+( 400 160 224 ) ( 464 184 224 ) ( 432 168 224 ) Material-LIB/RoofTiles/RoofTiles [ 3.061616997868383e-17 -0.5 0 0 ] [ -0.5 -3.061616997868383e-17 0 0 ] 0 0.063 0.063
 ( 384 288 112 ) ( 512 288 80 ) ( 512 288 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.5 -3.061616997868383e-17 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
 ( 400 160 112 ) ( 432 168 80 ) ( 400 160 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.9701425001453319 0.24253562503633302 0 0.48135376 ] [ 0 0 -1 0 ] 270 0.063 0.063
 ( 432 168 112 ) ( 464 184 80 ) ( 432 168 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.894427190999916 0.44721359549995804 0 0.4991455 ] [ 0 0 -1 0 ] 270 0.063 0.063
@@ -1447,14 +1456,14 @@
 ( 112 0 16 ) ( 112 0 -16 ) ( 128 160 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1.9967346175427393e-16 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 ( 128 -64 -16 ) ( 112 0 -16 ) ( 112 0 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 -0.7071067811865476 0 0.6274185 ] [ 0 0 -1 0 ] 180 0.063 0.063
 ( 128 -64 -16 ) ( 128 160 -16 ) ( 112 0 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 -1 0 0 ] 180 0.063 0.063
-( 112 0 224 ) ( 128 160 224 ) ( 128 -64 224 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 112 0 224 ) ( 128 160 224 ) ( 128 -64 224 ) Material-LIB/RoofTiles/RoofTiles [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
 ( 128 -64 16 ) ( 128 160 16 ) ( 128 160 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -2.7817808468846267e-16 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 }
 // brush 1
 {
 ( -32 144 -16 ) ( -96 160 -16 ) ( -96 160 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 -0.7071067811865476 0 0.6274109 ] [ 0 0 -1 0 ] 180 0.063 0.063
 ( -32 144 -16 ) ( 128 160 -16 ) ( -96 160 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 -1 0 0 ] 180 0.063 0.063
-( -96 160 224 ) ( 128 160 224 ) ( -32 144 224 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -96 160 224 ) ( 128 160 224 ) ( -32 144 224 ) Material-LIB/RoofTiles/RoofTiles [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
 ( 128 160 -16 ) ( 128 160 16 ) ( -96 160 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
 ( -32 144 16 ) ( 128 160 16 ) ( 128 160 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 1.9967346175427393e-16 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 }
@@ -1463,7 +1472,7 @@
 ( 32 112 -16 ) ( -32 144 -16 ) ( -32 144 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 -0.7071067811865476 0 0.6274185 ] [ 0 0 -1 0 ] 180 0.063 0.063
 ( 128 160 -16 ) ( 128 160 16 ) ( -32 144 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 1.9967346175427393e-16 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
 ( 32 112 -16 ) ( 128 160 -16 ) ( -32 144 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 -1 0 0 ] 180 0.063 0.063
-( -32 144 224 ) ( 128 160 224 ) ( 32 112 224 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -32 144 224 ) ( 128 160 224 ) ( 32 112 224 ) Material-LIB/RoofTiles/RoofTiles [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
 ( 32 112 16 ) ( 128 160 16 ) ( 128 160 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 }
 // brush 3
@@ -1471,7 +1480,7 @@
 ( 80 64 -16 ) ( 32 112 -16 ) ( 32 112 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 -0.7071067811865476 0 0.6274166 ] [ 0 0 -1 0 ] 180 0.063 0.063
 ( 128 160 -16 ) ( 128 160 16 ) ( 32 112 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
 ( 80 64 -16 ) ( 128 160 -16 ) ( 32 112 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 -1 0 0 ] 180 0.063 0.063
-( 32 112 224 ) ( 128 160 224 ) ( 80 64 224 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 32 112 224 ) ( 128 160 224 ) ( 80 64 224 ) Material-LIB/RoofTiles/RoofTiles [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
 ( 80 64 16 ) ( 128 160 16 ) ( 128 160 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -2.7817808468846267e-16 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 }
 // brush 4
@@ -1479,7 +1488,7 @@
 ( 112 0 -16 ) ( 80 64 -16 ) ( 80 64 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 -0.7071067811865476 0 0.6274147 ] [ 0 0 -1 0 ] 180 0.063 0.063
 ( 80 64 16 ) ( 80 64 -16 ) ( 128 160 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -2.7817808468846267e-16 -1 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
 ( 112 0 -16 ) ( 128 160 -16 ) ( 80 64 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 -1 0 0.9999962 ] 180 0.063 0.063
-( 80 64 224 ) ( 128 160 224 ) ( 112 0 224 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 -1 0 0.9999962 ] 0 0.063 0.063
+( 80 64 224 ) ( 128 160 224 ) ( 112 0 224 ) Material-LIB/RoofTiles/RoofTiles [ 1 0 0 0 ] [ 0 -1 0 0.9999962 ] 0 0.063 0.063
 ( 112 0 16 ) ( 128 160 16 ) ( 128 160 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1.9967346175427393e-16 1 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
 }
 }
@@ -1497,54 +1506,54 @@
 ( -224 48 112 ) ( -384 32 80 ) ( -224 48 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 2.609058017116416e-16 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
 ( -160 32 112 ) ( -384 32 80 ) ( -384 32 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 2.16945744731095e-16 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 ( -160 32 80 ) ( -224 48 80 ) ( -384 32 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 6.123233995736766e-17 1 0 -0.9999981 ] [ 1 -6.123233995736766e-17 0 0 ] 90 0.063 0.063
-( -224 48 448 ) ( -160 32 448 ) ( -384 32 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -6.123233995736766e-17 -1 0 0.9999981 ] [ 1 -6.123233995736766e-17 0 0 ] 270 0.063 0.063
-( -160 32 80 ) ( -224 48 112 ) ( -224 48 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 -0.7071067811865476 0 0.1564331 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -224 48 448 ) ( -160 32 448 ) ( -384 32 448 ) Material-LIB/RoofTiles/RoofTiles [ -6.123233995736766e-17 -1 0 0.9999981 ] [ 1 -6.123233995736766e-17 0 0 ] 270 0.063 0.063
+( -160 32 80 ) ( -224 48 112 ) ( -224 48 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 -0.7071067811865476 0 0.1564331 ] [ 0 0 -1 0 ] 0 0.285 0.215
 }
 // brush 1
 {
 ( -384 32 80 ) ( -384 256 112 ) ( -384 32 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 6.123233995736766e-17 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 ( -368 192 80 ) ( -384 256 80 ) ( -384 32 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 6.123233995736766e-17 1 0 0 ] [ 1 -6.123233995736766e-17 0 0.9999695 ] 90 0.063 0.063
-( -384 256 448 ) ( -368 192 448 ) ( -384 32 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -6.123233995736766e-17 -1 0 0 ] [ 1 -6.123233995736766e-17 0 0.9999695 ] 270 0.063 0.063
-( -368 192 80 ) ( -384 256 112 ) ( -384 256 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 -0.7071067811865476 0 0.15640259 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -384 256 448 ) ( -368 192 448 ) ( -384 32 448 ) Material-LIB/RoofTiles/RoofTiles [ -6.123233995736766e-17 -1 0 0 ] [ 1 -6.123233995736766e-17 0 0.9999695 ] 270 0.063 0.063
+( -368 192 80 ) ( -384 256 112 ) ( -384 256 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 -0.7071067811865476 0 0.15640259 ] [ 0 0 -1 0 ] 0 0.285 0.215
 ( -368 192 112 ) ( -384 32 80 ) ( -384 32 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1.3844112179690625e-16 1 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
 }
 // brush 2
 {
 ( -384 32 80 ) ( -368 192 112 ) ( -384 32 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1.3844112179690625e-16 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 ( -336 128 80 ) ( -368 192 80 ) ( -384 32 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 6.123233995736766e-17 1 0 0 ] [ 1 -6.123233995736766e-17 0 0.9999695 ] 90 0.063 0.063
-( -368 192 448 ) ( -336 128 448 ) ( -384 32 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -6.123233995736766e-17 -1 0 0 ] [ 1 -6.123233995736766e-17 0 0.9999695 ] 270 0.063 0.063
+( -368 192 448 ) ( -336 128 448 ) ( -384 32 448 ) Material-LIB/RoofTiles/RoofTiles [ -6.123233995736766e-17 -1 0 0 ] [ 1 -6.123233995736766e-17 0 0.9999695 ] 270 0.063 0.063
 ( -336 128 112 ) ( -384 32 80 ) ( -384 32 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 6.123233995736766e-17 1 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
-( -336 128 80 ) ( -368 192 112 ) ( -368 192 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 -0.7071067811865476 0 0.15640259 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -336 128 80 ) ( -368 192 112 ) ( -368 192 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 -0.7071067811865476 0 0.15640259 ] [ 0 0 -1 0 ] 0 0.285 0.215
 }
 // brush 3
 {
 ( -384 32 80 ) ( -336 128 112 ) ( -384 32 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 6.123233995736766e-17 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 ( -288 80 80 ) ( -336 128 80 ) ( -384 32 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 6.123233995736766e-17 1 0 0 ] [ 1 -6.123233995736766e-17 0 0 ] 90 0.063 0.063
-( -336 128 448 ) ( -288 80 448 ) ( -384 32 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -6.123233995736766e-17 -1 0 0 ] [ 1 -6.123233995736766e-17 0 0 ] 270 0.063 0.063
+( -336 128 448 ) ( -288 80 448 ) ( -384 32 448 ) Material-LIB/RoofTiles/RoofTiles [ -6.123233995736766e-17 -1 0 0 ] [ 1 -6.123233995736766e-17 0 0 ] 270 0.063 0.063
 ( -288 80 112 ) ( -384 32 80 ) ( -384 32 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 2.16945744731095e-16 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
-( -288 80 80 ) ( -336 128 112 ) ( -336 128 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 -0.7071067811865476 0 0.15646362 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -288 80 80 ) ( -336 128 112 ) ( -336 128 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 -0.7071067811865476 0 0.15646362 ] [ 0 0 -1 0 ] 0 0.285 0.215
 }
 // brush 4
 {
 ( -288 80 112 ) ( -384 32 80 ) ( -288 80 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 2.16945744731095e-16 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 ( -224 48 80 ) ( -288 80 80 ) ( -384 32 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 6.123233995736766e-17 1 0 0 ] [ 1 -6.123233995736766e-17 0 0 ] 90 0.063 0.063
-( -288 80 448 ) ( -224 48 448 ) ( -384 32 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -6.123233995736766e-17 -1 0 0 ] [ 1 -6.123233995736766e-17 0 0 ] 270 0.063 0.063
+( -288 80 448 ) ( -224 48 448 ) ( -384 32 448 ) Material-LIB/RoofTiles/RoofTiles [ -6.123233995736766e-17 -1 0 0 ] [ 1 -6.123233995736766e-17 0 0 ] 270 0.063 0.063
 ( -224 48 112 ) ( -384 32 80 ) ( -384 32 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 2.609058017116416e-16 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -224 48 80 ) ( -288 80 112 ) ( -288 80 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 -0.7071067811865476 0 0.15644836 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -224 48 80 ) ( -288 80 112 ) ( -288 80 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 -0.7071067811865476 0 0.15644836 ] [ 0 0 -1 0 ] 0 0.285 0.215
 }
 // brush 5
 {
 ( -384 -96 16 ) ( -384 32 -16 ) ( -384 32 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0 -0.5 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 ( 0 -224 16 ) ( -128 -224 -16 ) ( -128 -224 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.5 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 ( 0 -80 -16 ) ( -128 -96 -16 ) ( 0 -96 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.5 0 0 0 ] [ 0 -0.5 0 0 ] 90 0.063 0.063
-( 0 -80 448 ) ( -24 -16 448 ) ( -8 -48 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.5 0 0 0 ] [ 0 -0.5 0 0 ] 90 0.063 0.063
-( -112 32 16 ) ( -128 32 -16 ) ( -112 32 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.5 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -80 24 16 ) ( -112 32 -16 ) ( -80 24 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.9701425001453319 0.24253562503633297 0 -0.7611389 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -48 8 16 ) ( -80 24 -16 ) ( -48 8 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.894427190999916 0.447213595499958 0 -0.3108368 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -24 -16 16 ) ( -48 8 -16 ) ( -24 -16 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 0.7071067811865476 0 -0.6274166 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -8 -48 16 ) ( -24 -16 -16 ) ( -8 -48 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.447213595499958 0.894427190999916 0 -0.62166786 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( 0 -80 16 ) ( -8 -48 -16 ) ( 0 -80 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.24253562503633297 0.9701425001453319 0 -0.04455948 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( 0 -80 16 ) ( 0 -96 -16 ) ( 0 -96 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0 0.5 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 0 -80 448 ) ( -24 -16 448 ) ( -8 -48 448 ) Material-LIB/RoofTiles/RoofTiles [ 0.5 0 0 0 ] [ 0 -0.5 0 0 ] 90 0.063 0.063
+( -112 32 16 ) ( -128 32 -16 ) ( -112 32 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.5 0 0 0 ] [ 0 0 -1 0 ] 0 0.285 0.215
+( -80 24 16 ) ( -112 32 -16 ) ( -80 24 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.9701425001453319 0.24253562503633297 0 -0.7611389 ] [ 0 0 -1 0 ] 0 0.285 0.215
+( -48 8 16 ) ( -80 24 -16 ) ( -48 8 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.894427190999916 0.447213595499958 0 -0.3108368 ] [ 0 0 -1 0 ] 0 0.285 0.215
+( -24 -16 16 ) ( -48 8 -16 ) ( -24 -16 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 0.7071067811865476 0 -0.6274166 ] [ 0 0 -1 0 ] 0 0.285 0.215
+( -8 -48 16 ) ( -24 -16 -16 ) ( -8 -48 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.447213595499958 0.894427190999916 0 -0.62166786 ] [ 0 0 -1 0 ] 0 0.285 0.215
+( 0 -80 16 ) ( -8 -48 -16 ) ( 0 -80 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.24253562503633297 0.9701425001453319 0 -0.04455948 ] [ 0 0 -1 0 ] 0 0.285 0.215
+( 0 -80 16 ) ( 0 -96 -16 ) ( 0 -96 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0 0.5 0 0 ] [ 0 0 -1 0 ] 0 0.285 0.215
 }
 }
 // entity 5
@@ -1560,7 +1569,7 @@
 {
 ( 128 -64 16 ) ( 128 160 -16 ) ( 128 160 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 2.7817808468846267e-16 -1 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
 ( 128 -64 -16 ) ( 144 0 -16 ) ( 128 160 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 -1 0 0 ] 90 0.063 0.063
-( 144 0 224 ) ( 128 -64 224 ) ( 128 160 224 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 -1 0 0 ] 270 0.063 0.063
+( 144 0 224 ) ( 128 -64 224 ) ( 128 160 224 ) Material-LIB/RoofTiles/RoofTiles [ -1 0 0 0 ] [ 0 -1 0 0 ] 270 0.063 0.063
 ( 128 -64 -16 ) ( 144 0 16 ) ( 144 0 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 -0.7071067811865476 0 -0.35324097 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( 144 0 16 ) ( 128 160 -16 ) ( 144 0 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1.9967346175427393e-16 1 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 }
@@ -1568,7 +1577,7 @@
 {
 ( 288 144 16 ) ( 128 160 -16 ) ( 128 160 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 1.9967346175427393e-16 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( 288 144 -16 ) ( 352 160 -16 ) ( 128 160 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 -1 0 0 ] 90 0.063 0.063
-( 352 160 224 ) ( 288 144 224 ) ( 128 160 224 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 -1 0 0 ] 270 0.063 0.063
+( 352 160 224 ) ( 288 144 224 ) ( 128 160 224 ) Material-LIB/RoofTiles/RoofTiles [ -1 0 0 0 ] [ 0 -1 0 0 ] 270 0.063 0.063
 ( 128 160 -16 ) ( 352 160 16 ) ( 128 160 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( 288 144 -16 ) ( 352 160 16 ) ( 352 160 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 -0.7071067811865476 0 -0.35327148 ] [ 0 0 -1 0 ] 90 0.063 0.063
 }
@@ -1576,7 +1585,7 @@
 {
 ( 224 112 16 ) ( 128 160 -16 ) ( 128 160 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( 224 112 -16 ) ( 288 144 -16 ) ( 128 160 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 -1 0 0 ] 90 0.063 0.063
-( 288 144 224 ) ( 224 112 224 ) ( 128 160 224 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 -1 0 0 ] 270 0.063 0.063
+( 288 144 224 ) ( 224 112 224 ) ( 128 160 224 ) Material-LIB/RoofTiles/RoofTiles [ -1 0 0 0 ] [ 0 -1 0 0 ] 270 0.063 0.063
 ( 128 160 -16 ) ( 288 144 16 ) ( 128 160 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 1.9967346175427393e-16 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( 224 112 -16 ) ( 288 144 16 ) ( 288 144 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 -0.7071067811865476 0 -0.35327148 ] [ 0 0 -1 0 ] 90 0.063 0.063
 }
@@ -1584,7 +1593,7 @@
 {
 ( 176 64 16 ) ( 128 160 -16 ) ( 128 160 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 2.7817808468846267e-16 -1 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( 176 64 -16 ) ( 224 112 -16 ) ( 128 160 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 -1 0 0 ] 90 0.063 0.063
-( 224 112 224 ) ( 176 64 224 ) ( 128 160 224 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 -1 0 0 ] 270 0.063 0.063
+( 224 112 224 ) ( 176 64 224 ) ( 128 160 224 ) Material-LIB/RoofTiles/RoofTiles [ -1 0 0 0 ] [ 0 -1 0 0 ] 270 0.063 0.063
 ( 128 160 -16 ) ( 224 112 16 ) ( 128 160 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( 176 64 -16 ) ( 224 112 16 ) ( 224 112 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 -0.7071067811865476 0 -0.35324097 ] [ 0 0 -1 0 ] 90 0.063 0.063
 }
@@ -1592,7 +1601,7 @@
 {
 ( 144 0 16 ) ( 128 160 -16 ) ( 128 160 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1.9967346175427393e-16 1 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( 144 0 -16 ) ( 176 64 -16 ) ( 128 160 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 -1 0 0 ] 90 0.063 0.063
-( 176 64 224 ) ( 144 0 224 ) ( 128 160 224 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 -1 0 0 ] 270 0.063 0.063
+( 176 64 224 ) ( 144 0 224 ) ( 128 160 224 ) Material-LIB/RoofTiles/RoofTiles [ -1 0 0 0 ] [ 0 -1 0 0 ] 270 0.063 0.063
 ( 144 0 -16 ) ( 176 64 16 ) ( 176 64 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 -0.7071067811865476 0 -0.35325623 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( 176 64 16 ) ( 128 160 -16 ) ( 176 64 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 2.7817808468846267e-16 -1 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 }
@@ -1608,56 +1617,56 @@
 "_tb_group" "15"
 // brush 0
 {
-( 416 32 80 ) ( 480 48 80 ) ( 480 48 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 -0.7071067811865476 0 -0.82421875 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( 416 32 80 ) ( 480 48 80 ) ( 480 48 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 -0.7071067811865476 0 -0.82421875 ] [ 0 0 -1 0 ] 90 0.285 0.215
 ( 416 32 112 ) ( 640 32 112 ) ( 640 32 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 2.16945744731095e-16 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
 ( 416 32 80 ) ( 640 32 80 ) ( 480 48 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -6.123233995736766e-17 1 0 0 ] [ -1 -6.123233995736766e-17 0 0 ] 0 0.063 0.063
-( 480 48 448 ) ( 640 32 448 ) ( 416 32 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 6.123233995736766e-17 -1 0 0 ] [ -1 -6.123233995736766e-17 0 0 ] 180 0.063 0.063
+( 480 48 448 ) ( 640 32 448 ) ( 416 32 448 ) Material-LIB/RoofTiles/RoofTiles [ 6.123233995736766e-17 -1 0 0 ] [ -1 -6.123233995736766e-17 0 0 ] 180 0.063 0.063
 ( 480 48 112 ) ( 480 48 80 ) ( 640 32 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 2.609058017116416e-16 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 }
 // brush 1
 {
 ( 624 192 112 ) ( 640 32 112 ) ( 640 32 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1.3844112179690625e-16 1 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
-( 624 192 80 ) ( 640 256 80 ) ( 640 256 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 -0.7071067811865476 0 -0.8242798 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( 624 192 80 ) ( 640 256 80 ) ( 640 256 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 -0.7071067811865476 0 -0.8242798 ] [ 0 0 -1 0 ] 90 0.285 0.215
 ( 624 192 80 ) ( 640 32 80 ) ( 640 256 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -6.123233995736766e-17 1 0 0 ] [ -1 -6.123233995736766e-17 0 0 ] 0 0.063 0.063
-( 640 256 448 ) ( 640 32 448 ) ( 624 192 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 6.123233995736766e-17 -1 0 0 ] [ -1 -6.123233995736766e-17 0 0 ] 180 0.063 0.063
+( 640 256 448 ) ( 640 32 448 ) ( 624 192 448 ) Material-LIB/RoofTiles/RoofTiles [ 6.123233995736766e-17 -1 0 0 ] [ -1 -6.123233995736766e-17 0 0 ] 180 0.063 0.063
 ( 640 32 80 ) ( 640 32 112 ) ( 640 256 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -6.123233995736766e-17 1 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
 }
 // brush 2
 {
 ( 592 128 112 ) ( 640 32 112 ) ( 640 32 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -6.123233995736766e-17 1 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
-( 592 128 80 ) ( 624 192 80 ) ( 624 192 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 -0.7071067811865476 0 -0.8242798 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( 592 128 80 ) ( 624 192 80 ) ( 624 192 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 -0.7071067811865476 0 -0.8242798 ] [ 0 0 -1 0 ] 90 0.285 0.215
 ( 592 128 80 ) ( 640 32 80 ) ( 624 192 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -6.123233995736766e-17 1 0 0 ] [ -1 -6.123233995736766e-17 0 0 ] 0 0.063 0.063
-( 624 192 448 ) ( 640 32 448 ) ( 592 128 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 6.123233995736766e-17 -1 0 0 ] [ -1 -6.123233995736766e-17 0 0 ] 180 0.063 0.063
+( 624 192 448 ) ( 640 32 448 ) ( 592 128 448 ) Material-LIB/RoofTiles/RoofTiles [ 6.123233995736766e-17 -1 0 0 ] [ -1 -6.123233995736766e-17 0 0 ] 180 0.063 0.063
 ( 640 32 80 ) ( 640 32 112 ) ( 624 192 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1.3844112179690625e-16 1 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 }
 // brush 3
 {
-( 544 80 80 ) ( 592 128 80 ) ( 592 128 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 -0.7071067811865476 0 -0.82424927 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( 544 80 80 ) ( 592 128 80 ) ( 592 128 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 -0.7071067811865476 0 -0.82424927 ] [ 0 0 -1 0 ] 90 0.285 0.215
 ( 544 80 112 ) ( 640 32 112 ) ( 640 32 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 2.16945744731095e-16 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( 544 80 80 ) ( 640 32 80 ) ( 592 128 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -6.123233995736766e-17 1 0 0 ] [ -1 -6.123233995736766e-17 0 0 ] 0 0.063 0.063
-( 592 128 448 ) ( 640 32 448 ) ( 544 80 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 6.123233995736766e-17 -1 0 0 ] [ -1 -6.123233995736766e-17 0 0 ] 180 0.063 0.063
+( 592 128 448 ) ( 640 32 448 ) ( 544 80 448 ) Material-LIB/RoofTiles/RoofTiles [ 6.123233995736766e-17 -1 0 0 ] [ -1 -6.123233995736766e-17 0 0 ] 180 0.063 0.063
 ( 640 32 80 ) ( 640 32 112 ) ( 592 128 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -6.123233995736766e-17 1 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 }
 // brush 4
 {
-( 480 48 80 ) ( 544 80 80 ) ( 544 80 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 -0.7071067811865476 0 -0.82421875 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( 480 48 80 ) ( 544 80 80 ) ( 544 80 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 -0.7071067811865476 0 -0.82421875 ] [ 0 0 -1 0 ] 90 0.285 0.215
 ( 480 48 112 ) ( 640 32 112 ) ( 640 32 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 2.609058017116416e-16 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( 480 48 80 ) ( 640 32 80 ) ( 544 80 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -6.123233995736766e-17 1 0 0 ] [ -1 -6.123233995736766e-17 0 0 ] 0 0.063 0.063
-( 544 80 448 ) ( 640 32 448 ) ( 480 48 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 6.123233995736766e-17 -1 0 0 ] [ -1 -6.123233995736766e-17 0 0 ] 180 0.063 0.063
+( 544 80 448 ) ( 640 32 448 ) ( 480 48 448 ) Material-LIB/RoofTiles/RoofTiles [ 6.123233995736766e-17 -1 0 0 ] [ -1 -6.123233995736766e-17 0 0 ] 180 0.063 0.063
 ( 544 80 112 ) ( 544 80 80 ) ( 640 32 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 2.16945744731095e-16 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 }
 // brush 5
 {
-( 256 -80 16 ) ( 256 -96 16 ) ( 256 -96 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0 0.5 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
-( 256 -80 16 ) ( 256 -80 -16 ) ( 264 -48 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.24253562503633297 0.9701425001453319 0 0.86631393 ] [ 0 0 -1 0 ] 270 0.063 0.063
-( 264 -48 16 ) ( 264 -48 -16 ) ( 280 -16 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.447213595499958 0.894427190999916 0 0.89164734 ] [ 0 0 -1 0 ] 270 0.063 0.063
-( 280 -16 16 ) ( 280 -16 -16 ) ( 304 8 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 0.7071067811865476 0 0.35324097 ] [ 0 0 -1 0 ] 270 0.063 0.063
-( 304 8 16 ) ( 304 8 -16 ) ( 336 24 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.894427190999916 0.447213595499958 0 0.7157898 ] [ 0 0 -1 0 ] 270 0.063 0.063
-( 336 24 16 ) ( 336 24 -16 ) ( 368 32 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.9701425001453319 0.24253562503633297 0 0.88238525 ] [ 0 0 -1 0 ] 270 0.063 0.063
+( 256 -80 16 ) ( 256 -96 16 ) ( 256 -96 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0 0.5 0 0 ] [ 0 0 -1 0 ] 90 0.285 0.215
+( 256 -80 16 ) ( 256 -80 -16 ) ( 264 -48 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.24253562503633297 0.9701425001453319 0 0.86631393 ] [ 0 0 -1 0 ] 270 0.285 0.215
+( 264 -48 16 ) ( 264 -48 -16 ) ( 280 -16 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.447213595499958 0.894427190999916 0 0.89164734 ] [ 0 0 -1 0 ] 270 0.285 0.215
+( 280 -16 16 ) ( 280 -16 -16 ) ( 304 8 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 0.7071067811865476 0 0.35324097 ] [ 0 0 -1 0 ] 270 0.285 0.215
+( 304 8 16 ) ( 304 8 -16 ) ( 336 24 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.894427190999916 0.447213595499958 0 0.7157898 ] [ 0 0 -1 0 ] 270 0.285 0.215
+( 336 24 16 ) ( 336 24 -16 ) ( 368 32 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.9701425001453319 0.24253562503633297 0 0.88238525 ] [ 0 0 -1 0 ] 270 0.285 0.215
 ( 256 -224 16 ) ( 384 -224 16 ) ( 384 -224 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.5 0 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( 256 -80 -16 ) ( 256 -96 -16 ) ( 384 -96 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.5 0 0 0 ] [ 0 -0.5 0 0 ] 0 0.063 0.063
-( 256 -80 448 ) ( 264 -48 448 ) ( 280 -16 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.5 0 0 0 ] [ 0 -0.5 0 0 ] 0 0.063 0.063
-( 368 32 16 ) ( 368 32 -16 ) ( 384 32 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.5 0 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
+( 256 -80 448 ) ( 264 -48 448 ) ( 280 -16 448 ) Material-LIB/RoofTiles/RoofTiles [ -0.5 0 0 0 ] [ 0 -0.5 0 0 ] 0 0.063 0.063
+( 368 32 16 ) ( 368 32 -16 ) ( 384 32 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.5 0 0 0 ] [ 0 0 -1 0 ] 270 0.285 0.215
 ( 640 -96 16 ) ( 640 32 16 ) ( 640 32 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0 -0.5 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 }
 }
@@ -1672,40 +1681,40 @@
 // brush 0
 {
 ( 256 1312 16 ) ( 248 1232 16 ) ( 248 1232 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 4.677050100851671e-16 -1 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
-( 248 1232 -16 ) ( 248 1232 16 ) ( 256 1200 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865472 0.7071067811865478 0 -0.15551758 ] [ 0 0 -1 0 ] 270 0.063 0.063
+( 248 1232 -16 ) ( 248 1232 16 ) ( 256 1200 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865472 0.7071067811865478 0 -0.15551758 ] [ 0 0 -1 0 ] 270 0.285 0.215
 ( 256 1312 -16 ) ( 248 1232 -16 ) ( 256 1200 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 1 0 0 ] 270 0.063 0.063
-( 256 1200 448 ) ( 248 1232 448 ) ( 256 1312 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 1 0 0 ] 90 0.063 0.063
+( 256 1200 448 ) ( 248 1232 448 ) ( 256 1312 448 ) Material-LIB/RoofTiles/RoofTiles [ -1 0 0 0 ] [ 0 1 0 0 ] 90 0.063 0.063
 ( 256 1200 16 ) ( 256 1312 16 ) ( 256 1312 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -3.1339616320458145e-16 -1 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 }
 // brush 1
 {
-( 232 1264 -16 ) ( 232 1264 16 ) ( 248 1232 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865472 0.7071067811865478 0 -0.15551758 ] [ 0 0 -1 0 ] 270 0.063 0.063
+( 232 1264 -16 ) ( 232 1264 16 ) ( 248 1232 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865472 0.7071067811865478 0 -0.15551758 ] [ 0 0 -1 0 ] 270 0.285 0.215
 ( 256 1312 16 ) ( 232 1264 16 ) ( 232 1264 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -2.7817808468846267e-16 -1 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( 256 1312 -16 ) ( 232 1264 -16 ) ( 248 1232 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 1 0 0 ] 270 0.063 0.063
-( 248 1232 448 ) ( 232 1264 448 ) ( 256 1312 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 1 0 0 ] 90 0.063 0.063
+( 248 1232 448 ) ( 232 1264 448 ) ( 256 1312 448 ) Material-LIB/RoofTiles/RoofTiles [ -1 0 0 0 ] [ 0 1 0 0 ] 90 0.063 0.063
 ( 248 1232 16 ) ( 256 1312 16 ) ( 256 1312 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 4.677050100851671e-16 -1 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
 }
 // brush 2
 {
-( 208 1288 -16 ) ( 208 1288 16 ) ( 232 1264 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 -0.7071067811865476 0 0.3128662 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( 208 1288 -16 ) ( 208 1288 16 ) ( 232 1264 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 -0.7071067811865476 0 0.3128662 ] [ 0 0 -1 0 ] 90 0.285 0.215
 ( 256 1312 16 ) ( 208 1288 16 ) ( 208 1288 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( 256 1312 -16 ) ( 208 1288 -16 ) ( 232 1264 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 1 0 0 ] 270 0.063 0.063
-( 232 1264 448 ) ( 208 1288 448 ) ( 256 1312 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 1 0 0 ] 90 0.063 0.063
+( 232 1264 448 ) ( 208 1288 448 ) ( 256 1312 448 ) Material-LIB/RoofTiles/RoofTiles [ -1 0 0 0 ] [ 0 1 0 0 ] 90 0.063 0.063
 ( 232 1264 16 ) ( 256 1312 16 ) ( 256 1312 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -2.7817808468846267e-16 -1 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
 }
 // brush 3
 {
-( 176 1304 -16 ) ( 176 1304 16 ) ( 208 1288 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 -0.7071067811865476 0 0.3128662 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( 176 1304 -16 ) ( 176 1304 16 ) ( 208 1288 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 -0.7071067811865476 0 0.3128662 ] [ 0 0 -1 0 ] 90 0.285 0.215
 ( 256 1312 16 ) ( 176 1304 16 ) ( 176 1304 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 1.9967346175427393e-16 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( 256 1312 -16 ) ( 176 1304 -16 ) ( 208 1288 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 1 0 0 ] 270 0.063 0.063
-( 208 1288 448 ) ( 176 1304 448 ) ( 256 1312 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 1 0 0 ] 90 0.063 0.063
+( 208 1288 448 ) ( 176 1304 448 ) ( 256 1312 448 ) Material-LIB/RoofTiles/RoofTiles [ -1 0 0 0 ] [ 0 1 0 0 ] 90 0.063 0.063
 ( 208 1288 16 ) ( 256 1312 16 ) ( 256 1312 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
 }
 // brush 4
 {
-( 144 1312 -16 ) ( 144 1312 16 ) ( 176 1304 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 -0.7071067811865476 0 0.3128662 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( 144 1312 -16 ) ( 144 1312 16 ) ( 176 1304 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 -0.7071067811865476 0 0.3128662 ] [ 0 0 -1 0 ] 90 0.285 0.215
 ( 256 1312 -16 ) ( 144 1312 -16 ) ( 176 1304 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 1 0 0 ] 270 0.063 0.063
-( 176 1304 448 ) ( 144 1312 448 ) ( 256 1312 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 1 0 0 ] 90 0.063 0.063
+( 176 1304 448 ) ( 144 1312 448 ) ( 256 1312 448 ) Material-LIB/RoofTiles/RoofTiles [ -1 0 0 0 ] [ 0 1 0 0 ] 90 0.063 0.063
 ( 256 1312 16 ) ( 144 1312 16 ) ( 144 1312 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
 ( 176 1304 16 ) ( 256 1312 16 ) ( 256 1312 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 1.9967346175427393e-16 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
 }
@@ -1713,41 +1722,41 @@
 {
 ( 0 1200 16 ) ( 0 1312 -16 ) ( 0 1312 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 3.1339616320458145e-16 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 ( 0 1312 -16 ) ( 0 1200 -16 ) ( 8 1232 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 1 0 0 ] 180 0.063 0.063
-( 0 1200 448 ) ( 0 1312 448 ) ( 8 1232 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 1 0 0 ] 0 0.063 0.063
-( 8 1232 -16 ) ( 0 1200 16 ) ( 8 1232 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865472 0.7071067811865478 0 -0.17492676 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 0 1200 448 ) ( 0 1312 448 ) ( 8 1232 448 ) Material-LIB/RoofTiles/RoofTiles [ 1 0 0 0 ] [ 0 1 0 0 ] 0 0.063 0.063
+( 8 1232 -16 ) ( 0 1200 16 ) ( 8 1232 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865472 0.7071067811865478 0 -0.17492676 ] [ 0 0 -1 0 ] 0 0.285 0.215
 ( 0 1312 16 ) ( 8 1232 -16 ) ( 8 1232 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -4.677050100851671e-16 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 }
 // brush 6
 {
 ( 8 1232 16 ) ( 0 1312 -16 ) ( 0 1312 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -4.677050100851671e-16 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 ( 0 1312 -16 ) ( 8 1232 -16 ) ( 24 1264 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 1 0 0 ] 180 0.063 0.063
-( 8 1232 448 ) ( 0 1312 448 ) ( 24 1264 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 1 0 0 ] 0 0.063 0.063
-( 24 1264 -16 ) ( 8 1232 16 ) ( 24 1264 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865472 0.7071067811865478 0 -0.17492676 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 8 1232 448 ) ( 0 1312 448 ) ( 24 1264 448 ) Material-LIB/RoofTiles/RoofTiles [ 1 0 0 0 ] [ 0 1 0 0 ] 0 0.063 0.063
+( 24 1264 -16 ) ( 8 1232 16 ) ( 24 1264 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865472 0.7071067811865478 0 -0.17492676 ] [ 0 0 -1 0 ] 0 0.285 0.215
 ( 0 1312 16 ) ( 24 1264 -16 ) ( 24 1264 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 2.7817808468846267e-16 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 }
 // brush 7
 {
 ( 24 1264 16 ) ( 0 1312 -16 ) ( 0 1312 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 2.7817808468846267e-16 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 ( 0 1312 -16 ) ( 24 1264 -16 ) ( 48 1288 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 1 0 0 ] 180 0.063 0.063
-( 24 1264 448 ) ( 0 1312 448 ) ( 48 1288 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 1 0 0 ] 0 0.063 0.063
+( 24 1264 448 ) ( 0 1312 448 ) ( 48 1288 448 ) Material-LIB/RoofTiles/RoofTiles [ 1 0 0 0 ] [ 0 1 0 0 ] 0 0.063 0.063
 ( 0 1312 16 ) ( 48 1288 -16 ) ( 48 1288 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( 48 1288 -16 ) ( 24 1264 16 ) ( 48 1288 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 -0.7071067811865476 0 0.3322754 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 48 1288 -16 ) ( 24 1264 16 ) ( 48 1288 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 -0.7071067811865476 0 0.3322754 ] [ 0 0 -1 0 ] 0 0.285 0.215
 }
 // brush 8
 {
 ( 48 1288 16 ) ( 0 1312 -16 ) ( 0 1312 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 ( 0 1312 -16 ) ( 48 1288 -16 ) ( 80 1304 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 1 0 0 ] 180 0.063 0.063
-( 48 1288 448 ) ( 0 1312 448 ) ( 80 1304 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 1 0 0 ] 0 0.063 0.063
+( 48 1288 448 ) ( 0 1312 448 ) ( 80 1304 448 ) Material-LIB/RoofTiles/RoofTiles [ 1 0 0 0 ] [ 0 1 0 0 ] 0 0.063 0.063
 ( 0 1312 16 ) ( 80 1304 -16 ) ( 80 1304 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 1.9967346175427393e-16 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( 80 1304 -16 ) ( 48 1288 16 ) ( 80 1304 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 -0.7071067811865476 0 0.3322754 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 80 1304 -16 ) ( 48 1288 16 ) ( 80 1304 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 -0.7071067811865476 0 0.3322754 ] [ 0 0 -1 0 ] 0 0.285 0.215
 }
 // brush 9
 {
 ( 80 1304 16 ) ( 0 1312 -16 ) ( 0 1312 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 1.9967346175427393e-16 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 ( 0 1312 -16 ) ( 80 1304 -16 ) ( 112 1312 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 1 0 0 ] 180 0.063 0.063
-( 80 1304 448 ) ( 0 1312 448 ) ( 112 1312 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 1 0 0 ] 0 0.063 0.063
+( 80 1304 448 ) ( 0 1312 448 ) ( 112 1312 448 ) Material-LIB/RoofTiles/RoofTiles [ 1 0 0 0 ] [ 0 1 0 0 ] 0 0.063 0.063
 ( 0 1312 16 ) ( 112 1312 -16 ) ( 112 1312 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
-( 112 1312 -16 ) ( 80 1304 16 ) ( 112 1312 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 -0.7071067811865476 0 0.33215332 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 112 1312 -16 ) ( 80 1304 16 ) ( 112 1312 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 -0.7071067811865476 0 0.33215332 ] [ 0 0 -1 0 ] 0 0.285 0.215
 }
 // brush 10
 {
@@ -1759,7 +1768,7 @@
 ( -144 928 112 ) ( -176 920 80 ) ( -144 928 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.9701425001453319 -0.24253562503633302 0 0.71661377 ] [ 0 0 -1 0 ] 180 0.063 0.063
 ( -128 800 112 ) ( -256 800 80 ) ( -256 800 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.5 3.061616997868383e-17 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
 ( -144 928 80 ) ( -128 800 80 ) ( -128 928 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 3.061616997868383e-17 -0.5 0 0 ] [ 0.5 3.061616997868383e-17 0 0 ] 0 0.063 0.063
-( -144 928 224 ) ( -208 904 224 ) ( -176 920 224 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -3.061616997868383e-17 0.5 0 0 ] [ 0.5 3.061616997868383e-17 0 0 ] 90 0.063 0.063
+( -144 928 224 ) ( -208 904 224 ) ( -176 920 224 ) Material-LIB/RoofTiles/RoofTiles [ -3.061616997868383e-17 0.5 0 0 ] [ 0.5 3.061616997868383e-17 0 0 ] 90 0.063 0.063
 ( -144 928 112 ) ( -128 928 80 ) ( -128 928 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.5 -3.061616997868383e-17 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
 ( 128 928 112 ) ( 128 800 80 ) ( 128 800 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -3.061616997868383e-17 0.5 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 }
@@ -1768,7 +1777,7 @@
 ( 128 928 112 ) ( 128 800 112 ) ( 128 800 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 3.061616997868383e-17 0.5 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
 ( 384 800 112 ) ( 512 800 112 ) ( 512 800 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.5 3.061616997868383e-17 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 ( 400 928 80 ) ( 384 928 80 ) ( 384 800 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -3.061616997868383e-17 -0.5 0 0 ] [ -0.5 3.061616997868383e-17 0 0 ] 270 0.063 0.063
-( 400 928 224 ) ( 432 920 224 ) ( 464 904 224 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 3.061616997868383e-17 0.5 0 0 ] [ -0.5 3.061616997868383e-17 0 0 ] 0 0.063 0.063
+( 400 928 224 ) ( 432 920 224 ) ( 464 904 224 ) Material-LIB/RoofTiles/RoofTiles [ 3.061616997868383e-17 0.5 0 0 ] [ -0.5 3.061616997868383e-17 0 0 ] 0 0.063 0.063
 ( 400 928 112 ) ( 384 928 112 ) ( 384 928 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.5 -3.061616997868383e-17 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
 ( 400 928 112 ) ( 400 928 80 ) ( 432 920 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.9701425001453319 -0.24253562503633302 0 0.36010742 ] [ 0 0 -1 0 ] 270 0.063 0.063
 ( 432 920 112 ) ( 432 920 80 ) ( 464 904 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.894427190999916 -0.44721359549995804 0 0.06750488 ] [ 0 0 -1 0 ] 270 0.063 0.063
@@ -1792,7 +1801,7 @@
 ( 112 1088 16 ) ( 128 928 -16 ) ( 112 1088 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1.9967346175427393e-16 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 ( 128 1152 -16 ) ( 112 1088 16 ) ( 112 1088 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 0.7071067811865476 0 -0.704834 ] [ 0 0 -1 0 ] 180 0.063 0.063
 ( 128 1152 -16 ) ( 112 1088 -16 ) ( 128 928 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 1 0 0 ] 0 0.063 0.063
-( 112 1088 224 ) ( 128 1152 224 ) ( 128 928 224 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 1 0 0 ] 180 0.063 0.063
+( 112 1088 224 ) ( 128 1152 224 ) ( 128 928 224 ) Material-LIB/RoofTiles/RoofTiles [ 1 0 0 0 ] [ 0 1 0 0 ] 180 0.063 0.063
 ( 128 1152 16 ) ( 128 928 -16 ) ( 128 928 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -2.7817808468846267e-16 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 }
 // brush 1
@@ -1800,7 +1809,7 @@
 ( -32 944 -16 ) ( -96 928 16 ) ( -96 928 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 0.7071067811865476 0 -0.704834 ] [ 0 0 -1 0 ] 180 0.063 0.063
 ( 128 928 -16 ) ( -96 928 16 ) ( 128 928 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 ( -32 944 -16 ) ( -96 928 -16 ) ( 128 928 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 1 0 0 ] 0 0.063 0.063
-( -96 928 224 ) ( -32 944 224 ) ( 128 928 224 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 1 0 0 ] 180 0.063 0.063
+( -96 928 224 ) ( -32 944 224 ) ( 128 928 224 ) Material-LIB/RoofTiles/RoofTiles [ 1 0 0 0 ] [ 0 1 0 0 ] 180 0.063 0.063
 ( -32 944 16 ) ( 128 928 -16 ) ( 128 928 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 -1.9967346175427393e-16 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 }
 // brush 2
@@ -1808,7 +1817,7 @@
 ( 32 976 -16 ) ( -32 944 16 ) ( -32 944 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 0.7071067811865476 0 -0.704834 ] [ 0 0 -1 0 ] 180 0.063 0.063
 ( 128 928 -16 ) ( -32 944 16 ) ( 128 928 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 -1.9967346175427393e-16 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
 ( 32 976 -16 ) ( -32 944 -16 ) ( 128 928 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 1 0 0 ] 0 0.063 0.063
-( -32 944 224 ) ( 32 976 224 ) ( 128 928 224 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 1 0 0 ] 180 0.063 0.063
+( -32 944 224 ) ( 32 976 224 ) ( 128 928 224 ) Material-LIB/RoofTiles/RoofTiles [ 1 0 0 0 ] [ 0 1 0 0 ] 180 0.063 0.063
 ( 32 976 16 ) ( 128 928 -16 ) ( 128 928 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 }
 // brush 3
@@ -1816,7 +1825,7 @@
 ( 80 1024 -16 ) ( 32 976 16 ) ( 32 976 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 0.7071067811865476 0 -0.704834 ] [ 0 0 -1 0 ] 180 0.063 0.063
 ( 128 928 -16 ) ( 32 976 16 ) ( 128 928 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
 ( 80 1024 -16 ) ( 32 976 -16 ) ( 128 928 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 1 0 0 ] 0 0.063 0.063
-( 32 976 224 ) ( 80 1024 224 ) ( 128 928 224 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 1 0 0 ] 180 0.063 0.063
+( 32 976 224 ) ( 80 1024 224 ) ( 128 928 224 ) Material-LIB/RoofTiles/RoofTiles [ 1 0 0 0 ] [ 0 1 0 0 ] 180 0.063 0.063
 ( 80 1024 16 ) ( 128 928 -16 ) ( 128 928 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -2.7817808468846267e-16 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 }
 // brush 4
@@ -1824,7 +1833,7 @@
 ( 80 1024 16 ) ( 128 928 -16 ) ( 80 1024 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -2.7817808468846267e-16 1 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
 ( 112 1088 -16 ) ( 80 1024 16 ) ( 80 1024 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 0.7071067811865476 0 -0.704834 ] [ 0 0 -1 0 ] 180 0.063 0.063
 ( 112 1088 -16 ) ( 80 1024 -16 ) ( 128 928 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 1 0 0 ] 0 0.063 0.063
-( 80 1024 224 ) ( 112 1088 224 ) ( 128 928 224 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 1 0 0 ] 180 0.063 0.063
+( 80 1024 224 ) ( 112 1088 224 ) ( 128 928 224 ) Material-LIB/RoofTiles/RoofTiles [ 1 0 0 0 ] [ 0 1 0 0 ] 180 0.063 0.063
 ( 112 1088 16 ) ( 128 928 -16 ) ( 128 928 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1.9967346175427393e-16 -1 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
 }
 }
@@ -1841,55 +1850,55 @@
 {
 ( -224 1040 112 ) ( -224 1040 80 ) ( -384 1056 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 -2.609058017116416e-16 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
 ( -160 1056 80 ) ( -384 1056 80 ) ( -224 1040 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 6.123233995736766e-17 -1 0 0 ] [ 1 6.123233995736766e-17 0 0 ] 90 0.063 0.063
-( -224 1040 448 ) ( -384 1056 448 ) ( -160 1056 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -6.123233995736766e-17 1 0 0 ] [ 1 6.123233995736766e-17 0 0 ] 270 0.063 0.063
+( -224 1040 448 ) ( -384 1056 448 ) ( -160 1056 448 ) Material-LIB/RoofTiles/RoofTiles [ -6.123233995736766e-17 1 0 0 ] [ 1 6.123233995736766e-17 0 0 ] 270 0.063 0.063
 ( -160 1056 112 ) ( -384 1056 112 ) ( -384 1056 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 -2.16945744731095e-16 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
-( -160 1056 80 ) ( -224 1040 80 ) ( -224 1040 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 0.7071067811865476 0 -0.17578125 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -160 1056 80 ) ( -224 1040 80 ) ( -224 1040 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 0.7071067811865476 0 -0.17578125 ] [ 0 0 -1 0 ] 0 0.285 0.215
 }
 // brush 1
 {
 ( -384 1056 80 ) ( -384 1056 112 ) ( -384 832 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 6.123233995736766e-17 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 ( -368 896 80 ) ( -384 1056 80 ) ( -384 832 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 6.123233995736766e-17 -1 0 0 ] [ 1 6.123233995736766e-17 0 0 ] 90 0.063 0.063
-( -384 832 448 ) ( -384 1056 448 ) ( -368 896 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -6.123233995736766e-17 1 0 0 ] [ 1 6.123233995736766e-17 0 0 ] 270 0.063 0.063
-( -368 896 80 ) ( -384 832 80 ) ( -384 832 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 0.7071067811865476 0 -0.17578125 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -384 832 448 ) ( -384 1056 448 ) ( -368 896 448 ) Material-LIB/RoofTiles/RoofTiles [ -6.123233995736766e-17 1 0 0 ] [ 1 6.123233995736766e-17 0 0 ] 270 0.063 0.063
+( -368 896 80 ) ( -384 832 80 ) ( -384 832 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 0.7071067811865476 0 -0.17578125 ] [ 0 0 -1 0 ] 0 0.285 0.215
 ( -368 896 112 ) ( -384 1056 112 ) ( -384 1056 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1.3844112179690625e-16 -1 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
 }
 // brush 2
 {
 ( -384 1056 80 ) ( -384 1056 112 ) ( -368 896 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1.3844112179690625e-16 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 ( -336 960 80 ) ( -384 1056 80 ) ( -368 896 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 6.123233995736766e-17 -1 0 0 ] [ 1 6.123233995736766e-17 0 0 ] 90 0.063 0.063
-( -368 896 448 ) ( -384 1056 448 ) ( -336 960 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -6.123233995736766e-17 1 0 0 ] [ 1 6.123233995736766e-17 0 0 ] 270 0.063 0.063
-( -336 960 80 ) ( -368 896 80 ) ( -368 896 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 0.7071067811865476 0 -0.17578125 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -368 896 448 ) ( -384 1056 448 ) ( -336 960 448 ) Material-LIB/RoofTiles/RoofTiles [ -6.123233995736766e-17 1 0 0 ] [ 1 6.123233995736766e-17 0 0 ] 270 0.063 0.063
+( -336 960 80 ) ( -368 896 80 ) ( -368 896 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 0.7071067811865476 0 -0.17578125 ] [ 0 0 -1 0 ] 0 0.285 0.215
 ( -336 960 112 ) ( -384 1056 112 ) ( -384 1056 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 6.123233995736766e-17 -1 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
 }
 // brush 3
 {
 ( -384 1056 80 ) ( -384 1056 112 ) ( -336 960 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 6.123233995736766e-17 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 ( -288 1008 80 ) ( -384 1056 80 ) ( -336 960 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 6.123233995736766e-17 -1 0 0 ] [ 1 6.123233995736766e-17 0 0 ] 90 0.063 0.063
-( -336 960 448 ) ( -384 1056 448 ) ( -288 1008 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -6.123233995736766e-17 1 0 0 ] [ 1 6.123233995736766e-17 0 0 ] 270 0.063 0.063
+( -336 960 448 ) ( -384 1056 448 ) ( -288 1008 448 ) Material-LIB/RoofTiles/RoofTiles [ -6.123233995736766e-17 1 0 0 ] [ 1 6.123233995736766e-17 0 0 ] 270 0.063 0.063
 ( -288 1008 112 ) ( -384 1056 112 ) ( -384 1056 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 -2.16945744731095e-16 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
-( -288 1008 80 ) ( -336 960 80 ) ( -336 960 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 0.7071067811865476 0 -0.17578125 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -288 1008 80 ) ( -336 960 80 ) ( -336 960 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 0.7071067811865476 0 -0.17578125 ] [ 0 0 -1 0 ] 0 0.285 0.215
 }
 // brush 4
 {
 ( -288 1008 112 ) ( -288 1008 80 ) ( -384 1056 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 -2.16945744731095e-16 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 ( -224 1040 80 ) ( -384 1056 80 ) ( -288 1008 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 6.123233995736766e-17 -1 0 0 ] [ 1 6.123233995736766e-17 0 0 ] 90 0.063 0.063
-( -288 1008 448 ) ( -384 1056 448 ) ( -224 1040 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -6.123233995736766e-17 1 0 0 ] [ 1 6.123233995736766e-17 0 0 ] 270 0.063 0.063
+( -288 1008 448 ) ( -384 1056 448 ) ( -224 1040 448 ) Material-LIB/RoofTiles/RoofTiles [ -6.123233995736766e-17 1 0 0 ] [ 1 6.123233995736766e-17 0 0 ] 270 0.063 0.063
 ( -224 1040 112 ) ( -384 1056 112 ) ( -384 1056 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 -2.609058017116416e-16 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -224 1040 80 ) ( -288 1008 80 ) ( -288 1008 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 0.7071067811865476 0 -0.17578125 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -224 1040 80 ) ( -288 1008 80 ) ( -288 1008 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 0.7071067811865476 0 -0.17578125 ] [ 0 0 -1 0 ] 0 0.285 0.215
 }
 // brush 5
 {
 ( -384 1184 16 ) ( -384 1056 16 ) ( -384 1056 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0 0.5 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -112 1056 16 ) ( -112 1056 -16 ) ( -128 1056 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.5 0 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
+( -112 1056 16 ) ( -112 1056 -16 ) ( -128 1056 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.5 0 0 0 ] [ 0 0 -1 0 ] 180 0.285 0.215
 ( 0 1168 -16 ) ( 0 1184 -16 ) ( -128 1184 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.5 0 0 0 ] [ 0 0.5 0 0 ] 270 0.063 0.063
-( 0 1168 448 ) ( -8 1136 448 ) ( -24 1104 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.5 0 0 0 ] [ 0 0.5 0 0 ] 270 0.063 0.063
+( 0 1168 448 ) ( -8 1136 448 ) ( -24 1104 448 ) Material-LIB/RoofTiles/RoofTiles [ 0.5 0 0 0 ] [ 0 0.5 0 0 ] 270 0.063 0.063
 ( 0 1312 16 ) ( -128 1312 16 ) ( -128 1312 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.5 0 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
-( -80 1064 16 ) ( -80 1064 -16 ) ( -112 1056 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.9701425001453319 -0.24253562503633297 0 0.117614746 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -48 1080 16 ) ( -48 1080 -16 ) ( -80 1064 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.894427190999916 -0.447213595499958 0 0.25756836 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -24 1104 16 ) ( -24 1104 -16 ) ( -48 1080 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 -0.7071067811865476 0 0.704834 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -8 1136 16 ) ( -8 1136 -16 ) ( -24 1104 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.447213595499958 -0.894427190999916 0 0.5151367 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( 0 1168 16 ) ( 0 1168 -16 ) ( -8 1136 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.24253562503633297 -0.9701425001453319 0 0.47045898 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( 0 1168 16 ) ( 0 1184 16 ) ( 0 1184 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0 -0.5 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -80 1064 16 ) ( -80 1064 -16 ) ( -112 1056 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.9701425001453319 -0.24253562503633297 0 0.117614746 ] [ 0 0 -1 0 ] 0 0.285 0.215
+( -48 1080 16 ) ( -48 1080 -16 ) ( -80 1064 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.894427190999916 -0.447213595499958 0 0.25756836 ] [ 0 0 -1 0 ] 0 0.285 0.215
+( -24 1104 16 ) ( -24 1104 -16 ) ( -48 1080 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 -0.7071067811865476 0 0.704834 ] [ 0 0 -1 0 ] 0 0.285 0.215
+( -8 1136 16 ) ( -8 1136 -16 ) ( -24 1104 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.447213595499958 -0.894427190999916 0 0.5151367 ] [ 0 0 -1 0 ] 0 0.285 0.215
+( 0 1168 16 ) ( 0 1168 -16 ) ( -8 1136 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.24253562503633297 -0.9701425001453319 0 0.47045898 ] [ 0 0 -1 0 ] 0 0.285 0.215
+( 0 1168 16 ) ( 0 1184 16 ) ( 0 1184 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0 -0.5 0 0 ] [ 0 0 -1 0 ] 0 0.285 0.215
 }
 }
 // entity 10
@@ -1905,7 +1914,7 @@
 {
 ( 128 1152 16 ) ( 128 928 16 ) ( 128 928 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 2.7817808468846267e-16 1 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
 ( 128 1152 -16 ) ( 128 928 -16 ) ( 144 1088 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 1 0 0 ] 270 0.063 0.063
-( 144 1088 224 ) ( 128 928 224 ) ( 128 1152 224 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 1 0 0 ] 90 0.063 0.063
+( 144 1088 224 ) ( 128 928 224 ) ( 128 1152 224 ) Material-LIB/RoofTiles/RoofTiles [ -1 0 0 0 ] [ 0 1 0 0 ] 90 0.063 0.063
 ( 128 1152 -16 ) ( 144 1088 -16 ) ( 144 1088 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 0.7071067811865476 0 -0.6854248 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( 144 1088 16 ) ( 144 1088 -16 ) ( 128 928 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1.9967346175427393e-16 -1 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 }
@@ -1914,14 +1923,14 @@
 ( 288 944 16 ) ( 128 928 16 ) ( 128 928 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 -1.9967346175427393e-16 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( 128 928 -16 ) ( 128 928 16 ) ( 352 928 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
 ( 288 944 -16 ) ( 128 928 -16 ) ( 352 928 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 1 0 0 ] 270 0.063 0.063
-( 352 928 224 ) ( 128 928 224 ) ( 288 944 224 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 1 0 0 ] 90 0.063 0.063
+( 352 928 224 ) ( 128 928 224 ) ( 288 944 224 ) Material-LIB/RoofTiles/RoofTiles [ -1 0 0 0 ] [ 0 1 0 0 ] 90 0.063 0.063
 ( 288 944 -16 ) ( 352 928 -16 ) ( 352 928 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 0.7071067811865476 0 -0.6854248 ] [ 0 0 -1 0 ] 90 0.063 0.063
 }
 // brush 2
 {
 ( 224 976 16 ) ( 128 928 16 ) ( 128 928 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( 224 976 -16 ) ( 128 928 -16 ) ( 288 944 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 1 0 0 ] 270 0.063 0.063
-( 288 944 224 ) ( 128 928 224 ) ( 224 976 224 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 1 0 0 ] 90 0.063 0.063
+( 288 944 224 ) ( 128 928 224 ) ( 224 976 224 ) Material-LIB/RoofTiles/RoofTiles [ -1 0 0 0 ] [ 0 1 0 0 ] 90 0.063 0.063
 ( 128 928 -16 ) ( 128 928 16 ) ( 288 944 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 -1.9967346175427393e-16 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( 224 976 -16 ) ( 288 944 -16 ) ( 288 944 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 0.7071067811865476 0 -0.6855469 ] [ 0 0 -1 0 ] 90 0.063 0.063
 }
@@ -1929,7 +1938,7 @@
 {
 ( 176 1024 16 ) ( 128 928 16 ) ( 128 928 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 2.7817808468846267e-16 1 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( 176 1024 -16 ) ( 128 928 -16 ) ( 224 976 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 1 0 0 ] 270 0.063 0.063
-( 224 976 224 ) ( 128 928 224 ) ( 176 1024 224 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 1 0 0 ] 90 0.063 0.063
+( 224 976 224 ) ( 128 928 224 ) ( 176 1024 224 ) Material-LIB/RoofTiles/RoofTiles [ -1 0 0 0 ] [ 0 1 0 0 ] 90 0.063 0.063
 ( 128 928 -16 ) ( 128 928 16 ) ( 224 976 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( 176 1024 -16 ) ( 224 976 -16 ) ( 224 976 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 0.7071067811865476 0 -0.6854248 ] [ 0 0 -1 0 ] 90 0.063 0.063
 }
@@ -1937,7 +1946,7 @@
 {
 ( 144 1088 16 ) ( 128 928 16 ) ( 128 928 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1.9967346175427393e-16 -1 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( 144 1088 -16 ) ( 128 928 -16 ) ( 176 1024 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 1 0 0 ] 270 0.063 0.063
-( 176 1024 224 ) ( 128 928 224 ) ( 144 1088 224 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 1 0 0 ] 90 0.063 0.063
+( 176 1024 224 ) ( 128 928 224 ) ( 144 1088 224 ) Material-LIB/RoofTiles/RoofTiles [ -1 0 0 0 ] [ 0 1 0 0 ] 90 0.063 0.063
 ( 176 1024 16 ) ( 176 1024 -16 ) ( 128 928 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 2.7817808468846267e-16 1 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( 144 1088 -16 ) ( 176 1024 -16 ) ( 176 1024 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 0.7071067811865476 0 -0.6854248 ] [ 0 0 -1 0 ] 90 0.063 0.063
 }
@@ -1953,55 +1962,55 @@
 "_tb_group" "21"
 // brush 0
 {
-( 416 1056 80 ) ( 480 1040 112 ) ( 480 1040 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 0.7071067811865476 0 -0.15637207 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( 416 1056 80 ) ( 480 1040 112 ) ( 480 1040 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 0.7071067811865476 0 -0.15637207 ] [ 0 0 -1 0 ] 90 0.285 0.215
 ( 416 1056 80 ) ( 480 1040 80 ) ( 640 1056 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -6.123233995736766e-17 -1 0 0 ] [ -1 6.123233995736766e-17 0 0 ] 0 0.063 0.063
-( 480 1040 448 ) ( 416 1056 448 ) ( 640 1056 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 6.123233995736766e-17 1 0 0 ] [ -1 6.123233995736766e-17 0 0 ] 180 0.063 0.063
+( 480 1040 448 ) ( 416 1056 448 ) ( 640 1056 448 ) Material-LIB/RoofTiles/RoofTiles [ 6.123233995736766e-17 1 0 0 ] [ -1 6.123233995736766e-17 0 0 ] 180 0.063 0.063
 ( 416 1056 112 ) ( 640 1056 80 ) ( 640 1056 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 -2.16945744731095e-16 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( 480 1040 112 ) ( 640 1056 80 ) ( 480 1040 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 -2.609058017116416e-16 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 }
 // brush 1
 {
 ( 624 896 112 ) ( 640 1056 80 ) ( 640 1056 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1.3844112179690625e-16 -1 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
-( 624 896 80 ) ( 640 832 112 ) ( 640 832 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 0.7071067811865476 0 -0.15649414 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( 624 896 80 ) ( 640 832 112 ) ( 640 832 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 0.7071067811865476 0 -0.15649414 ] [ 0 0 -1 0 ] 90 0.285 0.215
 ( 624 896 80 ) ( 640 832 80 ) ( 640 1056 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -6.123233995736766e-17 -1 0 0 ] [ -1 6.123233995736766e-17 0 0 ] 0 0.063 0.063
-( 640 832 448 ) ( 624 896 448 ) ( 640 1056 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 6.123233995736766e-17 1 0 0 ] [ -1 6.123233995736766e-17 0 0 ] 180 0.063 0.063
+( 640 832 448 ) ( 624 896 448 ) ( 640 1056 448 ) Material-LIB/RoofTiles/RoofTiles [ 6.123233995736766e-17 1 0 0 ] [ -1 6.123233995736766e-17 0 0 ] 180 0.063 0.063
 ( 640 1056 80 ) ( 640 832 112 ) ( 640 1056 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -6.123233995736766e-17 -1 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
 }
 // brush 2
 {
-( 592 960 80 ) ( 624 896 112 ) ( 624 896 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 0.7071067811865476 0 -0.15649414 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( 592 960 80 ) ( 624 896 112 ) ( 624 896 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 0.7071067811865476 0 -0.15649414 ] [ 0 0 -1 0 ] 90 0.285 0.215
 ( 592 960 112 ) ( 640 1056 80 ) ( 640 1056 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -6.123233995736766e-17 -1 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( 592 960 80 ) ( 624 896 80 ) ( 640 1056 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -6.123233995736766e-17 -1 0 0 ] [ -1 6.123233995736766e-17 0 0 ] 0 0.063 0.063
-( 624 896 448 ) ( 592 960 448 ) ( 640 1056 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 6.123233995736766e-17 1 0 0 ] [ -1 6.123233995736766e-17 0 0 ] 180 0.063 0.063
+( 624 896 448 ) ( 592 960 448 ) ( 640 1056 448 ) Material-LIB/RoofTiles/RoofTiles [ 6.123233995736766e-17 1 0 0 ] [ -1 6.123233995736766e-17 0 0 ] 180 0.063 0.063
 ( 640 1056 80 ) ( 624 896 112 ) ( 640 1056 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1.3844112179690625e-16 -1 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 }
 // brush 3
 {
-( 544 1008 80 ) ( 592 960 112 ) ( 592 960 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 0.7071067811865476 0 -0.15649414 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( 544 1008 80 ) ( 592 960 112 ) ( 592 960 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 0.7071067811865476 0 -0.15649414 ] [ 0 0 -1 0 ] 90 0.285 0.215
 ( 544 1008 112 ) ( 640 1056 80 ) ( 640 1056 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 -2.16945744731095e-16 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( 544 1008 80 ) ( 592 960 80 ) ( 640 1056 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -6.123233995736766e-17 -1 0 0 ] [ -1 6.123233995736766e-17 0 0 ] 0 0.063 0.063
-( 592 960 448 ) ( 544 1008 448 ) ( 640 1056 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 6.123233995736766e-17 1 0 0 ] [ -1 6.123233995736766e-17 0 0 ] 180 0.063 0.063
+( 592 960 448 ) ( 544 1008 448 ) ( 640 1056 448 ) Material-LIB/RoofTiles/RoofTiles [ 6.123233995736766e-17 1 0 0 ] [ -1 6.123233995736766e-17 0 0 ] 180 0.063 0.063
 ( 640 1056 80 ) ( 592 960 112 ) ( 640 1056 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -6.123233995736766e-17 -1 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 }
 // brush 4
 {
-( 480 1040 80 ) ( 544 1008 112 ) ( 544 1008 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 0.7071067811865476 0 -0.15637207 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( 480 1040 80 ) ( 544 1008 112 ) ( 544 1008 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.7071067811865476 0.7071067811865476 0 -0.15637207 ] [ 0 0 -1 0 ] 90 0.285 0.215
 ( 480 1040 112 ) ( 640 1056 80 ) ( 640 1056 112 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 -2.609058017116416e-16 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( 480 1040 80 ) ( 544 1008 80 ) ( 640 1056 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -6.123233995736766e-17 -1 0 0 ] [ -1 6.123233995736766e-17 0 0 ] 0 0.063 0.063
-( 544 1008 448 ) ( 480 1040 448 ) ( 640 1056 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 6.123233995736766e-17 1 0 0 ] [ -1 6.123233995736766e-17 0 0 ] 180 0.063 0.063
+( 544 1008 448 ) ( 480 1040 448 ) ( 640 1056 448 ) Material-LIB/RoofTiles/RoofTiles [ 6.123233995736766e-17 1 0 0 ] [ -1 6.123233995736766e-17 0 0 ] 180 0.063 0.063
 ( 544 1008 112 ) ( 640 1056 80 ) ( 544 1008 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 -2.16945744731095e-16 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 }
 // brush 5
 {
-( 256 1168 16 ) ( 256 1184 -16 ) ( 256 1184 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0 -0.5 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
-( 256 1168 16 ) ( 264 1136 -16 ) ( 256 1168 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.24253562503633297 -0.9701425001453319 0 0.38134766 ] [ 0 0 -1 0 ] 270 0.063 0.063
-( 264 1136 16 ) ( 280 1104 -16 ) ( 264 1136 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.447213595499958 -0.894427190999916 0 0.028442383 ] [ 0 0 -1 0 ] 270 0.063 0.063
-( 280 1104 16 ) ( 304 1080 -16 ) ( 280 1104 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 -0.7071067811865476 0 0.6854248 ] [ 0 0 -1 0 ] 270 0.063 0.063
-( 304 1080 16 ) ( 336 1064 -16 ) ( 304 1080 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.894427190999916 -0.447213595499958 0 0.2841797 ] [ 0 0 -1 0 ] 270 0.063 0.063
-( 336 1064 16 ) ( 368 1056 -16 ) ( 336 1064 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.9701425001453319 -0.24253562503633297 0 0.76116943 ] [ 0 0 -1 0 ] 270 0.063 0.063
-( 368 1056 16 ) ( 384 1056 -16 ) ( 368 1056 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.5 0 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( 256 1168 16 ) ( 256 1184 -16 ) ( 256 1184 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0 -0.5 0 0 ] [ 0 0 -1 0 ] 90 0.285 0.215
+( 256 1168 16 ) ( 264 1136 -16 ) ( 256 1168 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.24253562503633297 -0.9701425001453319 0 0.38134766 ] [ 0 0 -1 0 ] 270 0.285 0.215
+( 264 1136 16 ) ( 280 1104 -16 ) ( 264 1136 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.447213595499958 -0.894427190999916 0 0.028442383 ] [ 0 0 -1 0 ] 270 0.285 0.215
+( 280 1104 16 ) ( 304 1080 -16 ) ( 280 1104 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.7071067811865476 -0.7071067811865476 0 0.6854248 ] [ 0 0 -1 0 ] 270 0.285 0.215
+( 304 1080 16 ) ( 336 1064 -16 ) ( 304 1080 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.894427190999916 -0.447213595499958 0 0.2841797 ] [ 0 0 -1 0 ] 270 0.285 0.215
+( 336 1064 16 ) ( 368 1056 -16 ) ( 336 1064 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.9701425001453319 -0.24253562503633297 0 0.76116943 ] [ 0 0 -1 0 ] 270 0.285 0.215
+( 368 1056 16 ) ( 384 1056 -16 ) ( 368 1056 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.5 0 0 0 ] [ 0 0 -1 0 ] 90 0.285 0.215
 ( 256 1168 -16 ) ( 384 1184 -16 ) ( 256 1184 -16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.5 0 0 0 ] [ 0 0.5 0 0 ] 180 0.063 0.063
-( 256 1168 448 ) ( 280 1104 448 ) ( 264 1136 448 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.5 0 0 0 ] [ 0 0.5 0 0 ] 180 0.063 0.063
+( 256 1168 448 ) ( 280 1104 448 ) ( 264 1136 448 ) Material-LIB/RoofTiles/RoofTiles [ -0.5 0 0 0 ] [ 0 0.5 0 0 ] 180 0.063 0.063
 ( 256 1312 16 ) ( 384 1312 -16 ) ( 384 1312 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.5 0 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
 ( 640 1184 16 ) ( 640 1056 -16 ) ( 640 1056 16 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0 0.5 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 }
@@ -10573,7 +10582,7 @@
 ( 208 440 -272 ) ( 232 464 -240 ) ( 208 440 -240 ) BrickWall/BrickWall[Blue] [ 0.7071067811865476 0.7071067811865476 0 -58.567596 ] [ 0 0 -1 0 ] 180 0.063 0.063
 ( 256 416 -240 ) ( 208 440 -272 ) ( 208 440 -240 ) BrickWall/BrickWall[Blue] [ -1 1.2246467991473532e-16 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
 ( 256 416 -1808 ) ( 232 464 -1808 ) ( 208 440 -1808 ) BrickWall/BrickWall[Blue] [ 1 -1.2246467991473532e-16 0 0 ] [ -1.2246467991473532e-16 -1 0 0 ] 270 0.063 0.063
-( 232 464 192 ) ( 256 416 192 ) ( 208 440 192 ) BrickWall/BrickWall[Blue] [ -1 1.2246467991473532e-16 0 0 ] [ -1.2246467991473532e-16 -1 0 0 ] 0 0.063 0.063
+( 232 464 192 ) ( 256 416 192 ) ( 208 440 192 ) Material-LIB/RoofTiles/RoofTiles [ -1 1.2246467991473532e-16 0 0 ] [ -1.2246467991473532e-16 -1 0 0 ] 0 0.103 0.103
 ( 232 464 -240 ) ( 256 416 -272 ) ( 256 416 -240 ) BrickWall/BrickWall[Blue] [ -1.5571340477372733e-16 1 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
 }
 // brush 1
@@ -10581,7 +10590,7 @@
 ( 256 416 -240 ) ( 248 496 -272 ) ( 248 496 -240 ) BrickWall/BrickWall[Blue] [ 5.901696899999024e-16 1 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
 ( 248 496 -272 ) ( 256 528 -240 ) ( 248 496 -240 ) BrickWall/BrickWall[Blue] [ -0.7071067811865472 -0.7071067811865478 0 58.724915 ] [ 0 0 -1 0 ] 180 0.063 0.063
 ( 256 416 -1808 ) ( 256 528 -1808 ) ( 248 496 -1808 ) BrickWall/BrickWall[Blue] [ 1 -1.2246467991473532e-16 0 0 ] [ -1.2246467991473532e-16 -1 0 0 ] 270 0.063 0.063
-( 256 528 192 ) ( 256 416 192 ) ( 248 496 192 ) BrickWall/BrickWall[Blue] [ -1 1.2246467991473532e-16 0 0 ] [ -1.2246467991473532e-16 -1 0 0 ] 0 0.063 0.063
+( 256 528 192 ) ( 256 416 192 ) ( 248 496 192 ) Material-LIB/RoofTiles/RoofTiles [ -1 1.2246467991473532e-16 0 0 ] [ -1.2246467991473532e-16 -1 0 0 ] 0 0.103 0.103
 ( 256 528 -240 ) ( 256 416 -272 ) ( 256 416 -240 ) BrickWall/BrickWall[Blue] [ -1.909314832898461e-16 1 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
 }
 // brush 2
@@ -10589,7 +10598,7 @@
 ( 256 416 -240 ) ( 232 464 -272 ) ( 232 464 -240 ) BrickWall/BrickWall[Blue] [ -1.5571340477372733e-16 1 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
 ( 232 464 -272 ) ( 248 496 -240 ) ( 232 464 -240 ) BrickWall/BrickWall[Blue] [ -0.7071067811865472 -0.7071067811865478 0 58.724915 ] [ 0 0 -1 0 ] 180 0.063 0.063
 ( 256 416 -1808 ) ( 248 496 -1808 ) ( 232 464 -1808 ) BrickWall/BrickWall[Blue] [ 1 -1.2246467991473532e-16 0 0 ] [ -1.2246467991473532e-16 -1 0 63.99997 ] 270 0.063 0.063
-( 248 496 192 ) ( 256 416 192 ) ( 232 464 192 ) BrickWall/BrickWall[Blue] [ -1 1.2246467991473532e-16 0 0 ] [ -1.2246467991473532e-16 -1 0 63.99997 ] 0 0.063 0.063
+( 248 496 192 ) ( 256 416 192 ) ( 232 464 192 ) Material-LIB/RoofTiles/RoofTiles [ -1 1.2246467991473532e-16 0 0 ] [ -1.2246467991473532e-16 -1 0 63.99997 ] 0 0.103 0.103
 ( 248 496 -240 ) ( 256 416 -272 ) ( 256 416 -240 ) BrickWall/BrickWall[Blue] [ 5.901696899999024e-16 1 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
 }
 // brush 3
@@ -10597,7 +10606,7 @@
 ( 176 424 -272 ) ( 208 440 -240 ) ( 176 424 -240 ) BrickWall/BrickWall[Blue] [ 0.7071067811865476 0.7071067811865476 0 -58.567566 ] [ 0 0 -1 0 ] 180 0.063 0.063
 ( 256 416 -240 ) ( 176 424 -272 ) ( 176 424 -240 ) BrickWall/BrickWall[Blue] [ -1 -7.720878183953859e-17 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
 ( 256 416 -1808 ) ( 208 440 -1808 ) ( 176 424 -1808 ) BrickWall/BrickWall[Blue] [ 1 -1.2246467991473532e-16 0 0 ] [ -1.2246467991473532e-16 -1 0 63.99997 ] 270 0.063 0.063
-( 208 440 192 ) ( 256 416 192 ) ( 176 424 192 ) BrickWall/BrickWall[Blue] [ -1 1.2246467991473532e-16 0 0 ] [ -1.2246467991473532e-16 -1 0 63.99997 ] 0 0.063 0.063
+( 208 440 192 ) ( 256 416 192 ) ( 176 424 192 ) Material-LIB/RoofTiles/RoofTiles [ -1 1.2246467991473532e-16 0 0 ] [ -1.2246467991473532e-16 -1 0 63.99997 ] 0 0.103 0.103
 ( 208 440 -240 ) ( 256 416 -272 ) ( 256 416 -240 ) BrickWall/BrickWall[Blue] [ -1 1.2246467991473532e-16 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
 }
 // brush 4
@@ -10605,7 +10614,7 @@
 ( 144 416 -272 ) ( 176 424 -240 ) ( 144 416 -240 ) BrickWall/BrickWall[Blue] [ 0.7071067811865476 0.7071067811865476 0 -58.567688 ] [ 0 0 -1 0 ] 180 0.063 0.063
 ( 256 416 -240 ) ( 144 416 -272 ) ( 144 416 -240 ) BrickWall/BrickWall[Blue] [ -1 1.2246467991473532e-16 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 ( 256 416 -1808 ) ( 176 424 -1808 ) ( 144 416 -1808 ) BrickWall/BrickWall[Blue] [ 1 -1.2246467991473532e-16 0 0 ] [ -1.2246467991473532e-16 -1 0 63.99997 ] 270 0.063 0.063
-( 176 424 192 ) ( 256 416 192 ) ( 144 416 192 ) BrickWall/BrickWall[Blue] [ -1 1.2246467991473532e-16 0 0 ] [ -1.2246467991473532e-16 -1 0 63.99997 ] 0 0.063 0.063
+( 176 424 192 ) ( 256 416 192 ) ( 144 416 192 ) Material-LIB/RoofTiles/RoofTiles [ -1 1.2246467991473532e-16 0 0 ] [ -1.2246467991473532e-16 -1 0 63.99997 ] 0 0.103 0.103
 ( 176 424 -240 ) ( 256 416 -272 ) ( 256 416 -240 ) BrickWall/BrickWall[Blue] [ -1 -7.720878183953859e-17 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
 }
 // brush 5
@@ -10613,14 +10622,14 @@
 ( 80 424 -240 ) ( 0 416 -240 ) ( 0 416 -272 ) BrickWall/BrickWall[Blue] [ 1 -3.2213814166900927e-16 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( 0 416 -240 ) ( 112 416 -240 ) ( 112 416 -272 ) BrickWall/BrickWall[Blue] [ 1 -1.2246467991473532e-16 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( 0 416 -1808 ) ( 112 416 -1808 ) ( 80 424 -1808 ) BrickWall/BrickWall[Blue] [ -1 1.2246467991473532e-16 0 0 ] [ -1.2246467991473532e-16 -1 0 63.99997 ] 180 0.063 0.063
-( 80 424 192 ) ( 112 416 192 ) ( 0 416 192 ) BrickWall/BrickWall[Blue] [ 1 -1.2246467991473532e-16 0 0 ] [ -1.2246467991473532e-16 -1 0 63.99997 ] 90 0.063 0.063
+( 80 424 192 ) ( 112 416 192 ) ( 0 416 192 ) Material-LIB/RoofTiles/RoofTiles [ 1 -1.2246467991473532e-16 0 0 ] [ -1.2246467991473532e-16 -1 0 63.99997 ] 90 0.103 0.103
 ( 112 416 -272 ) ( 112 416 -240 ) ( 80 424 -240 ) BrickWall/BrickWall[Blue] [ -0.7071067811865476 0.7071067811865476 0 -16.54834 ] [ 0 0 -1 0 ] 270 0.063 0.063
 }
 // brush 6
 {
 ( 48 440 -240 ) ( 0 416 -240 ) ( 0 416 -272 ) BrickWall/BrickWall[Blue] [ 1 -1.2246467991473532e-16 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( 0 416 -1808 ) ( 80 424 -1808 ) ( 48 440 -1808 ) BrickWall/BrickWall[Blue] [ -1 1.2246467991473532e-16 0 0 ] [ -1.2246467991473532e-16 -1 0 63.99997 ] 180 0.063 0.063
-( 48 440 192 ) ( 80 424 192 ) ( 0 416 192 ) BrickWall/BrickWall[Blue] [ 1 -1.2246467991473532e-16 0 0 ] [ -1.2246467991473532e-16 -1 0 63.99997 ] 90 0.063 0.063
+( 48 440 192 ) ( 80 424 192 ) ( 0 416 192 ) Material-LIB/RoofTiles/RoofTiles [ 1 -1.2246467991473532e-16 0 0 ] [ -1.2246467991473532e-16 -1 0 63.99997 ] 90 0.103 0.103
 ( 0 416 -240 ) ( 80 424 -240 ) ( 80 424 -272 ) BrickWall/BrickWall[Blue] [ 1 -3.2213814166900927e-16 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
 ( 80 424 -272 ) ( 80 424 -240 ) ( 48 440 -240 ) BrickWall/BrickWall[Blue] [ -0.7071067811865476 0.7071067811865476 0 -16.54831 ] [ 0 0 -1 0 ] 270 0.063 0.063
 }
@@ -10628,7 +10637,7 @@
 {
 ( 24 464 -240 ) ( 0 416 -240 ) ( 0 416 -272 ) BrickWall/BrickWall[Blue] [ 4.00642764603198e-16 1 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( 0 416 -1808 ) ( 48 440 -1808 ) ( 24 464 -1808 ) BrickWall/BrickWall[Blue] [ -1 1.2246467991473532e-16 0 0 ] [ -1.2246467991473532e-16 -1 0 0 ] 180 0.063 0.063
-( 24 464 192 ) ( 48 440 192 ) ( 0 416 192 ) BrickWall/BrickWall[Blue] [ 1 -1.2246467991473532e-16 0 0 ] [ -1.2246467991473532e-16 -1 0 0 ] 90 0.063 0.063
+( 24 464 192 ) ( 48 440 192 ) ( 0 416 192 ) Material-LIB/RoofTiles/RoofTiles [ 1 -1.2246467991473532e-16 0 0 ] [ -1.2246467991473532e-16 -1 0 0 ] 90 0.103 0.103
 ( 0 416 -240 ) ( 48 440 -240 ) ( 48 440 -272 ) BrickWall/BrickWall[Blue] [ 1 -1.2246467991473532e-16 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
 ( 48 440 -272 ) ( 48 440 -240 ) ( 24 464 -240 ) BrickWall/BrickWall[Blue] [ -0.7071067811865476 0.7071067811865476 0 -16.54834 ] [ 0 0 -1 0 ] 270 0.063 0.063
 }
@@ -10636,7 +10645,7 @@
 {
 ( 8 496 -240 ) ( 0 416 -240 ) ( 0 416 -272 ) BrickWall/BrickWall[Blue] [ -3.4524033017043173e-16 1 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( 0 416 -1808 ) ( 24 464 -1808 ) ( 8 496 -1808 ) BrickWall/BrickWall[Blue] [ -1 1.2246467991473532e-16 0 0 ] [ -1.2246467991473532e-16 -1 0 63.99997 ] 180 0.063 0.063
-( 8 496 192 ) ( 24 464 192 ) ( 0 416 192 ) BrickWall/BrickWall[Blue] [ 1 -1.2246467991473532e-16 0 0 ] [ -1.2246467991473532e-16 -1 0 63.99997 ] 90 0.063 0.063
+( 8 496 192 ) ( 24 464 192 ) ( 0 416 192 ) Material-LIB/RoofTiles/RoofTiles [ 1 -1.2246467991473532e-16 0 0 ] [ -1.2246467991473532e-16 -1 0 63.99997 ] 90 0.103 0.103
 ( 0 416 -240 ) ( 24 464 -240 ) ( 24 464 -272 ) BrickWall/BrickWall[Blue] [ 4.00642764603198e-16 1 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
 ( 24 464 -272 ) ( 24 464 -240 ) ( 8 496 -240 ) BrickWall/BrickWall[Blue] [ 0.7071067811865472 -0.7071067811865478 0 16.705627 ] [ 0 0 -1 0 ] 90 0.063 0.063
 }
@@ -10644,7 +10653,7 @@
 {
 ( 0 528 -240 ) ( 0 416 -240 ) ( 0 416 -272 ) BrickWall/BrickWall[Blue] [ 4.358608431193168e-16 1 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
 ( 0 416 -1808 ) ( 8 496 -1808 ) ( 0 528 -1808 ) BrickWall/BrickWall[Blue] [ -1 1.2246467991473532e-16 0 0 ] [ -1.2246467991473532e-16 -1 0 0 ] 180 0.063 0.063
-( 0 528 192 ) ( 8 496 192 ) ( 0 416 192 ) BrickWall/BrickWall[Blue] [ 1 -1.2246467991473532e-16 0 0 ] [ -1.2246467991473532e-16 -1 0 0 ] 90 0.063 0.063
+( 0 528 192 ) ( 8 496 192 ) ( 0 416 192 ) Material-LIB/RoofTiles/RoofTiles [ 1 -1.2246467991473532e-16 0 0 ] [ -1.2246467991473532e-16 -1 0 0 ] 90 0.103 0.103
 ( 8 496 -272 ) ( 8 496 -240 ) ( 0 528 -240 ) BrickWall/BrickWall[Blue] [ 0.7071067811865472 -0.7071067811865478 0 16.705658 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( 0 416 -240 ) ( 8 496 -240 ) ( 8 496 -272 ) BrickWall/BrickWall[Blue] [ -3.4524033017043173e-16 1 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
 }
@@ -10652,7 +10661,7 @@
 {
 ( 24 624 -240 ) ( 0 672 -272 ) ( 0 672 -240 ) BrickWall/BrickWall[Blue] [ 2.7817808468846267e-16 -1 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
 ( 0 672 -1808 ) ( 24 624 -1808 ) ( 48 648 -1808 ) BrickWall/BrickWall[Blue] [ -1 0 0 0 ] [ 0 1 0 0 ] 0 0.063 0.063
-( 24 624 192 ) ( 0 672 192 ) ( 48 648 192 ) BrickWall/BrickWall[Blue] [ 1 0 0 0 ] [ 0 1 0 0 ] 90 0.063 0.063
+( 24 624 192 ) ( 0 672 192 ) ( 48 648 192 ) Material-LIB/RoofTiles/RoofTiles [ 1 0 0 0 ] [ 0 1 0 0 ] 90 0.103 0.103
 ( 0 672 -240 ) ( 48 648 -272 ) ( 48 648 -240 ) BrickWall/BrickWall[Blue] [ 1 0 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( 48 648 -272 ) ( 24 624 -240 ) ( 48 648 -240 ) BrickWall/BrickWall[Blue] [ -0.7071067811865476 -0.7071067811865476 0 -4.216095 ] [ 0 0 -1 0 ] 90 0.063 0.063
 }
@@ -10660,7 +10669,7 @@
 {
 ( 0 560 -240 ) ( 0 672 -272 ) ( 0 672 -240 ) BrickWall/BrickWall[Blue] [ 3.1339616320458145e-16 -1 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
 ( 0 672 -1808 ) ( 0 560 -1808 ) ( 8 592 -1808 ) BrickWall/BrickWall[Blue] [ -1 0 0 0 ] [ 0 1 0 0 ] 0 0.063 0.063
-( 0 560 192 ) ( 0 672 192 ) ( 8 592 192 ) BrickWall/BrickWall[Blue] [ 1 0 0 0 ] [ 0 1 0 0 ] 90 0.063 0.063
+( 0 560 192 ) ( 0 672 192 ) ( 8 592 192 ) Material-LIB/RoofTiles/RoofTiles [ 1 0 0 0 ] [ 0 1 0 0 ] 90 0.103 0.103
 ( 8 592 -272 ) ( 0 560 -240 ) ( 8 592 -240 ) BrickWall/BrickWall[Blue] [ 0.7071067811865472 0.7071067811865478 0 4.373413 ] [ 0 0 -1 0 ] 270 0.063 0.063
 ( 0 672 -240 ) ( 8 592 -272 ) ( 8 592 -240 ) BrickWall/BrickWall[Blue] [ -4.677050100851671e-16 -1 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 }
@@ -10668,7 +10677,7 @@
 {
 ( 8 592 -240 ) ( 0 672 -272 ) ( 0 672 -240 ) BrickWall/BrickWall[Blue] [ -4.677050100851671e-16 -1 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
 ( 0 672 -1808 ) ( 8 592 -1808 ) ( 24 624 -1808 ) BrickWall/BrickWall[Blue] [ -1 0 0 0 ] [ 0 1 0 0 ] 0 0.063 0.063
-( 8 592 192 ) ( 0 672 192 ) ( 24 624 192 ) BrickWall/BrickWall[Blue] [ 1 0 0 0 ] [ 0 1 0 0 ] 90 0.063 0.063
+( 8 592 192 ) ( 0 672 192 ) ( 24 624 192 ) Material-LIB/RoofTiles/RoofTiles [ 1 0 0 0 ] [ 0 1 0 0 ] 90 0.103 0.103
 ( 24 624 -272 ) ( 8 592 -240 ) ( 24 624 -240 ) BrickWall/BrickWall[Blue] [ 0.7071067811865472 0.7071067811865478 0 4.373413 ] [ 0 0 -1 0 ] 270 0.063 0.063
 ( 0 672 -240 ) ( 24 624 -272 ) ( 24 624 -240 ) BrickWall/BrickWall[Blue] [ 2.7817808468846267e-16 -1 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 }
@@ -10676,7 +10685,7 @@
 {
 ( 48 648 -240 ) ( 0 672 -272 ) ( 0 672 -240 ) BrickWall/BrickWall[Blue] [ 1 0 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
 ( 0 672 -1808 ) ( 48 648 -1808 ) ( 80 664 -1808 ) BrickWall/BrickWall[Blue] [ -1 0 0 0 ] [ 0 1 0 0 ] 0 0.063 0.063
-( 48 648 192 ) ( 0 672 192 ) ( 80 664 192 ) BrickWall/BrickWall[Blue] [ 1 0 0 0 ] [ 0 1 0 0 ] 90 0.063 0.063
+( 48 648 192 ) ( 0 672 192 ) ( 80 664 192 ) Material-LIB/RoofTiles/RoofTiles [ 1 0 0 0 ] [ 0 1 0 0 ] 90 0.103 0.103
 ( 0 672 -240 ) ( 80 664 -272 ) ( 80 664 -240 ) BrickWall/BrickWall[Blue] [ 1 1.9967346175427393e-16 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( 80 664 -272 ) ( 48 648 -240 ) ( 80 664 -240 ) BrickWall/BrickWall[Blue] [ -0.7071067811865476 -0.7071067811865476 0 -4.2160645 ] [ 0 0 -1 0 ] 90 0.063 0.063
 }
@@ -10684,7 +10693,7 @@
 {
 ( 80 664 -240 ) ( 0 672 -272 ) ( 0 672 -240 ) BrickWall/BrickWall[Blue] [ 1 1.9967346175427393e-16 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
 ( 0 672 -1808 ) ( 80 664 -1808 ) ( 112 672 -1808 ) BrickWall/BrickWall[Blue] [ -1 0 0 0 ] [ 0 1 0 0 ] 0 0.063 0.063
-( 80 664 192 ) ( 0 672 192 ) ( 112 672 192 ) BrickWall/BrickWall[Blue] [ 1 0 0 0 ] [ 0 1 0 0 ] 90 0.063 0.063
+( 80 664 192 ) ( 0 672 192 ) ( 112 672 192 ) Material-LIB/RoofTiles/RoofTiles [ 1 0 0 0 ] [ 0 1 0 0 ] 90 0.103 0.103
 ( 0 672 -240 ) ( 112 672 -272 ) ( 112 672 -240 ) BrickWall/BrickWall[Blue] [ 1 0 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
 ( 112 672 -272 ) ( 80 664 -240 ) ( 112 672 -240 ) BrickWall/BrickWall[Blue] [ -0.7071067811865476 -0.7071067811865476 0 -4.2161865 ] [ 0 0 -1 0 ] 90 0.063 0.063
 }
@@ -10692,7 +10701,7 @@
 {
 ( 144 672 -272 ) ( 144 672 -240 ) ( 176 664 -240 ) BrickWall/BrickWall[Blue] [ 0.7071067811865476 -0.7071067811865476 0 -4.235504 ] [ 0 0 -1 0 ] 0 0.063 0.063
 ( 256 672 -1808 ) ( 144 672 -1808 ) ( 176 664 -1808 ) BrickWall/BrickWall[Blue] [ 1 0 0 0 ] [ 0 1 0 0 ] 90 0.063 0.063
-( 176 664 192 ) ( 144 672 192 ) ( 256 672 192 ) BrickWall/BrickWall[Blue] [ -1 0 0 0 ] [ 0 1 0 0 ] 0 0.063 0.063
+( 176 664 192 ) ( 144 672 192 ) ( 256 672 192 ) Material-LIB/RoofTiles/RoofTiles [ -1 0 0 0 ] [ 0 1 0 0 ] 0 0.103 0.103
 ( 256 672 -240 ) ( 144 672 -240 ) ( 144 672 -272 ) BrickWall/BrickWall[Blue] [ -1 0 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
 ( 176 664 -240 ) ( 256 672 -240 ) ( 256 672 -272 ) BrickWall/BrickWall[Blue] [ -1 1.9967346175427393e-16 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 }
@@ -10701,7 +10710,7 @@
 ( 176 664 -272 ) ( 176 664 -240 ) ( 208 648 -240 ) BrickWall/BrickWall[Blue] [ 0.7071067811865476 -0.7071067811865476 0 -4.2354736 ] [ 0 0 -1 0 ] 0 0.063 0.063
 ( 256 672 -240 ) ( 176 664 -240 ) ( 176 664 -272 ) BrickWall/BrickWall[Blue] [ -1 1.9967346175427393e-16 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 ( 256 672 -1808 ) ( 176 664 -1808 ) ( 208 648 -1808 ) BrickWall/BrickWall[Blue] [ 1 0 0 0 ] [ 0 1 0 0 ] 90 0.063 0.063
-( 208 648 192 ) ( 176 664 192 ) ( 256 672 192 ) BrickWall/BrickWall[Blue] [ -1 0 0 0 ] [ 0 1 0 0 ] 0 0.063 0.063
+( 208 648 192 ) ( 176 664 192 ) ( 256 672 192 ) Material-LIB/RoofTiles/RoofTiles [ -1 0 0 0 ] [ 0 1 0 0 ] 0 0.103 0.103
 ( 208 648 -240 ) ( 256 672 -240 ) ( 256 672 -272 ) BrickWall/BrickWall[Blue] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 }
 // brush 17
@@ -10709,7 +10718,7 @@
 ( 208 648 -272 ) ( 208 648 -240 ) ( 232 624 -240 ) BrickWall/BrickWall[Blue] [ 0.7071067811865476 -0.7071067811865476 0 -4.2354736 ] [ 0 0 -1 0 ] 0 0.063 0.063
 ( 256 672 -240 ) ( 208 648 -240 ) ( 208 648 -272 ) BrickWall/BrickWall[Blue] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 ( 256 672 -1808 ) ( 208 648 -1808 ) ( 232 624 -1808 ) BrickWall/BrickWall[Blue] [ 1 0 0 0 ] [ 0 1 0 0 ] 90 0.063 0.063
-( 232 624 192 ) ( 208 648 192 ) ( 256 672 192 ) BrickWall/BrickWall[Blue] [ -1 0 0 0 ] [ 0 1 0 0 ] 0 0.063 0.063
+( 232 624 192 ) ( 208 648 192 ) ( 256 672 192 ) Material-LIB/RoofTiles/RoofTiles [ -1 0 0 0 ] [ 0 1 0 0 ] 0 0.103 0.103
 ( 232 624 -240 ) ( 256 672 -240 ) ( 256 672 -272 ) BrickWall/BrickWall[Blue] [ -2.7817808468846267e-16 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 }
 // brush 18
@@ -10717,7 +10726,7 @@
 ( 232 624 -272 ) ( 232 624 -240 ) ( 248 592 -240 ) BrickWall/BrickWall[Blue] [ -0.7071067811865472 0.7071067811865478 0 4.3927917 ] [ 0 0 -1 0 ] 0 0.063 0.063
 ( 256 672 -240 ) ( 232 624 -240 ) ( 232 624 -272 ) BrickWall/BrickWall[Blue] [ -2.7817808468846267e-16 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 ( 256 672 -1808 ) ( 232 624 -1808 ) ( 248 592 -1808 ) BrickWall/BrickWall[Blue] [ 1 0 0 0 ] [ 0 1 0 0 ] 90 0.063 0.063
-( 248 592 192 ) ( 232 624 192 ) ( 256 672 192 ) BrickWall/BrickWall[Blue] [ -1 0 0 0 ] [ 0 1 0 0 ] 0 0.063 0.063
+( 248 592 192 ) ( 232 624 192 ) ( 256 672 192 ) Material-LIB/RoofTiles/RoofTiles [ -1 0 0 0 ] [ 0 1 0 0 ] 0 0.103 0.103
 ( 248 592 -240 ) ( 256 672 -240 ) ( 256 672 -272 ) BrickWall/BrickWall[Blue] [ 4.677050100851671e-16 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 }
 // brush 19
@@ -10725,7 +10734,7 @@
 ( 256 672 -240 ) ( 248 592 -240 ) ( 248 592 -272 ) BrickWall/BrickWall[Blue] [ 4.677050100851671e-16 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 ( 248 592 -272 ) ( 248 592 -240 ) ( 256 560 -240 ) BrickWall/BrickWall[Blue] [ -0.7071067811865472 0.7071067811865478 0 4.3928223 ] [ 0 0 -1 0 ] 0 0.063 0.063
 ( 256 672 -1808 ) ( 248 592 -1808 ) ( 256 560 -1808 ) BrickWall/BrickWall[Blue] [ 1 0 0 0 ] [ 0 1 0 0 ] 90 0.063 0.063
-( 256 560 192 ) ( 248 592 192 ) ( 256 672 192 ) BrickWall/BrickWall[Blue] [ -1 0 0 0 ] [ 0 1 0 0 ] 0 0.063 0.063
+( 256 560 192 ) ( 248 592 192 ) ( 256 672 192 ) Material-LIB/RoofTiles/RoofTiles [ -1 0 0 0 ] [ 0 1 0 0 ] 0 0.103 0.103
 ( 256 560 -240 ) ( 256 672 -240 ) ( 256 672 -272 ) BrickWall/BrickWall[Blue] [ -3.1339616320458145e-16 -1 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
 }
 }
@@ -10739,163 +10748,163 @@
 "_tb_transformation" "-1.25 -1.5308084989341916e-16 0 288.0000000000001 1.5308084989341916e-16 -1.25 0 1384 0 0 0.06896551724137934 193.10344827586204 0 0 0 1"
 // brush 0
 {
-( 228 414 192 ) ( 258 444 194.20689655172413 ) ( 228 414 194.20689655172413 ) Material-LIB/Cobblestone/Cobblestone [ 0.5656854249492379 0.5656854249492379 0 36.46756 ] [ 0 0 -14.499999999999993 48 ] 90 0.063 0.063
-( 288 384 194.20689655172413 ) ( 228 414 192 ) ( 228 414 194.20689655172413 ) Material-LIB/Cobblestone/Cobblestone [ -0.7999999999999998 9.797174393178824e-17 0 -25.600006 ] [ 0 0 -14.499999999999993 48 ] 90 0.063 0.063
-( 288 384 192 ) ( 258 444 192 ) ( 228 414 192 ) Material-LIB/Cobblestone/Cobblestone [ 0.7999999999999998 -9.797174393178824e-17 0 25.600006 ] [ -9.797174393178824e-17 -0.7999999999999998 0 -44.799988 ] 90 0.063 0.063
-( 258 444 224 ) ( 288 384 224 ) ( 228 414 224 ) Material-LIB/Cobblestone/Cobblestone [ -0.7999999999999998 9.797174393178824e-17 0 -25.600006 ] [ -9.797174393178824e-17 -0.7999999999999998 0 -44.799988 ] 270 0.063 0.063
-( 258 444 194.20689655172413 ) ( 288 384 192 ) ( 288 384 194.20689655172413 ) Material-LIB/Cobblestone/Cobblestone [ -1.2457072381898183e-16 0.7999999999999998 0 44.799988 ] [ 0 0 -14.499999999999993 48 ] 270 0.063 0.063
+( 228 414 192 ) ( 258 444 194.20689655172413 ) ( 228 414 194.20689655172413 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.5656854249492379 0.5656854249492379 0 36.46756 ] [ 0 0 -14.499999999999993 48 ] 90 -0.047 -0.507
+( 288 384 194.20689655172413 ) ( 228 414 192 ) ( 228 414 194.20689655172413 ) Material-LIB/RoofTiles/RoofTiles [ -0.7999999999999998 9.797174393178824e-17 0 -25.600006 ] [ 0 0 -14.499999999999993 48 ] 90 0.063 0.063
+( 288 384 192 ) ( 258 444 192 ) ( 228 414 192 ) Material-LIB/RoofTiles/RoofTiles [ 0.7999999999999998 -9.797174393178824e-17 0 25.600006 ] [ -9.797174393178824e-17 -0.7999999999999998 0 -44.799988 ] 90 0.063 0.063
+( 258 444 224 ) ( 288 384 224 ) ( 228 414 224 ) Material-LIB/RoofTiles/RoofTiles [ -0.7999999999999998 9.797174393178824e-17 0 -25.600006 ] [ -9.797174393178824e-17 -0.7999999999999998 0 -44.799988 ] 270 0.063 0.063
+( 258 444 194.20689655172413 ) ( 288 384 192 ) ( 288 384 194.20689655172413 ) Material-LIB/RoofTiles/RoofTiles [ -1.2457072381898183e-16 0.7999999999999998 0 44.799988 ] [ 0 0 -14.499999999999993 48 ] 270 0.063 0.063
 }
 // brush 1
 {
-( 288 384 194.20689655172413 ) ( 278 484 192 ) ( 278 484 194.20689655172413 ) Material-LIB/Cobblestone/Cobblestone [ 4.721357519999219e-16 0.7999999999999998 0 44.799988 ] [ 0 0 -14.499999999999993 48 ] 90 0.063 0.063
-( 278 484 192 ) ( 288 524 194.20689655172413 ) ( 278 484 194.20689655172413 ) Material-LIB/Cobblestone/Cobblestone [ -0.5656854249492377 -0.5656854249492381 0 -36.31021 ] [ 0 0 -14.499999999999993 48 ] 270 0.063 0.063
-( 288 384 192 ) ( 288 524 192 ) ( 278 484 192 ) Material-LIB/Cobblestone/Cobblestone [ 0.7999999999999998 -9.797174393178824e-17 0 25.59999 ] [ -9.797174393178824e-17 -0.7999999999999998 0 -44.799988 ] 90 0.063 0.063
-( 288 524 224 ) ( 288 384 224 ) ( 278 484 224 ) Material-LIB/Cobblestone/Cobblestone [ -0.7999999999999998 9.797174393178824e-17 0 -25.59999 ] [ -9.797174393178824e-17 -0.7999999999999998 0 -44.799988 ] 270 0.063 0.063
-( 288 524 194.20689655172413 ) ( 288 384 192 ) ( 288 384 194.20689655172413 ) Material-LIB/Cobblestone/Cobblestone [ -1.5274518663187686e-16 0.7999999999999998 0 44.799988 ] [ 0 0 -14.499999999999993 48 ] 270 0.063 0.063
+( 288 384 194.20689655172413 ) ( 278 484 192 ) ( 278 484 194.20689655172413 ) Material-LIB/RoofTiles/RoofTiles [ 4.721357519999219e-16 0.7999999999999998 0 44.799988 ] [ 0 0 -14.499999999999993 48 ] 90 0.063 0.063
+( 278 484 192 ) ( 288 524 194.20689655172413 ) ( 278 484 194.20689655172413 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.5656854249492377 -0.5656854249492381 0 -36.31021 ] [ 0 0 -14.499999999999993 48 ] 270 -0.047 -0.507
+( 288 384 192 ) ( 288 524 192 ) ( 278 484 192 ) Material-LIB/RoofTiles/RoofTiles [ 0.7999999999999998 -9.797174393178824e-17 0 25.59999 ] [ -9.797174393178824e-17 -0.7999999999999998 0 -44.799988 ] 90 0.063 0.063
+( 288 524 224 ) ( 288 384 224 ) ( 278 484 224 ) Material-LIB/RoofTiles/RoofTiles [ -0.7999999999999998 9.797174393178824e-17 0 -25.59999 ] [ -9.797174393178824e-17 -0.7999999999999998 0 -44.799988 ] 270 0.063 0.063
+( 288 524 194.20689655172413 ) ( 288 384 192 ) ( 288 384 194.20689655172413 ) Material-LIB/RoofTiles/RoofTiles [ -1.5274518663187686e-16 0.7999999999999998 0 44.799988 ] [ 0 0 -14.499999999999993 48 ] 270 0.063 0.063
 }
 // brush 2
 {
-( 288 384 194.20689655172413 ) ( 258 444 192 ) ( 258 444 194.20689655172413 ) Material-LIB/Cobblestone/Cobblestone [ -1.2457072381898183e-16 0.7999999999999998 0 44.799988 ] [ 0 0 -14.499999999999993 48 ] 90 0.063 0.063
-( 258 444 192 ) ( 278 484 194.20689655172413 ) ( 258 444 194.20689655172413 ) Material-LIB/Cobblestone/Cobblestone [ -0.5656854249492377 -0.5656854249492381 0 -36.31024 ] [ 0 0 -14.499999999999993 48 ] 270 0.063 0.063
-( 288 384 192 ) ( 278 484 192 ) ( 258 444 192 ) Material-LIB/Cobblestone/Cobblestone [ 0.7999999999999998 -9.797174393178824e-17 0 25.59999 ] [ -9.797174393178824e-17 -0.7999999999999998 0 -44.80002 ] 90 0.063 0.063
-( 278 484 224 ) ( 288 384 224 ) ( 258 444 224 ) Material-LIB/Cobblestone/Cobblestone [ -0.7999999999999998 9.797174393178824e-17 0 -25.59999 ] [ -9.797174393178824e-17 -0.7999999999999998 0 -44.80002 ] 270 0.063 0.063
-( 278 484 194.20689655172413 ) ( 288 384 192 ) ( 288 384 194.20689655172413 ) Material-LIB/Cobblestone/Cobblestone [ 4.721357519999219e-16 0.7999999999999998 0 44.799988 ] [ 0 0 -14.499999999999993 48 ] 270 0.063 0.063
+( 288 384 194.20689655172413 ) ( 258 444 192 ) ( 258 444 194.20689655172413 ) Material-LIB/RoofTiles/RoofTiles [ -1.2457072381898183e-16 0.7999999999999998 0 44.799988 ] [ 0 0 -14.499999999999993 48 ] 90 0.063 0.063
+( 258 444 192 ) ( 278 484 194.20689655172413 ) ( 258 444 194.20689655172413 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.5656854249492377 -0.5656854249492381 0 -36.31024 ] [ 0 0 -14.499999999999993 48 ] 270 -0.047 -0.507
+( 288 384 192 ) ( 278 484 192 ) ( 258 444 192 ) Material-LIB/RoofTiles/RoofTiles [ 0.7999999999999998 -9.797174393178824e-17 0 25.59999 ] [ -9.797174393178824e-17 -0.7999999999999998 0 -44.80002 ] 90 0.063 0.063
+( 278 484 224 ) ( 288 384 224 ) ( 258 444 224 ) Material-LIB/RoofTiles/RoofTiles [ -0.7999999999999998 9.797174393178824e-17 0 -25.59999 ] [ -9.797174393178824e-17 -0.7999999999999998 0 -44.80002 ] 270 0.063 0.063
+( 278 484 194.20689655172413 ) ( 288 384 192 ) ( 288 384 194.20689655172413 ) Material-LIB/RoofTiles/RoofTiles [ 4.721357519999219e-16 0.7999999999999998 0 44.799988 ] [ 0 0 -14.499999999999993 48 ] 270 0.063 0.063
 }
 // brush 3
 {
-( 188 394 192 ) ( 228 414 194.20689655172413 ) ( 188 394 194.20689655172413 ) Material-LIB/Cobblestone/Cobblestone [ 0.5656854249492379 0.5656854249492379 0 36.46756 ] [ 0 0 -14.499999999999993 48 ] 90 0.063 0.063
-( 288 384 194.20689655172413 ) ( 188 394 192 ) ( 188 394 194.20689655172413 ) Material-LIB/Cobblestone/Cobblestone [ -0.7999999999999998 -6.176702547163087e-17 0 -25.600006 ] [ 0 0 -14.499999999999993 48 ] 90 0.063 0.063
-( 288 384 192 ) ( 228 414 192 ) ( 188 394 192 ) Material-LIB/Cobblestone/Cobblestone [ 0.7999999999999998 -9.797174393178824e-17 0 25.59999 ] [ -9.797174393178824e-17 -0.7999999999999998 0 -44.80002 ] 90 0.063 0.063
-( 228 414 224 ) ( 288 384 224 ) ( 188 394 224 ) Material-LIB/Cobblestone/Cobblestone [ -0.7999999999999998 9.797174393178824e-17 0 -25.59999 ] [ -9.797174393178824e-17 -0.7999999999999998 0 -44.80002 ] 270 0.063 0.063
-( 228 414 194.20689655172413 ) ( 288 384 192 ) ( 288 384 194.20689655172413 ) Material-LIB/Cobblestone/Cobblestone [ -0.7999999999999998 9.797174393178824e-17 0 -25.600006 ] [ 0 0 -14.499999999999993 48 ] 270 0.063 0.063
+( 188 394 192 ) ( 228 414 194.20689655172413 ) ( 188 394 194.20689655172413 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.5656854249492379 0.5656854249492379 0 36.46756 ] [ 0 0 -14.499999999999993 48 ] 90 -0.047 -0.507
+( 288 384 194.20689655172413 ) ( 188 394 192 ) ( 188 394 194.20689655172413 ) Material-LIB/RoofTiles/RoofTiles [ -0.7999999999999998 -6.176702547163087e-17 0 -25.600006 ] [ 0 0 -14.499999999999993 48 ] 90 0.063 0.063
+( 288 384 192 ) ( 228 414 192 ) ( 188 394 192 ) Material-LIB/RoofTiles/RoofTiles [ 0.7999999999999998 -9.797174393178824e-17 0 25.59999 ] [ -9.797174393178824e-17 -0.7999999999999998 0 -44.80002 ] 90 0.063 0.063
+( 228 414 224 ) ( 288 384 224 ) ( 188 394 224 ) Material-LIB/RoofTiles/RoofTiles [ -0.7999999999999998 9.797174393178824e-17 0 -25.59999 ] [ -9.797174393178824e-17 -0.7999999999999998 0 -44.80002 ] 270 0.063 0.063
+( 228 414 194.20689655172413 ) ( 288 384 192 ) ( 288 384 194.20689655172413 ) Material-LIB/RoofTiles/RoofTiles [ -0.7999999999999998 9.797174393178824e-17 0 -25.600006 ] [ 0 0 -14.499999999999993 48 ] 270 0.063 0.063
 }
 // brush 4
 {
-( 148 384 192 ) ( 188 394 194.20689655172413 ) ( 148 384 194.20689655172413 ) Material-LIB/Cobblestone/Cobblestone [ 0.5656854249492379 0.5656854249492379 0 36.46747 ] [ 0 0 -14.499999999999993 48 ] 90 0.063 0.063
-( 288 384 194.20689655172413 ) ( 148 384 192 ) ( 148 384 194.20689655172413 ) Material-LIB/Cobblestone/Cobblestone [ -0.7999999999999998 9.797174393178824e-17 0 -25.600006 ] [ 0 0 -14.499999999999993 48 ] 270 0.063 0.063
-( 288 384 192 ) ( 188 394 192 ) ( 148 384 192 ) Material-LIB/Cobblestone/Cobblestone [ 0.7999999999999998 -9.797174393178824e-17 0 25.600006 ] [ -9.797174393178824e-17 -0.7999999999999998 0 -44.80002 ] 90 0.063 0.063
-( 188 394 224 ) ( 288 384 224 ) ( 148 384 224 ) Material-LIB/Cobblestone/Cobblestone [ -0.7999999999999998 9.797174393178824e-17 0 -25.600006 ] [ -9.797174393178824e-17 -0.7999999999999998 0 -44.80002 ] 270 0.063 0.063
-( 188 394 194.20689655172413 ) ( 288 384 192 ) ( 288 384 194.20689655172413 ) Material-LIB/Cobblestone/Cobblestone [ -0.7999999999999998 -6.176702547163087e-17 0 -25.600006 ] [ 0 0 -14.499999999999993 48 ] 270 0.063 0.063
+( 148 384 192 ) ( 188 394 194.20689655172413 ) ( 148 384 194.20689655172413 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.5656854249492379 0.5656854249492379 0 36.46747 ] [ 0 0 -14.499999999999993 48 ] 90 -0.047 -0.507
+( 288 384 194.20689655172413 ) ( 148 384 192 ) ( 148 384 194.20689655172413 ) Material-LIB/RoofTiles/RoofTiles [ -0.7999999999999998 9.797174393178824e-17 0 -25.600006 ] [ 0 0 -14.499999999999993 48 ] 270 0.063 0.063
+( 288 384 192 ) ( 188 394 192 ) ( 148 384 192 ) Material-LIB/RoofTiles/RoofTiles [ 0.7999999999999998 -9.797174393178824e-17 0 25.600006 ] [ -9.797174393178824e-17 -0.7999999999999998 0 -44.80002 ] 90 0.063 0.063
+( 188 394 224 ) ( 288 384 224 ) ( 148 384 224 ) Material-LIB/RoofTiles/RoofTiles [ -0.7999999999999998 9.797174393178824e-17 0 -25.600006 ] [ -9.797174393178824e-17 -0.7999999999999998 0 -44.80002 ] 270 0.063 0.063
+( 188 394 194.20689655172413 ) ( 288 384 192 ) ( 288 384 194.20689655172413 ) Material-LIB/RoofTiles/RoofTiles [ -0.7999999999999998 -6.176702547163087e-17 0 -25.600006 ] [ 0 0 -14.499999999999993 48 ] 270 0.063 0.063
 }
 // brush 5
 {
-( 68 394 194.20689655172413 ) ( -32 384 194.20689655172413 ) ( -32 384 192 ) Material-LIB/Cobblestone/Cobblestone [ 0.7999999999999998 -2.577105133352074e-16 0 25.6 ] [ 0 0 -14.499999999999993 48 ] 0 0.063 0.063
-( -32 384 194.20689655172413 ) ( 108 384 194.20689655172413 ) ( 108 384 192 ) Material-LIB/Cobblestone/Cobblestone [ 0.7999999999999998 -9.797174393178824e-17 0 25.6 ] [ 0 0 -14.499999999999993 48 ] 180 0.063 0.063
-( -32 384 192 ) ( 108 384 192 ) ( 68 394 192 ) Material-LIB/Cobblestone/Cobblestone [ -0.7999999999999998 9.797174393178824e-17 0 -25.599998 ] [ -9.797174393178824e-17 -0.7999999999999998 0 -44.80002 ] 0 0.063 0.063
-( 68 394 224 ) ( 108 384 224 ) ( -32 384 224 ) Material-LIB/Cobblestone/Cobblestone [ 0.7999999999999998 -9.797174393178824e-17 0 25.599998 ] [ -9.797174393178824e-17 -0.7999999999999998 0 -44.80002 ] 180 0.063 0.063
-( 108 384 192 ) ( 108 384 194.20689655172413 ) ( 68 394 194.20689655172413 ) Material-LIB/Cobblestone/Cobblestone [ -0.5656854249492379 0.5656854249492379 0 42.282944 ] [ 0 0 -14.499999999999993 48 ] 0 0.063 0.063
+( 68 394 194.20689655172413 ) ( -32 384 194.20689655172413 ) ( -32 384 192 ) Material-LIB/RoofTiles/RoofTiles [ 0.7999999999999998 -2.577105133352074e-16 0 25.6 ] [ 0 0 -14.499999999999993 48 ] 0 0.063 0.063
+( -32 384 194.20689655172413 ) ( 108 384 194.20689655172413 ) ( 108 384 192 ) Material-LIB/RoofTiles/RoofTiles [ 0.7999999999999998 -9.797174393178824e-17 0 25.6 ] [ 0 0 -14.499999999999993 48 ] 180 0.063 0.063
+( -32 384 192 ) ( 108 384 192 ) ( 68 394 192 ) Material-LIB/RoofTiles/RoofTiles [ -0.7999999999999998 9.797174393178824e-17 0 -25.599998 ] [ -9.797174393178824e-17 -0.7999999999999998 0 -44.80002 ] 0 0.063 0.063
+( 68 394 224 ) ( 108 384 224 ) ( -32 384 224 ) Material-LIB/RoofTiles/RoofTiles [ 0.7999999999999998 -9.797174393178824e-17 0 25.599998 ] [ -9.797174393178824e-17 -0.7999999999999998 0 -44.80002 ] 180 0.063 0.063
+( 108 384 192 ) ( 108 384 194.20689655172413 ) ( 68 394 194.20689655172413 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.5656854249492379 0.5656854249492379 0 42.282944 ] [ 0 0 -14.499999999999993 48 ] 0 -0.047 -0.507
 }
 // brush 6
 {
-( 28 414 194.20689655172413 ) ( -32 384 194.20689655172413 ) ( -32 384 192 ) Material-LIB/Cobblestone/Cobblestone [ 0.7999999999999998 -9.797174393178824e-17 0 25.6 ] [ 0 0 -14.499999999999993 48 ] 0 0.063 0.063
-( -32 384 192 ) ( 68 394 192 ) ( 28 414 192 ) Material-LIB/Cobblestone/Cobblestone [ -0.7999999999999998 9.797174393178824e-17 0 -25.6 ] [ -9.797174393178824e-17 -0.7999999999999998 0 -44.80002 ] 0 0.063 0.063
-( 28 414 224 ) ( 68 394 224 ) ( -32 384 224 ) Material-LIB/Cobblestone/Cobblestone [ 0.7999999999999998 -9.797174393178824e-17 0 25.6 ] [ -9.797174393178824e-17 -0.7999999999999998 0 -44.80002 ] 180 0.063 0.063
-( -32 384 194.20689655172413 ) ( 68 394 194.20689655172413 ) ( 68 394 192 ) Material-LIB/Cobblestone/Cobblestone [ 0.7999999999999998 -2.577105133352074e-16 0 25.6 ] [ 0 0 -14.499999999999993 48 ] 0 0.063 0.063
-( 68 394 192 ) ( 68 394 194.20689655172413 ) ( 28 414 194.20689655172413 ) Material-LIB/Cobblestone/Cobblestone [ -0.5656854249492379 0.5656854249492379 0 42.282974 ] [ 0 0 -14.499999999999993 48 ] 0 0.063 0.063
+( 28 414 194.20689655172413 ) ( -32 384 194.20689655172413 ) ( -32 384 192 ) Material-LIB/RoofTiles/RoofTiles [ 0.7999999999999998 -9.797174393178824e-17 0 25.6 ] [ 0 0 -14.499999999999993 48 ] 0 0.063 0.063
+( -32 384 192 ) ( 68 394 192 ) ( 28 414 192 ) Material-LIB/RoofTiles/RoofTiles [ -0.7999999999999998 9.797174393178824e-17 0 -25.6 ] [ -9.797174393178824e-17 -0.7999999999999998 0 -44.80002 ] 0 0.063 0.063
+( 28 414 224 ) ( 68 394 224 ) ( -32 384 224 ) Material-LIB/RoofTiles/RoofTiles [ 0.7999999999999998 -9.797174393178824e-17 0 25.6 ] [ -9.797174393178824e-17 -0.7999999999999998 0 -44.80002 ] 180 0.063 0.063
+( -32 384 194.20689655172413 ) ( 68 394 194.20689655172413 ) ( 68 394 192 ) Material-LIB/RoofTiles/RoofTiles [ 0.7999999999999998 -2.577105133352074e-16 0 25.6 ] [ 0 0 -14.499999999999993 48 ] 0 0.063 0.063
+( 68 394 192 ) ( 68 394 194.20689655172413 ) ( 28 414 194.20689655172413 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.5656854249492379 0.5656854249492379 0 42.282974 ] [ 0 0 -14.499999999999993 48 ] 0 -0.047 -0.507
 }
 // brush 7
 {
-( -2 444 194.20689655172413 ) ( -32 384 194.20689655172413 ) ( -32 384 192 ) Material-LIB/Cobblestone/Cobblestone [ 3.2051421168255836e-16 0.7999999999999998 0 44.799988 ] [ 0 0 -14.499999999999993 48 ] 0 0.063 0.063
-( -32 384 192 ) ( 28 414 192 ) ( -2 444 192 ) Material-LIB/Cobblestone/Cobblestone [ -0.7999999999999998 9.797174393178824e-17 0 -25.6 ] [ -9.797174393178824e-17 -0.7999999999999998 0 -44.799988 ] 0 0.063 0.063
-( -2 444 224 ) ( 28 414 224 ) ( -32 384 224 ) Material-LIB/Cobblestone/Cobblestone [ 0.7999999999999998 -9.797174393178824e-17 0 25.6 ] [ -9.797174393178824e-17 -0.7999999999999998 0 -44.799988 ] 180 0.063 0.063
-( -32 384 194.20689655172413 ) ( 28 414 194.20689655172413 ) ( 28 414 192 ) Material-LIB/Cobblestone/Cobblestone [ 0.7999999999999998 -9.797174393178824e-17 0 25.6 ] [ 0 0 -14.499999999999993 48 ] 0 0.063 0.063
-( 28 414 192 ) ( 28 414 194.20689655172413 ) ( -2 444 194.20689655172413 ) Material-LIB/Cobblestone/Cobblestone [ -0.5656854249492379 0.5656854249492379 0 42.28296 ] [ 0 0 -14.499999999999993 48 ] 0 0.063 0.063
+( -2 444 194.20689655172413 ) ( -32 384 194.20689655172413 ) ( -32 384 192 ) Material-LIB/RoofTiles/RoofTiles [ 3.2051421168255836e-16 0.7999999999999998 0 44.799988 ] [ 0 0 -14.499999999999993 48 ] 0 0.063 0.063
+( -32 384 192 ) ( 28 414 192 ) ( -2 444 192 ) Material-LIB/RoofTiles/RoofTiles [ -0.7999999999999998 9.797174393178824e-17 0 -25.6 ] [ -9.797174393178824e-17 -0.7999999999999998 0 -44.799988 ] 0 0.063 0.063
+( -2 444 224 ) ( 28 414 224 ) ( -32 384 224 ) Material-LIB/RoofTiles/RoofTiles [ 0.7999999999999998 -9.797174393178824e-17 0 25.6 ] [ -9.797174393178824e-17 -0.7999999999999998 0 -44.799988 ] 180 0.063 0.063
+( -32 384 194.20689655172413 ) ( 28 414 194.20689655172413 ) ( 28 414 192 ) Material-LIB/RoofTiles/RoofTiles [ 0.7999999999999998 -9.797174393178824e-17 0 25.6 ] [ 0 0 -14.499999999999993 48 ] 0 0.063 0.063
+( 28 414 192 ) ( 28 414 194.20689655172413 ) ( -2 444 194.20689655172413 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.5656854249492379 0.5656854249492379 0 42.28296 ] [ 0 0 -14.499999999999993 48 ] 0 -0.047 -0.507
 }
 // brush 8
 {
-( -22 484 194.20689655172413 ) ( -32 384 194.20689655172413 ) ( -32 384 192 ) Material-LIB/Cobblestone/Cobblestone [ -2.761922641363453e-16 0.7999999999999998 0 44.799988 ] [ 0 0 -14.499999999999993 48 ] 0 0.063 0.063
-( -32 384 192 ) ( -2 444 192 ) ( -22 484 192 ) Material-LIB/Cobblestone/Cobblestone [ -0.7999999999999998 9.797174393178824e-17 0 -25.6 ] [ -9.797174393178824e-17 -0.7999999999999998 0 -44.80002 ] 0 0.063 0.063
-( -22 484 224 ) ( -2 444 224 ) ( -32 384 224 ) Material-LIB/Cobblestone/Cobblestone [ 0.7999999999999998 -9.797174393178824e-17 0 25.6 ] [ -9.797174393178824e-17 -0.7999999999999998 0 -44.80002 ] 180 0.063 0.063
-( -2 444 192 ) ( -2 444 194.20689655172413 ) ( -22 484 194.20689655172413 ) Material-LIB/Cobblestone/Cobblestone [ 0.5656854249492377 -0.5656854249492381 0 -42.12564 ] [ 0 0 -14.499999999999993 48 ] 0 0.063 0.063
-( -32 384 194.20689655172413 ) ( -2 444 194.20689655172413 ) ( -2 444 192 ) Material-LIB/Cobblestone/Cobblestone [ 3.2051421168255836e-16 0.7999999999999998 0 44.799988 ] [ 0 0 -14.499999999999993 48 ] 0 0.063 0.063
+( -22 484 194.20689655172413 ) ( -32 384 194.20689655172413 ) ( -32 384 192 ) Material-LIB/RoofTiles/RoofTiles [ -2.761922641363453e-16 0.7999999999999998 0 44.799988 ] [ 0 0 -14.499999999999993 48 ] 0 0.063 0.063
+( -32 384 192 ) ( -2 444 192 ) ( -22 484 192 ) Material-LIB/RoofTiles/RoofTiles [ -0.7999999999999998 9.797174393178824e-17 0 -25.6 ] [ -9.797174393178824e-17 -0.7999999999999998 0 -44.80002 ] 0 0.063 0.063
+( -22 484 224 ) ( -2 444 224 ) ( -32 384 224 ) Material-LIB/RoofTiles/RoofTiles [ 0.7999999999999998 -9.797174393178824e-17 0 25.6 ] [ -9.797174393178824e-17 -0.7999999999999998 0 -44.80002 ] 180 0.063 0.063
+( -2 444 192 ) ( -2 444 194.20689655172413 ) ( -22 484 194.20689655172413 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.5656854249492377 -0.5656854249492381 0 -42.12564 ] [ 0 0 -14.499999999999993 48 ] 0 -0.047 -0.507
+( -32 384 194.20689655172413 ) ( -2 444 194.20689655172413 ) ( -2 444 192 ) Material-LIB/RoofTiles/RoofTiles [ 3.2051421168255836e-16 0.7999999999999998 0 44.799988 ] [ 0 0 -14.499999999999993 48 ] 0 0.063 0.063
 }
 // brush 9
 {
-( -32 524 194.20689655172413 ) ( -32 384 194.20689655172413 ) ( -32 384 192 ) Material-LIB/Cobblestone/Cobblestone [ 3.486886744954534e-16 0.7999999999999998 0 44.799988 ] [ 0 0 -14.499999999999993 48 ] 180 0.063 0.063
-( -32 384 192 ) ( -22 484 192 ) ( -32 524 192 ) Material-LIB/Cobblestone/Cobblestone [ -0.7999999999999998 9.797174393178824e-17 0 -25.599998 ] [ -9.797174393178824e-17 -0.7999999999999998 0 -44.799988 ] 0 0.063 0.063
-( -32 524 224 ) ( -22 484 224 ) ( -32 384 224 ) Material-LIB/Cobblestone/Cobblestone [ 0.7999999999999998 -9.797174393178824e-17 0 25.599998 ] [ -9.797174393178824e-17 -0.7999999999999998 0 -44.799988 ] 180 0.063 0.063
-( -22 484 192 ) ( -22 484 194.20689655172413 ) ( -32 524 194.20689655172413 ) Material-LIB/Cobblestone/Cobblestone [ 0.5656854249492377 -0.5656854249492381 0 -42.12561 ] [ 0 0 -14.499999999999993 48 ] 0 0.063 0.063
-( -32 384 194.20689655172413 ) ( -22 484 194.20689655172413 ) ( -22 484 192 ) Material-LIB/Cobblestone/Cobblestone [ -2.761922641363453e-16 0.7999999999999998 0 44.799988 ] [ 0 0 -14.499999999999993 48 ] 0 0.063 0.063
+( -32 524 194.20689655172413 ) ( -32 384 194.20689655172413 ) ( -32 384 192 ) Material-LIB/RoofTiles/RoofTiles [ 3.486886744954534e-16 0.7999999999999998 0 44.799988 ] [ 0 0 -14.499999999999993 48 ] 180 0.063 0.063
+( -32 384 192 ) ( -22 484 192 ) ( -32 524 192 ) Material-LIB/RoofTiles/RoofTiles [ -0.7999999999999998 9.797174393178824e-17 0 -25.599998 ] [ -9.797174393178824e-17 -0.7999999999999998 0 -44.799988 ] 0 0.063 0.063
+( -32 524 224 ) ( -22 484 224 ) ( -32 384 224 ) Material-LIB/RoofTiles/RoofTiles [ 0.7999999999999998 -9.797174393178824e-17 0 25.599998 ] [ -9.797174393178824e-17 -0.7999999999999998 0 -44.799988 ] 180 0.063 0.063
+( -22 484 192 ) ( -22 484 194.20689655172413 ) ( -32 524 194.20689655172413 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.5656854249492377 -0.5656854249492381 0 -42.12561 ] [ 0 0 -14.499999999999993 48 ] 0 -0.047 -0.507
+( -32 384 194.20689655172413 ) ( -22 484 194.20689655172413 ) ( -22 484 192 ) Material-LIB/RoofTiles/RoofTiles [ -2.761922641363453e-16 0.7999999999999998 0 44.799988 ] [ 0 0 -14.499999999999993 48 ] 0 0.063 0.063
 }
 // brush 10
 {
-( -2 644 194.20689655172413 ) ( -32 704 192 ) ( -32 704 194.20689655172413 ) Material-LIB/Cobblestone/Cobblestone [ 2.225424677507701e-16 -0.7999999999999998 0 -44.799988 ] [ 0 0 -14.499999999999993 48 ] 0 0.063 0.063
-( -32 704 192 ) ( -2 644 192 ) ( 28 674 192 ) Material-LIB/Cobblestone/Cobblestone [ -0.7999999999999998 0 0 -25.6 ] [ 0 0.7999999999999998 0 44.799988 ] 180 0.063 0.063
-( -2 644 224 ) ( -32 704 224 ) ( 28 674 224 ) Material-LIB/Cobblestone/Cobblestone [ 0.7999999999999998 0 0 25.6 ] [ 0 0.7999999999999998 0 44.799988 ] 0 0.063 0.063
-( -32 704 194.20689655172413 ) ( 28 674 192 ) ( 28 674 194.20689655172413 ) Material-LIB/Cobblestone/Cobblestone [ 0.7999999999999998 0 0 25.6 ] [ 0 0 -14.499999999999993 48 ] 0 0.063 0.063
-( 28 674 192 ) ( -2 644 194.20689655172413 ) ( 28 674 194.20689655172413 ) Material-LIB/Cobblestone/Cobblestone [ -0.5656854249492379 -0.5656854249492379 0 -35.25125 ] [ 0 0 -14.499999999999993 48 ] 0 0.063 0.063
+( -2 644 194.20689655172413 ) ( -32 704 192 ) ( -32 704 194.20689655172413 ) Material-LIB/RoofTiles/RoofTiles [ 2.225424677507701e-16 -0.7999999999999998 0 -44.799988 ] [ 0 0 -14.499999999999993 48 ] 0 0.063 0.063
+( -32 704 192 ) ( -2 644 192 ) ( 28 674 192 ) Material-LIB/RoofTiles/RoofTiles [ -0.7999999999999998 0 0 -25.6 ] [ 0 0.7999999999999998 0 44.799988 ] 180 0.063 0.063
+( -2 644 224 ) ( -32 704 224 ) ( 28 674 224 ) Material-LIB/RoofTiles/RoofTiles [ 0.7999999999999998 0 0 25.6 ] [ 0 0.7999999999999998 0 44.799988 ] 0 0.063 0.063
+( -32 704 194.20689655172413 ) ( 28 674 192 ) ( 28 674 194.20689655172413 ) Material-LIB/RoofTiles/RoofTiles [ 0.7999999999999998 0 0 25.6 ] [ 0 0 -14.499999999999993 48 ] 0 0.063 0.063
+( 28 674 192 ) ( -2 644 194.20689655172413 ) ( 28 674 194.20689655172413 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.5656854249492379 -0.5656854249492379 0 -35.25125 ] [ 0 0 -14.499999999999993 48 ] 0 -0.047 -0.507
 }
 // brush 11
 {
-( -32 564 194.20689655172413 ) ( -32 704 192 ) ( -32 704 194.20689655172413 ) Material-LIB/Cobblestone/Cobblestone [ 2.507169305636651e-16 -0.7999999999999998 0 -44.799988 ] [ 0 0 -14.499999999999993 48 ] 0 0.063 0.063
-( -32 704 192 ) ( -32 564 192 ) ( -22 604 192 ) Material-LIB/Cobblestone/Cobblestone [ -0.7999999999999998 0 0 -25.599998 ] [ 0 0.7999999999999998 0 44.799988 ] 180 0.063 0.063
-( -32 564 224 ) ( -32 704 224 ) ( -22 604 224 ) Material-LIB/Cobblestone/Cobblestone [ 0.7999999999999998 0 0 25.599998 ] [ 0 0.7999999999999998 0 44.799988 ] 0 0.063 0.063
-( -22 604 192 ) ( -32 564 194.20689655172413 ) ( -22 604 194.20689655172413 ) Material-LIB/Cobblestone/Cobblestone [ 0.5656854249492377 0.5656854249492381 0 35.40857 ] [ 0 0 -14.499999999999993 48 ] 0 0.063 0.063
-( -32 704 194.20689655172413 ) ( -22 604 192 ) ( -22 604 194.20689655172413 ) Material-LIB/Cobblestone/Cobblestone [ -3.741640080681336e-16 -0.7999999999999998 0 -44.799988 ] [ 0 0 -14.499999999999993 48 ] 0 0.063 0.063
+( -32 564 194.20689655172413 ) ( -32 704 192 ) ( -32 704 194.20689655172413 ) Material-LIB/RoofTiles/RoofTiles [ 2.507169305636651e-16 -0.7999999999999998 0 -44.799988 ] [ 0 0 -14.499999999999993 48 ] 0 0.063 0.063
+( -32 704 192 ) ( -32 564 192 ) ( -22 604 192 ) Material-LIB/RoofTiles/RoofTiles [ -0.7999999999999998 0 0 -25.599998 ] [ 0 0.7999999999999998 0 44.799988 ] 180 0.063 0.063
+( -32 564 224 ) ( -32 704 224 ) ( -22 604 224 ) Material-LIB/RoofTiles/RoofTiles [ 0.7999999999999998 0 0 25.599998 ] [ 0 0.7999999999999998 0 44.799988 ] 0 0.063 0.063
+( -22 604 192 ) ( -32 564 194.20689655172413 ) ( -22 604 194.20689655172413 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.5656854249492377 0.5656854249492381 0 35.40857 ] [ 0 0 -14.499999999999993 48 ] 0 -0.047 -0.507
+( -32 704 194.20689655172413 ) ( -22 604 192 ) ( -22 604 194.20689655172413 ) Material-LIB/RoofTiles/RoofTiles [ -3.741640080681336e-16 -0.7999999999999998 0 -44.799988 ] [ 0 0 -14.499999999999993 48 ] 0 0.063 0.063
 }
 // brush 12
 {
-( -22 604 194.20689655172413 ) ( -32 704 192 ) ( -32 704 194.20689655172413 ) Material-LIB/Cobblestone/Cobblestone [ -3.741640080681336e-16 -0.7999999999999998 0 -44.799988 ] [ 0 0 -14.499999999999993 48 ] 0 0.063 0.063
-( -32 704 192 ) ( -22 604 192 ) ( -2 644 192 ) Material-LIB/Cobblestone/Cobblestone [ -0.7999999999999998 0 0 -25.6 ] [ 0 0.7999999999999998 0 44.799988 ] 180 0.063 0.063
-( -22 604 224 ) ( -32 704 224 ) ( -2 644 224 ) Material-LIB/Cobblestone/Cobblestone [ 0.7999999999999998 0 0 25.6 ] [ 0 0.7999999999999998 0 44.799988 ] 0 0.063 0.063
-( -2 644 192 ) ( -22 604 194.20689655172413 ) ( -2 644 194.20689655172413 ) Material-LIB/Cobblestone/Cobblestone [ 0.5656854249492377 0.5656854249492381 0 35.40854 ] [ 0 0 -14.499999999999993 48 ] 0 0.063 0.063
-( -32 704 194.20689655172413 ) ( -2 644 192 ) ( -2 644 194.20689655172413 ) Material-LIB/Cobblestone/Cobblestone [ 2.225424677507701e-16 -0.7999999999999998 0 -44.799988 ] [ 0 0 -14.499999999999993 48 ] 0 0.063 0.063
+( -22 604 194.20689655172413 ) ( -32 704 192 ) ( -32 704 194.20689655172413 ) Material-LIB/RoofTiles/RoofTiles [ -3.741640080681336e-16 -0.7999999999999998 0 -44.799988 ] [ 0 0 -14.499999999999993 48 ] 0 0.063 0.063
+( -32 704 192 ) ( -22 604 192 ) ( -2 644 192 ) Material-LIB/RoofTiles/RoofTiles [ -0.7999999999999998 0 0 -25.6 ] [ 0 0.7999999999999998 0 44.799988 ] 180 0.063 0.063
+( -22 604 224 ) ( -32 704 224 ) ( -2 644 224 ) Material-LIB/RoofTiles/RoofTiles [ 0.7999999999999998 0 0 25.6 ] [ 0 0.7999999999999998 0 44.799988 ] 0 0.063 0.063
+( -2 644 192 ) ( -22 604 194.20689655172413 ) ( -2 644 194.20689655172413 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.5656854249492377 0.5656854249492381 0 35.40854 ] [ 0 0 -14.499999999999993 48 ] 0 -0.047 -0.507
+( -32 704 194.20689655172413 ) ( -2 644 192 ) ( -2 644 194.20689655172413 ) Material-LIB/RoofTiles/RoofTiles [ 2.225424677507701e-16 -0.7999999999999998 0 -44.799988 ] [ 0 0 -14.499999999999993 48 ] 0 0.063 0.063
 }
 // brush 13
 {
-( 28 674 194.20689655172413 ) ( -32 704 192 ) ( -32 704 194.20689655172413 ) Material-LIB/Cobblestone/Cobblestone [ 0.7999999999999998 0 0 25.6 ] [ 0 0 -14.499999999999993 48 ] 0 0.063 0.063
-( -32 704 192 ) ( 28 674 192 ) ( 68 694 192 ) Material-LIB/Cobblestone/Cobblestone [ -0.7999999999999998 0 0 -25.6 ] [ 0 0.7999999999999998 0 44.799988 ] 180 0.063 0.063
-( 28 674 224 ) ( -32 704 224 ) ( 68 694 224 ) Material-LIB/Cobblestone/Cobblestone [ 0.7999999999999998 0 0 25.6 ] [ 0 0.7999999999999998 0 44.799988 ] 0 0.063 0.063
-( -32 704 194.20689655172413 ) ( 68 694 192 ) ( 68 694 194.20689655172413 ) Material-LIB/Cobblestone/Cobblestone [ 0.7999999999999998 1.5973876940341912e-16 0 25.6 ] [ 0 0 -14.499999999999993 48 ] 0 0.063 0.063
-( 68 694 192 ) ( 28 674 194.20689655172413 ) ( 68 694 194.20689655172413 ) Material-LIB/Cobblestone/Cobblestone [ -0.5656854249492379 -0.5656854249492379 0 -35.25122 ] [ 0 0 -14.499999999999993 48 ] 0 0.063 0.063
+( 28 674 194.20689655172413 ) ( -32 704 192 ) ( -32 704 194.20689655172413 ) Material-LIB/RoofTiles/RoofTiles [ 0.7999999999999998 0 0 25.6 ] [ 0 0 -14.499999999999993 48 ] 0 0.063 0.063
+( -32 704 192 ) ( 28 674 192 ) ( 68 694 192 ) Material-LIB/RoofTiles/RoofTiles [ -0.7999999999999998 0 0 -25.6 ] [ 0 0.7999999999999998 0 44.799988 ] 180 0.063 0.063
+( 28 674 224 ) ( -32 704 224 ) ( 68 694 224 ) Material-LIB/RoofTiles/RoofTiles [ 0.7999999999999998 0 0 25.6 ] [ 0 0.7999999999999998 0 44.799988 ] 0 0.063 0.063
+( -32 704 194.20689655172413 ) ( 68 694 192 ) ( 68 694 194.20689655172413 ) Material-LIB/RoofTiles/RoofTiles [ 0.7999999999999998 1.5973876940341912e-16 0 25.6 ] [ 0 0 -14.499999999999993 48 ] 0 0.063 0.063
+( 68 694 192 ) ( 28 674 194.20689655172413 ) ( 68 694 194.20689655172413 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.5656854249492379 -0.5656854249492379 0 -35.25122 ] [ 0 0 -14.499999999999993 48 ] 0 -0.047 -0.507
 }
 // brush 14
 {
-( 68 694 194.20689655172413 ) ( -32 704 192 ) ( -32 704 194.20689655172413 ) Material-LIB/Cobblestone/Cobblestone [ 0.7999999999999998 1.5973876940341912e-16 0 25.6 ] [ 0 0 -14.499999999999993 48 ] 0 0.063 0.063
-( -32 704 192 ) ( 68 694 192 ) ( 108 704 192 ) Material-LIB/Cobblestone/Cobblestone [ -0.7999999999999998 0 0 -25.599998 ] [ 0 0.7999999999999998 0 44.799988 ] 180 0.063 0.063
-( 68 694 224 ) ( -32 704 224 ) ( 108 704 224 ) Material-LIB/Cobblestone/Cobblestone [ 0.7999999999999998 0 0 25.599998 ] [ 0 0.7999999999999998 0 44.799988 ] 0 0.063 0.063
-( -32 704 194.20689655172413 ) ( 108 704 192 ) ( 108 704 194.20689655172413 ) Material-LIB/Cobblestone/Cobblestone [ 0.7999999999999998 0 0 25.6 ] [ 0 0 -14.499999999999993 48 ] 180 0.063 0.063
-( 108 704 192 ) ( 68 694 194.20689655172413 ) ( 108 704 194.20689655172413 ) Material-LIB/Cobblestone/Cobblestone [ -0.5656854249492379 -0.5656854249492379 0 -35.251312 ] [ 0 0 -14.499999999999993 48 ] 0 0.063 0.063
+( 68 694 194.20689655172413 ) ( -32 704 192 ) ( -32 704 194.20689655172413 ) Material-LIB/RoofTiles/RoofTiles [ 0.7999999999999998 1.5973876940341912e-16 0 25.6 ] [ 0 0 -14.499999999999993 48 ] 0 0.063 0.063
+( -32 704 192 ) ( 68 694 192 ) ( 108 704 192 ) Material-LIB/RoofTiles/RoofTiles [ -0.7999999999999998 0 0 -25.599998 ] [ 0 0.7999999999999998 0 44.799988 ] 180 0.063 0.063
+( 68 694 224 ) ( -32 704 224 ) ( 108 704 224 ) Material-LIB/RoofTiles/RoofTiles [ 0.7999999999999998 0 0 25.599998 ] [ 0 0.7999999999999998 0 44.799988 ] 0 0.063 0.063
+( -32 704 194.20689655172413 ) ( 108 704 192 ) ( 108 704 194.20689655172413 ) Material-LIB/RoofTiles/RoofTiles [ 0.7999999999999998 0 0 25.6 ] [ 0 0 -14.499999999999993 48 ] 180 0.063 0.063
+( 108 704 192 ) ( 68 694 194.20689655172413 ) ( 108 704 194.20689655172413 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.5656854249492379 -0.5656854249492379 0 -35.251312 ] [ 0 0 -14.499999999999993 48 ] 0 -0.047 -0.507
 }
 // brush 15
 {
-( 148 704 192 ) ( 148 704 194.20689655172413 ) ( 188 694 194.20689655172413 ) Material-LIB/Cobblestone/Cobblestone [ 0.5656854249492379 -0.5656854249492379 0 -63.066772 ] [ 0 0 -14.499999999999993 48 ] 90 0.063 0.063
-( 288 704 192 ) ( 148 704 192 ) ( 188 694 192 ) Material-LIB/Cobblestone/Cobblestone [ 0.7999999999999998 0 0 25.600006 ] [ 0 0.7999999999999998 0 44.799988 ] 270 0.063 0.063
-( 188 694 224 ) ( 148 704 224 ) ( 288 704 224 ) Material-LIB/Cobblestone/Cobblestone [ -0.7999999999999998 0 0 -25.600006 ] [ 0 0.7999999999999998 0 44.799988 ] 90 0.063 0.063
-( 288 704 194.20689655172413 ) ( 148 704 194.20689655172413 ) ( 148 704 192 ) Material-LIB/Cobblestone/Cobblestone [ -0.7999999999999998 0 0 -25.600006 ] [ 0 0 -14.499999999999993 48 ] 270 0.063 0.063
-( 188 694 194.20689655172413 ) ( 288 704 194.20689655172413 ) ( 288 704 192 ) Material-LIB/Cobblestone/Cobblestone [ -0.7999999999999998 1.5973876940341912e-16 0 -25.600006 ] [ 0 0 -14.499999999999993 48 ] 270 0.063 0.063
+( 148 704 192 ) ( 148 704 194.20689655172413 ) ( 188 694 194.20689655172413 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.5656854249492379 -0.5656854249492379 0 -63.066772 ] [ 0 0 -14.499999999999993 48 ] 90 -0.047 -0.507
+( 288 704 192 ) ( 148 704 192 ) ( 188 694 192 ) Material-LIB/RoofTiles/RoofTiles [ 0.7999999999999998 0 0 25.600006 ] [ 0 0.7999999999999998 0 44.799988 ] 270 0.063 0.063
+( 188 694 224 ) ( 148 704 224 ) ( 288 704 224 ) Material-LIB/RoofTiles/RoofTiles [ -0.7999999999999998 0 0 -25.600006 ] [ 0 0.7999999999999998 0 44.799988 ] 90 0.063 0.063
+( 288 704 194.20689655172413 ) ( 148 704 194.20689655172413 ) ( 148 704 192 ) Material-LIB/RoofTiles/RoofTiles [ -0.7999999999999998 0 0 -25.600006 ] [ 0 0 -14.499999999999993 48 ] 270 0.063 0.063
+( 188 694 194.20689655172413 ) ( 288 704 194.20689655172413 ) ( 288 704 192 ) Material-LIB/RoofTiles/RoofTiles [ -0.7999999999999998 1.5973876940341912e-16 0 -25.600006 ] [ 0 0 -14.499999999999993 48 ] 270 0.063 0.063
 }
 // brush 16
 {
-( 188 694 192 ) ( 188 694 194.20689655172413 ) ( 228 674 194.20689655172413 ) Material-LIB/Cobblestone/Cobblestone [ 0.5656854249492379 -0.5656854249492379 0 -63.066742 ] [ 0 0 -14.499999999999993 48 ] 90 0.063 0.063
-( 288 704 194.20689655172413 ) ( 188 694 194.20689655172413 ) ( 188 694 192 ) Material-LIB/Cobblestone/Cobblestone [ -0.7999999999999998 1.5973876940341912e-16 0 -25.600006 ] [ 0 0 -14.499999999999993 48 ] 90 0.063 0.063
-( 288 704 192 ) ( 188 694 192 ) ( 228 674 192 ) Material-LIB/Cobblestone/Cobblestone [ 0.7999999999999998 0 0 25.59999 ] [ 0 0.7999999999999998 0 44.799988 ] 270 0.063 0.063
-( 228 674 224 ) ( 188 694 224 ) ( 288 704 224 ) Material-LIB/Cobblestone/Cobblestone [ -0.7999999999999998 0 0 -25.59999 ] [ 0 0.7999999999999998 0 44.799988 ] 90 0.063 0.063
-( 228 674 194.20689655172413 ) ( 288 704 194.20689655172413 ) ( 288 704 192 ) Material-LIB/Cobblestone/Cobblestone [ -0.7999999999999998 0 0 -25.600006 ] [ 0 0 -14.499999999999993 48 ] 270 0.063 0.063
+( 188 694 192 ) ( 188 694 194.20689655172413 ) ( 228 674 194.20689655172413 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.5656854249492379 -0.5656854249492379 0 -63.066742 ] [ 0 0 -14.499999999999993 48 ] 90 -0.047 -0.507
+( 288 704 194.20689655172413 ) ( 188 694 194.20689655172413 ) ( 188 694 192 ) Material-LIB/RoofTiles/RoofTiles [ -0.7999999999999998 1.5973876940341912e-16 0 -25.600006 ] [ 0 0 -14.499999999999993 48 ] 90 0.063 0.063
+( 288 704 192 ) ( 188 694 192 ) ( 228 674 192 ) Material-LIB/RoofTiles/RoofTiles [ 0.7999999999999998 0 0 25.59999 ] [ 0 0.7999999999999998 0 44.799988 ] 270 0.063 0.063
+( 228 674 224 ) ( 188 694 224 ) ( 288 704 224 ) Material-LIB/RoofTiles/RoofTiles [ -0.7999999999999998 0 0 -25.59999 ] [ 0 0.7999999999999998 0 44.799988 ] 90 0.063 0.063
+( 228 674 194.20689655172413 ) ( 288 704 194.20689655172413 ) ( 288 704 192 ) Material-LIB/RoofTiles/RoofTiles [ -0.7999999999999998 0 0 -25.600006 ] [ 0 0 -14.499999999999993 48 ] 270 0.063 0.063
 }
 // brush 17
 {
-( 228 674 192 ) ( 228 674 194.20689655172413 ) ( 258 644 194.20689655172413 ) Material-LIB/Cobblestone/Cobblestone [ 0.5656854249492379 -0.5656854249492379 0 -63.066772 ] [ 0 0 -14.499999999999993 48 ] 90 0.063 0.063
-( 288 704 194.20689655172413 ) ( 228 674 194.20689655172413 ) ( 228 674 192 ) Material-LIB/Cobblestone/Cobblestone [ -0.7999999999999998 0 0 -25.600006 ] [ 0 0 -14.499999999999993 48 ] 90 0.063 0.063
-( 288 704 192 ) ( 228 674 192 ) ( 258 644 192 ) Material-LIB/Cobblestone/Cobblestone [ 0.7999999999999998 0 0 25.600006 ] [ 0 0.7999999999999998 0 44.799988 ] 270 0.063 0.063
-( 258 644 224 ) ( 228 674 224 ) ( 288 704 224 ) Material-LIB/Cobblestone/Cobblestone [ -0.7999999999999998 0 0 -25.600006 ] [ 0 0.7999999999999998 0 44.799988 ] 90 0.063 0.063
-( 258 644 194.20689655172413 ) ( 288 704 194.20689655172413 ) ( 288 704 192 ) Material-LIB/Cobblestone/Cobblestone [ -2.225424677507701e-16 -0.7999999999999998 0 -44.799988 ] [ 0 0 -14.499999999999993 48 ] 270 0.063 0.063
+( 228 674 192 ) ( 228 674 194.20689655172413 ) ( 258 644 194.20689655172413 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0.5656854249492379 -0.5656854249492379 0 -63.066772 ] [ 0 0 -14.499999999999993 48 ] 90 -0.047 -0.507
+( 288 704 194.20689655172413 ) ( 228 674 194.20689655172413 ) ( 228 674 192 ) Material-LIB/RoofTiles/RoofTiles [ -0.7999999999999998 0 0 -25.600006 ] [ 0 0 -14.499999999999993 48 ] 90 0.063 0.063
+( 288 704 192 ) ( 228 674 192 ) ( 258 644 192 ) Material-LIB/RoofTiles/RoofTiles [ 0.7999999999999998 0 0 25.600006 ] [ 0 0.7999999999999998 0 44.799988 ] 270 0.063 0.063
+( 258 644 224 ) ( 228 674 224 ) ( 288 704 224 ) Material-LIB/RoofTiles/RoofTiles [ -0.7999999999999998 0 0 -25.600006 ] [ 0 0.7999999999999998 0 44.799988 ] 90 0.063 0.063
+( 258 644 194.20689655172413 ) ( 288 704 194.20689655172413 ) ( 288 704 192 ) Material-LIB/RoofTiles/RoofTiles [ -2.225424677507701e-16 -0.7999999999999998 0 -44.799988 ] [ 0 0 -14.499999999999993 48 ] 270 0.063 0.063
 }
 // brush 18
 {
-( 288 704 194.20689655172413 ) ( 258 644 194.20689655172413 ) ( 258 644 192 ) Material-LIB/Cobblestone/Cobblestone [ -2.225424677507701e-16 -0.7999999999999998 0 -44.799988 ] [ 0 0 -14.499999999999993 48 ] 90 0.063 0.063
-( 258 644 192 ) ( 258 644 194.20689655172413 ) ( 278 604 194.20689655172413 ) Material-LIB/Cobblestone/Cobblestone [ -0.5656854249492377 0.5656854249492381 0 63.224075 ] [ 0 0 -14.499999999999993 48 ] 270 0.063 0.063
-( 288 704 192 ) ( 258 644 192 ) ( 278 604 192 ) Material-LIB/Cobblestone/Cobblestone [ 0.7999999999999998 0 0 25.59999 ] [ 0 0.7999999999999998 0 44.799988 ] 270 0.063 0.063
-( 278 604 224 ) ( 258 644 224 ) ( 288 704 224 ) Material-LIB/Cobblestone/Cobblestone [ -0.7999999999999998 0 0 -25.59999 ] [ 0 0.7999999999999998 0 44.799988 ] 90 0.063 0.063
-( 278 604 194.20689655172413 ) ( 288 704 194.20689655172413 ) ( 288 704 192 ) Material-LIB/Cobblestone/Cobblestone [ 3.741640080681336e-16 -0.7999999999999998 0 -44.799988 ] [ 0 0 -14.499999999999993 48 ] 270 0.063 0.063
+( 288 704 194.20689655172413 ) ( 258 644 194.20689655172413 ) ( 258 644 192 ) Material-LIB/RoofTiles/RoofTiles [ -2.225424677507701e-16 -0.7999999999999998 0 -44.799988 ] [ 0 0 -14.499999999999993 48 ] 90 0.063 0.063
+( 258 644 192 ) ( 258 644 194.20689655172413 ) ( 278 604 194.20689655172413 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.5656854249492377 0.5656854249492381 0 63.224075 ] [ 0 0 -14.499999999999993 48 ] 270 -0.047 -0.507
+( 288 704 192 ) ( 258 644 192 ) ( 278 604 192 ) Material-LIB/RoofTiles/RoofTiles [ 0.7999999999999998 0 0 25.59999 ] [ 0 0.7999999999999998 0 44.799988 ] 270 0.063 0.063
+( 278 604 224 ) ( 258 644 224 ) ( 288 704 224 ) Material-LIB/RoofTiles/RoofTiles [ -0.7999999999999998 0 0 -25.59999 ] [ 0 0.7999999999999998 0 44.799988 ] 90 0.063 0.063
+( 278 604 194.20689655172413 ) ( 288 704 194.20689655172413 ) ( 288 704 192 ) Material-LIB/RoofTiles/RoofTiles [ 3.741640080681336e-16 -0.7999999999999998 0 -44.799988 ] [ 0 0 -14.499999999999993 48 ] 270 0.063 0.063
 }
 // brush 19
 {
-( 288 704 194.20689655172413 ) ( 278 604 194.20689655172413 ) ( 278 604 192 ) Material-LIB/Cobblestone/Cobblestone [ 3.741640080681336e-16 -0.7999999999999998 0 -44.799988 ] [ 0 0 -14.499999999999993 48 ] 90 0.063 0.063
-( 278 604 192 ) ( 278 604 194.20689655172413 ) ( 288 564 194.20689655172413 ) Material-LIB/Cobblestone/Cobblestone [ -0.5656854249492377 0.5656854249492381 0 63.224106 ] [ 0 0 -14.499999999999993 48 ] 270 0.063 0.063
-( 288 704 192 ) ( 278 604 192 ) ( 288 564 192 ) Material-LIB/Cobblestone/Cobblestone [ 0.7999999999999998 0 0 25.59999 ] [ 0 0.7999999999999998 0 44.799988 ] 270 0.063 0.063
-( 288 564 224 ) ( 278 604 224 ) ( 288 704 224 ) Material-LIB/Cobblestone/Cobblestone [ -0.7999999999999998 0 0 -25.59999 ] [ 0 0.7999999999999998 0 44.799988 ] 90 0.063 0.063
-( 288 564 194.20689655172413 ) ( 288 704 194.20689655172413 ) ( 288 704 192 ) Material-LIB/Cobblestone/Cobblestone [ -2.507169305636651e-16 -0.7999999999999998 0 -44.799988 ] [ 0 0 -14.499999999999993 48 ] 90 0.063 0.063
+( 288 704 194.20689655172413 ) ( 278 604 194.20689655172413 ) ( 278 604 192 ) Material-LIB/RoofTiles/RoofTiles [ 3.741640080681336e-16 -0.7999999999999998 0 -44.799988 ] [ 0 0 -14.499999999999993 48 ] 90 0.063 0.063
+( 278 604 192 ) ( 278 604 194.20689655172413 ) ( 288 564 194.20689655172413 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -0.5656854249492377 0.5656854249492381 0 63.224106 ] [ 0 0 -14.499999999999993 48 ] 270 -0.047 -0.507
+( 288 704 192 ) ( 278 604 192 ) ( 288 564 192 ) Material-LIB/RoofTiles/RoofTiles [ 0.7999999999999998 0 0 25.59999 ] [ 0 0.7999999999999998 0 44.799988 ] 270 0.063 0.063
+( 288 564 224 ) ( 278 604 224 ) ( 288 704 224 ) Material-LIB/RoofTiles/RoofTiles [ -0.7999999999999998 0 0 -25.59999 ] [ 0 0.7999999999999998 0 44.799988 ] 90 0.063 0.063
+( 288 564 194.20689655172413 ) ( 288 704 194.20689655172413 ) ( 288 704 192 ) Material-LIB/RoofTiles/RoofTiles [ -2.507169305636651e-16 -0.7999999999999998 0 -44.799988 ] [ 0 0 -14.499999999999993 48 ] 90 0.063 0.063
 }
 }
 // entity 59
@@ -15301,7 +15310,7 @@
 ( -32 256 -16 ) ( -32 257 -16 ) ( -32 256 -15 ) BrickWall/BrickWall[Blue] [ 0 -1 0 -32 ] [ 0 0 -1 0 ] 270 0.063 0.063
 ( -64 672 -16 ) ( -64 672 -15 ) ( -63 672 -16 ) BrickWall/BrickWall[Blue] [ 1 0 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
 ( -64 256 -16 ) ( -63 256 -16 ) ( -64 257 -16 ) BrickWall/BrickWall[Blue] [ -1 0 0 0 ] [ 0 -1 0 -32 ] 180 0.063 0.063
-( 960 512 192 ) ( 960 513 192 ) ( 961 512 192 ) BrickWall/BrickWall[Blue] [ 1 0 0 0 ] [ 0 -1 0 -32 ] 270 0.063 0.063
+( 960 512 192 ) ( 960 513 192 ) ( 961 512 192 ) Material-LIB/RoofTiles/RoofTiles [ 1 0 0 0 ] [ 0 -1 0 -32 ] 270 0.103 0.103
 ( 960 704 448 ) ( 961 704 448 ) ( 960 704 449 ) BrickWall/BrickWall[Blue] [ -1 0 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
 ( 288 512 448 ) ( 288 512 449 ) ( 288 513 448 ) BrickWall/BrickWall[Blue] [ 0 1 0 32 ] [ 0 0 -1 0 ] 180 0.063 0.063
 }
@@ -15337,7 +15346,7 @@
 ( 256 1376 448 ) ( 256 1377 448 ) ( 256 1376 449 ) BrickWall/BrickWall[Blue] [ -6.123233995736766e-17 -1 0 -32 ] [ 0 0 -1 0 ] 180 0.063 0.063
 ( 704 416 -16 ) ( 703 416 -16 ) ( 704 416 -15 ) BrickWall/BrickWall[Blue] [ 1 -6.123233995736766e-17 0 -32 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( 704 352 -1808 ) ( 704 353 -1808 ) ( 703 352 -1808 ) BrickWall/BrickWall[Blue] [ -6.123233995736766e-17 -1 0 -32 ] [ 1 -6.123233995736766e-17 0 -32 ] 180 0.063 0.063
-( 448 1376 192 ) ( 447 1376 192 ) ( 448 1377 192 ) BrickWall/BrickWall[Blue] [ 6.123233995736766e-17 1 0 32 ] [ 1 -6.123233995736766e-17 0 -32 ] 90 0.063 0.063
+( 448 1376 192 ) ( 447 1376 192 ) ( 448 1377 192 ) Material-LIB/RoofTiles/RoofTiles [ 6.123233995736766e-17 1 0 32 ] [ 1 -6.123233995736766e-17 0 -32 ] 90 0.103 0.103
 ( 448 672 448 ) ( 448 672 449 ) ( 447 672 448 ) BrickWall/BrickWall[Blue] [ -1 6.123233995736766e-17 0 32 ] [ 0 0 -1 0 ] 0 0.063 0.063
 ( 288 352 -16 ) ( 288 352 -15 ) ( 288 353 -16 ) BrickWall/BrickWall[Blue] [ 6.123233995736766e-17 1 0 32 ] [ 0 0 -1 0 ] 180 0.063 0.063
 }
@@ -15346,7 +15355,7 @@
 ( -32 1376 448 ) ( -32 1377 448 ) ( -32 1376 449 ) BrickWall/BrickWall[Blue] [ -6.123233995736766e-17 -1 0 -32 ] [ 0 0 -1 0 ] 270 0.063 0.063
 ( 416 416 -16 ) ( 415 416 -16 ) ( 416 416 -15 ) BrickWall/BrickWall[Blue] [ 1 -6.123233995736766e-17 0 0 ] [ 0 0 -1 0 ] 180 0.063 0.063
 ( 416 352 -1808 ) ( 416 353 -1808 ) ( 415 352 -1808 ) BrickWall/BrickWall[Blue] [ -6.123233995736766e-17 -1 0 -32 ] [ 1 -6.123233995736766e-17 0 0 ] 270 0.063 0.063
-( 160 1376 192 ) ( 159 1376 192 ) ( 160 1377 192 ) BrickWall/BrickWall[Blue] [ 6.123233995736766e-17 1 0 32 ] [ 1 -6.123233995736766e-17 0 0 ] 180 0.063 0.063
+( 160 1376 192 ) ( 159 1376 192 ) ( 160 1377 192 ) Material-LIB/RoofTiles/RoofTiles [ 6.123233995736766e-17 1 0 32 ] [ 1 -6.123233995736766e-17 0 0 ] 180 0.103 0.103
 ( 160 672 448 ) ( 160 672 449 ) ( 159 672 448 ) BrickWall/BrickWall[Blue] [ -1 6.123233995736766e-17 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( 0 352 -16 ) ( 0 352 -15 ) ( 0 353 -16 ) BrickWall/BrickWall[Blue] [ 6.123233995736766e-17 1 0 32 ] [ 0 0 -1 0 ] 270 0.063 0.063
 }
@@ -15355,7 +15364,7 @@
 ( -32 -32 -16 ) ( -32 -31 -16 ) ( -32 -32 -15 ) BrickWall/BrickWall[Blue] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( -64 384 -16 ) ( -64 384 -15 ) ( -63 384 -16 ) BrickWall/BrickWall[Blue] [ 1 0 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( -64 -32 -16 ) ( -63 -32 -16 ) ( -64 -31 -16 ) BrickWall/BrickWall[Blue] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
-( 960 224 192 ) ( 960 225 192 ) ( 961 224 192 ) BrickWall/BrickWall[Blue] [ 1 0 0 0 ] [ 0 -1 0 0 ] 90 0.063 0.063
+( 960 224 192 ) ( 960 225 192 ) ( 961 224 192 ) Material-LIB/RoofTiles/RoofTiles [ 1 0 0 0 ] [ 0 -1 0 0 ] 90 0.103 0.103
 ( 960 416 448 ) ( 961 416 448 ) ( 960 416 449 ) BrickWall/BrickWall[Blue] [ -1 0 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
 ( 288 224 448 ) ( 288 224 449 ) ( 288 225 448 ) BrickWall/BrickWall[Blue] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 }

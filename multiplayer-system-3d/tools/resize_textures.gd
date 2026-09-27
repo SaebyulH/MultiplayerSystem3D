@@ -22,7 +22,7 @@ extends Node
 
 const SOURCE_ROOT := "res://trenchbroom/textures"
 const BACKUP_ROOT := "res://backup/trenchbroom/textures"
-const TARGET_SIZE := 2048
+const TARGET_SIZE := 1024
 
 ## Only these are walked.  Everything else in the tree is deliberately ignored: the packs
 ## ship .blend/.blend1, a .txt and .txt~ asset-catalog, palette.lmp, the .import sidecars,

@@ -14,7 +14,7 @@ head_meshes = [NodePath("juggernaut/Skeleton3D/Juggernaut_hair"), NodePath("jugg
 [node name="juggernaut" parent="." unique_id=1100614634 instance=ExtResource("2_g7cg2")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0, 0)
 
-[node name="Skeleton3D" parent="juggernaut" index="0" unique_id=1272876518]
+[node name="Skeleton3D" parent="juggernaut" index="0" unique_id=604115232]
 bones/0/position = Vector3(-0.2508903, 0.8716351, 0.04961718)
 bones/0/rotation = Quaternion(0.03741218, -0.012530464, 0.99872273, 0.031563517)
 bones/2/position = Vector3(-0.006699004, 0.863631, -0.037461102)
@@ -258,7 +258,7 @@ bones/230/scale = Vector3(0.99207115, 0.9953075, 1.0129287)
 bones/231/rotation = Quaternion(-1.0701569e-05, 0.981572, -0.19109309, 4.8914635e-06)
 bones/231/scale = Vector3(0.99973553, 1.0004176, 0.9998479)
 
-[node name="Juggernaut_Body" parent="juggernaut/Skeleton3D" index="1" unique_id=1729178347]
+[node name="Juggernaut_Body" parent="juggernaut/Skeleton3D" index="1" unique_id=130530600]
 blend_shapes/JUggernaut = 1.0
 
 [node name="BoneAttachment3D" type="BoneAttachment3D" parent="juggernaut/Skeleton3D" index="9" unique_id=1197533160]

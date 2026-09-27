@@ -1,0 +1,15 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://d3h1hlvj7tvry"]
+
+[ext_resource type="Texture2D" uid="uid://copjjwnao1gtx" path="res://trenchbroom/textures/Material-LIB/Nature/Water/Water.png" id="1_i52yu"]
+[ext_resource type="Texture2D" uid="uid://c7iced6bxbgb2" path="res://trenchbroom/textures/Material-LIB/Nature/Water/Water_metallic.png" id="2_xauj0"]
+[ext_resource type="Texture2D" uid="uid://bbdna3kewmq6g" path="res://trenchbroom/textures/Material-LIB/Nature/Water/Water_normal.png" id="3_vmx5d"]
+[ext_resource type="Texture2D" uid="uid://xb0qv317lush" path="res://trenchbroom/textures/Material-LIB/Nature/Water/Water_roughness.png" id="4_2gprr"]
+
+[resource]
+albedo_texture = ExtResource("1_i52yu")
+metallic_specular = 0.0
+metallic_texture = ExtResource("2_xauj0")
+roughness_texture = ExtResource("4_2gprr")
+normal_enabled = true
+normal_texture = ExtResource("3_vmx5d")
+texture_filter = 2
