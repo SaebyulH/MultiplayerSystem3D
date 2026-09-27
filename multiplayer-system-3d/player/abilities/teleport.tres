@@ -1,9 +1,11 @@
 [gd_resource type="Resource" script_class="TeleportAbility" format=3 uid="uid://cpjjdgdpkqxcj"]
 
 [ext_resource type="Script" uid="uid://deqdkt0xirbqa" path="res://player/abilities/teleport_ability.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/icons/game-icons.net.svg/icons/ffffff/transparent/1x1/lorc/teleport.svg" id="2"]
 
 [resource]
 script = ExtResource("1")
+icon = ExtResource("2")
 teleport_distance = 10.0
 ability_name = "Teleport"
 description = "Blink 3 metres along your aim direction."

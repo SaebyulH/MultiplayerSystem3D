@@ -32,7 +32,7 @@ There is no profiler-friendly budget configured; the game runs `_process` (rende
 
 ### 2. Per-frame raycast + sort + dictionary alloc in targeted-ability previews — `[FIXED 2026-09-20]`
 
-`player/player_ui.gd` `_update_targeted_previews` now throttles `ability.find_candidates` (the group query + `has_line_of_sight_to` raycast per enemy + `sort_custom`) to 10 Hz (`PREVIEW_REFRESH_INTERVAL`), caching the result per ability in `_preview_candidates`. Between refreshes only the cheap label re-projection runs.
+`player/player_ui.gd` `_update_targeted_previews` now throttles `ability.find_candidates` (the group query + `has_line_of_sight_to` raycast per enemy + `sort_custom`) to 10 Hz (`PREVIEW_REFRESH_INTERVAL`), caching the result per ability in `_preview_candidates`. Between refreshes only the cheap disc re-projection runs (2026-09-27: these were ability-name `Label`s, now `TargetedAbilityIcon` discs — same pools, same per-frame work, one `queue_redraw` per disc whose icon or colour actually changed).
 
 **Cost (before fix):** for every equipped targeted ability (cooldown 0), a group query + raycast per enemy + screen projection + dictionary allocation + sort **every frame**. Now reduced to 10 Hz.
 
@@ -120,6 +120,51 @@ Added 2026-09-25 with `MeteredAbility` / the noclip rework. Same reasoning as ab
 - **Drawing:** one `draw_rect` pair inside `AbilityCircle._draw()` for a metered slot — no child
   nodes, no extra `queue_redraw` (`set_meter` early-returns when nothing changed, which is what keeps
   it off the per-frame redraw list). A charged slot draws no meter bar and vice versa.
+
+### Ability icons (static per circle) — one draw call, no child nodes
+
+Added 2026-09-27 with `Ability.icon`. Recorded here so the new draw call is not mistaken for a
+hot path later.
+
+- **One extra `draw_texture_rect` inside `AbilityCircle._draw()`** — a method that already ran per
+  redraw for the disc, pie, and bars. No new callback, no new node.
+- **`set_icon()` early-returns when the texture is unchanged**, so the empty-slot branch of
+  `_update_ability_cooldowns` calling it for every empty slot every frame costs one pointer
+  compare each. A populated slot is never touched per frame at all: icons are assigned in
+  `_rebuild_abilities` (on character change) and nowhere else.
+- **No child node, so nothing to lay out.** The icon draws inside `_draw()` from the same
+  `center`/`radius` the bars use, which is what keeps it welded to the disc through the
+  64 → 76 px resize — the same rule the charge bars follow. A `TextureRect` child would have
+  needed its rect recomputed on resize, and would have defaulted to `MOUSE_FILTER_STOP`, eating
+  the loadout screen's hover tooltip.
+- **`icon_rect()` is split out of `_draw()`** (like `charge_bar_geometry`) so the contain-fit can
+  be asserted without a renderer. The same fit is duplicated in
+  `player/hud/targeted_ability_icon.gd`'s `_fit_rect` — deliberately, not by oversight; see the
+  comment there and `05-known-issues.md` #57.
+
+## Segmented health bar (per-viewer, only while revealed) — negligible
+
+Added 2026-09-27, replacing the numeric health readout with a drawn bar
+(`player/segmented_health_bar.gd`). Recorded here so the per-frame push is not mistaken for a
+new hot path later.
+
+- **One `set_health()` call per other player per rendered frame**, from `player/player.gd`
+  `_update_visibility` (`2514`) — the same loop that already drove the old `Label`. The old path
+  formatted a string (`str(int(health))`) and re-shaped text on every change; the new one
+  compares two ints and usually returns untouched.
+- **Hidden bars cost one bool check.** `set_health()` returns before any arithmetic when
+  `visible` is false, and `queue_redraw()` is never reached while hidden — so a peer with no
+  reveal active pays nothing at all.
+- **Revealed bars redraw on the quantized pixel, not per frame.** The gate compares the drawn
+  width and fill *in whole pixels*, so a regenerating target costs a redraw per pixel of fill
+  (~2/s for 10 HP/s on a 100-max bar) rather than one per frame, and a full-health target
+  redraws zero times. A target whose health is only drifting (the sync interpolating) never
+  redraws at all.
+- **No child nodes, no allocation.** `_draw()` issues at most `2 + N + 1` `draw_rect` calls
+  (N = dividers, one per 100 HP) and derives everything from `size` — the same shape as
+  `AbilityCircle`'s charge bars, which this widget deliberately mirrors.
+- **The width scales with max health by design** — 20 px per 100 max HP — and NOT with distance:
+  the bar is projected with `unproject_position`, like the damage numbers.
 
 ## Per-frame HUD / leaderboard rebuilds
 

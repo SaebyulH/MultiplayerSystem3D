@@ -1,6 +1,7 @@
 [gd_resource type="Resource" script_class="BashDownAbility" format=3 uid="uid://bfq5o8d1u00uw"]
 
 [ext_resource type="Script" uid="uid://bnqfiejian72o" path="res://player/abilities/bashdown_ability.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://61tpsaxndddr" path="res://assets/icons/game-icons.net.svg/icons/ffffff/transparent/1x1/lorc/quake-stomp.svg" id="2"]
 
 [resource]
 script = ExtResource("1")
@@ -10,4 +11,5 @@ ability_name = "Bashdown"
 description = "Lunge in the direction you're looking; pin a hit enemy and slam down to the ground."
 cast_mode = 1
 cooldown = 4.0
+icon = ExtResource("2")
 max_charges = 2

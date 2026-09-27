@@ -1,9 +1,11 @@
 [gd_resource type="Resource" script_class="HealAllyAbility" format=3 uid="uid://ds02dq8s8gwdo"]
 
 [ext_resource type="Script" uid="uid://rg8domftfy2q" path="res://player/abilities/heal_ally_ability.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/icons/game-icons.net.svg/icons/ffffff/transparent/1x1/delapouite/first-aid-kit.svg" id="2"]
 
 [resource]
 script = ExtResource("1")
+icon = ExtResource("2")
 locked_color = Color(0.35, 0.9, 0.45, 1)
 target_team = 1
 ability_name = "Field Dressing"

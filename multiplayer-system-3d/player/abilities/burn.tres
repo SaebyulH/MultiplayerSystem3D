@@ -1,11 +1,13 @@
 [gd_resource type="Resource" script_class="BurnAbility" format=3 uid="uid://7ic1yrpop4dr"]
 
 [ext_resource type="Script" uid="uid://cq2ye3tu5t3gf" path="res://player/abilities/burn_ability.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://b00xq1y77rk67" path="res://assets/icons/game-icons.net.svg/icons/ffffff/transparent/1x1/carl-olsen/flame.svg" id="2"]
 
 [resource]
 script = ExtResource("1")
-max_targets = 2
+max_targets = 5
 locked_color = Color(0.82418334, 0.2867307, 0.111631356, 1)
 ability_name = "Burn Ability"
 description = "Set visible enemies nearest your crosshair ablaze."
-cooldown = 12.0
+cooldown = 10.0
+icon = ExtResource("2")

@@ -402,8 +402,10 @@ var _noclip_exit_hit: Dictionary = {}
 ## Whether the player's hurtbox areas are currently enabled (disabled in noclip).
 var _hurtboxes_active := true
 
-## 2D health-bar reveal UI (projected above the head, like a damage number).
-var _health_bar: Label = null
+## 2D segmented health-bar reveal UI (projected above the head, like a damage
+## number).  One section per 100 max HP — the viewer reads max health by counting
+## sections.  See player/segmented_health_bar.gd.
+var _health_bar: SegmentedHealthBar = null
 
 # Stored so late-joining peers can be synced with the correct weapon models.
 var _loadout_primary_path: String = ""
@@ -471,18 +473,15 @@ func _ready() -> void:
 	_outline_material = ShaderMaterial.new()
 	_outline_material.shader = WALLHACK_OUTLINE_SHADER
 
-	# Health-bar reveal UI: a 2D Label on its own CanvasLayer, projected above
-	# the head like a damage number (constant screen size regardless of distance).
+	# Health-bar reveal UI: a segmented bar on its own CanvasLayer, projected
+	# above the head like a damage number (constant screen size regardless of
+	# distance).  The widget sizes itself from the target's MAX health — one
+	# section per 100 HP — so the bar reports max health as well as current.
 	var layer := CanvasLayer.new()
 	layer.layer = 3
 	layer.name = "HealthBarLayer"
 	add_child(layer)
-	_health_bar = Label.new()
-	_health_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_health_bar.add_theme_color_override("font_color", Color(0.35, 0.95, 0.35))
-	_health_bar.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-	_health_bar.add_theme_constant_override("outline_size", 4)
-	_health_bar.add_theme_font_size_override("font_size", 22)
+	_health_bar = SegmentedHealthBar.new()
 	_health_bar.visible = false
 	layer.add_child(_health_bar)
 
@@ -1580,8 +1579,12 @@ func _process(_delta: float) -> void:
 		_hurtboxes_active = not noclip_active
 		_set_hurtboxes_active(_hurtboxes_active)
 
-	_update_health_bar()
+	# _update_visibility first: its set_public_health_visible() is what updates the
+	# bar's `size` from the target's max health, and _update_health_bar() is what
+	# reads `size` for centering.  The other order mis-centres the bar for one
+	# frame whenever max health changes (spawn, character swap, size effect).
 	_update_visibility(_delta)
+	_update_health_bar()
 	_update_aimbot()
 	_update_third_person_aim()
 
@@ -2315,13 +2318,20 @@ func set_wallhack_outline(enabled: bool, color: Color = ALLY_OUTLINE_COLOR) -> v
 			m.material_override = _outline_material if enabled else null
 
 
-## Show or hide this player's 2D health bar for the local viewer.
+## Show or hide this player's 2D health bar for the local viewer, and push the
+## values it draws.
+##
+## The push lives here rather than on `health_changed` because this is already
+## called once per frame per other player from _update_visibility, and because
+## `max_health` is DERIVED (components/attribute_component.gd recompute_max_health)
+## and has no signal of its own — it moves under size effects, so a signal-driven
+## bar would silently keep a stale width.
 func set_public_health_visible(show: bool) -> void:
 	if _health_bar == null:
 		return
-	if show:
-		_health_bar.text = str(int(attribute_component.health)) if attribute_component else ""
 	_health_bar.visible = show
+	if show and attribute_component:
+		_health_bar.set_health(attribute_component.health, attribute_component.max_health)
 
 
 ## Project the 2D health bar above the head each frame.  Moves it off-screen

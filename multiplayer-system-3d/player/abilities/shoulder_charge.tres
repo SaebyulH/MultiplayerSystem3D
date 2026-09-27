@@ -1,6 +1,7 @@
 [gd_resource type="Resource" script_class="ShoulderChargeAbility" format=3 uid="uid://bkofte7pvpmh5"]
 
 [ext_resource type="Script" uid="uid://bawdsghsibs4c" path="res://player/abilities/shoulder_charge_ability.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://bvej3ji52usg6" path="res://assets/icons/game-icons.net.svg/icons/ffffff/transparent/1x1/delapouite/charging-bull.svg" id="2"]
 
 [resource]
 script = ExtResource("1")
@@ -11,3 +12,4 @@ ability_name = "Shoulder Charge"
 description = "Charge forward, pinning enemies and slamming them into walls."
 cast_mode = 1
 cooldown = 4.0
+icon = ExtResource("2")

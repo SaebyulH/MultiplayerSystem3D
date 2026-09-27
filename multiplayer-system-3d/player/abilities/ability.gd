@@ -35,6 +35,20 @@ enum CastMode {
 ## AbilityManager while the player is dead.
 @export var can_be_used_while_dead: bool = false
 
+## Icon drawn in the middle of this ability's HUD/loadout circle in place of
+## [member ability_name].  Leave it empty and the circle falls back to the name
+## text, which is what every ability without an authored icon still does.
+##
+## The game-icons.net set under assets/icons/ is white paths on transparent — the
+## circle tints them per disc state (see AbilityCircle._icon_color), so coloured
+## art will not read correctly.
+##
+## Deliberately NOT inside an @export_group: the group markers are positional, so
+## a group declared here would also capture every subclass's own exports (the
+## trailing "Charges" group already does that today).  Ungrouped, this sits with
+## ability_name at the top of the inspector.
+@export var icon: Texture2D
+
 @export_group("Charges")
 ## How many charges (HUD bars) this ability can hold.  **1 — the default — is
 ## today's behaviour**: a single charge that regenerates over [member cooldown],

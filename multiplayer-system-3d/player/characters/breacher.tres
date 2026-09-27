@@ -17,12 +17,16 @@
 [ext_resource type="PackedScene" uid="uid://c0plytpiwyh8p" path="res://weapon/projectiles/scenes/nuke.tscn" id="12_ow7rt"]
 [ext_resource type="Script" uid="uid://bgnoupinctd73" path="res://player/abilities/passive_ability.gd" id="12_pasv"]
 [ext_resource type="Texture2D" uid="uid://du8s0sa6sd2mb" path="res://character_portraits/flygirl.png" id="16_eak8f"]
+[ext_resource type="Texture2D" uid="uid://btoifubrtotqb" path="res://assets/icons/game-icons.net.svg/icons/ffffff/transparent/1x1/zeromancer/heart-plus.svg" id="20_heal"]
+[ext_resource type="Texture2D" uid="uid://cd8qig5wt6pya" path="res://assets/icons/game-icons.net.svg/icons/ffffff/transparent/1x1/skoll/carpet-bombing.svg" id="21_bomb"]
+[ext_resource type="Texture2D" uid="uid://1fm6rpc7eqo4" path="res://assets/icons/game-icons.net.svg/icons/ffffff/transparent/1x1/lorc/feather.svg" id="22_lowg"]
 
 [sub_resource type="Resource" id="Resource_x7c3f"]
 script = ExtResource("2_moh7u")
 heal_amount = 100.0
 ability_name = "Heal 100 Health"
 cooldown = 3.0
+icon = ExtResource("20_heal")
 
 [sub_resource type="Resource" id="Resource_ur13p"]
 script = ExtResource("7_1o6mg")
@@ -49,6 +53,7 @@ script = ExtResource("3_a2xb3")
 weapon_fire = SubResource("Resource_qisbw")
 ability_name = "Carpet Bomb"
 cooldown = 15.0
+icon = ExtResource("21_bomb")
 max_charges = 3
 
 [sub_resource type="Resource" id="Resource_lowg"]
@@ -56,6 +61,7 @@ script = ExtResource("12_pasv")
 ability_name = "Low Gravity"
 description = "You fall slowly and drift through the air, making long jumps, air strafing and mid-air control much easier."
 cooldown = 0.0
+icon = ExtResource("22_lowg")
 
 [sub_resource type="Resource" id="Resource_a2xb3"]
 script = ExtResource("7_1o6mg")

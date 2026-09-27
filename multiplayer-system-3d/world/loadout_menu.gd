@@ -119,6 +119,7 @@ func _ready() -> void:
 	_section_header_font = (agent_header.get_node("Label") as Label).get_theme_font("font")
 
 	_build_character_picker()
+	_build_icon_credit()
 	_populate_mode_info.call_deferred()
 
 	_confirm_button.pressed.connect(_on_confirm_pressed)
@@ -138,6 +139,30 @@ func _ready() -> void:
 			_select_random_loadout()
 		else:
 			_select_character(_all_characters[0]["char"])
+
+
+## Credit for the ability icons, tucked into the bottom-right corner.  The
+## game-icons.net set is CC BY 3.0, so the attribution has to be visible in the
+## build, not just in a licence file — see docs/05-known-issues.md #56.
+##
+## Built in code rather than in loadout_menu.tscn because it is decoration with no
+## references: nothing needs to find it by node path.  Parented to the CanvasLayer
+## rather than to `Root`, which is a MarginContainer and would stretch this label
+## across its whole margin rect instead of letting it hug the corner.
+func _build_icon_credit() -> void:
+	var credit := Label.new()
+	credit.text = "Icons: game-icons.net (CC BY 3.0)"
+	credit.add_theme_color_override("font_color", Color(0.62, 0.62, 0.62, 0.85))
+	credit.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
+	credit.add_theme_constant_override("outline_size", 3)
+	credit.add_theme_font_size_override("font_size", 11)
+	credit.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_canvas.add_child(credit)
+	# Added before the preset is applied: BOTTOM_RIGHT/MINSIZE derives its offsets
+	# from the parent's anchorable rect, which is the viewport size — zero until
+	# this label is in the tree, which would park it off-screen.
+	credit.set_anchors_and_offsets_preset(
+		Control.PRESET_BOTTOM_RIGHT, Control.PRESET_MODE_MINSIZE, 8)
 
 
 func _on_visibility_changed() -> void:
@@ -365,9 +390,13 @@ func _make_ability_slot(index: int, ability: Ability) -> Control:
 	circle.set_meta("ability", ability)
 	if ability:
 		circle.set_ability_name(ability.ability_name)
+		# Hides the name label when the ability has an icon, so the slot shows one
+		# or the other — see AbilityCircle.set_icon.
+		circle.set_icon(ability.icon)
 		circle.name_label.add_theme_color_override("font_color", Color(0.85, 0.85, 0.85))
 	else:
 		circle.set_ability_name("UNASSIGNED")
+		# No ability, so no icon, so set_icon(null) leaves this text showing.
 		circle.name_label.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
 	circle.name_label.add_theme_font_size_override("font_size", 12)
 

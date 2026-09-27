@@ -1,6 +1,7 @@
 [gd_resource type="Resource" script_class="HealAbility" format=3 uid="uid://b8guv2doanh4m"]
 
 [ext_resource type="Script" uid="uid://cqveqjaj5p1jv" path="res://player/abilities/heal_ability.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://btoifubrtotqb" path="res://assets/icons/game-icons.net.svg/icons/ffffff/transparent/1x1/zeromancer/heart-plus.svg" id="2"]
 
 [resource]
 script = ExtResource("1")
@@ -11,3 +12,4 @@ ability_name = "Heal 300"
 description = "Restores 300 health over 5 sec
 "
 cooldown = 10.0
+icon = ExtResource("2")

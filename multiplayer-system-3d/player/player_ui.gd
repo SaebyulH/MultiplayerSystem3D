@@ -109,15 +109,25 @@ const MIN_DISPLAY_DELTA: float = 0.5
 const UI_TICK_INTERVAL: float = 0.1
 var _ui_timer: Timer
 
-# Targeted-ability preview labels (projected over candidate enemies).
+# Targeted-ability preview discs (projected beside candidate enemies).
 var _preview_layer: CanvasLayer
-var _preview_labels: Array[Label] = []
+var _preview_icons: Array[TargetedAbilityIcon] = []
 ## Candidate discovery (players-group query + LOS raycast + sort) is throttled to
-## 10 Hz; results are cached per ability and only the cheap label re-projection
+## 10 Hz; results are cached per ability and only the cheap disc re-projection
 ## runs every frame (see #3 in docs/05-known-issues.md).
 const PREVIEW_REFRESH_INTERVAL := 0.1
 var _preview_timer := 0.0
 var _preview_candidates: Dictionary = {}  # ability -> Array[Player]
+## Where the discs sit relative to the enemy, in screen pixels: level with the
+## head, starting just right of it, and marching further right for each extra
+## ability targeting the same enemy.
+##
+## Anchored at head height rather than the health bar's (Player._update_health_bar
+## projects that 2.2 m up, centred) so the two never stack on each other — the
+## whole point of moving these off the top of the head.
+const PREVIEW_ANCHOR_HEIGHT := 1.9
+const PREVIEW_OFFSET_X := 18.0
+const PREVIEW_GAP := 4.0
 
 # Layout constants
 const MARGIN: float = 20.0
@@ -812,22 +822,23 @@ func _build_ability_previews() -> void:
 	add_child(_preview_layer)
 
 
-## Draw a column of ability-name labels over each candidate enemy for every
-## active targeted ability.  Locked (would-hit) targets are coloured red.
+## Draw a row of ability discs beside each candidate enemy for every active
+## targeted ability.  A locked (would-hit) target's disc is rimmed in the
+## ability's locked_color; a mere candidate gets preview_color.
 func _update_targeted_previews(delta: float) -> void:
 	if _owner_player == null:
 		return
 	# While a menu (loadout / join / host popup) is open the 3D world is dimmed;
-	# these projected labels sit on CanvasLayer 4, above the menu, so hide them.
+	# these projected discs sit on CanvasLayer 4, above the menu, so hide them.
 	if PlayerInput.ui_open:
-		for lbl in _preview_labels:
-			lbl.visible = false
+		for icon in _preview_icons:
+			icon.visible = false
 		return
 	var am := _owner_player.ability_manager
 	var cam := _owner_player.camera as Camera3D
 	if am == null or cam == null:
-		for lbl in _preview_labels:
-			lbl.visible = false
+		for icon in _preview_icons:
+			icon.visible = false
 		return
 
 	# Candidate discovery does a players-group query + a line-of-sight raycast + a
@@ -891,32 +902,34 @@ func _update_targeted_previews(delta: float) -> void:
 			})
 			stacks[c.name] = stack + 1
 
-	# Grow the label pool as needed (never shrink; the whole HUD is freed on death).
-	while _preview_labels.size() < entries.size():
-		var lbl := Label.new()
-		lbl.add_theme_font_size_override("font_size", 14)
-		lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-		lbl.add_theme_constant_override("outline_size", 4)
-		lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		_preview_layer.add_child(lbl)
-		_preview_labels.append(lbl)
+	# Grow the disc pool as needed (never shrink; the whole HUD is freed on death).
+	while _preview_icons.size() < entries.size():
+		var icon := TargetedAbilityIcon.new()
+		_preview_layer.add_child(icon)
+		_preview_icons.append(icon)
 
-	for j in _preview_labels.size():
-		var lbl: Label = _preview_labels[j]
+	for j in _preview_icons.size():
+		var icon: TargetedAbilityIcon = _preview_icons[j]
 		if j >= entries.size():
-			lbl.visible = false
+			icon.visible = false
 			continue
 		var entry: Dictionary = entries[j]
 		var ability := entry["ability"] as TargetedAbility
 		var target := entry["player"] as Player
 		var locked: bool = entry["locked"]
 		var stack: int = entry["stack"]
-		lbl.text = ability.ability_name
-		lbl.modulate = ability.locked_color if locked else ability.preview_color
-		lbl.visible = true
-		var world_pos: Vector3 = target.global_position + Vector3(0, 2.2, 0)
+		icon.set_preview(ability.icon,
+			ability.locked_color if locked else ability.preview_color)
+		icon.visible = true
+		var world_pos: Vector3 = target.global_position \
+			+ Vector3(0.0, PREVIEW_ANCHOR_HEIGHT, 0.0)
 		var screen: Vector2 = cam.unproject_position(world_pos)
-		lbl.position = screen + Vector2(-lbl.get_minimum_size().x * 0.5, float(stack) * 20.0)
+		# To the right of the enemy, level with the head, one disc per ability
+		# targeting them.  Vertical centring on the anchor keeps a stack of discs
+		# reading as a row rather than hanging below the head.
+		icon.position = screen + Vector2(
+			PREVIEW_OFFSET_X + float(stack) * (TargetedAbilityIcon.DIAMETER + PREVIEW_GAP),
+			-TargetedAbilityIcon.DIAMETER * 0.5)
 
 
 ## Size and show the aimbot cone circle while the aimbot effect is active.  The
@@ -1230,11 +1243,13 @@ func _rebuild_abilities() -> void:
 		var circle := AbilityCircle.new()
 		if i < abilities.size() and abilities[i] != null:
 			circle.set_ability_name(abilities[i].ability_name)
+			circle.set_icon(abilities[i].icon)
 			_apply_hud_font(circle.name_label, 12)
 			circle.set_charges(0.0, abilities[i].max_charges)
 			_ability_indices.append(i)
 		else:
 			circle.set_ability_name("")
+			circle.set_icon(null)
 			_ability_indices.append(-1)
 		_ability_container.add_child(circle)
 		_ability_circles.append(circle)
@@ -1255,6 +1270,9 @@ func _update_ability_cooldowns() -> void:
 			_ability_circles[j].set_cooldown(0.0, false)
 			_ability_circles[j].set_active(false)
 			_ability_circles[j].set_meter(0.0, false, false)
+			# Same reason set_meter's third argument exists: a recycled circle must
+			# not keep drawing the previous occupant's icon.
+			_ability_circles[j].set_icon(null)
 			continue
 		var ability: Ability = abilities[i]
 		# The pie shows whichever gate is the bottleneck — the inter-cast interval

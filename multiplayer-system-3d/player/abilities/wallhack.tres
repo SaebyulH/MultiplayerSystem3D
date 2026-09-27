@@ -1,9 +1,11 @@
 [gd_resource type="Resource" script_class="WallhackAbility" format=3 uid="uid://d2d4m0f7c28x3"]
 
 [ext_resource type="Script" uid="uid://coggjlsesnnph" path="res://player/abilities/wallhack_ability.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/icons/game-icons.net.svg/icons/ffffff/transparent/1x1/lorc/third-eye.svg" id="2"]
 
 [resource]
 script = ExtResource("1")
+icon = ExtResource("2")
 ability_name = "Wallhack"
 description = "See enemies through walls for 10 seconds."
 cooldown = 15.0

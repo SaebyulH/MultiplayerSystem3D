@@ -1,9 +1,11 @@
 [gd_resource type="Resource" script_class="InvisibilityAbility" format=3]
 
 [ext_resource type="Script" path="res://player/abilities/invisibility_ability.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/icons/game-icons.net.svg/icons/ffffff/transparent/1x1/delapouite/invisible.svg" id="2"]
 
 [resource]
 script = ExtResource("1")
+icon = ExtResource("2")
 ability_name = "Invisibility"
 description = "Turn invisible to enemies for 6 seconds."
 cooldown = 12.0

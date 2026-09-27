@@ -1,10 +1,14 @@
 [gd_resource type="Resource" script_class="SmiteAbility" format=3 uid="uid://hjpxah8x0xip"]
 
 [ext_resource type="Script" uid="uid://cx35ymweutjjf" path="res://player/abilities/smite_ability.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://3avrglt3i3a" path="res://assets/icons/game-icons.net.svg/icons/ffffff/transparent/1x1/lorc/heavy-lightning.svg" id="2"]
 
 [resource]
 script = ExtResource("1")
-locked_color = Color(0.8292704, 0.4700806, 0, 1)
+damage = 25.0
+locked_color = Color(0.94613236, 0.8742794, 0.5421599, 1)
 ability_name = "Smite"
 description = "Strike the visible enemy nearest your crosshair for 50 damage."
-cooldown = 6.0
+cooldown = 5.0
+icon = ExtResource("2")
+max_charges = 10
