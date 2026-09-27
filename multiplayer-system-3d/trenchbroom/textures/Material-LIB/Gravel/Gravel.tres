@@ -1,0 +1,15 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://cowvvyle6hv7j"]
+
+[ext_resource type="Texture2D" uid="uid://jo8cmi0wcpb5" path="res://trenchbroom/textures/Material-LIB/Gravel/Gravel.png" id="1_3u5jn"]
+[ext_resource type="Texture2D" uid="uid://bigrh6n4fcag8" path="res://trenchbroom/textures/Material-LIB/Gravel/Gravel_metallic.png" id="2_6uhxa"]
+[ext_resource type="Texture2D" uid="uid://wtaefqgua3v7" path="res://trenchbroom/textures/Material-LIB/Gravel/Gravel_normal.png" id="3_fietk"]
+[ext_resource type="Texture2D" uid="uid://boniu56q1o4wq" path="res://trenchbroom/textures/Material-LIB/Gravel/Gravel_roughness.png" id="4_mupfm"]
+
+[resource]
+albedo_texture = ExtResource("1_3u5jn")
+metallic_specular = 0.0
+metallic_texture = ExtResource("2_6uhxa")
+roughness_texture = ExtResource("4_mupfm")
+normal_enabled = true
+normal_texture = ExtResource("3_fietk")
+texture_filter = 2

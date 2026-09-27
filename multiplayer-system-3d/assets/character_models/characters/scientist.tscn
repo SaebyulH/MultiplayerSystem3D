@@ -6,6 +6,14 @@
 [ext_resource type="AnimationLibrary" uid="uid://dd783w6dpe1gq" path="res://assets/character_models/human/other_movement.glb" id="4_f2ip5"]
 [ext_resource type="AnimationLibrary" uid="uid://cl3hr20wvwixe" path="res://assets/character_models/human/sprint.glb" id="5_fkert"]
 [ext_resource type="AnimationLibrary" uid="uid://ch1fkaujvdl85" path="res://assets/character_models/human/walk.glb" id="6_7t2ej"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/scientist_SCIENTIST_SKIN.tres" id="t0"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/scientist_Scientist_clothes.tres" id="t1"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/scientist_Material_003.tres" id="t2"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/scientist_GLASS.tres" id="t3"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/scientist_CustomEye.tres" id="t4"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/scientist_Material_001.tres" id="t5"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/scientist_Gums.tres" id="t6"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/scientist_Teeth.tres" id="t7"]
 
 [node name="Scientist" type="Node3D" unique_id=1833866528 node_paths=PackedStringArray("head_meshes")]
 script = ExtResource("1_f2ip5")
@@ -259,9 +267,11 @@ bones/231/rotation = Quaternion(-2.030752e-05, 0.9815889, -0.19100565, 6.764246e
 bones/231/scale = Vector3(0.99985313, 1.0002319, 0.9999156)
 
 [node name="Scientist" parent="scientist/Skeleton3D" index="0" unique_id=1005431744]
+surface_material_override/0 = ExtResource("t0")
 blend_shapes/Scientist = 1.0
 
 [node name="Scientist_clothes_001" parent="scientist/Skeleton3D" index="2" unique_id=41677219]
+surface_material_override/0 = ExtResource("t1")
 blend_shapes/Scientist = 1.0
 
 [node name="BoneAttachment3D" type="BoneAttachment3D" parent="scientist/Skeleton3D" index="9" unique_id=1197533160]
@@ -281,5 +291,37 @@ libraries/walk = ExtResource("6_7t2ej")
 [node name="Camera3D" type="Camera3D" parent="." unique_id=1517829784]
 transform = Transform3D(-0.9536537, 0, 0.3009064, 0, 1, 0, -0.3009064, 0, -0.9536537, 0.15380776, 1.5491703, -0.52452147)
 fov = 57.495663
+
+[node name="Scientist_clothes" parent="scientist/Skeleton3D" index="1"]
+surface_material_override/0 = ExtResource("t1")
+
+[node name="Scientist_clothes_002" parent="scientist/Skeleton3D" index="3"]
+surface_material_override/0 = ExtResource("t1")
+
+[node name="sCIENTIST_GLASSES" parent="scientist/Skeleton3D" index="4"]
+surface_material_override/0 = ExtResource("t2")
+surface_material_override/1 = ExtResource("t3")
+
+[node name="Scientist_head" parent="scientist/Skeleton3D" index="5"]
+surface_material_override/0 = ExtResource("t0")
+
+[node name="ultimate_human_eye_left" parent="scientist/Skeleton3D" index="6"]
+surface_material_override/0 = ExtResource("t4")
+surface_material_override/1 = ExtResource("t5")
+
+[node name="ultimate_human_eye_right" parent="scientist/Skeleton3D" index="7"]
+surface_material_override/0 = ExtResource("t4")
+surface_material_override/1 = ExtResource("t5")
+
+[node name="ultimate_human_teeth_lower" parent="scientist/Skeleton3D" index="8"]
+surface_material_override/0 = ExtResource("t6")
+surface_material_override/1 = ExtResource("t7")
+
+[node name="ultimate_human_teeth_upper" parent="scientist/Skeleton3D" index="9"]
+surface_material_override/0 = ExtResource("t6")
+surface_material_override/1 = ExtResource("t7")
+
+[node name="ultimate_human_tongue" parent="scientist/Skeleton3D" index="10"]
+surface_material_override/0 = ExtResource("t6")
 
 [editable path="scientist"]

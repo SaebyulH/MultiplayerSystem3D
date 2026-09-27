@@ -4,6 +4,16 @@
 [ext_resource type="AnimationLibrary" uid="uid://cl3hr20wvwixe" path="res://assets/character_models/human/sprint.glb" id="3_j26ap"]
 [ext_resource type="PackedScene" uid="uid://dsqd7pcvv15y5" path="res://assets/character_models/governess/governess.glb" id="3_jqltn"]
 [ext_resource type="AnimationLibrary" uid="uid://ch1fkaujvdl85" path="res://assets/character_models/human/walk.glb" id="4_jqltn"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/governess_BASE_HUMAN_DEFAULT_SKIN.tres" id="t0"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/governess_Collar_001.tres" id="t1"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/governess_Eyebrows.tres" id="t2"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/governess_hAIR_001.tres" id="t3"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/governess_Eyelashes_001.tres" id="t4"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/governess_Material_004.tres" id="t5"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/governess_CustomEye.tres" id="t6"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/governess_Material_001.tres" id="t7"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/governess_Gums.tres" id="t8"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/governess_Teeth.tres" id="t9"]
 
 [node name="Flier" type="Node3D" unique_id=1833866528 node_paths=PackedStringArray("head_meshes")]
 script = ExtResource("1_6j5q8")
@@ -244,6 +254,7 @@ bones/164/rotation = Quaternion(1.5657253e-05, 0.98140675, -0.19193968, -2.52728
 bones/164/scale = Vector3(1.0002913, 0.9995417, 1.0001678)
 
 [node name="Governess_body" parent="governess/Skeleton3D" index="1" unique_id=190415662]
+surface_material_override/0 = ExtResource("t0")
 blend_shapes/Ghost.001 = 1.0
 
 [node name="BoneAttachment3D" type="BoneAttachment3D" parent="governess/Skeleton3D" index="5" unique_id=1197533160]
@@ -261,5 +272,38 @@ libraries/walk = ExtResource("4_jqltn")
 [node name="Camera3D" type="Camera3D" parent="." unique_id=797880655]
 transform = Transform3D(-0.9536537, 0, 0.3009064, 0, 1, 0, -0.3009064, 0, -0.9536537, 0.15380776, 1.61024, -0.52452147)
 fov = 57.495663
+
+[node name="Ghost_head_001" parent="governess/Skeleton3D" index="0"]
+surface_material_override/0 = ExtResource("t0")
+
+[node name="Governess_body_001" parent="governess/Skeleton3D" index="2"]
+surface_material_override/0 = ExtResource("t1")
+surface_material_override/1 = ExtResource("t2")
+
+[node name="governess_hair" parent="governess/Skeleton3D" index="3"]
+surface_material_override/0 = ExtResource("t3")
+
+[node name="governess_hair_001" parent="governess/Skeleton3D" index="4"]
+surface_material_override/0 = ExtResource("t4")
+surface_material_override/1 = ExtResource("t5")
+
+[node name="ultimate_human_eye_left" parent="governess/Skeleton3D" index="5"]
+surface_material_override/0 = ExtResource("t6")
+surface_material_override/1 = ExtResource("t7")
+
+[node name="ultimate_human_eye_right" parent="governess/Skeleton3D" index="6"]
+surface_material_override/0 = ExtResource("t6")
+surface_material_override/1 = ExtResource("t7")
+
+[node name="ultimate_human_teeth_lower" parent="governess/Skeleton3D" index="7"]
+surface_material_override/0 = ExtResource("t8")
+surface_material_override/1 = ExtResource("t9")
+
+[node name="ultimate_human_teeth_upper" parent="governess/Skeleton3D" index="8"]
+surface_material_override/0 = ExtResource("t8")
+surface_material_override/1 = ExtResource("t9")
+
+[node name="ultimate_human_tongue" parent="governess/Skeleton3D" index="9"]
+surface_material_override/0 = ExtResource("t8")
 
 [editable path="governess"]

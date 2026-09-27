@@ -1,0 +1,10 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://assets/materials/painted_toon.gdshader" id="1_shader"]
+
+[resource]
+shader = ExtResource("1_shader")
+shader_parameter/use_albedo_texture = false
+shader_parameter/albedo_color = Color(0, 0, 0, 1)
+shader_parameter/metallic = 1
+shader_parameter/roughness = 1

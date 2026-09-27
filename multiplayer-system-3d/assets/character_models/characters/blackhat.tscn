@@ -6,6 +6,19 @@
 [ext_resource type="AnimationLibrary" uid="uid://dd783w6dpe1gq" path="res://assets/character_models/human/other_movement.glb" id="4_8qvhx"]
 [ext_resource type="AnimationLibrary" uid="uid://cl3hr20wvwixe" path="res://assets/character_models/human/sprint.glb" id="5_hf2yq"]
 [ext_resource type="AnimationLibrary" uid="uid://ch1fkaujvdl85" path="res://assets/character_models/human/walk.glb" id="6_yybij"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/blackhat_JUGGERNAUT_CLOTHES.tres" id="t0"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/blackhat_BlackHat_Skin.tres" id="t1"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/blackhat_hAIR.tres" id="t2"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/blackhat_hat.tres" id="t3"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/blackhat_Eyelashes.tres" id="t4"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/blackhat_hAIR_001.tres" id="t5"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/blackhat_White.tres" id="t6"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/blackhat_Shoe right.tres" id="t7"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/blackhat_Shoe Left.tres" id="t8"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/blackhat_CustomEye.tres" id="t9"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/blackhat_Material_001.tres" id="t10"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/blackhat_Gums.tres" id="t11"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/blackhat_Teeth.tres" id="t12"]
 
 [node name="Blackhat" type="Node3D" unique_id=1833866528 node_paths=PackedStringArray("head_meshes")]
 script = ExtResource("1_5dt4b")
@@ -15,9 +28,11 @@ head_meshes = [null, null, null, null, null, null, null, null]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0, 0)
 
 [node name="blackhatbody" parent="blackhat/Skeleton3D" parent_id_path=PackedInt32Array(176952940, 2072632411) index="1" unique_id=1287946344]
+surface_material_override/0 = ExtResource("t1")
 blend_shapes/JUggernaut = 1.0
 
 [node name="Blackhathead" parent="blackhat/Skeleton3D" parent_id_path=PackedInt32Array(176952940, 2072632411) index="3" unique_id=131732468]
+surface_material_override/0 = ExtResource("t1")
 blend_shapes/JUggernaut = 0.725
 
 [node name="BoneAttachment3D" type="BoneAttachment3D" parent="blackhat/Skeleton3D" parent_id_path=PackedInt32Array(176952940, 2072632411) index="11" unique_id=1197533160]
@@ -38,5 +53,40 @@ libraries/walk = ExtResource("6_yybij")
 [node name="Camera3D" type="Camera3D" parent="." unique_id=948913145]
 transform = Transform3D(-0.95365375, -0.055127114, 0.29581356, 0, 0.983075, 0.18320355, -0.3009064, 0.17471273, -0.9375132, 0.14884579, 1.6676924, -0.5087956)
 fov = 57.495663
+
+[node name="blackhat_clothes" parent="blackhat/Skeleton3D" index="0"]
+surface_material_override/0 = ExtResource("t0")
+
+[node name="Blackhathair" parent="blackhat/Skeleton3D" index="2"]
+surface_material_override/0 = ExtResource("t2")
+surface_material_override/1 = ExtResource("t3")
+
+[node name="Glasses" parent="blackhat/Skeleton3D" index="4"]
+surface_material_override/0 = ExtResource("t4")
+surface_material_override/2 = ExtResource("t5")
+surface_material_override/3 = ExtResource("t6")
+
+[node name="Shoe right_001" parent="blackhat/Skeleton3D" index="5"]
+surface_material_override/0 = ExtResource("t7")
+surface_material_override/1 = ExtResource("t8")
+
+[node name="ultimate_human_eye_left" parent="blackhat/Skeleton3D" index="6"]
+surface_material_override/0 = ExtResource("t9")
+surface_material_override/1 = ExtResource("t10")
+
+[node name="ultimate_human_eye_right" parent="blackhat/Skeleton3D" index="7"]
+surface_material_override/0 = ExtResource("t9")
+surface_material_override/1 = ExtResource("t10")
+
+[node name="ultimate_human_teeth_lower" parent="blackhat/Skeleton3D" index="8"]
+surface_material_override/0 = ExtResource("t11")
+surface_material_override/1 = ExtResource("t12")
+
+[node name="ultimate_human_teeth_upper" parent="blackhat/Skeleton3D" index="9"]
+surface_material_override/0 = ExtResource("t11")
+surface_material_override/1 = ExtResource("t12")
+
+[node name="ultimate_human_tongue" parent="blackhat/Skeleton3D" index="10"]
+surface_material_override/0 = ExtResource("t11")
 
 [editable path="blackhat"]

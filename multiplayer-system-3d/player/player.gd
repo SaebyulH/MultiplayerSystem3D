@@ -55,23 +55,17 @@ signal team_changed()
 signal character_changed()
 
 
-var skins: Array[MeshInstance3D] = []
-
-## Original surface-0 material for each entry in [member skins], captured when
-## the character model is built.  Team tinting duplicates these so the model's
-## own textures survive instead of being flattened to a single solid colour.
-var _skin_original_materials: Array[Material] = []
-
-const TEAM_COLORS: Dictionary = {
-	Team.SCI: Color.BLUE,
-	Team.SPI: Color.RED,
-}
+## Team colouring is gone.  Character models carry authored
+## `surface_material_override/N` entries pointing at painted-toon materials
+## (assets/materials/character_toon/), and tinting used to overwrite them on
+## every spawn: the setter below ran `_apply_team_color()`, which either cleared
+## the override (FFA) or replaced it with a duplicate of the GLB's
+## StandardMaterial3D (SPI/SCI).  Team identity is still carried by `team`
+## itself, which drives damage and the HUD — only the model tint is gone.
 
 var team: Team = Team.FFA:
 	set(value):
 		team = value
-		if is_inside_tree():
-			_apply_team_color()
 		team_changed.emit()
 
 func get_gmc_team() -> Player.Team:
@@ -438,21 +432,7 @@ func _enter_tree() -> void:
 
 
 func _ready() -> void:
-	skins = [
-		#$Body/Recoil/Head/WeaponParent/RightArm,
-		#$Body/Recoil/Head/WeaponParent/RightForearm,
-		#$Body/Recoil/Head/WeaponParent/LeftForearm,
-		#$Body/Recoil/Head/WeaponParent/LeftArm,
-		#$Body/Recoil/Head/Helmet,
-		#$Body/LeftLeg3, $Body/LeftLeg9, $Body/LeftLeg10, $Body/LeftLeg5, $Body/LeftLeg4, $Body/LeftLeg6, $Body/LeftLeg7, $Body/LeftLeg8,
-		#
-		#
-		# Character skin meshes are collected dynamically in _rebuild_skins().
-		
-		#$Body/Torso,
-		#$Body/LeftLeg,
-		#$Body/RighLeg,
-	]
+	# Emits team_changed once so listeners (the HUD) see the initial team.
 	team = team
 
 	player_input.toggle_camera.connect(_on_toggle_camera)
@@ -2264,10 +2244,6 @@ func _spawn_character_model() -> void:
 		for m in world_instance.find_children("*", "MeshInstance3D", true, false):
 			_outline_meshes.append(m as MeshInstance3D)
 
-	# Rebuild the team-colour skin list and re-apply the current team.
-	_rebuild_skins()
-	team = team
-
 	# Rim light (render layer 10): the RimPivot spotlights are culled to that layer
 	# only, and character model scenes are authored on layer 1, so every world model
 	# has to opt in explicitly — the built-in mannequin does it via the `layers = 513`
@@ -2311,84 +2287,9 @@ func _setup_pose_copy(model_node: Node3D) -> void:
 		_pose_map[src_idx] = _pose_target.find_bone(mannequin_skeleton.get_bone_name(src_idx))
 
 
-## Re-tint every skin mesh to the current team colour while keeping its own
-## texture.  FFA (no team) resolves to white — the identity tint — so the model
-## renders with its authored materials instead of a flat colour.
-#func _apply_team_color() -> void:
-	#var color: Color = TEAM_COLORS.get(team, Color.WHITE)
-	#for i in skins.size():
-		#var skin: MeshInstance3D = skins[i]
-		#if skin == null:
-			#continue
-		#var original: Material = _skin_original_materials[i] if i < _skin_original_materials.size() else null
-		#if original == null:
-			#continue
-		## Identity tint (FFA) or an untintable shader — show the authored material.
-		#if color.is_equal_approx(Color.WHITE) or not (original is BaseMaterial3D):
-			#skin.set_surface_override_material(0, null)
-			#continue
-		#var tinted: Material = original.duplicate() as Material
-		#(tinted as BaseMaterial3D).albedo_color = color
-		#skin.set_surface_override_material(0, tinted)
-
-func _apply_team_color() -> void:
-	var color: Color = TEAM_COLORS.get(team, Color.WHITE)
-
-	for i in skins.size():
-		var skin: MeshInstance3D = skins[i]
-		if skin == null:
-			continue
-
-		var original: Material = _skin_original_materials[i] if i < _skin_original_materials.size() else null
-		if original == null:
-			continue
-
-		# FFA or materials that cannot be tinted: use the authored material.
-		if color.is_equal_approx(Color.WHITE) or not (original is BaseMaterial3D):
-			skin.set_surface_override_material(0, null)
-			continue
-
-		var tinted: BaseMaterial3D = original.duplicate() as BaseMaterial3D
-
-		# Stronger tint: blend the team colour into the material's existing
-		# albedo instead of merely multiplying it.
-		var original_color := tinted.albedo_color
-		tinted.albedo_color = original_color.lerp(color, 0.75)
-
-		skin.set_surface_override_material(0, tinted)
-
-
-
-## Return the material a mesh uses for surface 0 before any team-tint override,
-## falling back to a fresh material when the model ships none.
-func _original_surface_material(mesh: MeshInstance3D) -> Material:
-	if mesh.mesh != null:
-		if mesh.mesh.get_surface_count() > 0:
-			var mat := mesh.mesh.surface_get_material(0)
-			if mat != null:
-				return mat
-		if mesh.mesh.material != null:
-			return mesh.mesh.material
-	if mesh.material_override != null:
-		return mesh.material_override
-	return StandardMaterial3D.new()
-
-
 ## True when this Player is the local peer's own first-person model.
 func _is_own_model() -> bool:
 	return body.is_multiplayer_authority() and not is_bot
-
-
-## Collect the meshes that should receive team colouring (everything except
-## the head meshes, which are marked on the model's PlayerModel).
-func _rebuild_skins() -> void:
-	skins.clear()
-	_skin_original_materials.clear()
-	if model_script == null:
-		return
-	for mesh in model_script.get_skin_meshes():
-		skins.append(mesh)
-		_skin_original_materials.append(_original_surface_material(mesh))
 
 
 ## Read a base stat with an optional character offset applied.

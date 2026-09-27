@@ -6,6 +6,15 @@
 [ext_resource type="AnimationLibrary" uid="uid://cl3hr20wvwixe" path="res://assets/character_models/human/sprint.glb" id="5_t26cg"]
 [ext_resource type="AnimationLibrary" uid="uid://ch1fkaujvdl85" path="res://assets/character_models/human/walk.glb" id="6_jjoxn"]
 [ext_resource type="PackedScene" uid="uid://bq1cxluegrrx0" path="res://assets/character_models/nerd/nerd.glb" id="8_xl2fu"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/nerd_BASE_HUMAN_DEFAULT_SKIN.tres" id="t0"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/nerd_nerd_clothes.tres" id="t1"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/nerd_nerd_hair.tres" id="t2"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/nerd_Shoe right.tres" id="t3"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/nerd_Shoe Left.tres" id="t4"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/nerd_CustomEye.tres" id="t5"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/nerd_Material_001.tres" id="t6"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/nerd_Gums.tres" id="t7"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/nerd_Teeth.tres" id="t8"]
 
 [node name="Nerd" type="Node3D" unique_id=1833866528 node_paths=PackedStringArray("head_meshes")]
 script = ExtResource("1_lhyae")
@@ -275,5 +284,43 @@ libraries/walk = ExtResource("6_jjoxn")
 [node name="Camera3D" type="Camera3D" parent="." unique_id=44105193]
 transform = Transform3D(-0.9536537, 0, 0.3009064, 0.027446404, 0.99583143, 0.086985074, -0.29965204, 0.09121244, -0.9496783, 0.15380776, 1.6365573, -0.52452147)
 fov = 57.495663
+
+[node name="nerd" parent="nerd3/Skeleton3D" index="0"]
+surface_material_override/0 = ExtResource("t0")
+
+[node name="nerd_clothes" parent="nerd3/Skeleton3D" index="1"]
+surface_material_override/0 = ExtResource("t1")
+
+[node name="NERD_HAIR" parent="nerd3/Skeleton3D" index="2"]
+surface_material_override/0 = ExtResource("t2")
+
+[node name="NERD_HAIR_001" parent="nerd3/Skeleton3D" index="3"]
+surface_material_override/0 = ExtResource("t1")
+
+[node name="nerd_head" parent="nerd3/Skeleton3D" index="4"]
+surface_material_override/0 = ExtResource("t0")
+
+[node name="Shoe right" parent="nerd3/Skeleton3D" index="5"]
+surface_material_override/0 = ExtResource("t3")
+surface_material_override/1 = ExtResource("t4")
+
+[node name="ultimate_human_eye_left" parent="nerd3/Skeleton3D" index="6"]
+surface_material_override/0 = ExtResource("t5")
+surface_material_override/1 = ExtResource("t6")
+
+[node name="ultimate_human_eye_right" parent="nerd3/Skeleton3D" index="7"]
+surface_material_override/0 = ExtResource("t5")
+surface_material_override/1 = ExtResource("t6")
+
+[node name="ultimate_human_teeth_lower" parent="nerd3/Skeleton3D" index="8"]
+surface_material_override/0 = ExtResource("t7")
+surface_material_override/1 = ExtResource("t8")
+
+[node name="ultimate_human_teeth_upper" parent="nerd3/Skeleton3D" index="9"]
+surface_material_override/0 = ExtResource("t7")
+surface_material_override/1 = ExtResource("t8")
+
+[node name="ultimate_human_tongue" parent="nerd3/Skeleton3D" index="10"]
+surface_material_override/0 = ExtResource("t7")
 
 [editable path="nerd3"]

@@ -5,6 +5,12 @@
 [ext_resource type="AnimationLibrary" uid="uid://dd783w6dpe1gq" path="res://assets/character_models/human/other_movement.glb" id="4_mjvcg"]
 [ext_resource type="AnimationLibrary" uid="uid://cl3hr20wvwixe" path="res://assets/character_models/human/sprint.glb" id="5_8pxc0"]
 [ext_resource type="AnimationLibrary" uid="uid://ch1fkaujvdl85" path="res://assets/character_models/human/walk.glb" id="6_bfjjk"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/stalker_stalker.tres" id="t0"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/stalker_stalker_eyes.tres" id="t1"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/stalker_CustomEye.tres" id="t2"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/stalker_Material_001.tres" id="t3"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/stalker_Gums.tres" id="t4"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/stalker_Teeth.tres" id="t5"]
 
 [node name="Stalker" type="Node3D" unique_id=1833866528 node_paths=PackedStringArray("head_meshes")]
 script = ExtResource("1_mjvcg")
@@ -247,9 +253,13 @@ bones/231/rotation = Quaternion(1.5657253e-05, 0.98140675, -0.19193968, -2.52728
 bones/231/scale = Vector3(1.0002913, 0.9995417, 1.0001678)
 
 [node name="Stalker" parent="stalker/Skeleton3D" index="0" unique_id=881675509]
+surface_material_override/0 = ExtResource("t0")
+surface_material_override/1 = ExtResource("t1")
 blend_shapes/stalker = 1.0
 
 [node name="Stalker_head" parent="stalker/Skeleton3D" index="1" unique_id=1284052685]
+surface_material_override/0 = ExtResource("t0")
+surface_material_override/1 = ExtResource("t1")
 blend_shapes/stalker = 1.0
 
 [node name="BoneAttachment3D" type="BoneAttachment3D" parent="stalker/Skeleton3D" index="2" unique_id=1197533160]
@@ -268,5 +278,24 @@ libraries/walk = ExtResource("6_bfjjk")
 [node name="Camera3D" type="Camera3D" parent="." unique_id=144772457]
 transform = Transform3D(-0.9536537, 0, 0.3009064, 0, 1, 0, -0.3009064, 0, -0.9536537, 0.06448281, 1.5689914, -0.39329588)
 fov = 57.495663
+
+[node name="ultimate_human_eye_left" parent="stalker/Skeleton3D" index="2"]
+surface_material_override/0 = ExtResource("t2")
+surface_material_override/1 = ExtResource("t3")
+
+[node name="ultimate_human_eye_right" parent="stalker/Skeleton3D" index="3"]
+surface_material_override/0 = ExtResource("t2")
+surface_material_override/1 = ExtResource("t3")
+
+[node name="ultimate_human_teeth_lower" parent="stalker/Skeleton3D" index="4"]
+surface_material_override/0 = ExtResource("t4")
+surface_material_override/1 = ExtResource("t5")
+
+[node name="ultimate_human_teeth_upper" parent="stalker/Skeleton3D" index="5"]
+surface_material_override/0 = ExtResource("t4")
+surface_material_override/1 = ExtResource("t5")
+
+[node name="ultimate_human_tongue" parent="stalker/Skeleton3D" index="6"]
+surface_material_override/0 = ExtResource("t4")
 
 [editable path="stalker"]

@@ -7,6 +7,8 @@
 [ext_resource type="AnimationLibrary" uid="uid://cl3hr20wvwixe" path="res://assets/character_models/human/sprint.glb" id="5_5mtge"]
 [ext_resource type="AnimationLibrary" uid="uid://ch1fkaujvdl85" path="res://assets/character_models/human/walk.glb" id="6_hhdo6"]
 [ext_resource type="AnimationLibrary" uid="uid://l3btdniv136r" path="res://assets/character_models/human/weapon_holds.glb" id="7_cl0hm"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/jett_TP_Wushu_S0_TattooMI.tres" id="t0"]
+[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/jett_TP_Wushu_S0_Hair_MI.tres" id="t1"]
 
 [node name="Jett" type="Node3D" unique_id=1833866528]
 script = ExtResource("1_ygxqy")
@@ -256,5 +258,10 @@ libraries/other_movement = ExtResource("4_ugvdb")
 libraries/sprint = ExtResource("5_5mtge")
 libraries/walk = ExtResource("6_hhdo6")
 libraries/weapon_holds = ExtResource("7_cl0hm")
+
+[node name="TP_Wushu_S0_Skelmesh_mo" parent="jett/Skeleton3D" index="0"]
+surface_material_override/0 = ExtResource("t0")
+surface_material_override/1 = ExtResource("t1")
+surface_material_override/2 = ExtResource("t1")
 
 [editable path="jett"]

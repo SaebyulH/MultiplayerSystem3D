@@ -9,7 +9,7 @@
 [ext_resource type="PackedScene" uid="uid://bds042g4ismxf" path="res://world/payload_checkpoint_visual.tscn" id="7_telcu"]
 [ext_resource type="Script" uid="uid://cwu5cf7a0awcd" path="res://addons/func_godot/src/map/func_godot_map.gd" id="8_ytskv"]
 [ext_resource type="Resource" uid="uid://bq8p1ikwut6o4" path="res://trenchbroom/multiplayer_system_3d_map_settings.tres" id="9_ytskv"]
-[ext_resource type="Material" uid="uid://6u4u6u1cxxy6" path="res://trenchbroom/textures/FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k.tres" id="10_8b2e1"]
+[ext_resource type="Material" uid="uid://cowvvyle6hv7j" path="res://trenchbroom/textures/Material-LIB/Gravel/Gravel.tres" id="10_8b2e1"]
 
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_wnf2b"]
 panorama = ExtResource("2_l3pqv")
@@ -46,21 +46,21 @@ point_count = 5
 
 [sub_resource type="ArrayMesh" id="ArrayMesh_sbnl8"]
 _surfaces = [{
-"aabb": AABB(0, -2, -2, 4, 4, 4),
-"attribute_data": PackedByteArray("AACAvwAAAL8AAAAAAAAAvwAAAAAAAAA/AACAvwAAAD8AAAA/AAAAPwAAAL8AAAA/AAAAvwAAAL8AAAA/AAAAvwAAAL8AAAAAAAAAvwAAgL8AAAA/AACAvwAAAD8AAAAAAACAPwAAAD8AAAAAAAAAPwAAAAAAAAC/AACAPwAAAL8AAAC/AAAAvwAAAD8AAAC/AAAAPwAAAD8AAAC/AAAAPwAAgD8AAAA/AAAAAAAAAD8AAAAAAAAAvwAAgD8AAAC/"),
+"aabb": AABB(-8, -2, -8, 16, 4, 16),
+"attribute_data": PackedByteArray("PY0wvz2NML49jTA/PY0wvj2NMD89jTA+PY0wvz2NMD49jTA/PY0wPj2NML89jTA+PY0wvz2NML49jTA/PY0wvj2NML89jTA/PY0wvz2NML89jTA/PY0wvz2NMD89jTA/n0bYP59G2D+F5Z4+n0bYP4Xlnj6F5Z4+n0bYP4Xlnj49jTC/PY0wvj2NMD89jTC+PY0wPz2NMD49jTC/PY0wPj2NMD89jTA+PY0wvz2NMD49jTC/PY0wvj2NMD89jTC+"),
 "format": 34359742487,
 "index_count": 36,
 "index_data": PackedByteArray("AAABAAIAAAACAAMABAAFAAYABAAGAAcACAAJAAoACAAKAAsADAANAA4ADAAOAA8AEAARABIAEAASABMAFAAVABYAFAAWABcA"),
 "material": ExtResource("10_8b2e1"),
-"name": "FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k",
+"name": "Material-LIB/Gravel/Gravel",
 "primitive": 3,
 "uv_scale": Vector4(0, 0, 0, 0),
 "vertex_count": 24,
-"vertex_data": PackedByteArray("AACAQAAAAEAAAADAAAAAAAAAAEAAAADAAAAAAAAAAMAAAADAAACAQAAAAMAAAADAAAAAAAAAAMAAAABAAAAAAAAAAMAAAADAAAAAAAAAAEAAAADAAAAAAAAAAEAAAABAAAAAAAAAAMAAAABAAACAQAAAAMAAAABAAACAQAAAAMAAAADAAAAAAAAAAMAAAADAAAAAAAAAAEAAAABAAAAAAAAAAEAAAADAAACAQAAAAEAAAADAAACAQAAAAEAAAABAAACAQAAAAEAAAABAAACAQAAAAEAAAADAAACAQAAAAMAAAADAAACAQAAAAMAAAABAAACAQAAAAMAAAABAAAAAAAAAAMAAAABAAAAAAAAAAEAAAABAAACAQAAAAEAAAABA/////wAA/7//////AAD/v/////8AAP+//////wAA/78AAP9//3//vwAA/3//f/+/AAD/f/9//78AAP9//3//v/9/AAD//////38AAP//////fwAA//////9/AAD//////3////9//7//f////3//v/9/////f/+//3////9//7////9//////////3//////////f/////////9///////9//3////+//3//f////7//f/9/////v/9//3////+/")
+"vertex_data": PackedByteArray("AAAAQQAAAEAAAADBAAAAwQAAAEAAAADBAAAAwQAAAMAAAADBAAAAQQAAAMAAAADBAAAAwQAAAMAAAABBAAAAwQAAAMAAAADBAAAAwQAAAEAAAADBAAAAwQAAAEAAAABBAAAAwQAAAMAAAABBAAAAQQAAAMAAAABBAAAAQQAAAMAAAADBAAAAwQAAAMAAAADBAAAAwQAAAEAAAABBAAAAwQAAAEAAAADBAAAAQQAAAEAAAADBAAAAQQAAAEAAAABBAAAAQQAAAEAAAABBAAAAQQAAAEAAAADBAAAAQQAAAMAAAADBAAAAQQAAAMAAAABBAAAAQQAAAMAAAABBAAAAwQAAAMAAAABBAAAAwQAAAEAAAABBAAAAQQAAAEAAAABB/////wAA/7//////AAD/v/////8AAP+//////wAA/78AAP9//3//vwAA/3//f/+/AAD/f/9//78AAP9//3//v/9/AAD//////38AAP//////fwAA//////9/AAD//////3////9//7//f////3//v/9/////f/+//3////9//7////9//////////3//////////f/////////9///////9//3////+//3//f////7//f/9/////v/9//3////+/")
 }]
 
 [sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_6dyqu"]
-points = PackedVector3Array(4, 2, 2, 4, -2, 2, 0, 2, 2, 0, -2, 2, 4, 2, -2, 4, -2, -2, 0, 2, -2, 0, -2, -2)
+points = PackedVector3Array(8, 2, 8, 8, -2, 8, -8, 2, 8, -8, -2, 8, 8, 2, -8, 8, -2, -8, -8, 2, -8, -8, -2, -8)
 
 [node name="Game" type="Node3D" unique_id=159294576 node_paths=PackedStringArray("despawn_location")]
 script = ExtResource("1_817op")
@@ -403,7 +403,7 @@ progress = 24.845465
 [node name="PayloadCheckpointVisual" parent="Path3D/Node3D2" unique_id=1633043086 instance=ExtResource("7_telcu")]
 
 [node name="Node3D3" type="PathFollow3D" parent="Path3D" unique_id=704746823]
-transform = Transform3D(-0.99822754, 0.005358353, -0.05890174, 0.005683522, 0.99995226, -0.005354699, 0.058871206, -0.0056801233, -0.9982283, -13.229095, 0.062809415, 11.709001)
+transform = Transform3D(-0.99822754, 0.005358351, -0.058901723, 0.005683522, 0.99995196, -0.005354698, 0.058871206, -0.0056801215, -0.998228, -13.229095, 0.062809415, 11.709001)
 progress = 54.960716
 
 [node name="PayloadCheckpointVisual" parent="Path3D/Node3D3" unique_id=394312367 instance=ExtResource("7_telcu")]
@@ -421,23 +421,23 @@ progress = 34.40255
 [node name="PayloadCheckpointVisual" parent="Path3D/Node3D5" unique_id=1765611327 instance=ExtResource("7_telcu")]
 
 [node name="Node3D6" type="PathFollow3D" parent="Path3D" unique_id=1696483240]
-transform = Transform3D(-0.03800141, 0.007514091, -0.999227, 0.0038521986, 0.9999476, 0.0073729386, 0.9992482, -0.003569134, -0.038029026, 0, 1.1641532e-10, 18.200003)
+transform = Transform3D(-0.03800141, 0.007514091, -0.9992267, 0.0038521986, 0.9999476, 0.0073729362, 0.9992482, -0.003569134, -0.038029015, 0, 1.1641532e-10, 18.200003)
 progress = 73.85691
 
 [node name="PayloadCheckpointVisual" parent="Path3D/Node3D6" unique_id=814555535 instance=ExtResource("7_telcu")]
 
 [node name="FuncGodotMap" type="Node3D" parent="." unique_id=1121539896]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -92, 0, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -90.79843, 0.094139755, 0)
 script = ExtResource("8_ytskv")
 local_map_file = "res://trenchbroom/maps/test.map"
 map_settings = ExtResource("9_ytskv")
 metadata/_custom_type_script = "uid://cwu5cf7a0awcd"
 
-[node name="entity_0_worldspawn" type="StaticBody3D" parent="FuncGodotMap" unique_id=809274141]
+[node name="entity_0_worldspawn" type="StaticBody3D" parent="FuncGodotMap" unique_id=1156350819]
 collision_mask = 0
 
-[node name="entity_0_mesh_instance" type="MeshInstance3D" parent="FuncGodotMap/entity_0_worldspawn" unique_id=1590998815]
+[node name="entity_0_mesh_instance" type="MeshInstance3D" parent="FuncGodotMap/entity_0_worldspawn" unique_id=1995292334]
 mesh = SubResource("ArrayMesh_sbnl8")
 
-[node name="entity_0_brush_0_collision_shape" type="CollisionShape3D" parent="FuncGodotMap/entity_0_worldspawn" unique_id=863524248]
+[node name="entity_0_brush_0_collision_shape" type="CollisionShape3D" parent="FuncGodotMap/entity_0_worldspawn" unique_id=955610978]
 shape = SubResource("ConvexPolygonShape3D_6dyqu")

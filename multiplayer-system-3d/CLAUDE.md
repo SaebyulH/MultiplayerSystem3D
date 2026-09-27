@@ -167,12 +167,14 @@ This is the subtle part — read carefully before touching `network_manager.gd`.
 ## Player & character architecture
 
 - `player/player.gd` (`class_name Player`) is a `CharacterBody3D`. Movement is Quake/Source-style (ground friction vs. `_air_accelerate`), with stamina, dash/dash-jump, crouch/slide, double-jump, and a server-driven shoulder-charge carry/stun.
-- `Player.Team` enum is `{ SPI, SCI, FFA }` (FFA = damage anyone). `TEAM_COLORS`: SCI blue, SPI red.
+- `Player.Team` enum is `{ SPI, SCI, FFA }` (FFA = damage anyone). Team identity drives damage and the HUD; it does **not** tint the model — team colouring was removed (see below).
 - **Characters vs. Classes** are both `Resource`s:
   - `Class` (`player/class.gd`) lists `primary_weapons` / `secondary_weapons` / `melee_weapons` and `characters`.
   - `Character` (`player/character.gd`) carries stat multipliers (health, speed, regen, etc.), an `abilities` list, and a `character_scene` world model.
 - Character models are cosmetic: the built-in mannequin always drives animation via `AnimationTree`; a spawned character model copies its pose per-bone by name (`_copy_mannequin_pose`).
-- Team tinting / wallhack outlines / health-bar reveal are **purely client-side** (`Player._update_visibility`), driven by status-effect flags, and never networked.
+- Wallhack outlines / health-bar reveal are **purely client-side** (`Player._update_visibility`), driven by status-effect flags, and never networked.
+- **Team colouring was removed** (`_apply_team_color` / `_rebuild_skins` / `skins` / `_skin_original_materials` are gone). It had to go: it ran from the `team` setter, which `_spawn_character_model` triggers on every spawn, and it either cleared or replaced every skin mesh's `surface_material_override` — wiping the authored toon materials below.
+- **Character models wear authored toon materials.** Each `assets/character_models/characters/*.tscn` carries `surface_material_override/N` entries pointing at `assets/materials/character_toon/<char>_<material>.tres`, generated from the GLBs' own `baseColorFactor` / `metallicFactor` / `roughnessFactor` / `baseColorTexture`. See `05-known-issues.md` #54 for the fragility that comes with authoring overrides onto nodes that live inside an instanced GLB.
 - **The rim light is a render-layer handshake, and both halves must stay in sync.** `RimPivot`'s spotlights cull to render layer 10 (`light_cull_mask = 512`, `player.tscn:2615-2629`), so a mesh catches them only if it carries bit 9 (`PlayerModel.RIM_LAYER`). `_spawn_character_model()` opts a world model in via `PlayerModel.enable_rim_layer()` and strips the local player's own via `disable_rim_layer()`; character model scenes are authored on layer 1, so **a model that is never opted in is silently unlit** — the built-in mannequin is the only mesh with `layers = 513` baked into `player.tscn`. `weapon_controller.gd:897-902` does the same for weapon models. See `05-known-issues.md` #51.
 
 ## Weapon architecture

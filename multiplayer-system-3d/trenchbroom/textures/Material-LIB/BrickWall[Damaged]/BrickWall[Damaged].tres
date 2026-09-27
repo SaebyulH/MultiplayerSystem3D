@@ -1,0 +1,14 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://bn3orub7v7fax"]
+
+[ext_resource type="Texture2D" uid="uid://8gspnpweqth0" path="res://trenchbroom/textures/Material-LIB/BrickWall[Damaged]/BrickWall[Damaged].png" id="1_nlv55"]
+[ext_resource type="Texture2D" uid="uid://iy40t38jhhrj" path="res://trenchbroom/textures/Material-LIB/BrickWall[Damaged]/BrickWall[Damaged]_metallic.png" id="2_ks5qf"]
+[ext_resource type="Texture2D" uid="uid://baarf1nv0worg" path="res://trenchbroom/textures/Material-LIB/BrickWall[Damaged]/BrickWall[Damaged]_normal.png" id="3_fqbjc"]
+[ext_resource type="Texture2D" uid="uid://ghik6o28ub2v" path="res://trenchbroom/textures/Material-LIB/BrickWall[Damaged]/BrickWall[Damaged]_roughness.png" id="4_j4pmp"]
+
+[resource]
+albedo_texture = ExtResource("1_nlv55")
+metallic_specular = 0.0
+metallic_texture = ExtResource("2_ks5qf")
+roughness_texture = ExtResource("4_j4pmp")
+normal_texture = ExtResource("3_fqbjc")
+texture_filter = 2

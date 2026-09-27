@@ -1,0 +1,12 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://assets/materials/painted_toon.gdshader" id="1_shader"]
+[ext_resource type="Texture2D" path="res://assets/character_models/ghost/ghost_Ucupaint GEO-body_female_realistic.png" id="2_albedo"]
+
+[resource]
+shader = ExtResource("1_shader")
+shader_parameter/use_albedo_texture = true
+shader_parameter/albedo_texture = ExtResource("2_albedo")
+shader_parameter/albedo_color = Color(1, 1, 1, 1)
+shader_parameter/metallic = 0
+shader_parameter/roughness = 0.046828

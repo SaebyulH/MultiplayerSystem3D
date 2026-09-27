@@ -9,20 +9,11 @@
 "_tb_mod" "trenchbroom"
 // brush 0
 {
-( -64 0 -64 ) ( -64 1 -64 ) ( -64 0 -56 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.0625 0.0625
-( -64 0 -64 ) ( -64 0 -56 ) ( -63 0 -64 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.0625 0.0625
-( -64 0 -64 ) ( -63 0 -64 ) ( -64 1 -64 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.0625 0.0625
-( 64 128 64 ) ( 64 129 64 ) ( 65 128 64 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 1024 ] [ 0 -1 0 1024 ] 0 0.0625 0.0625
-( 64 128 64 ) ( 65 128 64 ) ( 64 128 72 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.0625 0.0625
-( 64 128 64 ) ( 64 128 72 ) ( 64 129 64 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.0625 0.0625
-}
-// brush 1
-{
-( 64 -176 80 ) ( 64 -175 80 ) ( 64 -176 81 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( 64 -176 80 ) ( 64 -176 81 ) ( 65 -176 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( 64 -176 80 ) ( 65 -176 80 ) ( 64 -175 80 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
-( 224 -64 96 ) ( 224 -63 96 ) ( 225 -64 96 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
-( 224 -64 96 ) ( 225 -64 96 ) ( 224 -64 97 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( 224 -64 96 ) ( 224 -64 97 ) ( 224 -63 96 ) FreeStylized/tudor_wall_03_2k/tudor_wall_03_2k/tudor_wall_03_basecolor_2k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -256 -256 -64 ) ( -256 -252 -64 ) ( -256 -256 -56 ) Material-LIB/Gravel/Gravel [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.3625 0.3625
+( -256 -256 -64 ) ( -256 -256 -56 ) ( -252 -256 -64 ) Material-LIB/Gravel/Gravel [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.3625 0.3625
+( -256 -256 -64 ) ( -252 -256 -64 ) ( -256 -252 -64 ) Material-LIB/Gravel/Gravel [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.3625 0.3625
+( 256 256 64 ) ( 256 260 64 ) ( 260 256 64 ) Material-LIB/Gravel/Gravel [ 1 0 0 1024 ] [ 0 -1 0 1024 ] 0 0.3625 0.3625
+( 256 256 64 ) ( 260 256 64 ) ( 256 256 72 ) Material-LIB/Gravel/Gravel [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.3625 0.3625
+( 256 256 64 ) ( 256 256 72 ) ( 256 260 64 ) Material-LIB/Gravel/Gravel [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.3625 0.3625
 }
 }
