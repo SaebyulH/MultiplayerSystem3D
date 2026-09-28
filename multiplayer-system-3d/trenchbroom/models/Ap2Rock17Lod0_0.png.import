@@ -2,20 +2,20 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b22lpjgglhjjt"
-path.s3tc="res://.godot/imported/Ap2Rock17Lod0_AP2_Rocks_Roughness.png-d96fc8b03a456b89364e1b7cff7ada98.s3tc.ctex"
+uid="uid://dsy584pe3bqd7"
+path.s3tc="res://.godot/imported/Ap2Rock17Lod0_0.png-8f86e0c052ef53375ea3e08d8b62c3e0.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
 }
 generator_parameters={
-"md5": "07b5562cd6559f8db69796efc9aa241c"
+"md5": "cd1614a71df90b0dc497a5ddcb5925b7"
 }
 
 [deps]
 
-source_file="res://trenchbroom/models/Ap2Rock17Lod0_AP2_Rocks_Roughness.png"
-dest_files=["res://.godot/imported/Ap2Rock17Lod0_AP2_Rocks_Roughness.png-d96fc8b03a456b89364e1b7cff7ada98.s3tc.ctex"]
+source_file="res://trenchbroom/models/Ap2Rock17Lod0_0.png"
+dest_files=["res://.godot/imported/Ap2Rock17Lod0_0.png-8f86e0c052ef53375ea3e08d8b62c3e0.s3tc.ctex"]
 
 [params]
 

@@ -6,7 +6,7 @@
 [ext_resource type="Resource" uid="uid://crlirgc6sep16" path="res://trenchbroom/entities/big_box.tres" id="4_1"]
 [ext_resource type="Resource" uid="uid://b14qbgttaa5je" path="res://trenchbroom/entities/forklift.tres" id="4_2"]
 [ext_resource type="Resource" uid="uid://bnyie3mkkx6hy" path="res://trenchbroom/entities/mannequin_ref.tres" id="4_3"]
-[ext_resource type="Resource" path="res://trenchbroom/entities/player_spawn.tres" id="4_4"]
+[ext_resource type="Resource" uid="uid://dtjbel6rpg137" path="res://trenchbroom/entities/player_spawn.tres" id="4_4"]
 [ext_resource type="Resource" uid="uid://bw640wievkjji" path="res://trenchbroom/entities/test.tres" id="4_5"]
 [ext_resource type="Resource" uid="uid://bxv5wfnfobid2" path="res://trenchbroom/entities/truck.tres" id="4_6"]
 
