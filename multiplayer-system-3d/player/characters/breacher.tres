@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="Character" format=3 uid="uid://cmbd1xh1wwo7d"]
+[gd_resource type="Resource" script_class="Character" format=3 uid="uid://cb1fsud2ejqgb"]
 
 [ext_resource type="PackedScene" uid="uid://cinsq1lv1jv" path="res://assets/character_models/characters/flier.tscn" id="1_1m2t5"]
 [ext_resource type="Script" uid="uid://bxv3anwekoggx" path="res://player/character.gd" id="1_char"]

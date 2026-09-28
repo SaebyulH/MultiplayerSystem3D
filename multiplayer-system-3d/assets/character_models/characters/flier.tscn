@@ -3,12 +3,12 @@
 [ext_resource type="Script" uid="uid://b4ohd0sroqg5d" path="res://player/player_model.gd" id="1_p44sx"]
 [ext_resource type="PackedScene" uid="uid://0h8h8alx7sl7" path="res://assets/character_models/flier/flier.glb" id="1_qd1mn"]
 [ext_resource type="AnimationLibrary" uid="uid://cl3hr20wvwixe" path="res://assets/character_models/human/sprint.glb" id="4_wrw6f"]
-[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/flier_FLIER_SKIN.tres" id="t0"]
-[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/flier_FLIER_CLOTHES.tres" id="t1"]
-[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/flier_CustomEye.tres" id="t2"]
-[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/flier_Material_001.tres" id="t3"]
-[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/flier_Gums.tres" id="t4"]
-[ext_resource type="ShaderMaterial" path="res://assets/materials/character_toon/flier_Teeth.tres" id="t5"]
+[ext_resource type="Material" path="res://assets/materials/character_toon/flier_FLIER_SKIN.tres" id="t0"]
+[ext_resource type="Material" path="res://assets/materials/character_toon/flier_FLIER_CLOTHES.tres" id="t1"]
+[ext_resource type="Material" path="res://assets/materials/character_toon/flier_CustomEye.tres" id="t2"]
+[ext_resource type="Material" path="res://assets/materials/character_toon/flier_Material_001.tres" id="t3"]
+[ext_resource type="Material" path="res://assets/materials/character_toon/flier_Gums.tres" id="t4"]
+[ext_resource type="Material" path="res://assets/materials/character_toon/flier_Teeth.tres" id="t5"]
 
 [node name="Flier" type="Node3D" unique_id=1833866528 node_paths=PackedStringArray("head_meshes")]
 script = ExtResource("1_p44sx")
@@ -17,7 +17,7 @@ head_meshes = [NodePath("flier/Skeleton3D/flier_head"), NodePath("flier/Skeleton
 [node name="flier" parent="." unique_id=2054063734 instance=ExtResource("1_qd1mn")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0, 0)
 
-[node name="Skeleton3D" parent="flier" index="0" unique_id=1586540527]
+[node name="Skeleton3D" parent="flier" index="0" unique_id=296868465]
 bones/0/position = Vector3(-0.4613289, 0.88530725, 0.2159902)
 bones/0/rotation = Quaternion(0.43647015, -0.026176777, 0.8872454, 0.14698319)
 bones/2/position = Vector3(-0.0592132, 0.82530725, 0.022064485)
@@ -238,9 +238,33 @@ bones/230/scale = Vector3(1.0047109, 1.0010811, 0.9943307)
 bones/231/rotation = Quaternion(1.5657253e-05, 0.98140675, -0.19193968, -2.5272834e-07)
 bones/231/scale = Vector3(1.0002913, 0.9995417, 1.0001678)
 
-[node name="FLIER" parent="flier/Skeleton3D" index="0" unique_id=373720415]
-surface_material_override/0 = ExtResource("t0")
+[node name="FLIER" parent="flier/Skeleton3D" index="0" unique_id=2101863879]
 blend_shapes/FLIER = 1.0
+surface_material_override/0 = ExtResource("t0")
+
+[node name="FLIER_CLOTHES" parent="flier/Skeleton3D" index="1" unique_id=345595276]
+surface_material_override/0 = ExtResource("t1")
+
+[node name="FLIER_CLOTHES_002" parent="flier/Skeleton3D" index="2" unique_id=264716186]
+surface_material_override/0 = ExtResource("t1")
+
+[node name="flier_head" parent="flier/Skeleton3D" index="3" unique_id=1123815158]
+surface_material_override/0 = ExtResource("t0")
+
+[node name="FLIER_HELMET_001" parent="flier/Skeleton3D" index="4" unique_id=43881907]
+surface_material_override/0 = ExtResource("t1")
+
+[node name="ultimate_human_eye_left" parent="flier/Skeleton3D" index="5" unique_id=422522471]
+surface_material_override/0 = ExtResource("t2")
+surface_material_override/1 = ExtResource("t3")
+
+[node name="ultimate_human_eye_right" parent="flier/Skeleton3D" index="6" unique_id=2026092153]
+surface_material_override/0 = ExtResource("t2")
+surface_material_override/1 = ExtResource("t3")
+
+[node name="ultimate_human_teeth_lower" parent="flier/Skeleton3D" index="7" unique_id=1870668651]
+surface_material_override/0 = ExtResource("t4")
+surface_material_override/1 = ExtResource("t5")
 
 [node name="BoneAttachment3D" type="BoneAttachment3D" parent="flier/Skeleton3D" index="8" unique_id=1197533160]
 transform = Transform3D(0.99873614, 0.05025907, -1.1920929e-07, -0.050259072, 0.99873626, -1.6391277e-07, 2.9802322e-08, 2.2351742e-07, 0.9999999, 0.02744608, 1.510354, 0.02522624)
@@ -250,42 +274,18 @@ bone_idx = 72
 [node name="Node3D" type="Node3D" parent="flier/Skeleton3D/BoneAttachment3D" unique_id=1977014581]
 transform = Transform3D(1, -1.6940659e-21, 0, -1.4823077e-21, 1, 0, 0, 0, 1, -1.3901665e-08, 0.11539245, 0.1590165)
 
+[node name="ultimate_human_teeth_upper" parent="flier/Skeleton3D" index="9" unique_id=120599330]
+surface_material_override/0 = ExtResource("t4")
+surface_material_override/1 = ExtResource("t5")
+
+[node name="ultimate_human_tongue" parent="flier/Skeleton3D" index="10" unique_id=1121142246]
+surface_material_override/0 = ExtResource("t4")
+
 [node name="AnimationPlayer2" type="AnimationPlayer" parent="flier" unique_id=808298058]
 libraries/sprint = ExtResource("4_wrw6f")
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=829362703]
 transform = Transform3D(-0.95365375, -0.05512711, 0.29581356, 0, 0.983075, 0.18320356, -0.3009064, 0.17471273, -0.9375132, 0.14884579, 1.5943282, -0.5087956)
 fov = 57.495663
-
-[node name="FLIER_CLOTHES" parent="flier/Skeleton3D" index="1"]
-surface_material_override/0 = ExtResource("t1")
-
-[node name="FLIER_CLOTHES_002" parent="flier/Skeleton3D" index="2"]
-surface_material_override/0 = ExtResource("t1")
-
-[node name="flier_head" parent="flier/Skeleton3D" index="3"]
-surface_material_override/0 = ExtResource("t0")
-
-[node name="FLIER_HELMET_001" parent="flier/Skeleton3D" index="4"]
-surface_material_override/0 = ExtResource("t1")
-
-[node name="ultimate_human_eye_left" parent="flier/Skeleton3D" index="5"]
-surface_material_override/0 = ExtResource("t2")
-surface_material_override/1 = ExtResource("t3")
-
-[node name="ultimate_human_eye_right" parent="flier/Skeleton3D" index="6"]
-surface_material_override/0 = ExtResource("t2")
-surface_material_override/1 = ExtResource("t3")
-
-[node name="ultimate_human_teeth_lower" parent="flier/Skeleton3D" index="7"]
-surface_material_override/0 = ExtResource("t4")
-surface_material_override/1 = ExtResource("t5")
-
-[node name="ultimate_human_teeth_upper" parent="flier/Skeleton3D" index="8"]
-surface_material_override/0 = ExtResource("t4")
-surface_material_override/1 = ExtResource("t5")
-
-[node name="ultimate_human_tongue" parent="flier/Skeleton3D" index="9"]
-surface_material_override/0 = ExtResource("t4")
 
 [editable path="flier"]

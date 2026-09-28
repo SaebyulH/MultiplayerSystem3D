@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="FuncGodotFGDModelPointClass" format=3 uid="uid://bxv5wfnfobid2"]
+
+[ext_resource type="Script" uid="uid://d1nwwgcrner8b" path="res://addons/func_godot/src/fgd/func_godot_fgd_point_class_display_descriptor.gd" id="1_wwneh"]
+[ext_resource type="PackedScene" uid="uid://b1stq4e4vox5h" path="res://assets/map_models/props/truck.tscn" id="2_0krny"]
+[ext_resource type="Script" uid="uid://ldfqjtq0br35" path="res://addons/func_godot/src/fgd/func_godot_fgd_model_point_class.gd" id="2_hj80h"]
+
+[resource]
+script = ExtResource("2_hj80h")
+models_sub_folder = "trenchbroom/models"
+generate_size_property = true
+scene_file = ExtResource("2_0krny")
+classname = "Truck"
+description = "truck"
+meta_properties = Dictionary[String, Variant]({
+"color": Color(0.8, 0.8, 0.8, 1),
+"size": AABB(-3, -1, -1, 2, 1, 1),
+"studio": "\"trenchbroom/models/Truck.glb\""
+})
+metadata/_custom_type_script = "uid://ldfqjtq0br35"

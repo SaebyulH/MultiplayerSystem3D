@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="FuncGodotFGDModelPointClass" format=3 uid="uid://b14qbgttaa5je"]
+
+[ext_resource type="Script" uid="uid://d1nwwgcrner8b" path="res://addons/func_godot/src/fgd/func_godot_fgd_point_class_display_descriptor.gd" id="1_shmwi"]
+[ext_resource type="PackedScene" uid="uid://cye8rvu518pfm" path="res://assets/props/forklift.glb" id="2_shmwi"]
+[ext_resource type="Script" uid="uid://ldfqjtq0br35" path="res://addons/func_godot/src/fgd/func_godot_fgd_model_point_class.gd" id="3_137wp"]
+
+[resource]
+script = ExtResource("3_137wp")
+target_map_editor = 1
+models_sub_folder = "trenchbroom/models"
+generate_size_property = true
+scene_file = ExtResource("2_shmwi")
+apply_scale_on_map_build = false
+classname = "Forklift"
+description = "Forklift 3D model"
+meta_properties = Dictionary[String, Variant]({
+"color": Color(0.8, 0.8, 0.8, 1),
+"model": "{\"path\": \"trenchbroom/models/Forklift.glb\", \"scale\": 32.0 }",
+"size": AABB(-32, -25, -37, 99, 25, 70)
+})
+metadata/_custom_type_script = "uid://ldfqjtq0br35"

@@ -103,6 +103,12 @@ The engine then loads the main scene `res://world/main.tscn` (a `Control` root `
 
 The menu's `CanvasLayer` starts visible, so the loadout screen covers the world on boot.
 
+### Portrait assets behind the character picker
+
+The picker's buttons draw `Character.portrait` (`ui/kill_feed.gd`, `world/spawn_bot_menu.gd` and `world/game_menu.gd` read the same field), which is a pre-rendered 256×256 transparent PNG in `character_portraits/`. Those PNGs are produced **offline** by `player/character_portrait_generator.gd` — not at runtime, so nothing on the boot path regenerates them and a missing one is simply a blank icon.
+
+The generator lights each portrait with the **editor's own per-scene preview sun and environment**, because the character `.tscn` files contain no lights at all. It reads those settings back out of `res://.godot/editor/<scene>-editstate-<md5>.cfg`, which is machine-local and gitignored — so a portrait regenerated on another machine (or after a cache wipe) is lit by the engine defaults instead and still looks plausible. See `05-known-issues.md` #58, and #59 for the `uid=` stripping the same `ResourceSaver.save()` does to `player/characters/*.tres`.
+
 ---
 
 ## Stage 6 — confirm loadout → first spawn

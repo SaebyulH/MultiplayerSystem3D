@@ -101,12 +101,12 @@ func get_human_anim_path(slot: WeaponAnimGroup.AnimSlot) -> StringName:
 ## animation names frequently carry a stray trailing space, so the authored
 ## gun_anim StringName can drift out of sync with the imported clip.  Matching
 ## after trimming both sides keeps them in sync.  Returns &"" when nothing matches.
-func _resolve_animation(name: StringName) -> StringName:
-	if anim_player == null or name == &"":
+func _resolve_animation(n: StringName) -> StringName:
+	if anim_player == null or n == &"":
 		return &""
-	if anim_player.has_animation(name):
-		return name
-	var stripped := String(name).strip_edges()
+	if anim_player.has_animation(n):
+		return n
+	var stripped := String(n).strip_edges()
 	for anim_name in anim_player.get_animation_list():
 		if String(anim_name).strip_edges() == stripped:
 			return StringName(anim_name)
