@@ -6,14 +6,22 @@
 
 [resource]
 script = ExtResource("2_hj80h")
+target_map_editor = 1
 models_sub_folder = "trenchbroom/models"
-generate_size_property = true
+rotation_offset = Vector3(0, 180, 0)
 scene_file = ExtResource("2_0krny")
+apply_scale_on_map_build = false
 classname = "Truck"
-description = "truck"
+description = "Truck - static prop with collision"
+class_properties = Dictionary[String, Variant]({
+"mangle": "0 0 0"
+})
+class_property_descriptions = Dictionary[String, Variant]({
+"mangle": "Pitch Yaw Roll"
+})
 meta_properties = Dictionary[String, Variant]({
 "color": Color(0.8, 0.8, 0.8, 1),
-"size": AABB(-3, -1, -1, 2, 1, 1),
-"studio": "\"trenchbroom/models/Truck.glb\""
+"model": "{\"path\": \"trenchbroom/models/Truck.glb\", \"scale\": 32.0 }",
+"size": AABB(-92, -32, -43, 92, 32, 34)
 })
 metadata/_custom_type_script = "uid://ldfqjtq0br35"

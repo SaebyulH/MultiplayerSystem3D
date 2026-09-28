@@ -64,6 +64,11 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 | 57 | 🟡 Medium | Fragility | A cross-script static call into a `class_name` widget drew a phantom "non-static function" error the editor would not clear |
 | 58 | 🟡 Medium | Assets | Portrait lighting is reproduced from gitignored, machine-local editor state (`.godot/editor/*-editstate-*.cfg`) |
 | 59 | 🟢 Low | Fragility | The asset generators strip `uid=` from every `.tres` they re-save |
+| 60 | 🟡 Medium | Authoring | An entity `.tres` missing from `entity_definitions` is invisible to TrenchBroom, and builds as a bare `Marker3D` |
+| 61 | 🟡 Medium | Authoring | `FuncGodotFGDModelPointClass.target_map_editor` defaults to `GENERIC`, so the display model exports as `studio` and TrenchBroom draws a box |
+| 62 | 🟡 Medium | Tooling | The headless boot smoke test reports `Parse Error` on resources that are not broken — a different set every run |
+| 63 | 🟡 Medium | Authoring | TrenchBroom silently refuses to rotate a point entity whose `size` box is not centred on XY — `R` just moves it |
+| 64 | 🟡 Medium | Authoring | `generate_size_property` offsets the box by the average root-child position, which can leave the origin outside it — TrenchBroom then draws no model at all |
 
 ---
 
@@ -716,6 +721,49 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 - **Mechanism — not isolated.** The save happens in a *game* process (`F6` / a scene passed on the CLI), not the editor; the likely cause is that such a process never populates the `ResourceUID` path→uid cache, so the saver has nothing to write. Unconfirmed, and worth confirming before acting on it.
 - **Why it matters little, and why it is still recorded:** uid references keep resolving via their path fallback, so this has not broken anything observable. It is recorded because a uid is the only thing protecting a reference across a file move, and because the diff churn makes every regeneration look like it touched more than it did.
 - **Suggested fix:** if the stripped diffs become annoying, register the mapping before saving (`ResourceUID.set_id(ResourceUID.text_to_id(uid), path)`) or run the generators from the editor rather than the CLI — but only after confirming the mechanism above.
+
+### 60. An entity that is not in `entity_definitions` is invisible to TrenchBroom, and builds as a bare `Marker3D`
+- **Files:** `trenchbroom/entities/multiplayer_system_3d_fgd.tres` (`entity_definitions`); `addons/func_godot/src/core/parser.gd:83-87`; `addons/func_godot/src/fgd/func_godot_fgd_file.gd:88-100, 104-114`
+- **Symptom:** two faces of one mistake. In TrenchBroom the entity is **absent from the entity browser** and cannot be placed at all. In Godot the other direction: rebuilding a map whose `.map` already contains that classname **replaces every placed instance with an empty `Marker3D`**, silently deleting the prop with no error on either side.
+- **Why:** the `.tres` files under `trenchbroom/entities/` are not auto-discovered. `build_class_text()` walks only `base_fgd_files` + `entity_definitions`, so an unlisted definition produces no `@PointClass` and TrenchBroom never learns the classname. On the build side `parser.gd:83` resolves classnames through `map_settings.entity_fgd.get_entity_definitions()` and falls back to `default_point_class.node_class = "Marker3D"` (`:86-87`) for anything it cannot find — the degradation is a *default*, not an error, so nothing is reported.
+- **Confirmed in this repo:** `entity_definitions` was empty in every committed revision (including before the folder was moved into `entities/` in `30f62c5d`), while `trenchbroom/maps/test.map` and `maps/hyb_castle.tscn` both contain `Forklift` and `Truck` entities. The three entities were therefore orphaned and the generated `.fgd` contained zero `@PointClass` entries. Fixed 2026-09-28 by registering all three.
+- **Suggested fix:** keep every `.tres` in `trenchbroom/entities/` listed in `entity_definitions`, and re-export the FGD. `tools/export_trenchbroom_fgd.tscn` now asserts registration and exits non-zero if a classname is missing, so this is checkable rather than a thing to remember. See `06-trenchbroom-entities.md`.
+
+### 61. `FuncGodotFGDModelPointClass.target_map_editor` defaults to `GENERIC`, which TrenchBroom cannot read
+- **Files:** `addons/func_godot/src/fgd/func_godot_fgd_model_point_class.gd:20` (the default), `:69-82` (the writer); `addons/func_godot/src/fgd/func_godot_fgd_point_class.gd:110-120`
+- **Symptom:** a model entity looks correct in the inspector and exports without any warning, but appears in TrenchBroom as a **bare bounding box** with no model drawn.
+- **Why:** `target_map_editor` defaults to `GENERIC`, and `_generate_model()` then writes the `studio` keyword. `studio` is the Hammer/J.A.C.K. spelling; TrenchBroom's display-model keyword is `model`. The name mismatch is entirely invisible from the Godot side — `build_def_text` only filters the `model` key for non-TrenchBroom targets (`func_godot_fgd_entity_class.gd:86-87`), so a stray `studio` is written straight through. `truck.tres` had exactly this: `target_map_editor` unset plus a hand-written `meta_properties["studio"]`, which read as correct but produced an entry TrenchBroom ignored.
+- **Suggested fix:** always set `target_map_editor = 1` (`TRENCHBROOM`) on a `FuncGodotFGDModelPointClass`, and let `_generate_model()` own `meta_properties["model"]` rather than hand-writing either keyword. The export harness asserts the written `.fgd` contains `model(`, not `studio(`.
+
+### 62. The headless boot smoke test reports `Parse Error` on resources that are not broken
+- **Files:** the smoke-test recipe in `CLAUDE.md`; any `.tres` whose header carries a `script_class=` attribute — observed on `player/player_classes/*.tres`, `weapon/*/*.tres`
+- **Symptom:** a `--headless --quit-after N` run prints `ERROR: res://…tres:NN - Parse Error: .` followed by `Failed loading resource:` for a handful of resources. It reads exactly like a malformed weapon or class resource, but **the failing set is different on every run**, so no single file is actually broken.
+- **Evidence (4 consecutive runs, no code change between them):** 9 / 3 / 3 / 5 distinct failing files per run, 13 distinct across the union, and exactly one file (`player/player_classes/assistance.tres`) failed in all four. That one is a *downstream* victim, not the cause: it references 13 weapons, so it has the most chances to depend on one that lost the race. Nothing fails consistently on its own account.
+- **Why:** a startup load-order race. A `.tres` declaring `script_class="Weapon"` (etc.) cannot be parsed until the matching `class_name` script is registered, and on a cold headless start the resource loader can reach the `.tres` first. Resources with many cross-references are simply more likely to be hit. This does not reproduce in a normal game launch, where scripts register well before class resources load.
+- **Suggested fix:** none needed for the game. For diagnosis, **do not treat one run's `Parse Error` lines as a finding** — re-run and check whether the same file fails again before chasing it. When validating a specific change, prefer a *named* scene run (`godot_console.exe --path . --headless res://tools/<name>.tscn`, as the `tools/` harnesses do), which loads a small dependency set and does not exhibit this, over the full boot.
+
+### 63. TrenchBroom silently refuses to rotate a point entity whose `size` box is not centred on XY
+- **Files:** `trenchbroom/entities/*.tres` (`meta_properties["size"]`, `generate_size_property`); `addons/func_godot/src/fgd/func_godot_fgd_model_point_class.gd:157-197`; `docs/06-trenchbroom-entities.md`
+- **Symptom:** in TrenchBroom, pressing `R` on a prop and dragging does **not** change its `mangle`/`angle` — the entity is shoved around instead, as if the rotate tool were a translate tool. Typing the keyvalue by hand does work, so the entity looks incorrectly authored rather than the bounds being at fault. Downstream, the map builds with the entity unrotated.
+- **Why:** TrenchBroom blocks rotation for point entities whose bounding box is not centred on the XY plane — its manual documents the guard ("attempts to rotate the entity in TrenchBroom will be blocked", to avoid moving the model out of its collision box), and `TrenchBroom/TrenchBroom` #2498 reports the same finding from the bug side. `generate_size_property = true` is what triggers it: it derives `size` from the mesh's real AABB, which is off-centre whenever the prop's origin isn't at its middle. Every prop here is — the Truck came out `x -92…71` (centre −10.5), the Forklift `x -32…99` (centre 33.5).
+- **Related trap:** `apply_rotation_on_map_build` is the *other* half. It is what makes the assembler read `mangle`/`angle`/`angles` at all (`entity_assembler.gd:172-200`), so setting it `false` builds every entity unrotated no matter what the map says — an easy thing to flip while debugging and then forget.
+- **Suggested fix:** leave `generate_size_property` **off** and author `size` by hand, symmetric on X and Y about the origin while still containing the real extents (Z is left alone — only XY is checked). The export harness asserts centring for every registered entity, so re-enabling generation fails loudly instead of silently breaking `R` again.
+
+### 64. `generate_size_property` offsets the box by the average root-child position, which can put the origin outside it
+- **Files:** `addons/func_godot/src/fgd/func_godot_fgd_model_point_class.gd:157-197` (`_generate_size_from_aabb`); `trenchbroom/entities/mannequin_ref.tres`; `docs/06-trenchbroom-entities.md`
+- **Symptom:** the entity has **no preview model at all in TrenchBroom** — not a box, not a misplaced model, nothing — while other entities using the same model pipeline draw fine. Nothing is logged on either side.
+- **Why:** TrenchBroom will not preview a point entity whose `size` box does not contain the origin (`TrenchBroom/TrenchBroom` #4573, "3D model is missing/invisible in entity browser with specific `size()`", fixed in milestone 2024.2). The box here was `z 7…65`, so the origin at `(0,0,0)` sat *below* it. The offset came from `_generate_size_from_aabb`, which adds the **average position of the scene root's direct children** to the mesh AABB:
+  ```gdscript
+  for node in nodes:
+      if node.parent == 0:
+          pos_ofs += node.position
+          ct += 1
+  pos_ofs /= maxi(ct, 1)
+  aabb.position += pos_ofs
+  ```
+  That is exact when the root has one child carrying the whole model — the Truck and Forklift both do, and both were correct. The mannequin is **rigged**, and its root has four armature children, so the average was meaningless and shifted the box `+7` on Z. The true bounds, read from the glTF `POSITION` accessor `min`/`max`, are `z 0…58`.
+- **Not the cause:** the model being skinned. `mannequin.glb` carries a 164-joint skin and `JOINTS_0`/`WEIGHTS_0`, and its mesh nodes hang directly off the root at identity transform — but the `POSITION` accessors are still valid bind-pose geometry (`0.88 × 1.8 × 0.33` m, feet at `y = 0`), so a renderer that ignores skinning still has a human to draw. The box was the whole problem.
+- **Suggested fix:** as #63 — author `size` by hand with `generate_size_property` off, measured from the model's `POSITION` accessors rather than from the generator, and make sure it spans the origin. The export harness now asserts origin containment for **every** registered entity (and XY centring additionally for rotatable ones), so this cannot silently return.
 
 ---
 

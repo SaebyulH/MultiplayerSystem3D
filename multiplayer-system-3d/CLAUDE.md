@@ -35,6 +35,8 @@ There is no build step, test suite, or lint command. The project is opened and r
 "C:/tools/godot/godot_console.exe" --path . --headless --quit-after 240
 ```
 
+> **The smoke test's `Parse Error` lines are noisy — re-run before believing them.** A cold headless start has a load-order race where a `.tres` is reached before the `class_name` script it declares in `script_class=` is registered, so a handful of `player_classes/*.tres` and `weapon/*/*.tres` fail to load **and the failing set differs every run**. Nothing is actually malformed. Confirm a hit by re-running and checking the same file fails twice; when validating a specific change, prefer a named scene run (`… --headless res://tools/<name>.tscn`), which loads a small dependency set and does not exhibit this. `05-known-issues.md` #62.
+
 A one-off scene can be run directly by passing its path as the final argument — `godot_console.exe --path . res://some/scene.tscn` — which is how a standalone verification harness is driven (the process exit code is that script's `get_tree().quit(code)`).
 
 On boot the game **auto-hosts**: it creates an ENet server on port `8080` (`NetworkManager.SERVER_PORT`) and loads the lobby map. The old 2D menu (`ui/main_menu.tscn`) still exists on disk but is **bypassed** — `world/main.tscn` no longer instances it.
@@ -234,6 +236,16 @@ The channeled heal is the only current user: `HealAbility` (`player/abilities/he
 - **`maps/bind.tscn`** (uid `uid://tvv5xjtm8fwk`) was added to `world/world1.tscn`'s `MultiplayerSpawner._spawnable_scenes`. **Any map the scanner can return must be in that list** or selecting it won't replicate to clients.
 - **`_spawnable_scenes` is shared state — keep it deduped, minimal and deterministically ordered.** The receiver resolves a spawn against *its own* copy of the list, so duplicates or a build-order-dependent arrangement can make a peer instantiate a different scene than the one that was spawned. The list used to reach **96 entries for 17 scenes** in `player.tscn` because the scan appended every editor session. Generate it with `player/auto_projectile_spawner.gd` (idempotent, sorted, rebuilds from scratch) rather than appending. `world1.tscn` now holds both lists: the map/player spawner (13 uids) and the `ProjectileSpawner` (17 uids). Regenerate the latter with `scan_projectiles` on that node rather than editing the array by hand.
 - **`MultiplayerSpawner` resolves scenes by *file path*, not by index.** It matches the spawned node's `scene_file_path` against each entry's `Resource.get_path()`. A scene that isn't a file on disk can never match — so **never store a `projectile_scene` (or any spawned scene) as an inline `SubResource` `PackedScene`**; use an `ExtResource` on a real `.tscn`. This was `05-known-issues.md` #28: `rocket_launcher.tres` and `syringe_gun.tres` held inline bundles whose base was the mesh-less `simple_projectile.tscn`, so every remote peer instantiated an invisible projectile.
+
+## TrenchBroom entities (func_godot)
+
+Maps can be authored outside Godot in TrenchBroom via **func_godot** (`addons/func_godot/`, plugin enabled in `project.godot:43`). Full detail in [`docs/06-trenchbroom-entities.md`](docs/06-trenchbroom-entities.md) — read it before touching `trenchbroom/`. The essentials:
+
+- **`trenchbroom/entities/*.tres` is the entity "folder system"**, and a definition is only live if it is also listed in `entity_definitions` on `trenchbroom/entities/multiplayer_system_3d_fgd.tres`. The `.tres` files are **not** auto-discovered — an unlisted one gets no `@PointClass`, is unplaceable in TrenchBroom, and (because `parser.gd` falls back to `Marker3D`) **silently replaces already-placed instances on map rebuild** (`05-known-issues.md` #60).
+- **Export the FGD after any change:** `"C:/tools/godot/godot_console.exe" --path . --headless res://tools/export_trenchbroom_fgd.tscn`. It asserts registration, the written `.fgd`, and the rotation round-trip, exiting non-zero on failure. It also regenerates the committed display `.glb`s, so expect a diff on those.
+- **A model entity needs `target_map_editor = 1` (`TRENCHBROOM`)** or `_generate_model()` writes the `studio` keyword, which TrenchBroom ignores and renders as an empty box (`05-known-issues.md` #61). Let generation own `meta_properties["model"]`/`["size"]` rather than hand-writing them.
+- **Rotation must be declared.** func_godot never synthesises a rotation property — add `angle` (yaw float) or `mangle` (`"x y z"` string) to `class_properties` or the entity is not rotatable in TrenchBroom. The assembler prefers `mangle` over `angle` and applies **`angles.y += 180` unconditionally** (`entity_assembler.gd:172-200`), so `mangle "0 0 0"` builds at 180° yaw. `Truck` uses `mangle`.
+- **`scene_file` is what gets built; the display model is separate.** `Truck` builds `assets/map_models/props/truck.tscn` (CSG, carries collision) and generates its TrenchBroom preview from it. These are authoring-time resources only — nothing here runs in-game.
 
 ## Projectiles
 
