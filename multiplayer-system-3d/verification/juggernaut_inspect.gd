@@ -10,7 +10,7 @@ extends Node3D
 ## which is measured by rendering a mask rather than guessed from coordinates —
 ## guessing put the "torso" region on the sky twice.
 
-const SCENE := "res://assets/character_models/characters/juggernaut.tscn"
+const SCENE := "res://assets/character_models/character_scenes/juggernaut.tscn"
 
 var _bbox := Rect2i()
 var _env: WorldEnvironment

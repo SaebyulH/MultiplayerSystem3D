@@ -8,7 +8,7 @@ shader_type spatial;
 // AO / emission maps all supported) whose *direct* lighting is replaced by a
 // banded ramp with a soft, irregular terminator, so it reads as brushwork
 // rather than as a hard cel outline.  On top of that it adds a back rim light
-// that is deliberately independent of the scene's lights.
+// that reacts to the scene's actual lights.
 //
 // How the pieces fit together, and why:
 //
@@ -29,11 +29,22 @@ shader_type spatial;
 //     our own brightness constant) is what keeps this shader's exposure
 //     matching a StandardMaterial3D next to it.
 //
-//   * The back rim goes into `EMISSION` from `fragment()`, not into `light()`.
-//     Two reasons: `light()` runs once per light, so a rim written there would
-//     be added N times; and emission is light-independent by construction,
-//     which is exactly the "always lit from behind" behaviour we want -- it
-//     stays on in shadow, in the dark, and under any light setup.
+//   * The back rim is split across *both* passes now, because it has two
+//     jobs that live in different places:
+//       - fragment() writes a fixed-opacity floor into EMISSION. Emission is
+//         light-independent by construction, so this is what keeps the rim
+//         visible at all in total darkness or with zero lights in range --
+//         light() simply never runs there, so nothing else would show.
+//       - light() adds an *extra* contribution into SPECULAR_LIGHT, once per
+//         light hitting the fragment, tinted by that light's own colour and
+//         scaled by its post-shadow brightness. SPECULAR_LIGHT is an
+//         accumulator across all light() calls, which is exactly the
+//         "global running total of scene brightness" this needs and that
+//         fragment() has no other way to see (there are no mutable globals,
+//         and fragment() runs before any light() calls).
+//     Net effect: the rim is always at least `rim_min_opacity` opaque, and
+//     climbs above that -- picking up the colour of whatever light is
+//     actually landing on the fragment -- as the scene gets brighter.
 //
 //   * The painting is object-space (see `v_obj_pos`), so the brushwork sticks
 //     to the surface and does not swim when the object moves or when the
@@ -133,8 +144,10 @@ group_uniforms;
 // ---------------------------------------------------------------------------
 // Back rim.  This is a fresnel on the view vector: the surface brightens as it
 // turns away from the camera, which is precisely what happens when a light
-// sits *behind* the subject.  Because it is driven by the view and not by any
-// scene light, it always reads as a back light, whatever the lighting is.
+// sits *behind* the subject.  Its geometry (where it appears) is always
+// view-driven, so it always reads as a rim, whatever the lighting is -- but
+// its opacity and colour now track the light actually hitting the surface
+// (see the fragment()/light() split explained at the top of the file).
 // ---------------------------------------------------------------------------
 group_uniforms BackRim;
 uniform bool rim_enabled = true;
@@ -150,8 +163,16 @@ uniform float rim_softness : hint_range(0.0, 1.0) = 0.12;
 // when a straight-behind light is not what the shot wants.  The underlying
 // fresnel stays view-driven, so this re-aims it without un-behind-ing it.
 uniform float rim_top_bias : hint_range(-1.0, 1.0) = 0.7;
-// Pick up the surface colour in the rim, as if light were bleeding through.
-uniform float rim_albedo_mix : hint_range(0.0, 1.0) = 0.0;
+// The rim's floor: how opaque it stays even where no light reaches the
+// fragment at all (light() never fires there, so this is the only term that
+// can still be showing).  1.0 - this is the extra headroom light() has left
+// to climb toward as the fragment gets brighter.
+uniform float rim_min_opacity : hint_range(0.0, 1.0) = 0.5;
+// How much of the rim's colour comes from the actual light currently hitting
+// the fragment (LIGHT_COLOR * ATTENUATION) versus staying neutral/white so
+// `rim_color` alone shows through.  1.0 = fully take on the real light's
+// colour; 0.0 = ignore it and always use `rim_color` as-is.
+uniform float rim_light_color_mix : hint_range(0.0, 1.0) = 1.0;
 group_uniforms;
 
 // ---------------------------------------------------------------------------
@@ -208,6 +229,34 @@ float toon_ramp(float x, float steps, float softness) {
 	float e = clamp((f - 0.5) / edge + 0.5, 0.0, 1.0);
 	e = e * e * (3.0 - 2.0 * e);
 	return (band + e) / steps;
+}
+
+// The rim's geometry only -- where it appears and how wide/soft it is.
+// Called from both fragment() and light() (see the header comment for why
+// there's no way to compute this once and share it): `dot(NORMAL, VIEW)` is 1
+// when the surface faces the camera and falls to 0 at the silhouette, so the
+// complement is a back light's contribution.
+float compute_rim(vec3 n, vec3 v) {
+	float fresnel = 1.0 - clamp(dot(normalize(n), normalize(v)), 0.0, 1.0);
+
+	// Bias toward the top or bottom of the silhouette before banding, so
+	// the shaping happens on the raw fresnel rather than on the cut edge.
+	if (abs(rim_top_bias) > 0.001) {
+		float up = normalize(v_world_normal).y;
+		fresnel *= clamp(1.0 + rim_top_bias * up, 0.0, 2.0);
+	}
+
+	// Exponential mapping, not linear.  The fresnel rises steeply right at
+	// the silhouette, so on a sphere a linear exponent spends almost the
+	// whole slider on a 1px outline and only becomes a rim light at the
+	// very top of its range.  exp2(3)..exp2(-1) puts "hairline accent" at
+	// one end, "broad wash across the form" at the other, and a real rim
+	// light in the middle.
+	float rim = pow(clamp(fresnel, 0.0, 1.0), exp2(mix(3.0, -1.0, rim_width)));
+
+	float rs = max(rim_softness, 1e-3);
+	rim = smoothstep(0.5 - rs * 0.5, 0.5 + rs * 0.5, rim);
+	return rim;
 }
 
 void vertex() {
@@ -267,33 +316,17 @@ void fragment() {
 		emit *= texture(emission_texture, uv).rgb;
 	}
 
-	// --- Back rim -----------------------------------------------------------
-	// `dot(NORMAL, VIEW)` is 1 when the surface faces the camera and falls to 0
-	// at the silhouette, so the complement is a back light's contribution.
+	// --- Back rim: the floor ------------------------------------------------
+	// This is the ONLY rim term fragment() can write, and it's the ONLY rim
+	// term that still shows where no light reaches the fragment at all (a
+	// fragment with zero lights in range never calls light()).  It therefore
+	// has to stand on its own at exactly `rim_min_opacity`, using the
+	// user-authored `rim_color` since there's no real light to take a colour
+	// from here.  The brightness-driven remainder is added in light() below.
 	if (rim_enabled) {
-		float fresnel = 1.0 - clamp(dot(normalize(NORMAL), normalize(VIEW)), 0.0, 1.0);
-
-		// Bias toward the top or bottom of the silhouette before banding, so
-		// the shaping happens on the raw fresnel rather than on the cut edge.
-		if (abs(rim_top_bias) > 0.001) {
-			float up = normalize(v_world_normal).y;
-			fresnel *= clamp(1.0 + rim_top_bias * up, 0.0, 2.0);
-		}
-
-		// Exponential mapping, not linear.  The fresnel rises steeply right at
-		// the silhouette, so on a sphere a linear exponent spends almost the
-		// whole slider on a 1px outline and only becomes a rim light at the
-		// very top of its range.  exp2(3)..exp2(-1) puts "hairline accent" at
-		// one end, "broad wash across the form" at the other, and a real rim
-		// light in the middle.
-		float rim = pow(clamp(fresnel, 0.0, 1.0), exp2(mix(3.0, -1.0, rim_width)));
-
-		float rs = max(rim_softness, 1e-3);
-		rim = smoothstep(0.5 - rs * 0.5, 0.5 + rs * 0.5, rim);
-
+		float rim = compute_rim(NORMAL, VIEW);
 		vec3 rim_rgb = rim_color.rgb * rim_color.a * rim * rim_strength;
-		rim_rgb *= mix(vec3(1.0), base, rim_albedo_mix);
-		emit += rim_rgb;
+		emit += rim_rgb * rim_min_opacity;
 	}
 
 	EMISSION += emit;
@@ -342,4 +375,52 @@ void light() {
 
 	vec3 f0 = mix(vec3(0.16 * specular * specular), ALBEDO, METALLIC);
 	SPECULAR_LIGHT += f0 * spec * toon_specular_strength * LIGHT_COLOR * ATTENUATION;
+
+	// --- Back rim: the brightness- and colour-reactive part -----------------
+	// `light()` runs once per light influencing this fragment, and
+	// SPECULAR_LIGHT accumulates across all of those calls -- which is exactly
+	// the running "how brightly and with what colour is this fragment
+	// currently lit" total that fragment() has no way to compute on its own.
+	// EMISSION can't be touched from here (only DIFFUSE_LIGHT/SPECULAR_LIGHT/
+	// ALPHA can), so the floor above and this extra both being additive is
+	// what keeps them from fighting: whatever this adds only ever raises the
+	// rim's effective opacity above `rim_min_opacity`, never below it.
+	if (rim_enabled) {
+		float rim = compute_rim(NORMAL, VIEW);
+		if (rim > 0.0001) {
+			// The colour and brightness this specific light is actually
+			// delivering to this fragment right now, post shadow/falloff.
+			vec3 received = LIGHT_COLOR * ATTENUATION;
+
+			// Brightness = strongest channel, not luma: luma weights blue at
+			// ~11%, so a full-strength blue light would barely register.
+			float received_max = max(received.r, max(received.g, received.b));
+			float w = clamp(received_max, 0.0, 1.0);
+
+			// Pure hue of the light (brightest channel == 1), so blue light
+			// gives (0, 0, 1) regardless of how dim the light is.  Brightness
+			// is carried separately by `w`.
+			vec3 hue = received / max(received_max, 1e-4);
+			vec3 tinted = mix(vec3(1.0), hue, rim_light_color_mix);
+
+			vec3 rim_base = rim_color.rgb * rim_color.a * rim * rim_strength;
+
+			// Written to SPECULAR_LIGHT, not DIFFUSE_LIGHT, on purpose: the rim
+			// must depend only on the light received, never on the surface
+			// colour, and specular is added to the output as-is.  The rim colour
+			// is built purely from rim_color and LIGHT_COLOR -- ALBEDO is never
+			// read here, so a blue texture has no effect on it.
+			//
+			// The white floor from fragment() is already in EMISSION and would
+			// wash the colour out, so this term both recolours it and adds the
+			// brightness headroom in one go:
+			//   floor * white  +  w * (tinted - floor)
+			// At w = 1 that is exactly `tinted` at full strength (blue light ->
+			// fully blue rim); at w = 0 (unlit / shadowed) it adds nothing and
+			// the rim stays at the neutral floor.  The subtraction can go
+			// negative on the channels the light lacks -- that is the point,
+			// it cancels the floor's white on those channels.
+			SPECULAR_LIGHT += rim_base * w * (tinted - vec3(rim_min_opacity));
+		}
+	}
 }

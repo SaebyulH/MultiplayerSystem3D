@@ -1,0 +1,15 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://beaehibgow4j2"]
+
+[ext_resource type="Texture2D" uid="uid://c1wbtkvhsvr70" path="res://trenchbroom/textures/Material-LIB/Thatch/Thatch.png" id="1_dc4wj"]
+[ext_resource type="Texture2D" uid="uid://b5scu4gb26t0x" path="res://trenchbroom/textures/Material-LIB/Thatch/Thatch_metallic.png" id="2_e8vra"]
+[ext_resource type="Texture2D" uid="uid://bieyvy3nsjq8s" path="res://trenchbroom/textures/Material-LIB/Thatch/Thatch_normal.png" id="3_6gvyv"]
+[ext_resource type="Texture2D" uid="uid://ufjuhq4h80re" path="res://trenchbroom/textures/Material-LIB/Thatch/Thatch_roughness.png" id="4_yei37"]
+
+[resource]
+albedo_texture = ExtResource("1_dc4wj")
+metallic_specular = 0.0
+metallic_texture = ExtResource("2_e8vra")
+roughness_texture = ExtResource("4_yei37")
+normal_enabled = true
+normal_texture = ExtResource("3_6gvyv")
+texture_filter = 2

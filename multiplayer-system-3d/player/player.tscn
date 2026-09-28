@@ -13,7 +13,7 @@
 [ext_resource type="Script" uid="uid://bk7h6t34yea7r" path="res://player/recoil/recoil.gd" id="14_wodsf"]
 [ext_resource type="Script" uid="uid://3wscq7m2f1x7" path="res://player/camera_3d.gd" id="16_65viv"]
 [ext_resource type="Script" uid="uid://b8qygy7q520a8" path="res://player/animation_tree.gd" id="17_c35mf"]
-[ext_resource type="PackedScene" uid="uid://bpiaawoevyijs" path="res://assets/mannequin/mannequin.tscn" id="18_c35mf"]
+[ext_resource type="PackedScene" uid="uid://bpiaawoevyijs" path="res://assets/character_models/mannequin/mannequin.tscn" id="18_c35mf"]
 [ext_resource type="PackedScene" uid="uid://em68gvqy1f84" path="res://effects/muzzle_flash.tscn" id="27_5ejfk"]
 [ext_resource type="Script" uid="uid://dmbwmsfd27dhh" path="res://player/player_ui.gd" id="34_ge24q"]
 [ext_resource type="Script" uid="uid://hpdd6uclsu15" path="res://components/damage_number_manager.gd" id="35_dmn"]

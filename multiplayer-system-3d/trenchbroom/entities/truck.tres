@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="FuncGodotFGDModelPointClass" format=3 uid="uid://bxv5wfnfobid2"]
+
+[ext_resource type="Script" uid="uid://d1nwwgcrner8b" path="res://addons/func_godot/src/fgd/func_godot_fgd_point_class_display_descriptor.gd" id="1_wwneh"]
+[ext_resource type="PackedScene" uid="uid://b1stq4e4vox5h" path="res://assets/map_models_old/props/truck.tscn" id="2_0krny"]
+[ext_resource type="Script" uid="uid://ldfqjtq0br35" path="res://addons/func_godot/src/fgd/func_godot_fgd_model_point_class.gd" id="2_hj80h"]
+
+[resource]
+script = ExtResource("2_hj80h")
+target_map_editor = 1
+models_sub_folder = "trenchbroom/models"
+scale_expression = "{{ scale == undefined -> 32, scale * 32 }}"
+rotation_offset = Vector3(0, 180, 0)
+scene_file = ExtResource("2_0krny")
+classname = "Truck"
+description = "Truck - static prop with collision"
+class_properties = Dictionary[String, Variant]({
+"mangle": "0 0 0",
+"scale": 1.0
+})
+class_property_descriptions = Dictionary[String, Variant]({
+"mangle": "Pitch Yaw Roll",
+"scale": "Scale multiplier"
+})
+meta_properties = Dictionary[String, Variant]({
+"color": Color(0.8, 0.8, 0.8, 1),
+"model": "{\"path\": \"trenchbroom/models/Truck.glb\", \"scale\": {{ scale == undefined -> 32, scale * 32 }} }",
+"size": AABB(-92, -32, -43, 92, 32, 34)
+})
+metadata/_custom_type_script = "uid://ldfqjtq0br35"

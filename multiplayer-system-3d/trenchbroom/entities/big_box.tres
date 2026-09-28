@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="FuncGodotFGDModelPointClass" format=3 uid="uid://crlirgc6sep16"]
+
+[ext_resource type="Script" uid="uid://d1nwwgcrner8b" path="res://addons/func_godot/src/fgd/func_godot_fgd_point_class_display_descriptor.gd" id="1_dscpt"]
+[ext_resource type="PackedScene" uid="uid://y0n1axtg4s2c" path="res://assets/props/FreeStylized/big_box.tscn" id="2_scene"]
+[ext_resource type="Script" uid="uid://ldfqjtq0br35" path="res://addons/func_godot/src/fgd/func_godot_fgd_model_point_class.gd" id="3_mpc"]
+
+[resource]
+script = ExtResource("3_mpc")
+target_map_editor = 1
+models_sub_folder = "trenchbroom/models"
+scale_expression = "{{ scale == undefined -> 32, scale * 32 }}"
+rotation_offset = Vector3(0, 180, 0)
+scene_file = ExtResource("2_scene")
+classname = "BigBox"
+description = "BigBox"
+class_properties = Dictionary[String, Variant]({
+"mangle": "0 0 0",
+"scale": 1.0
+})
+class_property_descriptions = Dictionary[String, Variant]({
+"mangle": "Pitch Yaw Roll",
+"scale": "Scale multiplier"
+})
+meta_properties = Dictionary[String, Variant]({
+"color": Color(0.8, 0.8, 0.8, 1),
+"model": "{\"path\": \"trenchbroom/models/BigBox.glb\", \"scale\": {{ scale == undefined -> 32, scale * 32 }} }",
+"size": AABB(-19, -20, -1, 19, 20, 38)
+})
+metadata/_custom_type_script = "uid://ldfqjtq0br35"

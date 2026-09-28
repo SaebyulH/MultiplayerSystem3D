@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="Character" format=3 uid="uid://cmbd1xh1wwo7d"]
+[gd_resource type="Resource" script_class="Character" format=3 uid="uid://cb1fsud2ejqgb"]
 
-[ext_resource type="PackedScene" uid="uid://cinsq1lv1jv" path="res://assets/character_models/characters/flier.tscn" id="1_1m2t5"]
+[ext_resource type="PackedScene" uid="uid://cinsq1lv1jv" path="res://assets/character_models/character_scenes/flier.tscn" id="1_1m2t5"]
 [ext_resource type="Script" uid="uid://bxv3anwekoggx" path="res://player/character.gd" id="1_char"]
 [ext_resource type="Script" uid="uid://nwsvfqljwb2b" path="res://player/abilities/ability.gd" id="1_ckkow"]
 [ext_resource type="AudioStream" uid="uid://c4hcib02wpb8t" path="res://assets/sounds/flier_death.mp3" id="2_kaefc"]

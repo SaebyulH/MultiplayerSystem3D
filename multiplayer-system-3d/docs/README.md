@@ -13,6 +13,7 @@ Class-based team FPS (TF2-style hero shooter) on **Godot 4.7** (Forward Plus, Jo
 | 3 | [`03-event-flow.md`](03-event-flow.md) | `NetworkEvents`/`NetworkTime` lifecycle, connection ordering invariants, teardown/re-host | anything about connect/disconnect, re-host, the "movement died" bug |
 | 4 | [`04-optimization.md`](04-optimization.md) | Performance model, hot paths, patterns to avoid | anything touching `_process`/`_physics_process`/`_rollback_tick` or spawning effects |
 | 5 | [`05-known-issues.md`](05-known-issues.md) | High-signal TODO backlog (perf bugs, correctness fragilities), severity-ranked | triage before starting any perf/bug work; add entries here when you introduce risk |
+| 6 | [`06-trenchbroom-entities.md`](06-trenchbroom-entities.md) | The `trenchbroom/` func_godot pipeline: the entity folder system, FGD export, models, rotation | anything about map authoring, `trenchbroom/entities/*`, or a prop entity placed in TrenchBroom |
 
 ## Contribution rule (binding)
 
@@ -23,6 +24,7 @@ Class-based team FPS (TF2-style hero shooter) on **Godot 4.7** (Forward Plus, Jo
 - If you change connection/teardown/re-host → update `03-event-flow.md`.
 - If you add or touch a per-frame / per-shot hot path → update `04-optimization.md`.
 - If you introduce (or find) a bug, fragility, or perf risk → **add a TODO to `05-known-issues.md`** with file:line, symptom, and a suggested fix. Even if you don't fix it, record it.
+- If you change the map-authoring pipeline (`trenchbroom/`, entity definitions, the FGD, `FuncGodotMap`) → update `06-trenchbroom-entities.md`.
 
 Treat a missing doc update as an incomplete change.
 
