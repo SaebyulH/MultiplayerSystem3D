@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="MapData" format=3 uid="uid://cbtiawjirdl1i"]
+
+[ext_resource type="Texture2D" uid="uid://cqlexmw0k7h8d" path="res://map_thumbnails/death_stairs.png" id="1_7cwi7"]
+[ext_resource type="Script" uid="uid://bo6nug35cwptb" path="res://maps/map_data.gd" id="2_ujaid"]
+
+[resource]
+script = ExtResource("2_ujaid")
+display_name = "death_mountain"
+map_scene_path = "uid://d3yo13h36iexl"
+map_image = ExtResource("1_7cwi7")
+game_mode = 5

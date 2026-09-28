@@ -1,0 +1,14 @@
+[remap]
+
+importer="func_godot.map"
+type="Resource"
+uid="uid://hdenj5xsw1lh"
+path="res://.godot/imported/brickstairs.map-b997b4f684faf43354a852b6bc48422a.tres"
+
+[deps]
+
+source_file="res://trenchbroom/maps/brickstairs.map"
+dest_files=["res://.godot/imported/brickstairs.map-b997b4f684faf43354a852b6bc48422a.tres"]
+
+[params]
+
