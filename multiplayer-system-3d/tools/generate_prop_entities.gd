@@ -10,18 +10,25 @@ extends Node
 ## hand-tuned work survives (`Truck`'s authored size, `mannequin`'s static-bake pointer,
 ## `test.tres`). To regenerate one, delete its `.tres` and re-run.
 ##
-## It does **not** export. `tools/export_trenchbroom_fgd.tscn` stays the step that
-## validates — a generator that also published would hide its own mistakes.
+## It finishes by exporting, which is the same call the **Export GameConfig** tool button
+## on `trenchbroom_config.tres` makes — so one command covers the whole round trip:
+## scan -> create -> register -> publish.
+##
+## Note that means it publishes without validating. `tools/export_trenchbroom_fgd.tscn`
+## is still the thing that asserts bounds, registration and the scale expression, and it
+## is worth running after any hand-edit to an entity — the generator's own output is the
+## part least likely to surprise it.
 ##
 ## HOW TO USE:
 ##   "C:/tools/godot/godot_console.exe" --path . --headless res://tools/generate_prop_entities.tscn
 ##
-## Exits non-zero if an entity could not be written.
+## Exits non-zero if an entity could not be written or the export failed.
 
 const PROPS_DIR := "res://assets/props/"
 const ENTITIES_DIR := "res://trenchbroom/entities/"
 const DISPLAY_DIR := "res://trenchbroom/models/"
 const FGD_PATH := "res://trenchbroom/entities/multiplayer_system_3d_fgd.tres"
+const GAME_CONFIG_PATH := "res://trenchbroom/trenchbroom_config.tres"
 
 ## Anything that imports as a `PackedScene` can be a prop source.
 const MODEL_EXTENSIONS := ["glb", "gltf", "fbx", "obj", "dae", "tscn"]
@@ -70,6 +77,7 @@ func _ready() -> void:
 	# mirror the folder, or deleting an entity's `.tres` leaves the FGD referencing a file
 	# that no longer exists.  Rebuilt sorted and deduped, so the result is reproducible.
 	_rewrite_definitions()
+	await _export()
 
 	print("---")
 	print("%d model(s) scanned, %d entity(s) created" % [models.size(), created])
@@ -367,6 +375,28 @@ func _rewrite_definitions() -> void:
 
 	if _write(FGD_PATH, text):
 		print("wrote %s — %d entity definition(s)" % [FGD_PATH, files.size()])
+
+
+## The **Export GameConfig** tool button on `trenchbroom_config.tres` is nothing more than
+## `TrenchBroomGameConfig.export_file()` — that one call writes the icon, `GameConfig.cfg`
+## and the FGD.  Called from here rather than reimplemented, so the button and this script
+## can never drift apart.
+func _export() -> void:
+	var config := load(GAME_CONFIG_PATH) as TrenchBroomGameConfig
+	if config == null:
+		_failures += 1
+		printerr("FAIL: could not load %s — nothing exported" % GAME_CONFIG_PATH)
+		return
+
+	config.export_file()
+
+	# The FGD's `_generate_model()` saves each ModelPointClass's display `.glb` through a
+	# `call_deferred`, so the process has to survive a few idle frames for those files to
+	# reach disk before it quits.
+	for _i in 4:
+		await get_tree().process_frame
+
+	print("exported GameConfig.cfg + FGD (as the Export GameConfig button does)")
 
 
 func _header_uid(path: String) -> String:

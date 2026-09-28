@@ -52,17 +52,25 @@ checklist below — every setting, the computed `size`, the rigged-model bake, a
 2. ```
    "C:/tools/godot/godot_console.exe" --path . --headless res://tools/generate_prop_entities.tscn
    ```
-3. Re-export and check:
-   ```
-   "C:/tools/godot/godot_console.exe" --path . --headless res://tools/export_trenchbroom_fgd.tscn
-   ```
-4. Reload the game config in TrenchBroom.
+3. Reload the game config in TrenchBroom.
+
+**Step 2 exports as well as generates.** It finishes by calling
+`TrenchBroomGameConfig.export_file()` on `trenchbroom_config.tres` — the identical call the
+**Export GameConfig** tool button makes — so one command covers the whole round trip: scan → create →
+register → publish, writing `icon.png`, `GameConfig.cfg` and the FGD.
 
 It is **create-missing-only**: an existing `.tres` is never rewritten, so hand-tuned entities survive.
 To regenerate one, delete its `.tres` and re-run. It always rebuilds `entity_definitions` from the
 folder — sorted, deduped, uids preserved — so deleting an entity's `.tres` removes it from the FGD
-too. It never exports; the harness stays the step that validates, because a generator that also
-published would hide its own mistakes.
+too.
+
+Because it publishes, it does **not** validate. `tools/export_trenchbroom_fgd.tscn` is still what
+asserts registration, bounds and the scale expression — run it after any hand-edit to an entity, and
+whenever you want the round-trip check:
+
+```
+"C:/tools/godot/godot_console.exe" --path . --headless res://tools/export_trenchbroom_fgd.tscn
+```
 
 ### Generated props have no collision — they are visual only
 
