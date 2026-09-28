@@ -1,0 +1,14 @@
+[remap]
+
+importer="func_godot.map"
+type="Resource"
+uid="uid://bnd4sg37u066k"
+path="res://.godot/imported/texturestairs.map-9376424f03965c6de2ff9666200905b6.tres"
+
+[deps]
+
+source_file="res://trenchbroom/maps/texturestairs.map"
+dest_files=["res://.godot/imported/texturestairs.map-9376424f03965c6de2ff9666200905b6.tres"]
+
+[params]
+
