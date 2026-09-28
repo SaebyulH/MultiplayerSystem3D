@@ -395,10 +395,10 @@ func load_match_map(map_path: String) -> void:
 	sp.add_child(new_map)
 
 	# Respawn existing players on the new map (after it exists so
-	# _get_spawn_position() finds it).
+	# _get_spawn_transform() finds it).
 	for child in sp.get_children():
 		if child is Player:
-			child.rpc_reset.rpc(child._get_spawn_position())
+			child.rpc_reset.rpc(child._get_spawn_transform())
 
 
 # ─────────────────────────────────────────────

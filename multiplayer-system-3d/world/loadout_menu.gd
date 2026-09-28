@@ -941,7 +941,7 @@ func _request_loadout(tpid: String, pp: String, sp: String, mp: String, team: Pl
 	player._loadout_class_path = class_path
 	player.set_randomize_on_death(rand_on_death)
 	_apply_loadout.rpc(tpid, pp, sp, mp, team, cp)
-	player.rpc_reset.rpc(player._get_spawn_position())
+	player.rpc_reset.rpc(player._get_spawn_transform())
 
 @rpc("authority", "call_remote", "reliable")
 func _apply_loadout(tpid: String, pp: String, sp: String, mp: String, team: Player.Team, cp: String = "") -> void:

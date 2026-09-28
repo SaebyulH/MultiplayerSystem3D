@@ -516,3 +516,24 @@ rigged model is the cause.
 | `Truck` | `assets/map_models/props/truck.tscn` (CSG, `use_collision = true`) | generated | `mangle` | `scale` |
 | `Forklift` | `assets/props/forklift.glb` | generated | `mangle` | `scale` |
 | `mannequin` | `assets/mannequin/mannequin.glb` (rigged) | static bake — see above | `mangle` | `scale` |
+| `PlayerSpawn` | `world/special_entities/player_spawn.tscn` | static bake (the mannequin) | `mangle` | — |
+
+`Truck` and `PlayerSpawn` are **hand-authored** — the generator only covers `assets/props/`, and
+`PlayerSpawn` is a scene under `world/`. `PlayerSpawn` takes no `scale`: it is a spawn point, not a
+prop, and the harness only requires the keys an entity actually declares.
+
+Its `mangle` sets **which way the player faces on spawn** — `Map.get_random_spawn_transform()` reads
+the built marker's yaw, `rpc_reset()` carries it as a `Transform3D`, and the player's body is turned
+to match. Rotating the entity in TrenchBroom rotates the preview mannequin to match, so what a mapper
+aims is what a player gets.
+
+Its one property is `team`, a `choices` list (`SPI (red)` 0 / `SCI (blue)` 1 / `Any` 2, default
+`Any`) that `auto_apply_to_matching_node_properties` pushes onto the built node's exported `team`.
+`Map._enter_tree()` reads it to route the spawn into a pool. A spawn is identified by **type, not by
+name**: the scan keeps every `PlayerSpawn` it finds (recursively, since func_godot nests entities
+under `FuncGodotMap`) and takes the pool from `team` alone, so renaming one cannot move it between
+pools. Anything that is not a `PlayerSpawn` is ignored — a bare `Marker3D` named "…spawn…" is no
+longer a spawn at all; the old name rules (`spi`/`sci` in the name) are gone.
+
+The enum values must stay in step with that `choices` list — the enum lives on
+`world/special_entities/player_spawn.gd`.

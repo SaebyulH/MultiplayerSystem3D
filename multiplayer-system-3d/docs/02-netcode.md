@@ -73,7 +73,18 @@ Also excluded: the local ability-staging vars `queued_charge_trigger_dir` / `que
 
 ### Determinism hazard (the single most fragile assumption)
 
-Movement direction is **camera-relative** but the camera's basis is **not** rollback-synced. `_apply_movement_from_input` derives `forward`/`right` from `_movement_basis()` (`player.gd:1493`, and `_movement_basis` at `1864-1867` reads the local `camera` or `third_person_camera`). Dash, charge, and bashdown directions use the same basis. Body yaw/pitch are set **only** on the authority via mouse-look (`player/body.gd:26-57`), and there is a commented-out `sync_rotation` RPC (`body.gd:59-68`) — so body/camera orientation is neither rollback state nor replicated.
+Movement direction is **camera-relative** but the camera's basis is **not** rollback-synced. `_apply_movement_from_input` derives `forward`/`right` from `_movement_basis()` (`player.gd:1493`, and `_movement_basis` at `1864-1867` reads the local `camera` or `third_person_camera`). Dash, charge, and bashdown directions use the same basis. Body yaw/pitch are set **only** on the authority via mouse-look (`player/body.gd:26-57`), and there is a commented-out `sync_rotation` RPC (`body.gd:59-68`) — so body/camera orientation is not rollback state.
+
+**Correction (2026-09-28): it is replicated, though** — the `MultiplayerSynchronizer` on `Body`
+(`player.tscn:529`) carries `.:rotation`, `Recoil/Head:rotation` and `WeaponTilt:rotation`
+(`SceneReplicationConfig_kb6p2`, `player.tscn:50-59`), all with `spawn = true`. An earlier revision
+of this file said "nor replicated", and that was wrong.
+
+That distinction is what lets spawn facing work: `rpc_reset` carries a `Transform3D`, and the yaw is
+written to `body.rotation.y` once in `_physics_process`, deliberately **not** in `_rollback_tick` —
+body yaw is not rollback state, so it needs no re-deriving on re-simulation, and writing it there
+would have every peer fight its own synchronizer. The hazard below is unchanged: the replicated yaw
+can still be a step behind the authority's, which is the staleness described next.
 
 On remote peers the camera basis for that player's copy is stale, so camera-relative movement (and especially dash/charge direction) can diverge from the authority's simulation. The server is the rollback state authority, so corrections snap any drift — but this is the deepest determinism assumption in the project. **TODO in `05-known-issues.md`.**
 

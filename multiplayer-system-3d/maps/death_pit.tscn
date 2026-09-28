@@ -4,6 +4,7 @@
 [ext_resource type="Texture2D" uid="uid://c4ln0bpu3tmo3" path="res://assets/environment/kloppenheim_06_puresky_4k.exr" id="2_w84cf"]
 [ext_resource type="Script" uid="uid://ccrf5bdka2m35" path="res://player/auto_projectile_spawner.gd" id="4_d2smp"]
 [ext_resource type="Script" uid="uid://r6rneeolnvra" path="res://components/game_mode_component.gd" id="5_w6djt"]
+[ext_resource type="PackedScene" uid="uid://capfpmiollt7e" path="res://world/special_entities/player_spawn.tscn" id="99_spawn"]
 
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_wnf2b"]
 panorama = ExtResource("2_w84cf")
@@ -33,20 +34,25 @@ despawn_location = NodePath("Despawn")
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=765331845]
 environment = SubResource("Environment_yhcpw")
 
-[node name="SCI Spawn Location" type="Marker3D" parent="." unique_id=908470764]
-transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 17.896873, -0.686687, 4.550232)
+[node name="SCI Spawn Location" parent="." unique_id=908470764 instance=ExtResource("99_spawn")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17.896873, -0.686687, 4.550232)
+team = 1
 
-[node name="SCI Spawn Location2" type="Marker3D" parent="." unique_id=632002273]
-transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 12.178015, -0.686687, 4.782202)
+[node name="SCI Spawn Location2" parent="." unique_id=632002273 instance=ExtResource("99_spawn")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.178015, -0.686687, 4.782202)
+team = 1
 
-[node name="SCI Spawn Location3" type="Marker3D" parent="." unique_id=962193450]
-transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, -11.083165, -0.686687, 5.083704)
+[node name="SCI Spawn Location3" parent="." unique_id=962193450 instance=ExtResource("99_spawn")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.083165, -0.686687, 5.083704)
+team = 1
 
-[node name="SCI Spawn Location4" type="Marker3D" parent="." unique_id=1069561229]
-transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, -17.158611, -0.686687, 5.253107)
+[node name="SCI Spawn Location4" parent="." unique_id=1069561229 instance=ExtResource("99_spawn")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17.158611, -0.686687, 5.253107)
+team = 1
 
-[node name="SCI Spawn Location5" type="Marker3D" parent="." unique_id=275038284]
-transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 8.094536, -0.6866889, -16.23564)
+[node name="SCI Spawn Location5" parent="." unique_id=275038284 instance=ExtResource("99_spawn")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.094536, -0.6866889, -16.23564)
+team = 1
 
 [node name="Despawn" type="Marker3D" parent="." unique_id=1311557604]
 transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, -2.797104, -53.386234, 17.53489)

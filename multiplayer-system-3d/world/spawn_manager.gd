@@ -190,8 +190,8 @@ func _apply_bot_loadout_with(entity_id: String, character: Character, bot_class:
 	if character:
 		player.set_character(character)
 
-	var spawn_pos: Vector3 = player._get_spawn_position()
-	player.rpc_reset.rpc(spawn_pos)
+	var spawn_tf: Transform3D = player._get_spawn_transform()
+	player.rpc_reset.rpc(spawn_tf)
 
 	return {
 		"character_path": character.resource_path if character else "",
@@ -219,8 +219,8 @@ func _apply_saved_bot_loadout(entity_id: String, entry: Dictionary) -> void:
 	if character:
 		player.set_character(character)
 
-	var spawn_pos: Vector3 = player._get_spawn_position()
-	player.rpc_reset.rpc(spawn_pos)
+	var spawn_tf: Transform3D = player._get_spawn_transform()
+	player.rpc_reset.rpc(spawn_tf)
 
 
 func _apply_bot_weapons(player: Player, primary: Weapon, secondary: Weapon, melee: Weapon) -> void:

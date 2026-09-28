@@ -11,7 +11,7 @@
 script = ExtResource("6_lhd7s")
 game_name = "MultiplayerSystem3D"
 textures_root_folder = "trenchbroom/textures"
-texture_exclusion_patterns = Array[String](["*_albedo", "*_ao", "*_emission", "*_height", "*_metallic", "*_normal", "*_orm", "*_roughness", "*_sss", "*albedo*", "*metallic*", "*roughness*", "*normal*"])
+texture_exclusion_patterns = Array[String](["*_albedo", "*_ao", "*_emission", "*_height", "*_metallic", "*_normal", "*_orm", "*_roughness", "*_sss", "*albedo*", "*metallic*", "*roughness*", "*normal*", "*height*", "*ambientocclusion*"])
 palette_path = "trenchbroom/textures/palette.lmp"
 fgd_file = ExtResource("4_xdkvf")
 default_uv_scale = Vector2(0.063, 0.063)

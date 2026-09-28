@@ -4,6 +4,8 @@
 [ext_resource type="CompressedTexture3D" uid="uid://gj7tu2wrtw4l" path="res://assets/environment/True Cinematic.cube-s33.png" id="2_bjhbo"]
 [ext_resource type="Texture2D" uid="uid://c4ln0bpu3tmo3" path="res://assets/environment/kloppenheim_06_puresky_4k.exr" id="2_elc4j"]
 [ext_resource type="VoxelGIData" uid="uid://d342skpy3bpcs" path="res://maps/voxel_GI/underground.VoxelGI_data.res" id="3_w84c5"]
+[ext_resource type="PackedScene" uid="uid://capfpmiollt7e" path="res://world/special_entities/player_spawn.tscn" id="99_spawn"]
+
 
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_w84c5"]
 panorama = ExtResource("2_elc4j")
@@ -50,11 +52,13 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.741928, 16.783552, 0.16792
 size = Vector3(155.91699, 44.23074, 41.48047)
 data = ExtResource("3_w84c5")
 
-[node name="Spawn Location 1" type="Marker3D" parent="." unique_id=459523118]
+[node name="Spawn Location 1" parent="." unique_id=459523118 instance=ExtResource("99_spawn")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -48.132137, 5.726851, 9.652053)
+team = 2
 
-[node name="Spawn Location 2" type="Marker3D" parent="." unique_id=1865176421]
+[node name="Spawn Location 2" parent="." unique_id=1865176421 instance=ExtResource("99_spawn")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 47.12688, 7.300351, 9.580237)
+team = 2
 
 [node name="CSGCombiner3D2" type="CSGCombiner3D" parent="." unique_id=380105345]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.6160278, -6, -11.375907)

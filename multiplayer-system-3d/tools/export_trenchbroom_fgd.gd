@@ -34,7 +34,7 @@ func _ready() -> void:
 	# `entity_definitions` is invisible to TrenchBroom *and* rebuilds as a Marker3D
 	# (#60), and a hand-maintained list is exactly what gets forgotten when one is added.
 	var definitions := fgd.get_entity_definitions()
-	var checked: Array[String] = []
+	var checked: Dictionary = {}
 	for path in _entity_files():
 		var definition := load(path) as FuncGodotFGDEntityClass
 		if definition == null:
@@ -43,7 +43,7 @@ func _ready() -> void:
 			continue
 		if definitions.has(definition.classname):
 			print("ok   registered: %s" % definition.classname)
-			checked.append(definition.classname)
+			checked[definition.classname] = definition
 		else:
 			_failures += 1
 			printerr("FAIL: %s is not in entity_definitions — it would build as a Marker3D" % definition.classname)
@@ -234,7 +234,7 @@ func _check_bounds(classname: String, block: String, rotatable: bool) -> void:
 ## block carries the tokens it needs.  The classname is read back out of the block
 ## (`... = Truck : "..."`) rather than assumed from the expected list, so a block
 ## that failed to generate is reported as missing instead of silently matching.
-func _check_file(path: String, classnames: Array[String]) -> void:
+func _check_file(path: String, checked: Dictionary) -> void:
 	if not FileAccess.file_exists(path):
 		_failures += 1
 		printerr("FAIL: %s was not written" % path)
@@ -249,13 +249,25 @@ func _check_file(path: String, classnames: Array[String]) -> void:
 		if not classname.is_empty():
 			blocks[classname] = block
 
-	for classname in classnames:
+	for classname in checked:
+		var definition: FuncGodotFGDEntityClass = checked[classname]
 		if not blocks.has(classname):
 			_failures += 1
 			printerr("FAIL: no @PointClass for %s in the exported FGD" % classname)
 			continue
+
+		# `model(` and `size(` are on every point entity.  `mangle(`/`scale(` are not:
+		# the spawn carries neither, so expecting them universally would fail on correct
+		# output.  Take the expectation from the definition's own class properties.
+		var has_scale: bool = definition.class_properties.has("scale")
+		var tokens: Array[String] = ["model(", "size("]
+		if definition.class_properties.has("mangle"):
+			tokens.append("mangle(")
+		if has_scale:
+			tokens.append("scale(")
+
 		var missing := PackedStringArray()
-		for token in ["model(", "size(", "mangle(", "scale("]:
+		for token in tokens:
 			if not blocks[classname].contains(token):
 				missing.append(token)
 		if missing.is_empty():
@@ -264,26 +276,24 @@ func _check_file(path: String, classnames: Array[String]) -> void:
 			_failures += 1
 			printerr("FAIL: %s is missing %s in the exported FGD" % [classname, ", ".join(missing)])
 
+		if has_scale:
+			if blocks[classname].contains("scale(float)"):
+				print("ok   scale key: %s declares a numeric scale" % classname)
+			else:
+				_failures += 1
+				printerr("FAIL: %s does not declare scale as a float — an unset scale leaves the prop undrawn" % classname)
+
+			# The scale expression must carry a branch that does not need the property.
+			# The entity browser evaluates model expressions with no entity behind them,
+			# so a form that *requires* the property leaves the thumbnail blank — and so
+			# does a freshly placed prop before its `scale` is touched (#65, #4253).
+			if blocks[classname].contains("scale == undefined -> 32"):
+				print("ok   fallback: %s scale expression has a property-free branch" % classname)
+			else:
+				_failures += 1
+				printerr("FAIL: %s has no property-free scale branch — its preview will not draw" % classname)
+
 		# `mangle(` contains `angle(`, so this one test covers all three rotation
 		# spellings; an entity with no rotation property is only checked for the
 		# origin-inside-bounds rule.
 		_check_bounds(classname, blocks[classname], blocks[classname].contains("angle("))
-
-		# `scale` has to be numeric.  As a string TrenchBroom leaves it unset on a newly
-		# placed entity, and an unset property makes the config's scale expression
-		# evaluate to nothing — the prop simply does not draw.
-		if blocks[classname].contains("scale(float)"):
-			print("ok   scale key: %s declares a numeric scale" % classname)
-		else:
-			_failures += 1
-			printerr("FAIL: %s does not declare scale as a float — an unset scale leaves the prop undrawn" % classname)
-
-		# Every entity's model map must carry a branch that does not need the property.
-		# The entity browser evaluates model expressions with no entity behind them, so a
-		# form that *requires* the property leaves the thumbnail blank — and so does a
-		# freshly placed prop before its `scale` is touched.  `TrenchBroom/TrenchBroom` #4253.
-		if blocks[classname].contains("scale == undefined -> 32"):
-			print("ok   fallback: %s scale expression has a property-free branch" % classname)
-		else:
-			_failures += 1
-			printerr("FAIL: %s has no property-free scale branch — its preview will not draw" % classname)

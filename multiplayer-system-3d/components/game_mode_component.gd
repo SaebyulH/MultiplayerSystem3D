@@ -381,7 +381,7 @@ func _start_new_round() -> void:
 	_rpc_set_rounds_to_win.rpc(_effective_rounds_to_win())
 	for child in GameManager.spawn_parent.get_children():
 		if child is Player:
-			child.rpc_reset.rpc(child._get_spawn_position())
+			child.rpc_reset.rpc(child._get_spawn_transform())
 
 	match game_mode:
 		GameMode.ESCORT:

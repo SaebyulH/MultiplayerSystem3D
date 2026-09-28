@@ -1,0 +1,8 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://ccmemdvuyxh4k"]
+
+[ext_resource type="Texture2D" uid="uid://dtp3jla8qmhc" path="res://trenchbroom/textures/Material-LIB/MedievalTiles/MedievalTiles[Green].png" id="1_mw06e"]
+
+[resource]
+albedo_texture = ExtResource("1_mw06e")
+metallic_specular = 0.0
+texture_filter = 2

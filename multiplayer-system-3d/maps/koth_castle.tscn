@@ -22,6 +22,7 @@
 [ext_resource type="PackedScene" uid="uid://ckqbalqesms6g" path="res://assets/modular/architecture/Stairs_Railing_8x16x8.glb" id="19_7amg6"]
 [ext_resource type="VoxelGIData" uid="uid://d2ut5lwjswndo" path="res://maps/voxel_GI/koth_castle.VoxelGI_data.res" id="20_4rt7s"]
 [ext_resource type="Script" uid="uid://b4as4sku6aydp" path="res://components/material_replacer.gd" id="21_matrep"]
+[ext_resource type="PackedScene" uid="uid://capfpmiollt7e" path="res://world/special_entities/player_spawn.tscn" id="99_spawn"]
 
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_wnf2b"]
 panorama = ExtResource("2_ebs18")
@@ -51,11 +52,13 @@ despawn_location = NodePath("Despawn")
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=765331845]
 environment = SubResource("Environment_yhcpw")
 
-[node name="SCI Spawn Location" type="Marker3D" parent="." unique_id=908470764]
-transform = Transform3D(-0.4330127, -0.21650639, 0.125, 0, 0.24999999, 0.43301272, -0.25000003, 0.375, -0.21650633, -33, 3, 49)
+[node name="SCI Spawn Location" parent="." unique_id=908470764 instance=ExtResource("99_spawn")]
+transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, -33, 3, 49)
+team = 1
 
-[node name="SPI Spawn Location" type="Marker3D" parent="." unique_id=235155852]
+[node name="SPI Spawn Location" parent="." unique_id=235155852 instance=ExtResource("99_spawn")]
 transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 40, 4, -48)
+team = 0
 
 [node name="Despawn" type="Marker3D" parent="." unique_id=1311557604]
 transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, -2.797104, -53.386234, 17.53489)

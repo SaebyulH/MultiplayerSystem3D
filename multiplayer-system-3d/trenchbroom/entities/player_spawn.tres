@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="FuncGodotFGDPointClass" format=3 uid="uid://dtjbel6rpg137"]
+
+[ext_resource type="Script" uid="uid://cxsqwtsqd8w33" path="res://addons/func_godot/src/fgd/func_godot_fgd_point_class.gd" id="1_pntcl"]
+[ext_resource type="PackedScene" uid="uid://capfpmiollt7e" path="res://world/special_entities/player_spawn.tscn" id="2_scene"]
+[ext_resource type="Script" uid="uid://d1nwwgcrner8b" path="res://addons/func_godot/src/fgd/func_godot_fgd_point_class_display_descriptor.gd" id="3_dscpt"]
+
+[sub_resource type="Resource" id="Resource_display"]
+script = ExtResource("3_dscpt")
+display_asset_path = "\"trenchbroom/models/mannequin_static.glb\""
+scale = "{{ scale == undefined -> 32, scale * 32 }}"
+
+[resource]
+script = ExtResource("1_pntcl")
+scene_file = ExtResource("2_scene")
+display_descriptors = Array[ExtResource("3_dscpt")]([SubResource("Resource_display")])
+classname = "PlayerSpawn"
+description = "Player spawn point - pick the team it feeds"
+class_properties = Dictionary[String, Variant]({
+"mangle": "0 0 0",
+"team": {
+"Any": 2,
+"SCI (blue)": 1,
+"SPI (red)": 0
+}
+})
+class_property_descriptions = Dictionary[String, Variant]({
+"mangle": "Pitch Yaw Roll - yaw is which way the player faces on spawn",
+"team": ["Team", 2]
+})
+auto_apply_to_matching_node_properties = true
+meta_properties = Dictionary[String, Variant]({
+"color": Color(0.8, 0.8, 0.8, 1),
+"model": "{ \"path\": \"trenchbroom/models/mannequin_static.glb\", \"scale\": {{ scale == undefined -> 32, scale * 32 }} }",
+"size": AABB(-7, -15, -2, 7, 15, 58)
+})
+metadata/_custom_type_script = "uid://cxsqwtsqd8w33"

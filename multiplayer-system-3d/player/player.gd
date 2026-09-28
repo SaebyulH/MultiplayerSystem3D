@@ -309,15 +309,19 @@ var _footstep_sounds: Array[AudioStream] = [
 var _footstep_timer: float = FOOTSTEP_INTERVAL
 
 # ── Respawn state ─────────────────────────────────
-# Persistent across rollback: _spawn_pending_position is NOT consumed inside
+# Persistent across rollback: _spawn_pending_transform is NOT consumed inside
 # _rollback_tick, so re-simulations of death/respawn ticks always see it.
 # It is consumed only in _physics_process (real frames only).
-var _spawn_pending_position: Vector3 = Vector3.ZERO
+#
+# A Transform3D rather than a Vector3 because a spawn marker also carries a FACING.
+# The basis is a pure yaw — `Map.get_random_spawn_transform()` builds it from the
+# marker's yaw alone, so no marker scale can leak onto the player.
+var _spawn_pending_transform: Transform3D = Transform3D()
 var spawned := false
 
 # ── Pinned-by-charge state ────────────────────────
 # Set via RPC by the charger and read inside _rollback_tick (like
-# _spawn_pending_position, it persists across re-simulation).  While
+# _spawn_pending_transform, it persists across re-simulation).  While
 # pinned_charger_name is set, the player follows that charger every tick.
 var pinned_charger_name: String = ""
 var pinned_offset: Vector3 = Vector3.ZERO
@@ -327,7 +331,7 @@ var pinned_at_wall: bool = false
 
 # ── Size change (SizeChangeEffect) state ───────────
 # Persistent across rollback: set via RPC by SizeChangeEffect and read inside
-# _rollback_tick (like _spawn_pending_position, it persists across re-simulation).
+# _rollback_tick (like _spawn_pending_transform, it persists across re-simulation).
 # Scaling the root node directly would be overwritten by netfox's rollback state
 # (global_transform), so the scale is re-derived from this multiplier every tick.
 # 1.0 = normal, > 1.0 = enlarged, < 1.0 = shrunk.
@@ -493,19 +497,25 @@ func _ready() -> void:
 func _health_changed():
 	pass
 
-func _get_spawn_position() -> Vector3:
+## Where this player should respawn, and which way it should face — both come from the
+## same spawn marker, so a mapper can aim a spawn by rotating it.
+##
+## Every caller passes the result straight to `rpc_reset`, which is why this carries a
+## transform rather than a bare position.
+func _get_spawn_transform() -> Transform3D:
 	for node in GameManager.spawn_parent.get_children():
 		if node is Map:
-			return node.get_random_spawn_location(team)
-	return Vector3.ZERO
+			return node.get_random_spawn_transform(team)
+	return Transform3D()
 
 @rpc("any_peer", "call_local")
-func rpc_reset(pos: Vector3) -> void:
+func rpc_reset(transform: Transform3D) -> void:
 	despawn()
 	respawn_timer = respawn_time
-	if pos == Vector3.ZERO:
-		pos = Vector3(0, 12, 0)
-	_spawn_pending_position = pos
+	var spawn := transform
+	if spawn.origin == Vector3.ZERO:
+		spawn = Transform3D(Basis.IDENTITY, Vector3(0, 12, 0))
+	_spawn_pending_transform = spawn
 	velocity = Vector3.ZERO
 	knockback_velocity = Vector3.ZERO
 	_reset_movement_tech()
@@ -709,7 +719,7 @@ func no_health() -> void:
 			status_effect_manager.clear_all_effects()
 		var death_impulse := attribute_component.last_hit_direction * RAGDOLL_DEATH_IMPULSE
 		_spawn_ragdoll.rpc(corpse_transform, death_impulse)
-		rpc_reset.rpc(_get_spawn_position())
+		rpc_reset.rpc(_get_spawn_transform())
 
 
 ## Respawn immediately, skipping the respawn timer.  Called by CheatDeathAbility.
@@ -905,10 +915,16 @@ func _physics_process(delta: float) -> void:
 	# Only auto-spawn when a spawn position was explicitly queued (e.g. by
 	# rpc_reset from class-select or death).  This prevents the player from
 	# popping into the world before class select.
-	elif not spawned and _spawn_pending_position != Vector3.ZERO:
-		var pos := _spawn_pending_position
-		_spawn_pending_position = Vector3.ZERO
-		global_position = pos
+	elif not spawned and _spawn_pending_transform.origin != Vector3.ZERO:
+		var spawn := _spawn_pending_transform
+		_spawn_pending_transform = Transform3D()
+		global_position = spawn.origin
+		# Face the way the spawn marker was aimed.  Only the authority needs to write
+		# this: `Body`'s MultiplayerSynchronizer replicates `.:rotation`, so the other
+		# peers get it from the wire.  Deliberately NOT done in `_rollback_tick` — body
+		# yaw is not rollback state, so it does not need re-deriving on re-simulation,
+		# and writing it there would have every peer fight its own synchronizer.
+		body.rotation.y = spawn.basis.get_euler().y
 		velocity = Vector3.ZERO
 		knockback_velocity = Vector3.ZERO
 		_reset_movement_tech()
@@ -1020,11 +1036,13 @@ func _rollback_tick(delta, tick, is_fresh):
 	scale = Vector3.ONE * _size_scale
 
 	# ── Respawn / teleport handling ────────────────
-	# _spawn_pending_position persists across re-simulation because it is
+	# _spawn_pending_transform persists across re-simulation because it is
 	# consumed only in _physics_process (real frames only).  Every rollback
 	# tick, whether fresh or re-simulated, sees the same flag and teleports.
-	if _spawn_pending_position != Vector3.ZERO:
-		global_position = _spawn_pending_position
+	# Only the origin is applied here; the spawn facing is written once in
+	# _physics_process — see the note there.
+	if _spawn_pending_transform.origin != Vector3.ZERO:
+		global_position = _spawn_pending_transform.origin
 		velocity = Vector3.ZERO
 		tick_interpolator.teleport()
 		return

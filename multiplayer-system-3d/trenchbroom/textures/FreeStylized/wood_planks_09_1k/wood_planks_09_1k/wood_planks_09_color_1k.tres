@@ -1,0 +1,8 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://4eqlqtvb5g0j"]
+
+[ext_resource type="Texture2D" uid="uid://hmdxa7xw5ljv" path="res://trenchbroom/textures/FreeStylized/wood_planks_09_1k/wood_planks_09_1k/wood_planks_09_color_1k.png" id="1_wxaau"]
+
+[resource]
+albedo_texture = ExtResource("1_wxaau")
+metallic_specular = 0.0
+texture_filter = 2

@@ -3,10 +3,13 @@
 [ext_resource type="Script" uid="uid://b3gtcm614wpi8" path="res://maps/map.gd" id="1_5me74"]
 [ext_resource type="Texture2D" uid="uid://c4ln0bpu3tmo3" path="res://assets/environment/kloppenheim_06_puresky_4k.exr" id="2_nytf2"]
 [ext_resource type="Script" uid="uid://ccrf5bdka2m35" path="res://player/auto_projectile_spawner.gd" id="3_dgob0"]
+[ext_resource type="Script" uid="uid://cwogshjnp078c" path="res://world/special_entities/player_spawn.gd" id="3_s2bvn"]
 [ext_resource type="Script" uid="uid://r6rneeolnvra" path="res://components/game_mode_component.gd" id="4_imcub"]
 [ext_resource type="PackedScene" uid="uid://cbonxqwx4pkes" path="res://assets/map_models_old/valorant_spike_plant_tutorial_map/scene.gltf" id="6_dgob0"]
 [ext_resource type="Material" uid="uid://b6l23ihtcguc1" path="res://assets/environment/grid_material.tres" id="6_imcub"]
 [ext_resource type="Shader" uid="uid://c27khwu6mxn41" path="res://assets/environment/grid_shader.gdshader" id="7_imcub"]
+[ext_resource type="PackedScene" uid="uid://capfpmiollt7e" path="res://world/special_entities/player_spawn.tscn" id="99_spawn"]
+
 
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_wnf2b"]
 panorama = ExtResource("2_nytf2")
@@ -56,17 +59,23 @@ despawn_location = NodePath("Despawn")
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=765331845]
 environment = SubResource("Environment_yhcpw")
 
-[node name="SCI Spawn Location" type="Marker3D" parent="." unique_id=908470764]
+[node name="SCI Spawn Location" parent="." unique_id=251449100 instance=ExtResource("99_spawn")]
 transform = Transform3D(-0.18155381, -0.09077693, 0.052410074, 0, 0.10482014, 0.18155383, -0.104820155, 0.15723023, -0.0907769, -6.8359604, 3.5727391, 21.107513)
+team = 1
+script = ExtResource("3_s2bvn")
+metadata/_custom_type_script = "uid://cwogshjnp078c"
 
-[node name="SCI Spawn Location2" type="Marker3D" parent="." unique_id=431377195]
+[node name="SCI Spawn Location2" parent="." unique_id=431377195 instance=ExtResource("99_spawn")]
 transform = Transform3D(-0.18155381, -0.09077693, 0.052410074, 0, 0.10482014, 0.18155383, -0.104820155, 0.15723023, -0.0907769, -6.8359604, 3.2519941, -2.942126)
+team = 1
 
-[node name="SCI Spawn Location3" type="Marker3D" parent="." unique_id=2118138283]
+[node name="SCI Spawn Location3" parent="." unique_id=2118138283 instance=ExtResource("99_spawn")]
 transform = Transform3D(-0.18155381, -0.09077693, 0.052410074, 0, 0.10482014, 0.18155383, -0.104820155, 0.15723023, -0.0907769, -6.8359604, 0.8999548, 9.467929)
+team = 1
 
-[node name="SCI Spawn Location4" type="Marker3D" parent="." unique_id=1556369114]
+[node name="SCI Spawn Location4" parent="." unique_id=1556369114 instance=ExtResource("99_spawn")]
 transform = Transform3D(-0.18155381, -0.09077693, 0.052410074, 0, 0.10482014, 0.18155383, -0.104820155, 0.15723023, -0.0907769, 2.6011531, 3.3014364, 21.353127)
+team = 1
 
 [node name="Despawn" type="Marker3D" parent="." unique_id=1311557604]
 transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, -2.797104, -53.386234, 17.53489)
@@ -745,7 +754,7 @@ size = Vector3(0.5, 1, 18.5)
 
 [node name="Sketchfab_Scene" parent="." unique_id=1353892224 instance=ExtResource("6_dgob0")]
 
-[node name="Object_4" parent="Sketchfab_Scene/Sketchfab_model/root/GLTF_SceneRootNode/Base_0" parent_id_path=PackedInt32Array(1353892224, 1352361588) index="0" unique_id=775592164]
+[node name="Object_4" parent="Sketchfab_Scene/Sketchfab_model/root/GLTF_SceneRootNode/Base_0" parent_id_path=PackedInt32Array(1353892224, 2067266269) index="0" unique_id=809791779]
 surface_material_override/0 = ExtResource("6_imcub")
 
 [node name="StaticBody3D" type="StaticBody3D" parent="Sketchfab_Scene/Sketchfab_model/root/GLTF_SceneRootNode/Base_0/Object_4" index="0" unique_id=697391081]
@@ -753,7 +762,7 @@ surface_material_override/0 = ExtResource("6_imcub")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Sketchfab_Scene/Sketchfab_model/root/GLTF_SceneRootNode/Base_0/Object_4/StaticBody3D" unique_id=909607111]
 shape = SubResource("ConcavePolygonShape3D_dgob0")
 
-[node name="Object_6" parent="Sketchfab_Scene/Sketchfab_model/root/GLTF_SceneRootNode/Boxes_1" parent_id_path=PackedInt32Array(1353892224, 1979092102) index="0" unique_id=1519313999]
+[node name="Object_6" parent="Sketchfab_Scene/Sketchfab_model/root/GLTF_SceneRootNode/Boxes_1" parent_id_path=PackedInt32Array(1353892224, 337611336) index="0" unique_id=486419792]
 surface_material_override/0 = SubResource("ShaderMaterial_s2bvn")
 
 [node name="StaticBody3D" type="StaticBody3D" parent="Sketchfab_Scene/Sketchfab_model/root/GLTF_SceneRootNode/Boxes_1/Object_6" index="0" unique_id=899447346]

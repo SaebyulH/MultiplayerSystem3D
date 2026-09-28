@@ -1,0 +1,9 @@
+[gd_scene format=3 uid="uid://capfpmiollt7e"]
+
+[ext_resource type="PackedScene" uid="uid://djiaj7d7goe25" path="res://trenchbroom/models/mannequin_static.glb" id="1_amwft"]
+[ext_resource type="Script" uid="uid://cwogshjnp078c" path="res://world/special_entities/player_spawn.gd" id="1_ob6uh"]
+
+[node name="PlayerSpawn" type="Marker3D" unique_id=1614452669]
+script = ExtResource("1_ob6uh")
+
+[node name="static" parent="." unique_id=1118913924 instance=ExtResource("1_amwft")]

@@ -1,0 +1,8 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://c6ek8h5i8b1hh"]
+
+[ext_resource type="Texture2D" uid="uid://bns13ypk4wrnv" path="res://trenchbroom/textures/FreeStylized/concrete_slabs_03_1k/concrete_slabs_03_1k/concrete_slabs_03_basecolor_1k.png" id="1_t516g"]
+
+[resource]
+albedo_texture = ExtResource("1_t516g")
+metallic_specular = 0.0
+texture_filter = 2

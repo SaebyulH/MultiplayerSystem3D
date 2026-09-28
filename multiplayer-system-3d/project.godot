@@ -49,6 +49,7 @@ folder_colors={
 "res://assets/props/": "orange",
 "res://components/": "orange",
 "res://defaults/": "yellow",
+"res://killfeed_icons/": "teal",
 "res://tools/": "pink",
 "res://trenchbroom/": "green",
 "res://trenchbroom/textures/": "yellow"
