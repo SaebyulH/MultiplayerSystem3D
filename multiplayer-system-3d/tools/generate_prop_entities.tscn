@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://c1hb7m1nm2u3g"]
+
+[ext_resource type="Script" uid="uid://5vi0ksh7it32" path="res://tools/generate_prop_entities.gd" id="1"]
+
+[node name="GeneratePropEntities" type="Node" unique_id=1773789138]
+script = ExtResource("1")

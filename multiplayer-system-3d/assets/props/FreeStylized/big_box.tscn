@@ -1,0 +1,29 @@
+[gd_scene format=3 uid="uid://y0n1axtg4s2c"]
+
+[ext_resource type="PackedScene" uid="uid://bvbdxrxbaeo4x" path="res://assets/props_unprocessed/BigBox_M5/BigBox_M5/Source/BigBox1_M5_LOD0.fbx" id="1_06byh"]
+[ext_resource type="Texture2D" uid="uid://clopn6dfq0ieh" path="res://assets/props_unprocessed/BigBox_M5/BigBox_M5/Textures/BigBox_M5_Base_color.png" id="2_et0ra"]
+[ext_resource type="Texture2D" uid="uid://d1mq5tirvbvar" path="res://assets/props_unprocessed/BigBox_M5/BigBox_M5/Textures/BigBox_M5_Normal_GL.png" id="3_1ajh7"]
+[ext_resource type="Texture2D" uid="uid://lcqsbae30kro" path="res://assets/props_unprocessed/BigBox_M5/BigBox_M5/Textures/BigBox_M5_Roughness.png" id="4_ulkss"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_irsoy"]
+albedo_texture = ExtResource("2_et0ra")
+roughness_texture = ExtResource("4_ulkss")
+normal_enabled = true
+normal_texture = ExtResource("3_1ajh7")
+
+[sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_06byh"]
+points = PackedVector3Array(-0.58545405, -0.007975482, -0.60337704, -0.58545405, -0.016098797, -0.5952231, -0.5937252, -0.007975482, -0.5953413, -0.58545405, 1.1783817, -0.60337704, 0.46802765, -0.007975482, -0.59723204, -0.59944206, -0.016098797, 0.44233376, 0.46790606, -0.016098797, -0.58896, -0.6075916, -0.007975482, 0.44221562, -0.5937252, 1.1783817, -0.5953413, -0.58545405, 1.1866229, -0.5952231, 0.46802765, 1.1783817, -0.59723204, 0.6253018, -0.007975482, -0.5953413, 0.6251802, -0.016098797, -0.58718735, -0.6010233, -0.016098797, 0.5842592, -0.6075916, 1.1783817, 0.44221562, -0.6091729, -0.007975482, 0.5841411, -0.59944206, 1.1866229, 0.44233376, 0.46790606, 1.1866229, -0.58896, 0.6251802, 1.1866229, -0.58718735, 0.6253018, 1.1783817, -0.5953413, 0.6333298, -0.007975482, -0.5870692, 0.61690897, -0.016098797, 0.4536783, -0.60114497, -0.007975482, 0.5924131, -0.44374913, -0.016098797, 0.58603185, -0.44387078, -0.007975482, 0.5943039, -0.6091729, 1.1783817, 0.5841411, -0.6010233, 1.1866229, 0.5842592, 0.61690897, 1.1866229, 0.4536783, 0.6333298, 1.1783817, -0.5870692, 0.6250586, -0.007975482, 0.45379645, 0.6234773, -0.007975482, 0.595722, 0.61520606, -0.016098797, 0.59560376, -0.60114497, 1.1783817, 0.5924131, -0.44387078, 1.1783817, 0.5943039, 0.61520606, -0.007975482, 0.60387594, -0.44374913, 1.1866229, 0.58603185, 0.6234773, 1.1783817, 0.595722, 0.6250586, 1.1783817, 0.45379645, 0.61520606, 1.1866229, 0.59560376, 0.61520606, 1.1783817, 0.6037578)
+
+[node name="BigBox" type="Node3D" unique_id=1847235070]
+
+[node name="BigBox1_M5_LOD0" parent="." unique_id=78805474 instance=ExtResource("1_06byh")]
+
+[node name="BigBox1_LOD0" parent="BigBox1_M5_LOD0" index="0" unique_id=1281570663]
+surface_material_override/0 = SubResource("StandardMaterial3D_irsoy")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="BigBox1_M5_LOD0/BigBox1_LOD0" index="0" unique_id=2091492517]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BigBox1_M5_LOD0/BigBox1_LOD0/StaticBody3D" unique_id=198081003]
+shape = SubResource("ConvexPolygonShape3D_06byh")
+
+[editable path="BigBox1_M5_LOD0"]

@@ -4,12 +4,12 @@ importer="scene"
 importer_version=1
 type="PackedScene"
 uid="uid://cmm3olbw82kre"
-path="res://.godot/imported/mannequin.glb-7aa9d6e26ad5a7d065122dac9e4e8638.scn"
+path="res://.godot/imported/mannequin.glb-75de53e82e385e0fe0d06c86b5ef4fc9.scn"
 
 [deps]
 
-source_file="res://assets/mannequin/mannequin.glb"
-dest_files=["res://.godot/imported/mannequin.glb-7aa9d6e26ad5a7d065122dac9e4e8638.scn"]
+source_file="res://assets/character_models/mannequin/mannequin.glb"
+dest_files=["res://.godot/imported/mannequin.glb-75de53e82e385e0fe0d06c86b5ef4fc9.scn"]
 
 [params]
 

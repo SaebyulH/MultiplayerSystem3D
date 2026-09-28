@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://cbonxqwx4pkes"
-path="res://.godot/imported/scene.gltf-7b536c21a8fca94c417446217c8d325c.scn"
+uid="uid://clc8tivhk8cw6"
+path="res://.godot/imported/BigBox2_M5_LOD1.fbx-4dfbf710e1618849dbb735f33991ebe1.scn"
 
 [deps]
 
-source_file="res://assets/map_models/valorant_spike_plant_tutorial_map/scene.gltf"
-dest_files=["res://.godot/imported/scene.gltf-7b536c21a8fca94c417446217c8d325c.scn"]
+source_file="res://assets/props_unprocessed/BigBox_M5/BigBox_M5/Source/BigBox2_M5_LOD1.fbx"
+dest_files=["res://.godot/imported/BigBox2_M5_LOD1.fbx-4dfbf710e1618849dbb735f33991ebe1.scn"]
 
 [params]
 
@@ -32,7 +32,7 @@ meshes/force_disable_compression=false
 skins/use_named_skins=true
 animation/import=true
 animation/fps=30
-animation/trimming=false
+animation/trimming=true
 animation/remove_immutable_tracks=true
 animation/import_rest_as_RESET=false
 import_script/path=""
@@ -40,6 +40,7 @@ materials/extract=0
 materials/extract_format=0
 materials/extract_path=""
 _subresources={}
-gltf/naming_version=2
-gltf/embedded_image_handling=1
-gltf/texture_map_mode=1
+fbx/importer=0
+fbx/allow_geometry_helper_nodes=false
+fbx/embedded_image_handling=1
+fbx/naming_version=2

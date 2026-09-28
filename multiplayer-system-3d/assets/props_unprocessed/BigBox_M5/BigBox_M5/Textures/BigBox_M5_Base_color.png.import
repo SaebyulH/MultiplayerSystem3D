@@ -2,20 +2,17 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://rlec84doa3xt"
-path.s3tc="res://.godot/imported/mannequin_Scientist_clothes.png-f72177b81f5016f29008f7da474a843d.s3tc.ctex"
+uid="uid://clopn6dfq0ieh"
+path.s3tc="res://.godot/imported/BigBox_M5_Base_color.png-94740f7cdf4126c78632bda527ac1009.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
 }
-generator_parameters={
-"md5": "1fb0155db65b9796e7bd844485fb27e1"
-}
 
 [deps]
 
-source_file="res://assets/mannequin/mannequin_Scientist_clothes.png"
-dest_files=["res://.godot/imported/mannequin_Scientist_clothes.png-f72177b81f5016f29008f7da474a843d.s3tc.ctex"]
+source_file="res://assets/props_unprocessed/BigBox_M5/BigBox_M5/Textures/BigBox_M5_Base_color.png"
+dest_files=["res://.godot/imported/BigBox_M5_Base_color.png-94740f7cdf4126c78632bda527ac1009.s3tc.ctex"]
 
 [params]
 

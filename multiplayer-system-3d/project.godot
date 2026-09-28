@@ -48,6 +48,7 @@ folder_colors={
 "res://assets/": "red",
 "res://components/": "orange",
 "res://defaults/": "yellow",
+"res://tools/": "pink",
 "res://trenchbroom/": "green",
 "res://trenchbroom/textures/": "yellow"
 }

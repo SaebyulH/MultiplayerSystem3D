@@ -43,24 +43,70 @@ Worse, the failure is silent on the Godot side too. `parser.gd:83-87` resolves a
 
 ## Adding a new entity
 
-**Duplicate an existing `.tres` rather than building one from scratch in the Inspector.** Every
-setting in the checklist below is non-obvious, mis-defaults silently, and was only found by hitting
-the resulting bug — a duplicate inherits all of them.
+**For a prop, let the generator do it.** `tools/generate_prop_entities.gd` encodes the whole
+checklist below — every setting, the computed `size`, the rigged-model bake, and the registration:
+
+1. Drop the model into `assets/props/<name>/` — **any** format that imports as a `PackedScene`
+   (`.glb`, `.gltf`, `.fbx`, `.obj`, `.dae`, `.tscn`). A generically-named file (`model.glb`) takes
+   its classname from the folder instead.
+2. ```
+   "C:/tools/godot/godot_console.exe" --path . --headless res://tools/generate_prop_entities.tscn
+   ```
+3. Re-export and check:
+   ```
+   "C:/tools/godot/godot_console.exe" --path . --headless res://tools/export_trenchbroom_fgd.tscn
+   ```
+4. Reload the game config in TrenchBroom.
+
+It is **create-missing-only**: an existing `.tres` is never rewritten, so hand-tuned entities survive.
+To regenerate one, delete its `.tres` and re-run. It always rebuilds `entity_definitions` from the
+folder — sorted, deduped, uids preserved — so deleting an entity's `.tres` removes it from the FGD
+too. It never exports; the harness stays the step that validates, because a generator that also
+published would hide its own mistakes.
+
+### Generated props have no collision — they are visual only
+
+The generator points `scene_file` at the **raw model**, and a glTF/GLB imports with no physics at
+all. Verified: the forklift's imported scene contains no `StaticBody3D` and no `CollisionShape3D`.
+Godot's glTF importer only synthesises collision for meshes whose **names** carry a `-col`,
+`-convcol` or `-colonly` suffix — `nodes/use_name_suffixes=true` is set in the import settings, and
+the forklift's mesh is named `Cube.001`.
+
+**So a generated prop is decoration you walk straight through.** This is a deliberate trade, not an
+oversight: collision is hand-authored where it matters.
+
+`Truck` is solid and always has been, which is exactly why it is the one entity still authored by
+hand — its `scene_file` is a CSG scene with `use_collision = true`, not a model. If a prop needs to
+be solid, do the same:
+
+- **Wrap it.** Author a `<name>.tscn` with a `StaticBody3D`, the model instanced under it, and a
+  `CollisionShape3D` (`BoxShape3D` from the computed `size`, or a `ConvexPolygonShape3D` from the
+  mesh), then point `scene_file` at that `.tscn` instead of the raw model.
+- **Or name the source meshes** `something-col` and let the importer generate collision.
+
+Either way the entity keeps working — `scene_file` is only ever "the thing the map builds", and the
+display model is separate.
+
+### Adding one by hand
+
+Needed for anything outside `assets/props/` — `Truck`, whose source is a `.tscn` under
+`assets/map_models/`, is hand-authored. **Duplicate an existing `.tres` rather than building one in
+the Inspector**: every setting below mis-defaults silently and was only found by hitting its bug, so
+a duplicate inherits all of them.
 
 1. Copy `trenchbroom/entities/truck.tres` to `<name>.tres`.
 2. **Change the `uid=` on line 1**, or delete the attribute and let Godot assign one.
    FileSystem-duplicating a `.tres` copies the uid verbatim, and two resources sharing a uid break
    every reference to both, quietly.
-3. Set the per-entity fields — `classname` (unique; this is the name in TrenchBroom), `description`,
-   `scene_file` — then work through the checklist below.
-4. Register it in `entity_definitions` on `multiplayer_system_3d_fgd.tres`, as an
-   `[ext_resource type="Resource" …]` line plus an array entry, or via the Inspector.
-5. Re-export, then add the classname to `EXPECTED` at the top of `tools/export_trenchbroom_fgd.gd`
-   so it stays checked from then on:
-   ```
-   "C:/tools/godot/godot_console.exe" --path . --headless res://tools/export_trenchbroom_fgd.tscn
-   ```
+3. Set `classname` (unique; this is the name in TrenchBroom), `description` and `scene_file`, then
+   work the checklist below and measure `size`.
+4. Register it in `entity_definitions` on `multiplayer_system_3d_fgd.tres` — or simply run the
+   generator, which rebuilds that array from the folder.
+5. Re-export. No list needs updating: the harness discovers entities by scanning the folder.
 6. Reload the game config in TrenchBroom.
+
+Note the harness checks **every** entity `.tres` in the folder automatically — it no longer keeps a
+hand-maintained list, which is the step that used to be forgotten.
 
 ### The settings checklist
 
@@ -72,9 +118,13 @@ None of these error on their own — each one just silently produces the wrong r
 | `models_sub_folder` | `"trenchbroom/models"` | the display `.glb` is generated into the project root |
 | `generate_size_property` | **`false`** | derived AABB is off-centre, so TrenchBroom refuses to rotate (#63) |
 | `meta_properties["size"]` | hand-authored: contains the origin, and XY-symmetric | no preview model, and/or `R` won't rotate (#64) |
-| `class_properties` | `{"mangle": "0 0 0"}` | no rotation property → no gizmo, entity not rotatable |
+| `class_properties` | `{"mangle": "0 0 0", "scale": 1.0}` | no rotation property → no gizmo; no `scale` → not scalable; a **string** `scale` → the prop never draws |
+| `scale_expression` (on `FuncGodotFGDModelPointClass`) **or** `display_descriptors[0].scale` (on `FuncGodotFGDPointClass`) | `"{{ scale == undefined -> 32, scale * 32 }}"` | the prop **never draws** — neither in the browser nor in the world (#65) |
 | `apply_rotation_on_map_build` | `true` | the map builds every entity unrotated, whatever the map says |
+| `apply_scale_on_map_build` | `true` | the map builds every entity at natural size, whatever the map says |
+| `entity_scale` (on `trenchbroom_config.tres`) | `"32"` — a **literal** | the outer fallback if the model map's expression cannot be evaluated |
 | `rotation_offset` | `Vector3(0, 180, 0)` | preview faces 180° opposite the built node |
+| the display `.glb` | **`skins: 0`** — no rig | a rigged model previews as **nothing at all**; bake it first |
 | `meta_properties["color"]` | anything | cosmetic only |
 
 Two notes on reading these files, both of which look like something is missing when it isn't:
@@ -83,7 +133,8 @@ Two notes on reading these files, both of which look like something is missing w
   *not* appear in a correct file — its default is already `true`. Absence is the healthy case; only
   an explicit `= false` is a bug. The same applies to `target_map_editor` (`GENERIC` is the default,
   so any working entity shows `= 1`).
-- **`apply_scale_on_map_build` *does* appear**, as `= false`, because its default is `true`.
+- **`apply_scale_on_map_build` works the same way** — absent means `true`, so an explicit `= false` is
+  the only form that breaks building scaled props.
 
 ### Measuring `size` for a new entity
 
@@ -286,10 +337,174 @@ root node of `Truck.glb`/`Forklift.glb` carries a 180° Y quaternion.
 Rotate it in Godot's axes, not TrenchBroom's — `Vector3(0, 180, 0)` is yaw; an X or Z value here
 would tip or roll the preview instead.
 
+## Scaling
+
+All three axes, uniform or per-axis. Like rotation it is two halves — a `scale` key the mapper edits,
+and the assembler applying it — and unlike rotation there is no dedicated editor tool wired to it.
+
+**The key.** `class_properties` declares `scale` as a **`float`**, defaulting to `1.0`:
+
+| value | effect |
+|---|---|
+| `1` | natural size (default) |
+| `2` | uniform 2× |
+
+The type matters to the **editor, not the build**. A `String` property would additionally allow
+per-axis (`"2 3 4"` → a `Vector3`, `entity_assembler.gd:208-210`), but TrenchBroom does not write a
+default onto a newly placed entity for a string property, and an unset `scale` makes the game
+config's scale expression evaluate to nothing — the prop then does not draw at all. A numeric
+property is the form TrenchBroom is expected to materialise a default for; **that is the hypothesis
+under test**, and if it does not hold the string form comes back and the invisible-until-set wart
+returns with it.
+
+The build handles either type: the map parser yields the keyvalue as a string regardless, so
+`"2 3 4"` written into a `.map` by hand still builds per-axis even though the editor's numeric field
+will not accept it.
+
+**The build.** `entity_assembler.gd:202-218` reads it and multiplies the instantiated node's scale.
+A 3-value string is axis-swapped exactly like `origin` — TB `(x, y, z)` becomes Godot `(y, z, x)`, so
+`"2 3 4"` lands as Godot scale `(3, 4, 2)`. This needs **`apply_scale_on_map_build` left at its
+default `true`**; an explicit `= false` silently builds every prop at natural size.
+
+**The preview needs a bare `model()` and the game config's expression — both.** TrenchBroom's model
+scale is *not* a multiplier: it is units-per-model-unit, defaulting to 32. Tracking a `scale` key
+therefore needs the expression to multiply, and **a per-model `scale` overrides the game config's
+expression entirely** (the manual: the config default is used only when no expression "is given or it
+can't be evaluated"). `FuncGodotFGDModelPointClass` always writes one — `_generate_model()` emits a
+literal `32.0` whenever `scale_expression` is empty (`func_godot_fgd_model_point_class.gd:76-80`) —
+so on that class the config expression is never consulted, and writing the multiply *into* the model
+map is what produced a ~32×-too-small preview and then an invisible one.
+
+The knob is `entity_scale` on `trenchbroom_config.tres`, which becomes the `"scale"` value in
+`GameConfig.cfg`. **It is deliberately a literal:**
+
+```
+entity_scale = "32"
+```
+
+→ `GameConfig.cfg`: `"scale": 32`.
+
+### The preview does not follow `scale`, and cannot — read this before changing it back
+
+Property-driven preview scale is a **supported TrenchBroom feature** (Quake 3's `modelscale` /
+`modelscale_vec` are the precedent; the manual documents `"scale": modelscale` directly), and it
+**works** — but only in one specific shape. Five other forms were tried first, and each failed
+differently, so they are tabulated as traps rather than history:
+
+| form | where | result |
+|---|---|---|
+| `scale * 32` | model map | prop **not drawn at all** |
+| `[scale * 32, 32]` | model map | prop **~32× too small** |
+| `[scale * 32, 32]` | game config | scales once set; an unset prop **invisible** |
+| `{{ scale == undefined -> 32, scale * 32 }}` | game config | always natural size — the `32` branch always wins |
+| `[scale * 32, 32]` + a numeric `scale` property | game config | unchanged — the property is still absent when unset |
+| **`{{ scale == undefined -> 32, scale * 32 }}`** | **model map** | **works — this is the one** |
+
+### The one shape that works
+
+```
+model({ "path": "trenchbroom/models/Truck.glb", "scale": {{ scale == undefined -> 32, scale * 32 }} })
+```
+
+Both halves of that are load-bearing:
+
+- **In the model map, not the game config.** The identical conditional in `entity_scale` always takes
+  its `32` branch. Why the two contexts differ is not established — only that they do.
+- **With a property-free branch.** TrenchBroom evaluates a model expression with **no entity behind
+  it** for the entity browser (`TrenchBroom/TrenchBroom` #4253), and a freshly placed prop carries no
+  `scale` key because an FGD default is not written on placement. Both make the property *absent*, so
+  any form that requires it — every row above the last — leaves the prop undrawn, in the browser or in
+  the world.
+
+Giving that missing case a value is what makes the browser thumbnail draw **and** the viewport prop
+draw **and** the scale apply, all at once. `scale` stays a plain multiplier of the 32 units-per-model-unit,
+which is why the preview and the build agree.
+
+The property **must** be called `scale` — `entity_assembler.gd:202-218` looks up `properties["scale"]`
+literally — and it must be a numeric (`float`) type so the mapper gets a number field.
+
+`entity_scale` on `trenchbroom_config.tres` stays a literal `32`: it is the outer fallback if the
+model map's expression cannot be evaluated at all.
+
+### Setting it — two equivalent routes
+
+| entity class | field to set | emits |
+|---|---|---|
+| `FuncGodotFGDModelPointClass` | `scale_expression` | the model map, from the generated display model |
+| `FuncGodotFGDPointClass` | `display_descriptors[0].scale` | the same, for a hand-authored display model |
+
+`_generate_model()` writes `scale_expression` straight into the model map
+(`func_godot_fgd_model_point_class.gd:69-82`); `_build_model_branch_text()` does the same for the
+descriptor's `scale` (`func_godot_fgd_point_class.gd:61-62`). Both produce the identical `.fgd` line.
+`Truck` and `mannequin` use the first, `Forklift` the second — an artefact of an earlier experiment,
+and either is fine.
+
+A `FuncGodotFGDPointClass` entity is authored **by hand** rather than generated: its display `.glb` is
+not regenerated on export, so `rotation_offset` / `models_sub_folder` / `generate_size_property` do
+not apply to it. The committed `.glb`s already carry the 180° yaw bake.
+
+The harness asserts both halves of the recipe for **every** registered entity.
+
+Two caveats:
+
+- **The `size` box does not scale with the prop.** `size` is static FGD data, so a prop at `"3"` keeps
+  its authored selection box. Cosmetic, but it also means a heavily scaled prop can end up outside the
+  box the rotation/origin rules depend on — re-check those if scaling gets extreme.
+- **No drag-scaling.** TrenchBroom's manual lists the Scale tool as "Scaling brushes" and never
+  describes it writing an entity property (contrast the Rotate tool, which explicitly rewrites
+  `angle`/`angles`/`mangle`). Type the value in the entity inspector's property list. If a future
+  TrenchBroom wires the scale tool to a property, `scale` is already the key it would write.
+
+## Rigged source models need a static display model
+
+**A display model carrying a skin may not draw at all.** TrenchBroom renders display models through
+Assimp, and the one structural property that separates a model that previews from one that does not
+is whether it is rigged:
+
+| model | `skins` | nodes | `JOINTS_0`/`WEIGHTS_0` | previews |
+|---|---|---|---|---|
+| `Truck.glb` (CSG, exported) | 0 | 23 | no | yes |
+| `Forklift.glb` (Blender) | 0 | 2 | no | yes |
+| `mannequin.glb` (Blender, **rigged**) | 1 | 168 | yes | **no** |
+
+Nothing else differs — the GLB is valid, its buffers are consistent, it uses no unsupported glTF
+extensions (`GODOT_single_root` only, which the working models carry too), its materials need no
+textures, its `size` box contains the origin and is XY-symmetric, and it carries the same scale
+expression as the other two. Assimp does have a skeletal-animation path, added for HL1 and
+[never validated against glTF](https://github.com/TrenchBroom/TrenchBroom/issues/1140), but it is
+documented to fall back to the unanimated path when a model has no animations — and this one has
+none, so that is not a complete explanation. **Treat "rigged models do not preview" as the leading
+hypothesis rather than a proven rule**; it is the third explanation offered for this specific model,
+after `studio`-vs-`model` and the bounds, both of which were real defects that did not fix it.
+
+### The workaround: bake the display model
+
+`tools/bake_static_model.tscn` strips the rig and writes a static `.glb` — every `MeshInstance3D`'s
+geometry rebound to a fresh `ArrayMesh` with the bone/weight arrays removed, its global transform
+baked in, then the usual 180° display rotation applied. Positions are already in bind-pose space, so
+the result is the model at rest.
+
+```
+"C:/tools/godot/godot_console.exe" --path . --headless res://tools/bake_static_model.tscn
+```
+
+Edit `SRC`/`OUT` at the top of `tools/bake_static_model.gd` to retarget it. For the mannequin it
+produced a 1.2 MB `skins=0` model from a 4.3 MB rigged one.
+
+The entity then takes that as its **display** while keeping the rigged scene as its build input —
+`scene_file` is unchanged, so maps still build the real model and only the editor preview differs.
+That requires `FuncGodotFGDPointClass` + `display_descriptors`, since a
+`FuncGodotFGDModelPointClass` would regenerate its display from `scene_file` and undo the bake.
+`mannequin_ref.tres` is authored this way; `Truck` and `mannequin`'s scale expressions are identical,
+so this is the only structural difference between them.
+
+**Confirmed 2026-09-28:** swapping the mannequin to a `skins=0` display model made it preview. The
+rigged model is the cause.
+
 ## Current entities
 
-| classname | Built from | Display model | Rotatable |
-|---|---|---|---|
-| `Truck` | `assets/map_models/props/truck.tscn` (CSG, `use_collision = true`) | generated | `mangle` |
-| `Forklift` | `assets/props/forklift.glb` | generated | `mangle` |
-| `mannequin` | `assets/mannequin/mannequin.glb` | generated | `mangle` |
+| classname | Built from | Display model | Rotatable | Scalable |
+|---|---|---|---|---|
+| `Truck` | `assets/map_models/props/truck.tscn` (CSG, `use_collision = true`) | generated | `mangle` | `scale` |
+| `Forklift` | `assets/props/forklift.glb` | generated | `mangle` | `scale` |
+| `mannequin` | `assets/mannequin/mannequin.glb` (rigged) | static bake — see above | `mangle` | `scale` |

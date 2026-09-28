@@ -2,13 +2,15 @@
 
 [ext_resource type="Resource" uid="uid://crgpdahjaj" path="res://addons/func_godot/fgd/func_godot_fgd.tres" id="1_fopi5"]
 [ext_resource type="Script" uid="uid://drlmgulwbjwqu" path="res://addons/func_godot/src/fgd/func_godot_fgd_file.gd" id="3_pir0d"]
-[ext_resource type="Resource" uid="uid://b14qbgttaa5je" path="res://trenchbroom/entities/forklift.tres" id="4_fork"]
-[ext_resource type="Resource" uid="uid://bxv5wfnfobid2" path="res://trenchbroom/entities/truck.tres" id="5_truk"]
-[ext_resource type="Resource" uid="uid://bnyie3mkkx6hy" path="res://trenchbroom/entities/mannequin_ref.tres" id="6_mann"]
+[ext_resource type="Resource" path="res://trenchbroom/entities/big_box.tres" id="4_0"]
+[ext_resource type="Resource" uid="uid://b14qbgttaa5je" path="res://trenchbroom/entities/forklift.tres" id="4_1"]
+[ext_resource type="Resource" uid="uid://bnyie3mkkx6hy" path="res://trenchbroom/entities/mannequin_ref.tres" id="4_2"]
+[ext_resource type="Resource" uid="uid://bw640wievkjji" path="res://trenchbroom/entities/test.tres" id="4_3"]
+[ext_resource type="Resource" uid="uid://bxv5wfnfobid2" path="res://trenchbroom/entities/truck.tres" id="4_4"]
 
 [resource]
 script = ExtResource("3_pir0d")
 fgd_name = "MultiplayerSystem3D"
 base_fgd_files = Array[Resource]([ExtResource("1_fopi5")])
-entity_definitions = Array[Resource]([ExtResource("4_fork"), ExtResource("5_truk"), ExtResource("6_mann")])
+entity_definitions = Array[Resource]([ExtResource("4_0"), ExtResource("4_1"), ExtResource("4_2"), ExtResource("4_3"), ExtResource("4_4")])
 metadata/_custom_type_script = "uid://drlmgulwbjwqu"

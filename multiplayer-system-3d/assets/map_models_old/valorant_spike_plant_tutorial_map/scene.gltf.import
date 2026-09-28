@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://dbwcbehrs7okb"
-path="res://.godot/imported/mannequin.glb-80a92c3de9b072cfaeb85820d7dbbf35.scn"
+uid="uid://cbonxqwx4pkes"
+path="res://.godot/imported/scene.gltf-79e568e73ddf0c3079f87266debd04eb.scn"
 
 [deps]
 
-source_file="res://trenchbroom/models/mannequin.glb"
-dest_files=["res://.godot/imported/mannequin.glb-80a92c3de9b072cfaeb85820d7dbbf35.scn"]
+source_file="res://assets/map_models_old/valorant_spike_plant_tutorial_map/scene.gltf"
+dest_files=["res://.godot/imported/scene.gltf-79e568e73ddf0c3079f87266debd04eb.scn"]
 
 [params]
 

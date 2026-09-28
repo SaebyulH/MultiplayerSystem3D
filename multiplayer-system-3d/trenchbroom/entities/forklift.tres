@@ -1,27 +1,31 @@
-[gd_resource type="Resource" script_class="FuncGodotFGDModelPointClass" format=3 uid="uid://b14qbgttaa5je"]
+[gd_resource type="Resource" script_class="FuncGodotFGDPointClass" format=3 uid="uid://b14qbgttaa5je"]
 
-[ext_resource type="Script" uid="uid://d1nwwgcrner8b" path="res://addons/func_godot/src/fgd/func_godot_fgd_point_class_display_descriptor.gd" id="1_shmwi"]
-[ext_resource type="PackedScene" uid="uid://cye8rvu518pfm" path="res://assets/props/forklift.glb" id="2_shmwi"]
-[ext_resource type="Script" uid="uid://ldfqjtq0br35" path="res://addons/func_godot/src/fgd/func_godot_fgd_model_point_class.gd" id="3_137wp"]
+[ext_resource type="Script" uid="uid://cxsqwtsqd8w33" path="res://addons/func_godot/src/fgd/func_godot_fgd_point_class.gd" id="1_pntcl"]
+[ext_resource type="PackedScene" uid="uid://cye8rvu518pfm" path="res://assets/props/forklift/forklift.glb" id="2_shmwi"]
+[ext_resource type="Script" uid="uid://d1nwwgcrner8b" path="res://addons/func_godot/src/fgd/func_godot_fgd_point_class_display_descriptor.gd" id="3_dscpt"]
+
+[sub_resource type="Resource" id="Resource_display"]
+script = ExtResource("3_dscpt")
+display_asset_path = "\"trenchbroom/models/Forklift.glb\""
+scale = "{{ scale == undefined -> 32, scale * 32 }}"
 
 [resource]
-script = ExtResource("3_137wp")
-target_map_editor = 1
-models_sub_folder = "trenchbroom/models"
-rotation_offset = Vector3(0, 180, 0)
+script = ExtResource("1_pntcl")
 scene_file = ExtResource("2_shmwi")
-apply_scale_on_map_build = false
+display_descriptors = Array[ExtResource("3_dscpt")]([SubResource("Resource_display")])
 classname = "Forklift"
 description = "Forklift 3D model"
 class_properties = Dictionary[String, Variant]({
-"mangle": "0 0 0"
+"mangle": "0 0 0",
+"scale": 1.0
 })
 class_property_descriptions = Dictionary[String, Variant]({
-"mangle": "Pitch Yaw Roll"
+"mangle": "Pitch Yaw Roll",
+"scale": "Scale multiplier"
 })
 meta_properties = Dictionary[String, Variant]({
 "color": Color(0.8, 0.8, 0.8, 1),
-"model": "{\"path\": \"trenchbroom/models/Forklift.glb\", \"scale\": 32.0 }",
+"model": "{ \"path\": \"trenchbroom/models/Forklift.glb\", \"scale\": {{ scale == undefined -> 32, scale * 32 }} }",
 "size": AABB(-99, -25, -37, 99, 25, 70)
 })
-metadata/_custom_type_script = "uid://ldfqjtq0br35"
+metadata/_custom_type_script = "uid://cxsqwtsqd8w33"

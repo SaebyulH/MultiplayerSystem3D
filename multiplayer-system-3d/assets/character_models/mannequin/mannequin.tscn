@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://bpiaawoevyijs"]
 
 [ext_resource type="Script" uid="uid://b4ohd0sroqg5d" path="res://player/player_model.gd" id="1_13r4p"]
-[ext_resource type="PackedScene" uid="uid://cmm3olbw82kre" path="res://assets/mannequin/mannequin.glb" id="1_q4k74"]
+[ext_resource type="PackedScene" uid="uid://cmm3olbw82kre" path="res://assets/character_models/mannequin/mannequin.glb" id="1_q4k74"]
 [ext_resource type="AnimationLibrary" uid="uid://ct8c4qs0yx4o3" path="res://assets/character_models/glb/human/crouch.glb" id="3_2lwhn"]
 [ext_resource type="AnimationLibrary" uid="uid://cv55yvfohsp02" path="res://assets/weapon_models/ak_test/Human Ak.glb" id="3_13r4p"]
 [ext_resource type="AnimationLibrary" uid="uid://ch1fkaujvdl85" path="res://assets/character_models/glb/human/walk.glb" id="3_v6ho6"]

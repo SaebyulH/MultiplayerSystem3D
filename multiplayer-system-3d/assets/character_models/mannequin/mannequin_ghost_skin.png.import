@@ -2,20 +2,20 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://ckaduff86o4pa"
-path.s3tc="res://.godot/imported/mannequin_Ucupaint GEO-body_female_realistic.png-19b23ae78bce32fa0f5b0ffc612838d0.s3tc.ctex"
+uid="uid://qaqpb6ob8ipu"
+path.s3tc="res://.godot/imported/mannequin_ghost_skin.png-6b50bdce34d2725fa6b8e7a4274fa0ae.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
 }
 generator_parameters={
-"md5": "1e89e45037f5251362718d920536fb66"
+"md5": "91a8b648de210cfe509a3311109875ee"
 }
 
 [deps]
 
-source_file="res://assets/mannequin/mannequin_Ucupaint GEO-body_female_realistic.png"
-dest_files=["res://.godot/imported/mannequin_Ucupaint GEO-body_female_realistic.png-19b23ae78bce32fa0f5b0ffc612838d0.s3tc.ctex"]
+source_file="res://assets/character_models/mannequin/mannequin_ghost_skin.png"
+dest_files=["res://.godot/imported/mannequin_ghost_skin.png-6b50bdce34d2725fa6b8e7a4274fa0ae.s3tc.ctex"]
 
 [params]
 
