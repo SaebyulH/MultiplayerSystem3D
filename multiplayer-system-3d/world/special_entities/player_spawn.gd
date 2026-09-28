@@ -10,10 +10,10 @@ class_name PlayerSpawn
 ## without it, nothing here executes in the editor, which is the only place the marker is
 ## meant to be seen.
 ##
-## Where a spawn is *placed* is not decided here. func_godot names generated nodes
-## `entity_<index>_<classname>` (`entity_assembler.gd:274-277`), and `Map._enter_tree()`
-## routes a spawn by reading that name — or the `team` property below, which wins when it
-## is present. See the spawn-discovery comment in `maps/map.gd`.
+## Which *pool* a spawn feeds is not decided here either: `Map._enter_tree()` finds every
+## `PlayerSpawn` in the map and routes it by reading `team` below. The node's name is
+## never consulted, so renaming one cannot move it between pools — see the
+## spawn-discovery comment in `maps/map.gd`.
 
 ## Which pool this spawn feeds. Its own enum rather than `Player.Team`: a spawn has an
 ## `ANY` case the player enum has no room for, and this keeps the scene independent of
@@ -38,6 +38,26 @@ const COLORS := {
 @export var func_godot_properties: Dictionary = {}
 
 
+## One material per team, built on first use and shared by every spawn and every surface.
+## Allocating one per mesh meant 400 StandardMaterial3D objects for 200 spawns — this is
+## three for the whole session, and a shared material lets the markers batch.
+##
+## Static, so it survives for the editor session.  Changing `COLORS` therefore needs a
+## project reload before the new colours appear.
+static var _shared_materials: Dictionary = {}
+
+
+static func _material_for(spawn_team: Team) -> StandardMaterial3D:
+	if not _shared_materials.has(spawn_team):
+		var material := StandardMaterial3D.new()
+		material.albedo_color = COLORS.get(spawn_team, COLORS[Team.ANY])
+		_shared_materials[spawn_team] = material
+	return _shared_materials[spawn_team]
+
+
+# Everything below runs on load or on a property change — never per frame.  There is
+# deliberately no `_process`/`_physics_process`: a spawn is static geometry, and its only
+# dynamic act is hiding itself once, at startup.
 func _ready() -> void:
 	# The setter can run before the scene's children exist, when properties are applied
 	# during instantiation — so the tint is (re)applied here, once the mannequin is there.
@@ -49,14 +69,10 @@ func _ready() -> void:
 		hide()
 
 
-## Overrides every surface of the mannequin with one flat material. `material_override`
-## rather than per-surface overrides so it does not matter how many surfaces the GLB has.
+## Points every surface of the mannequin at the shared team material. Assigned as
+## `material_override` rather than per-surface overrides so it does not matter how many
+## surfaces the GLB has.
 func _tint() -> void:
-	var color: Color = COLORS.get(team, COLORS[Team.ANY])
+	var material := _material_for(team)
 	for node in find_children("*", "MeshInstance3D", true, false):
-		var mesh_instance := node as MeshInstance3D
-		var material := mesh_instance.material_override as StandardMaterial3D
-		if material == null:
-			material = StandardMaterial3D.new()
-			mesh_instance.material_override = material
-		material.albedo_color = color
+		(node as MeshInstance3D).material_override = material
