@@ -517,10 +517,11 @@ rigged model is the cause.
 | `Forklift` | `assets/props/forklift.glb` | generated | `mangle` | `scale` |
 | `mannequin` | `assets/mannequin/mannequin.glb` (rigged) | static bake — see above | `mangle` | `scale` |
 | `PlayerSpawn` | `world/special_entities/player_spawn.tscn` | static bake (the mannequin) | `mangle` | — |
+| `HealthPackSpawner` | `world/special_entities/health_pack_spawner.tscn` | generated | — | — |
 
-`Truck` and `PlayerSpawn` are **hand-authored** — the generator only covers `assets/props/`, and
-`PlayerSpawn` is a scene under `world/`. `PlayerSpawn` takes no `scale`: it is a spawn point, not a
-prop, and the harness only requires the keys an entity actually declares.
+`Truck`, `PlayerSpawn` and `HealthPackSpawner` are **hand-authored** — the generator only covers
+`assets/props/`, and the other two are scenes under `world/`. `PlayerSpawn` takes no `scale`: it is a
+spawn point, not a prop, and the harness only requires the keys an entity actually declares.
 
 Its `mangle` sets **which way the player faces on spawn** — `Map.get_random_spawn_transform()` reads
 the built marker's yaw, `rpc_reset()` carries it as a `Transform3D`, and the player's body is turned
@@ -537,3 +538,19 @@ longer a spawn at all; the old name rules (`spi`/`sci` in the name) are gone.
 
 The enum values must stay in step with that `choices` list — the enum lives on
 `world/special_entities/player_spawn.gd`.
+
+**`HealthPackSpawner` takes neither `mangle` nor `scale`, and that is a decision rather than an
+omission.** `PlayerSpawn` needs `mangle` because a spawn's yaw is gameplay; a health pack has no
+meaningful facing, and declaring a rotation property would additionally drag in the XY-centring rule
+above for nothing. `scale` is the dangerous one — `apply_scale_on_map_build` scales the built node, so
+a scaled spawner would grow its pickup `Area3D` while the FGD `size` box stayed put (the same caveat
+the scaling section records for every prop). What a mapper *can* set is **`respawn_time`**, a `float`
+defaulting to `10.0`, pushed onto the built node by `auto_apply_to_matching_node_properties` — the
+mechanism `PlayerSpawn`'s `team` uses. It has to stay a `float` on both sides: `parser.gd:144-145`
+converts the raw `.map` string with `to_float()` for a `TYPE_FLOAT` default, and
+`entity_assembler.gd:255` `push_error`s on a `typeof` mismatch rather than coercing.
+
+The entity's `scene_file` is the spawner, so its generated display model is the **pack itself** —
+which is what a mapper wants to see, since the pack is the thing players aim at. Everything in the
+scene is centred on the origin in X and Z because the map build applies an unconditional 180° yaw
+(`entity_assembler.gd:196-199`); an off-centre child would be mirrored relative to the preview.

@@ -23,7 +23,6 @@ health_mult = 1.25
 lifesteal_percent = 0.3
 regen_per_sec = 0.0
 regen_delay = 0.0
-heal_on_kill = 999.0
 death_sound = ExtResource("2_4vwll")
 abilities = Array[ExtResource("2_abil")]([ExtResource("3_abil"), ExtResource("4_abil"), ExtResource("6_abil"), ExtResource("5_abil")])
 passive_see_enemy_health = true

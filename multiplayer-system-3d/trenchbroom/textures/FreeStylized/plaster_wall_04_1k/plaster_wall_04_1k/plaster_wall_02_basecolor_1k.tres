@@ -1,0 +1,8 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://5woicugu02q7"]
+
+[ext_resource type="Texture2D" uid="uid://cbrwbmkue7a15" path="res://trenchbroom/textures/FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k.png" id="1_0k0vb"]
+
+[resource]
+albedo_texture = ExtResource("1_0k0vb")
+metallic_specular = 0.0
+texture_filter = 2

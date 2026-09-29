@@ -1,0 +1,8 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://b3cdulp6al7d3"]
+
+[ext_resource type="Texture2D" uid="uid://nnntdbahu00t" path="res://trenchbroom/textures/FreeStylized/floor_tiles_14_1k/floor_tiles_14_1k/floor_tiles_14_basecolor_1k.png" id="1_2wkue"]
+
+[resource]
+albedo_texture = ExtResource("1_2wkue")
+metallic_specular = 0.0
+texture_filter = 2

@@ -58,6 +58,5 @@ description = "With an umbrella she can use to shield herself. "
 character_scene = ExtResource("11_fbd81")
 portrait = ExtResource("13_oajhw")
 health_mult = 2.0
-heal_on_kill = 999.0
 death_sound = ExtResource("12_rynjg")
 abilities = Array[ExtResource("1_fbd81")]([SubResource("Resource_x7c3f"), SubResource("Resource_bjvpn")])

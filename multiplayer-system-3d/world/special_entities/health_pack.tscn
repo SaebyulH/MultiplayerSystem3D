@@ -1,0 +1,66 @@
+[gd_scene format=3 uid="uid://c67ty1te1i08f"]
+
+[ext_resource type="Script" uid="uid://cmj4kvib6u07w" path="res://world/special_entities/health_pack.gd" id="1_hp"]
+[ext_resource type="Texture2D" uid="uid://cqu7s1apmcwry" path="res://backup/trenchbroom/textures/Material-LIB/Fabric/Fabric[White].png" id="2_oluw0"]
+[ext_resource type="Texture2D" uid="uid://dydeb5c5f2rwp" path="res://assets/images/greybox/greybox_red_grid.png" id="3_e7i6s"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_m7wls"]
+albedo_texture = ExtResource("2_oluw0")
+
+[sub_resource type="BoxMesh" id="BoxMesh_body"]
+size = Vector3(0.6, 0.4, 0.6)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_body"]
+albedo_color = Color(0.93, 0.93, 0.93, 1)
+roughness = 0.6
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ockqi"]
+albedo_texture = ExtResource("3_e7i6s")
+
+[sub_resource type="BoxMesh" id="BoxMesh_cross_long"]
+size = Vector3(0.44, 0.05, 0.14)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cross"]
+albedo_color = Color(0.82, 0.12, 0.12, 1)
+roughness = 0.6
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_b2o4e"]
+albedo_texture = ExtResource("3_e7i6s")
+
+[sub_resource type="BoxMesh" id="BoxMesh_cross_short"]
+size = Vector3(0.14, 0.05, 0.44)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_pickup"]
+size = Vector3(1.4, 1.8, 1.4)
+
+[node name="HealthPack" type="Node3D" unique_id=1659883611]
+script = ExtResource("1_hp")
+
+[node name="Visual" type="Node3D" parent="." unique_id=1759883812]
+
+[node name="Body" type="MeshInstance3D" parent="Visual" unique_id=46938215]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2, 0)
+material_override = SubResource("StandardMaterial3D_m7wls")
+mesh = SubResource("BoxMesh_body")
+surface_material_override/0 = SubResource("StandardMaterial3D_body")
+
+[node name="CrossLong" type="MeshInstance3D" parent="Visual" unique_id=288680628]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
+material_override = SubResource("StandardMaterial3D_ockqi")
+mesh = SubResource("BoxMesh_cross_long")
+surface_material_override/0 = SubResource("StandardMaterial3D_cross")
+
+[node name="CrossShort" type="MeshInstance3D" parent="Visual" unique_id=846914823]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
+material_override = SubResource("StandardMaterial3D_b2o4e")
+mesh = SubResource("BoxMesh_cross_short")
+surface_material_override/0 = SubResource("StandardMaterial3D_cross")
+
+[node name="PickupArea" type="Area3D" parent="." unique_id=372616296]
+collision_layer = 0
+collision_mask = 2
+monitorable = false
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="PickupArea" unique_id=124186235]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("BoxShape3D_pickup")

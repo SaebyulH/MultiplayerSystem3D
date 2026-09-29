@@ -11,5 +11,9 @@ height = 0.5119934
 script = ExtResource("1_6uxfd")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1946043990]
-transform = Transform3D(0.6723758, 0, 0, 0, 0.6723758, 0, 0, 0, 0.6723758, 0, -1.4047121, 0)
+transform = Transform3D(0.6723758, 0, 0, 0, 0.6723758, 0, 0, 0, 0.6723758, 0, 0.03591907, 0)
+mesh = SubResource("CylinderMesh_g4v7s")
+
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="." unique_id=119282899]
+transform = Transform3D(0.38335466, 0, 0, 0, 0.38335466, 0, 0, 0, 0.38335466, 0, 0.20881629, 0)
 mesh = SubResource("CylinderMesh_g4v7s")

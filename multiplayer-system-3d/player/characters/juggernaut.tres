@@ -25,6 +25,5 @@ air_accel_mult = 0.5
 air_speed_cap_mult = 0.5
 health_mult = 3.0
 regen_delay = 1.0
-heal_on_kill = 999.0
 death_sound = ExtResource("2_655ax")
 abilities = Array[ExtResource("2_abil")]([ExtResource("3_abil"), ExtResource("6_abil"), ExtResource("4_j6qkh"), ExtResource("7_abil")])

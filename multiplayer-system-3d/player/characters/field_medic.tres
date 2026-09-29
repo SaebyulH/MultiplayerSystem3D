@@ -95,7 +95,6 @@ max_stamina = 2
 health_mult = 1.5
 lifesteal_percent = 0.4
 regen_per_sec = 1.0
-heal_on_kill = 999.0
 death_sound = ExtResource("2_tjccu")
 abilities = Array[ExtResource("1_hkw1k")]([SubResource("Resource_d2yr2"), SubResource("Resource_h41pr"), SubResource("Resource_ruhws"), ExtResource("10_haal")])
 passive_see_enemy_health = true

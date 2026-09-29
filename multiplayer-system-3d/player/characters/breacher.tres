@@ -102,6 +102,5 @@ min_ground_contact_time = 0.05
 slide_entry_boost_mult = 0.5
 slope_gravity_mult = 1.4
 health_mult = 2.0
-heal_on_kill = 999.0
 death_sound = ExtResource("2_kaefc")
 abilities = Array[ExtResource("1_ckkow")]([SubResource("Resource_x7c3f"), SubResource("Resource_bjvpn"), SubResource("Resource_lowg"), SubResource("Resource_odo1h")])

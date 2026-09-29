@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="FuncGodotFGDModelPointClass" format=3 uid="uid://bs85xs0xue5jf"]
+
+[ext_resource type="Script" uid="uid://d1nwwgcrner8b" path="res://addons/func_godot/src/fgd/func_godot_fgd_point_class_display_descriptor.gd" id="1_0ig2f"]
+[ext_resource type="PackedScene" path="res://world/special_entities/health_pack_spawner.tscn" id="1_scene"]
+[ext_resource type="Script" uid="uid://ldfqjtq0br35" path="res://addons/func_godot/src/fgd/func_godot_fgd_model_point_class.gd" id="2_mpc"]
+
+[resource]
+script = ExtResource("2_mpc")
+target_map_editor = 1
+models_sub_folder = "trenchbroom/models"
+scale_expression = "{{ scale == undefined -> 32, scale * 32 }}"
+rotation_offset = Vector3(0, 180, 0)
+scene_file = ExtResource("1_scene")
+classname = "HealthPackSpawner"
+description = "Health pack - respawns a few seconds after a player takes it"
+class_properties = Dictionary[String, Variant]({
+"respawn_time": 10.0
+})
+class_property_descriptions = Dictionary[String, Variant]({
+"respawn_time": "Seconds before the pack comes back"
+})
+auto_apply_to_matching_node_properties = true
+meta_properties = Dictionary[String, Variant]({
+"color": Color(0.8, 0.8, 0.8, 1),
+"model": "{\"path\": \"trenchbroom/models/HealthPackSpawner.glb\", \"scale\": {{ scale == undefined -> 32, scale * 32 }} }",
+"size": AABB(-10, -10, -4, 10, 10, 16)
+})
+metadata/_custom_type_script = "uid://ldfqjtq0br35"

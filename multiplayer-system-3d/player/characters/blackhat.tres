@@ -59,6 +59,5 @@ slope_gravity_mult = 0.8
 health_mult = 1.5
 regen_per_sec = 3.0
 regen_delay = 0.0
-heal_on_kill = 999.0
 death_sound = ExtResource("4_unj1j")
 abilities = Array[ExtResource("1_wvobv")]([SubResource("Resource_qjglq"), SubResource("Resource_x4sq6"), SubResource("Resource_q30ng"), SubResource("Resource_mb7bb")])

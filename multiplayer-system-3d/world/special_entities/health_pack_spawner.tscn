@@ -1,0 +1,13 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://world/special_entities/health_pack_spawner.gd" id="1_hps"]
+[ext_resource type="PackedScene" path="res://world/special_entities/health_pack.tscn" id="2_hp"]
+
+[node name="HealthPackSpawner" type="Node3D"]
+script = ExtResource("1_hps")
+
+[node name="HealthPack" parent="." instance=ExtResource("2_hp")]
+
+[node name="RespawnTimer" type="Timer" parent="."]
+wait_time = 10.0
+one_shot = true

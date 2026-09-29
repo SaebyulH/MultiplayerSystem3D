@@ -8,7 +8,6 @@
 [ext_resource type="Script" uid="uid://ccrf5bdka2m35" path="res://player/auto_projectile_spawner.gd" id="4_gpsch"]
 [ext_resource type="Texture2D" uid="uid://c3sha4tclocn7" path="res://assets/images/greybox/greybox_grey_grid.png" id="4_ykm5p"]
 [ext_resource type="Script" uid="uid://r6rneeolnvra" path="res://components/game_mode_component.gd" id="5_bgj78"]
-[ext_resource type="Texture2D" uid="uid://ygukauet8tyo" path="res://assets/images/greybox/greybox_light_solid.png" id="5_fh2lp"]
 [ext_resource type="Script" uid="uid://dwcq33mnoqpgi" path="res://world/host_server_area.gd" id="6_host"]
 [ext_resource type="FontFile" uid="uid://cwys10lucxxmh" path="res://assets/fonts/Montserrat/static/Montserrat-Regular.ttf" id="6_ykm5p"]
 [ext_resource type="Script" uid="uid://df15x0c0nulp2" path="res://world/join_party_area.gd" id="7_join"]
@@ -117,7 +116,7 @@ emission_texture = ExtResource("3_ykm5p")
 render_priority = 0
 shader = ExtResource("2_s0y3g")
 shader_parameter/texture_a = ExtResource("3_jaf4h")
-shader_parameter/texture_b = ExtResource("5_fh2lp")
+shader_parameter/texture_b = ExtResource("4_ykm5p")
 shader_parameter/grid_size = 1.0
 shader_parameter/flat_threshold = 0.7
 shader_parameter/roughness_value = 0.9

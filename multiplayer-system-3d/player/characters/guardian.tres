@@ -26,5 +26,4 @@ shoot_delay_mult = 1.1
 health_mult = 1.25
 regen_per_sec = 3.0
 regen_delay = 0.0
-heal_on_kill = 999.0
 death_sound = ExtResource("2_slv88")

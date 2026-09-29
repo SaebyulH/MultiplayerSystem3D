@@ -312,6 +312,32 @@ Other modes follow the same shape: `koth_mode.gd:23-39` and `domination_mode.gd:
 - **Projectiles** are replicated by a **single world-level** `MultiplayerSpawner`: `world/world1.tscn` `ProjectilesParent/ProjectileSpawner` (`spawn_path = ".."`, 17 uids), reached through `GameManager.projectile_parent` (set in `world_1.gd:_ready()`, resolved in `WeaponController._projectile_parent()`). Projectiles are **not** parented to the Player that fired them — `Player.despawn()`'s `hide()` would cascade to them and a disconnect would free them.
 - The tracer / bullet-decal / bullet-impact nodes from `_on_hitscan_hit` ride the **same** parent. They are local, non-networked nodes; their scenes are absent from `_spawnable_scenes`, so the spawner ignores them (true before this change too).
 - `player/auto_projectile_spawner.gd` extends `MultiplayerSpawner` to auto-scan the projectiles folder — it is a `@tool` script, inert at runtime.
+- **The health pack spawner (`world/special_entities/health_pack_spawner.gd`) is the counter-example
+  worth reading before adding another "spawner" inside a map.** Its pack is **authored in the scene**
+  and toggled available, never instantiated: the map itself arrives on a client through the spawner
+  above, so a client's own spawner is created *while* the map is being instantiated — after the host
+  added the initial pack — and `MultiplayerSpawner` only replicates `node_added` events it observes
+  live, replaying nothing. A runtime-`add_child`ed pack would therefore be missing for every peer
+  that joined before the map swap, which is the normal case. Keeping it in the scene gets it to every
+  peer with the map, and leaves only a boolean to sync.
+- **That boolean rides a reliable RPC, not a `MultiplayerSynchronizer` property**
+  (`@rpc("authority","call_local","reliable") _set_available`), because it changes at most twice per
+  pickup and there is nothing to interpolate. A **late joiner pulls it**: the client's spawner asks in
+  `_ready()` (`_request_availability.rpc_id(1)`) and the host answers with `rpc_id(get_remote_sender_id(), …)`.
+  The pull is required, not a convenience — `phase_changed` is not replayed to a late joiner either
+  (`game_mode_component.gd:128-144` writes the phase *without* emitting), so joining mid-cooldown is
+  otherwise invisible until the next change. The scene default is deliberately **available**: a stale
+  *visible* pack is a harmless cosmetic, whereas a stale *hidden* one would let the host heal from an
+  invisible pickup.
+- **The pack heals through `Player.change_health(amount, player.name)`, not `HitboxComponent`.** That
+  component always delegates the delta to the victim's `HurtComponent`, which resolves a `changer`
+  from the hitbox's parent and dereferences `GameMode.find_player(changer).is_bot` with no null check
+  (`attribute_component.gd:197-203`) — a neutral pickup has no shooter and would crash there. Passing
+  the victim's own name makes `changee == changer` (`attribute_component.gd:198-199`), the only branch
+  with no deref. Consumption is decided **per physics frame on the server** from an overlap list, not
+  in `body_entered`: that signal is edge-triggered and cannot express either half of the pack's
+  contract (a player already standing there when the timer expires, or one who walked over at full
+  health and was then shot without moving).
 - The `ProjectilesParent`/`ProjectileSpawner` pair that still exists in all 10 maps is **dead** — nothing parents under it. See known-issues #29.
 
 ---

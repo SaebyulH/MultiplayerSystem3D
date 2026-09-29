@@ -27,7 +27,6 @@ slide_entry_boost_mult = 1.5
 slope_gravity_mult = 1.3
 lifesteal_percent = 0.6
 regen_per_sec = 2.0
-heal_on_kill = 999.0
 death_sound = ExtResource("2_85qva")
 abilities = Array[ExtResource("2_abil")]([ExtResource("3_abil"), ExtResource("4_abil"), ExtResource("5_abil"), ExtResource("6_abil")])
 passive_see_enemy_health = true
