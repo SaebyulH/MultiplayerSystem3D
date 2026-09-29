@@ -6,6 +6,6 @@
 [resource]
 script = ExtResource("2_qd63k")
 display_name = "death_stairs"
-map_scene_path = "res://maps/death_stairs.tscn"
+map_scene_path = "res://maps/death_stairs.scn"
 map_image = ExtResource("1_1e2i6")
 game_mode = 5

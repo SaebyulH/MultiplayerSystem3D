@@ -133,28 +133,42 @@ static func _score_ip(addr: String) -> int:
 #  Map Scanning
 # ─────────────────────────────────────────────
 
-## Lists every *.tscn under res://maps (excluding the lobby world), sorted by
-## display name.  Each entry is { "display_name": String, "path": String }.
+## Lists every *.tscn and *.scn under res://maps (excluding utility/lobby
+## scenes), sorted by display name.
+## Each entry is { "display_name": String, "path": String }.
 static func scan_maps() -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	var dir := DirAccess.open("res://maps")
 	if dir == null:
 		return out
 
+	var excluded_maps := [
+		"main_menu_world",
+		"map_thumbnail_generator",
+		"map_game_mode_assigner",
+		"underground",
+	]
+
 	dir.list_dir_begin()
 	var f := dir.get_next()
+
 	while f != "":
-		if not dir.current_is_dir() and f.ends_with(".tscn") and f != "main_menu_world.tscn" and f != "map_thumbnail_generator.tscn" and f != "map_game_mode_assigner.tscn" and f != "underground.tscn":
-			out.append({
-				"display_name": f.trim_suffix(".tscn"),
-				"path": "res://maps/" + f,
-			})
+		if not dir.current_is_dir():
+			var extension := f.get_extension().to_lower()
+			var display_name := f.get_basename()
+
+			if extension in ["tscn", "scn"] and display_name not in excluded_maps:
+				out.append({
+					"display_name": display_name,
+					"path": "res://maps/" + f,
+				})
+
 		f = dir.get_next()
+
 	dir.list_dir_end()
 
 	out.sort_custom(func(a, b): return a["display_name"] < b["display_name"])
 	return out
-
 
 ## Loads every MapData .tres under res://maps/map_data, sorted by display name.
 ## This is the map-list source for the host menu (grouped by game mode).
