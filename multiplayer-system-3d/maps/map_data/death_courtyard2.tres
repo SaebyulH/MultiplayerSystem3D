@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="MapData" format=3]
+
+[ext_resource type="Texture2D" path="res://map_thumbnails/death_courtyard2.png" id="1_ttgvf"]
+[ext_resource type="Script" path="res://maps/map_data.gd" id="2_le4p4"]
+
+[resource]
+script = ExtResource("2_le4p4")
+display_name = "death_courtyard2"
+map_scene_path = "res://maps/death_courtyard2.scn"
+map_image = ExtResource("1_ttgvf")
+game_mode = 5

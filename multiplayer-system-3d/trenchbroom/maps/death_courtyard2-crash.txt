@@ -1,0 +1,48 @@
+OS:	macOS Tahoe (26.6.2)
+Qt:	6.10.3
+GL_VENDOR:	Apple
+GL_RENDERER:	Apple M2
+GL_VERSION:	2.1 Metal - 90.5
+TrenchBroom Version:	2026.2
+TrenchBroom Build:	v2026.2 Release macOS
+Reason:	SIGSEGV
+Stack trace (most recent call first):
+#0  0x000000010284f3db in __mh_execute_header + 1553371 at /Users/maddoxmcalpine/Applications/TrenchBroom.app/Contents/MacOS/TrenchBroom
+#1  0x0000000187e59743 in __sigtramp + 55 at /usr/lib/system/libsystem_platform.dylib
+#2  0x0000000102920f9f in __mh_execute_header + 2412447 at /Users/maddoxmcalpine/Applications/TrenchBroom.app/Contents/MacOS/TrenchBroom
+#3  0x000000010654e4f7 in QAbstractItemModel::multiData(QModelIndex const&, QModelRoleDataSpan) const + 95 at /Users/maddoxmcalpine/Applications/TrenchBroom.app/Contents/Frameworks/QtCore.framework/Versions/A/QtCore
+#4  0x00000001053c196f in QStyledItemDelegate::initStyleOption(QStyleOptionViewItem*, QModelIndex const&) const + 111 at /Users/maddoxmcalpine/Applications/TrenchBroom.app/Contents/Frameworks/QtWidgets.framework/Versions/A/QtWidgets
+#5  0x00000001053c2843 in QStyledItemDelegate::sizeHint(QStyleOptionViewItem const&, QModelIndex const&) const + 275 at /Users/maddoxmcalpine/Applications/TrenchBroom.app/Contents/Frameworks/QtWidgets.framework/Versions/A/QtWidgets
+#6  0x00000001053ed1cb in QTableView::columnWidth(int) const + 787 at /Users/maddoxmcalpine/Applications/TrenchBroom.app/Contents/Frameworks/QtWidgets.framework/Versions/A/QtWidgets
+#7  0x00000001053f2573 in QTableView::sizeHintForRow(int) const + 443 at /Users/maddoxmcalpine/Applications/TrenchBroom.app/Contents/Frameworks/QtWidgets.framework/Versions/A/QtWidgets
+#8  0x00000001053ac487 in QHeaderView::resizeSections(QHeaderView::ResizeMode) + 935 at /Users/maddoxmcalpine/Applications/TrenchBroom.app/Contents/Frameworks/QtWidgets.framework/Versions/A/QtWidgets
+#9  0x00000001053a9eb7 in QHeaderView::length() const + 119 at /Users/maddoxmcalpine/Applications/TrenchBroom.app/Contents/Frameworks/QtWidgets.framework/Versions/A/QtWidgets
+#10 0x00000001053f20d3 in QTableView::updateGeometries() + 655 at /Users/maddoxmcalpine/Applications/TrenchBroom.app/Contents/Frameworks/QtWidgets.framework/Versions/A/QtWidgets
+#11 0x00000001053f380f in QTableView::timerEvent(QTimerEvent*) + 491 at /Users/maddoxmcalpine/Applications/TrenchBroom.app/Contents/Frameworks/QtWidgets.framework/Versions/A/QtWidgets
+#12 0x000000010636d763 in QObject::event(QEvent*) + 103 at /Users/maddoxmcalpine/Applications/TrenchBroom.app/Contents/Frameworks/QtCore.framework/Versions/A/QtCore
+#13 0x000000010514fc2b in QWidget::event(QEvent*) + 3199 at /Users/maddoxmcalpine/Applications/TrenchBroom.app/Contents/Frameworks/QtWidgets.framework/Versions/A/QtWidgets
+#14 0x00000001051a0d9b in QFrame::event(QEvent*) + 55 at /Users/maddoxmcalpine/Applications/TrenchBroom.app/Contents/Frameworks/QtWidgets.framework/Versions/A/QtWidgets
+#15 0x0000000105393e47 in QAbstractItemView::event(QEvent*) + 563 at /Users/maddoxmcalpine/Applications/TrenchBroom.app/Contents/Frameworks/QtWidgets.framework/Versions/A/QtWidgets
+#16 0x00000001051003b7 in QApplicationPrivate::notify_helper(QObject*, QEvent*) + 331 at /Users/maddoxmcalpine/Applications/TrenchBroom.app/Contents/Frameworks/QtWidgets.framework/Versions/A/QtWidgets
+#17 0x0000000105101e17 in QApplication::notify(QObject*, QEvent*) + 3083 at /Users/maddoxmcalpine/Applications/TrenchBroom.app/Contents/Frameworks/QtWidgets.framework/Versions/A/QtWidgets
+#18 0x000000010632354f in QCoreApplication::sendEvent(QObject*, QEvent*) + 171 at /Users/maddoxmcalpine/Applications/TrenchBroom.app/Contents/Frameworks/QtCore.framework/Versions/A/QtCore
+#19 0x00000001064b9fc3 in QTimerInfoList::activateTimers() + 1267 at /Users/maddoxmcalpine/Applications/TrenchBroom.app/Contents/Frameworks/QtCore.framework/Versions/A/QtCore
+#20 0x0000000105d781a7 in _qt_plugin_instance + 53583 at /Users/maddoxmcalpine/Applications/TrenchBroom.app/Contents/PlugIns/platforms/libqcocoa.dylib
+#21 0x0000000187f0cf5f at /System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation
+#22 0x0000000187f0cef3 at /System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation
+#23 0x0000000187f0ccc3 at /System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation
+#24 0x0000000187f0b883 at /System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation
+#25 0x0000000187fde263 at /System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation
+#26 0x0000000194cf755f at /System/Library/Frameworks/Carbon.framework/Versions/A/Frameworks/HIToolbox.framework/Versions/A/HIToolbox
+#27 0x0000000194cfa8bb at /System/Library/Frameworks/Carbon.framework/Versions/A/Frameworks/HIToolbox.framework/Versions/A/HIToolbox
+#28 0x0000000194e8414b at /System/Library/Frameworks/Carbon.framework/Versions/A/Frameworks/HIToolbox.framework/Versions/A/HIToolbox
+#29 0x000000018c9ee3cf at /System/Library/Frameworks/AppKit.framework/Versions/C/AppKit
+#30 0x000000018c342083 at /System/Library/Frameworks/AppKit.framework/Versions/C/AppKit
+#31 0x000000018ced796b at /System/Library/Frameworks/AppKit.framework/Versions/C/AppKit
+#32 0x000000018ced7677 at /System/Library/Frameworks/AppKit.framework/Versions/C/AppKit
+#33 0x000000018c33513b at /System/Library/Frameworks/AppKit.framework/Versions/C/AppKit
+#34 0x0000000105d78e3f in _qt_plugin_instance + 56807 at /Users/maddoxmcalpine/Applications/TrenchBroom.app/Contents/PlugIns/platforms/libqcocoa.dylib
+#35 0x000000010632cadf in QEventLoop::exec(QFlags<QEventLoop::ProcessEventsFlag>) + 587 at /Users/maddoxmcalpine/Applications/TrenchBroom.app/Contents/Frameworks/QtCore.framework/Versions/A/QtCore
+#36 0x0000000106323247 in QCoreApplication::exec() + 227 at /Users/maddoxmcalpine/Applications/TrenchBroom.app/Contents/Frameworks/QtCore.framework/Versions/A/QtCore
+#37 0x00000001026d9a1b in __mh_execute_header + 23067 at /Users/maddoxmcalpine/Applications/TrenchBroom.app/Contents/MacOS/TrenchBroom
+#38 0x0000000187a844e3 in start + 6991 at /usr/lib/dyld

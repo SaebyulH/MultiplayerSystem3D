@@ -1,0 +1,619 @@
+Loading document from "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map"
+Adding file system path "/Users/maddoxmcalpine/Applications/TrenchBroom.app/Contents/Resources/defaults/assets"
+Adding file system path "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/"
+Adding file system path "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom"
+Found 0 shaders
+Loaded entity definition file MultiplayerSystem3D.fgd
+Found 0 shaders
+No usable diffuse textures found for material 0 of model 'trenchbroom/models/Truck.glb', loading fallback texture
+Could not load texture 'trenchbroom/textures/FreeStylized/bricks_wall_15_1k/bricks_wall_15_1k/bricks_wall_15_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/bricks_wall_15_1k/bricks_wall_15_1k/bricks_wall_15_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/church_wall_01_1k/church_wall_01_1k/church_wall_01_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/church_wall_01_1k/church_wall_01_1k/church_wall_01_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/cliff_rocks_07_1k/cliff_rocks_07_1k/cliff_rocks_07_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/cliff_rocks_07_1k/cliff_rocks_07_1k/cliff_rocks_07_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_slabs_03_1k/concrete_slabs_03_1k/concrete_slabs_03_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_slabs_03_1k/concrete_slabs_03_1k/concrete_slabs_03_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_slabs_05_1k/concrete_slabs_05_1k/concrete_slabs_05_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_slabs_05_1k/concrete_slabs_05_1k/concrete_slabs_05_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_wall_01_1k/concrete_wall_01_1k/concrete_wall_01_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_wall_05_1k/concrete_wall_05_1k/concrete_wall_05_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_wall_09_1k/concrete_wall_09_1k/concrete_wall_09_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_wall_09_1k/concrete_wall_09_1k/concrete_wall_09_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/floor_tiles_14_1k/floor_tiles_14_1k/floor_tiles_14_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/floor_tiles_14_1k/floor_tiles_14_1k/floor_tiles_14_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/grass_04_1k/grass_04_1k/grass_04_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/grass_04_1k/grass_04_1k/grass_04_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/ground_tiles_14_1k/ground_tiles_14_1k/ground_tiles_14_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/ground_tiles_27_1k/ground_tiles_27_1k/ground_tiles_27_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/ground_tiles_27_1k/ground_tiles_27_1k/ground_tiles_27_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/ground_with_rocks_02_1k/ground_with_rocks_02_1k/ground_with_rocks_02_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/metal_01_1k/metal_01_1k/metal_01_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/metal_03_1k/metal_03_1k/metal_03_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/plaster_wall_01_1k/plaster_wall_01_1k/plaster_wall_01_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/plaster_wall_01_1k/plaster_wall_01_1k/plaster_wall_01_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/metal_roof_01_1k/metal_roof_01_1k/metal_roof_01_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/snow_01_1k/snow_01_1k/snow_01_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/stone_bricks_wall_04_1k/stone_bricks_wall_04_1k/stone_bricks_wall_04_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/white_bricks_wall_01_1k/white_bricks_wall_01_1k/white_bricks_wall_01_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/wood_planks_22_1k/wood_planks_22_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/wood_planks_22_1k/wood_planks_22_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/wood_planks_09_1k/wood_planks_09_1k/wood_planks_09_height_1k.png': Unsupported pixel format
+No usable diffuse textures found for material 0 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 1 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 1 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 1 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 2 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 3 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 4 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 0 of model 'trenchbroom/models/mannequin_static.glb', loading fallback texture
+No usable diffuse textures found for material 1 of model 'trenchbroom/models/mannequin_static.glb', loading fallback texture
+No usable diffuse textures found for material 0 of model 'trenchbroom/models/mannequin_static.glb', loading fallback texture
+No usable diffuse textures found for material 1 of model 'trenchbroom/models/mannequin_static.glb', loading fallback texture
+Reloading entity definitions
+Loaded entity definition file MultiplayerSystem3D.fgd
+No usable diffuse textures found for material 0 of model 'trenchbroom/models/Truck.glb', loading fallback texture
+No usable diffuse textures found for material 0 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 1 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 1 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 1 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 2 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 3 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 4 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 0 of model 'trenchbroom/models/mannequin_static.glb', loading fallback texture
+No usable diffuse textures found for material 1 of model 'trenchbroom/models/mannequin_static.glb', loading fallback texture
+No usable diffuse textures found for material 0 of model 'trenchbroom/models/mannequin_static.glb', loading fallback texture
+No usable diffuse textures found for material 1 of model 'trenchbroom/models/mannequin_static.glb', loading fallback texture
+Reloading material collections
+Found 0 shaders
+Could not load texture 'trenchbroom/textures/FreeStylized/bricks_wall_15_1k/bricks_wall_15_1k/bricks_wall_15_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/bricks_wall_15_1k/bricks_wall_15_1k/bricks_wall_15_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/church_wall_01_1k/church_wall_01_1k/church_wall_01_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/church_wall_01_1k/church_wall_01_1k/church_wall_01_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/cliff_rocks_07_1k/cliff_rocks_07_1k/cliff_rocks_07_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/cliff_rocks_07_1k/cliff_rocks_07_1k/cliff_rocks_07_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_slabs_03_1k/concrete_slabs_03_1k/concrete_slabs_03_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_slabs_03_1k/concrete_slabs_03_1k/concrete_slabs_03_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_slabs_05_1k/concrete_slabs_05_1k/concrete_slabs_05_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_slabs_05_1k/concrete_slabs_05_1k/concrete_slabs_05_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_wall_01_1k/concrete_wall_01_1k/concrete_wall_01_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_wall_05_1k/concrete_wall_05_1k/concrete_wall_05_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/floor_tiles_14_1k/floor_tiles_14_1k/floor_tiles_14_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_wall_09_1k/concrete_wall_09_1k/concrete_wall_09_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_wall_09_1k/concrete_wall_09_1k/concrete_wall_09_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/floor_tiles_14_1k/floor_tiles_14_1k/floor_tiles_14_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/grass_04_1k/grass_04_1k/grass_04_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/grass_04_1k/grass_04_1k/grass_04_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/ground_tiles_14_1k/ground_tiles_14_1k/ground_tiles_14_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/ground_tiles_27_1k/ground_tiles_27_1k/ground_tiles_27_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/ground_tiles_27_1k/ground_tiles_27_1k/ground_tiles_27_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/ground_with_rocks_02_1k/ground_with_rocks_02_1k/ground_with_rocks_02_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/metal_01_1k/metal_01_1k/metal_01_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/metal_03_1k/metal_03_1k/metal_03_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/plaster_wall_01_1k/plaster_wall_01_1k/plaster_wall_01_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/metal_roof_01_1k/metal_roof_01_1k/metal_roof_01_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/plaster_wall_01_1k/plaster_wall_01_1k/plaster_wall_01_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/snow_01_1k/snow_01_1k/snow_01_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/stone_bricks_wall_04_1k/stone_bricks_wall_04_1k/stone_bricks_wall_04_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/white_bricks_wall_01_1k/white_bricks_wall_01_1k/white_bricks_wall_01_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/wood_planks_09_1k/wood_planks_09_1k/wood_planks_09_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/wood_planks_22_1k/wood_planks_22_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/wood_planks_22_1k/wood_planks_22_height_1k.png': Unsupported pixel format
+Reloading entity definitions
+Loaded entity definition file MultiplayerSystem3D.fgd
+No usable diffuse textures found for material 0 of model 'trenchbroom/models/Truck.glb', loading fallback texture
+No usable diffuse textures found for material 0 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 1 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 1 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 1 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 2 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 3 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 4 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 0 of model 'trenchbroom/models/mannequin_static.glb', loading fallback texture
+No usable diffuse textures found for material 1 of model 'trenchbroom/models/mannequin_static.glb', loading fallback texture
+No usable diffuse textures found for material 0 of model 'trenchbroom/models/mannequin_static.glb', loading fallback texture
+No usable diffuse textures found for material 1 of model 'trenchbroom/models/mannequin_static.glb', loading fallback texture
+Reloading material collections
+Found 0 shaders
+Could not load texture 'trenchbroom/textures/FreeStylized/bricks_wall_15_1k/bricks_wall_15_1k/bricks_wall_15_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/bricks_wall_15_1k/bricks_wall_15_1k/bricks_wall_15_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/church_wall_01_1k/church_wall_01_1k/church_wall_01_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/church_wall_01_1k/church_wall_01_1k/church_wall_01_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/cliff_rocks_07_1k/cliff_rocks_07_1k/cliff_rocks_07_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/cliff_rocks_07_1k/cliff_rocks_07_1k/cliff_rocks_07_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_slabs_03_1k/concrete_slabs_03_1k/concrete_slabs_03_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_slabs_03_1k/concrete_slabs_03_1k/concrete_slabs_03_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_slabs_05_1k/concrete_slabs_05_1k/concrete_slabs_05_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_slabs_05_1k/concrete_slabs_05_1k/concrete_slabs_05_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_wall_01_1k/concrete_wall_01_1k/concrete_wall_01_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_wall_05_1k/concrete_wall_05_1k/concrete_wall_05_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_wall_09_1k/concrete_wall_09_1k/concrete_wall_09_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_wall_09_1k/concrete_wall_09_1k/concrete_wall_09_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/floor_tiles_14_1k/floor_tiles_14_1k/floor_tiles_14_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/floor_tiles_14_1k/floor_tiles_14_1k/floor_tiles_14_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/grass_04_1k/grass_04_1k/grass_04_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/ground_tiles_27_1k/ground_tiles_27_1k/ground_tiles_27_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/grass_04_1k/grass_04_1k/grass_04_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/ground_tiles_14_1k/ground_tiles_14_1k/ground_tiles_14_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/ground_tiles_27_1k/ground_tiles_27_1k/ground_tiles_27_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/ground_with_rocks_02_1k/ground_with_rocks_02_1k/ground_with_rocks_02_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/metal_01_1k/metal_01_1k/metal_01_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/metal_03_1k/metal_03_1k/metal_03_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/plaster_wall_01_1k/plaster_wall_01_1k/plaster_wall_01_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/plaster_wall_01_1k/plaster_wall_01_1k/plaster_wall_01_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/metal_roof_01_1k/metal_roof_01_1k/metal_roof_01_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/snow_01_1k/snow_01_1k/snow_01_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/stone_bricks_wall_04_1k/stone_bricks_wall_04_1k/stone_bricks_wall_04_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/white_bricks_wall_01_1k/white_bricks_wall_01_1k/white_bricks_wall_01_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/wood_planks_09_1k/wood_planks_09_1k/wood_planks_09_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/wood_planks_22_1k/wood_planks_22_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/wood_planks_22_1k/wood_planks_22_height_1k.png': Unsupported pixel format
+Could not clip brush: Brush is empty
+Could not clip brush: Brush is empty
+Could not resize brush: Brush is empty
+Could not resize brush: Brush is empty
+Could not resize brush: Brush is empty
+Could not resize brush: Brush is empty
+Could not resize brush: Brush is empty
+Could not resize brush: Brush is empty
+Could not resize brush: Brush is empty
+Could not resize brush: Brush is empty
+Could not resize brush: Brush is empty
+Could not resize brush: Brush is empty
+Could not resize brush: Brush is empty
+Could not resize brush: Brush is empty
+Could not resize brush: Brush is empty
+Could not resize brush: Brush is empty
+Could not resize brush: Brush is empty
+Could not clip brush: Brush is empty
+Could not clip brush: Brush is empty
+Could not clip brush: Brush is empty
+Could not clip brush: Brush is empty
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/autosave/brickstairs.10.map"
+Created autosave backup at "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/autosave/brickstairs.10.map"
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map" in 27ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map" in 14ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/autosave/brickstairs.11.map"
+Created autosave backup at "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/autosave/brickstairs.11.map"
+Reloading entity definitions
+Loaded entity definition file MultiplayerSystem3D.fgd
+No usable diffuse textures found for material 0 of model 'trenchbroom/models/Truck.glb', loading fallback texture
+No usable diffuse textures found for material 0 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 1 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 1 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 1 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 2 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 3 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 4 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 0 of model 'trenchbroom/models/mannequin_static.glb', loading fallback texture
+No usable diffuse textures found for material 1 of model 'trenchbroom/models/mannequin_static.glb', loading fallback texture
+No usable diffuse textures found for material 0 of model 'trenchbroom/models/mannequin_static.glb', loading fallback texture
+No usable diffuse textures found for material 1 of model 'trenchbroom/models/mannequin_static.glb', loading fallback texture
+Reloading material collections
+Found 0 shaders
+Could not load texture 'trenchbroom/textures/FreeStylized/bricks_wall_15_1k/bricks_wall_15_1k/bricks_wall_15_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/bricks_wall_15_1k/bricks_wall_15_1k/bricks_wall_15_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/church_wall_01_1k/church_wall_01_1k/church_wall_01_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/church_wall_01_1k/church_wall_01_1k/church_wall_01_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/cliff_rocks_07_1k/cliff_rocks_07_1k/cliff_rocks_07_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/cliff_rocks_07_1k/cliff_rocks_07_1k/cliff_rocks_07_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_slabs_03_1k/concrete_slabs_03_1k/concrete_slabs_03_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_slabs_03_1k/concrete_slabs_03_1k/concrete_slabs_03_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_slabs_05_1k/concrete_slabs_05_1k/concrete_slabs_05_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_slabs_05_1k/concrete_slabs_05_1k/concrete_slabs_05_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_wall_01_1k/concrete_wall_01_1k/concrete_wall_01_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_wall_05_1k/concrete_wall_05_1k/concrete_wall_05_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_wall_09_1k/concrete_wall_09_1k/concrete_wall_09_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_wall_09_1k/concrete_wall_09_1k/concrete_wall_09_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/floor_tiles_14_1k/floor_tiles_14_1k/floor_tiles_14_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/floor_tiles_14_1k/floor_tiles_14_1k/floor_tiles_14_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/grass_04_1k/grass_04_1k/grass_04_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/grass_04_1k/grass_04_1k/grass_04_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/ground_tiles_14_1k/ground_tiles_14_1k/ground_tiles_14_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/ground_tiles_27_1k/ground_tiles_27_1k/ground_tiles_27_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/ground_tiles_27_1k/ground_tiles_27_1k/ground_tiles_27_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/ground_with_rocks_02_1k/ground_with_rocks_02_1k/ground_with_rocks_02_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/metal_01_1k/metal_01_1k/metal_01_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/metal_03_1k/metal_03_1k/metal_03_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/metal_roof_01_1k/metal_roof_01_1k/metal_roof_01_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/plaster_wall_01_1k/plaster_wall_01_1k/plaster_wall_01_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/plaster_wall_01_1k/plaster_wall_01_1k/plaster_wall_01_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/snow_01_1k/snow_01_1k/snow_01_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/stone_bricks_wall_04_1k/stone_bricks_wall_04_1k/stone_bricks_wall_04_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/white_bricks_wall_01_1k/white_bricks_wall_01_1k/white_bricks_wall_01_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/wood_planks_09_1k/wood_planks_09_1k/wood_planks_09_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/wood_planks_22_1k/wood_planks_22_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/wood_planks_22_1k/wood_planks_22_height_1k.png': Unsupported pixel format
+Reloading entity definitions
+Loaded entity definition file MultiplayerSystem3D.fgd
+No usable diffuse textures found for material 0 of model 'trenchbroom/models/Truck.glb', loading fallback texture
+No usable diffuse textures found for material 0 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 1 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 1 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 1 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 2 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 3 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 4 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 0 of model 'trenchbroom/models/mannequin_static.glb', loading fallback texture
+No usable diffuse textures found for material 1 of model 'trenchbroom/models/mannequin_static.glb', loading fallback texture
+No usable diffuse textures found for material 0 of model 'trenchbroom/models/mannequin_static.glb', loading fallback texture
+No usable diffuse textures found for material 1 of model 'trenchbroom/models/mannequin_static.glb', loading fallback texture
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map" in 28ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map" in 6ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/autosave/brickstairs.4.map"
+Created autosave backup at "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/autosave/brickstairs.4.map"
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map" in 45ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map" in 50ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map" in 20ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map" in 20ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map" in 12ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map" in 8ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map" in 12ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/autosave/brickstairs.5.map"
+Created autosave backup at "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/autosave/brickstairs.5.map"
+Could not resize brush: Brush is empty
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map" in 81ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map" in 3ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map" in 18ms
+Could not resize brush: Brush is empty
+Could not resize brush: Brush is empty
+Could not resize brush: Brush is empty
+Could not resize brush: Brush is empty
+Could not resize brush: Brush is empty
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map" in 62ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/autosave/brickstairs.6.map"
+Created autosave backup at "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/autosave/brickstairs.6.map"
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map" in 62ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map" in 18ms
+Could not clip brush: Brush is empty
+Could not resize brush: Brush is empty
+Could not resize brush: Brush is empty
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map" in 53ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map" in 60ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map" in 21ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map" in 15ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/autosave/brickstairs.7.map"
+Created autosave backup at "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/autosave/brickstairs.7.map"
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map" in 67ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/autosave/brickstairs.8.map"
+Created autosave backup at "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/autosave/brickstairs.8.map"
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/autosave/brickstairs.9.map"
+Created autosave backup at "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/autosave/brickstairs.9.map"
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map" in 66ms
+Reloading material collections
+Found 0 shaders
+Could not load texture 'trenchbroom/textures/FreeStylized/bricks_wall_15_1k/bricks_wall_15_1k/bricks_wall_15_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/bricks_wall_15_1k/bricks_wall_15_1k/bricks_wall_15_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/church_wall_01_1k/church_wall_01_1k/church_wall_01_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/church_wall_01_1k/church_wall_01_1k/church_wall_01_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/cliff_rocks_07_1k/cliff_rocks_07_1k/cliff_rocks_07_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/cliff_rocks_07_1k/cliff_rocks_07_1k/cliff_rocks_07_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_slabs_03_1k/concrete_slabs_03_1k/concrete_slabs_03_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_slabs_03_1k/concrete_slabs_03_1k/concrete_slabs_03_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_slabs_05_1k/concrete_slabs_05_1k/concrete_slabs_05_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_slabs_05_1k/concrete_slabs_05_1k/concrete_slabs_05_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_wall_01_1k/concrete_wall_01_1k/concrete_wall_01_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_wall_05_1k/concrete_wall_05_1k/concrete_wall_05_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_wall_09_1k/concrete_wall_09_1k/concrete_wall_09_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/floor_tiles_14_1k/floor_tiles_14_1k/floor_tiles_14_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/floor_tiles_14_1k/floor_tiles_14_1k/floor_tiles_14_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_wall_09_1k/concrete_wall_09_1k/concrete_wall_09_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/grass_04_1k/grass_04_1k/grass_04_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/grass_04_1k/grass_04_1k/grass_04_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/ground_tiles_14_1k/ground_tiles_14_1k/ground_tiles_14_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/ground_tiles_27_1k/ground_tiles_27_1k/ground_tiles_27_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/ground_tiles_27_1k/ground_tiles_27_1k/ground_tiles_27_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/metal_03_1k/metal_03_1k/metal_03_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/ground_with_rocks_02_1k/ground_with_rocks_02_1k/ground_with_rocks_02_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/metal_01_1k/metal_01_1k/metal_01_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/plaster_wall_01_1k/plaster_wall_01_1k/plaster_wall_01_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/plaster_wall_01_1k/plaster_wall_01_1k/plaster_wall_01_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/metal_roof_01_1k/metal_roof_01_1k/metal_roof_01_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/snow_01_1k/snow_01_1k/snow_01_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/stone_bricks_wall_04_1k/stone_bricks_wall_04_1k/stone_bricks_wall_04_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/white_bricks_wall_01_1k/white_bricks_wall_01_1k/white_bricks_wall_01_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/wood_planks_09_1k/wood_planks_09_1k/wood_planks_09_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/wood_planks_22_1k/wood_planks_22_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/wood_planks_22_1k/wood_planks_22_height_1k.png': Unsupported pixel format
+Reloading entity definitions
+Loaded entity definition file MultiplayerSystem3D.fgd
+No usable diffuse textures found for material 0 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 1 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 1 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 1 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 2 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 3 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 4 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 0 of model 'trenchbroom/models/Truck.glb', loading fallback texture
+No usable diffuse textures found for material 0 of model 'trenchbroom/models/mannequin_static.glb', loading fallback texture
+No usable diffuse textures found for material 1 of model 'trenchbroom/models/mannequin_static.glb', loading fallback texture
+No usable diffuse textures found for material 0 of model 'trenchbroom/models/mannequin_static.glb', loading fallback texture
+No usable diffuse textures found for material 1 of model 'trenchbroom/models/mannequin_static.glb', loading fallback texture
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map" in 33ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/autosave/brickstairs.10.map"
+Created autosave backup at "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/autosave/brickstairs.10.map"
+Could not resize brush: Brush has invalid face
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map" in 62ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map" in 21ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map" in 31ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map" in 32ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map" in 21ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/brickstairs.map" in 24ms
+Creating new document
+Adding file system path "/Users/maddoxmcalpine/Applications/TrenchBroom.app/Contents/Resources/defaults/assets"
+Adding file system path "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/"
+Found 0 shaders
+Loaded entity definition file MultiplayerSystem3D.fgd
+Found 0 shaders
+Could not load texture 'trenchbroom/textures/FreeStylized/bricks_wall_15_1k/bricks_wall_15_1k/bricks_wall_15_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/bricks_wall_15_1k/bricks_wall_15_1k/bricks_wall_15_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/church_wall_01_1k/church_wall_01_1k/church_wall_01_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/church_wall_01_1k/church_wall_01_1k/church_wall_01_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/cliff_rocks_07_1k/cliff_rocks_07_1k/cliff_rocks_07_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/cliff_rocks_07_1k/cliff_rocks_07_1k/cliff_rocks_07_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_slabs_03_1k/concrete_slabs_03_1k/concrete_slabs_03_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_slabs_03_1k/concrete_slabs_03_1k/concrete_slabs_03_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_slabs_05_1k/concrete_slabs_05_1k/concrete_slabs_05_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_slabs_05_1k/concrete_slabs_05_1k/concrete_slabs_05_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_wall_01_1k/concrete_wall_01_1k/concrete_wall_01_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_wall_05_1k/concrete_wall_05_1k/concrete_wall_05_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_wall_09_1k/concrete_wall_09_1k/concrete_wall_09_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/concrete_wall_09_1k/concrete_wall_09_1k/concrete_wall_09_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/floor_tiles_14_1k/floor_tiles_14_1k/floor_tiles_14_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/floor_tiles_14_1k/floor_tiles_14_1k/floor_tiles_14_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/grass_04_1k/grass_04_1k/grass_04_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/grass_04_1k/grass_04_1k/grass_04_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/ground_tiles_14_1k/ground_tiles_14_1k/ground_tiles_14_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/ground_tiles_27_1k/ground_tiles_27_1k/ground_tiles_27_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/ground_tiles_27_1k/ground_tiles_27_1k/ground_tiles_27_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/ground_with_rocks_02_1k/ground_with_rocks_02_1k/ground_with_rocks_02_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/metal_01_1k/metal_01_1k/metal_01_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/metal_03_1k/metal_03_1k/metal_03_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/metal_roof_01_1k/metal_roof_01_1k/metal_roof_01_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/plaster_wall_01_1k/plaster_wall_01_1k/plaster_wall_01_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/plaster_wall_01_1k/plaster_wall_01_1k/plaster_wall_01_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/snow_01_1k/snow_01_1k/snow_01_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/stone_bricks_wall_04_1k/stone_bricks_wall_04_1k/stone_bricks_wall_04_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/white_bricks_wall_01_1k/white_bricks_wall_01_1k/white_bricks_wall_01_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/wood_planks_09_1k/wood_planks_09_1k/wood_planks_09_height_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/wood_planks_22_1k/wood_planks_22_ambientocclusion_1k.png': Unsupported pixel format
+Could not load texture 'trenchbroom/textures/FreeStylized/wood_planks_22_1k/wood_planks_22_height_1k.png': Unsupported pixel format
+No usable diffuse textures found for material 0 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 1 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 1 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 1 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 2 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 3 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 0 of model 'trenchbroom/models/Truck.glb', loading fallback texture
+No usable diffuse textures found for material 4 of model 'trenchbroom/models/Test.glb', loading fallback texture
+No usable diffuse textures found for material 0 of model 'trenchbroom/models/mannequin_static.glb', loading fallback texture
+No usable diffuse textures found for material 1 of model 'trenchbroom/models/mannequin_static.glb', loading fallback texture
+No usable diffuse textures found for material 0 of model 'trenchbroom/models/mannequin_static.glb', loading fallback texture
+No usable diffuse textures found for material 1 of model 'trenchbroom/models/mannequin_static.glb', loading fallback texture
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 22ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 11ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/autosave/death_courtyard2.1.map"
+Created autosave backup at "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/autosave/death_courtyard2.1.map"
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 12ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 13ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 4ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 22ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 5ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 12ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 7ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 13ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 61ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 21ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 19ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 32ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 24ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 23ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 18ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 14ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/autosave/death_courtyard2.2.map"
+Created autosave backup at "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/autosave/death_courtyard2.2.map"
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 29ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/autosave/death_courtyard2.3.map"
+Created autosave backup at "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/autosave/death_courtyard2.3.map"
+Could not clip brush: Brush is empty
+Could not clip brush: Brush is empty
+Could not clip brush: Brush is empty
+Could not clip brush: Brush is empty
+Could not clip brush: Brush is empty
+Could not clip brush: Brush is empty
+Could not clip brush: Brush is empty
+Could not clip brush: Brush is empty
+Could not clip brush: Brush is empty
+Could not clip brush: Brush is empty
+Could not clip brush: Brush is empty
+Could not clip brush: Brush is empty
+Could not clip brush: Brush is empty
+Could not clip brush: Brush is empty
+Could not clip brush: Brush is empty
+Could not clip brush: Brush is empty
+Could not clip brush: Brush is empty
+Could not clip brush: Brush is empty
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 73ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 100ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 19ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 15ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/autosave/death_courtyard2.4.map"
+Created autosave backup at "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/autosave/death_courtyard2.4.map"
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/autosave/death_courtyard2.5.map"
+Created autosave backup at "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/autosave/death_courtyard2.5.map"
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 61ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 37ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 32ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 14ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 30ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/autosave/death_courtyard2.6.map"
+Created autosave backup at "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/autosave/death_courtyard2.6.map"
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/autosave/death_courtyard2.7.map"
+Created autosave backup at "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/autosave/death_courtyard2.7.map"
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 75ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 25ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 75ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/autosave/death_courtyard2.8.map"
+Created autosave backup at "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/autosave/death_courtyard2.8.map"
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 39ms
+Could not resize brush: Brush is empty
+Could not resize brush: Brush is empty
+Could not resize brush: Brush is empty
+Could not resize brush: Brush is empty
+Could not resize brush: Brush is empty
+Could not resize brush: Brush is empty
+Could not resize brush: Brush is empty
+Could not resize brush: Brush is empty
+Could not resize brush: Brush is empty
+Could not resize brush: Brush is empty
+Could not resize brush: Brush is empty
+Could not resize brush: Brush is empty
+Could not resize brush: Brush is empty
+Could not resize brush: Brush is empty
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/autosave/death_courtyard2.9.map"
+Created autosave backup at "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/autosave/death_courtyard2.9.map"
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 62ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 9ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 10ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 9ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 10ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 26ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 9ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 8ms
+Could not resize brush: Brush is empty
+Could not resize brush: Brush is empty
+Could not resize brush: Brush is empty
+Could not resize brush: Brush is empty
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/autosave/death_courtyard2.10.map"
+Created autosave backup at "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/autosave/death_courtyard2.10.map"
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 50ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 16ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 32ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 61ms
+Could not resize brush: Brush is empty
+Could not resize brush: Brush is empty
+Could not resize brush: Brush is empty
+Could not resize brush: Brush is empty
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 98ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 59ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/autosave/death_courtyard2.11.map"
+Created autosave backup at "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/autosave/death_courtyard2.11.map"
+Could not resize brush: Brush is empty
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 46ms
+Saving document to "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map"
+Saved "/Users/maddoxmcalpine/Documents/GitHub/MultiplayerSystem3D/multiplayer-system-3d/trenchbroom/maps/death_courtyard2.map" in 38ms
+Could not clip brush: Brush is empty
+Could not clip brush: Brush is empty
+Could not clip brush: Brush is empty
+Could not clip brush: Brush is empty
+Could not clip brush: Brush is empty
+Could not clip brush: Brush is empty
+Could not clip brush: Brush is empty
+Could not clip brush: Brush is empty

@@ -1,0 +1,14 @@
+[remap]
+
+importer="func_godot.map"
+type="Resource"
+uid="uid://8medlisg214m"
+path="res://.godot/imported/death_courtyard2.map-2f6ab0af441b2be838084ae49c26f691.tres"
+
+[deps]
+
+source_file="res://trenchbroom/maps/death_courtyard2.map"
+dest_files=["res://.godot/imported/death_courtyard2.map-2f6ab0af441b2be838084ae49c26f691.tres"]
+
+[params]
+
