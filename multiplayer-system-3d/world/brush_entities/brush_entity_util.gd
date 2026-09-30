@@ -51,8 +51,8 @@ static func connect_round_reset(node: Node, callable: Callable) -> void:
 	gmc.phase_changed.connect(callable)
 
 
-## Wires [param source]'s `trigger` signal to the `use()` method of every entity in the
-## same map carrying [param target_name] as its `targetname`.
+## Wires [param source]'s signals to every entity in the same map carrying
+## [param target_name] as its `targetname`.
 ##
 ## This replaces Qodot's `QodotMap.connect_signals()`, which func_godot dropped outright
 ## — nothing in `addons/func_godot/` wires entities together. It is called from a
@@ -60,18 +60,29 @@ static func connect_round_reset(node: Node, callable: Callable) -> void:
 ## (`entity_assembler.gd:267-268`), so by the time it runs every entity in the map exists
 ## and is in the tree.
 ##
-## [b]The connection is made with `CONNECT_PERSIST` and therefore only exists after the
+## [b]One `target` name carries two contracts, and a target takes whichever it implements:[/b]
+##
+## [codeblock]
+## source.trigger           -> target.use()                        (a mover door)
+## source.occupant_entered  -> target.add_occupant(body)           (a ControlPoint)
+## source.occupant_exited   -> target.remove_occupant(body)
+## [/codeblock]
+##
+## They are additive rather than exclusive. `use()` is a one-shot and cannot express "who is
+## standing in this volume", which is why [ControlPoint] needs the second pair; a
+## [MovingBrush] implements only `use()`, so the occupancy half is skipped for it and every
+## trigger→door link behaves exactly as it did before.
+##
+## [b]The connections are made with `CONNECT_PERSIST` and therefore only exist after the
 ## mapper rebuilds the map [i]and saves the scene[/i].[/b] Both endpoints are owned by
-## `edited_scene_root` (`entity_assembler.gd:347`), which is what lets it serialize into
+## `edited_scene_root` (`entity_assembler.gd:347`), which is what lets them serialize into
 ## `maps/*.tscn`. A rebuild that is not saved loses the link.
 ##
-## [b]Nothing here gates on the server.[/b] The connection is a plain local signal
-## connection and exists on every peer — which is precisely why a source entity must gate
-## its own `trigger` emission on `multiplayer.is_server()`. Calling this again at runtime
-## is safe: the `is_connected` guard makes it a no-op.
-##
-## The target method is hardcoded to `use()`, as Qodot hardcoded it. Only
-## [MovingBrush] defines one today, so a mover is the only useful target.
+## [b]Nothing here gates on the server.[/b] The connections are plain local signal
+## connections and exist on every peer — which is precisely why a source entity must gate
+## its own `trigger` emission on `multiplayer.is_server()`. Occupancy is deliberately left
+## ungated; its consumer gates its own simulation instead. Calling this again at runtime is
+## safe: the `is_connected` guards make it a no-op.
 static func link_targets(source: Node, target_name: String) -> void:
 	if target_name.is_empty():
 		return
@@ -85,16 +96,32 @@ static func link_targets(source: Node, target_name: String) -> void:
 		return
 
 	for target in targets:
-		if not target.has_method("use"):
+		var linked := false
+
+		# `use()` — the Quake contract, hardcoded as Qodot hardcoded it. Only MovingBrush
+		# defines one today, so a mover is the only useful single-shot target.
+		if target.has_method("use"):
+			var callable := Callable(target, "use")
+			if not source.is_connected("trigger", callable):
+				source.connect("trigger", callable, CONNECT_PERSIST)
+			linked = true
+
+		# Occupancy — the ControlPoint contract. Both methods or neither: a half-wired
+		# pair would leave a volume that can add an occupant it can never remove.
+		if target.has_method("add_occupant") and target.has_method("remove_occupant"):
+			var entered := Callable(target, "add_occupant")
+			var exited := Callable(target, "remove_occupant")
+			if not source.is_connected("occupant_entered", entered):
+				source.connect("occupant_entered", entered, CONNECT_PERSIST)
+			if not source.is_connected("occupant_exited", exited):
+				source.connect("occupant_exited", exited, CONNECT_PERSIST)
+			linked = true
+
+		if not linked:
 			push_warning(
-				"%s: target '%s' (%s) has no use() — it cannot be triggered."
+				"%s: target '%s' (%s) implements neither use() nor add_occupant()/remove_occupant() — it cannot be triggered."
 				% [source.name, target.name, target.get_class()]
 			)
-			continue
-		var callable := Callable(target, "use")
-		if source.is_connected("trigger", callable):
-			continue
-		source.connect("trigger", callable, CONNECT_PERSIST)
 
 
 ## Every node under the same [FuncGodotMap] whose `targetname` equals

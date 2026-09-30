@@ -6,6 +6,7 @@
 [ext_resource type="Resource" uid="uid://d2s6d1uyrn0gs" path="res://trenchbroom/entities/multiplayer_system_3d_fgd.tres" id="4_xdkvf"]
 [ext_resource type="Texture2D" uid="uid://decwujsyhj0qy" path="res://addons/func_godot/icon32.png" id="5_gvmc7"]
 [ext_resource type="Script" uid="uid://cx44c4vnq8bt5" path="res://addons/func_godot/src/trenchbroom/trenchbroom_game_config.gd" id="6_lhd7s"]
+[ext_resource type="Resource" uid="uid://co2sb1ng7cw4i" path="res://addons/func_godot/game_config/trenchbroom/tb_brush_tag_trigger.tres" id="7_brtrg"]
 
 [resource]
 script = ExtResource("6_lhd7s")
@@ -13,6 +14,7 @@ game_name = "MultiplayerSystem3D"
 textures_root_folder = "trenchbroom/textures"
 texture_exclusion_patterns = Array[String](["*_albedo", "*_ao", "*_emission", "*_height", "*_metallic", "*_normal", "*_orm", "*_roughness", "*_sss", "*albedo*", "*metallic*", "*roughness*", "*normal*", "*height*", "*ambientocclusion*"])
 palette_path = "trenchbroom/textures/palette.lmp"
+brush_tags = Array[Resource]([ExtResource("7_brtrg")])
 fgd_file = ExtResource("4_xdkvf")
 default_uv_scale = Vector2(0.063, 0.063)
 metadata/_custom_type_script = "uid://cx44c4vnq8bt5"

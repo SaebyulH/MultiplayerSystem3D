@@ -284,10 +284,11 @@ Other modes follow the same shape: `koth_mode.gd:23-39` and `domination_mode.gd:
 
 ### ControlPoint — independent unreliable 10 Hz backup
 
-`world/control_point.gd`:
-- `_ready` calls `game_mode_component.register_control_point(self)` (53-54) and connects `phase_changed` (55).
-- `_process` (69-122) is server-only; ticks capture logic and at `CP_SYNC_RATE = 0.1` (line 20) sends `_rpc_sync_state.rpc(...)` — **unreliable** (242) — while `_rpc_on_captured` (253-261) is reliable. The reliable GameModeComponent 10 Hz snapshot is the authoritative fallback.
-- Body tracking: `Area3D.body_entered/body_exited` append/erase `Player` nodes to `_players_on_point` (139-144); `_count_team` (146-151) tallies by team.
+`world/special_entities/control_point.gd`:
+- `_ready` resolves `_gmc` from `GameManager.game_mode_component` (guarded with `is_instance_valid` — the export was dropped when the point became a TrenchBroom entity), then calls `register_control_point(self)` and connects `phase_changed`.
+- `_process` is server-only; ticks capture logic and at `CP_SYNC_RATE = 0.1` sends `_rpc_sync_state.rpc(...)` — **unreliable** — while `_rpc_on_captured` is reliable. The reliable GameModeComponent 10 Hz snapshot is the authoritative fallback.
+- Body tracking: the point has **no `Area3D`**. Its capture volume is a TrenchBroom `trigger` brush, whose `occupant_entered`/`occupant_exited` signals are wired at map build time to `add_occupant()` / `remove_occupant()` (see `docs/06-trenchbroom-entities.md`). Those forward **ungated, on every peer**, matching the old `Area3D` behaviour — the list is peer-local and nothing reads it off the server. `_count_team` tallies by team.
+- `_prune_occupants()` runs first in `_process`, before the `is_locked` early-out, dropping freed Players. A disconnect frees a `Player` without necessarily emitting `body_exited`, and a dangling entry would keep a ghost team capturing the point forever.
 
 ---
 
@@ -741,6 +742,15 @@ That is the load-bearing rule for this whole subsystem. It is also why the wirin
 step: the link is a scene fact, and only the server is allowed to act on it. See
 `docs/06-trenchbroom-entities.md`.
 
+**`occupant_entered`/`occupant_exited` are the deliberate exception to that exception.** The same
+baked connection carries a second contract — a `trigger` brush wired to a `ControlPoint`'s
+`targetname` reports who is standing inside it — and those two signals forward **ungated, on every
+peer**. They change no replicated state, so the failure mode above does not apply; the one consumer
+gates its own simulation instead (`ControlPoint._process` returns unless `multiplayer.is_server()`)
+while keeping its occupant list peer-local, exactly as it did when an `Area3D` did the tracking.
+Gating them on the server would be harmless today and a trap tomorrow: nothing would notice, because
+no client code reads the list — yet the day something does, it would find it permanently empty.
+
 **Per-entity sync shape**, following the two patterns already in the codebase:
 
 | Entity | Agreement | Mechanism |
@@ -799,7 +809,7 @@ does, and every handler is strictly idempotent because the host sees each transi
 2. **`_sync_mag` unreliable** (`weapon_controller.gd:2015`).
 3. **`fire_intent` lacks sender validation** (`weapon_controller.gd:1948`) vs `request_reload` (`1459`).
 4. **Health regen simulates on every peer** (`attribute_component.gd:160-180`, no `is_server()` gate) and calls `apply_health_delta`, triggering kill/score bookkeeping. The server's value wins via `MultiplayerSynchronizer` (always), but the client duplicate-simulates death/score side effects on negative regen. **`[FIXED 2026-09-20]` — regen is now `is_server()`-gated and self-heal stat reporting is throttled.**
-5. **Two overlapping 10 Hz control-point syncs** — `ControlPoint._rpc_sync_state` unreliable (`control_point.gd:242`) vs `GameModeComponent._rpc_sync_state` reliable (`game_mode_component.gd:128`). Intentional redundancy, easy to mistake for a duplicate.
+5. **Two overlapping 10 Hz control-point syncs** — `ControlPoint._rpc_sync_state` unreliable (`world/special_entities/control_point.gd:244`) vs `GameModeComponent._rpc_sync_state` reliable (`game_mode_component.gd:128`). Intentional redundancy, easy to mistake for a duplicate.
 6. **Manual state kept in sync against netfox rollback** — `scale` re-derived each tick (`player.gd:969-972`); `_spawn_pending_position`/`pinned_charger_name` persist across re-sim.
 7. **Server-side randomness is fine, rollback randomness is not** — `_get_spawn_position` uses `randi()` but runs server-side via RPC; fire spread `randf()` runs only in server-side `_fire_single_shot`. Neither is inside `_rollback_tick`.
 8. **Map swap ordering** — `remove_child` + `queue_free` (not `free`) so the spawner emits the removal event; teardown+rehost deferred a frame (`network_manager.gd:return_to_lobby`).

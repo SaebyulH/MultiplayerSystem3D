@@ -1,13 +1,30 @@
 extends Node3D
 class_name ControlPoint
 
-@export var game_mode_component: GameModeComponent
+## A capturable point. Placeable in TrenchBroom as the `ControlPoint` entity — see
+## `trenchbroom/entities/control_point.tres`.
+##
+## [b]The capture volume is a `trigger` brush, not a child of this scene.[/b] Whoever stands
+## in the brush is fed here through [method add_occupant] / [method remove_occupant]; the
+## brush's `target` names this point's [member targetname], and
+## [method BrushEntityUtil.link_targets] wires the two together at map build time. That is why
+## there is no `Area3D` below: a volume you draw in the map is visible, draggable and per
+## placement, where a `BoxShape3D` in a `.tscn` is none of those. It also means a map with no
+## [FuncGodotMap] has to author the brush by hand — see `docs/05-known-issues.md`.
+##
+## Only the server simulates capture ([method _process] returns on every other peer); the two
+## RPCs below carry the result. Body tracking is deliberately peer-local and ungated, exactly
+## as it was when an `Area3D` did it — nothing reads the list off the server.
+##
+## [b]The label is the whole readout.[/b] This used to also carry a colour-changing CSG box
+## and a torus progress ring; both said what the label already says, and the colour pair cost
+## three exports plus a per-instance material duplication on every spawn.
+
+## This point's name in the map. A `trigger` brush's `target` resolves against it.
+@export var targetname: String = ""
 @export var default_owner: Player.Team = Player.Team.FFA
 @export var capture_time: float = 4.0
 @export var contest_slow_multiplier: float = 0.0
-@export var color_neutral: Color = Color.GRAY
-@export var color_spi: Color = Color.RED
-@export var color_sci: Color = Color.SKY_BLUE
 
 signal captured(team: Player.Team)
 signal contested(is_contested: bool)
@@ -23,36 +40,29 @@ var is_contested: bool = false
 var is_locked: bool = true
 var _players_on_point: Array = []
 
-@onready var area: Area3D = $Area3D
-@onready var csg_color := $Color
-@onready var progress_mesh: MeshInstance3D = $CaptureUI/ProgressMesh
-@onready var capture_label: Label3D = $CaptureUI/Label3D
+var _gmc: GameModeComponent
+
+@onready var capture_label: Label3D = $Label3D
 
 func _ready() -> void:
 	owning_team = default_owner
 	capture_team = default_owner
 
-	# --- Ensure unique materials (only once) ---
-	if csg_color.material_override:
-		csg_color.material_override = csg_color.material_override.duplicate(true)
+	_refresh_label()
 
-	if progress_mesh.material_override:
-		progress_mesh.material_override = progress_mesh.material_override.duplicate(true)
+	# Resolved from the global rather than an `@export NodePath`, which TrenchBroom cannot
+	# author.  `Map._enter_tree()` (`maps/map.gd:18`) sets it before any descendant's `_ready`,
+	# so it is live on every path a map is built — boot, `load_match_map`, and a client's
+	# spawner-driven instantiation.  It is *not* cleared when the lobby tears its world down,
+	# though, so a freed component still compares unequal to null in GDScript;
+	# `is_instance_valid` is the check that actually holds — same reasoning as
+	# `world/special_entities/health_pack_spawner.gd`.
+	_gmc = GameManager.game_mode_component
+	if not is_instance_valid(_gmc):
+		return
 
-	var surf_mat := progress_mesh.get_active_material(0)
-	if surf_mat:
-		progress_mesh.set_surface_override_material(0, surf_mat.duplicate(true))
-	# ------------------------------------------
-
-	_update_color()
-	_update_capture_ui()
-
-	area.body_entered.connect(_on_body_entered)
-	area.body_exited.connect(_on_body_exited)
-
-	if game_mode_component:
-		game_mode_component.register_control_point(self)
-		game_mode_component.phase_changed.connect(_on_phase_changed)
+	_gmc.register_control_point(self)
+	_gmc.phase_changed.connect(_on_phase_changed)
 
 func reset_for_new_round() -> void:
 	owning_team = default_owner
@@ -61,14 +71,18 @@ func reset_for_new_round() -> void:
 	is_contested = false
 	_players_on_point.clear()
 
-	_update_color()
-	_update_capture_ui()
+	_refresh_label()
 
 	_rpc_sync_state.rpc(owning_team, capture_team, capture_progress, is_contested)
 
 func _process(delta: float) -> void:
 	if not multiplayer.is_server():
 		return
+
+	# Before the lock check, so a point that is locked for a whole round does not accumulate
+	# freed Players the rest of the round and then count them on unlock.
+	_prune_occupants()
+
 	if is_locked:
 		return
 
@@ -127,21 +141,32 @@ func _capture(team: Player.Team) -> void:
 	capture_progress = 1.0
 
 	captured.emit(team)
-	_update_color()
-	_update_capture_ui()
+	_refresh_label()
 
 	_rpc_on_captured.rpc(team)
 
 # -----------------------------
-# Player tracking
+# Occupancy
 # -----------------------------
 
-func _on_body_entered(body: Node3D) -> void:
+## Called by the `trigger` brush wired to this point's [member targetname].  Filtering to
+## Players lives here rather than in the brush so the brush stays generic; it is also what
+## [method _prune_occupants] has to undo when one is freed mid-round.
+func add_occupant(body: Node3D) -> void:
 	if body is Player and body not in _players_on_point:
 		_players_on_point.append(body)
 
-func _on_body_exited(body: Node3D) -> void:
+func remove_occupant(body: Node3D) -> void:
 	_players_on_point.erase(body)
+
+## Drops occupants that have been freed.  A disconnect frees a Player without necessarily
+## emitting `body_exited`, and a dangling entry would keep a ghost team capturing the point
+## forever.  Backwards so an entry can be erased in place — the same walk
+## `world/special_entities/health_pack.gd` does.
+func _prune_occupants() -> void:
+	for i in range(_players_on_point.size() - 1, -1, -1):
+		if not is_instance_valid(_players_on_point[i]):
+			_players_on_point.remove_at(i)
 
 func _count_team(team: Player.Team) -> int:
 	var count := 0
@@ -157,32 +182,15 @@ func _player_team_to_gmc(t: Player.Team) -> Player.Team:
 		_: return Player.Team.FFA
 
 func _on_phase_changed(new_phase: GameModeComponent.PhaseState) -> void:
-	is_locked = not game_mode_component.is_objective_unlocked()
+	is_locked = not _gmc.is_objective_unlocked()
 
 # -----------------------------
 # Visuals
 # -----------------------------
 
-func _update_color() -> void:
-	if csg_color.material_override and csg_color.material_override is StandardMaterial3D:
-		var mat := csg_color.material_override as StandardMaterial3D
-		mat.albedo_color = _team_color(owning_team)
-
-func _update_capture_ui() -> void:
-	_refresh_progress_mesh()
-	_refresh_label()
-
-func _refresh_progress_mesh() -> void:
-	var fill := capture_progress
-	progress_mesh.scale = Vector3(fill, 1.0, fill)
-
-	var col := _team_color(capture_team if capture_progress > 0.0 else owning_team)
-
-	var mat := progress_mesh.get_active_material(0)
-	if mat and mat is StandardMaterial3D:
-		var smat := mat as StandardMaterial3D
-		smat.albedo_color = Color.WHITE if is_contested else col
-
+## The label is the only readout left, so its wording carries the whole state.  Colours are
+## fixed: `Color.GRAY` reads as inert and white as live.  Team identity is in the text
+## (`SPI` / `SCI`), not in a tint.
 func _refresh_label() -> void:
 	if is_locked:
 		capture_label.text = "LOCKED"
@@ -192,18 +200,12 @@ func _refresh_label() -> void:
 		capture_label.modulate = Color.WHITE
 	elif capture_progress > 0.0:
 		capture_label.text = "%d%%" % int(capture_progress * 100)
-		capture_label.modulate = _team_color(capture_team)
+		capture_label.modulate = Color.WHITE
 	elif owning_team != Player.Team.FFA:
 		capture_label.text = _team_name(owning_team)
-		capture_label.modulate = _team_color(owning_team)
+		capture_label.modulate = Color.WHITE
 	else:
 		capture_label.text = ""
-
-func _team_color(team: Player.Team) -> Color:
-	match team:
-		Player.Team.SPI: return color_spi
-		Player.Team.SCI: return color_sci
-		_: return color_neutral
 
 func _team_name(team: Player.Team) -> String:
 	match team:
@@ -232,8 +234,7 @@ func apply_cp_state(state: Dictionary) -> void:
 	is_locked = state.get("is_locked", is_locked)
 
 	capture_progress_changed.emit(capture_team, capture_progress)
-	_update_color()
-	_update_capture_ui()
+	_refresh_label()
 
 # -----------------------------
 # RPC
@@ -247,8 +248,7 @@ func _rpc_sync_state(p_owning, p_cap_team, p_progress, p_contested) -> void:
 	is_contested = p_contested
 
 	capture_progress_changed.emit(capture_team, capture_progress)
-	_update_color()
-	_update_capture_ui()
+	_refresh_label()
 
 @rpc("authority", "call_local", "reliable")
 func _rpc_on_captured(team: Player.Team) -> void:
@@ -257,5 +257,4 @@ func _rpc_on_captured(team: Player.Team) -> void:
 	capture_progress = 1.0
 
 	captured.emit(team)
-	_update_color()
-	_update_capture_ui()
+	_refresh_label()

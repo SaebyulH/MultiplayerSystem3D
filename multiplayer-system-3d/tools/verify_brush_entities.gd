@@ -2,9 +2,12 @@ extends Node
 ## Builds `trenchbroom/maps/brush_entity_test.map` and checks that the brush entities come
 ## out of the build wired to each other.
 ##
-## The thing under test is the build-time `trigger` → `use()` link, which func_godot has no
-## equivalent of and which [BrushEntityUtil.link_targets] reimplements.  Everything about
-## it is easy to get silently wrong:
+## The thing under test is the build-time wiring from a source entity's signals to its
+## `target`, which func_godot has no equivalent of and which
+## [BrushEntityUtil.link_targets] reimplements.  One `target` name carries two contracts —
+## `trigger` → `use()` for a mover, and `occupant_entered`/`occupant_exited` →
+## `add_occupant()`/`remove_occupant()` for a [ControlPoint] — and a target takes whichever
+## it implements.  Everything about it is easy to get silently wrong:
 ##
 ##   * it only runs from `_func_godot_build_complete`, which the assembler calls *deferred*
 ##     — so linking from `_func_godot_apply_properties` instead finds only the entities
@@ -72,18 +75,36 @@ func _ready() -> void:
 	await get_tree().process_frame
 
 	var mover := _sole(map, "MovingBrush") as MovingBrush
-	var trigger := _sole(map, "TriggerVolume") as TriggerVolume
+	var trigger := _trigger_for(map, "door_01")
+	var cp_trigger := _trigger_for(map, "cp_test")
 	var button := _sole(map, "ButtonBrush") as ButtonBrush
 	var rotator := _sole(map, "RotatingBrush") as RotatingBrush
 	var body := _sole(map, "PhysicsBrush") as PhysicsBrush
+	var point := _sole(map, "ControlPoint") as ControlPoint
 
-	if mover == null or trigger == null or button == null or rotator == null or body == null:
+	if mover == null or trigger == null or cp_trigger == null or button == null \
+			or rotator == null or body == null or point == null:
 		_report()
 		return
 
 	# 1. The link itself, which is the whole point.
 	_check_link(trigger, mover)
 	_check_link(button, mover)
+
+	# 1b. The same call, a different contract.  The mover implements only `use()`, so the
+	#     occupational half is skipped for it — that gate is what keeps every trigger→door
+	#     link in the project behaving exactly as it did.
+	_check_occupancy_link(cp_trigger, point, mover)
+	_check_forwarding(cp_trigger)
+
+	# 1c. The `class_properties` actually reached the node.  `auto_apply_to_matching_node_properties`
+	#     is the only mechanism that survives into a built scene, and without it every one of
+	#     these silently keeps its script default — a map full of points that ignore the value
+	#     the mapper typed (known-issues #70).  The `.map` stores all three as strings, so this
+	#     also covers the type coercion the assembler does before the assignment.
+	_check_applied("ControlPoint.targetname", point.targetname, "cp_test")
+	_check_applied("ControlPoint.capture_time", point.capture_time, 2.5)
+	_check_applied("ControlPoint.default_owner", point.default_owner, Player.Team.SCI)
 
 	# 2. A source with no target must not be wired to anything.
 	if trigger.target == "door_01":
@@ -291,15 +312,87 @@ func _check_link(source: Node, target: Node) -> void:
 		return
 	print("ok   wired: %s -> %s.use()" % [source.name, target.name])
 
-	for connection in source.get_signal_connection_list("trigger"):
-		if connection["callable"] != wanted:
+	if _persisted(source, "trigger", wanted):
+		print("ok   persist: %s -> %s would serialize" % [source.name, target.name])
+	else:
+		_fail("%s -> %s is connected without CONNECT_PERSIST — it would vanish on save"
+			% [source.name, target.name])
+
+
+## Whether [param signal_name] on [param source] carries [param callable] with
+## `CONNECT_PERSIST`.  Connections only reach a `.tscn` when both endpoints carry an
+## `owner`, so the persist flag is the difference between a link that survives a save and
+## one that exists only in the editor session that built it.
+func _persisted(source: Node, signal_name: String, callable: Callable) -> bool:
+	for connection in source.get_signal_connection_list(signal_name):
+		if connection["callable"] == callable:
+			return bool(int(connection["flags"]) & CONNECT_PERSIST)
+	return false
+
+
+## The occupancy contract, which is the half a [ControlPoint] takes instead of `use()`.
+## Both directions are asserted, and so is the gate: [param bystander] implements only
+## `use()`, and a target that does not implement occupancy must not have been wired for it.
+func _check_occupancy_link(source: Node, target: Node, bystander: Node) -> void:
+	for pair in [["occupant_entered", "add_occupant"], ["occupant_exited", "remove_occupant"]]:
+		var signal_name: String = pair[0]
+		var method: String = pair[1]
+		var wanted := Callable(target, method)
+		if not source.is_connected(signal_name, wanted):
+			_fail("%s is not connected to %s.%s()" % [source.name, target.name, method])
 			continue
-		if int(connection["flags"]) & CONNECT_PERSIST:
-			print("ok   persist: %s -> %s would serialize" % [source.name, target.name])
+		if _persisted(source, signal_name, wanted):
+			print("ok   wired: %s -> %s.%s() with CONNECT_PERSIST" % [source.name, target.name, method])
 		else:
-			_fail("%s -> %s is connected without CONNECT_PERSIST — it would vanish on save"
-				% [source.name, target.name])
-		return
+			_fail("%s -> %s.%s is connected without CONNECT_PERSIST — it would vanish on save"
+				% [source.name, target.name, method])
+
+	for signal_name in ["occupant_entered", "occupant_exited"]:
+		for connection in source.get_signal_connection_list(signal_name):
+			if connection["callable"].get_object() == bystander:
+				_fail("%s wired %s to a target that implements no occupancy — a mover must be skipped"
+					% [source.name, signal_name])
+
+
+## The source end of the occupancy wire.  [method _check_occupancy_link] proves the
+## connection to the target exists; this proves the signal it hangs off actually fires, by
+## raising `body_entered` by hand and watching `occupant_entered` come out the other side.
+##
+## The two are not the same thing, and only this one covers [constant TriggerVolume]'s
+## `body_entered.connect(occupant_entered.emit)` — a re-emit that the `is_connected` checks
+## above cannot see.  A probe rather than a real [Player] on purpose: the point's own
+## `body is Player` filter is a separate concern, and instantiating a whole Player to test a
+## signal relay would drag in the entire spawn pipeline.
+func _check_forwarding(source: TriggerVolume) -> void:
+	# Never parented: the payload only has to be *a* Node3D, and a free-standing one keeps
+	# the teardown out of the tree's bookkeeping.
+	var seen: Array[Node3D] = []
+	var probe := Node3D.new()
+	var spy := func(body: Node3D) -> void: seen.append(body)
+	source.occupant_entered.connect(spy)
+
+	source.body_entered.emit(probe)
+
+	var forwarded := seen.size() == 1 and seen[0] == probe
+	source.occupant_entered.disconnect(spy)
+	probe.free()
+
+	if forwarded:
+		print("ok   forwarding: %s.body_entered reaches occupant_entered" % source.name)
+	else:
+		_fail("%s.body_entered produced %d occupant_entered — the occupancy link hangs off a signal that never fires"
+			% [source.name, seen.size()])
+
+
+## An entity's `class_properties` value as it arrived on the built node.  Compared by value
+## rather than by type, because the `.map` stores every one of them as a string and the
+## assembler coerces each to the property's type before assigning it.
+func _check_applied(label: String, actual: Variant, expected: Variant) -> void:
+	if actual == expected:
+		print("ok   applied: %s = %s" % [label, actual])
+	else:
+		_fail("%s is %s, expected %s — the entity property did not reach the built node"
+			% [label, actual, expected])
 
 
 ## Exact-vector comparison against a literal Godot-space value.  Deliberately not derived
@@ -356,6 +449,20 @@ func _sole(root: Node, script_class: String) -> Node:
 			found.append(node)
 	if found.size() != 1:
 		_fail("expected exactly one %s, found %d" % [script_class, found.size()])
+		return null
+	return found[0]
+
+
+## The one [TriggerVolume] whose `target` is [param target_name].  Not [method _sole]: the
+## fixture carries two triggers deliberately, one per contract, so `_sole` would fail on it.
+func _trigger_for(root: Node, target_name: String) -> TriggerVolume:
+	var found: Array[TriggerVolume] = []
+	for node in root.find_children("*", "", true, false):
+		var volume := node as TriggerVolume
+		if volume != null and volume.target == target_name:
+			found.append(volume)
+	if found.size() != 1:
+		_fail("expected exactly one trigger targeting \"%s\", found %d" % [target_name, found.size()])
 		return null
 	return found[0]
 

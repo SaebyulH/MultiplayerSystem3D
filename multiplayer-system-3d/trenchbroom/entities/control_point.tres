@@ -1,0 +1,38 @@
+[gd_resource type="Resource" script_class="FuncGodotFGDModelPointClass" format=3 uid="uid://doddfd0d23l7q"]
+
+[ext_resource type="PackedScene" uid="uid://cbujyyto6hg8p" path="res://world/special_entities/control_point.tscn" id="1_scene"]
+[ext_resource type="Script" uid="uid://d1nwwgcrner8b" path="res://addons/func_godot/src/fgd/func_godot_fgd_point_class_display_descriptor.gd" id="1_vvmlo"]
+[ext_resource type="Script" uid="uid://ldfqjtq0br35" path="res://addons/func_godot/src/fgd/func_godot_fgd_model_point_class.gd" id="2_mpc"]
+
+[resource]
+script = ExtResource("2_mpc")
+target_map_editor = 1
+models_sub_folder = "trenchbroom/models"
+scale_expression = "{{ scale == undefined -> 32, scale * 32 }}"
+rotation_offset = Vector3(0, 180, 0)
+scene_file = ExtResource("1_scene")
+classname = "ControlPoint"
+description = "Capturable control point - a trigger brush is its capture volume"
+class_properties = Dictionary[String, Variant]({
+"capture_time": 4.0,
+"contest_slow_multiplier": 0.0,
+"default_owner": {
+"FFA (neutral)": 2,
+"SCI (blue)": 1,
+"SPI (red)": 0
+},
+"targetname": ""
+})
+class_property_descriptions = Dictionary[String, Variant]({
+"capture_time": "Seconds for one player to take the point",
+"contest_slow_multiplier": "Capture speed while both teams are inside. 0 freezes it",
+"default_owner": ["Team it starts as", 2],
+"targetname": "Name a trigger brush's target points at. That brush is this point's capture volume"
+})
+auto_apply_to_matching_node_properties = true
+meta_properties = Dictionary[String, Variant]({
+"color": Color(0.35, 0.9, 0.55, 1),
+"model": "{\"path\": \"trenchbroom/models/ControlPoint.glb\", \"scale\": {{ scale == undefined -> 32, scale * 32 }} }",
+"size": AABB(-100, -100, -100, 100, 100, 100)
+})
+metadata/_custom_type_script = "uid://ldfqjtq0br35"

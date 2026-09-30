@@ -5,6 +5,11 @@
 // One of every brush entity, all sharing the same box so the geometry cannot be what
 // makes a test pass. The trigger and the button both target the mover by name, which is
 // the link the verifier exists to prove.
+//
+// Two targets here deliberately differ in what they implement, because `link_targets`
+// wires whichever contract each one has: `door_01` is a mover and takes `use()`, while
+// `cp_test` is a ControlPoint and takes the occupancy pair. A single `target` name that
+// resolved to both contracts at once is not what is being tested.
 // entity 0
 {
 "mapversion" "220"
@@ -82,6 +87,27 @@
 "classname" "physics"
 "mass" "20"
 "velocity" "0 0 32"
+{
+( 256 0 -128 ) ( 256 1 -128 ) ( 256 0 -127 ) FreeStylized/floor_tiles_14_1k/floor_tiles_14_1k/floor_tiles_14_basecolor_1k [ 0 -1 0 0.8729248 ] [ 0 0 -1 -17 ] 0 0.063 0.063
+( 48 -256 -128 ) ( 48 -256 -127 ) ( 49 -256 -128 ) FreeStylized/floor_tiles_14_1k/floor_tiles_14_1k/floor_tiles_14_basecolor_1k [ 1 0 0 73.14307 ] [ 0 0 -1 -17 ] 0 0.063 0.063
+( 48 0 64 ) ( 49 0 64 ) ( 48 1 64 ) FreeStylized/floor_tiles_14_1k/floor_tiles_14_1k/floor_tiles_14_basecolor_1k [ -1 0 0 -73.14307 ] [ 0 -1 0 0.87298584 ] 0 0.063 0.063
+( 1216 256 128 ) ( 1216 257 128 ) ( 1217 256 128 ) FreeStylized/floor_tiles_14_1k/floor_tiles_14_1k/floor_tiles_14_basecolor_1k [ 1 0 0 73.14307 ] [ 0 -1 0 0.87298584 ] 90 0.063 0.063
+( 1216 256 128 ) ( 1217 256 128 ) ( 1216 256 129 ) FreeStylized/floor_tiles_14_1k/floor_tiles_14_1k/floor_tiles_14_basecolor_1k [ -1 0 0 -73.14307 ] [ 0 0 -1 -17 ] 180 0.063 0.063
+( 576 256 128 ) ( 576 256 129 ) ( 576 257 128 ) FreeStylized/floor_tiles_14_1k/floor_tiles_14_1k/floor_tiles_14_basecolor_1k [ 0 1 0 -0.8729248 ] [ 0 0 -1 -17 ] 270 0.063 0.063
+}
+}
+// entity 6
+{
+"classname" "ControlPoint"
+"targetname" "cp_test"
+"capture_time" "2.5"
+"default_owner" "1"
+"origin" "0 0 0"
+}
+// entity 7
+{
+"classname" "trigger"
+"target" "cp_test"
 {
 ( 256 0 -128 ) ( 256 1 -128 ) ( 256 0 -127 ) FreeStylized/floor_tiles_14_1k/floor_tiles_14_1k/floor_tiles_14_basecolor_1k [ 0 -1 0 0.8729248 ] [ 0 0 -1 -17 ] 0 0.063 0.063
 ( 48 -256 -128 ) ( 48 -256 -127 ) ( 49 -256 -128 ) FreeStylized/floor_tiles_14_1k/floor_tiles_14_1k/floor_tiles_14_basecolor_1k [ 1 0 0 73.14307 ] [ 0 0 -1 -17 ] 0 0.063 0.063

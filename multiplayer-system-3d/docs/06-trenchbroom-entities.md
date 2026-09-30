@@ -676,7 +676,25 @@ This is the part with no func_godot equivalent. Qodot's `QodotMap.connect_signal
 kind, so `BrushEntityUtil.link_targets()` reimplements it, called from each source entity's
 `_func_godot_build_complete()`.
 
-Three things about it are load-bearing:
+**One `target` name carries two contracts, and a target is wired for whichever it implements:**
+
+| source signal | target method | target today |
+|---|---|---|
+| `trigger` | `use()` | `MovingBrush` (a door) |
+| `occupant_entered` / `occupant_exited` | `add_occupant()` / `remove_occupant()` | `ControlPoint` |
+
+They are **additive, not exclusive**. `use()` is a one-shot and cannot express "who is standing in
+this volume", which is why a `ControlPoint` — whose capture volume *is* a trigger brush — needs the
+second pair. A `MovingBrush` implements only `use()`, so the occupancy half is skipped for it and
+every trigger→door link behaves exactly as it did before the pair was added. Occupancy is wired for
+**both** methods or neither: a half-wired pair would leave a volume that could add an occupant it
+could never remove.
+
+Unlike `trigger`, `occupant_entered`/`occupant_exited` are **deliberately not gated on the server** —
+they change no replicated state, and `ControlPoint._process` gates its own simulation while tracking
+bodies peer-locally, exactly as it did when an `Area3D` did the tracking.
+
+Three more things about it are load-bearing:
 
 - **It must be `_func_godot_build_complete`, which the assembler calls *deferred*** after every
   entity has been added (`entity_assembler.gd:267-268`). Linking from `_func_godot_apply_properties`
@@ -691,9 +709,9 @@ Three things about it are load-bearing:
 
 Target names resolve against a `targetname`, matched by walking the `FuncGodotMap` subtree —
 **not** by Godot group, so it cannot collide with the `node_groups` namespace. An unresolvable
-`target`, or a target with no `use()`, raises a `push_warning` at build time; Qodot failed
-silently on both. Per Qodot the method is hardcoded to `use()`, so `mover` is currently the only
-entity a trigger can drive.
+`target`, or a target implementing **neither** contract, raises a `push_warning` at build time;
+Qodot failed silently on both. `use()` is hardcoded per Qodot, so a mover is the only single-shot
+target — `ControlPoint` is the only occupancy one.
 
 ### `build_visuals = false` does not mean no collision
 
@@ -707,7 +725,9 @@ trigger has no collision.
 
 Beyond the FGD harness below, `tools/verify_brush_entities.tscn` builds
 `trenchbroom/maps/brush_entity_test.map` — one of each entity — and asserts the wiring, the
-`CONNECT_PERSIST` flag, the unit conversion, collision presence and trigger invisibility:
+`CONNECT_PERSIST` flag, the unit conversion, collision presence and trigger invisibility. The
+fixture carries **two** triggers and a `ControlPoint` on purpose, so both contracts are covered
+and so is the gate: the mover must come out *without* the occupancy pair attached.
 
 ```
 "C:/tools/godot/godot_console.exe" --path . --headless res://tools/verify_brush_entities.tscn
@@ -717,6 +737,52 @@ It expects a screen of `Attempting to initialize the wrong RID` noise on the way
 dummy renderer (`--headless` has no mesh storage) and it is not fatal. **It cannot check
 serialization**, because connections only reach a `.tscn` when both endpoints carry an `owner`
 and `edited_scene_root` is null outside the editor. That half is the manual build-and-save.
+
+### Making a brush entity always carry a certain texture
+
+TrenchBroom game-config **tags** can assign a material to every brush matching a classname, which is
+how a mapper gets a trigger brush that always paints the same texture — and, with the same tag, show
+it semi-transparent the way the `clip` face tag does. func_godot exposes the mechanism as
+`TrenchBroomTag.texture_name` (`addons/func_godot/src/trenchbroom/trenchbroom_tag.gd`), emitted as
+the tag's `material` key by `trenchbroom_game_config.gd:167-169`. The addon ships a ready-made
+example, `addons/func_godot/game_config/trenchbroom/tb_brush_tag_trigger.tres` — classname pattern
+`trigger*`, material `trigger`, and the default `tag_attributes` of `["transparent"]`.
+
+**It is wired up for `trigger`.** `trenchbroom/trenchbroom_config.tres` lists that resource in
+`brush_tags`, which is the only switch — `brush_tags` is empty by default and nothing is written
+until something is listed there. The exported `GameConfig.cfg` then carries:
+
+```
+"brush": [
+	{ "name": "Trigger", "attribs": [ "transparent" ],
+	  "match": "classname", "pattern": "trigger*", "material": "trigger" }
+]
+```
+
+`"transparent"` is the same attribute the shipped `Clip` face tag uses, which is why the two behave
+identically. To cover another entity, add a `TrenchBroomTag` (`tag_match_type = CLASSNAME`,
+`tag_pattern` = the entity classname, `texture_name` = a name that resolves under
+`trenchbroom/textures`) to `brush_tags` and re-export.
+
+**Two things to know before relying on it:**
+
+- **It never reaches Godot.** `trigger.tres` has `build_visuals = false`, so a trigger builds no
+  `MeshInstance3D` at all and the texture has nothing to attach to. This is an editor-only
+  affordance — which is the point, since an invisible trigger is meant to be found in the editor.
+- **The `material` name must resolve in TrenchBroom's material collection, by full relative path, or
+  the tag does nothing — silently.** See `05-known-issues.md` #77. Our name is `trigger` because
+  `trigger.png` sits at the root of `trenchbroom/textures`, matching how `clip`/`skip`/`origin` are
+  named. TrenchBroom builds that collection **when it loads the game and does not watch the folder**,
+  so a texture added while it is running is invisible until a restart — and an unresolvable material
+  fails without an error.
+- **Do not read "the brush went transparent" as "the material applied".** The `attribs` half is a
+  rendering attribute resolved per matching brush entity — a separate code path from the material.
+  They fail independently, which is exactly what an unresolved material name looks like.
+- **A tag only supplies a *default*, so it never repaints a face that already carries a texture.**
+  A brush that had one before it became a trigger keeps it.
+
+`trigger.tres` also sets `meta_properties["color"]` to amber, which tints trigger brushes in the
+viewport independently of any of this.
 
 ## Current entities
 
@@ -731,6 +797,7 @@ do not apply to them (no `scene_file`, no display model, no `size` box).
 | `mannequin` | `assets/mannequin/mannequin.glb` (rigged) | static bake — see above | `mangle` | `scale` |
 | `PlayerSpawn` | `world/special_entities/player_spawn.tscn` | static bake (the mannequin) | `mangle` | — |
 | `HealthPackSpawner` | `world/special_entities/health_pack_spawner.tscn` | generated | — | — |
+| `ControlPoint` | `world/special_entities/control_point.tscn` | generated (the sphere) | — | — |
 
 `Truck`, `PlayerSpawn` and `HealthPackSpawner` are **hand-authored** — the generator only covers
 `assets/props/`, and the other two are scenes under `world/`. `PlayerSpawn` takes no `scale`: it is a
@@ -767,3 +834,22 @@ The entity's `scene_file` is the spawner, so its generated display model is the 
 which is what a mapper wants to see, since the pack is the thing players aim at. Everything in the
 scene is centred on the origin in X and Z because the map build applies an unconditional 180° yaw
 (`entity_assembler.gd:196-199`); an off-centre child would be mirrored relative to the preview.
+
+**`ControlPoint` is placed as a point entity, but its capture volume is a `trigger` brush.** The
+scene holds only the sphere and a billboard `Label3D`; there is deliberately no `Area3D` in it, since
+a volume drawn in the map is visible, draggable and per placement, where a `BoxShape3D` buried in a
+`.tscn` is none of those. The mapper sets the point's **`targetname`** and gives a `trigger` brush
+that same name as its **`target`** — `link_targets` then wires the brush's occupancy signals to
+`add_occupant()` / `remove_occupant()` (see [the link section](#the-trigger--target-link-is-made-at-map-build-time)).
+
+Its `game_mode_component` is **not** an `@export NodePath` — TrenchBroom cannot author one. The script
+reads `GameManager.game_mode_component`, which `Map._enter_tree()` sets before any descendant's
+`_ready`, the same route `HealthPackSpawner` takes. That also removes an old silent failure where an
+unset export meant the point never registered at all.
+
+The other three properties are `capture_time` (`float`), `contest_slow_multiplier` (`float`) and
+`default_owner` (a `choices` list, `SPI (red)` 0 / `SCI (blue)` 1 / `FFA (neutral)` 2, default 2) —
+all pushed onto the built node by `auto_apply_to_matching_node_properties`. Like `PlayerSpawn`'s
+`team` and `HealthPackSpawner`'s `respawn_time`, the `.map` stores them as strings and the assembler
+coerces each to the property's type before assigning. Verified by the brush-entity harness, which
+asserts all three land (`tools/verify_brush_entities.gd` `_check_applied`).
