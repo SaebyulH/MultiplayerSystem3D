@@ -121,6 +121,64 @@ Added 2026-09-25 with `MeteredAbility` / the noclip rework. Same reasoning as ab
   nodes, no extra `queue_redraw` (`set_meter` early-returns when nothing changed, which is what keeps
   it off the per-frame redraw list). A charged slot draws no meter bar and vice versa.
 
+### Calligraphy canvas (owner only, only while raised) — one texture upload per drawn frame
+
+Added 2026-09-30 with the calligraphy ability. Recorded because it *is* a real per-frame cost, unlike
+everything else in this section — the difference is that it only exists while a player is actively
+painting, and only on the peer doing the painting.
+
+- **Nothing runs when the canvas is down.** `CalligraphySphere` is created once per local player and
+  starts with `set_physics_process(false)`; visibility and the callback are toggled together from
+  `StatusEffectManager.client_effects_changed`, which a *permanent* effect fires exactly twice per
+  toggle (no 10 Hz re-broadcast — `status_effect_manager.gd:131-138`). So the steady-state cost of
+  owning the ability is zero, and so is the cost of having the effect up but not drawing.
+- **The draw cost is one `ImageTexture.update()` per painted frame.** This is the notable one: the
+  whole 256×256 RGBA map (~256 KB) is re-uploaded whenever a dab lands, capped at once per physics
+  frame regardless of how many dabs that frame produced. A brush stamp is ~30 `set_pixel` calls on a
+  packed `Image` (CPU-side, no GPU sync), so the upload dominates. It is bounded and it stops the
+  instant the button is released, which is why it is acceptable — but it is the first thing to shrink
+  if this ever shows up in a profile: `CANVAS_SIZE` is a one-line change, and the map is only ever
+  read by a human eye. Note the map is scoped to the drawable patch rather than the whole sphere,
+  which is *why* it is only 256×256 — the same budget spread over a full-sphere equirect map would
+  leave the 15° patch at 21×21 px. See #79 in `05-known-issues.md`.
+- **The stroke is capped at `MAX_STROKE_STEPS` (64) dabs.** A fast flick across the canvas would
+  otherwise interpolate hundreds of stamps in a single frame; the cap degrades that to a dotted line
+  rather than a spike.
+- **No allocation per frame.** The `Image`, the `ImageTexture`, both meshes and both materials are
+  built once in `_ready()` and mutated in place, following `weapon/tracer.gd`'s `_ready()` rather
+  than the per-shot construction that #4 used to do.
+- **Three meshes on the canvas, all built once, none rebuilt per frame.** `_bubble` is a stock
+  `SphereMesh` (64×32, untextured, a faint film); `_patch` is the drawable sheet, a 32×32-cell
+  spherical section emitted as an **unindexed** `ArrayMesh` via `SurfaceTool` (~6k vertices for ~2k
+  triangles); `_guide` is a *second `MeshInstance3D` sharing that same ArrayMesh* with its own
+  `material_override`, scaled 1 % outward so it sorts behind the ink. Three draw calls, owner's screen
+  only, no per-frame geometry work. The patch is unindexed rather than a shared grid because that is
+  the shape of func_godot's own `SurfaceTool` use
+  (`addons/func_godot/src/util/func_godot_util.gd:447-460`), the project's only other `SurfaceTool`
+  precedent. It is authored rather than a slice of the sphere grid for *resolution* — a 15° patch is
+  under three cells of a 64-segment sphere — and the tangent texcoords that come with authoring it are
+  what make the ink land under the crosshair; see #78/#79. Note the shared mesh carries **no surface
+  material**, or `_patch` and `_guide` would be forced to look identical.
+- **The carried card is one quad plus a `Label3D`**, created once with the canvas and merely
+  re-`global_transform`ed per tick while held. It shares the ink `ImageTexture` with the sheet rather
+  than copying it, so the drawing costs nothing extra to carry.
+- **`_frame_patch()` runs once per activation**, not per frame: it aims the sheet at the view
+  direction the player cast from and is deliberately not repeated, since a sheet that tracked the view
+  would stop the crosshair sweeping across it.
+- **The per-glyph work is the real cost, and it is cached — see #80.** Decoding a 150×150 PNG and
+  dilating ~3.5k stroke pixels into a scoring mask is a few hundred thousand operations; both are done
+  once per glyph per process in `_glyph_data()` and kept in a `static` cache, so the first cast that
+  draws a given character pays for it (a frame or two) and every cast after that is free.
+- **Scoring is two bulk passes over `PackedByteArray`s, never `get_pixel`.** `Image.get_data()` copies
+  the 256×256 map once and both loops index the bytes directly — the same reason the paint path avoids
+  per-pixel API calls. Pass 1 walks the ink (65k) and dilates it; pass 2 walks the 150×150 glyph
+  (22k). The ink dilation in pass 1 is new with the F1 score and is the larger of the two costs, on the
+  order of a hundred thousand writes. It runs once per cast, on dismissal, so the worst case is one
+  frame at the moment the canvas closes.
+- **Deliberately owner-only and client-side.** Nothing about the canvas, the guide or the ink is
+  networked — see `02-netcode.md` §7. What replicates is the two phase effects; what crosses the wire
+  on a throw is a glyph index and a score.
+
 ### Ability icons (static per circle) — one draw call, no child nodes
 
 Added 2026-09-27 with `Ability.icon`. Recorded here so the new draw call is not mistaken for a

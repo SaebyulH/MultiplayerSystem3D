@@ -1,0 +1,38 @@
+[gd_scene format=3 uid="uid://bsiwnw2tfwe35"]
+
+[ext_resource type="PackedScene" uid="uid://6mr0d18yn8po" path="res://weapon/projectiles/scenes/simple_projectile.tscn" id="1_i8dex"]
+[ext_resource type="Script" uid="uid://bvkx76wgvdc6t" path="res://weapon/projectiles/scenes/arrow.gd" id="2_2yx4b"]
+[ext_resource type="PackedScene" uid="uid://8f1d2xr0xcvq" path="res://trenchbroom/models/BigBox.glb" id="3_2yx4b"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ji7og"]
+size = Vector3(2.0917969, 2.234375, 1.9589844)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_gpuqp"]
+
+[node name="SimpleProjectile" unique_id=1706686187 instance=ExtResource("1_i8dex")]
+mass = 0.458
+linear_velocity = Vector3(0, 0, -12)
+script = ExtResource("2_2yx4b")
+world_hit_mode = 1
+align_to_velocity = false
+falloff_enabled = false
+
+[node name="CollisionShape3D" parent="." index="0" unique_id=1810742212]
+transform = Transform3D(-0.3480795, 5.2558544e-08, 2.2974068e-15, 0, -1.5215038e-08, 0.3480795, 5.2558544e-08, 0.3480795, 1.5215038e-08, 0, 0, 0)
+shape = SubResource("BoxShape3D_ji7og")
+
+[node name="HitboxComponent" parent="." index="2" unique_id=1963592485]
+health_delta = -30.0
+
+[node name="CollisionShape3D" parent="HitboxComponent" index="0" unique_id=1314331169]
+transform = Transform3D(-0.5297596, 7.999147e-08, 3.4965385e-15, 0, -2.3156527e-08, 0.5297596, 7.999147e-08, 0.5297596, 2.3156527e-08, 0, 0, 0)
+shape = SubResource("BoxShape3D_gpuqp")
+
+[node name="BigBox" parent="." index="4" unique_id=1518209478 instance=ExtResource("3_2yx4b")]
+transform = Transform3D(-0.5740794, 0, -5.0187616e-08, 0, 0.5740794, 0, 5.0187616e-08, 0, -0.5740794, 0, -0.3453514, 0)
+
+[node name="StaticBody3D" parent="BigBox/BigBox1_M5_LOD0/BigBox1_LOD0" parent_id_path=PackedInt32Array(1518209478, 539566385) index="0" unique_id=1845443270]
+collision_layer = 0
+collision_mask = 0
+
+[editable path="BigBox"]

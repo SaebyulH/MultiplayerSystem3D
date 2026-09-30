@@ -595,6 +595,105 @@ amber once there is something to spend, matching the charge bars.
 `StatusEffectManager` accept effects, but there is no second peer), and the movement/gameplay half of
 noclip itself, which is unchanged by this feature.
 
+### Calligraphy — three phases, a fire lock that is not an input lockout, and a client-supplied score
+
+Added 2026-09-30. `player/abilities/calligraphy_ability.gd`,
+`components/status_effect/effects/calligraphy_{effect,hold_effect}.gd`, `player/calligraphy_sphere.gd`,
+`WeaponController.calligraphy_release`.
+
+Calligraphy raises a canvas around the player's head showing a Chinese character to trace. Dismissing
+it puts the drawing in the player's view; a left click then throws an elemental projectile whose damage
+scales with how well the character was traced. It is the noclip shape — the status effect *is* the
+state — extended to **three phases carried by two effects**:
+
+| Press | Effect already present | Result |
+|---|---|---|
+| 1st | none | raise the canvas (`CalligraphyEffect`) |
+| 2nd | `calligraphy` | dismiss it, carry the drawing (`CalligraphyHoldEffect`) |
+| 3rd | `calligraphy_hold` | cancel — drop the drawing, no throw |
+| (LMB is not an ability press) | `calligraphy_hold` | throw it |
+
+Both effects are named by `is_fire_blocked()` (below), so the gun is locked from the raise until the
+throw lands. The third press is the escape hatch: without it the only way out of a hold would be to
+throw, which traps a player who has changed their mind. The phase chosen on each press is derived from
+which effect the **server** already holds, never from a client-supplied direction, so a refused press
+cannot invert the sequence.
+
+**Firing is blocked by three separate things, and they are not the same question.** `is_fire_blocked()`
+covers stuns and both calligraphy phases; `is_weapon_holstered()` covers only the carry phase and means
+"there is no gun in hand at all", which `WeaponController.set_holstered()` turns into a hidden viewmodel,
+a false `_is_ready()` and a refused weapon switch. Neither implies the other: a stun blocks firing
+without taking the gun away, and the canvas phase blocks firing while the gun is still held (just
+invisible behind the canvas). The holster is driven off `client_effects_changed` and **must not be
+polled** — `calligraphy_release` removes the effect and fires in the same call, so the signal firing
+synchronously inside `remove_effect` is what lets the throw reach `fire_weapon_fire` with the gun
+already back in hand. See #82.
+
+**The scoring is the one input the server cannot verify.** Whether the drawing matched the character is
+only knowable on the peer that drew it — the guide image and the ink never leave the owner — so
+`calligraphy_release` takes the score as a *claim* and clamps it to `[0, 1]` rather than trusting it.
+The score itself is the F1 of precision and recall against the character's strokes (see
+`CalligraphySphere._compute_score`); precision alone, which was the first rule, scores a single well-placed
+dab at 100%.
+What keeps that honest is the gate either side of it: the request is refused outright unless the hold
+effect is up (which only the server can have granted), and the glyph index is resolved against the
+server's own `CalligraphyAbility.glyphs` rather than against anything the client sent. A client that
+lies about its score gets a better projectile; it cannot fire one it was not already holding. Closing
+the hold *before* firing is what makes a replayed RPC a no-op instead of a second projectile.
+
+**It is not a `MeteredAbility`.** The meter exists to bound how long noclip lasts; the canvas stays up
+until it is dismissed, so a meter would add a limit nobody asked for and would fire whatever is being
+carried the moment that limit expired. So it derives from `Ability` directly with `_init()` pinning
+INSTANT / SERVER / `max_charges = 1`, and `cooldown` (0.4 s) is the anti-spam phase delay — the same
+role `MeteredAbility._init()` gives its pinned 1.0.
+
+**Direction is derived server-side rather than carried with the cast.** `MeteredAbility` has the
+client decide on/off and ride it along as `want_on`, because the pool it toggles is local per peer
+and the two can disagree by half an RTT (see §7 and #47). That problem does not exist here: the
+effect is server-authoritative and replicated, so `activate()` asks the *server's own*
+`has_effect("calligraphy")` which way the toggle goes. A press the server refuses (cooldown, dead,
+action-blocked) therefore cannot invert the state, and the client's view is corrected by the effect
+sync rather than by prediction. The owner's sphere is driven off that same synced mirror
+(`StatusEffectManager.client_effects_changed`), never off local input.
+
+**The fire lock is `StatusEffectManager.is_fire_blocked()`, not `blocks_actions`.** `blocks_actions`
+is the ready-made weapon lock and it would be wrong here for two reasons. It also zeroes movement and
+jump in `PlayerInput._gather`/`_input`, which the canvas has no business doing; and — decisively —
+`AbilityManager._input` and `_cast_ability` both `return` on `is_action_blocked()`, so a canvas that
+blocked actions **could never be dismissed**.
+
+`is_fire_blocked()` is a sibling of the manager's existing `is_stunned()` / `is_pinned()` pair:
+`_client_blocking_count > 0`, or any id in `FIRE_BLOCK_EFFECT_IDS` — calligraphy's two phases — being
+present in the mirror. Reading the effect *mirror* means
+it answers identically on the server (which is what `fire_intent` needs) and on the owning client
+(which is what the fire path needs) — the same property `is_action_blocked()` was built on. Because
+`blocks_actions` is a subset of it, every gate that switched from `is_action_blocked()` to
+`is_fire_blocked()` blocks exactly what it blocked before, plus calligraphy:
+
+| Site | Role |
+|---|---|
+| `weapon_controller.gd` `_fire_is_blocked()` | charge start/release, and now `_process_fire` |
+| `weapon_controller.gd` `_process_fire()` | client: suppresses the shot locally instead of letting the server refuse it |
+| `weapon_controller.gd` `fire_intent()` | **server backstop** — the authoritative half |
+
+Movement is deliberately *not* locked (firing is enforceable server-side, movement is not — #33), so
+the canvas is a weapon lock only.
+
+**Neither effect has an `_on_remove`, and the throw is not in one.** `NoclipEffect._on_remove()` starts
+the exit pulse on *every* removal path, death included, because that is what noclip wants. Here the
+opposite is required: dying or respawning must tear the canvas (or the carried drawing) down
+**silently**, so neither effect has an `_on_remove` at all. The throw lives in the release RPC, reached
+only by a deliberate left click.
+
+**The score rides to the projectile as a damage multiplier.** `fire_weapon_fire()` takes an optional
+`damage_mult`, stored in `_ability_damage_mult` and folded into the amp in `_spawn_projectile` — the
+one place a projectile's `health_delta`/`splash_health_delta` are scaled (see the comment there on why
+it must run before `add_child`). It is a member rather than a threaded parameter because
+`_spawn_projectile` is also reached from the ordinary fire pipeline, which must always be 1.0;
+`fire_intent()` resets it on the way in so a stale value cannot leak onto a regular shot. The floor is
+`MIN_SCORE_DAMAGE_MULT` (0.25), not a gate — a badly drawn character still throws its element, just a
+weak one.
+
 ### SizeChangeEffect — one effect, both directions
 
 `components/status_effect/effects/size_change_effect.gd` scales the player's root node and max

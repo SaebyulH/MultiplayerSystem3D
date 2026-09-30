@@ -53,6 +53,16 @@ const TICK_INTERVAL: float = 0.1
 ## stacking effects get (see [member StatusEffect.stacks]), e.g. `shrink#12345`.
 const STACK_KEY_SEPARATOR := "#"
 
+## Calligraphy's two phases: the canvas being drawn on, and the drawing being
+## carried.  Both are named by is_fire_blocked() — the gun has to stay shut across
+## both, or the player could shoot their way out of a hold.
+const CALLIGRAPHY_EFFECT_ID := "calligraphy"
+## The carry phase.  Named separately because it means more than "don't fire": it
+## is the one state where the player has *no weapon in hand at all*, which
+## WeaponController reads as its holster (see is_weapon_holstered).
+const CALLIGRAPHY_HOLD_EFFECT_ID := "calligraphy_hold"
+const FIRE_BLOCK_EFFECT_IDS := [CALLIGRAPHY_EFFECT_ID, CALLIGRAPHY_HOLD_EFFECT_ID]
+
 
 ## Strip the per-application suffix from a stacking effect's key.  Ids that were
 ## never stacked pass through unchanged.
@@ -283,6 +293,40 @@ func is_pinned() -> bool:
 ## those are written into the gates by name, this one is data-driven per effect.
 func is_action_blocked() -> bool:
 	return _client_blocking_count > 0
+
+
+## Whether an active effect forbids **firing**, without the full input lockout
+## blocks_actions imposes.  Whatever is listed here is read by WeaponController's
+## fire gates in place of is_action_blocked(), so blocks_actions stays a subset of
+## it and nothing that was blocked before becomes fireable.
+##
+## Calligraphy's canvas is the only user.  It has to lock the gun — that is the
+## ability — but it must leave movement alone, and above all it must not block the
+## ability keys, because blocks_actions is checked in AbilityManager._input and
+## _cast_ability too: a canvas that blocked actions could never be dismissed.
+func is_fire_blocked() -> bool:
+	# Direct dictionary lookups, like is_stunned/is_pinned above: this is read
+	# from the per-frame fire path, and none of these effects stack, so the
+	# base-id fallback has_effect() does is not needed.
+	if _client_blocking_count > 0:
+		return true
+	for id in FIRE_BLOCK_EFFECT_IDS:
+		if _client_effects.has(id):
+			return true
+	return false
+
+
+## Whether an active effect means the player should have **no weapon in hand**,
+## rather than merely an unfireable one — the calligraphy carry phase, where the
+## drawing replaces the gun.
+##
+## A separate question from is_fire_blocked() on purpose.  That one is about what
+## the player may do; this one is about what they are holding, and WeaponController
+## uses it to hide the viewmodel and refuse weapon switching.  It is deliberately
+## not implied by is_fire_blocked(): a stun blocks firing without taking the gun
+## away.
+func is_weapon_holstered() -> bool:
+	return _client_effects.has(CALLIGRAPHY_HOLD_EFFECT_ID)
 
 
 ## Returns the per-instance state dictionary for an effect, if it's active.

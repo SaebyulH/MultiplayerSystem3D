@@ -145,6 +145,14 @@ var _scoped_charge_time: float = 0.0
 ## Damage-amp multiplier captured for the current shot (1.0 = no amp).  Reset to
 ## 1.0 for ability-fired shots so they never inherit the scoped amp.
 var _current_shot_amp_mult: float = 1.0
+## Extra damage multiplier for an ability-fired shot — the calligraphy score.  Set
+## by fire_weapon_fire and folded into the projectile amp in _spawn_projectile.
+##
+## A member rather than a parameter threaded down because the projectile path
+## (_fire_projectile -> _spawn_projectile) is also reached from the normal fire
+## pipeline, which must always be 1.0; fire_intent resets it on the way in so a
+## stale value can never leak onto a regular shot.
+var _ability_damage_mult: float = 1.0
 ## Whether the player was scoped in when the current shot's trigger was pulled.
 ## Captured before any force-unscope, so the shot keeps scoped accuracy/damage.
 var _shot_was_scoped: bool = false
@@ -212,6 +220,12 @@ signal signal_activated(target: Vector3, player_transform: Vector3)
 
 var current_weapon_model: Node3D = null
 
+## "No weapon in hand" — the player is carrying something else (currently only the
+## calligraphy drawing).  Derived from the status-effect mirror by
+## _refresh_holstered(), never set by hand, so it cannot drift out of step with the
+## effect that also gates firing.  See set_holstered().
+var _holstered: bool = false
+
 ## Cap on how many bodies one hitscan shot may travel through before it gives
 ## up (see `_hitscan_passes_through`).  Each pass excludes one more collider, so
 ## the loop is already bounded by the number of bodies in the line; this is only
@@ -278,7 +292,8 @@ func _on_reload_anim_finished(anim_name: StringName) -> void:
 # Central invariant check. Every RPC and fire path that touches _weapons or
 # current_weapon_model calls this first. One place to fix, one place to read.
 func _is_ready() -> bool:
-	return not _weapons.is_empty() \
+	return not _holstered \
+		and not _weapons.is_empty() \
 		and current_weapon_index < _weapons.size() \
 		and current_weapon_model != null \
 		and is_instance_valid(current_weapon_model)
@@ -497,6 +512,15 @@ func _ready() -> void:
 
 	if not _weapons.is_empty() and _weapons[current_weapon_index] != null:
 		spawn_weapon_model()
+
+	# The holster follows the effect mirror, and it has to be a signal rather than a
+	# per-frame poll: calligraphy_release removes the hold effect and fires in the
+	# same call, so a poll would still read "holstered" and refuse the throw.
+	# get_node rather than _parent_player.status_effect_manager because a child's
+	# _ready runs before the parent's @onready assignments.
+	var sem := _parent_player.get_node_or_null("StatusEffectManager") as StatusEffectManager
+	if sem != null:
+		sem.client_effects_changed.connect(_refresh_holstered)
 
 	player_input.previous_weapon.connect(previous_weapon)
 	player_input.next_weapon.connect(next_weapon)
@@ -891,6 +915,9 @@ func spawn_weapon_model() -> void:
 		if bone_attach:
 			parent = bone_attach
 	parent.add_child(current_weapon_model)
+	# A model spawned while holstered (a respawn or loadout change mid-hold) must
+	# come up hidden, or it would appear in hand behind the carried drawing.
+	current_weapon_model.visible = not _holstered
 
 	_refresh_muzzles()
 
@@ -1566,7 +1593,7 @@ func _find_next_selectable(direction: int) -> int:
 	return current_weapon_index
 
 func next_weapon() -> void:
-	if _weapon_switch_cooldown > 0.0:
+	if _holstered or _weapon_switch_cooldown > 0.0:
 		return
 	_weapon_switch_cooldown = WEAPON_SWITCH_THROTTLE
 	if multiplayer.is_server():
@@ -1575,7 +1602,7 @@ func next_weapon() -> void:
 		_next_weapon_server.rpc_id(1)
 
 func previous_weapon() -> void:
-	if _weapon_switch_cooldown > 0.0:
+	if _holstered or _weapon_switch_cooldown > 0.0:
 		return
 	_weapon_switch_cooldown = WEAPON_SWITCH_THROTTLE
 	if multiplayer.is_server():
@@ -1586,7 +1613,7 @@ func previous_weapon() -> void:
 @rpc("any_peer", "call_local")
 func _next_weapon_server() -> void:
 	if is_multiplayer_authority():
-		if _weapon_switch_cooldown > 0.0:
+		if _holstered or _weapon_switch_cooldown > 0.0:
 			return
 		_weapon_switch_cooldown = WEAPON_SWITCH_THROTTLE
 		current_weapon_index = _find_next_selectable(1)
@@ -1594,7 +1621,7 @@ func _next_weapon_server() -> void:
 @rpc("any_peer", "call_local")
 func _previous_weapon_server() -> void:
 	if is_multiplayer_authority():
-		if _weapon_switch_cooldown > 0.0:
+		if _holstered or _weapon_switch_cooldown > 0.0:
 			return
 		_weapon_switch_cooldown = WEAPON_SWITCH_THROTTLE
 		current_weapon_index = _find_next_selectable(-1)
@@ -1796,6 +1823,12 @@ func _process_fire() -> void:
 	if not _parent_player.spawned:
 		_end_charge_if_active()
 		return
+	# Fire lock that is not a full input lockout (the calligraphy canvas).  The
+	# server enforces the same thing in fire_intent; without this the client would
+	# play the shot locally and only then have it rejected.
+	if _fire_is_blocked():
+		_end_charge_if_active()
+		return
 	if not _is_ready():
 		_end_charge_if_active()
 		return
@@ -1931,7 +1964,7 @@ func _end_charge_if_active() -> void:
 ## ask the same question the input layer asked, rather than trusting the edge.
 func _fire_is_blocked() -> bool:
 	var sem := _parent_player.status_effect_manager
-	return sem != null and (sem.is_stunned() or sem.is_action_blocked())
+	return sem != null and (sem.is_stunned() or sem.is_fire_blocked())
 
 
 ## Begin a draw on a charged weapon.  The ammo pre-check lives here rather than
@@ -2124,10 +2157,104 @@ func _do_fire_client() -> void:
 	fire_intent.rpc_id(1, current_weapon_index, _pending_fire_index)
 
 
+## Damage multiplier for a calligraphy throw whose drawing scored 0.0.  A bad
+## drawing still throws something — the element is guaranteed, only its strength
+## varies — so this is a floor, not a gate.
+const MIN_SCORE_DAMAGE_MULT := 0.25
+
+
+## Throw the character a calligraphy hold is carrying: fire the glyph's projectile
+## and close the hold.
+##
+## The client sends only *which* glyph and *how well* it was traced.  Both are
+## validated against the server's own copy of the ability, and the whole request is
+## gated on the hold effect being present — that gate is what makes it safe to
+## expose to `any_peer`, since without it a client could fire an elemental
+## projectile at will.  The score is the one input the server cannot recompute for
+## itself (the drawing only ever existed on the owner's canvas), so it is clamped
+## rather than trusted.
+##
+## Runs on the server.
+@rpc("any_peer", "reliable")
+func calligraphy_release(glyph_index: int, score: float) -> void:
+	if not multiplayer.is_server():
+		return
+	if not _parent_player.spawned:
+		return
+	var sem := _parent_player.status_effect_manager
+	if sem == null or not sem.has_effect(CalligraphyAbility.HOLD_ID):
+		return
+	var ability := _find_calligraphy_ability()
+	if ability == null or glyph_index < 0 or glyph_index >= ability.glyphs.size():
+		return
+	var glyph := ability.glyphs[glyph_index]
+	if glyph == null or glyph.weapon_fire == null:
+		return
+	# Close the hold *before* firing: the effect is the gate, so this makes a
+	# duplicated or replayed RPC a no-op instead of a second projectile.
+	sem.remove_effect(CalligraphyAbility.HOLD_ID)
+	var clamped := clampf(score, 0.0, 1.0)
+	print("[Calligraphy] release glyph=", glyph.display_name, " score=", clamped)
+	fire_weapon_fire(glyph.weapon_fire, true, "Calligraphy", lerpf(MIN_SCORE_DAMAGE_MULT, 1.0, clamped))
+
+
+## The player's calligraphy ability, or null if they do not have one equipped.
+## Scanned rather than cached: AbilityManager.set_abilities replaces the list
+## wholesale on a character change, so a cached reference would go stale.
+func _find_calligraphy_ability() -> CalligraphyAbility:
+	if _parent_player == null or _parent_player.ability_manager == null:
+		return null
+	for a in _parent_player.ability_manager.abilities:
+		if a is CalligraphyAbility:
+			return a
+	return null
+
+
+## Put the weapon away or bring it back.  Public because "no weapon in hand" is a
+## general capability, not a calligraphy detail — anything that takes the gun away
+## for a while should route through here rather than hiding the viewmodel itself,
+## or [member _holstered] and the model's visibility will disagree.
+##
+## Holstered means: the viewmodel is hidden, [method _is_ready] is false so every
+## fire/charge/scope path bails on its own, and weapon switching is refused.  It is
+## deliberately *not* how firing is blocked for calligraphy — that is
+## StatusEffectManager.is_fire_blocked(), which also covers stuns and the canvas
+## phase.  This is the narrower "you are not holding a gun" idea.
+func set_holstered(value: bool) -> void:
+	if value == _holstered:
+		return
+	_holstered = value
+	if current_weapon_model != null and is_instance_valid(current_weapon_model):
+		current_weapon_model.visible = not value
+	if value:
+		# Nothing should survive the hand-off.  A draw or a pending shot that kept
+		# its state across the holster would resume the moment the gun came back,
+		# with the player's input long since gone.
+		_pending_fire = false
+		_any_fire_was_held = false
+		_ability_fire_interrupt = false
+		_fired_this_press.clear()
+		_clear_charge_local()
+		_current_charge_ratio = 1.0
+		_cancel_scope()
+
+
+## Recompute the holster from the effect mirror.  Called on every mirror change,
+## including the removal that immediately precedes a calligraphy throw — which is
+## what lets that throw reach fire_weapon_fire with the gun already back in hand.
+func _refresh_holstered() -> void:
+	var sem := _parent_player.status_effect_manager if _parent_player != null else null
+	set_holstered(sem != null and sem.is_weapon_holstered())
+
+
 ## Fire a standalone WeaponFire resource on demand.  Used by abilities (e.g.
 ## WeaponFireAbility) to fire a WeaponFire outside the normal weapon pipeline.
 ## Runs on the server; the ability's activate() hook is already server-side.
-func fire_weapon_fire(fire: WeaponFire, interrupt_shooting: bool = true, ability_name: String = "") -> void:
+##
+## [param damage_mult] scales the shot's damage on top of the character's own amp.
+## Left at 1.0 by everything except the calligraphy throw, which passes its
+## drawing score.
+func fire_weapon_fire(fire: WeaponFire, interrupt_shooting: bool = true, ability_name: String = "", damage_mult: float = 1.0) -> void:
 	if not fire:
 		return
 	if not _is_ready():
@@ -2137,6 +2264,7 @@ func fire_weapon_fire(fire: WeaponFire, interrupt_shooting: bool = true, ability
 
 	# Ability-fired shots never inherit the scoped damage amp.
 	_current_shot_amp_mult = 1.0
+	_ability_damage_mult = maxf(damage_mult, 0.0)
 	_shot_was_scoped = _parent_player.ads
 	# ...nor any draw that happened to be in flight: this path reaches
 	# _execute_fire / _spawn_projectile without passing through fire_intent, so
@@ -2252,15 +2380,19 @@ func _play_empty(weapon_fire_index: int) -> void:
 
 @rpc("any_peer")
 func fire_intent(weapon_index: int, weapon_fire_index: int) -> void:
+	# A regular shot is never score-scaled.  Reset here rather than after the shot
+	# so the value can never survive from an ability fire into a normal one.
+	_ability_damage_mult = 1.0
 	# Server backstop: reject fire while despawned (e.g. an in-flight intent RPC
 	# that lands just after death).
 	if not _parent_player.spawned:
 		return
-	# Server backstop for the channel lock (StatusEffect.blocks_actions): the
-	# client gate in PlayerInput._input is what the player feels, this is what
-	# actually holds — and unlike movement, firing is enforceable here.
+	# Server backstop for the fire lock — the channel lock (blocks_actions) plus
+	# the calligraphy canvas, which is a weapon lock without an input lockout.
+	# The client gate in PlayerInput._input is what the player feels; this is what
+	# actually holds, and unlike movement, firing is enforceable here.
 	var sem := _parent_player.status_effect_manager
-	if sem != null and sem.is_action_blocked():
+	if sem != null and sem.is_fire_blocked():
 		return
 	if not _is_ready():
 		return
@@ -2744,7 +2876,7 @@ func _spawn_projectile(fire: WeaponFire, world_dir: Vector3, shooter_name: Strin
 	# Per-target scaling (`enemy_delta_multiplier`, `self_health_delta_multiplier`,
 	# distance falloff) composes on top, and self-damage is amped too -- the same
 	# rule hitscan already follows.
-	var amp: float = _damage_amp_of(GameManager.find_player(shooter_name)) * _charge_damage_mult()
+	var amp: float = _damage_amp_of(GameManager.find_player(shooter_name)) * _charge_damage_mult() * _ability_damage_mult
 	var hb: HitboxComponent = projectile_scene.get_node_or_null("HitboxComponent") as HitboxComponent
 	if hb:
 		hb.hit_knockback = fire.hit_knockback

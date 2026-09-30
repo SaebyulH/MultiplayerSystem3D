@@ -411,6 +411,11 @@ var _hurtboxes_active := true
 ## sections.  See player/segmented_health_bar.gd.
 var _health_bar: SegmentedHealthBar = null
 
+## The calligraphy canvas, for the local model only.  Its visibility follows the
+## synced CalligraphyEffect rather than any input, and nothing about it is
+## networked.  See player/calligraphy_sphere.gd.
+var _calligraphy_sphere: CalligraphySphere = null
+
 # Stored so late-joining peers can be synced with the correct weapon models.
 var _loadout_primary_path: String = ""
 var _loadout_secondary_path: String = ""
@@ -488,6 +493,14 @@ func _ready() -> void:
 	_health_bar = SegmentedHealthBar.new()
 	_health_bar.visible = false
 	layer.add_child(_health_bar)
+
+	# Calligraphy canvas — owner-only, like the outline and the health bar above.
+	# Parented to the root and not to Body/Head on purpose: the root never
+	# rotates, so the sphere follows the player as they walk without following
+	# their head, which is what makes sweeping the view a drawing motion.
+	if _is_own_model():
+		_calligraphy_sphere = CalligraphySphere.new()
+		add_child(_calligraphy_sphere)
 
 	# The old world-space label is superseded by the 2D bar above.
 	$Body/HealthBarPublic.hide()

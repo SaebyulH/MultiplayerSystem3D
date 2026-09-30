@@ -885,6 +885,66 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 - **Also true independently of any of this:** a tag only ever supplies a *default*, so it never repaints faces that already carry a texture. A pre-existing brush will not change for that reason alone.
 - **Found by:** converting the trigger entity to a TrenchBroom brush tag on 2026-09-30.
 
+### 78. Guessing a mesh's UV convention instead of authoring it — `[FIXED 2026-09-30]`
+
+- **Files:** `player/calligraphy_sphere.gd` (`_tangent_to_uv`, `_patch_uv`, `_build_patch_mesh`)
+- **Symptom:** ink appeared on the canvas but **not under the crosshair that drew it** — first reported as a left-right mirror, then as still-wrong after a sign flip. Everything looked functional; the strokes were simply somewhere the player was not aiming.
+- **Cause:** painting is keyed by direction → UV, and the sheet was a stock `SphereMesh` whose texcoord convention was *guessed* at in closed form (`u = theta / TAU`, `v = phi / PI`). Painting and rendering only agree when the painting function is the exact inverse of the vertex generation, and nothing enforced that — the guess was a statement about engine internals that no headless test can falsify. It was wrong, in a way that was mistaken for a sign error, and the "fix" (negating `u`) was a second guess, made without looking.
+- **Fix (final):** the ink no longer touches the sphere mesh at all. The bubble is a stock `SphereMesh` again and **untextured**, so nothing reads its texcoords; the drawable area is a separate `_patch` mesh — a spherical section generated in `_build_patch_mesh()` — whose texcoords come from `_tangent_to_uv()` while painting goes through `_patch_uv()`, the same map inverted. They are inverses by construction, in plain tangent space, with no equirectangular projection and no engine convention anywhere in the path. (An intermediate fix authored the whole sphere with `SurfaceTool` and made _that_ self-consistent; it worked, but scoping the map to a small patch — see below — made the sphere mesh irrelevant to the ink and deleted the problem outright.)
+- **The invariant to preserve:** `_tangent_to_uv` and `_patch_uv` must stay inverses, and `_build_patch_mesh`'s vertex UVs must keep coming from the former. Change one alone and the symptom returns: ink landing away from the crosshair.
+- **Two things this cost, worth not repeating:**
+  - The first version asserted in a code comment and in this file that the `u` sign had been *measured*. It had not — it was inferred from one line of user feedback. Do not write "measured" for "guessed"; it is actively misleading to the next reader.
+  - `BaseMaterial3D.texture_repeat` is a **`bool`** and already defaults to `true` on Godot 4.7 — there is no `TEXTURE_REPEAT_ENABLED` enum member on `BaseMaterial3D`; that name is Godot 3's `flags_repeat_enable`. The equirect map that needed it is gone, so this is only a note about the name.
+- **Found by:** adding the calligraphy ability on 2026-09-30; resolved the same day after three failed play-test iterations.
+
+### 79. The calligraphy canvas is an equirectangular map, so it distorts at the poles and has a seam — `[FIXED 2026-09-30]`
+
+- **Files:** `player/calligraphy_sphere.gd`
+- **Was:** the ink map covered the whole sphere as a 512×256 equirectangular unwrap. Texels crowded toward the poles, so the brush was effectively much finer — and much more aliased — near `y = ±1` (where `u` is singular, since every column names the same point), and the ±180° meridian was a seam a stroke could cross, splitting it across two non-adjacent image columns.
+- **Fixed by the same change as #78, for a different reason.** The drawable area is now a **square section** of the sphere (`PATCH_DEGREES`, 15° by default) centred on wherever the player was looking when they raised the canvas, and the ink map is scoped to *that* rather than to the whole sphere. A tangent-space square has no poles and no seam, so both artefacts are gone by construction rather than mitigated.
+- **The resolution consequence, which is what forced the redesign:** a 15°×15° region of a 512×256 equirectangular map is **21×21 px**. Not "a bit coarse" — unusable for drawing a character. Scoping the map to the patch gives it the full `CANVAS_SIZE` (256×256) instead, at a *quarter* of the upload cost the old map had. That is the real argument for the patch-local map; the pole/seam fixes are a bonus.
+- **Found by:** adding the calligraphy ability on 2026-09-30.
+
+### 80. The first cast that draws a given character stalls a frame building its scoring mask
+
+- **Files:** `player/calligraphy_sphere.gd` (`_glyph_data`, `_compute_score`)
+- **Symptom:** the first time a canvas is raised on a glyph the player has not drawn before, that frame hitches. Casts after that are free.
+- **Cause:** `_glyph_data()` is cached in a `static Dictionary`, but on a miss it does all of the work in one frame on the main thread: `Texture2D.get_image()` (a PNG decode), `Image.convert()`, a **dilation** of every stroke pixel over a `SCORE_TOLERANCE_PX` (8) radius — ~3.5k stroke pixels × ~200 samples each — and a second full pass building the white-recoloured overlay copy. Five glyphs × two loops over 22 500 pixels.
+- **Why it is only a hitch and not a stall:** it is bounded, it happens at most once per glyph per process, and it lands on a canvas raise rather than during a fight. The cache is `static`, so it is shared by every player in the process and never rebuilt — the five glyphs cost a few frames in total, spread across the first five casts.
+- **Suggested fix:** if it ever shows in a profile, precompute the masks offline into a `PackedByteArray`-backed resource per glyph rather than dilating at runtime. The dilation is the expensive half and it is a pure function of a committed asset — nothing about it needs to be runtime work. Cheaper intermediate: drop the radius and test 4 offsets instead of a disc, or dilate separably (horizontal pass then vertical), which is the same result for ~2·r taps instead of r².
+- **Found by:** adding glyph tracing on 2026-09-30.
+
+### 81. The drawing score is a client claim the server cannot check
+
+- **Files:** `player/weapon_controller.gd` (`calligraphy_release`), `player/calligraphy_sphere.gd` (`_throw`, `_compute_score`)
+- **Symptom:** a modified client can send any score it likes and get a full-strength throw for a drawing it never made.
+- **Why it is unavoidable, not a bug:** "how well did this match the character" is only knowable on the peer that drew it — the guide image, the ink and the trace comparison all live on the owner and are deliberately never networked (see `02-netcode.md` §7). Any check the server could run for itself would have to ship the drawing to it, which is a much larger change than it is worth for a cosmetic damage bonus.
+- **What actually holds:** the score is **clamped** to `[0, 1]`, so a claim cannot exceed the design maximum, and it is the *only* thing the client gets to assert. The glyph index is resolved against the server's own `CalligraphyAbility.glyphs`, so a client cannot fire an arbitrary `WeaponFire`; and the whole request is refused unless the `calligraphy_hold` effect is present, which only the server can have granted. A cheating client gets a stronger hit from an element it was already entitled to throw — it cannot fire a projectile without spending the ability and the hold.
+- **If it ever needs to be authoritative:** the server would have to receive the stroke geometry (or the ink bitmap) and re-run `_compute_score` itself. That is a real design change — a new RPC, a size budget, and rate limiting — and should not be done piecemeal.
+- **Found by:** adding score-scaled damage on 2026-09-30.
+
+### 82. The calligraphy throw only works because the holster is signal-driven — polling it would silently drop the shot
+
+- **Files:** `player/weapon_controller.gd` (`set_holstered`, `_refresh_holstered`, `_is_ready`, `calligraphy_release`), `components/status_effect/status_effect_manager.gd` (`is_weapon_holstered`)
+- **Symptom if the ordering is ever broken:** the throw does nothing at all — no projectile, no error, and the hold effect is already gone, so the player is left with an empty hand and no way to retry except by casting again.
+- **The load-bearing chain:** `calligraphy_release` does `sem.remove_effect(HOLD_ID)` and then `fire_weapon_fire(...)` in the same call. The holster is refreshed from `client_effects_changed`, which `remove_effect` → `_sync_to_clients()` emits **synchronously**, so by the time `fire_weapon_fire` runs the gun is back in hand. `set_holstered(true)` makes `_is_ready()` false, and `fire_weapon_fire` bails on `not _is_ready()` — so if the holster were recomputed in `_physics_process` instead, that check would still read `true`, the shot would be dropped, and nothing would report it.
+- **The rule:** the holster must stay derived from the effect mirror *and* stay signal-driven. If a future change needs it polled (e.g. a second holster source that emits no signal), `calligraphy_release` has to clear it explicitly before firing rather than relying on the refresh having happened.
+- **Related:** the same shape as the `NetworkEvents` client-start takeover in `03-event-flow.md` — an ordering that is correct but invisible, where the failure mode is silence rather than an error. Anything that reads `_is_ready()` is a potential victim of a future reorder here.
+- **Found by:** adding the no-weapon state on 2026-09-30.
+
+### 83. Scoring a trace by precision alone is degenerate — it was replaced by F1
+
+- **Files:** `player/calligraphy_sphere.gd` (`_compute_score`, `SCORE_TOLERANCE_PX`)
+- **Symptom:** every score came out high, regardless of what was drawn.
+- **Two causes, and only fixing one would not have been enough:**
+  - **The metric.** The original rule was precision only — *fraction of the player's ink that landed on the character*. The amount of ink drawn never entered into it, so a single small dab placed on any stroke scored **100%**, and a short squiggle anywhere inside the character scored near it. That is inherent to precision, not a tuning problem.
+  - **The tolerance.** `SCORE_TOLERANCE_PX` was 8 on a 150 px glyph. Measured across the five shipped glyphs, an 8 px band covers **34–51% of the sheet** — so "scribble roughly over the character" was scoring well even before the metric is considered.
+- **Fix:** score is now the **F1** of precision (ink on the character) and recall (character covered by ink), with the tolerance tightened to **3 px** (band covers 21–34%). A single dab now scores ~4%, scribbling the character's box ~52%, and a confident trace ~80%. Both halves use the same tolerance — they are the same question asked from opposite sides.
+- **Why it needs both halves, not just a tighter band:** tightening alone still leaves precision degenerate at the top end (a perfect dab is still 100% *of nothing*), and recall alone would reward flooding the sheet. Only the harmonic mean requires the ink to both stay on the character and cover it.
+- **Cost of the fix:** the recall half needs the *ink* dilated, not just the glyph, so `_compute_score` gained a second dilation over the 256×256 map — see `04-optimization.md`. It runs once per cast.
+- **Calibration note:** the tolerance was chosen from a measurement of the shipped art (`grep` the tables in this entry, or rerun the dilation sweep over `assets/images/chinese_characters/*.png`) rather than by eye. Re-measure if the glyph art is ever replaced — the numbers above are a property of *these* five images, and the first estimate for this constant was off by more than 2× because it was guessed instead of measured.
+- **Found by:** the first play test of glyph tracing, 2026-09-30.
+
 ---
 
 ## Not bugs, but worth knowing

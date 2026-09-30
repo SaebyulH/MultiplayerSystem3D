@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="CalligraphyGlyph" format=3]
+
+[ext_resource type="Script" path="res://player/abilities/calligraphy_glyph.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/images/chinese_characters/wood.png" id="2"]
+[ext_resource type="Resource" path="res://player/abilities/calligraphy/wood_projectile.tres" id="3"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Wood"
+image = ExtResource("2")
+weapon_fire = ExtResource("3")

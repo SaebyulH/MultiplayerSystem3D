@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="CalligraphyAbility" format=3 uid="uid://cyksugpiofl6x"]
+
+[ext_resource type="Script" uid="uid://b3sin1irr4nak" path="res://player/abilities/calligraphy_ability.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://bpebj8gnv1un0" path="res://assets/icons/game-icons.net.svg/icons/ffffff/transparent/1x1/delapouite/scroll-quill.svg" id="2"]
+[ext_resource type="Script" uid="uid://b57d5d1keyaaj" path="res://player/abilities/calligraphy_glyph.gd" id="3"]
+[ext_resource type="Resource" path="res://player/abilities/calligraphy/fire_glyph.tres" id="4"]
+[ext_resource type="Resource" path="res://player/abilities/calligraphy/water_glyph.tres" id="5"]
+[ext_resource type="Resource" path="res://player/abilities/calligraphy/earth_glyph.tres" id="6"]
+[ext_resource type="Resource" path="res://player/abilities/calligraphy/metal_glyph.tres" id="7"]
+[ext_resource type="Resource" path="res://player/abilities/calligraphy/wood_glyph.tres" id="8"]
+
+[resource]
+script = ExtResource("1")
+glyphs = Array[ExtResource("3")]([ExtResource("4"), ExtResource("5"), ExtResource("6"), ExtResource("7"), ExtResource("8")])
+ability_name = "Calligraphy"
+description = "Raise a canvas showing a character, trace it, then throw the element you drew. Your weapon is locked until the throw lands."
+icon = ExtResource("2")
