@@ -7,16 +7,16 @@ in the map editor. Read this before adding or changing anything under `trenchbro
 
 ```
 trenchbroom/entities/<name>.tres      one FuncGodotFGD*Class resource per entity
-        │                             (the "folder system" — drop a .tres in, register it)
-        ▼
+		│                             (the "folder system" — drop a .tres in, register it)
+		▼
 trenchbroom/entities/multiplayer_system_3d_fgd.tres
-        │                             FuncGodotFGDFile: fgd_name + base_fgd_files + entity_definitions
-        ▼  Export FGD
+		│                             FuncGodotFGDFile: fgd_name + base_fgd_files + entity_definitions
+		▼  Export FGD
 C:/Trenchbroom/games/MultiplayerSystem3D/MultiplayerSystem3D.fgd   ← what TrenchBroom reads
-        │  (written to FGD_OUTPUT_FOLDER, a machine-local path)
-        ▼
+		│  (written to FGD_OUTPUT_FOLDER, a machine-local path)
+		▼
 trenchbroom/maps/*.map                drawn in TrenchBroom
-        ▼  FuncGodotMap.build()       (in the editor, on a map scene)
+		▼  FuncGodotMap.build()       (in the editor, on a map scene)
 maps/<map>.tscn                       generated Godot scene: brushwork + one node per entity
 ```
 
@@ -33,7 +33,13 @@ committed and regenerating it is expected.
 
 `FuncGodotFGDFile.build_class_text()` walks `base_fgd_files` + `entity_definitions` and nothing else
 (`func_godot_fgd_file.gd:88-100`). A `.tres` sitting in `trenchbroom/entities/` that is **not** in
-`entity_definitions` is invisible: it gets no `@PointClass`, so TrenchBroom cannot place it.
+`entity_definitions` is invisible: it gets no class declaration, so TrenchBroom cannot place it.
+
+**This applies to base classes even though `get_entity_definitions()` never returns them.**
+That getter yields only the two *placeable* kinds (`func_godot_fgd_file.gd:130`) and folds a base
+class's properties into its descendants; `build_class_text` walks the raw array instead. So a
+`@BaseClass` that is missing from `entity_definitions` disappears from the FGD while still looking
+registered to any code that asks the getter — taking every inherited property with it.
 
 Worse, the failure is silent on the Godot side too. `parser.gd:83-87` resolves a classname through
 `map_settings.entity_fgd.get_entity_definitions()` and falls back to
@@ -174,8 +180,15 @@ Either way, then:
 
 `tools/export_trenchbroom_fgd.gd` loads the FGD resource, exports it via
 `FuncGodotFGDFile.do_export_file()` (`func_godot_fgd_file.gd:25-49`), and then asserts against the
-**written file** — every expected classname has an `@PointClass` block carrying the tokens it needs.
-It exits non-zero on failure.
+**written file** — every expected classname has a block carrying the tokens its kind needs. It
+exits non-zero on failure.
+
+It handles all three FGD kinds, and each is checked differently: `@PointClass` (the `model(`/`size(`
+tokens, the scale expression, and the bounds rules), `@SolidClass` (must carry **no** `model(`/`size(`
+— a brush's shape is the volume the mapper drew, `func_godot_fgd_entity_class.gd:82-87`), and
+`@BaseClass` (its own properties, plus every entity's `base(...)` list). Splitting on `@PointClass`
+alone finds neither of the other two, which is how the first brush entity added here failed with a
+misleading "no @PointClass for trigger".
 
 The same export is available in the editor as the **Export FGD** tool button on the resource
 (`func_godot_fgd_file.gd:20`). Use the harness when scripting; either is fine interactively, but note
@@ -509,7 +522,207 @@ so this is the only structural difference between them.
 **Confirmed 2026-09-28:** swapping the mannequin to a `skins=0` display model made it preview. The
 rigged model is the cause.
 
+## Brush entities (solid classes)
+
+Everything above is a **point** entity: a `PackedScene` instanced at an origin, with a
+generated display model. A **brush** entity is the other kind — the mapper draws a volume and
+func_godot builds geometry, collision and a scripted node from it. Triggers, doors and
+buttons are brush entities, because their shape *is* their definition.
+
+`FuncGodotFGDSolidClass` (`func_godot_fgd_solid_class.gd`) is the definition type. Two things
+about it differ from a point class and both surprise people:
+
+- **There is no `scene_file`.** A brush cannot be a `PackedScene` — the geometry only exists
+  once the map is parsed. The built node is `node_class` (a built-in name like `"Area3D"`, or
+  a GDScript `class_name`) with `script_class` attached over the top
+  (`entity_assembler.gd:297`). So a brush entity is always *node type + script*, never a scene.
+- **Properties must be plain `@export` vars on the script**, not a properties dictionary.
+  func_godot has no `QodotEntity.update_properties()` equivalent, and
+  `_func_godot_apply_properties()` is build-time only (see below), so
+  `auto_apply_to_matching_node_properties = true` writing real exports is the only mechanism
+  that survives into the baked scene. **Forgetting that flag is silent:** every property
+  falls back to its script default and the entity builds looking correct but inert. It is the
+  one setting on this list that produces no error at all.
+
+### The five entities
+
+All are authored in `trenchbroom/entities/`, scripted under `world/brush_entities/`, and
+ported from Qodot's brush set.
+
+| classname | Node | Script | What it does |
+|---|---|---|---|
+| `trigger` | `Area3D` | `TriggerVolume` | fires its `target` when a player walks in |
+| `mover` | `AnimatableBody3D` | `MovingBrush` | door/platform; slides to an offset pose. The only entity with `use()`, so the only useful target |
+| `rotate` | `AnimatableBody3D` | `RotatingBrush` | spins forever from map load; never triggered |
+| `button` | `Area3D` | `ButtonBrush` | sinks when stood on, fires its `target` |
+| `physics` | `RigidBody3D` | `PhysicsBrush` | a rigid body that falls and tumbles |
+
+Two shared property sets live beside them: `target_base.tres` (`classname = "Target"`, the
+`target` key) and `targetname_base.tres` (`classname = "Targetname"`). They are ordinary
+`FuncGodotFGDBaseClass` resources and are declared through each entity's `base_classes`.
+
+### The mover's behaviour flags
+
+`mover` has three properties that decide what it does over time. All three default to the
+original one-way behaviour, so an existing map is unaffected.
+
+| property | default | meaning |
+|---|---|---|
+| `automatic` | `false` | runs with no trigger — plays its motion on map load, and again after every round reset |
+| `toggle` | `false` | a trigger flips it between poses instead of only ever opening it |
+| `wait` | `-1` | seconds after each activation. **`-1` means permanent** — see below |
+
+**`wait` means two different things depending on `toggle`, and `-1` is the important case:**
+
+| `toggle` | what `wait` is | what `wait = -1` means |
+|---|---|---|
+| `false` | how long it stays at the offset pose before returning home | it never returns — the pose is **permanent** |
+| `true` | a guard: how long it ignores further triggers after each activation | **no guard** — it can be toggled at any time |
+
+So `wait = -1` with `toggle = true` is not "permanent" in the sense of frozen; in toggle mode
+the pose *is* the state, and there is nothing to stay for. Permanent means "nothing moves it
+again on its own", which is what `-1` always means.
+
+The guard exists because the source entities re-fire on every `body_entered` (#72): in toggle
+mode a player standing in a trigger would otherwise rattle the mover open and shut as fast as
+the signal fires. In one-shot mode no guard is needed, because `play_motion()` already no-ops
+while the mover is open.
+
+Some worked examples on a mover with `move_translation "0 0 128"`:
+
+| `automatic` | `toggle` | `wait` | behaviour |
+|---|---|---|---|
+| `0` | `0` | `-1` | a trigger opens it and it stays open — the original behaviour |
+| `0` | `0` | `3` | a trigger opens it; it returns home 3 s later |
+| `0` | `1` | `2` | a trigger flips it; further triggers ignored for 2 s |
+| `0` | `1` | `-1` | a trigger flips it, with no guard |
+| `1` | — | `2` | rises on load, sinks 2 s after arriving, rises 2 s after that, forever |
+| `1` | — | `-1` | rises on load and stays up |
+
+`automatic` ignores `toggle` — there is nothing to toggle when nothing is firing it.
+
+The wait is armed by the **server** on the frame the mover lands on a pose, not when the
+trigger fired, so `wait` measures from arrival. `wait = 0` is legal and means "the instant it
+lands". Clients never run any of this: they follow `_progress` and `_target_open` over the
+existing RPCs, so all three flags are server-only behaviour even though they are plain
+exports on every peer.
+
+### Deviations from Qodot's originals
+
+Qodot is archived and its brush set is a demo. The port is behavioural, not literal, and these
+are the places a copy would have been wrong:
+
+- **`translation` / `rotation` / `scale` are renamed `move_translation` / `move_rotation` /
+  `move_scale`.** A real collision, not taste: `auto_apply_to_matching_node_properties` does
+  `if property in node` (`entity_assembler.gd:250-259`), and `Node3D` **already has** `rotation`
+  and `scale`. Qodot's names would have overwritten the brush's absolute transform instead of
+  describing an offset from it. `speed`, `axis`, `depth`, `target`, `targetname` and `mass` are
+  safe and kept — none is a `Node3D` property.
+- **`AnimatableBody3D`, not `CharacterBody3D`,** for `mover` and `rotate` — Godot 4's idiom for a
+  kinematic platform that *carries* a player rather than shoving them, and what `PayloadNode`
+  already uses.
+- **`node_class = "RigidBody3D"` on `physics`.** Qodot's definition says `"RigidBody"`, the Godot
+  **3** name, which `ClassDB.instantiate()` cannot resolve on Godot 4 — Qodot's own entity could
+  not have built.
+- **`origin_type = 4` (`BOUNDS_CENTER`) on all five.** The func_godot default is `BRUSH`, which
+  needs an `origin`-textured brush and otherwise silently falls back to the bounds centre
+  (`geometry_generator.gd:207-224`). Declaring it means a mapper never needs an `origin` brush
+  and the pivot is predictable. Qodot pivoted at the averaged brush vertices, which is close.
+- **`button.depth` defaults to `4` (map units), not Qodot's `0.8`;** `0.8` at this project's
+  32-units-per-metre scale would be a quarter of a millimetre of travel.
+- **`button`'s `press_signal_delay` / `release_signal_delay` are gone.** Qodot declared
+  `release_signal_delay` and never read it, and applied `release_delay` twice.
+
+### Vectors are authored in TrenchBroom's axes and map units, and converted at build time
+
+A mapper types into the editor they can see, so every vector property here is written in
+**TrenchBroom's Z-up axes** and in **map units**, and the build converts both. Neither conversion
+is automatic for a custom `class_properties` vector — the parser hands the value over exactly as
+written, in the order it was written. func_godot only does this for its own keys: `origin` is
+swapped at `entity_assembler.gd:224` and a per-axis `scale` at `:209`, both `(x, y, z) -> (y, z, x)`.
+
+Concretely: a mapper setting a mover to rise writes `move_translation "0 0 128"` — 128 up in the
+axes they can see, which has to arrive as `Vector3(0, 128, 0)`, then divide by 32 to become 4 Godot
+units. Skip the axis swap and the door slides *sideways*; skip the unit conversion and it travels
+128 units into the next room. Both are silent in TrenchBroom.
+
+| Property | Axes | Units |
+|---|---|---|
+| `move_translation` | swapped | map units |
+| `move_scale` | swapped | — |
+| `axis` (`rotate`, `button`) | swapped | — |
+| `velocity` (`physics`) | swapped | map units |
+| `depth` (`button`) | — | map units |
+| `move_rotation` | **not swapped** | degrees |
+| `speed` | — | per-second |
+
+**`move_rotation` is deliberately not swapped.** It is a (pitch, yaw, roll) triple, and "yaw about
+the up axis" is the same rotation in both engines even though the two engines give the up axis a
+different name. Component order, not axis identity, is what a rotation triple encodes. So the
+default `axis` on `rotate` and `button` is written `Vector3(0, 0, 1)` / `Vector3(0, 0, -1)` — up
+and down *in TrenchBroom's axes* — not the `Vector3(0, 1, 0)` a Godot reader would expect.
+
+Both conversions happen in `_func_godot_apply_properties()`, **not at runtime**, and that is
+forced: `FuncGodotMap.build()` is editor-only (a tool button, with no `_ready` build —
+`func_godot_map.gd:26,92`), so maps ship pre-baked and nothing here runs in a running game. The
+hook writes the converted value into the `@export`, which then serializes into the scene.
+`BrushEntityUtil.to_godot_axes()` and `BrushEntityUtil.map_units()` supply the two factors — the
+latter from the map's own `FuncGodotMapSettings.scale_factor`.
+
+### The trigger → target link is made at map build time
+
+This is the part with no func_godot equivalent. Qodot's `QodotMap.connect_signals()` wired
+`source.trigger` → `target.use()` as a build step; func_godot's assembler has nothing of the
+kind, so `BrushEntityUtil.link_targets()` reimplements it, called from each source entity's
+`_func_godot_build_complete()`.
+
+Three things about it are load-bearing:
+
+- **It must be `_func_godot_build_complete`, which the assembler calls *deferred*** after every
+  entity has been added (`entity_assembler.gd:267-268`). Linking from `_func_godot_apply_properties`
+  instead runs during the build loop and finds only the entities built *before* this one — a map
+  whose mover happens to come first still works, which is exactly what makes that bug nasty.
+- **The connection is made with `CONNECT_PERSIST`**, so it becomes a serialized fact of the map
+  scene. **It therefore only exists after the map is rebuilt *and the scene is saved*** —
+  a rebuild you do not save loses every link.
+- **It exists on every peer, so sources must gate their own emission on the server.** A client
+  that emitted `trigger` would call `use()` on its own copy and move a door its host never agreed
+  to move. Every source does `if not multiplayer.is_server(): return` before emitting.
+
+Target names resolve against a `targetname`, matched by walking the `FuncGodotMap` subtree —
+**not** by Godot group, so it cannot collide with the `node_groups` namespace. An unresolvable
+`target`, or a target with no `use()`, raises a `push_warning` at build time; Qodot failed
+silently on both. Per Qodot the method is hardcoded to `use()`, so `mover` is currently the only
+entity a trigger can drive.
+
+### `build_visuals = false` does not mean no collision
+
+It gates **only** the mesh (`geometry_generator.gd:522-540`); convex collision is built
+separately and unconditionally (`:546-558`). A `trigger` is therefore both invisible and solid —
+which is the point, and would be an easy thing to "fix" into a broken trigger. Note the same
+function skips any brush carrying an `origin` texture (`:549`), so an `origin` brush inside a
+trigger has no collision.
+
+### Verifying brush entities
+
+Beyond the FGD harness below, `tools/verify_brush_entities.tscn` builds
+`trenchbroom/maps/brush_entity_test.map` — one of each entity — and asserts the wiring, the
+`CONNECT_PERSIST` flag, the unit conversion, collision presence and trigger invisibility:
+
+```
+"C:/tools/godot/godot_console.exe" --path . --headless res://tools/verify_brush_entities.tscn
+```
+
+It expects a screen of `Attempting to initialize the wrong RID` noise on the way — that is the
+dummy renderer (`--headless` has no mesh storage) and it is not fatal. **It cannot check
+serialization**, because connections only reach a `.tscn` when both endpoints carry an `owner`
+and `edited_scene_root` is null outside the editor. That half is the manual build-and-save.
+
 ## Current entities
+
+Point entities only — the brush entities (`trigger`, `mover`, `rotate`, `button`, `physics`) are
+tabulated in [Brush entities](#brush-entities-solid-classes) above, where the settings here mostly
+do not apply to them (no `scene_file`, no display model, no `size` box).
 
 | classname | Built from | Display model | Rotatable | Scalable |
 |---|---|---|---|---|

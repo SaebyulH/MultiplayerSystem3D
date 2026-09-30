@@ -1,0 +1,39 @@
+[gd_resource type="Resource" script_class="FuncGodotFGDSolidClass" format=3 uid="uid://bd1w24vu81a7w"]
+
+[ext_resource type="Script" uid="uid://5cow84q03m6a" path="res://addons/func_godot/src/fgd/func_godot_fgd_solid_class.gd" id="1_solid"]
+[ext_resource type="Script" uid="uid://dwydijkhb8asb" path="res://world/brush_entities/button_brush.gd" id="2_script"]
+[ext_resource type="Resource" path="res://trenchbroom/entities/target_base.tres" id="3_target"]
+[ext_resource type="Resource" path="res://trenchbroom/entities/targetname_base.tres" id="4_targetname"]
+
+[resource]
+script = ExtResource("1_solid")
+origin_type = 4
+collision_layer = 0
+collision_mask = 2
+script_class = ExtResource("2_script")
+classname = "button"
+description = "Button brush. Sinks into the wall when a player stands on it and fires its target on the way in. Give it a target, and draw it where it should sit when unpressed."
+base_classes = Array[Resource]([ExtResource("3_target"), ExtResource("4_targetname")])
+class_properties = Dictionary[String, Variant]({
+"axis": Vector3(0, 0, -1),
+"depth": 4.0,
+"release_delay": 0.0,
+"speed": 8.0,
+"target": NodePath(""),
+"targetname": "",
+"trigger_signal_delay": 0.0
+})
+class_property_descriptions = Dictionary[String, Variant]({
+"axis": "Direction it sinks, in TrenchBroom's axes (0 0 -1 is down)",
+"depth": "How far it sinks, in map units",
+"release_delay": "Seconds to stay pressed after the last player steps off",
+"speed": "Sink speed - 8 is an eighth of a second",
+"target": "targetname of the entity to fire",
+"targetname": "Name other entities use to target this one",
+"trigger_signal_delay": "Seconds between being stood on and firing its target"
+})
+auto_apply_to_matching_node_properties = true
+meta_properties = Dictionary[String, Variant]({
+"color": Color(0.4, 0.9, 0.5, 1)
+})
+node_class = "Area3D"

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="FuncGodotFGDBaseClass" format=3]
+
+[ext_resource type="Script" path="res://addons/func_godot/src/fgd/func_godot_fgd_base_class.gd" id="1_base"]
+
+[resource]
+script = ExtResource("1_base")
+classname = "Target"
+description = "Lets an entity fire another one by name."
+class_properties = Dictionary[String, Variant]({
+"target": NodePath("")
+})
+class_property_descriptions = Dictionary[String, Variant]({
+"target": "targetname of the entity to fire"
+})

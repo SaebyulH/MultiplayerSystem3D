@@ -714,6 +714,83 @@ The rate is a property of the session, chosen by the host and adopted by clients
 
 History: the old `0.667` default was not really `60 / tickrate`. Adding knockback *outside* the sandwich made `move_and_slide()` scale it by the frame delta, and `0.667` happened to cancel that at a nominal 60 fps — which is why the constant looked like a tick-rate compensation and why it survived. It was 1.5× too strong at 60 fps and 3.6× at 25 fps before the fix.
 
+## 9. Brush entities (TrenchBroom triggers, movers, buttons)
+
+The five brush entities under `world/brush_entities/` are map-authored nodes — they arrive on every
+peer inside the replicated map scene, exactly like `ControlPoint` or `HealthPackSpawner`. Nothing
+about them is rollback state and none of them carries a `MultiplayerSynchronizer`; the model is
+`PayloadNode`'s, not the Player's.
+
+**Server-authoritative, with the map's node authority doing the work.** No map entity ever has
+`set_multiplayer_authority` called on it, so all of them inherit authority 1, and a plain
+`multiplayer.is_server()` check is sufficient gating. Each script simulates only on the server.
+
+**The one exception, and why it is one.** A source entity's `trigger` signal is wired to its
+target's `use()` by a `CONNECT_PERSIST` connection baked into the map scene — a *plain local signal
+connection*, present on every peer. If a client's `TriggerVolume` emitted, it would drive its own
+copy of the door and disagree with the host. So sources gate the emission itself:
+
+```gdscript
+func _on_body_entered(body: Node3D) -> void:
+    if not multiplayer.is_server():
+        return          # the baked connection exists here too, but must never fire
+    trigger.emit()
+```
+
+That is the load-bearing rule for this whole subsystem. It is also why the wiring is a *build-time*
+step: the link is a scene fact, and only the server is allowed to act on it. See
+`docs/06-trenchbroom-entities.md`.
+
+**Per-entity sync shape**, following the two patterns already in the codebase:
+
+| Entity | Agreement | Mechanism |
+|---|---|---|
+| `trigger` | none | stateless; emits and forgets |
+| `mover` | `_progress` + which pose | unreliable ~15 Hz + reliable on the flip |
+| `rotate` | angle | **no per-frame traffic** — every peer integrates locally, host corrects at 1 Hz |
+| `button` | `is_pressed` only | reliable on the flip; each peer animates the sink locally |
+| `physics` | full transform | unreliable 20 Hz; clients are frozen followers |
+
+Three of those are worth spelling out:
+
+- **`mover` and `rotate` differ on purpose.** A `MovingBrush` has to stream its progress because a
+  client cannot reconstruct the host's easing from a single scalar — so the host advances a
+  normalised `_progress` and clients interpolate with it (which is also why its travel is linear
+  rather than Qodot's exponential ease). A `RotatingBrush` needs none of that: rotation is a pure
+  function of elapsed time, so every peer integrates it at `speed` and the host only sends a ~1 Hz
+  correction. At the default 360°/s a 15 Hz transform stream would step 24° at a time and read as a
+  stutter; this costs nothing instead. `ButtonBrush` follows `rotate`'s reasoning for its sink
+  animation, which is why only its `is_pressed` flag is synced.
+- **The drift correction is conditional, not an assignment.** `RotatingBrush._rpc_sync` ignores a
+  disagreement below a quarter of a degree, so the common case is a no-op and the spin stays smooth
+  rather than ticking once a second.
+- **`PhysicsBrush` is the honest weak one.** A `RigidBody3D` is simulated independently per peer and
+  Jolt is deterministic only for identical builds, timesteps and contact ordering — none of which
+  survives a network. It is not made to match: the host owns the body and clients freeze
+  (`FREEZE_MODE_KINEMATIC`, so the transform can still be assigned) and follow. Correct at rest,
+  slightly rubbery while moving. Recorded in `05-known-issues.md`.
+- **`MovingBrush`'s timing is server-only, and needed no new sync.** `wait`, `toggle` and
+  `automatic` (`docs/06-trenchbroom-entities.md`) run a small state machine on the host — a rest
+  timer armed on the frame the mover lands, a re-trigger guard while it runs, and a self-restart
+  when `automatic` is set — and they drive the *same* two RPCs as before. A client needs to know
+  nothing about the flags: it already follows `_target_open` reliably and `_progress` unreliably,
+  so a mover cycling on its own looks identical to one being triggered. The flags are plain
+  exports on every peer, but only the host reads them.
+
+**Late joiners** use the health pack's pull, not a synchronizer: `BrushEntityUtil.should_pull_state()`
+gates a `_request_state.rpc_id(1)` in `_ready`, the host answers with `rpc_id(get_remote_sender_id(), …)`.
+The gate tests **peer id, not `is_server()`** — an offline peer reports `is_server()` false while
+still being peer 1, so a second instance sitting in a lobby would RPC itself. Same trap, same fix, as
+`health_pack_spawner.gd:37-41`.
+
+**The scene default is chosen to fail safely.** A `MovingBrush` starts at its authored pose with
+`_target_open = false`, so a peer that has heard nothing is wrong in the harmless direction — a door
+that has not opened — rather than a door that lets players through geometry the host considers
+solid.
+
+**Round reset** hangs off `GameModeComponent.phase_changed` → `PhaseState.SETUP`, as the health pack
+does, and every handler is strictly idempotent because the host sees each transition twice.
+
 ---
 
 ## Consolidated fragility list (cross-referenced to `05-known-issues.md`)

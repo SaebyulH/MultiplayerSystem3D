@@ -18,7 +18,7 @@ roughness = 0.6
 albedo_texture = ExtResource("3_e7i6s")
 
 [sub_resource type="BoxMesh" id="BoxMesh_cross_long"]
-size = Vector3(0.44, 0.05, 0.14)
+size = Vector3(0.44, 0.05, 0.056884766)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cross"]
 albedo_color = Color(0.82, 0.12, 0.12, 1)
@@ -28,7 +28,7 @@ roughness = 0.6
 albedo_texture = ExtResource("3_e7i6s")
 
 [sub_resource type="BoxMesh" id="BoxMesh_cross_short"]
-size = Vector3(0.14, 0.05, 0.44)
+size = Vector3(0.05078125, 0.05, 0.44)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_pickup"]
 size = Vector3(1.4, 1.8, 1.4)
@@ -45,13 +45,79 @@ mesh = SubResource("BoxMesh_body")
 surface_material_override/0 = SubResource("StandardMaterial3D_body")
 
 [node name="CrossLong" type="MeshInstance3D" parent="Visual" unique_id=288680628]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.401445, 0)
 material_override = SubResource("StandardMaterial3D_ockqi")
 mesh = SubResource("BoxMesh_cross_long")
 surface_material_override/0 = SubResource("StandardMaterial3D_cross")
 
 [node name="CrossShort" type="MeshInstance3D" parent="Visual" unique_id=846914823]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.401445, 0)
+material_override = SubResource("StandardMaterial3D_b2o4e")
+mesh = SubResource("BoxMesh_cross_short")
+surface_material_override/0 = SubResource("StandardMaterial3D_cross")
+
+[node name="CrossShort2" type="MeshInstance3D" parent="Visual" unique_id=877572294]
+transform = Transform3D(-6.016505e-09, 0, -0.1376416, 0, 0.1376416, 0, 0.1376416, 0, -6.016505e-09, -0.11656591, 0.40415654, 0.08923259)
+material_override = SubResource("StandardMaterial3D_b2o4e")
+mesh = SubResource("BoxMesh_cross_short")
+surface_material_override/0 = SubResource("StandardMaterial3D_cross")
+
+[node name="CrossShort3" type="MeshInstance3D" parent="Visual" unique_id=1608150495]
+transform = Transform3D(0.1376416, 0, 1.0842024e-15, 0, 0.1376416, 0, -1.0842024e-15, 0, 0.1376416, -0.089607686, 0.40415654, 0.11730243)
+material_override = SubResource("StandardMaterial3D_b2o4e")
+mesh = SubResource("BoxMesh_cross_short")
+surface_material_override/0 = SubResource("StandardMaterial3D_cross")
+
+[node name="CrossShort4" type="MeshInstance3D" parent="Visual" unique_id=856406374]
+transform = Transform3D(0.1376416, 0, 1.0842024e-15, 0, 0.1376416, 0, -1.0842024e-15, 0, 0.1376416, -0.14185657, 0.40415654, 0.11813626)
+material_override = SubResource("StandardMaterial3D_b2o4e")
+mesh = SubResource("BoxMesh_cross_short")
+surface_material_override/0 = SubResource("StandardMaterial3D_cross")
+
+[node name="CrossShort5" type="MeshInstance3D" parent="Visual" unique_id=787300155]
+transform = Transform3D(-6.016505e-09, 0, -0.1376416, 0, 0.1376416, 0, 0.1376416, 0, -6.016505e-09, -0.17020428, 0.40415654, 0.14703986)
+material_override = SubResource("StandardMaterial3D_b2o4e")
+mesh = SubResource("BoxMesh_cross_short")
+surface_material_override/0 = SubResource("StandardMaterial3D_cross")
+
+[node name="CrossShort6" type="MeshInstance3D" parent="Visual" unique_id=145239089]
+transform = Transform3D(-0.1376416, 0, 1.2033009e-08, 0, 0.1376416, 0, -1.2033009e-08, 0, -0.1376416, -0.19855207, 0.40415654, 0.11896993)
+material_override = SubResource("StandardMaterial3D_b2o4e")
+mesh = SubResource("BoxMesh_cross_short")
+surface_material_override/0 = SubResource("StandardMaterial3D_cross")
+
+[node name="CrossShort7" type="MeshInstance3D" parent="Visual" unique_id=1937004121]
+transform = Transform3D(-0.1376416, 0, 1.2033009e-08, 0, 0.1376416, 0, -1.2033009e-08, 0, -0.1376416, -0.19744039, 0.40415654, 0.20206779)
+material_override = SubResource("StandardMaterial3D_b2o4e")
+mesh = SubResource("BoxMesh_cross_short")
+surface_material_override/0 = SubResource("StandardMaterial3D_cross")
+
+[node name="CrossShort8" type="MeshInstance3D" parent="Visual" unique_id=254916581]
+transform = Transform3D(-0.1376416, 0, 1.2033009e-08, 0, 0.1376416, 0, -1.2033009e-08, 0, -0.1376416, -0.08794017, 0.40415654, 0.19956654)
+material_override = SubResource("StandardMaterial3D_b2o4e")
+mesh = SubResource("BoxMesh_cross_short")
+surface_material_override/0 = SubResource("StandardMaterial3D_cross")
+
+[node name="CrossShort9" type="MeshInstance3D" parent="Visual" unique_id=1694407600]
+transform = Transform3D(1.8049512e-08, 0, 0.1376416, 0, 0.1376416, 0, -0.1376416, 0, 1.8049512e-08, -0.11573209, 0.40415654, 0.17066287)
+material_override = SubResource("StandardMaterial3D_b2o4e")
+mesh = SubResource("BoxMesh_cross_short")
+surface_material_override/0 = SubResource("StandardMaterial3D_cross")
+
+[node name="CrossShort10" type="MeshInstance3D" parent="Visual" unique_id=2094511238]
+transform = Transform3D(1.8049512e-08, 0, 0.1376416, 0, 0.1376416, 0, -0.1376416, 0, 1.8049512e-08, -0.17326142, 0.40415654, 0.17038499)
+material_override = SubResource("StandardMaterial3D_b2o4e")
+mesh = SubResource("BoxMesh_cross_short")
+surface_material_override/0 = SubResource("StandardMaterial3D_cross")
+
+[node name="CrossShort11" type="MeshInstance3D" parent="Visual" unique_id=193038764]
+transform = Transform3D(1.8049512e-08, 0, 0.1376416, 0, 0.1376416, 0, -0.1376416, 0, 1.8049512e-08, -0.17326142, 0.40415654, 0.22958176)
+material_override = SubResource("StandardMaterial3D_b2o4e")
+mesh = SubResource("BoxMesh_cross_short")
+surface_material_override/0 = SubResource("StandardMaterial3D_cross")
+
+[node name="CrossShort12" type="MeshInstance3D" parent="Visual" unique_id=663236407]
+transform = Transform3D(1.8049512e-08, 0, 0.1376416, 0, 0.1376416, 0, -0.1376416, 0, 1.8049512e-08, -0.11545421, 0.40415654, 0.23013765)
 material_override = SubResource("StandardMaterial3D_b2o4e")
 mesh = SubResource("BoxMesh_cross_short")
 surface_material_override/0 = SubResource("StandardMaterial3D_cross")

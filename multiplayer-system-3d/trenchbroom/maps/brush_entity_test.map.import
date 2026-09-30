@@ -1,0 +1,14 @@
+[remap]
+
+importer="func_godot.map"
+type="Resource"
+uid="uid://djqexy8hitjlp"
+path="res://.godot/imported/brush_entity_test.map-418cddb1a18e4e6989b0c77d8fa82711.tres"
+
+[deps]
+
+source_file="res://trenchbroom/maps/brush_entity_test.map"
+dest_files=["res://.godot/imported/brush_entity_test.map-418cddb1a18e4e6989b0c77d8fa82711.tres"]
+
+[params]
+

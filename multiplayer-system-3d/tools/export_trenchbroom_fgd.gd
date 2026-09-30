@@ -7,6 +7,10 @@ extends Node
 ## vanish silently (docs/05-known-issues.md #60).  This harness is the cheap check,
 ## and it also regenerates the display models the entities point at.
 ##
+## All three FGD kinds are covered: `@PointClass` (props, spawns — the only kind that
+## carries a bounding box), `@SolidClass` (brush entities, shaped by the volume the
+## mapper draws) and `@BaseClass` (shared property sets).
+##
 ## HOW TO USE:
 ##   "C:/tools/godot/godot_console.exe" --path . --headless res://tools/export_trenchbroom_fgd.tscn
 ##
@@ -18,6 +22,21 @@ const GAME_CONFIG_PATH := "res://trenchbroom/trenchbroom_config.tres"
 
 
 const ENTITIES_DIR := "res://trenchbroom/entities/"
+
+
+## The FGD class prefixes func_godot emits, mapped to the kind this harness reasons about.
+##
+## Splitting on `@PointClass` alone — which is what `_check_file` used to do — finds
+## neither a `@SolidClass` nor a `@BaseClass`, so the first brush entity added to this
+## project failed the harness with a misleading "no @PointClass for trigger".
+const CLASS_PREFIXES := {
+	"@PointClass": "point",
+	"@SolidClass": "solid",
+	"@BaseClass": "base",
+}
+
+## Characters a classname may contain, for cutting one out of a declaration line.
+const CLASSNAME_CHARS := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_"
 
 var _failures := 0
 
@@ -34,6 +53,17 @@ func _ready() -> void:
 	# `entity_definitions` is invisible to TrenchBroom *and* rebuilds as a Marker3D
 	# (#60), and a hand-maintained list is exactly what gets forgotten when one is added.
 	var definitions := fgd.get_entity_definitions()
+	# Base classes are checked against the raw array instead, because
+	# `get_entity_definitions()` returns only the two *placeable* kinds
+	# (`func_godot_fgd_file.gd:130`) — it folds a base class's properties into its
+	# descendants rather than exposing it.  A base class must still be listed: the FGD
+	# writer walks the raw array to emit the `@BaseClass` blocks (`:88-98`), so an
+	# unlisted one would vanish from the FGD and take every inherited property with it.
+	var listed: Dictionary = {}
+	for entry in fgd.entity_definitions:
+		if entry is FuncGodotFGDEntityClass:
+			listed[entry.classname] = true
+
 	var checked: Dictionary = {}
 	for path in _entity_files():
 		var definition := load(path) as FuncGodotFGDEntityClass
@@ -41,7 +71,14 @@ func _ready() -> void:
 			_failures += 1
 			printerr("FAIL: could not load %s" % path)
 			continue
-		if definitions.has(definition.classname):
+		if definition is FuncGodotFGDBaseClass:
+			if listed.has(definition.classname):
+				print("ok   registered: %s (@BaseClass)" % definition.classname)
+				checked[definition.classname] = definition
+			else:
+				_failures += 1
+				printerr("FAIL: %s is not in entity_definitions — no @BaseClass block would be written" % definition.classname)
+		elif definitions.has(definition.classname):
 			print("ok   registered: %s" % definition.classname)
 			checked[definition.classname] = definition
 		else:
@@ -230,70 +267,198 @@ func _check_bounds(classname: String, block: String, rotatable: bool) -> void:
 		printerr("FAIL: %s bounds off-centre on XY by %s — TrenchBroom will refuse to rotate it" % [classname, off_centre])
 
 
-## Splits the exported .fgd on `@PointClass` and checks each registered classname's
-## block carries the tokens it needs.  The classname is read back out of the block
-## (`... = Truck : "..."`) rather than assumed from the expected list, so a block
-## that failed to generate is reported as missing instead of silently matching.
+## Splits the exported .fgd on every class prefix and checks each registered classname's
+## block carries the tokens its kind needs.  The classname is read back out of the block
+## (`... = Truck : "..."`) rather than assumed from the expected list, so a block that
+## failed to generate is reported as missing instead of silently matching.
 func _check_file(path: String, checked: Dictionary) -> void:
 	if not FileAccess.file_exists(path):
 		_failures += 1
 		printerr("FAIL: %s was not written" % path)
 		return
 
-	var blocks := {}
-	for block in FileAccess.get_file_as_string(path).split("@PointClass"):
-		var marker := block.find(" = ")
-		if marker == -1:
-			continue
-		var classname := block.substr(marker + 3).split(" ")[0].strip_edges()
-		if not classname.is_empty():
-			blocks[classname] = block
+	var blocks := _split_classes(FileAccess.get_file_as_string(path))
 
 	for classname in checked:
 		var definition: FuncGodotFGDEntityClass = checked[classname]
 		if not blocks.has(classname):
 			_failures += 1
-			printerr("FAIL: no @PointClass for %s in the exported FGD" % classname)
+			printerr("FAIL: no FGD class for %s in the exported FGD" % classname)
 			continue
 
-		# `model(` and `size(` are on every point entity.  `mangle(`/`scale(` are not:
-		# the spawn carries neither, so expecting them universally would fail on correct
-		# output.  Take the expectation from the definition's own class properties.
-		var has_scale: bool = definition.class_properties.has("scale")
-		var tokens: Array[String] = ["model(", "size("]
-		if definition.class_properties.has("mangle"):
-			tokens.append("mangle(")
-		if has_scale:
-			tokens.append("scale(")
+		var block: String = blocks[classname]["block"]
+		match blocks[classname]["kind"]:
+			"solid":
+				_check_solid(classname, block)
+				_check_declared_properties(classname, block, definition)
+			"base":
+				_check_declared_properties(classname, block, definition)
+			_:
+				_check_point(classname, block, definition)
 
-		var missing := PackedStringArray()
-		for token in tokens:
-			if not blocks[classname].contains(token):
-				missing.append(token)
-		if missing.is_empty():
-			print("ok   exported: %s" % classname)
+
+## Cuts the exported FGD into one entry per class declaration, keyed by classname.
+##
+## A class's text runs from its own prefix to whichever prefix comes next, [b]of any
+## kind[/b].  Splitting on a single prefix — which this used to do — lets a block run on
+## into every class that follows it.  That was harmless while the only question asked was
+## whether a token was [i]present[/i], but it is wrong the moment a check asks whether one
+## is [i]absent[/i], because the following class's `model(` and `size(` sit inside the
+## block under test.  It is exactly how four correct brush entities failed their first run.
+func _split_classes(text: String) -> Dictionary:
+	var starts: Array[Dictionary] = []
+	for prefix in CLASS_PREFIXES:
+		var at := text.find(prefix)
+		while at != -1:
+			starts.append({ "at": at, "kind": CLASS_PREFIXES[prefix], "length": prefix.length() })
+			at = text.find(prefix, at + 1)
+	starts.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return int(a["at"]) < int(b["at"]))
+
+	var blocks: Dictionary = {}
+	for i in starts.size():
+		var head: Dictionary = starts[i]
+		var from: int = int(head["at"]) + int(head["length"])
+		var to: int = int(starts[i + 1]["at"]) if i + 1 < starts.size() else text.length()
+		var block := text.substr(from, to - from)
+
+		var classname := _classname_in(block)
+		if classname.is_empty():
+			continue
+		blocks[classname] = { "block": block, "kind": head["kind"] }
+	return blocks
+
+
+## The classname a class block declares, read out of its first ` = `.
+##
+## Cutting at the first space is not enough.  A `@PointClass` or `@SolidClass` is written
+## `= Truck : "description"`, so the name is a clean first token — but a `@BaseClass`
+## carries no description and is written `= Target` followed by a newline and then its
+## property list.  A space-split therefore swallows the newline and the first property
+## into the name, and the class reads as missing from the file entirely.
+func _classname_in(block: String) -> String:
+	var marker := block.find(" = ")
+	if marker == -1:
+		return ""
+	var rest := block.substr(marker + 3).strip_edges(true, false)
+	var end := 0
+	while end < rest.length() and CLASSNAME_CHARS.contains(rest[end]):
+		end += 1
+	return rest.substr(0, end)
+
+
+## Point entities are the only kind TrenchBroom draws a bounding box for, so the
+## `model(`/`size(` tokens and the scale expression are checked here and nowhere else.
+func _check_point(classname: String, block: String, definition: FuncGodotFGDEntityClass) -> void:
+	# `model(` and `size(` are on every point entity.  `mangle(`/`scale(` are not:
+	# the spawn carries neither, so expecting them universally would fail on correct
+	# output.  Take the expectation from the definition's own class properties.
+	var has_scale: bool = definition.class_properties.has("scale")
+	var tokens: Array[String] = ["model(", "size("]
+	if definition.class_properties.has("mangle"):
+		tokens.append("mangle(")
+	if has_scale:
+		tokens.append("scale(")
+
+	var missing := PackedStringArray()
+	for token in tokens:
+		if not block.contains(token):
+			missing.append(token)
+	if missing.is_empty():
+		print("ok   exported: %s (@PointClass)" % classname)
+	else:
+		_failures += 1
+		printerr("FAIL: %s is missing %s in the exported FGD" % [classname, ", ".join(missing)])
+
+	if has_scale:
+		if block.contains("scale(float)"):
+			print("ok   scale key: %s declares a numeric scale" % classname)
 		else:
 			_failures += 1
-			printerr("FAIL: %s is missing %s in the exported FGD" % [classname, ", ".join(missing)])
+			printerr("FAIL: %s does not declare scale as a float — an unset scale leaves the prop undrawn" % classname)
 
-		if has_scale:
-			if blocks[classname].contains("scale(float)"):
-				print("ok   scale key: %s declares a numeric scale" % classname)
-			else:
-				_failures += 1
-				printerr("FAIL: %s does not declare scale as a float — an unset scale leaves the prop undrawn" % classname)
+		# The scale expression must carry a branch that does not need the property.
+		# The entity browser evaluates model expressions with no entity behind them,
+		# so a form that *requires* the property leaves the thumbnail blank — and so
+		# does a freshly placed prop before its `scale` is touched (#65, #4253).
+		if block.contains("scale == undefined -> 32"):
+			print("ok   fallback: %s scale expression has a property-free branch" % classname)
+		else:
+			_failures += 1
+			printerr("FAIL: %s has no property-free scale branch — its preview will not draw" % classname)
 
-			# The scale expression must carry a branch that does not need the property.
-			# The entity browser evaluates model expressions with no entity behind them,
-			# so a form that *requires* the property leaves the thumbnail blank — and so
-			# does a freshly placed prop before its `scale` is touched (#65, #4253).
-			if blocks[classname].contains("scale == undefined -> 32"):
-				print("ok   fallback: %s scale expression has a property-free branch" % classname)
-			else:
-				_failures += 1
-				printerr("FAIL: %s has no property-free scale branch — its preview will not draw" % classname)
+	# `mangle(` contains `angle(`, so this one test covers all three rotation
+	# spellings; an entity with no rotation property is only checked for the
+	# origin-inside-bounds rule.
+	_check_bounds(classname, block, block.contains("angle("))
 
-		# `mangle(` contains `angle(`, so this one test covers all three rotation
-		# spellings; an entity with no rotation property is only checked for the
-		# origin-inside-bounds rule.
-		_check_bounds(classname, blocks[classname], blocks[classname].contains("angle("))
+
+## Brush entities are defined by the volume the mapper draws, never by a bounding box.
+## `build_def_text` skips `size` and `model` for `@SolidClass` outright
+## (`func_godot_fgd_entity_class.gd:82-87`), so finding either means the definition has
+## been given a shape it cannot honour.
+func _check_solid(classname: String, block: String) -> void:
+	var stray := PackedStringArray()
+	for token in ["model(", "size("]:
+		if block.contains(token):
+			stray.append(token)
+	if stray.is_empty():
+		print("ok   exported: %s (@SolidClass)" % classname)
+	else:
+		_failures += 1
+		printerr("FAIL: %s is a brush entity but declares %s — a brush's shape comes from the volume in the map" % [classname, ", ".join(stray)])
+
+
+## Checks one class block's property list, in the two halves it actually has.
+##
+## Only the definition's [b]own[/b] `class_properties` appear inline.  Inherited ones are
+## declared through the FGD `base(...)` keyword and resolved by TrenchBroom, not copied
+## into the derived block — `trigger` is the proof, exporting an empty `[]` while its
+## `target` and `targetname` arrive entirely via `base(Target, Targetname)`.  So
+## inheritance is asserted separately: a `base_classes` list that failed to flatten leaves
+## the mapper without those keys, the map still builds, and nothing else would notice.
+func _check_declared_properties(classname: String, block: String, definition: FuncGodotFGDEntityClass) -> void:
+	var missing := PackedStringArray()
+	for property in definition.class_properties:
+		if not block.contains(property + "("):
+			missing.append(property)
+	if missing.is_empty():
+		print("ok   properties: %s declares all %d of its own" % [classname, definition.class_properties.size()])
+	else:
+		_failures += 1
+		printerr("FAIL: %s does not declare %s in the exported FGD" % [classname, ", ".join(missing)])
+
+	var inherited := PackedStringArray()
+	for base_class in definition.base_classes:
+		if base_class is FuncGodotFGDEntityClass:
+			inherited.append(base_class.classname)
+	if inherited.is_empty():
+		return
+
+	# Token-exact rather than a substring test: `Target` is a prefix of `Targetname`, so
+	# `contains` would call a missing `Target` present.
+	var declared := _base_list(block).split(",", false)
+	var absent := PackedStringArray()
+	for name in inherited:
+		var found := false
+		for entry in declared:
+			if entry.strip_edges() == name:
+				found = true
+				break
+		if not found:
+			absent.append(name)
+	if absent.is_empty():
+		print("ok   bases: %s inherits %s" % [classname, ", ".join(inherited)])
+	else:
+		_failures += 1
+		printerr("FAIL: %s does not declare base(%s) — a mapper would see none of those keys" % [classname, ", ".join(absent)])
+
+
+## The text inside a class declaration's `base(...)`, or "" when it declares none.
+func _base_list(block: String) -> String:
+	var at := block.find("base(")
+	if at == -1:
+		return ""
+	var close := block.find(")", at)
+	if close == -1:
+		return ""
+	return block.substr(at + 5, close - at - 5)

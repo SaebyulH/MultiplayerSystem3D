@@ -1,0 +1,39 @@
+[gd_resource type="Resource" script_class="FuncGodotFGDSolidClass" format=3 uid="uid://rgbbyx87hfqc"]
+
+[ext_resource type="Script" uid="uid://5cow84q03m6a" path="res://addons/func_godot/src/fgd/func_godot_fgd_solid_class.gd" id="1_solid"]
+[ext_resource type="Script" uid="uid://darrnm04wjdt4" path="res://world/brush_entities/moving_brush.gd" id="2_script"]
+[ext_resource type="Resource" path="res://trenchbroom/entities/targetname_base.tres" id="3_targetname"]
+
+[resource]
+script = ExtResource("1_solid")
+origin_type = 4
+collision_mask = 0
+script_class = ExtResource("2_script")
+classname = "mover"
+description = "Moving brush - a door or platform. Give it a targetname, then point a trigger or button at it; it slides to its offset pose when fired. This is the only entity a trigger can drive."
+base_classes = Array[Resource]([ExtResource("3_targetname")])
+class_properties = Dictionary[String, Variant]({
+"automatic": false,
+"move_rotation": Vector3(0, 0, 0),
+"move_scale": Vector3(1, 1, 1),
+"move_translation": Vector3(0, 0, 0),
+"speed": 1.0,
+"targetname": "",
+"toggle": false,
+"wait": -1.0
+})
+class_property_descriptions = Dictionary[String, Variant]({
+"automatic": "Run with no trigger - moves on map load and after every round reset",
+"move_rotation": "How far to rotate when fired, in degrees",
+"move_scale": "Scale at the open pose (1 1 1 leaves it alone)",
+"move_translation": "How far to travel, in TrenchBroom's axes and map units (0 0 128 is 4 units up)",
+"speed": "Travel speed - 1 is one second end to end",
+"targetname": "Name other entities use to target this one",
+"toggle": "A trigger flips it open/closed instead of only ever opening it",
+"wait": "Seconds after each activation. -1 = stays where it is, permanently. With toggle on, this is instead how long it ignores further triggers"
+})
+auto_apply_to_matching_node_properties = true
+meta_properties = Dictionary[String, Variant]({
+"color": Color(0.35, 0.6, 1, 1)
+})
+node_class = "AnimatableBody3D"
