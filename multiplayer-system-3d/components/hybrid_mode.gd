@@ -13,7 +13,7 @@ signal point_captured()
 # ─────────────────────────────────────────────
 
 ## How long SPI must hold the capture point to unlock the payload
-@export var capture_time_to_win: float = 30.0
+@export var capture_time_to_win: float = 1.0
 ## Whether the capture clock pauses when the point is contested
 @export var pause_on_contest: bool = true
 

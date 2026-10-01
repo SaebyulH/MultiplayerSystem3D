@@ -225,10 +225,11 @@ func _is_rigged(root: Node3D) -> bool:
 
 ## Godot AABB -> TrenchBroom `size` box.
 ##
-## Three conversions, each of which was a bug when missed:
+## Four conversions, each of which was a bug when missed:
 ##   - the assembler's axis swap: TB.x = Godot.z, TB.y = Godot.x, TB.z = Godot.y
 ##   - X and Y symmetric about the origin, or TrenchBroom refuses to rotate (#63)
 ##   - Z spanning the origin, or TrenchBroom draws no model at all (#64)
+##   - every bound a **power of two**, or the entity cannot be placed on the grid
 ##
 ## Returned as `AABB(min, max)`: func_godot's FGD writer emits `position` and `size` as
 ## two corners, so the second vector is the MAX corner, not an extent.
@@ -238,18 +239,51 @@ func _tb_size(godot_box: AABB) -> AABB:
 	var tb_lo := Vector3(lo.z, lo.x, lo.y)
 	var tb_hi := Vector3(hi.z, hi.x, hi.y)
 
-	var half_x: float = maxf(absf(tb_lo.x), absf(tb_hi.x))
-	var half_y: float = maxf(absf(tb_lo.y), absf(tb_hi.y))
-	tb_lo.x = -half_x
-	tb_hi.x = half_x
-	tb_lo.y = -half_y
-	tb_hi.y = half_y
-	tb_lo.z = minf(tb_lo.z, 0.0)
-	tb_hi.z = maxf(tb_hi.z, 0.0)
+	# Every half-extent rounds outward to a power of two — see `_ceil_pow2` for why that is
+	# what makes an entity placeable, and why rounding *outward* is the safe direction.
+	var half_x := _ceil_pow2(maxf(absf(tb_lo.x), absf(tb_hi.x)))
+	var half_y := _ceil_pow2(maxf(absf(tb_lo.y), absf(tb_hi.y)))
+	var z_lo := _floor_pow2(minf(tb_lo.z, 0.0))
+	var z_hi := _ceil_pow2(maxf(tb_hi.z, 0.0))
 
 	return AABB(
-		Vector3(roundf(tb_lo.x), roundf(tb_lo.y), roundf(tb_lo.z)),
-		Vector3(roundf(tb_hi.x), roundf(tb_hi.y), roundf(tb_hi.z)))
+		Vector3(-half_x, -half_y, z_lo),
+		Vector3(half_x, half_y, z_hi))
+
+
+## The smallest power of two that is at least [param value], with a floor of 1.
+##
+## [b]This is what makes an entity placeable.[/b] TrenchBroom snaps a point entity by its
+## bounding box, so the origin lands at `box_corner + half_extent` — which means a
+## half-extent that is not a multiple of the grid size puts the origin at a fixed offset
+## nothing can remove: 40 on the default 16 grid is `40 + 16n`, permanently 8 units off every
+## grid line. A power of two is a multiple of every grid size TrenchBroom offers up to 32, so
+## it is on-grid at all of them, and the mapper can always land the prop where they aimed.
+##
+## Rounded [i]outward[/i] rather than to nearest, so the box still contains the model it was
+## measured from; a box smaller than its model makes the prop awkward to select.
+##
+## A counting loop rather than `2^ceil(log2(v))`: that is exact for true powers of two but can
+## land one below for a value a float's precision away from one, which would round 8 down to
+## 4 and quietly put the entity back off-grid. The guard is against a NaN or infinite AABB,
+## which would otherwise spin here forever.
+static func _ceil_pow2(value: float) -> float:
+	var out := 1.0
+	for _i in 32:
+		if out >= value:
+			break
+		out *= 2.0
+	return out
+
+
+## The most negative power of two that is at least as negative as [param value] — the mirror
+## of [method _ceil_pow2] for a lower bound, so the box grows downwards and still contains the
+## model.  Zero stays zero: the origin sitting on the box floor is already grid-aligned, and
+## `-1` would lift every flat prop a unit off the ground.
+static func _floor_pow2(value: float) -> float:
+	if is_zero_approx(value):
+		return 0.0
+	return -_ceil_pow2(absf(value))
 
 
 # --- writing ----------------------------------------------------------------------

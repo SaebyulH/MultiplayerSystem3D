@@ -130,7 +130,7 @@
 ( -896 256 0 ) ( -897 256 0 ) ( -896 256 1 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ 1 -1.2246467991473532e-16 0 -32.507935 ] [ 0 0 -1 -0.7459717 ] 180 0.063 0.063
 ( 272 512 -64 ) ( 271 512 -64 ) ( 272 511 -64 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ 1 -1.2246467991473532e-16 0 -32.507935 ] [ 1.2246467991473532e-16 1 0 65.88916 ] 0 0.063 0.063
 ( -896 256 0 ) ( -896 255 0 ) ( -897 256 0 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ -1 1.2246467991473532e-16 0 32.507935 ] [ 1.2246467991473532e-16 1 0 65.88916 ] 90 0.063 0.063
-( 272 768 -256 ) ( 272 768 -255 ) ( 271 768 -256 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ -1 1.2246467991473532e-16 0 32.507935 ] [ 0 0 -1 -0.7459717 ] 0 0.063 0.063
+( 272 512 -256 ) ( 272 512 -255 ) ( 271 512 -256 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ -1 1.2246467991473532e-16 0 32.507935 ] [ 0 0 -1 -0.7459717 ] 270 0.063 0.063
 ( 0 512 -256 ) ( 0 511 -256 ) ( 0 512 -255 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ 1.2246467991473532e-16 1 0 65.88916 ] [ 0 0 -1 -0.7459717 ] 270 0.063 0.063
 }
 // brush 14
@@ -164,7 +164,7 @@
 {
 ( -288 1600 64 ) ( -288 1601 64 ) ( -288 1600 65 ) FreeStylized/concrete_slabs_03_1k/concrete_slabs_03_1k/concrete_slabs_03_basecolor_1k [ -3.0616169978683826e-16 -1 0 -121.9043 ] [ 0 0 -1 1015.1271 ] 0 0.063 0.063
 ( -32 512 -192 ) ( -33 512 -192 ) ( -32 512 -191 ) FreeStylized/concrete_slabs_03_1k/concrete_slabs_03_1k/concrete_slabs_03_basecolor_1k [ 1 -3.0616169978683826e-16 0 508.80957 ] [ 0 0 -1 1015.1271 ] 90 0.063 0.063
-( -32 432 0 ) ( -32 433 0 ) ( -33 432 0 ) FreeStylized/concrete_slabs_03_1k/concrete_slabs_03_1k/concrete_slabs_03_basecolor_1k [ -3.0616169978683826e-16 -1 0 -121.9043 ] [ 1 -3.0616169978683826e-16 0 508.80957 ] 90 0.063 0.063
+( -32 432 -48 ) ( -32 433 -48 ) ( -33 432 -48 ) FreeStylized/concrete_slabs_03_1k/concrete_slabs_03_1k/concrete_slabs_03_basecolor_1k [ -3.0616169978683826e-16 -1 0 -121.9043 ] [ 1 -3.0616169978683826e-16 0 508.80957 ] 180 0.063 0.063
 ( -288 1600 64 ) ( -289 1600 64 ) ( -288 1601 64 ) FreeStylized/concrete_slabs_03_1k/concrete_slabs_03_1k/concrete_slabs_03_basecolor_1k [ 3.0616169978683826e-16 1 0 121.9043 ] [ 1 -3.0616169978683826e-16 0 508.80957 ] 90 0.063 0.063
 ( -288 768 64 ) ( -288 768 65 ) ( -289 768 64 ) FreeStylized/concrete_slabs_03_1k/concrete_slabs_03_1k/concrete_slabs_03_basecolor_1k [ -1 3.0616169978683826e-16 0 -508.80957 ] [ 0 0 -1 1015.1271 ] 270 0.063 0.063
 ( -256 432 -192 ) ( -256 432 -191 ) ( -256 433 -192 ) FreeStylized/concrete_slabs_03_1k/concrete_slabs_03_1k/concrete_slabs_03_basecolor_1k [ 3.0616169978683826e-16 1 0 121.9043 ] [ 0 0 -1 1015.1271 ] 90 0.063 0.063
@@ -512,6 +512,40 @@
 ( 896 256 128 ) ( 897 256 128 ) ( 896 256 129 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ -1 0 0 -32.507935 ] [ 0 0 -1 1006.99994 ] 90 0.063 0.063
 ( 256 256 128 ) ( 256 256 129 ) ( 256 257 128 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ 0 1 0 -0.8729248 ] [ 0 0 -1 1006.99994 ] 180 0.063 0.063
 }
+// brush 56
+{
+( -256 576 0 ) ( -256 576 1 ) ( -256 575 0 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ -1.2246467991473532e-16 -1 0 -106.524414 ] [ 0 0 -1 -0.7459717 ] 270 0.063 0.063
+( -896 672 0 ) ( -897 672 0 ) ( -896 672 1 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ 1 -1.2246467991473532e-16 0 -32.507935 ] [ 0 0 -1 -0.7459717 ] 0 0.063 0.063
+( 272 832 -64 ) ( 271 832 -64 ) ( 272 831 -64 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ 1 -1.2246467991473532e-16 0 -32.507935 ] [ 1.2246467991473532e-16 1 0 106.524414 ] 0 0.063 0.063
+( -896 576 0 ) ( -896 575 0 ) ( -897 576 0 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ -1 1.2246467991473532e-16 0 32.507935 ] [ 1.2246467991473532e-16 1 0 106.524414 ] 90 0.063 0.063
+( 272 832 -256 ) ( 272 832 -255 ) ( 271 832 -256 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ -1 1.2246467991473532e-16 0 32.507935 ] [ 0 0 -1 -0.7459717 ] 270 0.063 0.063
+( 0 832 -256 ) ( 0 831 -256 ) ( 0 832 -255 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ 1.2246467991473532e-16 1 0 106.524414 ] [ 0 0 -1 -0.7459717 ] 270 0.063 0.063
+}
+// brush 57
+{
+( -256 384 -168 ) ( -256 385 -168 ) ( -256 384 -167 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ 0 -1 0 -47.88965 ] [ 0 0 -1 372.07928 ] 270 0.063 0.063
+( -528 512 -168 ) ( -528 512 -167 ) ( -527 512 -168 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ 1 0 0 1023.99994 ] [ 0 0 -1 372.0793 ] 180 0.063 0.063
+( -528 384 -40 ) ( -527 384 -40 ) ( -528 385 -40 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ -1 0 0 -1023.99994 ] [ 0 -1 0 -47.88965 ] 270 0.063 0.063
+( -256 576 -40 ) ( -128 384 88 ) ( -256 384 88 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ 1 0 0 1023.99994 ] [ 0 -0.8320502943378437 0.5547001962252291 -378.4668 ] 90 0.063 0.063
+( 0 640 88 ) ( 0 640 89 ) ( 0 641 88 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ 0 1 0 47.88965 ] [ 0 0 -1 372.07928 ] 270 0.063 0.063
+}
+// brush 58
+{
+( -256 544 88 ) ( -256 544 89 ) ( -256 543 88 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ -1.2246467991473532e-16 -1 0 409.54004 ] [ 0 0 -1 372.07928 ] 0 0.063 0.063
+( 0 608 -40 ) ( -128 800 88 ) ( 0 800 88 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ -1 1.2246467991473532e-16 0 -991.49194 ] [ 1.0189677296904535e-16 0.8320502943378437 0.5547001962252291 -655.7295 ] 180 0.063 0.063
+( 272 800 -40 ) ( 271 800 -40 ) ( 272 799 -40 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ 1 -1.2246467991473532e-16 0 991.49194 ] [ 1.2246467991473532e-16 1 0 -409.54102 ] 0 0.063 0.063
+( 272 672 -168 ) ( 272 672 -167 ) ( 271 672 -168 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ -1 1.2246467991473532e-16 0 -991.49194 ] [ 0 0 -1 372.0793 ] 270 0.063 0.063
+( 0 800 -168 ) ( 0 799 -168 ) ( 0 800 -167 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ 1.2246467991473532e-16 1 0 -409.54004 ] [ 0 0 -1 372.07928 ] 0 0.063 0.063
+}
+// brush 59
+{
+( -264 392 -40 ) ( -264 392 -39 ) ( -264 391 -40 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ -1.2246467991473532e-16 -1 0 44.84082 ] [ 0 0 -1 -635.6666 ] 270 0.063 0.063
+( -904 392 -40 ) ( -905 392 -40 ) ( -904 392 -39 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ 1 -1.2246467991473532e-16 0 94.47632 ] [ 0 0 -1 -635.6666 ] 180 0.063 0.063
+( 264 648 -104 ) ( 263 648 -104 ) ( 264 647 -104 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ 1 -1.2246467991473532e-16 0 94.47632 ] [ 1.2246467991473532e-16 1 0 -44.84082 ] 0 0.063 0.063
+( -904 392 -40 ) ( -904 391 -40 ) ( -905 392 -40 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ -1 1.2246467991473532e-16 0 -94.47632 ] [ 1.2246467991473532e-16 1 0 -44.84082 ] 90 0.063 0.063
+( 264 648 -296 ) ( 264 648 -295 ) ( 263 648 -296 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ -1 1.2246467991473532e-16 0 -94.47632 ] [ 0 0 -1 -635.6666 ] 270 0.063 0.063
+( 0 648 -296 ) ( 0 647 -296 ) ( 0 648 -295 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ 1.2246467991473532e-16 1 0 -44.84082 ] [ 0 0 -1 -635.6666 ] 180 0.063 0.063
+}
 }
 // entity 1
 {
@@ -617,130 +651,107 @@
 }
 // entity 17
 {
-"classname" "BigBox"
-"origin" "-43.05 117.92 1"
-"mangle" "0 135 0"
-}
-// entity 18
-{
-"classname" "BigBox"
-"origin" "-60.021 89.636 41"
-"mangle" "0 30 0"
-}
-// entity 19
-{
-"classname" "BigBox"
-"origin" "-71.335 78.3223 1"
-"mangle" "0 75 0"
-}
-// entity 20
-{
 "classname" "HealthPackSpawner"
 "origin" "170 -150 4"
 }
-// entity 21
+// entity 18
 {
 "classname" "HealthPackSpawner"
 "origin" "-26 730 4"
 }
-// entity 22
-{
-"classname" "HealthPackSpawner"
-"origin" "42 166 84"
-}
-// entity 23
+// entity 19
 {
 "classname" "BigBox"
 "origin" "179 20 1"
 "scale" "2"
 }
-// entity 24
+// entity 20
 {
 "classname" "Ap2Rock17Lod0"
 "origin" "-400 2 167"
 "mangle" "0 -60 0"
 "scale" "1.5"
 }
-// entity 25
+// entity 21
 {
 "classname" "Ap2Rock17Lod0"
 "origin" "-352 130 167"
 }
-// entity 26
+// entity 22
 {
 "classname" "PlayerSpawn"
 "origin" "519 47 130"
 "team" "1"
 }
-// entity 27
+// entity 23
 {
 "classname" "PlayerSpawn"
 "origin" "487 47 130"
 "team" "1"
 }
-// entity 28
+// entity 24
 {
 "classname" "PlayerSpawn"
 "origin" "519 15 130"
 "team" "1"
 }
-// entity 29
+// entity 25
 {
 "classname" "PlayerSpawn"
 "origin" "487 15 130"
 "team" "1"
 }
-// entity 30
+// entity 26
 {
 "classname" "PlayerSpawn"
 "origin" "519 -17 130"
 "team" "1"
 }
-// entity 31
+// entity 27
 {
 "classname" "PlayerSpawn"
 "origin" "519 -49 130"
 "team" "1"
 }
-// entity 32
+// entity 28
 {
 "classname" "PlayerSpawn"
 "origin" "487 -49 130"
 "team" "1"
 }
-// entity 33
+// entity 29
 {
 "classname" "PlayerSpawn"
 "origin" "487 -17 130"
 "team" "1"
 }
-// entity 34
+// entity 30
 {
 "classname" "Ap2Rock17Lod0"
 "origin" "-400 322 7"
 "mangle" "0 -60 0"
 "scale" "1.5"
 }
-// entity 35
+// entity 31
 {
 "classname" "Ap2Rock17Lod0"
 "origin" "-400 708.75 22.5881"
 "mangle" "26 -56 16"
 "scale" "1.5"
 }
-// entity 36
+// entity 32
 {
 "classname" "Ap2Rock17Lod0"
 "origin" "-400 514 71"
 "mangle" "0 -60 0"
 "scale" "1.5"
 }
-// entity 37
+// entity 33
 {
 "classname" "HealthPackSpawner"
 "origin" "-118 -198 4"
 }
-// entity 38
+// entity 34
 {
 "classname" "trigger"
 "move_translation" "0.0 1.0 0.0"
@@ -756,7 +767,7 @@
 ( -32 384 176 ) ( -32 384 177 ) ( -32 385 176 ) __TB_empty [ 0 1 0 15.380859 ] [ 0 0 -1 744.9049 ] 180 0.063 0.063
 }
 }
-// entity 39
+// entity 35
 {
 "classname" "mover"
 "move_translation" "0 0 128"
@@ -772,30 +783,30 @@
 ( -16 384 128 ) ( -16 384 129 ) ( -16 385 128 ) FreeStylized/plaster_wall_01_1k/plaster_wall_01_1k/plaster_wall_01_basecolor_1k [ 0 1 0 15.380859 ] [ 0 0 -1 1006.99994 ] 90 0.063 0.063
 }
 }
-// entity 40
+// entity 36
 {
 "classname" "mover"
 "automatic" "1"
 "move_rotation" "0 0 360"
-"move_translation" "0 0 -64"
+"move_translation" "0 40 0"
 "wait" "1"
 // brush 0
 {
-( 0 256 224 ) ( 0 256 225 ) ( 0 255 224 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ -1.2246467991473532e-16 -1 0 -65.88916 ] [ 0 0 -1 482.80933 ] 0 0.063 0.063
-( -640 672 224 ) ( -641 672 224 ) ( -640 672 225 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ 1 -1.2246467991473532e-16 0 -1023.99994 ] [ 0 0 -1 482.80933 ] 180 0.063 0.063
-( 528 512 208 ) ( 527 512 208 ) ( 528 511 208 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ 1 -1.2246467991473532e-16 0 -1023.99994 ] [ 1.2246467991473532e-16 1 0 65.88965 ] 0 0.063 0.063
-( -640 256 224 ) ( -640 255 224 ) ( -641 256 224 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ -1 1.2246467991473532e-16 0 1023.99994 ] [ 1.2246467991473532e-16 1 0 65.88916 ] 180 0.063 0.063
-( 528 768 -32 ) ( 528 768 -31 ) ( 527 768 -32 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ -1 1.2246467991473532e-16 0 1023.99994 ] [ 0 0 -1 482.80933 ] 90 0.063 0.063
-( 256 512 -32 ) ( 256 511 -32 ) ( 256 512 -31 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ 1.2246467991473532e-16 1 0 65.88916 ] [ 0 0 -1 482.80933 ] 0 0.063 0.063
+( -128 208 224 ) ( -128 208 225 ) ( -128 207 224 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ -1.2246467991473532e-16 -1 0 196.20508 ] [ 0 0 -1 482.80933 ] 270 0.063 0.063
+( -768 624 224 ) ( -769 624 224 ) ( -768 624 225 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ 1 -1.2246467991473532e-16 0 1007.7461 ] [ 0 0 -1 482.80933 ] 90 0.063 0.063
+( 400 464 208 ) ( 399 464 208 ) ( 400 463 208 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ 1 -1.2246467991473532e-16 0 1007.7461 ] [ 1.2246467991473532e-16 1 0 -196.20508 ] 270 0.063 0.063
+( -768 208 224 ) ( -768 207 224 ) ( -769 208 224 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ -1 1.2246467991473532e-16 0 -1007.7461 ] [ 1.2246467991473532e-16 1 0 -196.20508 ] 90 0.063 0.063
+( 400 720 -32 ) ( 400 720 -31 ) ( 399 720 -32 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ -1 1.2246467991473532e-16 0 -1007.7461 ] [ 0 0 -1 482.80933 ] 0 0.063 0.063
+( 128 464 -32 ) ( 128 463 -32 ) ( 128 464 -31 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ 1.2246467991473532e-16 1 0 -196.20508 ] [ 0 0 -1 482.80933 ] 270 0.063 0.063
 }
 }
-// entity 41
+// entity 37
 {
 "classname" "ControlPoint"
 "origin" "-124 -76 4"
 "targetname" "cp_1"
 }
-// entity 42
+// entity 38
 {
 "classname" "trigger"
 "target" "cp_1"
@@ -809,8 +820,228 @@
 ( -16 -16 16 ) ( -16 -16 17 ) ( -16 -15 16 ) __TB_empty [ 0 1 0 -0.03173828 ] [ 0 0 -1 0 ] 270 0.063 0.063
 }
 }
-// entity 43
+// entity 39
 {
 "classname" "HealthPackSpawner"
 "origin" "26 214 132"
+}
+// entity 40
+{
+"classname" "Payload"
+"origin" "128 -432 96"
+}
+// entity 41
+{
+"classname" "PayloadPathPoint"
+"origin" "-128 80 0"
+"targetname" "path_1"
+"target" "path_2"
+}
+// entity 42
+{
+"classname" "PayloadTrackStraight"
+"origin" "-128 144 1"
+"mangle" "0 -90 0"
+}
+// entity 43
+{
+"classname" "PayloadCheckpoint"
+"origin" "-128 80 0"
+"angle" "270"
+}
+// entity 44
+{
+"classname" "PayloadTrackStraight"
+"origin" "-128 208 1"
+"mangle" "0 -90 0"
+}
+// entity 45
+{
+"classname" "PayloadTrackStraight"
+"origin" "-128 272 1"
+"mangle" "0 -90 0"
+}
+// entity 46
+{
+"classname" "PayloadTrackStraight"
+"origin" "-128 320 1"
+"mangle" "0 -90 0"
+}
+// entity 47
+{
+"classname" "PayloadTrackStraight"
+"origin" "-128 384 1"
+"mangle" "0 -90 0"
+}
+// entity 48
+{
+"classname" "PayloadTrackStraight"
+"origin" "-128 448 1"
+"mangle" "0 -90 0"
+}
+// entity 49
+{
+"classname" "PayloadTrackStraight"
+"origin" "-128 480 1"
+"mangle" "0 -90 0"
+}
+// entity 50
+{
+"classname" "PayloadTrackStraight"
+"origin" "-128 639.327 -15.4905"
+"mangle" "30 -90 0"
+}
+// entity 51
+{
+"classname" "PayloadTrackStraight"
+"origin" "-64 704 1"
+"mangle" "0 180 0"
+}
+// entity 52
+{
+"classname" "PayloadTrackStraight"
+"origin" "64 704 1"
+"mangle" "0 180 0"
+}
+// entity 53
+{
+"classname" "PayloadTrackStraight"
+"origin" "128 640 1"
+"mangle" "0 90 0"
+}
+// entity 54
+{
+"classname" "PayloadTrackStraight"
+"origin" "128 608 1"
+"mangle" "0 90 0"
+}
+// entity 55
+{
+"classname" "PayloadTrackStraight"
+"origin" "128 544.75 24.799"
+"mangle" "33 90 0"
+}
+// entity 56
+{
+"classname" "PayloadTrackStraight"
+"origin" "128 488.75 64.799"
+"mangle" "33 90 0"
+}
+// entity 57
+{
+"classname" "PayloadTrackStraight"
+"origin" "128 424.75 104.799"
+"mangle" "33 90 0"
+}
+// entity 58
+{
+"classname" "PayloadTrackStraight"
+"origin" "128 352 129"
+"mangle" "0 -90 0"
+}
+// entity 59
+{
+"classname" "PayloadTrackStraight"
+"origin" "128 288 129"
+"mangle" "0 -90 0"
+}
+// entity 60
+{
+"classname" "PayloadTrackStraight"
+"origin" "128 224 129"
+"mangle" "0 -90 0"
+}
+// entity 61
+{
+"classname" "PayloadTrackStraight"
+"origin" "128 160 129"
+"mangle" "0 -90 0"
+}
+// entity 62
+{
+"classname" "PayloadTrackStraight"
+"origin" "128 96 129"
+"mangle" "0 -90 0"
+}
+// entity 63
+{
+"classname" "PayloadCheckpoint"
+"origin" "0 704 0"
+}
+// entity 64
+{
+"classname" "PayloadCheckpoint"
+"origin" "-128 592 -40"
+"angle" "90"
+}
+// entity 65
+{
+"classname" "PayloadTrackStraight"
+"origin" "-128 543.327 -15.4905"
+"mangle" "30 90 0"
+}
+// entity 66
+{
+"classname" "PayloadPathPoint"
+"origin" "-128 520 0"
+"rollforward_zone" "1"
+"targetname" "path_2"
+"target" "path_3"
+}
+// entity 67
+{
+"classname" "PayloadPathPoint"
+"origin" "-128 592 -40"
+"rollback_zone" "1"
+"targetname" "path_3"
+"target" "path_4"
+}
+// entity 68
+{
+"classname" "PayloadPathPoint"
+"origin" "-128 656 0"
+"targetname" "path_4"
+"target" "path_5"
+}
+// entity 69
+{
+"classname" "PayloadPathPoint"
+"origin" "-128 704 0"
+"targetname" "path_5"
+"target" "path_6"
+}
+// entity 70
+{
+"classname" "PayloadPathPoint"
+"origin" "-72 704 0"
+"targetname" "path_6"
+"target" "path_7"
+}
+// entity 71
+{
+"classname" "PayloadPathPoint"
+"origin" "128 704 0"
+"targetname" "path_7"
+"target" "path_8"
+}
+// entity 72
+{
+"classname" "PayloadPathPoint"
+"origin" "128 592 0"
+"targetname" "path_8"
+"target" "path_9"
+"rollback_zone" "1"
+}
+// entity 73
+{
+"classname" "PayloadPathPoint"
+"origin" "128 400 128"
+"targetname" "path_9"
+"target" "path_10"
+}
+// entity 74
+{
+"classname" "PayloadPathPoint"
+"origin" "128 56 128"
+"targetname" "path_10"
 }

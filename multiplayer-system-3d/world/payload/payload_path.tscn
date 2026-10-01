@@ -1,0 +1,15 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://world/payload/payload_path.gd" id="1_path"]
+[ext_resource type="Script" path="res://world/payload/payload_path_line.gd" id="2_line"]
+
+[node name="PayloadPath" type="Path3D" groups=["payload_path"]]
+script = ExtResource("1_path")
+
+[node name="PayloadFollower" type="PathFollow3D" parent="."]
+rotation_mode = 1
+loop = false
+
+[node name="PathLine" type="MeshInstance3D" parent="."]
+cast_shadow = 0
+script = ExtResource("2_line")

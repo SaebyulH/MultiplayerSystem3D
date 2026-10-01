@@ -4,24 +4,28 @@
 [ext_resource type="Script" uid="uid://drlmgulwbjwqu" path="res://addons/func_godot/src/fgd/func_godot_fgd_file.gd" id="3_pir0d"]
 [ext_resource type="Resource" uid="uid://dr5njmne0pqd4" path="res://trenchbroom/entities/ap_2_rock_17_lod_0.tres" id="4_0"]
 [ext_resource type="Resource" uid="uid://crlirgc6sep16" path="res://trenchbroom/entities/big_box.tres" id="4_1"]
-[ext_resource type="Resource" uid="uid://b14qbgttaa5je" path="res://trenchbroom/entities/forklift.tres" id="4_2"]
-[ext_resource type="Resource" uid="uid://bs85xs0xue5jf" path="res://trenchbroom/entities/health_pack_spawner.tres" id="4_3"]
-[ext_resource type="Resource" uid="uid://bnyie3mkkx6hy" path="res://trenchbroom/entities/mannequin_ref.tres" id="4_4"]
-[ext_resource type="Resource" uid="uid://dtjbel6rpg137" path="res://trenchbroom/entities/player_spawn.tres" id="4_5"]
-[ext_resource type="Resource" uid="uid://bw640wievkjji" path="res://trenchbroom/entities/test.tres" id="4_6"]
-[ext_resource type="Resource" uid="uid://bxv5wfnfobid2" path="res://trenchbroom/entities/truck.tres" id="4_7"]
-[ext_resource type="Resource" uid="uid://bd1w24vu81a7w" path="res://trenchbroom/entities/button.tres" id="4_8"]
-[ext_resource type="Resource" uid="uid://rgbbyx87hfqc" path="res://trenchbroom/entities/mover.tres" id="4_9"]
-[ext_resource type="Resource" uid="uid://dnfyx74f2h1k0" path="res://trenchbroom/entities/physics.tres" id="4_10"]
-[ext_resource type="Resource" uid="uid://dh1ut63bhficj" path="res://trenchbroom/entities/rotate.tres" id="4_11"]
-[ext_resource type="Resource" path="res://trenchbroom/entities/target_base.tres" id="4_12"]
-[ext_resource type="Resource" path="res://trenchbroom/entities/targetname_base.tres" id="4_13"]
-[ext_resource type="Resource" uid="uid://drdjog4cxfrlk" path="res://trenchbroom/entities/trigger.tres" id="4_14"]
-[ext_resource type="Resource" path="res://trenchbroom/entities/control_point.tres" id="4_15"]
+[ext_resource type="Resource" uid="uid://bd1w24vu81a7w" path="res://trenchbroom/entities/button.tres" id="4_2"]
+[ext_resource type="Resource" uid="uid://doddfd0d23l7q" path="res://trenchbroom/entities/control_point.tres" id="4_3"]
+[ext_resource type="Resource" uid="uid://b14qbgttaa5je" path="res://trenchbroom/entities/forklift.tres" id="4_4"]
+[ext_resource type="Resource" uid="uid://bs85xs0xue5jf" path="res://trenchbroom/entities/health_pack_spawner.tres" id="4_5"]
+[ext_resource type="Resource" uid="uid://bnyie3mkkx6hy" path="res://trenchbroom/entities/mannequin_ref.tres" id="4_6"]
+[ext_resource type="Resource" uid="uid://rgbbyx87hfqc" path="res://trenchbroom/entities/mover.tres" id="4_7"]
+[ext_resource type="Resource" uid="uid://dq4vj2xr8hmmn" path="res://trenchbroom/entities/payload.tres" id="4_8"]
+[ext_resource type="Resource" uid="uid://bqx3m7twaldh4" path="res://trenchbroom/entities/payload_checkpoint.tres" id="4_9"]
+[ext_resource type="Resource" uid="uid://c8pnw6q4k2vrt" path="res://trenchbroom/entities/payload_path_point.tres" id="4_10"]
+[ext_resource type="Resource" path="res://trenchbroom/entities/payload_track_straight.tres" id="4_11"]
+[ext_resource type="Resource" uid="uid://dnfyx74f2h1k0" path="res://trenchbroom/entities/physics.tres" id="4_12"]
+[ext_resource type="Resource" uid="uid://dtjbel6rpg137" path="res://trenchbroom/entities/player_spawn.tres" id="4_13"]
+[ext_resource type="Resource" uid="uid://dh1ut63bhficj" path="res://trenchbroom/entities/rotate.tres" id="4_14"]
+[ext_resource type="Resource" path="res://trenchbroom/entities/target_base.tres" id="4_15"]
+[ext_resource type="Resource" path="res://trenchbroom/entities/targetname_base.tres" id="4_16"]
+[ext_resource type="Resource" uid="uid://bw640wievkjji" path="res://trenchbroom/entities/test.tres" id="4_17"]
+[ext_resource type="Resource" uid="uid://drdjog4cxfrlk" path="res://trenchbroom/entities/trigger.tres" id="4_18"]
+[ext_resource type="Resource" uid="uid://bxv5wfnfobid2" path="res://trenchbroom/entities/truck.tres" id="4_19"]
 
 [resource]
 script = ExtResource("3_pir0d")
 fgd_name = "MultiplayerSystem3D"
 base_fgd_files = Array[Resource]([ExtResource("1_fopi5")])
-entity_definitions = Array[Resource]([ExtResource("4_0"), ExtResource("4_1"), ExtResource("4_8"), ExtResource("4_15"), ExtResource("4_2"), ExtResource("4_3"), ExtResource("4_4"), ExtResource("4_9"), ExtResource("4_10"), ExtResource("4_5"), ExtResource("4_11"), ExtResource("4_12"), ExtResource("4_13"), ExtResource("4_6"), ExtResource("4_14"), ExtResource("4_7")])
+entity_definitions = Array[Resource]([ExtResource("4_0"), ExtResource("4_1"), ExtResource("4_2"), ExtResource("4_3"), ExtResource("4_4"), ExtResource("4_5"), ExtResource("4_6"), ExtResource("4_7"), ExtResource("4_8"), ExtResource("4_9"), ExtResource("4_10"), ExtResource("4_11"), ExtResource("4_12"), ExtResource("4_13"), ExtResource("4_14"), ExtResource("4_15"), ExtResource("4_16"), ExtResource("4_17"), ExtResource("4_18"), ExtResource("4_19")])
 metadata/_custom_type_script = "uid://drlmgulwbjwqu"

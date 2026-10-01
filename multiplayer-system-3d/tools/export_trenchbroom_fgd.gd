@@ -40,6 +40,10 @@ const CLASSNAME_CHARS := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01
 
 var _failures := 0
 
+## Entities whose `size` box is not a power of two.  Counted, not failed — see
+## [method _check_grid_alignment].
+var _grid_warnings := 0
+
 
 func _ready() -> void:
 	var fgd := load(FGD_PATH) as FuncGodotFGDFile
@@ -119,6 +123,9 @@ func _ready() -> void:
 		print("skip rotation check — Truck is not registered")
 
 	print("---")
+	if _grid_warnings > 0:
+		print("%d entity(s) have grid-unfriendly bounds — see the 'warn grid' lines above."
+			% _grid_warnings)
 	if _failures == 0:
 		print("PASS: %d entities registered and exported" % checked.size())
 	else:
@@ -390,6 +397,63 @@ func _check_point(classname: String, block: String, definition: FuncGodotFGDEnti
 	# spellings; an entity with no rotation property is only checked for the
 	# origin-inside-bounds rule.
 	_check_bounds(classname, block, block.contains("angle("))
+	_check_grid_alignment(classname, definition)
+
+
+## Every number in an entity's `size` box should be a power of two.
+##
+## TrenchBroom snaps a point entity by its bounding box, so the origin lands at
+## `box_corner + half_extent`.  A half-extent that is not a multiple of the grid size therefore
+## leaves the origin at a fixed offset it can never escape — 40 on the default 16 grid is
+## `40 + 16n`, permanently 8 units off every grid line, and no amount of dragging fixes it.  A
+## power of two is a multiple of every grid size TrenchBroom offers up to 32.
+##
+## [b]A warning, not a failure.[/b] An entity with awkward bounds still builds, previews,
+## rotates and plays correctly; it is only fiddly to place, and the entities that predate this
+## rule are not wrong. `tools/generate_prop_entities.gd` rounds new props automatically
+## (`_ceil_pow2`), so the warnings should only ever name hand-authored ones.
+##
+## Not enforced anywhere else: the other bounds rules (`_check_bounds`) are the ones
+## TrenchBroom itself refuses, and those are hard failures.
+func _check_grid_alignment(classname: String, definition: FuncGodotFGDEntityClass) -> void:
+	if not definition.meta_properties.has("size"):
+		return
+
+	var box: AABB = definition.meta_properties["size"]
+	var bounds := {
+		"x": [absf(box.position.x), absf(box.size.x)],
+		"y": [absf(box.position.y), absf(box.size.y)],
+		"z": [absf(box.position.z), absf(box.size.z)],
+	}
+
+	# `%s`, not `%g` — GDScript's format operator has no `%g` specifier, and it fails by
+	# returning the format string unsubstituted rather than by erroring.
+	var offenders := PackedStringArray()
+	for axis in bounds:
+		for value in bounds[axis]:
+			if not _is_power_of_two(value):
+				offenders.append("%s=%d" % [axis, roundi(value)])
+
+	if offenders.is_empty():
+		print("ok   grid: %s bounds are all powers of two" % classname)
+		return
+
+	_grid_warnings += 1
+	print("warn grid: %s is %s — half-extents must be powers of two to land on the grid"
+		% [classname, ", ".join(offenders)])
+
+
+## True for 0, and for 1, 2, 4, 8, … — the values an entity's `size` box wants.
+##
+## Integer-tested rather than `log2`, which is exact for true powers of two but can report
+## 2.9999999 for 8 and call a perfectly good box misaligned.
+func _is_power_of_two(value: float) -> bool:
+	if is_zero_approx(value):
+		return true
+	var n := roundi(value)
+	if not is_equal_approx(value, float(n)) or n < 1:
+		return false
+	return (n & (n - 1)) == 0
 
 
 ## Brush entities are defined by the volume the mapper draws, never by a bounding box.

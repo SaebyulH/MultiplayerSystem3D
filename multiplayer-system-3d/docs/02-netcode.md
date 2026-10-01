@@ -6,7 +6,7 @@ The project deliberately splits simulation responsibility. Getting this wrong (e
 
 - Peer 1 is always the server (and the host player). Humans connect with ENet ids > 1. `network/network_manager.gd:27-55`.
 - Autoloads: `NetworkManager`, `Leaderboard`, `NetworkTime`, `NetworkTimeSynchronizer`, `NetworkRollback`, `NetworkEvents`, `NetworkPerformance`, `GameManager` (`project.godot:22-32`).
-- `[netfox] time/tickrate = 90`, `time/sync_to_physics = false` (`project.godot:217-220`); Jolt physics; collision layers WORLD=1, PLAYER_COLLISION=2, HURTBOX=3, HITBOX=4, RAGDOLLS=8 (`project.godot:208-214`). `time/tickrate` is only the **default**: the live rate is a per-session, server-chosen value applied by `NetworkManager.apply_tick_rate()`. See §8.
+- `[netfox] time/tickrate = 90`, `time/sync_to_physics = true`, and `[physics] common/physics_ticks_per_second = 90` (`project.godot:215-232`); Jolt physics; collision layers WORLD=1, PLAYER_COLLISION=2, HURTBOX=3, HITBOX=4, RAGDOLLS=8. **The tick rate and the physics rate are deliberately equal**, and the tick loop runs inside the physics frame — see §8, "Platform carry is the engine's, and it needs the tick and the physics step to coincide".
 
 ---
 
@@ -69,7 +69,7 @@ Also excluded: the local ability-staging vars `queued_charge_trigger_dir` / `que
 - **State that persists across re-simulation**: `_spawn_pending_position` is consumed only in `_physics_process`, never inside `_rollback_tick`, so re-simulated ticks see the same flag (declared `player.gd:321`, consumed `883-885`, safely re-read `998-1002`). Same pattern for `pinned_charger_name` (`328`, re-read `1027-1039`) and `_size_scale` (`334-340`).
 - **`scale` re-derived every tick**: because netfox re-applies `global_transform` from rollback history each tick, `_rollback_tick` sets `scale = Vector3.ONE * _size_scale` at the top (`player.gd:995`). That multiplier is the only copy of the size-change state that survives — a one-off `scale` write anywhere else (`set_size_scale` also sets `scale` directly, `1395-1397`, for the current frame) is lost on the next tick.
 - **Real-frame-only work** (sound, footsteps, fall damage) is kept **out** of `_rollback_tick` and placed in `_physics_process` (`player.gd:896-898, 901-905`).
-- **`NetworkTime.physics_factor` must wrap everything `move_and_slide()` integrates — and nothing else.** `move_and_slide()` advances by whatever delta is current when it is called, and the rollback tick runs from `_process`, so it integrates with the *frame* delta (`network-time.gd:248-253` returns `ticktime / _process_delta` outside a physics frame; `move_and_slide()` reads the same delta). Every velocity term fed into it must therefore be multiplied by the factor, and the persistent `velocity` divided back out — otherwise that term is silently scaled by the client's frame rate. Knockback is the term that got this wrong historically; see §8.
+- **`NetworkTime.physics_factor` must wrap everything `move_and_slide()` integrates — and nothing else.** `move_and_slide()` advances by whatever delta is current when it is called. Since `netfox/time/sync_to_physics = true` and the tick rate equals `physics_ticks_per_second` (§8), that delta *is* `ticktime` and the factor is `1.0` — but keep the sandwich anyway: every velocity term fed into the slide must be multiplied by the factor and the persistent `velocity` divided back out, or that term is silently scaled by the frame rate the day the two rates diverge again. Knockback is the term that got this wrong historically; see §8.
 
 ### Determinism hazard (the single most fragile assumption)
 
@@ -798,7 +798,8 @@ It is also why **the watchdog measures drift against the reference clock, not ag
 The rate is a property of the session, chosen by the host and adopted by clients:
 
 - `NetworkManager.server_tick_rate`, applied by `apply_tick_rate(rate)`.
-- netfox **latches** its rate from `ProjectSettings` when the autoload is constructed (`network-time.gd:368`) and its `tickrate` setter is a `push_error` no-op (`:17-18`), so `apply_tick_rate()` writes `NetworkTime._tickrate` directly. Nothing caches a rate at `_ready` — `ticktime`, `tick_factor` and `physics_factor` are all derived per use — so the write is complete.
+- **With `sync_to_physics` on — which is the shipped state (§8) — there is no per-session rate to set.** `NetworkTime.tickrate` reads straight through to `Engine.physics_ticks_per_second` (`network-time.gd:13-16`), whose setter is a `push_error` no-op; `apply_tick_rate()` detects this, sets only the derived tick-count limits, warns once, and returns. The rate is a build setting now.
+- Otherwise (kept for reference, and for anyone who turns it back off): netfox **latches** its rate from `ProjectSettings` when the autoload is constructed (`network-time.gd:368`) and its `tickrate` setter is a `push_error` no-op (`:17-18`), so `apply_tick_rate()` writes `NetworkTime._tickrate` directly. Nothing caches a rate at `_ready` — `ticktime`, `tick_factor` and `physics_factor` are all derived per use — so the write is complete.
 - **It must happen before `NetworkTime.start()`.** The client's seed is `seconds_to_ticks(...)` evaluated with the live rate, and the tick is monotonic, so a wrong multiplier at seed time can only be undone by a full re-seed. That is why `_rpc_set_tick_rate(rate, restart = false)` is only allowed to apply while the client's loop is still down, and does a real restart otherwise.
 - netfox's own `NetworkTickrateHandshake` cannot do this job: its `ADJUST` branch calls `ProjectSettings.set_setting` long after the latch, which is inert (`network-tickrate-handshake.gd:87-88`), and it only raises the mismatch signal when the rates *differ* — so a peer whose default happens to match would never be told the value.
 - Changing the rate mid-session stops the loop on every peer, applies, and restarts (`NetworkManager._reinit_time`). Clients restart after the host, so they seed from the host's already-running clock. Expect a brief movement freeze.
@@ -813,6 +814,59 @@ The rate is a property of the session, chosen by the host and adopted by clients
 - `knockback_decay = velocity.length() ** 2 * 10` is applied as `decay * delta` with `delta == ticktime`, so `tickrate × ticktime == 1` — it is already tick-rate independent. Do not "fix" it.
 
 History: the old `0.667` default was not really `60 / tickrate`. Adding knockback *outside* the sandwich made `move_and_slide()` scale it by the frame delta, and `0.667` happened to cancel that at a nominal 60 fps — which is why the constant looked like a tick-rate compensation and why it survived. It was 1.5× too strong at 60 fps and 3.6× at 25 fps before the fix.
+
+### Platform carry is the engine's, and it needs the tick and the physics step to coincide
+
+Standing on the payload cart or a `mover` brush is Godot's own `CharacterBody3D` platform support —
+`platform_floor_layers` / `platform_on_leave`, applied inside `move_and_slide()`. There is no custom
+carry code, and there should not be. Getting there took two changes, because the engine's carry
+makes two assumptions this project used to violate.
+
+**It assumes one `move_and_slide()` per tick.** Godot applies the platform's motion as a position
+offset — `get_velocity_at_local_position(...) * delta` — once per **call**, gated only on the
+platform's velocity and never on the body's own. This project calls it twice per tick: once in
+`_force_update_is_on_floor()` (a zero-velocity probe that exists to re-derive `is_on_floor()` after
+netfox restores `global_transform` for the tick being simulated) and once for real. **The probe now
+saves and restores `global_position` around its slide**, so it still re-derives the floor state but
+no longer moves the player. Restoring only `velocity`, as it used to, left the probe's carry and
+floor snap in place — a second one per tick.
+
+**It assumes `move_and_slide()`'s delta is the tick.** The call uses
+`is_in_physics_frame() ? physics_delta : process_delta`. With the tick loop running from `_process`
+at 90 Hz against 60 Hz physics it took the **frame** delta while a tick is `1/90 s`, so the carry was
+`1 / physics_factor` too large and varied with frame rate; everything else is rescaled by
+`physics_factor` to compensate, but the engine's carry is not part of that sandwich — it cannot be
+scaled. So **`netfox/time/sync_to_physics = true`** (the loop runs from `_physics_process`, where
+`is_in_physics_frame()` is true) and **`physics/common/physics_ticks_per_second = 90`** to match
+`time/tickrate`. The two now coincide: one tick per physics step, `move_and_slide()` integrates with
+`1/90`, `physics_factor` is `1.0`, and the carry is exactly one tick of the platform's motion.
+
+Together those were `05-known-issues.md` #92, where riders were shoved off the front of the cart at
+`2 / physics_factor` — about **3x** the platform's speed at 90 ticks / 60 fps, worse at lower frame
+rates.
+
+**Consequences of pinning the rate to physics.** `NetworkTime.tickrate` now answers
+`Engine.physics_ticks_per_second` (`network-time.gd:13-16`), so a session tick rate can no longer be
+chosen per session: `NetworkManager.apply_tick_rate()` detects `sync_to_physics` and returns after
+deriving only the tick-count limits, with a `push_warning` the first time. That is acceptable here
+because 90 was already the only rate in use — but it does mean the rate is now a *build* setting, not
+a runtime one. It also means physics steps 90 times a second instead of 60, which is the real cost of
+this fix; see `04-optimization.md`.
+
+**The platforms must be where the rider thinks they are.** The engine carry reads the platform
+body's velocity from the physics server, which on a *client* is whatever the last transform write
+implied — and both the payload and the movers arrive on an unreliable RPC at ~15 Hz. Assigning the
+transform straight from a packet moves the platform four times its true per-step distance in one
+step and then holds still, which the carry reads as four times the speed followed by nothing. So
+clients now **ease** toward the replicated progress (`PayloadNode._smooth_client_position`,
+`MovingBrush._smooth_client_position`), and a correction larger than `SNAP_THRESHOLD` — a late
+joiner's pulled state, a round reset — is snapped to instead. `RotatingBrush` needs none of it: it
+integrates locally every frame on every peer.
+
+**The payload has no `MultiplayerSynchronizer`.** `payload.tscn` used to replicate `.:position` on
+one, in parallel with `_rpc_sync` — a second writer that fought the RPC and defeated the easing. It
+is gone; a late joiner gets the cart's position from the reliable `PayloadNode._request_state` pull
+that `MovingBrush`, `RotatingBrush`, `ButtonBrush` and `PhysicsBrush` already used.
 
 ## 9. Brush entities (TrenchBroom triggers, movers, buttons)
 
@@ -899,6 +953,69 @@ solid.
 
 **Round reset** hangs off `GameModeComponent.phase_changed` → `PhaseState.SETUP`, as the health pack
 does, and every handler is strictly idempotent because the host sees each transition twice.
+
+---
+
+## 10. The payload route (TrenchBroom path points)
+
+A payload route is authored as a chain of `PayloadPathPoint` entities, a `PayloadCheckpoint` or two,
+and the `Payload` cart — see `06-trenchbroom-entities.md`. None of that changes the cart's sync shape,
+which is the one this document already described: **the server simulates `progress`, `payload_state`
+and `_return_countdown`, and pushes them at ~15 Hz on an unreliable `@rpc`**, with reliable one-shots
+for reset, checkpoint reached and delivered. Clients are pure consumers and never simulate.
+
+**The route itself is built on every peer and is not state.** `PayloadPathBuilder.ensure_path()` runs
+a `call_deferred` from each path point and from the cart, and is **idempotent** — whoever gets there
+first compiles the chain into a `Path3D`, and every later caller finds it. That is what makes node
+order irrelevant: a payload that happens to sit above its path points in the scene builds the route
+itself rather than finding nothing.
+
+**Never gate that build on `multiplayer.is_server()`.** The path, the glowing line and the checkpoints
+are map furniture like the brush entities in §9 — every peer needs them because every peer draws them.
+Only the cart's progress is server-authoritative. Gating the build would leave clients with an
+invisible route and a cart whose `path_follower` never resolves.
+
+**The cart's orientation is derived, not replicated.** The route's follower runs in
+`ROTATION_XYZ`, so the whole basis — yaw *and* pitch — comes from the curve, and the cart tilts with
+the slope rather than staying level. Both sides compute that transform from the follower at the same
+`progress`, which is already replicated, so the tilt needs no traffic of its own and cannot drift: the
+server assigns it in `_sync_position_to_path()`, clients in `_apply_position_to_path()`, from the same
+value. This is why `payload_state` carries no orientation — there is nothing to carry.
+
+**How the route is *authored* does not matter to any of this.** Points chain by placement order until
+a mapper presses `Auto Setup Payload Path`, which freezes the order into explicit `target`/`targetname`
+links in the `.map` (`06-trenchbroom-entities.md`). Both are just map data, resolved into the same
+`Path3D` by the same `build_chain()` on every peer — the network never sees the difference, and no
+part of this section changes when a route is frozen.
+
+**Zones ride the existing sync; nothing new is networked.** `_zone_flag()` reads the stretch the cart
+is currently in off the compiled route, which is derived from map data every peer already has, and the
+result only ever changes `payload_state` — which the 15 Hz `_rpc_sync` already carries. So neither flag
+needs an RPC of its own:
+
+| cart's stretch | `rollback_zone` | `rollforward_zone` | behaviour with nobody pushing |
+|---|---|---|---|
+| any | `false` | `false` | `IDLE` for `return_delay`, then `RETURNING` clamped at the last checkpoint — the base behaviour |
+| any | `true` | `false` | `RETURNING` **at once** — no wait, as if it were on a slope |
+| any | either | `true` | `ROLLFORWARD` — drives itself forward |
+
+**`rollback_zone` is an intensifier, not a permission.** Every stretch of every route rolls back; the
+flag only removes the `return_delay` wait before it starts. That is what keeps the flag honest — a
+route with no flags at all is not a special case, it is just the slow version of the same rule.
+
+**A map with no zones at all reads as "no rollforward, ordinary rollback delay".** `zone_at()` returns
+an empty dictionary for a plain `Path3D`, and `_zone_flag()`'s fallback is the pre-entity behaviour —
+so `castle`, `esc_castle` and `hyb_castle`, which hand-author their routes, behave exactly as they did
+before. That fallback is deliberately the *old* behaviour rather than the flag's own default, so a map
+that predates the entities cannot silently change meaning.
+
+**`PayloadNode` keeps `path_follower` and `checkpoints` as optional overrides**, checked before any
+discovery runs. Those three maps set both, so nothing about their load path changed.
+
+**The glowing line is presentation and stays local.** `PayloadPath.set_progress()` writes one shader
+uniform; the mesh is built once at load and never rebuilt. It is called from `_sync_position_to_path()`
+on the server and `_apply_position_to_path()` on clients, so both sides shorten the line from state
+they already have, with no RPC and no per-frame work.
 
 ---
 

@@ -1,0 +1,34 @@
+[gd_resource type="Resource" script_class="FuncGodotFGDModelPointClass" format=3 uid="uid://c8pnw6q4k2vrt"]
+
+[ext_resource type="PackedScene" path="res://world/payload/payload_path_point.tscn" id="1_scene"]
+[ext_resource type="Script" uid="uid://d1nwwgcrner8b" path="res://addons/func_godot/src/fgd/func_godot_fgd_point_class_display_descriptor.gd" id="1_tx5dw"]
+[ext_resource type="Script" uid="uid://ldfqjtq0br35" path="res://addons/func_godot/src/fgd/func_godot_fgd_model_point_class.gd" id="2_mpc"]
+
+[resource]
+script = ExtResource("2_mpc")
+target_map_editor = 1
+models_sub_folder = "trenchbroom/models"
+scale_expression = "{{ scale == undefined -> 32, scale * 32 }}"
+rotation_offset = Vector3(0, 180, 0)
+scene_file = ExtResource("1_scene")
+classname = "PayloadPathPoint"
+description = "One waypoint of a payload route - draw them front to back and they connect in order"
+class_properties = Dictionary[String, Variant]({
+"rollback_zone": false,
+"rollforward_zone": false,
+"target": "",
+"targetname": ""
+})
+class_property_descriptions = Dictionary[String, Variant]({
+"rollback_zone": "From here to the next point, the cart rolls back the moment nobody is on it, instead of waiting out the cart's return delay",
+"rollforward_zone": "From here to the next point, the cart drives itself forward with nobody on it",
+"target": "OPTIONAL. Route points connect in the order you place them. Set this only to override that - it switches the whole map to an explicit chain, so then every point needs naming",
+"targetname": "OPTIONAL. Only used when some point sets 'target'"
+})
+auto_apply_to_matching_node_properties = true
+meta_properties = Dictionary[String, Variant]({
+"color": Color(1, 0.45, 0.1, 1),
+"model": "{\"path\": \"trenchbroom/models/PayloadPathPoint.glb\", \"scale\": {{ scale == undefined -> 32, scale * 32 }} }",
+"size": AABB(-16, -16, 0, 16, 16, 16)
+})
+metadata/_custom_type_script = "uid://ldfqjtq0br35"

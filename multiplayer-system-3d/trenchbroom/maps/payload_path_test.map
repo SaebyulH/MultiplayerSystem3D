@@ -1,0 +1,81 @@
+// Game: MultiplayerSystem3D
+// Format: Valve
+// Generator: hand-written fixture for tools/verify_payload_path.tscn
+//
+// One payload route, drawn the way a mapper would draw it: four path points placed front
+// to back, a checkpoint dropped roughly beside the track rather than on it, and the cart.
+//
+// The route runs along TrenchBroom's +Y, so the points land on Godot's +X at 0, 10, 20 and
+// 30 units. The third point opens a rollback stretch, the second a rollforward one, and the
+// last two carry neither — that third combination is the ratchet, and it is what a route
+// with no flags at all gets, so it has to be reachable from a real build.
+//
+// NO POINT SETS `target`, and the `targetname` values are deliberately scrambled (2, 0, 3,
+// 1 against a placement order of 0, 1, 2, 3). That is the test: the route has to come out in
+// placement order, not in name order, and not in any order the names could produce. A
+// name-ordered chain would lay the curve out as 10, 30, 0, 20 and fail every curve
+// assertion in the verifier.
+//
+// The checkpoint is deliberately 3 Godot units off the track (96 map units along
+// TrenchBroom's +X). It is placed where a mapper would actually drop it, which is the
+// behaviour the entity exists to paper over: the built node must end up on the route.
+//
+// `vertical_offset` is authored in map units and on TrenchBroom's up axis, so the built
+// payload proves both halves of the conversion at once: "0 0 128" has to arrive as
+// Vector3(0, 4, 0).
+// entity 0
+{
+"mapversion" "220"
+"wad" ""
+"classname" "worldspawn"
+"_tb_mod" "trenchbroom"
+// brush 0
+{
+( 256 0 -128 ) ( 256 1 -128 ) ( 256 0 -127 ) FreeStylized/floor_tiles_14_1k/floor_tiles_14_1k/floor_tiles_14_basecolor_1k [ 0 -1 0 0.8729248 ] [ 0 0 -1 -17 ] 0 0.063 0.063
+( 48 -256 -128 ) ( 48 -256 -127 ) ( 49 -256 -128 ) FreeStylized/floor_tiles_14_1k/floor_tiles_14_1k/floor_tiles_14_basecolor_1k [ 1 0 0 73.14307 ] [ 0 0 -1 -17 ] 0 0.063 0.063
+( 48 0 64 ) ( 49 0 64 ) ( 48 1 64 ) FreeStylized/floor_tiles_14_1k/floor_tiles_14_1k/floor_tiles_14_basecolor_1k [ -1 0 0 -73.14307 ] [ 0 -1 0 0.87298584 ] 0 0.063 0.063
+( 1216 256 128 ) ( 1216 257 128 ) ( 1217 256 128 ) FreeStylized/floor_tiles_14_1k/floor_tiles_14_1k/floor_tiles_14_basecolor_1k [ 1 0 0 73.14307 ] [ 0 -1 0 0.87298584 ] 90 0.063 0.063
+( 1216 256 128 ) ( 1217 256 128 ) ( 1216 256 129 ) FreeStylized/floor_tiles_14_1k/floor_tiles_14_1k/floor_tiles_14_basecolor_1k [ -1 0 0 -73.14307 ] [ 0 0 -1 -17 ] 180 0.063 0.063
+( 576 256 128 ) ( 576 256 129 ) ( 576 257 128 ) FreeStylized/floor_tiles_14_1k/floor_tiles_14_1k/floor_tiles_14_basecolor_1k [ 0 1 0 -0.8729248 ] [ 0 0 -1 -17 ] 270 0.063 0.063
+}
+}
+// entity 1 — placement order 0, name "p2"
+{
+"classname" "PayloadPathPoint"
+"targetname" "p2"
+"rollback_zone" "1"
+"origin" "0 0 0"
+}
+// entity 2 — placement order 1, name "p0"
+{
+"classname" "PayloadPathPoint"
+"targetname" "p0"
+"rollforward_zone" "1"
+"origin" "0 320 0"
+}
+// entity 3 — placement order 2, name "p3"
+{
+"classname" "PayloadPathPoint"
+"targetname" "p3"
+"origin" "0 640 0"
+}
+// entity 4 — placement order 3, name "p1"
+{
+"classname" "PayloadPathPoint"
+"targetname" "p1"
+"origin" "0 960 0"
+}
+// entity 5
+{
+"classname" "PayloadCheckpoint"
+"origin" "96 320 0"
+}
+// entity 6
+{
+"classname" "Payload"
+"attacking_team" "1"
+"push_speed_base" "0.07"
+"return_delay" "3"
+"vertical_offset" "0 0 128"
+"origin" "0 0 0"
+}

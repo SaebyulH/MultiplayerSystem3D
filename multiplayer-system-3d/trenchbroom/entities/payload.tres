@@ -1,0 +1,43 @@
+[gd_resource type="Resource" script_class="FuncGodotFGDModelPointClass" format=3 uid="uid://dq4vj2xr8hmmn"]
+
+[ext_resource type="Script" uid="uid://d1nwwgcrner8b" path="res://addons/func_godot/src/fgd/func_godot_fgd_point_class_display_descriptor.gd" id="1_i0674"]
+[ext_resource type="PackedScene" uid="uid://gkkfn2sdv7hc" path="res://world/payload/payload.tscn" id="1_scene"]
+[ext_resource type="Script" uid="uid://ldfqjtq0br35" path="res://addons/func_godot/src/fgd/func_godot_fgd_model_point_class.gd" id="2_mpc"]
+
+[resource]
+script = ExtResource("2_mpc")
+target_map_editor = 1
+models_sub_folder = "trenchbroom/models"
+scale_expression = "{{ scale == undefined -> 32, scale * 32 }}"
+rotation_offset = Vector3(0, 180, 0)
+scene_file = ExtResource("1_scene")
+classname = "Payload"
+description = "The payload cart - rides the route its PayloadPathPoints define"
+class_properties = Dictionary[String, Variant]({
+"attacking_team": {
+"SCI (blue)": 1,
+"SPI (red)": 0
+},
+"heal_per_second": 10.0,
+"push_speed_base": 0.035,
+"return_delay": 10.0,
+"return_speed": 0.005,
+"rollforward_speed": 0.02,
+"vertical_offset": Vector3(0, 0, 0)
+})
+class_property_descriptions = Dictionary[String, Variant]({
+"attacking_team": ["Team that pushes the cart", 0],
+"heal_per_second": "Health per second given to attackers standing on the cart",
+"push_speed_base": "Progress per second with one pusher",
+"return_delay": "Seconds the cart waits before it drifts back",
+"return_speed": "Progress per second it drifts back at",
+"rollforward_speed": "Progress per second it drives itself in a rollforward zone",
+"vertical_offset": "Height above the route, in map units"
+})
+auto_apply_to_matching_node_properties = true
+meta_properties = Dictionary[String, Variant]({
+"color": Color(0.85, 0.2, 0.2, 1),
+"model": "{\"path\": \"trenchbroom/models/Payload.glb\", \"scale\": {{ scale == undefined -> 32, scale * 32 }} }",
+"size": AABB(-32, -32, -32, 32, 32, 64)
+})
+metadata/_custom_type_script = "uid://ldfqjtq0br35"

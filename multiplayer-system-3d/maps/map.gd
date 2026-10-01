@@ -1,3 +1,4 @@
+@tool
 extends Node
 class_name Map
 
@@ -14,7 +15,23 @@ var sci_spawn_locations: Array[Marker3D] = []
 @export var despawn_location: Marker3D
 @onready var camera: Camera3D = $Camera3D
 
+## Fills in the `target`/`targetname` links of this map's payload route and saves them to the
+## `.map` it is built from.
+##
+## A route chains by placement order by default, which needs nothing typed but breaks when a
+## point is inserted into the middle of an existing one — the new point is created last, so it
+## appends to the end of the chain rather than slotting in. Pressing this once makes the links
+## explicit, after which insertion cannot reorder anything. Points that already have a name or
+## a `target` are left alone, so it is safe to press repeatedly. See [PayloadPathLinker].
+@export_tool_button("Auto Setup Payload Path") var auto_setup_payload_path: Callable = _auto_setup_payload_path
+
 func _enter_tree() -> void:
+	# `@tool` is here for the button above, and nothing else on this node has any business
+	# running while the editor has a map scene open — the spawn pools and the global below
+	# are read at runtime only.
+	if Engine.is_editor_hint():
+		return
+
 	GameManager.game_mode_component = $GameModeComponent
 
 	var spawn_parent := GameManager.spawn_parent
@@ -81,3 +98,68 @@ func get_random_spawn_transform(team: Player.Team) -> Transform3D:
 
 func get_despawn_position() -> Vector3:
 	return despawn_location.global_position
+
+
+# ─────────────────────────────────────────────
+#  EDITOR TOOLS
+# ─────────────────────────────────────────────
+
+## Backing the "Auto Setup Payload Path" button — see [member auto_setup_payload_path].
+##
+## Editor-only in effect: it rewrites the `.map` this scene is built from, which is a source
+## file a running game has no business touching.
+##
+## [b]Run it with the map closed in TrenchBroom, or reload it there straight afterwards.[/b]
+## TrenchBroom holds the open map in memory and does not re-read the file underneath itself,
+## so saving from it later would write the pre-link contents back over this.
+func _auto_setup_payload_path() -> void:
+	var func_map := _find_func_godot_map()
+	if func_map == null:
+		push_warning(
+			"Map: no FuncGodotMap under this node, so there is no .map to link — this map was "
+			+ "authored in the editor rather than in TrenchBroom.")
+		return
+
+	var map_path: String = func_map.local_map_file
+	if map_path.is_empty():
+		push_warning("Map: the FuncGodotMap has no local_map_file set, so there is no .map to link.")
+		return
+	if not FileAccess.file_exists(map_path):
+		push_warning("Map: %s does not exist." % map_path)
+		return
+
+	var original := FileAccess.get_file_as_string(map_path)
+	if original.is_empty():
+		push_warning("Map: %s is empty or could not be read." % map_path)
+		return
+
+	var result := PayloadPathLinker.link_map_text(original)
+	for message in result["messages"]:
+		print("Payload path: %s" % message)
+
+	# An unchanged result means there was nothing to fill in — writing anyway would rewrite
+	# the file's bytes for no reason, and any diff noise is a real cost on a source file.
+	if result["text"] == original:
+		return
+
+	var file := FileAccess.open(map_path, FileAccess.WRITE)
+	if file == null:
+		push_error("Map: could not open %s for writing (error %d)."
+			% [map_path, FileAccess.get_open_error()])
+		return
+	file.store_string(result["text"])
+	file.close()
+
+	print("Payload path: wrote %s. Rebuild the map, and reload it in TrenchBroom to see the "
+		% map_path + "links.")
+
+
+## The [FuncGodotMap] this scene is built from, or `null` when it is not a TrenchBroom map.
+##
+## `find_children` is filtered by `is FuncGodotMap` rather than by a type string: the addon's
+## class is a `class_name`, and `find_children`'s type filter only answers for native classes.
+func _find_func_godot_map() -> FuncGodotMap:
+	for node in find_children("*", "", true, false):
+		if node is FuncGodotMap:
+			return node as FuncGodotMap
+	return null

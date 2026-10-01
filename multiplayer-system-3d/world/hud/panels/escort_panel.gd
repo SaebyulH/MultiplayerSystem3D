@@ -16,6 +16,7 @@ static func state_name(state) -> String:
 		PayloadNode.PayloadState.RETURNING:    return "RETURNING"
 		PayloadNode.PayloadState.AT_CHECKPOINT: return "AT_CHECKPOINT"
 		PayloadNode.PayloadState.DELIVERED:    return "DELIVERED"
+		PayloadNode.PayloadState.ROLLFORWARD:  return "ROLLFORWARD"
 		_:                                     return "?"
 
 const _marker_scene := preload("res://world/hud/components/checkpoint_marker.tscn")
@@ -57,6 +58,9 @@ func update_display(data: Dictionary) -> void:
 		"AT_CHECKPOINT":
 			_state_label.text = "CHECKPOINT"
 			_fill_rect.color = Color(0.85, 0.75, 0.10)
+		"ROLLFORWARD":
+			_state_label.text = "ROLLING"
+			_fill_rect.color = Color(0.90, 0.45, 0.10)
 		"DELIVERED":
 			_state_label.text = "DELIVERED!"
 			_fill_rect.color = Color(0.20, 0.75, 0.20)

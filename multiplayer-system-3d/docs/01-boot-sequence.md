@@ -109,6 +109,19 @@ The picker's buttons draw `Character.portrait` (`ui/kill_feed.gd`, `world/spawn_
 
 The generator lights each portrait with the **editor's own per-scene preview sun and environment**, because the character `.tscn` files contain no lights at all. It reads those settings back out of `res://.godot/editor/<scene>-editstate-<md5>.cfg`, which is machine-local and gitignored — so a portrait regenerated on another machine (or after a cache wipe) is lit by the engine defaults instead and still looks plausible. See `05-known-issues.md` #58, and #59 for the `uid=` stripping the same `ResourceSaver.save()` does to `player/characters/*.tres`.
 
+### The live character preview
+
+`world/loadout_menu.tscn:121-135` — a `SubViewportContainer` + `SubViewport` (`CharacterViewport`) instances `world/character_subviewport_preview.tscn`, and `loadout_menu.gd:_spawn_character_preview()` (603-659) adds `Character.character_scene` under that scene's `PreviewRoot`. It frames the model with the preview's own `Camera3D` (distance derived from the model's visual AABB), renders **once** (`UPDATE_ONCE`), and leaves it alone: the model's `process_mode` is disabled and its idle animation is `seek()`ed and paused, so the preview costs nothing per frame between openings.
+
+**The preview's whole appearance lives in that one scene.** `own_world_3d` gives the SubViewport its own `World3D`, so it inherits no environment and no lights from the lobby — `character_subviewport_preview.tscn` carries its own `WorldEnvironment` plus a `DirectionalLight3D` and two `OmniLight3D`s. Because the character materials are `painted_toon.gdshader` (whose `light()` override replaces the built-in direct-light path), what those lights do is the entire lit side of the model; the shadow side comes from the shader's `shadow_wrap` and the ambient the environment supplies. Before 2026-09-30 the scene had **no** environment, so its shadow side had no ambient at all and the darker characters (juggernaut, stalker) read as near-black. The current settings (sky `energy_multiplier` 0.8, sun 1.4, omnis 2.4/1.8) lift the juggernaut's mean pixel luminance `0.090` → `0.144` and the ghost's `0.307` → `0.331`, with highlight clipping essentially unchanged (`4.14%` → `4.33%` and `23.09%` → `23.66%`).
+
+**Tune this by the sky's `energy_multiplier`, not `ambient_light_energy`.** Measured 2026-09-30: with `ambient_light_source = AMBIENT_SOURCE_SKY`, changing `ambient_light_energy` from 0.0 to 3.0 produced a **pixel-identical** render, while the sky material's `energy_multiplier` moves it directly. `ambient_light_energy` is the lever the Godot inspector suggests and it does nothing here — an earlier pass tuned it to 1.3 and concluded the ambient was working when the visible change was coming entirely from the lights.
+
+Two things about that environment are load-bearing:
+
+- **Its sky is a light source, not a background.** `background_mode` is `BG_CLEAR_COLOR`, so Godot skips the sky *draw* on a transparent viewport while still using the sky as the ambient/reflection source. Turning `transparent_bg` off on the SubViewport would make the procedural sky render as an opaque backdrop — see `05-known-issues.md` #84.
+- **It is a hand-maintained twin of the portrait generator's environment** (`character_portrait_generator.gd:_build_preview_environment()`, 353-385). The generator derives its sky from the editor's machine-local editstate; the live preview hardcodes its colours in the scene. They are not shared code, so a change to one does not reach the other.
+
 ---
 
 ## Stage 6 — confirm loadout → first spawn

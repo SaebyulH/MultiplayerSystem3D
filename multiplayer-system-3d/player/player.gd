@@ -1130,11 +1130,23 @@ func _rollback_tick(delta, tick, is_fresh):
 		if multiplayer.is_server():
 			_bashdown_land_pending = true
 
+## Re-derives `is_on_floor()` for the tick about to be simulated, without letting the
+## `move_and_slide()` it takes have any say in where the player ends up.
+##
+## netfox restores `global_transform` from rollback history at the start of every tick it
+## simulates — including re-simulations — but `is_on_floor()` is engine state that still
+## reflects the *last* `move_and_slide()`, whichever tick that was.  Re-running the slide here
+## is what makes the floor state match the restored position; restoring the transform
+## afterwards is what stops this probe from moving the player, because `move_and_slide()`
+## would otherwise apply the platform carry and the floor snap a second time per tick on top
+## of the real slide at the end of it (see docs/02-netcode.md §8).
 func _force_update_is_on_floor():
 	var old_velocity = velocity
+	var old_position = global_position
 	velocity = Vector3.ZERO
 	move_and_slide()
 	velocity = old_velocity
+	global_position = old_position
 
 
 # ── Noclip free-fly ──────────────────────────────────────────────────────────

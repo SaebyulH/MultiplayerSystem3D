@@ -155,7 +155,7 @@ parameters/ShootTimeScale/scale = 1.0
 
 [node name="combat_knife" parent="." unique_id=545651624 instance=ExtResource("6_hxwus")]
 
-[node name="Skeleton3D" parent="combat_knife/Knife" parent_id_path=PackedInt32Array(545651624, 1083160410) index="0" unique_id=1617875219]
+[node name="Skeleton3D" parent="combat_knife/Knife" parent_id_path=PackedInt32Array(545651624, 1680858430) index="0" unique_id=1854783656]
 bones/0/position = Vector3(-0.18730554, 1.5600106, 0.3906611)
 bones/0/rotation = Quaternion(-0.016130755, -0.12348807, -0.6359203, 0.76164025)
 

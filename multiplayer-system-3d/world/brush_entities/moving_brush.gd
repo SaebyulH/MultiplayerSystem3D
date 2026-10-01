@@ -112,6 +112,20 @@ var _offset_converted: bool = false
 var _rest_timer: float = 0.0
 var _rest_pending: bool = false
 
+## Client only. Where along the travel the brush is *drawn*, eased toward [member _progress]
+## rather than snapped to it. Servers write the pose directly and never read this. See
+## [method _smooth_client_position].
+var _display_progress: float = 0.0
+
+## Time constant for that easing, in seconds — the mover's travel is linear, so the lag it
+## costs is a fixed `SMOOTH_TAU x speed` that settles to the same pose the server is at.
+const SMOOTH_TAU: float = 0.1
+
+## A correction bigger than this is a teleport, not travel — a late joiner's pulled state, or
+## a round reset sending the brush home — and is snapped to instead of eased into. A 15 Hz
+## packet carries at most `speed / 15`, and `speed` is in progress units per second.
+const SNAP_THRESHOLD: float = 0.05
+
 
 func _ready() -> void:
 	# `@tool`: the editor runs this before `apply_entity_properties` has written the class
@@ -195,7 +209,12 @@ func reverse_motion() -> void:
 # ─────────────────────────────────────────────
 
 func _physics_process(delta: float) -> void:
-	if Engine.is_editor_hint() or not multiplayer.is_server():
+	if Engine.is_editor_hint():
+		return
+	if not multiplayer.is_server():
+		# Clients do not simulate the travel, but they do drive the pose — `_rpc_sync` no
+		# longer writes it. See `_smooth_client_position`.
+		_smooth_client_position(delta)
 		return
 
 	var goal := 1.0 if _target_open else 0.0
@@ -282,6 +301,29 @@ func _apply_progress() -> void:
 		base_transform * _offset_transform, _progress)
 
 
+## Places the brush exactly where [member _progress] says, with no easing. For the writes
+## that are a teleport rather than travel: load, round reset, a pulled state.
+func _snap_to_progress() -> void:
+	_display_progress = _progress
+	_apply_progress()
+
+
+## Eases the brush toward the replicated [member _progress] instead of snapping to it.
+##
+## The mover's travel rides an unreliable RPC at ~15 Hz, so writing the pose straight from
+## it stepped the brush a whole packet's worth at a time — visible stutter, and a platform
+## whose position jumps then holds still is one that a rider's platform carry cannot measure.
+## `_rpc_sync` therefore only records the value and this, on every client physics frame, is
+## what actually moves the brush.
+func _smooth_client_position(delta: float) -> void:
+	if absf(_progress - _display_progress) > SNAP_THRESHOLD:
+		_snap_to_progress()
+		return
+	_display_progress = lerp(_display_progress, _progress, 1.0 - exp(-delta / SMOOTH_TAU))
+	global_transform = base_transform.interpolate_with(
+		base_transform * _offset_transform, _display_progress)
+
+
 # ─────────────────────────────────────────────
 #  RPC
 # ─────────────────────────────────────────────
@@ -302,7 +344,8 @@ func _rpc_sync(p_progress: float) -> void:
 	if multiplayer.is_server():
 		return
 	_progress = p_progress
-	_apply_progress()
+	# The pose is not written here — `_smooth_client_position` eases toward this on every
+	# client physics frame, so the brush travels instead of stepping.
 
 
 ## A joining client asking where this brush stands. Answered only by the host, and only

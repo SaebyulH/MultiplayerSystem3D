@@ -31,6 +31,6 @@ auto_apply_to_matching_node_properties = true
 meta_properties = Dictionary[String, Variant]({
 "color": Color(0.8, 0.8, 0.8, 1),
 "model": "{ \"path\": \"trenchbroom/models/mannequin_static.glb\", \"scale\": {{ scale == undefined -> 32, scale * 32 }} }",
-"size": AABB(-7, -15, -2, 7, 15, 58)
+"size": AABB(-8, -16, -2, 8, 16, 64)
 })
 metadata/_custom_type_script = "uid://cxsqwtsqd8w33"

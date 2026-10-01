@@ -23,6 +23,6 @@ auto_apply_to_matching_node_properties = true
 meta_properties = Dictionary[String, Variant]({
 "color": Color(0.8, 0.8, 0.8, 1),
 "model": "{\"path\": \"trenchbroom/models/HealthPackSpawner.glb\", \"scale\": {{ scale == undefined -> 32, scale * 32 }} }",
-"size": AABB(-10, -10, -4, 10, 10, 16)
+"size": AABB(-16, -16, -4, 16, 16, 16)
 })
 metadata/_custom_type_script = "uid://ldfqjtq0br35"

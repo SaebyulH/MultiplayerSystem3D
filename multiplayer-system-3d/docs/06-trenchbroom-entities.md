@@ -168,9 +168,36 @@ Either way, then:
 
 1. Symmetrise X and Y — take the larger magnitude on each of those two axes and use it for both
    signs, so the box still contains the model.
-2. Make sure Z spans the origin, extending it if the model floats above or hangs below.
-3. Set `generate_size_property = false` and write the box into `meta_properties["size"]` as
+2. **Round every bound outward to a power of two.** Not cosmetic, and not optional — see below.
+3. Make sure Z spans the origin, extending it if the model floats above or hangs below.
+4. Set `generate_size_property = false` and write the box into `meta_properties["size"]` as
    `AABB(min.x, min.y, min.z, max.x, max.y, max.z)` — min and max, *not* position and size.
+
+### Why the bounds have to be powers of two
+
+**TrenchBroom positions a point entity by snapping its bounding box.** The origin therefore ends up
+at `box_corner + half_extent`, which means a half-extent that is not a multiple of the grid size
+leaves the origin at a fixed offset nothing can remove: the mapper drags, and it stays exactly that
+far off the grid, forever.
+
+Concretely, the `PayloadCheckpoint` entity had a half-extent of 40. On TrenchBroom's default 16
+grid that is `40 + 16n` — permanently **8 units off** every grid line, and the complaint was
+"quite hard to line up with the grid". It is now 32.
+
+A power of two is a multiple of every grid size TrenchBroom offers up to 32, so it is on-grid at
+all of them. Round **outward**, never to nearest: a box smaller than its model is awkward to select,
+and the box is a click target rather than collision.
+
+**This is the one bounds rule nothing enforces for you.** `_check_bounds` in
+`tools/export_trenchbroom_fgd.gd` hard-fails the two rules TrenchBroom itself refuses — origin
+inside the box, and XY-centred for a rotatable entity — but an off-grid box builds, previews,
+rotates and plays perfectly. It is only fiddly to place, which no error can tell you. The harness
+therefore emits a `warn grid:` line naming each entity whose bounds are not powers of two, and
+**`tools/generate_prop_entities.gd` rounds new props for you** (`_ceil_pow2` / `_floor_pow2`).
+Hand-authored entities are the ones to check.
+
+The payload entities are all clean: `PayloadPathPoint` ±16, `PayloadCheckpoint` ±32/Z 0…16, `Payload`
+±32/Z −32…64.
 
 ## Exporting the FGD
 
@@ -619,8 +646,12 @@ are the places a copy would have been wrong:
   describing an offset from it. `speed`, `axis`, `depth`, `target`, `targetname` and `mass` are
   safe and kept — none is a `Node3D` property.
 - **`AnimatableBody3D`, not `CharacterBody3D`,** for `mover` and `rotate` — Godot 4's idiom for a
-  kinematic platform that *carries* a player rather than shoving them, and what `PayloadNode`
-  already uses.
+  kinematic platform, which is what *carries* a player standing on it. What that costs a mapper is one
+  rule: a platform the player should ride must stay on **collision layer 1**, since the player's
+  `collision_mask` is WORLD only and it is the player's own floor collision that names the platform.
+  `mover.tres` and the payload both are; an entity authored onto another layer would silently stop
+  carrying anyone. The carry itself is engine behaviour with two project-wide invariants behind it —
+  see `02-netcode.md` §8.
 - **`node_class = "RigidBody3D"` on `physics`.** Qodot's definition says `"RigidBody"`, the Godot
   **3** name, which `ClassDB.instantiate()` cannot resolve on Godot 4 — Qodot's own entity could
   not have built.
@@ -784,6 +815,162 @@ identically. To cover another entity, add a `TrenchBroomTag` (`tag_match_type = 
 `trigger.tres` also sets `meta_properties["color"]` to amber, which tints trigger brushes in the
 viewport independently of any of this.
 
+## Payload entities
+
+Three point entities author a payload route: `PayloadPathPoint` chain, `PayloadCheckpoint`, and the
+`Payload` cart itself. Before these existed, a route could only be built by hand-editing a map
+`.tscn` — a baked `Curve3D` plus `PathFollow3D` markers whose `progress` values were dialled in by
+eye.
+
+### `PayloadPathPoint` — the route
+
+**Draw the waypoints front to back and they connect themselves.** That is the whole authoring model:
+the route is the points in the order they were placed, which is simply how they appear in the `.map`
+and therefore how func_godot builds them. No names, no links, nothing to fill in — the same thing
+every spline tool does, and the reason there is no "next point" field to set on ten entities.
+
+| property | type | what it does |
+|---|---|---|
+| `targetname` | `string` | **optional** — only read by an explicit chain |
+| `target` | `string` | **optional** — see below |
+| `rollback_zone` | `bool` | from here to the next point, the cart may drift back unattended |
+| `rollforward_zone` | `bool` | from here to the next point, the cart drives itself |
+
+**Setting `target` on any point switches the whole map to an explicit chain** — Quake's `path_corner`
+or TF2's `path_track`, where `target` names the next point's `targetname` and the head is the point
+nothing names. That is the escape hatch, and it is what a route needs when its points were not drawn
+in order, when a leg has to run somewhere other than the next point, or when a loop is wanted. The
+two modes never mix: one `target` anywhere means placement order is ignored for the whole map,
+because a half-explicit, half-implied chain has no answer a mapper could predict.
+
+You rarely type those names: the section below turns a route you have already drawn into an explicit
+chain for you, which is the usual reason to leave placement order behind.
+
+**The failure to know about is insertion.** Placement order is creation order, so a point added to
+the middle of an existing route is appended to the end of the route instead. The generated line shows
+that immediately, and there are two ways out: re-place the point so it is created last in the right
+place, or freeze the order into an explicit chain — see below. Recorded as `05-known-issues.md` #90.
+
+### Freezing a route: the `Auto Setup Payload Path` button
+
+Placement order is convenient but it is re-derived on every load, so an insertion reshuffles it. Once
+a route is right, **select the map's root node in Godot and press `Auto Setup Payload Path`**. It
+finds the `.map` the scene is built from (through the `FuncGodotMap`'s `local_map_file`), names every
+unnamed path point `path_1`, `path_2`, … in placement order, sets each point's `target` to the next
+one's name, and saves the `.map`. From then on the order is stored, and inserting a point reorders
+nothing.
+
+It **fills gaps rather than overwriting decisions**: a point that already has a name keeps it, a point
+that already has a `target` keeps it, and a generated name never collides with one already used
+anywhere in the map. Pressing it twice does nothing the second time. It reports what it did in the
+Output panel.
+
+**TrenchBroom cannot do this itself, which is why the button is on the Godot side.** Upstream
+TrenchBroom has no scripting or plugin API — extensibility there is game configs, FGD entity
+definitions and mods, all data — and the feature that would have done exactly this (auto-incrementing
+numbered `targetname`/`target` when duplicating, requested specifically for `path_track` chains,
+TrenchBroom [#4554](https://github.com/TrenchBroom/TrenchBroom/issues/4554)) is unimplemented.
+
+> **Run it with the map closed in TrenchBroom, or reload the map there straight afterwards.**
+> TrenchBroom holds the open map in memory and does not re-read the file underneath itself, so saving
+> from it later would write the pre-link contents back over the button's work. This is the one sharp
+> edge in the workflow, and the tool cannot detect it.
+
+The linker itself is `world/payload/payload_path_linker.gd` — a pure text-in/text-out
+`link_map_text()`, so it is driven entirely from `tools/verify_payload_path.tscn`. It edits the `.map`
+line by line rather than re-serialising it, so comments, blank lines and the CRLF endings TrenchBroom
+writes all survive: a round trip over a map with nothing to do produces byte-identical text.
+
+**The point's origin is the bottom of its marker, and the `size` box's floor is at 0.** TrenchBroom
+positions a newly placed point entity from its bounding box, so a box that hung below the origin would
+leave the entity — and the route with it — that far above the surface it was dropped on. `PlayerSpawn`
+and `HealthPackSpawner` follow the same convention; `ControlPoint` deliberately does not, because a
+capture point is a floating orb rather than something that rests on the floor.
+
+**Raising a waypoint raises the route, and the cart tilts to match.** The compiled curve runs through
+the points in three dimensions, and the cart's basis is taken from it in full — so a point placed 128
+units up a ramp pitches the cart ~30° for that leg rather than sliding it level through the slope. Two
+consequences for the art: the track pieces should be laid along the same ramp, and the cart's own
+collision rotates with it, so a cart on a slope occupies a tilted box. `Payload.vertical_offset` is
+the lever if the cart needs lifting clear of the track.
+
+**The two flags are stretch flags, not point markers.** A flag set on a point applies from that point
+until the next one on the route, and the two are independent axes — `rollforward` governs driving with
+nobody pushing, `rollback` governs the unattended drift back, and one point may set both.
+
+**`rollback_zone` is an intensifier, not a permission — every stretch rolls back.** Left alone, the
+cart waits out `Payload.return_delay` (10 s by default) before it starts drifting back. A rollback
+zone removes that wait entirely, so the cart slides back the moment nobody is on it, the way something
+on a slope would. A route with no flags at all is not a special case; it is the slow version of the
+same rule, and it behaves exactly like the pre-entity maps. See `02-netcode.md` §10.
+
+**Two authoring choices here are deliberate and both come from the failure modes recorded above:**
+
+- **`target` is a plain `string`, not a `target_destination`.** `target_base.tres` declares `target`
+  as a `NodePath`, which TrenchBroom renders as a drag-and-drop picker — but `parser.gd` hands that
+  back as a `NodePath` and `entity_assembler.gd:255` `push_error`s on a `typeof` mismatch rather than
+  coercing, so assigning it to a `String` export fails. The chain is resolved by our own string walk
+  at runtime anyway, so the picker would buy nothing.
+- **No `mangle`, so the entity is not rotatable.** Track point orientation is meaningless — the curve
+  uses positions only, and the cart's facing comes from the spline's tangent. Declaring no rotation
+  property also exempts the entity from the XY-centring rule in [the `size` box
+  section](#the-size-box--two-hard-constraints-both-silent-when-violated), which is why its `size` is
+  symmetric in X and Y rather than by necessity.
+
+### `PayloadCheckpoint` — the markers
+
+Placed **roughly beside** the route, not on it. At load each one projects itself onto the nearest point
+of the compiled curve, adds a helper `PathFollow3D` there, and takes that follower's transform — so a
+mapper never has to land one precisely.
+
+Like `PayloadPathPoint`, its art stands on its origin rather than being centred on it, so dropping one
+on the floor puts the slab on the floor rather than half-buried in it.
+
+Ordering comes from the route, not from the map's node order: checkpoints are sorted by where they sit
+along the curve, which is the only ordering that matches what a player sees. It also means a
+checkpoint further along the track is always later, whatever order the entities happen to sit in the
+scene.
+
+It takes **no properties at all** — the only thing a mapper decides about a checkpoint is where it is.
+That placement also fully determines it: the cart cannot be rolled back past the last checkpoint it
+reached, and `PayloadNode` reads each checkpoint's own position along the curve rather than deriving
+it a second time. The two used to disagree — the checkpoint sat at an authored `progress` while the
+payload re-projected its world position, so nudging the curve silently moved every checkpoint.
+
+### `Payload` — the cart
+
+| property | type | what it does |
+|---|---|---|
+| `attacking_team` | `choices` `SPI (red)` 0 / `SCI (blue)` 1 | which team pushes it |
+| `push_speed_base` | `float` | progress per second with one pusher |
+| `return_delay` | `float` | seconds before it drifts back |
+| `return_speed` | `float` | progress per second it drifts back at |
+| `rollforward_speed` | `float` | progress per second it drives itself in a rollforward stretch |
+| `heal_per_second` | `float` | health per second to attackers standing on it |
+| `vertical_offset` | `Vector3` | height above the route, in **map units** |
+
+`game_mode_component` and `path_follower` are **not** properties — TrenchBroom cannot author a
+`NodePath`, and on a route built from path points neither exists at the moment the entity is built.
+The script falls back to `GameManager.game_mode_component` (the route `ControlPoint` and
+`HealthPackSpawner` take) and resolves the follower from the compiled route in a deferred call.
+
+`vertical_offset` is a `Vector3` authored in TrenchBroom's Z-up axes and map units, so `payload.gd`
+implements `_func_godot_apply_properties()` to convert it — axes first, then units — the same opt-in
+every brush-entity vector needs ([#74](05-known-issues.md)). Without it a mapper's `"0 0 128"` moves
+the cart sideways and 32× too far. `push_speed_curve` is deliberately **not** exposed: an
+`Array[float]` becomes an FGD `flags` bitfield, which is no way to author a curve.
+
+### What the build does *not* produce
+
+**The `Path3D` is generated at runtime, on every peer, and is not in the saved map scene.** So it —
+and the glowing line drawn along it — are invisible in the Godot editor. That is the trade for not
+inheriting this pipeline's rebuild-**and-save** requirement (#71): an unsaved rebuild silently loses
+any node the build wrote into the scene, and a route has no business depending on that. A mapper
+authors and inspects the route in TrenchBroom, where the entity markers are visible.
+
+Nothing here is gated on `is_server()`, on any peer. The route, the line and the checkpoints are map
+furniture like the brush entities; only the cart's own progress is server-authoritative.
+
 ## Current entities
 
 Point entities only — the brush entities (`trigger`, `mover`, `rotate`, `button`, `physics`) are
@@ -798,6 +985,9 @@ do not apply to them (no `scene_file`, no display model, no `size` box).
 | `PlayerSpawn` | `world/special_entities/player_spawn.tscn` | static bake (the mannequin) | `mangle` | — |
 | `HealthPackSpawner` | `world/special_entities/health_pack_spawner.tscn` | generated | — | — |
 | `ControlPoint` | `world/special_entities/control_point.tscn` | generated (the sphere) | — | — |
+| `PayloadPathPoint` | `world/payload/payload_path_point.tscn` | generated (the marker sphere) | — | — |
+| `PayloadCheckpoint` | `world/payload_checkpoint_visual.tscn` | generated (the slab) | — | — |
+| `Payload` | `world/payload/payload.tscn` | generated (the cart) | — | — |
 
 `Truck`, `PlayerSpawn` and `HealthPackSpawner` are **hand-authored** — the generator only covers
 `assets/props/`, and the other two are scenes under `world/`. `PlayerSpawn` takes no `scale`: it is a

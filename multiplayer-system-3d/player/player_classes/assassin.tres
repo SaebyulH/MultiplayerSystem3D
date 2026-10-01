@@ -1,26 +1,26 @@
 [gd_resource type="Resource" script_class="Class" format=3 uid="uid://dooxsri7qsjw1"]
 
 [ext_resource type="Script" uid="uid://qjf4ciit3dqy" path="res://weapon/weapon.gd" id="1_lj83e"]
-[ext_resource type="Resource" uid="uid://be2owhehrbk5u" path="res://weapon/assassin_weapons/sniper_rifle.tres" id="2_lj83e"]
+[ext_resource type="Resource" uid="uid://bo7jo3pniuo34" path="res://weapon/assassin_weapons/sniper_rifle.tres" id="2_lj83e"]
 [ext_resource type="Script" uid="uid://cbg4mqtqfaara" path="res://player/class.gd" id="4_oiapg"]
-[ext_resource type="Resource" uid="uid://b3tknjp4eb7lr" path="res://weapon/assassin_weapons/rifle.tres" id="5_blhw6"]
-[ext_resource type="Resource" uid="uid://dngitmfspeu7j" path="res://weapon/assassin_weapons/bow.tres" id="5_oiapg"]
-[ext_resource type="Resource" uid="uid://bff06umbrrcef" path="res://weapon/shared/revolver.tres" id="7_3tebw"]
-[ext_resource type="Resource" uid="uid://cteiol02rkdkk" path="res://weapon/assistance_weapons/bat.tres" id="7_id5m6"]
-[ext_resource type="Resource" uid="uid://b6kvetov2dlsv" path="res://weapon/assassin_weapons/heavy_rifle.tres" id="8_arg6d"]
+[ext_resource type="Resource" uid="uid://e5jc2icdxp1c" path="res://weapon/assassin_weapons/rifle.tres" id="5_blhw6"]
+[ext_resource type="Resource" uid="uid://2jcsrcy7a5ug" path="res://weapon/assassin_weapons/bow.tres" id="5_oiapg"]
+[ext_resource type="Resource" uid="uid://b4ljjxexrlmgj" path="res://weapon/tf2/backstab_knife.tres" id="6_gwsf4"]
+[ext_resource type="Resource" uid="uid://qy4cv40x5sxx" path="res://weapon/shared/revolver.tres" id="7_3tebw"]
+[ext_resource type="Resource" uid="uid://codhbpglwmg3r" path="res://weapon/assistance_weapons/bat.tres" id="7_id5m6"]
+[ext_resource type="Resource" uid="uid://bk7gmgqaiqmkg" path="res://weapon/assassin_weapons/heavy_rifle.tres" id="8_arg6d"]
 [ext_resource type="Script" uid="uid://bxv3anwekoggx" path="res://player/character.gd" id="10_char"]
 [ext_resource type="Resource" uid="uid://b8wpr5hk3etay" path="res://player/characters/ghost.tres" id="11_char"]
-[ext_resource type="Resource" uid="uid://cbfs668dm602c" path="res://weapon/assassin_weapons/fowling_piece.tres" id="11_tpx7a"]
+[ext_resource type="Resource" uid="uid://hg4hhapeixd0" path="res://weapon/assassin_weapons/fowling_piece.tres" id="11_tpx7a"]
 [ext_resource type="Resource" uid="uid://c4ubuepwbpmej" path="res://player/characters/stalker.tres" id="12_char"]
-[ext_resource type="Resource" uid="uid://d0kbgelmoy3ge" path="res://weapon/tf2/knife.tres" id="13_melee"]
-[ext_resource type="Resource" uid="uid://1ry6kta4in3w" path="res://weapon/shared/derringer.tres" id="14_tpx7a"]
-[ext_resource type="Resource" uid="uid://0rvg8srdkux6" path="res://weapon/assassin_weapons/shurikens.tres" id="15_gwsf4"]
+[ext_resource type="Resource" uid="uid://b24ute8ltxd27" path="res://weapon/shared/derringer.tres" id="14_tpx7a"]
+[ext_resource type="Resource" uid="uid://mb8iomem45i4" path="res://weapon/assassin_weapons/shurikens.tres" id="15_gwsf4"]
 
 [resource]
 script = ExtResource("4_oiapg")
 class_display_name = "Assassin"
 primary_weapons = Array[ExtResource("1_lj83e")]([ExtResource("5_blhw6"), ExtResource("2_lj83e"), ExtResource("8_arg6d"), ExtResource("5_oiapg"), ExtResource("7_3tebw"), ExtResource("11_tpx7a")])
 secondary_weapons = Array[ExtResource("1_lj83e")]([ExtResource("15_gwsf4"), ExtResource("14_tpx7a")])
-melee_weapons = Array[ExtResource("1_lj83e")]([ExtResource("13_melee"), ExtResource("7_id5m6")])
+melee_weapons = Array[ExtResource("1_lj83e")]([ExtResource("7_id5m6"), ExtResource("6_gwsf4")])
 characters = Array[ExtResource("10_char")]([ExtResource("11_char"), ExtResource("12_char")])
 metadata/_custom_type_script = "uid://cbg4mqtqfaara"

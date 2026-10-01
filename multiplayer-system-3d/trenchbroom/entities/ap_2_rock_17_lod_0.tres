@@ -24,6 +24,6 @@ class_property_descriptions = Dictionary[String, Variant]({
 meta_properties = Dictionary[String, Variant]({
 "color": Color(0.8, 0.8, 0.8, 1),
 "model": "{\"path\": \"trenchbroom/models/Ap2Rock17Lod0.glb\", \"scale\": {{ scale == undefined -> 32, scale * 32 }} }",
-"size": AABB(-80, -102, -7, 80, 102, 252)
+"size": AABB(-128, -128, -8, 128, 128, 256)
 })
 metadata/_custom_type_script = "uid://ldfqjtq0br35"
