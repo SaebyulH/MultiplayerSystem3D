@@ -173,7 +173,11 @@ func apply_health_delta(delta: float, changer: String, changee: String, is_heads
 
 
 
-	var changer_node = GameManager.find_player(changer)
+	# A changer is only a name, and it may no longer resolve to a live Player:
+	# the bot that fired this shot may have been removed, the human may have
+	# disconnected, or the source may be neutral.  The damage still lands — only
+	# the per-player feedback (sounds / damage numbers) needs a live source.
+	var changer_node: Player = GameManager.find_player(changer)
 	if applied_delta < 0:
 		_time_since_last_damage = 0.0
 
@@ -181,7 +185,7 @@ func apply_health_delta(delta: float, changer: String, changee: String, is_heads
 			Leaderboard.request_add_self_damage(changer, applied_delta)
 		else:
 			Leaderboard.request_add_damage(changer, applied_delta)
-			if not changer_node.is_bot:
+			if changer_node != null and not changer_node.is_bot:
 				if is_headshot:
 					changer_node.weapon_controller.play_crit_sound.rpc_id(changer.to_int())
 				else:
@@ -199,7 +203,7 @@ func apply_health_delta(delta: float, changer: String, changee: String, is_heads
 			Leaderboard.request_add_self_heal(changer, applied_delta)
 		else:
 			Leaderboard.request_add_heal_other(changer, applied_delta)
-			if not changer_node.is_bot:
+			if changer_node != null and not changer_node.is_bot:
 				changer_node.weapon_controller.play_hit_heal_sound.rpc_id(changer.to_int())
 				changer_node.damage_number_manager._receive_damage_number.rpc_id(changer.to_int(), changee, applied_delta)
 

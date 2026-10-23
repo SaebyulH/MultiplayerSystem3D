@@ -78,6 +78,10 @@ func _ready() -> void:
 	_check_linker()
 	await _check_chain_compiler()
 	await _check_entity_build()
+	_check_prop_profile()
+	_check_path_bake()
+	_check_track_sweep()
+	_check_legacy_route()
 	_finish()
 
 
@@ -338,20 +342,7 @@ func _check_chain_compiler() -> void:
 ## `_enter_tree` — a `Camera3D` and a `GameModeComponent` — the latter left in `MAIN_MENU`,
 ## which is the mode whose `_ready` returns before the phase machine starts.
 func _build_map() -> Node:
-	var map := Node3D.new()
-	map.name = "Map"
-	map.set_script(MAP_SCRIPT)
-
-	var camera := Camera3D.new()
-	camera.name = "Camera3D"
-	map.add_child(camera)
-
-	var gmc := GameModeComponent.new()
-	gmc.name = "GameModeComponent"
-	gmc.game_mode = GameModeComponent.GameMode.MAIN_MENU
-	map.add_child(gmc)
-
-	add_child(map)
+	var map := _build_map_bare("Map")
 
 	var previous: PayloadPathPoint = null
 	for i in WAYPOINTS.size():
@@ -371,6 +362,26 @@ func _build_map() -> Node:
 	var second := map.get_node("TrackPoint1") as PayloadPathPoint
 	second.rollforward_zone = true
 
+	return map
+
+
+## The bare shape of a map — the root with its script plus the two children `map.gd` reaches
+## for — and nothing else, so a check can give it whatever route shape it is testing.
+func _build_map_bare(node_name: String) -> Node:
+	var map := Node3D.new()
+	map.name = node_name
+	map.set_script(MAP_SCRIPT)
+
+	var camera := Camera3D.new()
+	camera.name = "Camera3D"
+	map.add_child(camera)
+
+	var gmc := GameModeComponent.new()
+	gmc.name = "GameModeComponent"
+	gmc.game_mode = GameModeComponent.GameMode.MAIN_MENU
+	map.add_child(gmc)
+
+	add_child(map)
 	return map
 
 
@@ -772,6 +783,175 @@ func _check_built_route(func_map: Node, points: Array[Node]) -> void:
 
 
 # ─────────────────────────────────────────────
+#  HALF 3 — the swept track and the baked route
+# ─────────────────────────────────────────────
+
+## The prop is the source of truth for every dimension the sweep uses, so a silent change to it
+## would move the track without anything else noticing.
+func _check_prop_profile() -> void:
+	var prop := PayloadTrackBuilder.read_prop()
+	_check("prop: the track prop was read", prop["ok"], true)
+
+	var rails: Array = prop["rails"]
+	if rails.size() != 2:
+		_fail("prop: found %d rails, expected 2" % rails.size())
+		return
+	_ok("prop: two rails")
+
+	var gauge: float = absf(float(rails[0]["lateral"]) - float(rails[1]["lateral"]))
+	_check_approx("prop: gauge (rail centre to centre)", gauge, 1.347828, 0.001)
+	_check_approx("prop: tie spacing", float(prop["tie_spacing"]), 0.25, 0.001)
+	_check_approx("prop: rest offset (tie underside to the curve)", float(prop["rest_offset"]),
+		0.029541, 0.001)
+
+	var half: Vector2 = rails[0]["half"]
+	_check_approx("prop: rail half-width", half.x, 0.053589, 0.001)
+	_check_approx("prop: rail half-height", half.y, 0.038527, 0.001)
+
+
+## [method PayloadPathBuilder.bake_path]'s contract: the route becomes a saved node, but only
+## its curve — the derived half must not reach the file, and the runtime must rebuild it.
+func _check_path_bake() -> void:
+	var map := _build_map()
+
+	# The tool button is a `Callable` property; if the script resolves it to Nil the button is
+	# dead and clicking it does nothing at all, with only a cryptic "value ... is Nil, but
+	# Callable was expected" in the Output. Cheap to assert, and it is the one failure mode the
+	# sweep checks below cannot see.
+	var button: Callable = map.get("bake_payload_route")
+	_check("button: the bake callable is bound", button.is_valid(), true)
+
+	var path := PayloadPathBuilder.bake_path(map, null)
+	if path == null:
+		_fail("bake_path returned null for a map with a chain")
+		return
+
+	_check("bake: the route is a PayloadPath", path is PayloadPath, true)
+	_check("bake: the route is a direct child of the map", path.get_parent(), map)
+	_check("bake: the route is in the payload_path group", path.is_in_group(PayloadPath.GROUP), true)
+	_check("bake: the curve has one point per waypoint",
+		path.curve.point_count if path.curve != null else -1, WAYPOINTS.size())
+
+	# The derived half is stripped, so it cannot serialize into the map scene.
+	_check("bake: the zone table is stripped", path.zones.size(), 0)
+	_check("bake: the line mesh is stripped", path.get_node("PathLine").mesh, null)
+
+	# ...and a peer finding the shell rebuilds it, which is the whole runtime contract.
+	var filled := PayloadPathBuilder.ensure_path(map)
+	_check("bake: ensure_path returns the baked shell, not a new route", filled, path)
+	_check("bake: ensure_path rebuilt the zone table", path.zones.size(), WAYPOINTS.size())
+	_check("bake: ensure_path rebuilt the line mesh",
+		path.get_node("PathLine").mesh != null, true)
+
+	# The bake runs on *every* save, so re-writing an unchanged curve would dirty the scene each
+	# time — and `path.curve` is a stored property, so a blind assignment does exactly that.
+	var curve_before: Curve3D = path.curve
+	PayloadPathBuilder.bake_path(map, null)
+	_check("bake: an unchanged chain is not rewritten", path.curve, curve_before)
+	_check("bake: the derived half is stripped again", path.get_node("PathLine").mesh, null)
+
+
+## The sweep: the track lands under the map (never inside the TrenchBroom world), as one merged
+## mesh, with no collision — and a second bake over an unchanged route is a no-op.
+func _check_track_sweep() -> void:
+	var map := _build_map()
+	PayloadPathBuilder.bake_path(map, null)
+
+	var result := PayloadTrackBuilder.bake(map, null)
+	var container := result["container"] as Node3D
+	if container == null:
+		_fail("the bake produced no track container")
+		return
+
+	_check("track: the container is a direct child of the map", container.get_parent(), map)
+	_check("track: the container is named", container.name, PayloadTrackBuilder.CONTAINER_NAME)
+
+	var mesh_instance := container.get_node_or_null(
+		PayloadTrackBuilder.MESH_NAME) as MeshInstance3D
+	if mesh_instance == null or mesh_instance.mesh == null:
+		_fail("track: no merged mesh was built")
+		return
+	var mesh := mesh_instance.mesh
+
+	_check("track: two surfaces — rails then ties", mesh.get_surface_count(), 2)
+	if mesh.get_surface_count() == 2:
+		_check("track: one tie box per tie (24 verts each)",
+			mesh.surface_get_array_len(1), 24 * int(result["ties"]))
+		if mesh.surface_get_array_len(0) > 0:
+			_ok("track: the rails surface has %d vertices" % mesh.surface_get_array_len(0))
+		else:
+			_fail("track: the rails surface is empty")
+	_check("track: the metal rail material reached surface 0",
+		mesh.surface_get_material(0) != null, true)
+	_check("track: the wood tie material reached surface 1",
+		mesh.surface_get_material(1) != null, true)
+
+	# The hand-placed prop has no collision, so neither does this.
+	var colliders := 0
+	for node in container.find_children("*", "", true, false):
+		if node is CollisionShape3D or node is StaticBody3D or node is Area3D:
+			colliders += 1
+	_check("track: no collision shapes", colliders, 0)
+
+	# A repeat bake over an unchanged route must not touch the tree — that is what keeps the
+	# save hook from re-dirtying the scene on every save.
+	var again := PayloadTrackBuilder.bake(map, null)
+	_check("track: a second bake changes nothing", bool(again["changed"]), false)
+	_check("track: still exactly one container", _count_track_containers(map), 1)
+
+	# Moving a waypoint changes the route, and the track has to follow it.
+	var moved := map.get_node("TrackPoint2") as Node3D
+	moved.position += Vector3(0.0, 0.0, 8.0)
+	PayloadPathBuilder.bake_path(map, null)
+	var after := PayloadTrackBuilder.bake(map, null)
+	_check("track: moving a waypoint re-bakes the track", bool(after["changed"]), true)
+	_check("track: still exactly one container after the move", _count_track_containers(map), 1)
+
+
+## The legacy shape: a hand-authored `Path3D` carries the route, the track is swept from its
+## curve, and no [PayloadPath] is created beside it.
+func _check_legacy_route() -> void:
+	var map := _build_map_bare("LegacyMap")
+
+	var path := Path3D.new()
+	path.name = "Path3D"
+	var curve := Curve3D.new()
+	curve.add_point(Vector3(0.0, 0.0, 0.0))
+	curve.add_point(Vector3(10.0, 0.0, 6.0))
+	curve.add_point(Vector3(20.0, 0.0, 0.0))
+	path.curve = curve
+	var follower := PathFollow3D.new()
+	follower.name = "PayloadFollower"
+	path.add_child(follower)
+	map.add_child(path)
+
+	# Baking a route here would give the map two of them — the cart rides the authored one.
+	var baked := PayloadPathBuilder.bake_path(map, null)
+	_check("legacy: bake_path refuses to add a second route", baked, null)
+
+	var result := PayloadTrackBuilder.bake(map, null)
+	var container := result["container"] as Node3D
+	if container == null:
+		_fail("legacy: no track was swept from the hand-authored curve")
+		return
+	_check("legacy: the track sits under the map", container.get_parent(), map)
+	if container.get_node_or_null(PayloadTrackBuilder.MESH_NAME) != null:
+		_ok("legacy: the hand-authored curve was swept")
+	else:
+		_fail("legacy: the container has no mesh")
+
+	_check("legacy: no PayloadPath was created", _count_payload_paths(map), 0)
+
+
+func _count_track_containers(root: Node) -> int:
+	return root.find_children(PayloadTrackBuilder.CONTAINER_NAME, "", false, false).size()
+
+
+func _count_payload_paths(root: Node) -> int:
+	return _all(root, "PayloadPath").size()
+
+
+# ─────────────────────────────────────────────
 #  HELPERS
 # ─────────────────────────────────────────────
 
@@ -847,6 +1027,15 @@ func _check_vector(label: String, actual: Vector3, expected: Vector3) -> void:
 		_ok("applied: %s = %s" % [label, actual])
 	else:
 		_fail("%s is %s, expected %s" % [label, actual, expected])
+
+
+## For the prop-derived dimensions, which are floats read off meshes rather than literals a test
+## can land on exactly.
+func _check_approx(label: String, actual: float, expected: float, tolerance: float = TOLERANCE) -> void:
+	if absf(actual - expected) <= tolerance:
+		_ok("%s = %.6f" % [label, actual])
+	else:
+		_fail("%s is %.6f, expected %.6f" % [label, actual, expected])
 
 
 func _ok(message: String) -> void:

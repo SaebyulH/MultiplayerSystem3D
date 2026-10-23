@@ -62,7 +62,8 @@ func _on_body_exited(body: Node3D) -> void:
 func _local_player_inside() -> bool:
 	var my_id := str(multiplayer.get_unique_id())
 	for p in _players_inside:
-		if p.name == my_id:
+		# `body_exited` is not guaranteed for a Player that is freed outright.
+		if is_instance_valid(p) and p.name == my_id:
 			return true
 	return false
 

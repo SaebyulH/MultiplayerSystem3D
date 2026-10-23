@@ -332,13 +332,17 @@ Other modes follow the same shape: `koth_mode.gd:23-39` and `domination_mode.gd:
   invisible pickup.
 - **The pack heals through `Player.change_health(amount, player.name)`, not `HitboxComponent`.** That
   component always delegates the delta to the victim's `HurtComponent`, which resolves a `changer`
-  from the hitbox's parent and dereferences `GameMode.find_player(changer).is_bot` with no null check
-  (`attribute_component.gd:197-203`) — a neutral pickup has no shooter and would crash there. Passing
-  the victim's own name makes `changee == changer` (`attribute_component.gd:198-199`), the only branch
-  with no deref. Consumption is decided **per physics frame on the server** from an overlap list, not
-  in `body_entered`: that signal is edge-triggered and cannot express either half of the pack's
-  contract (a player already standing there when the timer expires, or one who walked over at full
-  health and was then shot without moving).
+  from the hitbox's parent; a neutral pickup has no shooter, so that changer resolves to no `Player`
+  at all. Passing the victim's own name keeps it on the `changee == changer` self branch, the shape
+  the rest of the damage bookkeeping expects. **`apply_health_delta` now tolerates a changer that
+  does not resolve** (`attribute_component.gd:176-208`): a removed bot, a disconnected human, or a
+  neutral source still applies its damage/heal and its score credit, but skips the hit-sound /
+  damage-number feedback, which needs a live player. That missing guard was what made removing a bot
+  crash once its in-flight projectile or DoT tick paid out (known-issues #104). Consumption is decided
+  **per physics frame on the server** from an overlap list, not in `body_entered`: that signal is
+  edge-triggered and cannot express either half of the pack's contract (a player already standing
+  there when the timer expires, or one who walked over at full health and was then shot without
+  moving).
 - The `ProjectilesParent`/`ProjectileSpawner` pair that still exists in all 10 maps is **dead** — nothing parents under it. See known-issues #29.
 
 ---
@@ -354,6 +358,7 @@ Other modes follow the same shape: `koth_mode.gd:23-39` and `domination_mode.gd:
 - `_sync_to_clients` (272-290) rebuilds the client mirror and pushes via `_rpc_sync_effects` (`@rpc("authority","call_remote","reliable")`, 313-324) — four parallel arrays: `effect_ids`, `effect_names`, `remaining_times`, and `blocks_actions`. Poison hidden until `drain_started` (296-309).
 - `has_effect`/`is_stunned`/`is_pinned` read the client mirror `_client_effects` (29, 196-236).
 - **The action lock (`StatusEffect.blocks_actions`) travels with that same sync.** The gate that consumes it — `PlayerInput._gather` / `._input`, `AbilityManager._input`, `BotController._physics_process` — runs on the *owning client*, which holds no effect resources, so the boolean is mirrored into `_client_blocks_actions` and read through `is_action_blocked()` (239-243), which is an O(1) compare against `_client_blocking_count`. Do not collapse `blocks_actions` into an effect *id* the gates check by name (the way `stun`/`pinned` work): the flag is per-cast data (`HealAbility.block_actions_during_heal`), not per-effect-type. See known-issues #33 for the latency window this creates.
+- **An effect's `applier` is a name, not a `Player` reference**, and it may no longer resolve once the applier is removed (a bot deleted from the spawn menu) or disconnects. DoT ticks therefore reach `apply_health_delta` with a dead name; that function must credit the score and apply the damage without needing a live source, and it skips only the per-player feedback (see §6). Effects must stay tolerant of this — do not dereference `find_player(applier)` from an effect.
 - Late joiners get an explicit `_sync_to_clients(peer_id)` from `SpawnManager._sync_existing_players_to_peer` (`spawn_manager.gd:44-45`).
 
 ### HealAbility — instant vs. channeled (`player/abilities/heal_ability.gd`)
@@ -964,11 +969,18 @@ which is the one this document already described: **the server simulates `progre
 and `_return_countdown`, and pushes them at ~15 Hz on an unreliable `@rpc`**, with reliable one-shots
 for reset, checkpoint reached and delivered. Clients are pure consumers and never simulate.
 
-**The route itself is built on every peer and is not state.** `PayloadPathBuilder.ensure_path()` runs
-a `call_deferred` from each path point and from the cart, and is **idempotent** — whoever gets there
-first compiles the chain into a `Path3D`, and every later caller finds it. That is what makes node
-order irrelevant: a payload that happens to sit above its path points in the scene builds the route
-itself rather than finding nothing.
+**The route is baked into the map, and its derived half is rebuilt on every peer.** The `Path3D` and
+its `Curve3D` are written into the scene at editor time — `PayloadPathBuilder.bake_path()` from the
+Map's tool button and from its save hook — so a route is saved state rather than something that only
+appears at runtime. What is *not* saved is everything derived from that curve: the zone table and the
+glowing tube are stripped before the save and rebuilt at load, because as node properties they would
+bloat every map scene that carries a route (the same trade `ToonMaterialConverter` makes).
+
+That rebuild is `PayloadPathBuilder.ensure_path()`, which runs a `call_deferred` from each path point
+and from the cart and is **idempotent** — whoever gets there first finds the baked shell and calls
+`configure()` on it (or compiles a transient route, on a map that was never baked), and every later
+caller finds the result. Node order stays irrelevant either way. The compiled product is still, in
+every part that reaches the network, map furniture each peer derives for itself.
 
 **Never gate that build on `multiplayer.is_server()`.** The path, the glowing line and the checkpoints
 are map furniture like the brush entities in §9 — every peer needs them because every peer draws them.

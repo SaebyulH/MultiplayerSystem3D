@@ -1,5 +1,21 @@
+@tool
 extends AnimatableBody3D
 class_name PayloadNode
+
+## The payload cart.  Server-authoritative, and the only [AnimatableBody3D] in the project that
+## a player can stand on while it moves.
+##
+## [b]`@tool` is required, not cosmetic.[/b]  A `Payload` placed in TrenchBroom is built into
+## this node by func_godot's assembler, which calls [method _func_godot_apply_properties] on it
+## during the build — and the build is editor-only.  A script that is not in tool mode is
+## instantiated as a **placeholder** in the editor, which has no methods at all, so that call
+## died with "Attempt to call a method on a placeholder instance" and
+## [member vertical_offset] was never axis-swapped or unit-converted.  Everything else here is
+## runtime work and is guarded by `Engine.is_editor_hint()`; see [method _ready].  Same
+## arrangement as `moving_brush.gd` and the rest of `world/brush_entities/`.
+##
+## [b]`_func_godot_apply_properties` is deliberately NOT guarded[/b] — it must run in the
+## editor, and it is what bakes a mapper's TrenchBroom units into the saved scene.
 
 # ─────────────────────────────────────────────
 #  EXPORTS
@@ -37,6 +53,9 @@ class_name PayloadNode
 @export var max_push_players: int = 3
 
 @export var return_speed: float = 0.005
+## Progress units per second while the cart is sliding back inside a `rollback_zone` stretch.
+## Faster than [member return_speed], which applies everywhere else.
+@export var rollback_speed: float = 0.015
 @export var return_delay: float = 10.0
 
 ## Progress units per second while the cart is in a `rollforward_zone` stretch with nobody
@@ -118,6 +137,15 @@ var _mesh_mat: StandardMaterial3D
 # ─────────────────────────────────────────────
 
 func _ready() -> void:
+	# `@tool`: the editor runs this when a map scene is opened, and the whole body is runtime
+	# work — signal wiring, a `register_payload`, a live state pull — none of which has any
+	# business happening against a map being edited.  It also runs *before*
+	# `apply_entity_properties` has written the class properties (`entity_assembler.gd:339` adds
+	# the node, `:356` applies properties), so anything cached here would be cached from
+	# defaults.  Same guard, same reasons, as `moving_brush.gd:130-138`.
+	if Engine.is_editor_hint():
+		return
+
 	# Both of these are optional exports that only a hand-authored map fills in — see the
 	# notes on them.  A `Payload` entity leaves them empty and gets them resolved instead.
 	if game_mode_component == null:
@@ -290,6 +318,11 @@ func set_locked(locked: bool) -> void:
 # ─────────────────────────────────────────────
 
 func _physics_process(delta: float) -> void:
+	# `@tool` makes this a live tick in the editor too, where there is no peer at all — the
+	# client branch below would write `global_transform` on a map being edited, dirtying the
+	# scene once per frame.
+	if Engine.is_editor_hint():
+		return
 	if not multiplayer.is_server():
 		# Clients do not simulate the cart, but they do drive its transform — see
 		# `_apply_position_to_path`, which the RPC no longer calls.
@@ -369,7 +402,8 @@ func _physics_process(delta: float) -> void:
 
 		PayloadState.RETURNING:
 			var checkpoint_floor := _get_checkpoint_floor()
-			progress -= return_speed * delta
+			var back_speed := rollback_speed if _zone_flag("rollback", false) else return_speed
+			progress -= back_speed * delta
 			if progress <= checkpoint_floor:
 				progress = checkpoint_floor
 				new_state = PayloadState.AT_CHECKPOINT
@@ -441,9 +475,11 @@ func _set_state(new_state: PayloadState) -> void:
 # ─────────────────────────────────────────────
 
 func _tick_healing(delta: float) -> void:
-	# Server only — called after the is_server() guard in _physics_process
+	# Server only — called after the is_server() guard in _physics_process.
+	# `body_exited` does not reliably fire for a freed Player, so a removed bot can
+	# linger in the overlap list; a freed reference is not null, so validate it.
 	for p in _pushers:
-		if p is Player and p.team == attacking_team:
+		if is_instance_valid(p) and p is Player and p.team == attacking_team:
 			p.change_health(heal_per_second * delta, p.name)
 
 # ─────────────────────────────────────────────
@@ -606,7 +642,7 @@ func _get_defending_team() -> Player.Team:
 func _count_team(team: Player.Team) -> int:
 	var count := 0
 	for p in _pushers:
-		if p is Player and p.team == team:
+		if is_instance_valid(p) and p is Player and p.team == team:
 			count += 1
 	return count
 

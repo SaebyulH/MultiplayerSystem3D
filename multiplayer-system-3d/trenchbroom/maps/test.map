@@ -54,12 +54,12 @@
 }
 // brush 5
 {
-( -576 -256 192 ) ( -576 -256 193 ) ( -576 -257 192 ) Material-LIB/Nature/SurfacePebbles/SurfacePebbles [ -1.2246467991473532e-16 -1 0 -0.8729248 ] [ 0 0 -1 998.87317 ] 90 0.063 0.063
-( -1216 -256 192 ) ( -1217 -256 192 ) ( -1216 -256 193 ) Material-LIB/Nature/SurfacePebbles/SurfacePebbles [ 1 -1.2246467991473532e-16 0 -73.14307 ] [ 0 0 -1 998.87317 ] 0 0.063 0.063
-( -48 0 128 ) ( -49 0 128 ) ( -48 -1 128 ) Material-LIB/Nature/SurfacePebbles/SurfacePebbles [ 1 -1.2246467991473532e-16 0 -73.14307 ] [ 1.2246467991473532e-16 1 0 0.87298584 ] 180 0.063 0.063
-( -1216 -256 160 ) ( -1216 -257 160 ) ( -1217 -256 160 ) Material-LIB/Nature/SurfacePebbles/SurfacePebbles [ -1 1.2246467991473532e-16 0 73.14307 ] [ 1.2246467991473532e-16 1 0 0.87298584 ] 180 0.063 0.063
-( -48 256 -64 ) ( -48 256 -63 ) ( -49 256 -64 ) Material-LIB/Nature/SurfacePebbles/SurfacePebbles [ -1 1.2246467991473532e-16 0 73.14307 ] [ 0 0 -1 998.87317 ] 180 0.063 0.063
-( -256 0 -64 ) ( -256 -1 -64 ) ( -256 0 -63 ) Material-LIB/Nature/SurfacePebbles/SurfacePebbles [ 1.2246467991473532e-16 1 0 0.8729248 ] [ 0 0 -1 998.87317 ] 180 0.063 0.063
+( -576 -256 192 ) ( -576 -256 193 ) ( -576 -257 192 ) FreeStylized/metal_01_1k/metal_01_1k/metal_01_color_1k [ -1.2246467991473532e-16 -1 0 -0.8729248 ] [ 0 0 -1 998.87317 ] 90 0.063 0.063
+( -1216 -256 192 ) ( -1217 -256 192 ) ( -1216 -256 193 ) FreeStylized/metal_01_1k/metal_01_1k/metal_01_color_1k [ 1 -1.2246467991473532e-16 0 -73.14307 ] [ 0 0 -1 998.87317 ] 0 0.063 0.063
+( -48 0 128 ) ( -49 0 128 ) ( -48 -1 128 ) FreeStylized/metal_01_1k/metal_01_1k/metal_01_color_1k [ 1 -1.2246467991473532e-16 0 -73.14307 ] [ 1.2246467991473532e-16 1 0 0.87298584 ] 180 0.063 0.063
+( -1216 -256 160 ) ( -1216 -257 160 ) ( -1217 -256 160 ) FreeStylized/metal_01_1k/metal_01_1k/metal_01_color_1k [ -1 1.2246467991473532e-16 0 73.14307 ] [ 1.2246467991473532e-16 1 0 0.87298584 ] 180 0.063 0.063
+( -48 256 -64 ) ( -48 256 -63 ) ( -49 256 -64 ) FreeStylized/metal_01_1k/metal_01_1k/metal_01_color_1k [ -1 1.2246467991473532e-16 0 73.14307 ] [ 0 0 -1 998.87317 ] 180 0.063 0.063
+( -256 0 -64 ) ( -256 -1 -64 ) ( -256 0 -63 ) FreeStylized/metal_01_1k/metal_01_1k/metal_01_color_1k [ 1.2246467991473532e-16 1 0 0.8729248 ] [ 0 0 -1 998.87317 ] 180 0.063 0.063
 }
 // brush 6
 {
@@ -378,39 +378,39 @@
 }
 // brush 41
 {
-( -576 -256 64 ) ( -576 -256 65 ) ( -576 -257 64 ) Material-LIB/Nature/SurfacePebbles/SurfacePebbles [ -1.2246467991473532e-16 -1 0 1023.1271 ] [ 0 0 -1 1015.1271 ] 90 0.063 0.063
-( -1376 -256 64 ) ( -1377 -256 64 ) ( -1376 -256 65 ) Material-LIB/Nature/SurfacePebbles/SurfacePebbles [ 1 -1.2246467991473532e-16 0 -605.46094 ] [ 0 0 -1 1015.1271 ] 90 0.063 0.063
-( -256 0 64 ) ( -256 -64 64 ) ( -128 -64 64 ) Material-LIB/Nature/SurfacePebbles/SurfacePebbles [ -1 0 0 -605.46094 ] [ 0 -1 0 -1023.1271 ] 270 0.063 0.063
-( -1376 -256 128 ) ( -1376 -257 128 ) ( -1377 -256 128 ) Material-LIB/Nature/SurfacePebbles/SurfacePebbles [ -1 1.2246467991473532e-16 0 605.46094 ] [ 1.2246467991473532e-16 1 0 -1023.1271 ] 180 0.063 0.063
-( -208 256 -192 ) ( -208 256 -191 ) ( -209 256 -192 ) Material-LIB/Nature/SurfacePebbles/SurfacePebbles [ -1 1.2246467991473532e-16 0 605.46094 ] [ 0 0 -1 1015.1271 ] 270 0.063 0.063
-( -544 0 -192 ) ( -544 -1 -192 ) ( -544 0 -191 ) Material-LIB/Nature/SurfacePebbles/SurfacePebbles [ 1.2246467991473532e-16 1 0 -1023.1271 ] [ 0 0 -1 1015.1271 ] 0 0.063 0.063
+( -576 -256 64 ) ( -576 -256 65 ) ( -576 -257 64 ) FreeStylized/metal_01_1k/metal_01_1k/metal_01_color_1k [ -1.2246467991473532e-16 -1 0 1023.1271 ] [ 0 0 -1 1015.1271 ] 90 0.063 0.063
+( -1376 -256 64 ) ( -1377 -256 64 ) ( -1376 -256 65 ) FreeStylized/metal_01_1k/metal_01_1k/metal_01_color_1k [ 1 -1.2246467991473532e-16 0 -605.46094 ] [ 0 0 -1 1015.1271 ] 90 0.063 0.063
+( -256 0 64 ) ( -256 -64 64 ) ( -128 -64 64 ) FreeStylized/metal_01_1k/metal_01_1k/metal_01_color_1k [ -1 0 0 -605.46094 ] [ 0 -1 0 -1023.1271 ] 270 0.063 0.063
+( -1376 -256 128 ) ( -1376 -257 128 ) ( -1377 -256 128 ) FreeStylized/metal_01_1k/metal_01_1k/metal_01_color_1k [ -1 1.2246467991473532e-16 0 605.46094 ] [ 1.2246467991473532e-16 1 0 -1023.1271 ] 180 0.063 0.063
+( -208 256 -192 ) ( -208 256 -191 ) ( -209 256 -192 ) FreeStylized/metal_01_1k/metal_01_1k/metal_01_color_1k [ -1 1.2246467991473532e-16 0 605.46094 ] [ 0 0 -1 1015.1271 ] 270 0.063 0.063
+( -544 0 -192 ) ( -544 -1 -192 ) ( -544 0 -191 ) FreeStylized/metal_01_1k/metal_01_1k/metal_01_color_1k [ 1.2246467991473532e-16 1 0 -1023.1271 ] [ 0 0 -1 1015.1271 ] 0 0.063 0.063
 }
 // brush 42
 {
-( -288 -64 64 ) ( -288 -64 65 ) ( -288 -65 64 ) Material-LIB/Nature/SurfacePebbles/SurfacePebbles [ -1.2246467991473532e-16 -1 0 998.74603 ] [ 0 0 -1 1015.1271 ] 180 0.063 0.063
-( -1344 -64 64 ) ( -1345 -64 64 ) ( -1344 -64 65 ) Material-LIB/Nature/SurfacePebbles/SurfacePebbles [ 1 -1.2246467991473532e-16 0 -89.39697 ] [ 0 0 -1 1015.1271 ] 270 0.063 0.063
-( -256 0 64 ) ( -256 -64 64 ) ( -128 -64 64 ) Material-LIB/Nature/SurfacePebbles/SurfacePebbles [ -1 0 0 -89.39697 ] [ 0 -1 0 25.253906 ] 90 0.063 0.063
-( -1344 -64 128 ) ( -1344 -65 128 ) ( -1345 -64 128 ) Material-LIB/Nature/SurfacePebbles/SurfacePebbles [ -1 1.2246467991473532e-16 0 89.39697 ] [ 1.2246467991473532e-16 1 0 -998.74603 ] 0 0.063 0.063
-( -176 64 -192 ) ( -176 64 -191 ) ( -177 64 -192 ) Material-LIB/Nature/SurfacePebbles/SurfacePebbles [ -1 1.2246467991473532e-16 0 89.39697 ] [ 0 0 -1 1015.1271 ] 270 0.063 0.063
-( -256 192 -192 ) ( -256 191 -192 ) ( -256 192 -191 ) Material-LIB/Nature/SurfacePebbles/SurfacePebbles [ 1.2246467991473532e-16 1 0 -998.74603 ] [ 0 0 -1 1015.1271 ] 0 0.063 0.063
+( -288 -64 64 ) ( -288 -64 65 ) ( -288 -65 64 ) FreeStylized/metal_01_1k/metal_01_1k/metal_01_color_1k [ -1.2246467991473532e-16 -1 0 998.74603 ] [ 0 0 -1 1015.1271 ] 180 0.063 0.063
+( -1344 -64 64 ) ( -1345 -64 64 ) ( -1344 -64 65 ) FreeStylized/metal_01_1k/metal_01_1k/metal_01_color_1k [ 1 -1.2246467991473532e-16 0 -89.39697 ] [ 0 0 -1 1015.1271 ] 270 0.063 0.063
+( -256 0 64 ) ( -256 -64 64 ) ( -128 -64 64 ) FreeStylized/metal_01_1k/metal_01_1k/metal_01_color_1k [ -1 0 0 -89.39697 ] [ 0 -1 0 25.253906 ] 90 0.063 0.063
+( -1344 -64 128 ) ( -1344 -65 128 ) ( -1345 -64 128 ) FreeStylized/metal_01_1k/metal_01_1k/metal_01_color_1k [ -1 1.2246467991473532e-16 0 89.39697 ] [ 1.2246467991473532e-16 1 0 -998.74603 ] 0 0.063 0.063
+( -176 64 -192 ) ( -176 64 -191 ) ( -177 64 -192 ) FreeStylized/metal_01_1k/metal_01_1k/metal_01_color_1k [ -1 1.2246467991473532e-16 0 89.39697 ] [ 0 0 -1 1015.1271 ] 270 0.063 0.063
+( -256 192 -192 ) ( -256 191 -192 ) ( -256 192 -191 ) FreeStylized/metal_01_1k/metal_01_1k/metal_01_color_1k [ 1.2246467991473532e-16 1 0 -998.74603 ] [ 0 0 -1 1015.1271 ] 0 0.063 0.063
 }
 // brush 43
 {
-( -544 224 64 ) ( -544 224 65 ) ( -544 223 64 ) Material-LIB/Nature/SurfacePebbles/SurfacePebbles [ -1.2246467991473532e-16 -1 0 450.17456 ] [ 0 0 -1 1015.1271 ] 180 0.063 0.063
-( -1344 224 64 ) ( -1345 224 64 ) ( -1344 224 65 ) Material-LIB/Nature/SurfacePebbles/SurfacePebbles [ 1 -1.2246467991473532e-16 0 -89.39746 ] [ 0 0 -1 1015.1271 ] 180 0.063 0.063
-( -256 0 64 ) ( -256 -64 64 ) ( -128 -64 64 ) Material-LIB/Nature/SurfacePebbles/SurfacePebbles [ -1 0 0 -89.39746 ] [ 0 -1 0 -450.17456 ] 0 0.063 0.063
-( -1344 224 128 ) ( -1344 223 128 ) ( -1345 224 128 ) Material-LIB/Nature/SurfacePebbles/SurfacePebbles [ -1 1.2246467991473532e-16 0 89.39746 ] [ 1.2246467991473532e-16 1 0 -450.17456 ] 270 0.063 0.063
-( -176 256 -192 ) ( -176 256 -191 ) ( -177 256 -192 ) Material-LIB/Nature/SurfacePebbles/SurfacePebbles [ -1 1.2246467991473532e-16 0 89.39746 ] [ 0 0 -1 1015.1271 ] 270 0.063 0.063
-( -256 480 -192 ) ( -256 479 -192 ) ( -256 480 -191 ) Material-LIB/Nature/SurfacePebbles/SurfacePebbles [ 1.2246467991473532e-16 1 0 -450.17456 ] [ 0 0 -1 1015.1271 ] 270 0.063 0.063
+( -544 224 64 ) ( -544 224 65 ) ( -544 223 64 ) FreeStylized/metal_01_1k/metal_01_1k/metal_01_color_1k [ -1.2246467991473532e-16 -1 0 450.17456 ] [ 0 0 -1 1015.1271 ] 180 0.063 0.063
+( -1344 224 64 ) ( -1345 224 64 ) ( -1344 224 65 ) FreeStylized/metal_01_1k/metal_01_1k/metal_01_color_1k [ 1 -1.2246467991473532e-16 0 -89.39746 ] [ 0 0 -1 1015.1271 ] 180 0.063 0.063
+( -256 0 64 ) ( -256 -64 64 ) ( -128 -64 64 ) FreeStylized/metal_01_1k/metal_01_1k/metal_01_color_1k [ -1 0 0 -89.39746 ] [ 0 -1 0 -450.17456 ] 0 0.063 0.063
+( -1344 224 128 ) ( -1344 223 128 ) ( -1345 224 128 ) FreeStylized/metal_01_1k/metal_01_1k/metal_01_color_1k [ -1 1.2246467991473532e-16 0 89.39746 ] [ 1.2246467991473532e-16 1 0 -450.17456 ] 270 0.063 0.063
+( -176 256 -192 ) ( -176 256 -191 ) ( -177 256 -192 ) FreeStylized/metal_01_1k/metal_01_1k/metal_01_color_1k [ -1 1.2246467991473532e-16 0 89.39746 ] [ 0 0 -1 1015.1271 ] 270 0.063 0.063
+( -256 480 -192 ) ( -256 479 -192 ) ( -256 480 -191 ) FreeStylized/metal_01_1k/metal_01_1k/metal_01_color_1k [ 1.2246467991473532e-16 1 0 -450.17456 ] [ 0 0 -1 1015.1271 ] 270 0.063 0.063
 }
 // brush 44
 {
-( -544 -256 64 ) ( -544 -256 65 ) ( -544 -257 64 ) Material-LIB/Nature/SurfacePebbles/SurfacePebbles [ -1.2246467991473532e-16 -1 0 -0.87280273 ] [ 0 0 -1 1015.1271 ] 270 0.063 0.063
-( -1344 -256 64 ) ( -1345 -256 64 ) ( -1344 -256 65 ) Material-LIB/Nature/SurfacePebbles/SurfacePebbles [ 1 -1.2246467991473532e-16 0 -89.39746 ] [ 0 0 -1 1015.1271 ] 270 0.063 0.063
-( -256 0 64 ) ( -256 -64 64 ) ( -128 -64 64 ) Material-LIB/Nature/SurfacePebbles/SurfacePebbles [ -1 0 0 -89.39746 ] [ 0 -1 0 0.87280273 ] 90 0.063 0.063
-( -1344 -256 128 ) ( -1344 -257 128 ) ( -1345 -256 128 ) Material-LIB/Nature/SurfacePebbles/SurfacePebbles [ -1 1.2246467991473532e-16 0 89.39746 ] [ 1.2246467991473532e-16 1 0 0.87280273 ] 0 0.063 0.063
-( -176 -224 -192 ) ( -176 -224 -191 ) ( -177 -224 -192 ) Material-LIB/Nature/SurfacePebbles/SurfacePebbles [ -1 1.2246467991473532e-16 0 89.39746 ] [ 0 0 -1 1015.1271 ] 0 0.063 0.063
-( -256 0 -192 ) ( -256 -1 -192 ) ( -256 0 -191 ) Material-LIB/Nature/SurfacePebbles/SurfacePebbles [ 1.2246467991473532e-16 1 0 0.87280273 ] [ 0 0 -1 1015.1271 ] 0 0.063 0.063
+( -544 -256 64 ) ( -544 -256 65 ) ( -544 -257 64 ) FreeStylized/metal_01_1k/metal_01_1k/metal_01_color_1k [ -1.2246467991473532e-16 -1 0 -0.87280273 ] [ 0 0 -1 1015.1271 ] 270 0.063 0.063
+( -1344 -256 64 ) ( -1345 -256 64 ) ( -1344 -256 65 ) FreeStylized/metal_01_1k/metal_01_1k/metal_01_color_1k [ 1 -1.2246467991473532e-16 0 -89.39746 ] [ 0 0 -1 1015.1271 ] 270 0.063 0.063
+( -256 0 64 ) ( -256 -64 64 ) ( -128 -64 64 ) FreeStylized/metal_01_1k/metal_01_1k/metal_01_color_1k [ -1 0 0 -89.39746 ] [ 0 -1 0 0.87280273 ] 90 0.063 0.063
+( -1344 -256 128 ) ( -1344 -257 128 ) ( -1345 -256 128 ) FreeStylized/metal_01_1k/metal_01_1k/metal_01_color_1k [ -1 1.2246467991473532e-16 0 89.39746 ] [ 1.2246467991473532e-16 1 0 0.87280273 ] 0 0.063 0.063
+( -176 -224 -192 ) ( -176 -224 -191 ) ( -177 -224 -192 ) FreeStylized/metal_01_1k/metal_01_1k/metal_01_color_1k [ -1 1.2246467991473532e-16 0 89.39746 ] [ 0 0 -1 1015.1271 ] 0 0.063 0.063
+( -256 0 -192 ) ( -256 -1 -192 ) ( -256 0 -191 ) FreeStylized/metal_01_1k/metal_01_1k/metal_01_color_1k [ 1.2246467991473532e-16 1 0 0.87280273 ] [ 0 0 -1 1015.1271 ] 0 0.063 0.063
 }
 // brush 45
 {
@@ -539,12 +539,12 @@
 }
 // brush 59
 {
-( -264 392 -40 ) ( -264 392 -39 ) ( -264 391 -40 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ -1.2246467991473532e-16 -1 0 44.84082 ] [ 0 0 -1 -635.6666 ] 270 0.063 0.063
-( -904 392 -40 ) ( -905 392 -40 ) ( -904 392 -39 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ 1 -1.2246467991473532e-16 0 94.47632 ] [ 0 0 -1 -635.6666 ] 180 0.063 0.063
-( 264 648 -104 ) ( 263 648 -104 ) ( 264 647 -104 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ 1 -1.2246467991473532e-16 0 94.47632 ] [ 1.2246467991473532e-16 1 0 -44.84082 ] 0 0.063 0.063
-( -904 392 -40 ) ( -904 391 -40 ) ( -905 392 -40 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ -1 1.2246467991473532e-16 0 -94.47632 ] [ 1.2246467991473532e-16 1 0 -44.84082 ] 90 0.063 0.063
-( 264 648 -296 ) ( 264 648 -295 ) ( 263 648 -296 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ -1 1.2246467991473532e-16 0 -94.47632 ] [ 0 0 -1 -635.6666 ] 270 0.063 0.063
-( 0 648 -296 ) ( 0 647 -296 ) ( 0 648 -295 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ 1.2246467991473532e-16 1 0 -44.84082 ] [ 0 0 -1 -635.6666 ] 180 0.063 0.063
+( -264 392 -24 ) ( -264 392 -23 ) ( -264 391 -24 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ -1.2246467991473532e-16 -1 0 44.84082 ] [ 0 0 -1 -381.6983 ] 0 0.063 0.063
+( -904 392 -24 ) ( -905 392 -24 ) ( -904 392 -23 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ 1 -1.2246467991473532e-16 0 94.47632 ] [ 0 0 -1 -381.6983 ] 270 0.063 0.063
+( 264 648 -88 ) ( 263 648 -88 ) ( 264 647 -88 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ 1 -1.2246467991473532e-16 0 94.47632 ] [ 1.2246467991473532e-16 1 0 -44.84082 ] 90 0.063 0.063
+( -904 392 -24 ) ( -904 391 -24 ) ( -905 392 -24 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ -1 1.2246467991473532e-16 0 -94.47632 ] [ 1.2246467991473532e-16 1 0 -44.84082 ] 180 0.063 0.063
+( 264 648 -280 ) ( 264 648 -279 ) ( 263 648 -280 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ -1 1.2246467991473532e-16 0 -94.47632 ] [ 0 0 -1 -381.6983 ] 0 0.063 0.063
+( 0 648 -280 ) ( 0 647 -280 ) ( 0 648 -279 ) FreeStylized/plaster_wall_04_1k/plaster_wall_04_1k/plaster_wall_02_basecolor_1k [ 1.2246467991473532e-16 1 0 -44.84082 ] [ 0 0 -1 -381.6983 ] 270 0.063 0.063
 }
 }
 // entity 1
@@ -839,148 +839,16 @@
 }
 // entity 42
 {
-"classname" "PayloadTrackStraight"
-"origin" "-128 144 1"
-"mangle" "0 -90 0"
-}
-// entity 43
-{
 "classname" "PayloadCheckpoint"
 "origin" "-128 80 0"
 "angle" "270"
 }
-// entity 44
-{
-"classname" "PayloadTrackStraight"
-"origin" "-128 208 1"
-"mangle" "0 -90 0"
-}
-// entity 45
-{
-"classname" "PayloadTrackStraight"
-"origin" "-128 272 1"
-"mangle" "0 -90 0"
-}
-// entity 46
-{
-"classname" "PayloadTrackStraight"
-"origin" "-128 320 1"
-"mangle" "0 -90 0"
-}
-// entity 47
-{
-"classname" "PayloadTrackStraight"
-"origin" "-128 384 1"
-"mangle" "0 -90 0"
-}
-// entity 48
-{
-"classname" "PayloadTrackStraight"
-"origin" "-128 448 1"
-"mangle" "0 -90 0"
-}
-// entity 49
-{
-"classname" "PayloadTrackStraight"
-"origin" "-128 480 1"
-"mangle" "0 -90 0"
-}
-// entity 50
-{
-"classname" "PayloadTrackStraight"
-"origin" "-128 639.327 -15.4905"
-"mangle" "30 -90 0"
-}
-// entity 51
-{
-"classname" "PayloadTrackStraight"
-"origin" "-64 704 1"
-"mangle" "0 180 0"
-}
-// entity 52
-{
-"classname" "PayloadTrackStraight"
-"origin" "64 704 1"
-"mangle" "0 180 0"
-}
-// entity 53
-{
-"classname" "PayloadTrackStraight"
-"origin" "128 640 1"
-"mangle" "0 90 0"
-}
-// entity 54
-{
-"classname" "PayloadTrackStraight"
-"origin" "128 608 1"
-"mangle" "0 90 0"
-}
-// entity 55
-{
-"classname" "PayloadTrackStraight"
-"origin" "128 544.75 24.799"
-"mangle" "33 90 0"
-}
-// entity 56
-{
-"classname" "PayloadTrackStraight"
-"origin" "128 488.75 64.799"
-"mangle" "33 90 0"
-}
-// entity 57
-{
-"classname" "PayloadTrackStraight"
-"origin" "128 424.75 104.799"
-"mangle" "33 90 0"
-}
-// entity 58
-{
-"classname" "PayloadTrackStraight"
-"origin" "128 352 129"
-"mangle" "0 -90 0"
-}
-// entity 59
-{
-"classname" "PayloadTrackStraight"
-"origin" "128 288 129"
-"mangle" "0 -90 0"
-}
-// entity 60
-{
-"classname" "PayloadTrackStraight"
-"origin" "128 224 129"
-"mangle" "0 -90 0"
-}
-// entity 61
-{
-"classname" "PayloadTrackStraight"
-"origin" "128 160 129"
-"mangle" "0 -90 0"
-}
-// entity 62
-{
-"classname" "PayloadTrackStraight"
-"origin" "128 96 129"
-"mangle" "0 -90 0"
-}
-// entity 63
+// entity 43
 {
 "classname" "PayloadCheckpoint"
 "origin" "0 704 0"
 }
-// entity 64
-{
-"classname" "PayloadCheckpoint"
-"origin" "-128 592 -40"
-"angle" "90"
-}
-// entity 65
-{
-"classname" "PayloadTrackStraight"
-"origin" "-128 543.327 -15.4905"
-"mangle" "30 90 0"
-}
-// entity 66
+// entity 44
 {
 "classname" "PayloadPathPoint"
 "origin" "-128 520 0"
@@ -988,60 +856,68 @@
 "targetname" "path_2"
 "target" "path_3"
 }
-// entity 67
+// entity 45
 {
 "classname" "PayloadPathPoint"
-"origin" "-128 592 -40"
-"rollback_zone" "1"
+"origin" "-128 576 -24"
+"rollback_zone" ""
 "targetname" "path_3"
-"target" "path_4"
+"target" "path_3.5"
 }
-// entity 68
+// entity 46
 {
 "classname" "PayloadPathPoint"
 "origin" "-128 656 0"
 "targetname" "path_4"
 "target" "path_5"
 }
-// entity 69
+// entity 47
 {
 "classname" "PayloadPathPoint"
 "origin" "-128 704 0"
 "targetname" "path_5"
 "target" "path_6"
 }
-// entity 70
+// entity 48
 {
 "classname" "PayloadPathPoint"
 "origin" "-72 704 0"
 "targetname" "path_6"
 "target" "path_7"
 }
-// entity 71
+// entity 49
 {
 "classname" "PayloadPathPoint"
 "origin" "128 704 0"
 "targetname" "path_7"
 "target" "path_8"
 }
-// entity 72
+// entity 50
 {
 "classname" "PayloadPathPoint"
-"origin" "128 592 0"
+"origin" "128 576 0"
 "targetname" "path_8"
 "target" "path_9"
 "rollback_zone" "1"
 }
-// entity 73
+// entity 51
 {
 "classname" "PayloadPathPoint"
-"origin" "128 400 128"
+"origin" "128 384 128"
 "targetname" "path_9"
 "target" "path_10"
 }
-// entity 74
+// entity 52
 {
 "classname" "PayloadPathPoint"
 "origin" "128 56 128"
 "targetname" "path_10"
+}
+// entity 53
+{
+"classname" "PayloadPathPoint"
+"origin" "-128 608 -24"
+"target" "path_4"
+"targetname" "path_3.5"
+"rollback_zone" "1"
 }

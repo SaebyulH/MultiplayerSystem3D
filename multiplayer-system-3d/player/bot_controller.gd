@@ -502,6 +502,11 @@ func _has_line_of_sight_to_player(target: Player) -> bool:
 
 ## True while the current combat/heal targets are still worth tracking.
 func _targets_valid() -> bool:
+	# Check the heal target first, and on every call: the combat-target branch
+	# below returns early, so a freed `_heal_target` used to go unvalidated and
+	# was later dereferenced by `_act_heal()`.  A freed reference is not null.
+	if _heal_target != null and (not is_instance_valid(_heal_target) or not _heal_target.spawned):
+		return false
 	if _current_target != null:
 		if not is_instance_valid(_current_target) or not _current_target.spawned:
 			return false
@@ -511,8 +516,6 @@ func _targets_valid() -> bool:
 			return false
 		return _has_line_of_sight_to_player(_current_target)
 	if _heal_target != null:
-		if not is_instance_valid(_heal_target) or not _heal_target.spawned:
-			return false
 		var ac := _heal_target.attribute_component
 		if ac == null or ac.health >= ac.max_health:
 			return false

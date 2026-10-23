@@ -108,7 +108,13 @@ func _physics_process(delta: float) -> void:
 	if not is_multiplayer_authority():
 		return
 
-	if _stuck_to:
+	# A freed node reference is not null, so a plain truthiness check would still
+	# dereference a hurtbox whose Player was removed from under the projectile.
+	if _stuck_to != null:
+		if not is_instance_valid(_stuck_to):
+			# Nothing left to ride — the corpse/player it stuck into is gone.
+			queue_free()
+			return
 		global_transform = _stuck_to.global_transform * _local_offset
 	elif align_to_velocity:
 		var vel := linear_velocity

@@ -1,0 +1,46 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://b8we5nj4m0y1f"]
+
+[ext_resource type="Shader" uid="uid://blrlxqacu6rcn" path="res://assets/materials/painted_toon_world.gdshader" id="1_dl06y"]
+
+[resource]
+render_priority = 0
+shader = ExtResource("1_dl06y")
+shader_parameter/use_albedo_texture = false
+shader_parameter/albedo_color = Color(1, 1, 1, 1)
+shader_parameter/use_vertex_color = false
+shader_parameter/uv_scale = Vector2(1, 1)
+shader_parameter/albedo_gain = 2.0
+shader_parameter/saturation_max = 0.800000038
+shader_parameter/saturation_compress = 1.0
+shader_parameter/use_normal_map = false
+shader_parameter/normal_strength = 0.2630000124925
+shader_parameter/use_orm_texture = false
+shader_parameter/metallic = 0.0
+shader_parameter/roughness = 0.75
+shader_parameter/specular = 0.0
+shader_parameter/use_ao_texture = false
+shader_parameter/ao_strength = 1.0
+shader_parameter/toon_steps = 1
+shader_parameter/toon_softness = 0.45
+shader_parameter/shadow_wrap = 0.2570000122075
+shader_parameter/shadow_tint = Color(0.26402172, 0.48808712, 0.854244, 1)
+shader_parameter/light_tint = Color(1, 0.97, 0.89, 1)
+shader_parameter/tint_strength = 0.6390000303525
+shader_parameter/paint_scale = 1.6570000549575
+shader_parameter/brush_direction = Vector3(-0.105, -0.14, 0.15)
+shader_parameter/brush_stretch = 3.3030001450175
+shader_parameter/brush_hardness = 0.4050000192375
+shader_parameter/brush_warp = 2.0
+shader_parameter/paint_normal_warp = 0.0
+shader_parameter/paint_uv_warp = 0.0
+shader_parameter/paint_terminator_jitter = 0.04400000209
+shader_parameter/paint_value_jitter = 0.0800000038
+shader_parameter/paint_color_jitter = 0.0470000022325
+shader_parameter/toon_specular_strength = 0.66800003173
+shader_parameter/toon_specular_max = 0.25
+shader_parameter/toon_specular_size = 0.5
+shader_parameter/toon_specular_softness = 0.15
+shader_parameter/toon_specular_breakup = 0.7
+shader_parameter/use_emission_texture = false
+shader_parameter/emission_color = Color(0, 0, 0, 1)
+shader_parameter/emission_energy = 1.0

@@ -1,13 +1,21 @@
+@tool
 extends Path3D
 class_name PayloadPath
 
 ## The route a payload cart rides, compiled from a chain of [PayloadPathPoint]s.
 ##
-## Nothing places this by hand.  [PayloadPathBuilder.ensure_path] instantiates
-## `payload_path.tscn`, fills in the curve from the chain, and drops it under the `Map` —
-## which is why the three maps that predate the TrenchBroom entities still carry a plain
-## `Path3D` instead: this is a strict superset of one, and
-## [PayloadNode] reaches its follower through `path_follower.get_parent()` either way.
+## [b]The node is a shell; only its curve is baked.[/b]  [PayloadPathBuilder.bake_path] writes
+## it into the map scene at editor time — instantiating `payload_path.tscn`, filling in the
+## curve from the chain, and dropping it under the `Map` — so the route is visible and editable
+## rather than appearing only at runtime.  The curve is the whole of what it owns: the derived
+## half ([member path_points], [member zones] and the [member line] mesh) is stripped before the
+## save and rebuilt on every peer by [method configure].  That split is deliberate — see
+## [method strip_derived] — and it means this is still, in the parts that matter, map furniture
+## every peer derives for itself.
+##
+## Maps that predate the TrenchBroom entities still carry a plain `Path3D` instead: this is a
+## strict superset of one, and [PayloadNode] reaches its follower through
+## `path_follower.get_parent()` either way.
 ##
 ## Structure, all authored in `payload_path.tscn`:
 ##
@@ -17,10 +25,19 @@ class_name PayloadPath
 ##   PathLine        (PayloadPathLine) — the glowing red route
 ## [/codeblock]
 ##
-## [b]Everything here is built identically on every peer and must never be gated on
+## [b]The derived half is built identically on every peer and must never be gated on
 ## `multiplayer.is_server()`.[/b] The path, the line and the checkpoints are map furniture,
 ## like the TrenchBroom brush entities — only the payload's own state is
 ## server-authoritative.
+##
+## [b]This is a `@tool` script, and it has to be.[/b] The node is *written* by editor-side code:
+## [PayloadPathBuilder.bake_path] and [Map]'s save/exit hooks both call [method strip_derived]
+## on it. Godot instantiates a script that is not in tool mode as a **placeholder** in the
+## editor — an object with the right class and `class_name`, but no methods whatsoever — so
+## those calls died with "Attempt to call a method on a placeholder instance"
+## (`05-known-issues.md` #102). Nothing here runs while the editor has the map open: there is
+## no `_ready`, no `_process`, and [method configure] is only ever reached from the game. The
+## annotation exists purely to make the script real on the editor side.
 
 const GROUP: String = "payload_path"
 
@@ -57,6 +74,25 @@ func configure(points: Array[PayloadPathPoint]) -> void:
 
 	_rebuild_zones()
 	line.rebuild(self)
+
+
+## Drops everything derived from the curve, so none of it reaches the `.tscn`.
+##
+## The tube mesh is the important half: it is a generated [ArrayMesh] plus a [ShaderMaterial],
+## and as a node property it would serialize into every map scene that carries a route — the
+## same trade [ToonMaterialConverter] makes, for the same reason.  [member zones] and
+## [member path_points] are not `@export`, so they would not serialize anyway; clearing them
+## keeps the in-memory object honest against what is on disk.
+##
+## Called by [PayloadPathBuilder.bake_path] and by the Map's save hook.  The route is rebuilt
+## from it by [method configure] on every peer at load.
+func strip_derived() -> void:
+	# Guarded rather than assigned blind: `mesh` is a stored property, so writing it marks the
+	# scene dirty even when the value is unchanged — and this runs on every save.
+	if line.mesh != null:
+		line.mesh = null
+	zones.clear()
+	path_points.clear()
 
 
 ## The stretch of route [param ratio] falls in, or an empty dictionary when this path has

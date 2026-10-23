@@ -885,8 +885,13 @@ func _update_targeted_previews(delta: float) -> void:
 		# they would produce no entries anyway.
 		if not _preview_candidates.has(ability):
 			continue
-		var candidates: Array[Player] = _preview_candidates[ability]
-
+		# The cache can outlive a player removal by up to PREVIEW_REFRESH_INTERVAL,
+		# and a freed reference is not null — drop stale candidates before use.
+		var candidates: Array[Player] = []
+		for cached in _preview_candidates[ability]:
+			var p: Player = cached as Player
+			if p != null and is_instance_valid(p):
+				candidates.append(p)
 
 		var locked: Dictionary = {}
 		var limit := mini(candidates.size(), ability.max_targets)
