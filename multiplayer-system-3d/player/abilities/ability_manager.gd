@@ -51,6 +51,12 @@ extends Node
 
 @export var abilities: Array[Ability] = []
 
+## Dev-menu "no ability cooldowns".  Per-peer like the pools below: the owning
+## client's copy makes the HUD and the input gate agree, and the server's copy
+## is the _cast_ability backstop.  Deliberately not broadcast to third parties,
+## which never evaluate another player's casts.
+var dev_no_cooldowns := false
+
 var _parent_player: Player
 ## Absolute `Time.get_ticks_msec()` deadlines: the instant gate 2 opens.
 var _cooldowns: Array[float] = []
@@ -352,10 +358,13 @@ func is_ability_ready(index: int) -> bool:
 	if ability == null:
 		return false
 	var now := Time.get_ticks_msec()
-	if _cooldowns[index] > float(now):
-		return false
-	if _bank_at(index, now) < 1.0:
-		return false
+	if not dev_no_cooldowns:
+		if _cooldowns[index] > float(now):
+			return false
+		if _bank_at(index, now) < 1.0:
+			return false
+	# The meter gate is deliberately NOT bypassed: "no cooldowns" must not let a
+	# metered ability (noclip) start on an empty meter.
 	return _meter_gate_fraction(index, now) >= 1.0
 
 ## The charge pool, `0..max_charges`.  Drives the HUD's charge bars: bar `i` is
@@ -423,6 +432,11 @@ func get_cast_progress(index: int) -> float:
 	var ability := _ability_at(index)
 	if ability == null:
 		return 0.0
+	if dev_no_cooldowns:
+		# Ready unless the meter is the bottleneck, so the HUD pie matches what
+		# is_ability_ready() would answer.
+		var gate := _meter_gate_fraction(index, Time.get_ticks_msec())
+		return 1.0 if gate >= 1.0 else gate
 	var now := Time.get_ticks_msec()
 	if _bank_at(index, now) < 1.0:
 		return get_recharge_fraction(index)
@@ -439,6 +453,8 @@ func get_cast_progress(index: int) -> float:
 func get_cooldown_remaining(index: int) -> float:
 	var ability := _ability_at(index)
 	if ability == null:
+		return 0.0
+	if dev_no_cooldowns:
 		return 0.0
 	var now := Time.get_ticks_msec()
 	# Single charge: gate 2 *is* the charge pool, so report it directly rather
@@ -493,6 +509,11 @@ func _input(event: InputEvent) -> void:
 ## has to do both, and splitting them is how one path quietly drifts into spending
 ## without gating, or gating without spending.
 func _begin_ability_gate(index: int, ability: Ability) -> void:
+	# Dev-menu no-cooldowns: spend nothing and open no deadline.  is_ability_ready
+	# ignores both gates anyway; skipping the write keeps the pools intact so the
+	# HUD does not visibly drain while the hack is on.
+	if dev_no_cooldowns:
+		return
 	var now := Time.get_ticks_msec()
 	# Materialise the pool as of *now* before touching it, then re-stamp: the
 	# clock restarts from the cast rather than from whenever the pool was last

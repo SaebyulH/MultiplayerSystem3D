@@ -53,9 +53,12 @@ var _tracer_scene: PackedScene = preload("res://weapon/tracer.tscn")
 var _bullet_impact_scene: PackedScene = preload("res://effects/bullet_impact.tscn")
 var _bullet_hole_texture: Texture2D = preload("res://effects/bullet_hole.png")
 var _scratch_texture: Texture2D = preload("res://assets/scratch.png")
-var _hit_sound: AudioStream = preload("res://assets/sounds/Hitsound.wav")
+var _hit_sound: AudioStream = preload("res://assets/sounds/free_sounds/hitsounds/universfield-punch-impact-hit-567196.mp3")
 var _hit_heal_sound: AudioStream = preload("res://assets/sounds/medkit_sound.mp3")
-var _crit_sound: AudioStream = preload("res://assets/sounds/Crit_received1.wav")
+var _crit_sound: AudioStream = preload("res://assets/sounds/free_sounds/hitsounds/u_68csiaifb5-bulletimpact3-442719.mp3")
+
+## Boost applied to the headshot cue so it reads clearly over the hit cue.
+const CRIT_SOUND_VOLUME_DB := 12.0
 var _backshot_sound: AudioStream = preload("res://assets/sounds/backshot.mp3")
 
 
@@ -702,6 +705,38 @@ func _emit_weapon_changed() -> void:
 	var weapon: Weapon = _weapons[current_weapon_index]
 	weapon_changed.emit(current_weapon_index, weapon)
 	mag_changed.emit(weapon.mag_current, weapon.mag_size)
+
+
+## Dev-menu infinite ammo.  A controller flag rather than a mutation of each
+## Weapon: weapons are per-peer deep copies that set_weapons()/apply_loadout()
+## rebuild, so the override has to live outside them.
+var _dev_infinite_ammo := false
+
+
+## Whether [param weapon] is infinite right now — its own authored flag or the
+## dev-menu override.  Every ammo/reload check goes through this.
+func weapon_has_infinite_ammo(weapon: Weapon) -> bool:
+	return weapon.has_infinite_ammo or _dev_infinite_ammo
+
+
+func is_dev_infinite_ammo() -> bool:
+	return _dev_infinite_ammo
+
+
+## Toggle the dev-menu override.  Enabling refills every magazine so the HUD
+## reads full; on the server that refill is broadcast to all peers.
+func set_dev_infinite_ammo(on: bool) -> void:
+	_dev_infinite_ammo = on
+	if not on or _weapons.is_empty():
+		return
+	var mags: Array[int] = []
+	for w in _weapons:
+		w.mag_current = w.mag_size
+		mags.append(w.mag_size)
+	if multiplayer.is_server():
+		_sync_all_mags.rpc(mags)
+	else:
+		_emit_weapon_changed()
 #endregion
 
 
@@ -822,7 +857,7 @@ func _start_firing(weapon: Weapon, fire_index: int) -> void:
 ## Total ammo this fire-mode would consume.  For burst weapons with
 ## burst_ammo_per_shot > 0, it's per-bullet × bullet-count.
 func _get_fire_ammo_cost(weapon: Weapon, fire_index: int) -> int:
-	if weapon.has_infinite_ammo:
+	if weapon_has_infinite_ammo(weapon):
 		return 0
 	var fire: WeaponFire = weapon.weapon_fires[fire_index]
 	if fire.multishot_mode == WeaponFire.MultishotMode.BURST and fire.burst_ammo_per_shot > 0:
@@ -835,7 +870,7 @@ func get_reload_info(weapon_index: int) -> Dictionary:
 	if weapon_index < 0 or weapon_index >= _weapons.size():
 		return {"active": false, "progress": -1.0}
 	var w: Weapon = _weapons[weapon_index]
-	if w.has_infinite_ammo or w.mag_current >= w.mag_size:
+	if weapon_has_infinite_ammo(w) or w.mag_current >= w.mag_size:
 		return {"active": false, "progress": -1.0}
 	var reload_mult: float = _parent_player._character.reload_speed_mult if _parent_player._character else 1.0
 	var total: float = w.reload_time / max(reload_mult, 0.01)
@@ -860,7 +895,7 @@ func _auto_switch_to_next_loaded() -> void:
 		if i == current_weapon_index:
 			continue
 		var w: Weapon = _weapons[i]
-		if w.has_infinite_ammo or w.mag_current > 0:
+		if weapon_has_infinite_ammo(w) or w.mag_current > 0:
 			_switch_slot.rpc(i)
 			return
 
@@ -876,14 +911,15 @@ func _ensure_bg_arrays() -> void:
 
 
 #region Helpers
-func _play_sound(stream: AudioStream, speed: float = 1.0) -> void:
+func _play_sound(stream: AudioStream, speed: float = 1.0, volume_db: float = 0.0) -> void:
 	if stream == null:
 		return
 	AudioPool.play(
 		self,
 		stream,
 		weapon_model_parent.global_transform,
-		speed * (1.0 + randf_range(-PITCH_RANGE, PITCH_RANGE))
+		speed * (1.0 + randf_range(-PITCH_RANGE, PITCH_RANGE)),
+		volume_db
 	)
 
 
@@ -1553,7 +1589,7 @@ func _auto_reload_if_empty() -> void:
 	if not multiplayer.is_server() or _weapons.is_empty() or current_weapon_index >= _weapons.size():
 		return
 	var switched_weapon: Weapon = _weapons[current_weapon_index]
-	if not switched_weapon.has_infinite_ammo and switched_weapon.mag_current <= 0:
+	if not weapon_has_infinite_ammo(switched_weapon) and switched_weapon.mag_current <= 0:
 		_begin_reload_server()
 
 
@@ -1573,7 +1609,7 @@ func _is_weapon_locked(index: int) -> bool:
 	if index < 0 or index >= _weapons.size():
 		return true
 	var w: Weapon = _weapons[index]
-	if w.auto_switch_when_empty and not w.has_infinite_ammo and w.mag_current <= 0:
+	if w.auto_switch_when_empty and not weapon_has_infinite_ammo(w) and w.mag_current <= 0:
 		return true
 	return false
 
@@ -1651,7 +1687,7 @@ func start_reload() -> void:
 	if _charge_active:
 		_cancel_charge_synced.rpc()
 	var weapon: Weapon = _weapons[current_weapon_index]
-	if _is_reloading or weapon.has_infinite_ammo:
+	if _is_reloading or weapon_has_infinite_ammo(weapon):
 		return
 	if weapon.mag_current == weapon.mag_size:
 		return
@@ -1679,7 +1715,7 @@ func _begin_reload_server() -> bool:
 	if not _is_ready():
 		return false
 	var weapon: Weapon = _weapons[current_weapon_index]
-	if _is_reloading or weapon.has_infinite_ammo:
+	if _is_reloading or weapon_has_infinite_ammo(weapon):
 		return false
 	if weapon.mag_current == weapon.mag_size:
 		return false
@@ -1767,7 +1803,7 @@ func _bg_finish_reload(weapon_index: int) -> void:
 	if weapon_index < 0 or weapon_index >= _weapons.size():
 		return
 	var bg_weapon: Weapon = _weapons[weapon_index]
-	if bg_weapon.has_infinite_ammo or bg_weapon.mag_current >= bg_weapon.mag_size:
+	if weapon_has_infinite_ammo(bg_weapon) or bg_weapon.mag_current >= bg_weapon.mag_size:
 		_bg_reload_active[weapon_index] = false
 		return
 
@@ -1928,7 +1964,7 @@ func _handle_fire_input(weapon: Weapon, fire_index: int, input_held: bool) -> vo
 			_queued_interrupt = true
 
 		var required := _get_fire_ammo_cost(weapon, fire_index)
-		if not weapon.has_infinite_ammo and weapon.mag_current < required:
+		if not weapon_has_infinite_ammo(weapon) and weapon.mag_current < required:
 			_play_empty.rpc(fire_index)
 			_fired_this_press[fire_index] = true
 			# Trigger reload when trying to fire an empty magazine � covers
@@ -1976,7 +2012,7 @@ func _start_charge(weapon: Weapon, fire_index: int) -> void:
 		return
 
 	var required := _get_fire_ammo_cost(weapon, fire_index)
-	if not weapon.has_infinite_ammo and weapon.mag_current < required:
+	if not weapon_has_infinite_ammo(weapon) and weapon.mag_current < required:
 		_play_empty.rpc(fire_index)
 		_fired_this_press[fire_index] = true
 		return
@@ -2101,7 +2137,7 @@ func _try_fire(weapon_fire_index: int) -> void:
 
 	var fire: WeaponFire = weapon.weapon_fires[weapon_fire_index]
 	var required := _get_fire_ammo_cost(weapon, weapon_fire_index)
-	if not weapon.has_infinite_ammo and weapon.mag_current < required:
+	if not weapon_has_infinite_ammo(weapon) and weapon.mag_current < required:
 		return
 
 	var data: RecoilData = _weapons[current_weapon_index].weapon_fires[weapon_fire_index].recoil_data
@@ -2455,7 +2491,7 @@ func fire_intent(weapon_index: int, weapon_fire_index: int) -> void:
 		# ammo now (or the flat ammo_cost if burst_ammo_per_shot is 0).
 		# _fire_burst will deduct remaining bullets and handle auto-reload /
 		# auto-switch when the burst actually completes.
-		if not weapon.has_infinite_ammo:
+		if not weapon_has_infinite_ammo(weapon):
 			var first_cost: int = fire.burst_ammo_per_shot if fire.burst_ammo_per_shot > 0 else fire.ammo_cost
 			_set_mag(weapon.mag_current - first_cost)
 		_sync_mag.rpc(_weapons[current_weapon_index].mag_current)
@@ -2470,11 +2506,11 @@ func fire_intent(weapon_index: int, weapon_fire_index: int) -> void:
 		_sync_mag.rpc(_weapons[current_weapon_index].mag_current)
 
 		# Auto-reload when the magazine runs dry.
-		if not weapon.has_infinite_ammo and weapon.mag_current <= 0 and not _is_reloading:
+		if not weapon_has_infinite_ammo(weapon) and weapon.mag_current <= 0 and not _is_reloading:
 			start_reload()
 
 		# Auto-switch to another weapon when this one is empty.
-		if weapon.auto_switch_when_empty and weapon.mag_current <= 0 and not weapon.has_infinite_ammo:
+		if weapon.auto_switch_when_empty and weapon.mag_current <= 0 and not weapon_has_infinite_ammo(weapon):
 			_auto_switch_to_next_loaded()
 
 
@@ -2528,7 +2564,7 @@ func _fire_burst(weapon: Weapon, weapon_fire_index: int) -> void:
 			_parent_player.change_health(weapon_fire.self_health_delta_per_burst_bullet, _parent_player.name)
 
 		# Deduct ammo for bullets after the first (first was deducted in fire_intent).
-		if i > 0 and is_server and not weapon.has_infinite_ammo and weapon_fire.burst_ammo_per_shot > 0:
+		if i > 0 and is_server and not weapon_has_infinite_ammo(weapon) and weapon_fire.burst_ammo_per_shot > 0:
 			weapon.mag_current = clamp(weapon.mag_current - weapon_fire.burst_ammo_per_shot, 0, weapon.mag_size)
 			_sync_mag.rpc(weapon.mag_current)
 
@@ -2536,7 +2572,7 @@ func _fire_burst(weapon: Weapon, weapon_fire_index: int) -> void:
 			await get_tree().create_timer(weapon_fire.burst_post_shoot_delay).timeout
 
 	# Burst complete — handle auto-reload and auto-switch on the server.
-	if is_server and not weapon.has_infinite_ammo:
+	if is_server and not weapon_has_infinite_ammo(weapon):
 		if weapon.mag_current <= 0 and not _is_reloading:
 			start_reload()
 		if weapon.auto_switch_when_empty and weapon.mag_current <= 0:
@@ -3126,7 +3162,7 @@ func play_hit_heal_sound() -> void:
 func play_crit_sound() -> void:
 	if not _is_ready():
 		return
-	_play_sound(_crit_sound)
+	_play_sound(_crit_sound, 1.0, CRIT_SOUND_VOLUME_DB)
 
 
 ## Played when you land a backshot, called by the weapon / hurt component.

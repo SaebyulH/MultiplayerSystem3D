@@ -46,6 +46,13 @@ const CLIENT_MIRROR_KEY := "__synced"
 ## already identical on every peer — so the two can never drift apart.
 var max_health_mult: float = 1.0
 
+## Dev-menu god mode.  Server-only (all damage is applied on the server).
+##
+## Checked in [method apply_health_delta] rather than in `Player.change_health`
+## because `HurtComponent` and explosion damage call this method directly and
+## would bypass the invincibility guard there.
+var dev_god_mode := false
+
 ## The LIVE maximum health.  DERIVED — never assign it; write
 ## [member starting_health] or the multiplier registry and let
 ## [method recompute_max_health] recompute it.
@@ -126,6 +133,13 @@ func reset_health():
 	health = max_health
 
 
+## Restart the heal-delay clock without applying damage.  The dev menu uses it
+## after setting health directly so "Half Health" is not immediately healed back
+## by passive regen.
+func reset_regen_delay() -> void:
+	_time_since_last_damage = 0.0
+
+
 func _ready() -> void:
 	# Establish max_health from the base even if nothing has written
 	# starting_health yet (the declaration initializer does not route through the
@@ -161,6 +175,11 @@ func _flush_regen_stat() -> void:
 
 
 func apply_health_delta(delta: float, changer: String, changee: String, is_headshot: bool = false, falloff_mult: float = 1.0, is_backshot: bool = false):
+
+	# Dev-menu god mode.  Placed before any bookkeeping so the hit produces no
+	# damage number, sound or leaderboard entry either.
+	if dev_god_mode and delta < 0.0:
+		return
 
 	var old_health := health
 	var new_health :float = clamp(old_health + delta, 0.0, max_health)
@@ -301,6 +320,10 @@ func _process(delta: float) -> void:
 	if heal_rate < 0.0:
 		# Negative regen = damage over time.  Applied directly, bypasses the
 		# heal-delay gate and can kill the player (setter emits no_health).
+		# God mode has to be checked here too: this path writes `health`
+		# without going through apply_health_delta().
+		if dev_god_mode:
+			return
 		health = health + heal_rate * delta
 		return
 

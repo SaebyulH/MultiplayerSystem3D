@@ -17,7 +17,22 @@ static var _initial_selection_done := false
 
 @onready var world := $"../../.."
 
+## Emitted after a bot-edit session ends (confirm or cancel).  The dev menu
+## listens and reopens itself on the Bots tab.
+signal bot_edit_finished
+
 var player_id: String
+
+## True while this screen is retargeted at a bot (dev menu).  In this mode
+## `player_id` is the bot's name, the local player's pending selection is
+## snapshotted/restored around the session, and confirm never sets
+## `world.class_selected` or captures the mouse.
+var bot_edit_mode := false
+var _bot_name := ""
+## Set while the confirm RPC is in flight so the visibility handler does not
+## restore `player_id` before _request_loadout has read it.
+var _bot_applying := false
+var _bot_snapshot: Dictionary = {}
 var available_classes: Array[Class] = []
 var _char_to_class: Dictionary = {}      # character.resource_path -> Class
 var _all_characters: Array[Dictionary] = []  # [{ "char": Character, "class": Class }]
@@ -178,8 +193,124 @@ func _on_visibility_changed() -> void:
 	if _canvas.visible == visible:
 		return
 	_canvas.visible = visible
+	# Bot-edit mode is cancelled by hiding the screen (Esc / H / the dev menu
+	# closing).  `_bot_applying` suppresses this during confirm, where the hide
+	# happens before the loadout RPC reads player_id.
+	if not visible and bot_edit_mode and not _bot_applying:
+		_finish_bot_edit()
 	if OS.is_debug_build():
 		print("[DEBUG] loadout menu %s" % ("opened" if visible else "closed"))
+
+
+# ─────────────────────────────────────────────
+#  Bot editing (dev menu)
+# ─────────────────────────────────────────────
+
+## Retarget this screen at [param bot_name].  Reuses the single menu instance:
+## a second copy would create another SubViewport with its own World3D, which is
+## the expensive part this menu deliberately keeps alive between opens.
+func open_for_bot(bot_name: String) -> bool:
+	if bot_edit_mode:
+		return false
+	var bot := GameManager.find_player(bot_name)
+	if bot == null or not bot.is_bot:
+		return false
+	_bot_name = bot_name
+	_bot_applying = false
+	_snapshot_local_selection()
+	bot_edit_mode = true
+	player_id = bot_name
+	_leave_party_button.visible = false
+	_randomize_on_death_check.visible = false
+	_mode_label.text = "EDITING BOT: %s" % bot_name
+	_select_character(bot.get_character())
+	_select_bot_weapons(bot)
+	visible = true
+	PlayerInput.ui_open = true
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	return true
+
+
+func _snapshot_local_selection() -> void:
+	# Card *nodes* are useless here: _select_character() rebuilds the columns.
+	# Store the resources the cards point at and re-select by identity later.
+	_bot_snapshot = {
+		"character": selected_character,
+		"primary": selected_primary,
+		"secondary": selected_secondary,
+		"melee": selected_melee,
+		"randomize_on_death": _randomize_on_death_check.button_pressed,
+	}
+
+
+func _select_bot_weapons(bot: Player) -> void:
+	var weapons: Array[Weapon] = []
+	if bot.weapon_controller:
+		weapons = bot.weapon_controller.get_weapons()
+	var keys: Array[String] = ["primary", "secondary", "melee"]
+	for i in mini(weapons.size(), keys.size()):
+		_select_card_matching(keys[i], weapons[i])
+
+
+## Select the card in [param key]'s column that shows [param weapon].  Bot
+## weapons are deep copies, so match their resource path when they have one and
+## fall back to the display name.
+func _select_card_matching(key: String, weapon: Weapon) -> void:
+	if weapon == null:
+		return
+	var list: VBoxContainer = _column_lists.get(key)
+	if list == null:
+		return
+	for child in list.get_children():
+		var card := child as WeaponCard
+		if card == null:
+			continue
+		var card_weapon: Weapon = card.get_meta("weapon")
+		if card_weapon == null:
+			continue
+		if card_weapon.resource_path != "" and card_weapon.resource_path == weapon.resource_path:
+			_select_card(card)
+			return
+		if card_weapon.display_name == weapon.display_name:
+			_select_card(card)
+			return
+
+
+func _select_saved_card(key: String, weapon: Weapon) -> void:
+	if weapon == null:
+		return
+	var list: VBoxContainer = _column_lists.get(key)
+	if list == null:
+		return
+	for child in list.get_children():
+		var card := child as WeaponCard
+		if card and card.get_meta("weapon") == weapon:
+			_select_card(card)
+			return
+
+
+## Leave bot-edit mode and restore the local player's pending selection.
+func _finish_bot_edit() -> void:
+	if not bot_edit_mode:
+		return
+	var snap := _bot_snapshot
+	bot_edit_mode = false
+	_bot_applying = false
+	_bot_name = ""
+	player_id = str(multiplayer.get_unique_id())
+	_leave_party_button.visible = true
+	_randomize_on_death_check.visible = true
+	_mode_label.text = _get_mode_description()
+
+	var ch: Character = snap.get("character", null)
+	if ch:
+		_select_character(ch)
+		_select_saved_card("primary", snap.get("primary", null) as Weapon)
+		_select_saved_card("secondary", snap.get("secondary", null) as Weapon)
+		_select_saved_card("melee", snap.get("melee", null) as Weapon)
+	_randomize_on_death_check.button_pressed = bool(snap.get("randomize_on_death", false))
+	_bot_snapshot = {}
+	bot_edit_finished.emit()
 
 
 func _on_leave_party_pressed() -> void:
@@ -882,8 +1013,28 @@ func _on_confirm_pressed() -> void:
 	if selected_primary == null or selected_secondary == null or selected_melee == null:
 		return
 
-	var rand_on_death := _randomize_on_death_check.button_pressed
+	# Capture everything before hiding: in bot mode the hide triggers the
+	# visibility handler, and player_id must not be restored before the RPC.
+	var target_id := player_id
 	var character_path := selected_character.resource_path
+	var primary_path := selected_primary.resource_path
+	var secondary_path := selected_secondary.resource_path
+	var melee_path := selected_melee.resource_path
+	var class_path := selected_class.resource_path
+
+	if bot_edit_mode:
+		# A bot never randomizes on death.  Suppress the restore until the RPC
+		# has been issued, then restore explicitly.
+		_bot_applying = true
+		visible = false
+		if multiplayer.is_server():
+			_request_loadout(target_id, primary_path, secondary_path, melee_path, Player.Team.FFA, character_path, class_path, false)
+		else:
+			_request_loadout.rpc_id(1, target_id, primary_path, secondary_path, melee_path, Player.Team.FFA, character_path, class_path, false)
+		_finish_bot_edit()
+		return
+
+	var rand_on_death := _randomize_on_death_check.button_pressed
 
 	# Hide our canvas (don't free — user can re-open with H later).
 	visible = false  # triggers _process() → _canvas.visible = false
@@ -893,9 +1044,9 @@ func _on_confirm_pressed() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 
 	if multiplayer.is_server():
-		_request_loadout(player_id, selected_primary.resource_path, selected_secondary.resource_path, selected_melee.resource_path, Player.Team.FFA, character_path, selected_class.resource_path, rand_on_death)
+		_request_loadout(target_id, primary_path, secondary_path, melee_path, Player.Team.FFA, character_path, class_path, rand_on_death)
 	else:
-		_request_loadout.rpc_id(1, player_id, selected_primary.resource_path, selected_secondary.resource_path, selected_melee.resource_path, Player.Team.FFA, character_path, selected_class.resource_path, rand_on_death)
+		_request_loadout.rpc_id(1, target_id, primary_path, secondary_path, melee_path, Player.Team.FFA, character_path, class_path, rand_on_death)
 
 # ─────────────────────────────────────────────
 #  RPCs (mirrors ClassSelectUI)
@@ -942,6 +1093,10 @@ func _request_loadout(tpid: String, pp: String, sp: String, mp: String, team: Pl
 	player.set_randomize_on_death(rand_on_death)
 	_apply_loadout.rpc(tpid, pp, sp, mp, team, cp)
 	player.rpc_reset.rpc(player._get_spawn_transform())
+	# Keep the persistent manual-bot roster in step so a dev-menu edit survives
+	# return_to_lobby.  Autofill bots have no entry (no-op).
+	if tpid.begins_with("bot_") and GameManager.spawn_manager:
+		GameManager.spawn_manager.update_lobby_bot_entry(tpid)
 
 @rpc("authority", "call_remote", "reliable")
 func _apply_loadout(tpid: String, pp: String, sp: String, mp: String, team: Player.Team, cp: String = "") -> void:

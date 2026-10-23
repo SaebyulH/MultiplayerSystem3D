@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://bd6lublcioe52" path="res://world/world_1.gd" id="1_rf4cw"]
 [ext_resource type="PackedScene" uid="uid://cmix6q8a6hgcu" path="res://player/player.tscn" id="2_7dtx0"]
 [ext_resource type="Script" uid="uid://bi46jlfs4i3pp" path="res://world/game_menu.gd" id="3_ur4i3"]
-[ext_resource type="AudioStream" uid="uid://exvh8mdgxfb8" path="res://assets/sounds/multikill-1.mp3" id="4_p2lt3"]
+[ext_resource type="AudioStream" uid="uid://c5l83wfkkg0sw" path="res://assets/sounds/free_sounds/hitsounds/universfield-impact-cinematic-boom-02-487858.mp3" id="4_p2lt3"]
 [ext_resource type="PackedScene" path="res://world/hud/hud_controller.tscn" id="5_8kumn"]
 [ext_resource type="PackedScene" uid="uid://dmibwgb7msfrf" path="res://world/loadout_menu.tscn" id="9_loadout"]
 [ext_resource type="Script" uid="uid://ccrf5bdka2m35" path="res://player/auto_projectile_spawner.gd" id="10_pspawn"]

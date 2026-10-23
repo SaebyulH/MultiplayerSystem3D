@@ -74,6 +74,7 @@ The engine then loads the main scene `res://world/main.tscn` (a `Control` root `
 - **line 24: `if NetworkManager.is_hosting_game:`** — the branch that separates host from client:
   - **Host:** `load(map_path).instantiate()` named `"Map"` added to `spawn_parent` (27-29); `load("res://world/spawn_manager.tscn").instantiate()` with `player_scene` set, `add_child` (34-38); `GameManager.spawn_manager = sm`; re-adds `GameManager.lobby_bots` (40-45).
   - **Client** (`is_hosting_game == false`): **none of this runs** — no map, no `SpawnManager`; everything replicates from the host.
+- **After the split:** `world_1._ready()` creates the dev hacks menu (`world/dev_menu.gd`) and adds it to the world root — never to `SpawnParent`, so it is not replicated. `setup(loadout_menu)` wires the bot-edit return path. The menu is debug-build-only (`OS.is_debug_build()`, matching the console addon) and toggled with the **`0` key**; see Stage 12 for its `ui_open` ownership.
 
 `world/world1.tscn:95-97` defines the `MultiplayerSpawner` (`spawn_path = "../SpawnParent"`) with 13 `_spawnable_scenes` uids (player + all maps, including lobby `uid://cgnm6fpurb2b2`).
 
@@ -84,7 +85,7 @@ The engine then loads the main scene `res://world/main.tscn` (a `Control` root `
 `world/spawn_manager.gd:12-18` — `_ready()`:
 - connects `peer_connected`/`peer_disconnected`.
 - `_add_player_to_game(1)` (line 15) — **hardcoded peer 1**; the host is also a player.
-- `randomize()`, instantiates the bot menu onto `root`.
+- `randomize()`. Bot spawning/editing lives in the dev menu's Bots tab now; `SpawnManager` no longer instantiates or toggles a menu.
 
 `world/spawn_manager.gd:54-62` — `_add_player_to_game(1)`: `entity_id = str(1)`, instantiate `player_scene`, `name = "1"`, `set_multiplayer_authority(1)`, `spawn_manager = self`, `add_child` to `spawn_parent`, position `(0,100,0)`, `Leaderboard.request_add_player`.
 
@@ -102,6 +103,14 @@ The engine then loads the main scene `res://world/main.tscn` (a `Control` root `
 - On first load (`_initial_selection_done` static, lines 16, 134-138) picks a random character + weapons; on later loads selects `character[0]` to avoid re-randomizing on return-to-lobby.
 
 The menu's `CanvasLayer` starts visible, so the loadout screen covers the world on boot.
+
+The same instance doubles as the dev menu's bot editor. `open_for_bot(name)` snapshots the
+local player's pending selection (character, three weapons, randomize-on-death), points
+`player_id` at the bot, hides Leave Party / randomize-on-death, and preselects the bot's
+current character and weapons (weapons by `display_name` — bots hold deep copies). Confirm
+calls the normal `_request_loadout` for the bot and therefore respawns it; cancel (Esc/H)
+or a confirm both restore the snapshot via `_finish_bot_edit()`, which emits
+`bot_edit_finished` so the dev menu reopens on its Bots tab.
 
 ### Portrait assets behind the character picker
 
@@ -238,7 +247,7 @@ Entry points: `world/world_1.gd:47-48` (Main Menu button), `world/loadout_menu.g
 
 ## Stage 12 — `PlayerInput.ui_open` / mouse-mode inventory
 
-`ui_open` gates rollback input (the player can't move in menus) and is consumed by `player_input.gd:73-83`, `hud_controller.gd:96`, `player_ui.gd:742`, `ability_manager.gd`, `spawn_bot_menu.gd`.
+`ui_open` gates rollback input (the player can't move in menus) and is consumed by `player_input.gd:73-83`, `hud_controller.gd:96`, `player_ui.gd:742`, `ability_manager.gd`, `dev_menu.gd`.
 
 | Location | `ui_open` | Mouse mode |
 |---|---|---|
@@ -246,10 +255,17 @@ Entry points: `world/world_1.gd:47-48` (Main Menu button), `world/loadout_menu.g
 | `world/world_1.gd:59-61` (H toggles loadout) | `= loadout_menu.visible` | `VISIBLE` if open else `CAPTURED` |
 | `world/world_1.gd:62-68` (Esc closes loadout) | `false` | `CAPTURED` |
 | `world/loadout_menu.gd:863-864` (confirm) | `false` | `CAPTURED` |
+| `world/dev_menu.gd` (`0` open / close) | `true` / `= loadout_menu.visible` | `VISIBLE` / `CAPTURED` |
+| `world/dev_menu.gd` → bot loadout edit | stays `true` (the loadout screen owns it) | `VISIBLE` |
 | `world/join_party_area.gd:142-143 / 150-151` | `true` / `false` | `VISIBLE` / `CAPTURED` |
 | `world/host_menu.gd:65-66 / 71-72` | `true` / `false` | `VISIBLE` / `CAPTURED` |
 | `network/network_manager.gd` (return_to_lobby) | (unchanged) | `VISIBLE` |
 | `player/player_input.gd:123-132` (click-to-capture / Esc-to-release) | read-only gate | `CAPTURED` / `VISIBLE` |
+
+The dev menu refuses to open when `ui_open` is already true (the initial loadout screen,
+the Host/Join popups), so it never steals input from another menu. `HostServer` and
+`JoinParty` now make the same check before opening; previously they could stack a popup on
+top of another menu and clear `ui_open` when it closed.
 
 ---
 

@@ -302,6 +302,23 @@ Other modes follow the same shape: `koth_mode.gd:23-39` and `domination_mode.gd:
 - **Bots are fully server-authoritative**: `BotController._physics_process` guards `is_bot`, `multiplayer.is_server()`, `spawned` (`bot_controller.gd:188-194`) and writes directly into `player.player_input.input_dir`/`jump_input`/fire flags. Bot `player_input` authority is 1 and `_gather()` skips bots (`player_input.gd:71-72`), so bot input is written by `BotController` on the server and recorded/broadcast by the RollbackSynchronizer from peer 1.
 - Bots' aim (`_apply_smooth_aim`, `bot_controller.gd:343-353`) writes `player.body.rotation.y`/head pitch directly — meaningful only because the server owns the bot's body node.
 
+### Dev-menu hacks (`world/dev_menu.gd`, `0` key in debug builds)
+
+Self-targeted only, and split by what each flag actually gates:
+
+| Hack | Authoritative copy | Transport |
+|---|---|---|
+| Health 0/50/100 %, team, god mode | server (`AttributeComponent`, `Player.team`) | client → peer 1 `@rpc("any_peer", …, "reliable")`; the server accepts only a sender that owns the Player (`sid == 0` for a local/server call, else `sid == name.to_int()`) |
+| No ability cooldowns | per-peer (`AbilityManager.dev_no_cooldowns`) | local copy + the server's copy (the `_cast_ability` backstop); not broadcast to third parties |
+| Infinite ammo | per-peer (`WeaponController._dev_infinite_ammo`) | local copy + the server's copy (the `fire_intent` backstop); the server refills and broadcasts magazines with `_sync_all_mags` |
+| Infinite stamina | every peer (rollback state) | the server broadcasts `@rpc("authority", "call_local")`; `_apply_movement_from_input` tops the pool up before any gate |
+
+**God mode is checked in `AttributeComponent.apply_health_delta()`, not in `Player.change_health()`.** `HurtComponent` (`components/hurt_component.gd:39`) and explosions (`weapon/projectiles/explosion_component.gd:134`) call `apply_health_delta` directly, bypassing the invincibility check that lives in `change_health`; a flag there would let every bullet and blast through. The negative-regen branch of `AttributeComponent._process` writes `health` directly too and checks the flag separately.
+
+**Dev flags are toggles, never rollback state.** They are not in `RollbackSynchronizer.state_properties` and are not part of `rpc_sync_full_state`. Stamina is the one flag every peer must agree on (it gates rollback movement), which is why it is broadcast; a late joiner does not inherit it until the next toggle.
+
+**Bot loadout editing reuses the normal loadout path.** `LoadoutMenuUI.open_for_bot()` retargets the single menu instance (`player_id` = the bot's name) and confirm calls `_request_loadout`, whose sender check already permits `bot_` targets. That path respawns the bot via `rpc_reset` and updates the persistent `GameManager.lobby_bots` entry.
+
 ---
 
 ## 6. MultiplayerSpawner: Map, Players, Projectiles

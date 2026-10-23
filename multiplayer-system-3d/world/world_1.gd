@@ -1,8 +1,11 @@
 extends Node3D
 
 @export var player_scene: PackedScene
-@onready var loadout_menu: Control = %LoadoutMenu
+@onready var loadout_menu: LoadoutMenuUI = %LoadoutMenu
 @onready var game_menu: Control = $GameMenu
+
+const DEV_MENU_SCRIPT := preload("res://world/dev_menu.gd")
+var dev_menu
 
 
 #@export var player_ui: Control
@@ -49,25 +52,54 @@ func _ready() -> void:
 			for entry in GameManager.lobby_bots:
 				sm.add_bot_with_loadout(entry)
 
+	# Dev hacks menu.  Created for every peer (the General tab is self-service);
+	# parented to the world, never to SpawnParent, so it is not replicated.
+	dev_menu = DEV_MENU_SCRIPT.new()
+	add_child(dev_menu)
+	dev_menu.setup(loadout_menu)
+
 func _on_main_menu_pressed() -> void:
 	NetworkManager.return_to_lobby()
 
 func _unhandled_input(event: InputEvent) -> void:
+	# Dev menu owns input while it is logically open — including while its
+	# canvas is hidden during a bot-loadout edit.
+	if event.is_action_pressed("dev_menu"):
+		if OS.is_debug_build():
+			dev_menu.toggle()
+			get_viewport().set_input_as_handled()
+		return
+
+	if dev_menu and dev_menu.is_open():
+		if event.is_action_pressed("ui_cancel"):
+			dev_menu.close()
+			get_viewport().set_input_as_handled()
+		return
+
 	if Input.is_action_pressed("leaderboard"):
 		game_menu.show_leaderboard()
 	else:
 		game_menu.hide_leaderboard()
-		
-	if Input.is_action_just_pressed("class_select"):
+
+	if event.is_action_pressed("class_select"):
 		if class_selected == false:
+			return
+		if loadout_menu.bot_edit_mode:
+			# Cancel the bot editor; the dev menu reopens on its Bots tab.
+			loadout_menu.visible = false
 			return
 		loadout_menu.visible = not loadout_menu.visible
 		PlayerInput.ui_open = loadout_menu.visible
 		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE if loadout_menu.visible else Input.MOUSE_MODE_CAPTURED)
 	elif event.is_action_pressed("ui_cancel") and loadout_menu.visible:
 		# ESC closes the loadout menu without applying any changes.  Only after
-		# an initial loadout is confirmed (mirrors the H-toggle guard above).
-		if class_selected:
+		# an initial loadout is confirmed (mirrors the H-toggle guard above), or
+		# while editing a bot from the dev menu.
+		if loadout_menu.bot_edit_mode:
+			# Hiding finishes bot-edit mode, which reopens the dev menu; that
+			# path restores ui_open and the mouse mode itself.
+			loadout_menu.visible = false
+		elif class_selected:
 			loadout_menu.visible = false
 			PlayerInput.ui_open = false
 			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)

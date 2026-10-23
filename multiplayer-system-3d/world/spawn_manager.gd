@@ -6,22 +6,11 @@ var player_scene: PackedScene
 var bot_scene: PackedScene  # assign in editor
 var _bot_counter: int = 0
 
-const SPAWN_BOT_MENU_SCENE := preload("res://world/spawn_bot_menu.tscn")
-var _spawn_menu: Node = null
-
 func _ready() -> void:
 	get_tree().get_multiplayer().peer_connected.connect(_peer_connected)
 	get_tree().get_multiplayer().peer_disconnected.connect(_peer_disconnected)
 	_add_player_to_game(1)
 	randomize()
-	_spawn_menu = SPAWN_BOT_MENU_SCENE.instantiate()
-	get_tree().root.add_child(_spawn_menu)
-
-
-func _exit_tree() -> void:
-	if _spawn_menu and is_instance_valid(_spawn_menu):
-		_spawn_menu.queue_free()
-		_spawn_menu = null
 
 func _peer_connected(network_id):
 	if OS.is_debug_build(): print("Peer connected: Network ID: %s" % network_id)
@@ -79,20 +68,27 @@ func remove_bot(entity_id: String) -> void:
 	
 	
 	
+## Keep a manual bot's persisted roster entry in step after its loadout was
+## edited from the dev menu.  Autofill bots have no entry; that is a no-op.
+func update_lobby_bot_entry(bot_name: String) -> void:
+	var bot := GameManager.find_player(bot_name)
+	if bot == null:
+		return
+	for entry in GameManager.lobby_bots:
+		if entry.get("name", "") == bot_name:
+			entry["character_path"] = bot._loadout_character_path
+			entry["primary_path"] = bot._loadout_primary_path
+			entry["secondary_path"] = bot._loadout_secondary_path
+			entry["melee_path"] = bot._loadout_melee_path
+			return
+
+
 # At the top — point these at your actual class resources
 const BOT_CLASSES: Array[String] = [
 	"res://player/player_classes/assassin.tres",
 	"res://player/player_classes/assault.tres",
 	"res://player/player_classes/assistance.tres",
 ]
-
-func _input(event: InputEvent) -> void:
-	if event.is_action_pressed("add_bot_sci"):  # B — toggle spawn-bot menu
-		if multiplayer.is_server() and _spawn_menu:
-			if _spawn_menu.is_open():
-				_spawn_menu.close()
-			else:
-				_spawn_menu.open()
 
 func add_bot(team: Player.Team) -> String:
 	if not multiplayer.is_server():

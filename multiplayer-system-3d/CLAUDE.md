@@ -46,7 +46,7 @@ Multiplayer is tested by running multiple instances:
 - **Host**: launch once — you are already hosting and standing in the lobby. Walk into the **HostServer** zone, press `E`, pick a map, "Start server".
 - **Join**: launch a second instance. Its `create_server()` will fail (port 8080 already in use) and it falls back to an **offline peer** — it still gets a local lobby. Walk into **JoinParty**, press `E`, then either "Join Local (This Computer)" or enter the host's IP / 6-char join code.
 
-Bots can be added at runtime via the `add_bot_spi` / `add_bot_sci` / `add_bot_ffa` input actions (server only).
+**Dev hacks menu (`0` key, debug builds).** `world/dev_menu.gd` — instantiated by `world_1.gd`, parented to the world so it is not replicated — has two tabs. **General** is self-targeted: No/Half/Full health, god mode, no ability cooldowns, no stamina costs, infinite ammo, and a team change. **Bots** is server-only (the tab is disabled for clients) and contains the old spawn-bot menu plus a per-bot EDIT that retargets `LoadoutMenuUI` at that bot. The old B menu and `SpawnManager`'s pre-instantiation of it are gone. Authority: health/team/god are server RPCs on `Player` (the sender must own the node); cooldowns/ammo are per-peer and set on the owner + server copies; stamina is rollback state and is broadcast to every peer. A bot loadout edit reuses `_request_loadout`, so it **respawns** the bot. Full detail in `docs/02-netcode.md` §5.
 
 ## Autoloads (singletons)
 

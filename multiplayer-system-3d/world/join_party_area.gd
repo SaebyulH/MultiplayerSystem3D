@@ -74,6 +74,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			_close_popup()
 		return
 	if event.is_action_pressed("interact") and not event.is_echo():
+		# Another menu (loadout, dev hacks, …) owns input.  Without this, the
+		# popup opens on top of it and its close clears ui_open underneath.
+		if PlayerInput.ui_open:
+			return
 		_open_popup()
 
 

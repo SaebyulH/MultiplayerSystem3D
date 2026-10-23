@@ -92,5 +92,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not _local_player_inside():
 		return
 	if event.is_action_pressed("interact") and not event.is_echo() and _is_leader():
+		# Another menu (loadout, dev hacks, …) owns input.  Without this, the
+		# popup opens on top of it and its close clears ui_open underneath.
+		if PlayerInput.ui_open:
+			return
 		if _ensure_menu():
 			_menu.open()

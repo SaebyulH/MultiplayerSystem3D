@@ -105,6 +105,11 @@ const DOWN_DASH_WINDOW: float = 0.44
 ## Current stamina (fractional - the fractional part is a bar recovering).
 var stamina: float = float(MAX_STAMINA)
 
+## Dev-menu "no stamina cooldowns".  Broadcast to every peer (see
+## _sync_dev_infinite_stamina) because stamina is rollback state: a peer that
+## did not receive it would predict this player's dashes without stamina.
+var dev_infinite_stamina := false
+
 # Input edge-detection memory (rolled back so presses replay deterministically).
 var dash_held_prev: bool = false
 var jump_held_prev: bool = false
@@ -1635,6 +1640,11 @@ func _process(_delta: float) -> void:
 
 
 func _apply_movement_from_input(delta):
+	# Dev-menu infinite stamina: top the pool up before any gate or spend, so
+	# every dash/jump cost is a no-op and every `stamina >= n` check passes.
+	# Idempotent, and cheap enough to run every tick.
+	if dev_infinite_stamina:
+		stamina = float(get_max_stamina())
 	# Noclip is free-fly: no gravity, no collision, and WASD moves along the
 	# camera's full 3D basis (W = camera forward incl. pitch).  It replaces the
 	# normal movement simulation entirely.
@@ -1912,6 +1922,156 @@ func change_health(health: float, changer: String, is_headshot: bool = false, fa
 		shield_instance.absorb_damage(-health)
 		return
 	attribute_component.apply_health_delta(health, changer, self.name, is_headshot, falloff_mult, is_backshot)
+
+
+#region Dev menu
+# Server-authoritative self-service cheats used by world/dev_menu.gd.  The menu
+# only ever targets the local player; a client sends the request to peer 1 and
+# the server accepts it only from this Player's owner.
+#
+# Cooldowns and ammo are per-peer state (cooldowns are never networked; weapons
+# are deep copies on every peer), so those toggles set both the local copy and
+# the server's copy.  Stamina is rollback state and is therefore *broadcast*.
+
+## True when the RPC came from this player's owning peer (or ran locally on the
+## server, where get_remote_sender_id() is 0).
+func _dev_request_is_owner() -> bool:
+	var sid := multiplayer.get_remote_sender_id()
+	return sid == 0 or sid == name.to_int()
+
+
+func dev_set_health_fraction(frac: float) -> void:
+	if multiplayer.is_server():
+		_apply_dev_health_fraction(frac)
+	else:
+		_dev_health_request.rpc_id(1, frac)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _dev_health_request(frac: float) -> void:
+	if not multiplayer.is_server() or not _dev_request_is_owner():
+		return
+	_apply_dev_health_fraction(frac)
+
+
+func _apply_dev_health_fraction(frac: float) -> void:
+	# Setting health while despawned would either revive a dead player in place
+	# or re-emit no_health; the menu's health buttons are spawned-only.
+	if not spawned or attribute_component == null:
+		return
+	var ac := attribute_component
+	if frac <= 0.0:
+		# no_health fires on every write landing at <= 0, not only on the
+		# transition, so never re-write an already-dead player.
+		if ac.health > 0.0:
+			ac.health = 0.0
+		return
+	ac.reset_regen_delay()
+	ac.health = clampf(ac.max_health * frac, 0.0, ac.max_health)
+
+
+func dev_set_god_mode(on: bool) -> void:
+	if multiplayer.is_server():
+		_apply_dev_god_mode(on)
+	else:
+		_dev_god_mode_request.rpc_id(1, on)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _dev_god_mode_request(on: bool) -> void:
+	if not multiplayer.is_server() or not _dev_request_is_owner():
+		return
+	_apply_dev_god_mode(on)
+
+
+func _apply_dev_god_mode(on: bool) -> void:
+	# The flag lives on AttributeComponent because HurtComponent and explosions
+	# call apply_health_delta() directly; Player.change_health()'s invincibility
+	# guard never sees those hits.
+	if attribute_component:
+		attribute_component.dev_god_mode = on
+	if on and status_effect_manager:
+		status_effect_manager.clear_negative_effects()
+
+
+func dev_set_team(new_team: int) -> void:
+	if multiplayer.is_server():
+		_apply_dev_team(new_team)
+	else:
+		_dev_team_request.rpc_id(1, new_team)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _dev_team_request(new_team: int) -> void:
+	if not multiplayer.is_server() or not _dev_request_is_owner():
+		return
+	_apply_dev_team(new_team)
+
+
+func _apply_dev_team(new_team: int) -> void:
+	# Match rather than assigning the raw int: `team` is enum-typed.
+	match new_team:
+		Player.Team.SPI:
+			team = Player.Team.SPI
+		Player.Team.SCI:
+			team = Player.Team.SCI
+		Player.Team.FFA:
+			team = Player.Team.FFA
+
+
+func dev_set_no_cooldowns(on: bool) -> void:
+	if ability_manager:
+		ability_manager.dev_no_cooldowns = on
+	if not multiplayer.is_server():
+		_dev_no_cooldowns_request.rpc_id(1, on)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _dev_no_cooldowns_request(on: bool) -> void:
+	if not multiplayer.is_server() or not _dev_request_is_owner():
+		return
+	if ability_manager:
+		ability_manager.dev_no_cooldowns = on
+
+
+func dev_set_infinite_stamina(on: bool) -> void:
+	if multiplayer.is_server():
+		_sync_dev_infinite_stamina(on)
+	else:
+		_dev_infinite_stamina_request.rpc_id(1, on)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _dev_infinite_stamina_request(on: bool) -> void:
+	if not multiplayer.is_server() or not _dev_request_is_owner():
+		return
+	_sync_dev_infinite_stamina(on)
+
+
+## Server -> every peer.  Stamina is rollback state, so this flag must match on
+## all peers or non-owners predict this player's movement without it.  Not in
+## RollbackSynchronizer.state_properties — it is a toggle, not a tick value.
+@rpc("authority", "call_local", "reliable")
+func _sync_dev_infinite_stamina(on: bool) -> void:
+	dev_infinite_stamina = on
+	if on:
+		stamina = float(get_max_stamina())
+
+
+func dev_set_infinite_ammo(on: bool) -> void:
+	if weapon_controller:
+		weapon_controller.set_dev_infinite_ammo(on)
+	if not multiplayer.is_server():
+		_dev_infinite_ammo_request.rpc_id(1, on)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _dev_infinite_ammo_request(on: bool) -> void:
+	if not multiplayer.is_server() or not _dev_request_is_owner():
+		return
+	if weapon_controller:
+		weapon_controller.set_dev_infinite_ammo(on)
+#endregion
 
 
 ## Deploy a shield from a SHIELD-type WeaponFire.  Called by WeaponController.

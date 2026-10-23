@@ -1,11 +1,15 @@
 extends Node
 class_name SpawnBotMenu
-## Small host-only menu for spawning a bot with a chosen character + team.
+## Embeddable bot-spawn + bot-list panel, hosted by the dev menu's Bots tab.
 ##
-## Opened/closed with B (replaces the old V/B/N add-bot keys).  Built in code onto
-## a CanvasLayer (layer 2) and pre-instantiated by SpawnManager at lobby load so
-## opening it has no lag.  Style matches the loadout / host menus: flat dark
-## panels, no rounded corners, white text, blue accents.
+## The old standalone B menu (own CanvasLayer, dim, open/close) is gone: the
+## dev menu owns visibility and input.  This node only builds its content into a
+## host Control and refreshes the list on demand.
+##
+## Style matches the rest of the menus: flat dark panels, no rounded corners,
+## white text, blue accents.
+
+signal edit_bot_requested(bot_name: String)
 
 const BLUE := Color(0.35, 0.65, 1.0, 1)
 const PANEL_BG := Color(0.05, 0.05, 0.08, 0.96)
@@ -15,7 +19,6 @@ const CARD_BORDER := Color(0.30, 0.32, 0.38, 1)
 const TEAM_SPI := Color(0.88, 0.24, 0.24)
 const TEAM_SCI := Color(0.2, 0.6, 0.86)
 const TEXT := Color(0.9, 0.9, 0.9)
-const DIM := Color(0.0, 0.02, 0.06, 0.78)
 
 const CLASS_PATHS: Array[String] = [
 	"res://player/player_classes/assault.tres",
@@ -24,7 +27,6 @@ const CLASS_PATHS: Array[String] = [
 ]
 
 
-var _canvas: CanvasLayer
 var _classes: Array[Class] = []
 var _char_to_class: Dictionary = {}   # character.resource_path -> Class
 var _all_characters: Array[Character] = []
@@ -39,85 +41,30 @@ var _picker_vbox: VBoxContainer
 var _team_buttons: Dictionary = {}   # Player.Team -> Button
 var _bot_list: VBoxContainer
 
+## Hover preview (a top-level Control, so it is not clipped by the tab layout).
+var _preview: PanelContainer
+var _preview_vbox: VBoxContainer
+
 
 func _ready() -> void:
 	_load_characters()
-	_build()
 
 
-func is_open() -> bool:
-	return _canvas != null and _canvas.visible
-
-
-func open() -> void:
-	_pick_random_character()
-	_update_team_buttons()
-	_refresh_bot_list()
-	_picker.visible = false
-	_canvas.visible = true
-	PlayerInput.ui_open = true
-	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
-
-
-func close() -> void:
-	_canvas.visible = false
-	_picker.visible = false
-	PlayerInput.ui_open = false
-	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
-
-
-func _unhandled_input(event: InputEvent) -> void:
-	if not is_open():
-		return
-	if event.is_action_pressed("ui_accept"):
-		_confirm()
-
-
-# ─────────────────────────────────────────────────────────────
-#  Build
-# ─────────────────────────────────────────────────────────────
-
-func _build() -> void:
-	_canvas = CanvasLayer.new()
-	_canvas.layer = 2
-	_canvas.visible = false
-	add_child(_canvas)
-
-	var dim := ColorRect.new()
-	dim.color = DIM
-	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_canvas.add_child(dim)
-
-	var center := CenterContainer.new()
-	center.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_canvas.add_child(center)
-
-	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(560, 0)
-	panel.add_theme_stylebox_override("panel", _panel_style())
-	center.add_child(panel)
-
+## Build the panel into [param host].  Called once by the dev menu.
+func build_into(host: Control) -> void:
 	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 20)
-	margin.add_theme_constant_override("margin_top", 16)
-	margin.add_theme_constant_override("margin_right", 20)
-	margin.add_theme_constant_override("margin_bottom", 16)
-	panel.add_child(margin)
-
-	var vb := VBoxContainer.new()
-	vb.add_theme_constant_override("separation", 12)
-	margin.add_child(vb)
-
-	var title := Label.new()
-	title.text = "SPAWN BOT"
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 24)
-	title.add_theme_color_override("font_color", Color.WHITE)
-	vb.add_child(title)
+	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
+	margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	margin.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	margin.add_theme_constant_override("margin_left", 12)
+	margin.add_theme_constant_override("margin_top", 12)
+	margin.add_theme_constant_override("margin_right", 12)
+	margin.add_theme_constant_override("margin_bottom", 12)
+	host.add_child(margin)
 
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 16)
-	vb.add_child(row)
+	margin.add_child(row)
 
 	# ── Left: character + team + confirm ──
 	var left := VBoxContainer.new()
@@ -179,21 +126,21 @@ func _build() -> void:
 	team_row.add_child(_make_team_button(Player.Team.FFA, "FFA"))
 
 	var confirm := Button.new()
-	confirm.text = "CONFIRM  (Enter)"
+	confirm.text = "SPAWN BOT"
 	confirm.add_theme_font_size_override("font_size", 18)
 	confirm.pressed.connect(_confirm)
 	left.add_child(confirm)
 
 	# ── Right: existing bots list ──
 	var right := VBoxContainer.new()
-	right.custom_minimum_size = Vector2(240, 0)
+	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	right.add_theme_constant_override("separation", 8)
 	row.add_child(right)
 
 	right.add_child(_make_header("BOTS"))
 
 	var bot_scroll := ScrollContainer.new()
-	bot_scroll.custom_minimum_size = Vector2(0, 320)
+	bot_scroll.custom_minimum_size = Vector2(0, 280)
 	bot_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	bot_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	right.add_child(bot_scroll)
@@ -202,6 +149,17 @@ func _build() -> void:
 	_bot_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_bot_list.add_theme_constant_override("separation", 6)
 	bot_scroll.add_child(_bot_list)
+
+	_build_preview(host)
+	_pick_random_character()
+	_update_team_buttons()
+	_refresh_bot_list()
+
+
+## Rebuild the bot rows.  Called when the tab is opened and after spawn/remove.
+func refresh() -> void:
+	_hide_preview()
+	_refresh_bot_list()
 
 
 # ─────────────────────────────────────────────────────────────
@@ -302,6 +260,8 @@ func _update_team_buttons() -> void:
 
 
 func _confirm() -> void:
+	if not multiplayer.is_server():
+		return
 	if _selected_character == null or _selected_class == null:
 		return
 	var sm := GameManager.spawn_manager
@@ -316,7 +276,7 @@ func _confirm() -> void:
 
 func _get_bots() -> Array:
 	var out: Array = []
-	if GameManager.spawn_parent == null:
+	if not is_instance_valid(GameManager.spawn_parent):
 		return out
 	for child in GameManager.spawn_parent.get_children():
 		if child is Player and child.is_bot and not child.is_queued_for_deletion():
@@ -325,6 +285,8 @@ func _get_bots() -> Array:
 
 
 func _refresh_bot_list() -> void:
+	if _bot_list == null:
+		return
 	for child in _bot_list.get_children():
 		_bot_list.remove_child(child)
 		child.queue_free()
@@ -344,9 +306,13 @@ func _refresh_bot_list() -> void:
 func _make_bot_entry(bot: Player) -> Control:
 	var entry := PanelContainer.new()
 	entry.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	entry.mouse_filter = Control.MOUSE_FILTER_STOP
 	entry.add_theme_stylebox_override("panel", _card_style(CARD_BG, CARD_BORDER))
+	entry.mouse_entered.connect(_on_bot_hover.bind(entry, str(bot.name)))
+	entry.mouse_exited.connect(_on_bot_row_exited.bind(entry))
 
 	var hb := HBoxContainer.new()
+	hb.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hb.add_theme_constant_override("separation", 8)
 	entry.add_child(hb)
 
@@ -356,6 +322,7 @@ func _make_bot_entry(bot: Player) -> Control:
 	portrait.custom_minimum_size = Vector2(28, 28)
 	portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hb.add_child(portrait)
 
 	var name_lbl := Label.new()
@@ -364,17 +331,37 @@ func _make_bot_entry(bot: Player) -> Control:
 	name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	name_lbl.add_theme_font_size_override("font_size", 14)
 	name_lbl.add_theme_color_override("font_color", TEXT)
+	name_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hb.add_child(name_lbl)
+
+	var edit_btn := Button.new()
+	edit_btn.text = "EDIT"
+	edit_btn.focus_mode = Control.FOCUS_NONE
+	edit_btn.custom_minimum_size = Vector2(48, 28)
+	edit_btn.tooltip_text = "Change this bot's character and loadout"
+	edit_btn.pressed.connect(_request_edit.bind(str(bot.name)))
+	edit_btn.mouse_entered.connect(_on_bot_hover.bind(entry, str(bot.name)))
+	edit_btn.mouse_exited.connect(_on_bot_row_exited.bind(entry))
+	hb.add_child(edit_btn)
 
 	var x_btn := Button.new()
 	x_btn.text = "✕"
 	x_btn.flat = true
 	x_btn.focus_mode = Control.FOCUS_NONE
 	x_btn.custom_minimum_size = Vector2(28, 28)
-	x_btn.pressed.connect(_remove_bot.bind(bot.name))
+	x_btn.pressed.connect(_remove_bot.bind(str(bot.name)))
+	x_btn.mouse_entered.connect(_on_bot_hover.bind(entry, str(bot.name)))
+	x_btn.mouse_exited.connect(_on_bot_row_exited.bind(entry))
 	hb.add_child(x_btn)
 
 	return entry
+
+
+func _request_edit(bot_name: String) -> void:
+	if not multiplayer.is_server():
+		return
+	_hide_preview()
+	edit_bot_requested.emit(bot_name)
 
 
 func _remove_bot(entity_id: String) -> void:
@@ -382,6 +369,124 @@ func _remove_bot(entity_id: String) -> void:
 	if sm:
 		sm.remove_bot(entity_id)
 	_refresh_bot_list()
+
+
+# ─────────────────────────────────────────────────────────────
+#  Hover loadout preview
+# ─────────────────────────────────────────────────────────────
+
+func _build_preview(host: Control) -> void:
+	_preview = PanelContainer.new()
+	_preview.top_level = true
+	_preview.visible = false
+	_preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_preview.z_index = 100
+	_preview.add_theme_stylebox_override("panel", _panel_style())
+	host.add_child(_preview)
+
+	_preview_vbox = VBoxContainer.new()
+	_preview_vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_preview_vbox.add_theme_constant_override("separation", 4)
+	_preview.add_child(_preview_vbox)
+
+
+func _on_bot_hover(entry: Control, bot_name: String) -> void:
+	if _preview == null or not is_instance_valid(entry):
+		return
+	# Resolve by name: the row can outlive the bot by a frame, and a name
+	# lookup fails gracefully where a cached node reference would error.
+	var bot := GameManager.find_player(bot_name)
+	if bot == null or not bot.is_bot:
+		_hide_preview()
+		return
+
+	for child in _preview_vbox.get_children():
+		_preview_vbox.remove_child(child)
+		child.queue_free()
+
+	_preview_vbox.add_child(_preview_label("BOT LOADOUT", 13, BLUE))
+
+	var top := HBoxContainer.new()
+	top.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	top.add_theme_constant_override("separation", 8)
+	_preview_vbox.add_child(top)
+
+	var char := bot.get_character()
+	if char:
+		var portrait := TextureRect.new()
+		portrait.texture = char.portrait
+		portrait.custom_minimum_size = Vector2(48, 48)
+		portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		top.add_child(portrait)
+
+	var info := VBoxContainer.new()
+	info.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	info.add_theme_constant_override("separation", 1)
+	top.add_child(info)
+
+	var class_res := _class_for_character(char)
+	var cls_name := class_res.class_display_name if class_res else "?"
+	info.add_child(_preview_label(char.character_name if char else "No character", 15, TEXT))
+	info.add_child(_preview_label("%s  ·  %s" % [cls_name, _team_name(bot.team)], 12, Color(0.65, 0.68, 0.75)))
+
+	var weapons: Array[Weapon] = []
+	if bot.weapon_controller:
+		weapons = bot.weapon_controller.get_weapons()
+	var slots := ["Primary", "Secondary", "Melee"]
+	for i in mini(weapons.size(), slots.size()):
+		info.add_child(_preview_label("%s: %s" % [slots[i], weapons[i].display_name], 13, TEXT))
+
+	_preview.visible = true
+	_preview.reset_size()
+	var vp := get_viewport().get_visible_rect().size
+	var pos := entry.global_position + Vector2(entry.size.x + 8, 0)
+	pos.x = clampf(pos.x, 8.0, maxf(8.0, vp.x - _preview.size.x - 8.0))
+	pos.y = clampf(pos.y, 8.0, maxf(8.0, vp.y - _preview.size.y - 8.0))
+	_preview.global_position = pos
+
+
+func _on_bot_row_exited(entry: Control) -> void:
+	if not is_instance_valid(entry):
+		_hide_preview()
+		return
+	# Moving onto a child button fires the row's mouse_exited; keep the preview
+	# while the pointer is still inside the row.
+	if entry.get_global_rect().has_point(entry.get_global_mouse_position()):
+		return
+	_hide_preview()
+
+
+func _hide_preview() -> void:
+	if _preview and is_instance_valid(_preview):
+		_preview.visible = false
+
+
+func _preview_label(text: String, size: int, color: Color) -> Label:
+	var lbl := Label.new()
+	lbl.text = text
+	lbl.add_theme_font_size_override("font_size", size)
+	lbl.add_theme_color_override("font_color", color)
+	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return lbl
+
+
+func _class_for_character(ch: Character) -> Class:
+	if ch == null:
+		return null
+	for cls in _classes:
+		for c in cls.characters:
+			if c and c.resource_path == ch.resource_path:
+				return cls
+	return null
+
+
+func _team_name(team: int) -> String:
+	match team:
+		Player.Team.SPI: return "SPI"
+		Player.Team.SCI: return "SCI"
+		_: return "FFA"
 
 
 # ─────────────────────────────────────────────────────────────

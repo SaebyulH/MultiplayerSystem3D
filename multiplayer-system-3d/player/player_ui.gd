@@ -1124,7 +1124,9 @@ func _update_ammo() -> void:
 	else:
 		_hide_reload()
 
-	if weapon.has_infinite_ammo:
+	# Includes the dev-menu override, so the HUD reads INF while the hack is on.
+	var infinite := weapon_controller.weapon_has_infinite_ammo(weapon)
+	if infinite:
 		_ammo_value_label.text = "∞"
 		_ammo_max_label.text = ""
 	else:
@@ -1133,7 +1135,7 @@ func _update_ammo() -> void:
 
 	# Public ammo
 	if _ammo_bar_public:
-		_ammo_bar_public.text = "INF" if weapon.has_infinite_ammo else "%d / %d" % [weapon.mag_current, weapon.mag_size]
+		_ammo_bar_public.text = "INF" if infinite else "%d / %d" % [weapon.mag_current, weapon.mag_size]
 
 func _show_reload(weapon: Weapon) -> void:
 	_ammo_value_label.text = "%d" % weapon.mag_current
