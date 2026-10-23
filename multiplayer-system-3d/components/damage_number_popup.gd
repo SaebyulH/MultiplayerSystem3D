@@ -4,7 +4,13 @@ class_name DamageNumberPopup
 ## A single floating damage or heal number.  Damage pops out the right side
 ## of the target, heals out the left side — so both are visible simultaneously.
 
-var _target_node: Node3D = null
+## Weak reference to the player this number belongs to.  The popup lives for
+## several seconds and its target is freed on a bot removal / disconnect, so a
+## strong reference would dangle.  Godot 4.7 makes a freed reference compare
+## `== null` and test falsy, but casting or dereferencing it still raises
+## "Trying to cast a freed object" — so `WeakRef.get_ref()` (which yields null)
+## is the only structurally safe way to hold it.
+var _target_ref: WeakRef = null
 var _world_pos: Vector3
 var _offset: Vector3
 var _value: float = 0.0
@@ -23,8 +29,24 @@ const BOLD_FONT_PATH := "res://assets/CenturyGothic-Bold - Century Gothic - Bold
 var _bold_font: Font = null
 
 
+## The target, if it is still alive; null once it has been freed.
+func _live_target() -> Node3D:
+	if _target_ref == null:
+		return null
+	var ref: Variant = _target_ref.get_ref()
+	if not is_instance_valid(ref):
+		return null
+	return ref as Node3D
+
+
+## True while this popup still belongs to [param node].  Used to merge a new
+## hit into an existing popup; a freed target simply never matches.
+func targets(node: Node3D) -> bool:
+	return _live_target() == node
+
+
 func setup(target: Node3D, value: float, is_heal: bool, is_headshot: bool = false, falloff_mult: float = 1.0, is_backshot: bool = false) -> void:
-	_target_node = target
+	_target_ref = weakref(target)
 	_world_pos = target.global_position
 	_value = value
 	_is_heal = is_heal
@@ -44,8 +66,9 @@ func add_value(value: float, is_headshot: bool = false, falloff_mult: float = 1.
 	_is_headshot = is_headshot
 	_is_backshot = is_backshot
 	_falloff_mult = falloff_mult
-	if _target_node and is_instance_valid(_target_node) and _target_node.spawned:
-		_world_pos = _target_node.global_position
+	var target := _live_target()
+	if target != null and target.spawned:
+		_world_pos = target.global_position
 	_reset_offset()
 	_refresh_label()
 	_refresh_falloff_label()
@@ -124,14 +147,14 @@ func _apply_damage_font(lbl: Label) -> void:
 
 
 func _process(delta: float) -> void:
-	if _target_node != null:
-		if is_instance_valid(_target_node):
-			if _target_node.spawned:
-				_world_pos = _target_node.global_position
-			else:
-				_target_node = null
+	var target := _live_target()
+	if target != null:
+		if target.spawned:
+			_world_pos = target.global_position
 		else:
-			_target_node = null
+			# Dead or parked: stop tracking, leave the number at its last position.
+			_target_ref = null
+			target = null
 
 	_age += delta
 
@@ -146,7 +169,7 @@ func _process(delta: float) -> void:
 		return
 	# Hide when the target isn't currently "seen" by the viewer — occluded and
 	# not revealed through a wallhack.
-	var p := _target_node as Player # FIX TODO when disconnect causes isue
+	var p := target as Player
 	if p != null and not p._seen_by_local:
 		visible = false
 		return

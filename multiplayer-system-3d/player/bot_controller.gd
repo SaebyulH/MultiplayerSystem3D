@@ -504,7 +504,7 @@ func _has_line_of_sight_to_player(target: Player) -> bool:
 func _targets_valid() -> bool:
 	# Check the heal target first, and on every call: the combat-target branch
 	# below returns early, so a freed `_heal_target` used to go unvalidated and
-	# was later dereferenced by `_act_heal()`.  A freed reference is not null.
+	# was later dereferenced by `_act_heal()`.
 	if _heal_target != null and (not is_instance_valid(_heal_target) or not _heal_target.spawned):
 		return false
 	if _current_target != null:

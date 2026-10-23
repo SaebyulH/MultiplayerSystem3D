@@ -2,7 +2,13 @@
 extends RigidBody3D
 class_name SimpleProjectile
 
-var _stuck_to: Node3D = null
+## The hurtbox/body this projectile is lodged in.  Held weakly: the target is a
+## Player (or a child of it) and can be freed — a bot removed mid-match, or a
+## disconnect — while the projectile is deliberately parented to the world and
+## outlives it.  `_is_stuck` distinguishes "never attached" from "attached to
+## something that has since died", which a null/falsy check cannot.
+var _stuck_ref: WeakRef = null
+var _is_stuck := false
 var _local_offset: Transform3D
 
 # AUX
@@ -108,14 +114,13 @@ func _physics_process(delta: float) -> void:
 	if not is_multiplayer_authority():
 		return
 
-	# A freed node reference is not null, so a plain truthiness check would still
-	# dereference a hurtbox whose Player was removed from under the projectile.
-	if _stuck_to != null:
-		if not is_instance_valid(_stuck_to):
-			# Nothing left to ride — the corpse/player it stuck into is gone.
+	if _is_stuck:
+		var stuck := _stuck_target()
+		if stuck == null:
+			# Nothing left to ride — the player/hurtbox it stuck into is gone.
 			queue_free()
 			return
-		global_transform = _stuck_to.global_transform * _local_offset
+		global_transform = stuck.global_transform * _local_offset
 	elif align_to_velocity:
 		var vel := linear_velocity
 		if vel.length_squared() > 0.01:
@@ -193,5 +198,25 @@ func start_explode():
 
 func _attach_to(body: Node3D) -> void:
 	freeze = true
-	_stuck_to = body
+	_is_stuck = true
+	_stuck_ref = weakref(body)
 	_local_offset = body.global_transform.affine_inverse() * global_transform
+
+
+## Release from whatever this projectile is lodged in, so it can fly again
+## (used by redirectable projectiles on a weapon SIGNAL).
+func _unstick() -> void:
+	_is_stuck = false
+	_stuck_ref = null
+	freeze = false
+	sleeping = false
+
+
+## The object this projectile is lodged in, if it is still alive.
+func _stuck_target() -> Node3D:
+	if _stuck_ref == null:
+		return null
+	var ref: Variant = _stuck_ref.get_ref()
+	if not is_instance_valid(ref):
+		return null
+	return ref as Node3D

@@ -13,10 +13,8 @@ func _on_weapon_signal(target: Vector3, player_transform: Vector3) -> void:
 		return
 
 	# Unstick if embedded in a surface so the arrow can fly again.
-	if _stuck_to != null:
-		_stuck_to = null
-		freeze = false
-		sleeping = false
+	if _is_stuck:
+		_unstick()
 
 	# Redirect the arrow toward the target position using the original speed.
 	var dir := (target - global_position).normalized()

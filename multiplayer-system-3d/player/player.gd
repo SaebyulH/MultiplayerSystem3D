@@ -516,6 +516,8 @@ func _health_changed():
 ## Every caller passes the result straight to `rpc_reset`, which is why this carries a
 ## transform rather than a bare position.
 func _get_spawn_transform() -> Transform3D:
+	if not is_instance_valid(GameManager.spawn_parent):
+		return Transform3D()
 	for node in GameManager.spawn_parent.get_children():
 		if node is Map:
 			return node.get_random_spawn_transform(team)

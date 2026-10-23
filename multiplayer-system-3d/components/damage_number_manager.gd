@@ -44,7 +44,7 @@ func on_damage_dealt(target_name: String, amount: float, is_headshot: bool = fal
 
 	# If there's already a matching popup for this target + type, add to it.
 	for p in _popups:
-		if is_instance_valid(p) and p._target_node == target and p._is_heal == is_heal:
+		if is_instance_valid(p) and p.targets(target) and p._is_heal == is_heal:
 			p.add_value(abs_amount, is_headshot, falloff_mult, is_backshot)
 			return
 

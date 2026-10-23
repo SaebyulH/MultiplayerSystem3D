@@ -477,7 +477,8 @@ func _set_state(new_state: PayloadState) -> void:
 func _tick_healing(delta: float) -> void:
 	# Server only — called after the is_server() guard in _physics_process.
 	# `body_exited` does not reliably fire for a freed Player, so a removed bot can
-	# linger in the overlap list; a freed reference is not null, so validate it.
+	# linger in the overlap list.  `is_instance_valid` is the only reliable liveness
+	# test — a freed reference still errors when cast or dereferenced.
 	for p in _pushers:
 		if is_instance_valid(p) and p is Player and p.team == attacking_team:
 			p.change_health(heal_per_second * delta, p.name)

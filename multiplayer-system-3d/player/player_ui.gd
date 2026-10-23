@@ -885,13 +885,15 @@ func _update_targeted_previews(delta: float) -> void:
 		# they would produce no entries anyway.
 		if not _preview_candidates.has(ability):
 			continue
-		# The cache can outlive a player removal by up to PREVIEW_REFRESH_INTERVAL,
-		# and a freed reference is not null — drop stale candidates before use.
+		# The cache can outlive a player removal by up to PREVIEW_REFRESH_INTERVAL.
+		# A freed reference compares `== null` and tests falsy, but casting it still
+		# raises "Trying to cast a freed object" — `is_instance_valid` is the only
+		# reliable liveness test, and it must run *before* the cast.
 		var candidates: Array[Player] = []
 		for cached in _preview_candidates[ability]:
-			var p: Player = cached as Player
-			if p != null and is_instance_valid(p):
-				candidates.append(p)
+			if not is_instance_valid(cached):
+				continue
+			candidates.append(cached as Player)
 
 		var locked: Dictionary = {}
 		var limit := mini(candidates.size(), ability.max_targets)

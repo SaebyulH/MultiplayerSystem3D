@@ -22,6 +22,11 @@ var spawn_manager: SpawnManager
 var lobby_bots: Array[Dictionary] = []
 
 func find_player(id: String) -> Player:
+	# `spawn_parent` is a plain reference that can be null before the world is
+	# built, or a freed node during teardown — `is_instance_valid` is the only
+	# reliable check for both.
+	if not is_instance_valid(spawn_parent):
+		return null
 	for child in spawn_parent.get_children():
 		if child.name == id and child is Player:
 			return child as Player
@@ -85,6 +90,8 @@ func rpc_ragdoll_blast(corpse_name: String, origin: Vector3, force: float) -> vo
 
 
 func get_despawn_position() -> Vector3:
+	if not is_instance_valid(spawn_parent):
+		return Vector3.ZERO
 	for node in spawn_parent.get_children():
 		if node is Map:
 			return node.get_despawn_position()
