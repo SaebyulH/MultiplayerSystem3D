@@ -7,6 +7,10 @@ extends Node3D
 const DEV_MENU_SCRIPT := preload("res://world/dev_menu.gd")
 var dev_menu
 
+## The global kill feed.  Kept as a member so the dev-menu "hide other HUD"
+## toggle can hide it; it is a local CanvasLayer, not a replicated node.
+var _kill_feed: KillFeed
+
 
 #@export var player_ui: Control
 var class_selected := false
@@ -21,8 +25,8 @@ func _ready() -> void:
 	GameManager.projectile_parent = %ProjectilesParent
 
 	# Global kill feed — one per peer, cleaned up with the scene.
-	var kill_feed := KillFeed.new()
-	add_child(kill_feed)
+	_kill_feed = KillFeed.new()
+	add_child(_kill_feed)
 	
 	
 	
@@ -57,6 +61,23 @@ func _ready() -> void:
 	dev_menu = DEV_MENU_SCRIPT.new()
 	add_child(dev_menu)
 	dev_menu.setup(loadout_menu)
+
+	# GameManager outlives this scene, so a world rebuilt after return_to_lobby
+	# must re-apply its persisted dev display flag to the fresh HUD nodes.
+	apply_dev_world_hud_visibility()
+
+
+## Dev-menu "hide other HUD": the mode HUD and kill feed.
+## Menus — GameMenu's loadout/leaderboard and the dev menu — are untouched.
+func apply_dev_world_hud_visibility() -> void:
+	var hide := GameManager.dev_hide_world_hud
+	# Toggle the whole CanvasLayer, never HUDController._root: the 10 Hz HUD tick
+	# rewrites _root.visible and would immediately undo it.
+	var hud := game_menu.get_node_or_null("CanvasLayer") as CanvasLayer
+	if hud:
+		hud.visible = not hide
+	if is_instance_valid(_kill_feed):
+		_kill_feed.visible = not hide
 
 func _on_main_menu_pressed() -> void:
 	NetworkManager.return_to_lobby()

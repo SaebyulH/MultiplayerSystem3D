@@ -24,7 +24,11 @@ func _ready() -> void:
 		#$Recoil/Head/RightEye.hide()
 		#$Recoil/Head/LeftEye.hide()
 func _input(event: InputEvent) -> void:
-	if not is_multiplayer_authority():
+	# Bots are server-authoritative, so on the host `is_multiplayer_authority()`
+	# is TRUE for a bot's Body.  Without this guard, host mouse motion rotated
+	# every bot's yaw; BotController._apply_smooth_aim masked it while the bot
+	# was thinking, and freezing the bots made them follow the host's view.
+	if not is_multiplayer_authority() or _player.is_bot:
 		return
 	if Input.get_mouse_mode() != Input.MOUSE_MODE_CAPTURED:
 		return

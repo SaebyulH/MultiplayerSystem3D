@@ -77,6 +77,16 @@ Added 2026-09-25 with the `Weapon.charged` feature. Recorded here so it is not m
 - **Per shot:** one extra multiply on the launch-speed line and one on the damage scalar in `_spawn_projectile` (`2674`), plus one on each of the two hitscan damage sites.
 - **Deliberately NOT in the rollback path.** `_charge_active`/`_charge_time` are broadcast state, never `RollbackSynchronizer` properties — the same rule as the fire flags (`02-netcode.md` §1). Adding them there would re-simulate the draw and multiply this cost by the tick count for no benefit.
 
+## Dev-menu status line (per-frame, owner only) — negligible
+
+Added 2026-10-24 with the expanded dev menu. `PlayerUI._update_dev_status()` composes
+`"GOD MODE · NOCLIP · BOTS IGNORE ME"` from three booleans and compares it with a cached string;
+the `Label` is only rewritten when the composed text changes. It runs on the existing per-frame HUD
+`_process`, for the owning player only, and every flag defaults to false. The damage-number canvas
+is toggled event-driven (`DamageNumberManager.set_dev_hidden`), not polled. `Player.has_noclip()`
+replaces the inline `has_effect("noclip")` checks at the same sites (one extra function call per
+tick in the movement path, no allocation or lookup change).
+
 ## Ability charge pool (per-frame, owner only) — negligible
 
 Added 2026-09-25 with the charged-ability feature (`Ability.max_charges` / `charge_interval`).

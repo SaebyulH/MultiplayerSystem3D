@@ -36,10 +36,19 @@ var _god_check: CheckButton
 var _cooldowns_check: CheckButton
 var _stamina_check: CheckButton
 var _ammo_check: CheckButton
+var _meters_check: CheckButton
+var _noclip_check: CheckButton
+var _ignore_bots_check: CheckButton
+var _player_hud_check: CheckButton
+var _world_hud_check: CheckButton
+var _model_check: CheckButton
+# Bots-tab widgets (server only).
+var _freeze_bots_check: CheckButton
+var _remove_all_button: Button
 var _team_buttons: Dictionary = {}   # Player.Team -> Button
 var _team: Player.Team = Player.Team.FFA
-## God mode is a server-only flag that is not mirrored to clients, so the menu
-## keeps its own copy of the UI state (the other toggles are readable locally).
+## God mode is now mirrored to every peer (Player._sync_dev_god_mode), so this
+## is only a fallback for a player without an AttributeComponent.
 var _god_mode := false
 ## Suppresses the CheckButton.toggled handlers while the UI is being synced.
 var _syncing := false
@@ -74,6 +83,7 @@ func open() -> void:
 	_refresh_state()
 	if _bot_panel and multiplayer.is_server():
 		_bot_panel.refresh()
+		_update_remove_all_enabled()
 	_canvas.visible = true
 	PlayerInput.ui_open = true
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
@@ -165,9 +175,18 @@ func _build_general_tab() -> Control:
 	margin.add_theme_constant_override("margin_right", 12)
 	margin.add_theme_constant_override("margin_bottom", 10)
 
+	# The panel is a fixed 780x560; the full toggle list no longer fits, so the
+	# content scrolls rather than clipping the bottom rows.
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	margin.add_child(scroll)
+
 	var vb := VBoxContainer.new()
+	vb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	vb.add_theme_constant_override("separation", 10)
-	margin.add_child(vb)
+	scroll.add_child(vb)
 
 	vb.add_child(_section_header("HEALTH"))
 	var health_row := HBoxContainer.new()
@@ -176,19 +195,46 @@ func _build_general_tab() -> Control:
 	health_row.add_child(_dev_button("No Health", _set_health.bind(0.0)))
 	health_row.add_child(_dev_button("Half Health", _set_health.bind(0.5)))
 	health_row.add_child(_dev_button("Full Health", _set_health.bind(1.0)))
+	health_row.add_child(_dev_button("Respawn now", _on_respawn))
 
 	_god_check = _make_check("God mode (no damage taken)", _on_god_toggled)
 	vb.add_child(_god_check)
 
 	vb.add_child(HSeparator.new())
-	vb.add_child(_section_header("TOGGLES"))
+	vb.add_child(_section_header("GAMEPLAY TOGGLES"))
 
+	# Two columns keep the taller list inside the panel without scrolling for
+	# most window sizes (the ScrollContainer is the safety net).
+	var gameplay_grid := GridContainer.new()
+	gameplay_grid.columns = 2
+	gameplay_grid.add_theme_constant_override("h_separation", 18)
+	vb.add_child(gameplay_grid)
 	_cooldowns_check = _make_check("No ability cooldowns", _on_cooldowns_toggled)
-	vb.add_child(_cooldowns_check)
+	gameplay_grid.add_child(_cooldowns_check)
 	_stamina_check = _make_check("No stamina cooldowns", _on_stamina_toggled)
-	vb.add_child(_stamina_check)
+	gameplay_grid.add_child(_stamina_check)
 	_ammo_check = _make_check("Infinite ammo (all weapons)", _on_ammo_toggled)
-	vb.add_child(_ammo_check)
+	gameplay_grid.add_child(_ammo_check)
+	_meters_check = _make_check("Infinite ability meters", _on_meters_toggled)
+	gameplay_grid.add_child(_meters_check)
+	_noclip_check = _make_check("Dev noclip (fly through walls)", _on_noclip_toggled)
+	gameplay_grid.add_child(_noclip_check)
+	_ignore_bots_check = _make_check("Bots ignore me", _on_ignore_bots_toggled)
+	gameplay_grid.add_child(_ignore_bots_check)
+
+	vb.add_child(HSeparator.new())
+	vb.add_child(_section_header("DISPLAY (local only)"))
+
+	var display_grid := GridContainer.new()
+	display_grid.columns = 2
+	display_grid.add_theme_constant_override("h_separation", 18)
+	vb.add_child(display_grid)
+	_player_hud_check = _make_check("Hide player HUD", _on_player_hud_toggled)
+	display_grid.add_child(_player_hud_check)
+	_world_hud_check = _make_check("Hide other HUD", _on_world_hud_toggled)
+	display_grid.add_child(_world_hud_check)
+	_model_check = _make_check("Hide my model (weapon stays)", _on_model_toggled)
+	display_grid.add_child(_model_check)
 
 	vb.add_child(HSeparator.new())
 	vb.add_child(_section_header("TEAM"))
@@ -199,6 +245,10 @@ func _build_general_tab() -> Control:
 	team_row.add_child(_make_team_button(Player.Team.SPI, "SPI"))
 	team_row.add_child(_make_team_button(Player.Team.SCI, "SCI"))
 	team_row.add_child(_make_team_button(Player.Team.FFA, "FFA"))
+
+	var reset_btn := _dev_button("Reset all dev flags", _on_reset_dev_flags)
+	reset_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	vb.add_child(reset_btn)
 
 	return margin
 
@@ -218,10 +268,33 @@ func _build_bots_tab() -> Control:
 		center.add_child(lbl)
 		return tab
 
+	# Server-only world controls above the per-bot list.
+	var vb := VBoxContainer.new()
+	vb.set_anchors_preset(Control.PRESET_FULL_RECT)
+	vb.add_theme_constant_override("separation", 8)
+	tab.add_child(vb)
+
+	var tools_row := HBoxContainer.new()
+	tools_row.add_theme_constant_override("separation", 12)
+	vb.add_child(tools_row)
+	_freeze_bots_check = _make_check("Freeze all bots", _on_freeze_bots_toggled)
+	tools_row.add_child(_freeze_bots_check)
+	_remove_all_button = _dev_button("Remove all bots", _on_remove_all_bots)
+	_remove_all_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	tools_row.add_child(_remove_all_button)
+
+	# build_into() adds a full-rect MarginContainer; this non-container host
+	# gives it the space the VBox has left over.
+	var panel_host := Control.new()
+	panel_host.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel_host.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	vb.add_child(panel_host)
+
 	_bot_panel = BOT_PANEL_SCENE.instantiate() as SpawnBotMenu
 	add_child(_bot_panel)
-	_bot_panel.build_into(tab)
+	_bot_panel.build_into(panel_host)
 	_bot_panel.edit_bot_requested.connect(_on_edit_bot_requested)
+	_bot_panel.bots_changed.connect(_update_remove_all_enabled)
 	return tab
 
 
@@ -237,16 +310,25 @@ func _refresh_state() -> void:
 	var p := _local_player()
 	_syncing = true
 	if p:
-		# On the host the real god flag is readable; on a client it lives only on
-		# the server's copy, so keep the menu's remembered value.
-		if multiplayer.is_server() and p.attribute_component:
+		# God mode is mirrored to every peer (see Player._sync_dev_god_mode), so
+		# the client's copy is readable too; the cached value is only a fallback
+		# for a player without an AttributeComponent.
+		if p.attribute_component:
 			_god_mode = p.attribute_component.dev_god_mode
 		_team = p.team
 		if p.ability_manager:
 			_cooldowns_check.button_pressed = p.ability_manager.dev_no_cooldowns
+			_meters_check.button_pressed = p.ability_manager.dev_no_meter_drain
 		_stamina_check.button_pressed = p.dev_infinite_stamina
 		if p.weapon_controller:
 			_ammo_check.button_pressed = p.weapon_controller.is_dev_infinite_ammo()
+		_noclip_check.button_pressed = p.dev_noclip
+		_ignore_bots_check.button_pressed = p.dev_hidden_from_bots
+		_model_check.button_pressed = p.dev_hide_model
+	_player_hud_check.button_pressed = GameManager.dev_hide_player_hud
+	_world_hud_check.button_pressed = GameManager.dev_hide_world_hud
+	if _freeze_bots_check:
+		_freeze_bots_check.button_pressed = GameManager.dev_freeze_bots
 	_god_check.button_pressed = _god_mode
 	_syncing = false
 	_update_team_buttons()
@@ -289,6 +371,121 @@ func _on_ammo_toggled(on: bool) -> void:
 	var p := _local_player()
 	if p:
 		p.dev_set_infinite_ammo(on)
+
+
+func _on_meters_toggled(on: bool) -> void:
+	if _syncing:
+		return
+	var p := _local_player()
+	if p:
+		p.dev_set_no_meter_drain(on)
+
+
+func _on_noclip_toggled(on: bool) -> void:
+	if _syncing:
+		return
+	var p := _local_player()
+	if p:
+		p.dev_set_noclip(on)
+
+
+func _on_ignore_bots_toggled(on: bool) -> void:
+	if _syncing:
+		return
+	var p := _local_player()
+	if p:
+		p.dev_set_hidden_from_bots(on)
+
+
+func _on_respawn() -> void:
+	var p := _local_player()
+	if p:
+		p.dev_respawn()
+
+
+func _on_player_hud_toggled(on: bool) -> void:
+	if _syncing:
+		return
+	GameManager.dev_hide_player_hud = on
+	# PlayerUI re-reads the flag in its next _process and repaints itself; no
+	# direct call is needed (and the dev menu is a separate CanvasLayer, so it
+	# stays visible either way).
+
+
+func _on_world_hud_toggled(on: bool) -> void:
+	if _syncing:
+		return
+	GameManager.dev_hide_world_hud = on
+	_apply_world_hud_visibility()
+
+
+func _on_model_toggled(on: bool) -> void:
+	if _syncing:
+		return
+	var p := _local_player()
+	if p:
+		p.dev_set_hide_model(on)
+
+
+func _apply_world_hud_visibility() -> void:
+	var world := get_parent()
+	if world and world.has_method("apply_dev_world_hud_visibility"):
+		world.apply_dev_world_hud_visibility()
+
+
+## Turn every cheat back off.  Recovery path for a hidden HUD/model, and a
+## quicker reset than opening each tab and clicking.
+func _on_reset_dev_flags() -> void:
+	var p := _local_player()
+	if p:
+		p.dev_set_god_mode(false)
+		p.dev_set_no_cooldowns(false)
+		p.dev_set_infinite_stamina(false)
+		p.dev_set_infinite_ammo(false)
+		p.dev_set_no_meter_drain(false)
+		p.dev_set_noclip(false)
+		p.dev_set_hidden_from_bots(false)
+		p.dev_set_hide_model(false)
+	GameManager.dev_hide_player_hud = false
+	GameManager.dev_hide_world_hud = false
+	GameManager.dev_freeze_bots = false
+	_apply_world_hud_visibility()
+	_refresh_state()
+
+
+# ─────────────────────────────────────────────────────────────
+#  Bots tab: world controls
+# ─────────────────────────────────────────────────────────────
+
+func _on_freeze_bots_toggled(on: bool) -> void:
+	if _syncing:
+		return
+	GameManager.dev_freeze_bots = on
+
+
+func _on_remove_all_bots() -> void:
+	if not multiplayer.is_server():
+		return
+	var sm := GameManager.spawn_manager
+	if sm:
+		sm.remove_all_bots()
+	if _bot_panel:
+		_bot_panel.refresh()
+	_update_remove_all_enabled()
+
+
+func _has_bots() -> bool:
+	if not is_instance_valid(GameManager.spawn_parent):
+		return false
+	for child in GameManager.spawn_parent.get_children():
+		if child is Player and (child as Player).is_bot and not child.is_queued_for_deletion():
+			return true
+	return false
+
+
+func _update_remove_all_enabled() -> void:
+	if _remove_all_button:
+		_remove_all_button.disabled = not _has_bots()
 
 
 func _make_team_button(team: Player.Team, text: String) -> Button:

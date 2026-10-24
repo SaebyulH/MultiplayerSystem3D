@@ -193,6 +193,15 @@ func _physics_process(delta: float) -> void:
 	if not player.spawned:
 		return
 
+	# Dev-menu "freeze all bots": park them exactly like a stun, clearing the
+	# inputs BotController normally writes so nothing is left held down.
+	if GameManager.dev_freeze_bots:
+		player.player_input.input_dir = Vector2.ZERO
+		player.player_input.jump_input = false
+		player.player_input.crouch = false
+		_clear_fire_inputs()
+		return
+
 	# Stunned, pinned, or mid-channel bots cannot move, aim, or fire.
 	if player.status_effect_manager and (player.status_effect_manager.is_stunned() or player.status_effect_manager.is_pinned() or player.status_effect_manager.is_action_blocked()):
 		player.player_input.input_dir = Vector2.ZERO
@@ -436,6 +445,10 @@ func _think() -> void:
 		var p := node as Player
 		if p == null or p == player or not p.spawned:
 			continue
+		# Dev-menu "bots ignore me": skip both combat and heal targeting.  Bots
+		# simulate only on the server, so this reads the server's copy.
+		if p.dev_hidden_from_bots:
+			continue
 		var is_enemy := player.team == Player.Team.FFA or p.team != player.team
 		var dist_sq := player.global_position.distance_squared_to(p.global_position)
 
@@ -505,10 +518,13 @@ func _targets_valid() -> bool:
 	# Check the heal target first, and on every call: the combat-target branch
 	# below returns early, so a freed `_heal_target` used to go unvalidated and
 	# was later dereferenced by `_act_heal()`.
-	if _heal_target != null and (not is_instance_valid(_heal_target) or not _heal_target.spawned):
+	if _heal_target != null and (not is_instance_valid(_heal_target) \
+			or not _heal_target.spawned or _heal_target.dev_hidden_from_bots):
 		return false
 	if _current_target != null:
 		if not is_instance_valid(_current_target) or not _current_target.spawned:
+			return false
+		if _current_target.dev_hidden_from_bots:
 			return false
 		if not _is_enemy_of(_current_target):
 			return false

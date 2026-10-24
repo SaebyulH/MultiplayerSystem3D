@@ -110,6 +110,21 @@ var stamina: float = float(MAX_STAMINA)
 ## did not receive it would predict this player's dashes without stamina.
 var dev_infinite_stamina := false
 
+## Dev-menu free-fly override.  It reuses the noclip ABILITY's movement,
+## hurtbox and immunity paths through [method has_noclip] — there is no second
+## implementation.  Movement is rollback-simulated on every peer, so the flag is
+## broadcast (see _sync_dev_noclip); being a stable toggle it is NOT rollback
+## state and must stay out of RollbackSynchronizer.state_properties.
+var dev_noclip := false
+
+## Dev-menu "bots ignore me".  Bots simulate only on the server, so the copy
+## that matters is the server's; the local copy drives the menu.
+var dev_hidden_from_bots := false
+
+## Dev-menu "hide my own model".  Purely local — other peers still render it.
+## The first-person weapon is deliberately left visible.
+var dev_hide_model := false
+
 # Input edge-detection memory (rolled back so presses replay deterministically).
 var dash_held_prev: bool = false
 var jump_held_prev: bool = false
@@ -531,6 +546,11 @@ func _get_spawn_transform() -> Transform3D:
 @rpc("any_peer", "call_local")
 func rpc_reset(transform: Transform3D) -> void:
 	despawn()
+	# A noclip exit pulse must not survive a reset: with the timer zeroed
+	# (CheatDeath / the dev "Respawn now" button) the player spawns while the
+	# pulse is still live and would damage enemies at the new spawn.
+	_noclip_exit_time = 0.0
+	_noclip_exit_hit.clear()
 	respawn_timer = respawn_time
 	var spawn := transform
 	if spawn.origin == Vector3.ZERO:
@@ -826,12 +846,10 @@ func spawn():
 	show()
 	spawned = true
 	collider.disabled = false
-	# The first-person HUD belongs only to the local peer's own model. Showing it
-	# for bots/remote players is what briefly surfaced their HUD on your screen.
-	if _is_own_model():
-		$Body/PlayerUI.show()
-	else:
-		$Body/PlayerUI.hide()
+	# The first-person HUD belongs only to the local peer's own model.  The HUD
+	# owns the rule (authority, bot, and the dev-menu hide toggle) so a respawn
+	# cannot re-show it underneath that toggle.
+	$Body/PlayerUI.refresh_visibility()
 	if not is_bot:
 		var my_id := multiplayer.get_unique_id()
 		var player_id := name.to_int()
@@ -1161,6 +1179,14 @@ func _force_update_is_on_floor():
 # moves the player along the camera's full 3D basis — W is the camera forward
 # (including pitch), A/D strafe — so the ghost can fly through geometry.
 
+## True for the noclip ABILITY or the dev-menu override.  Every noclip site —
+## movement, hurtboxes, damage immunity and the ghost visual — goes through this
+## so the two sources cannot drift apart.
+func has_noclip() -> bool:
+	return dev_noclip \
+		or (status_effect_manager != null and status_effect_manager.has_effect("noclip"))
+
+
 ## Free-fly movement for the noclip state: camera-relative 3D steering with no
 ## gravity and no collision.  Replaces the normal movement sim entirely.
 func _noclip_move(delta: float) -> void:
@@ -1219,6 +1245,10 @@ func _set_hurtboxes_active(active: bool) -> void:
 ## Begin the post-noclip 999-damage overlap window (server only).  Called by
 ## NoclipEffect._on_remove when noclip is cancelled or cleared on death.
 func _start_noclip_exit_pulse() -> void:
+	# The dev override is not the ability: cancelling the real effect (or dying)
+	# while it is on must not nuke everyone standing next to the dev flyer.
+	if dev_noclip:
+		return
 	if not multiplayer.is_server() or not spawned:
 		return
 	_noclip_exit_time = 1.0
@@ -1622,9 +1652,10 @@ func _process(_delta: float) -> void:
 		body.mouse_sens_x = BASE_MOUSE_SENS * fov_ratio
 		body.mouse_sens_y = BASE_MOUSE_SENS * fov_ratio
 
-	# Noclip: disable hurtboxes so bullets/projectiles pass through (mirrored on
-	# all peers via the synced effect id).
-	var noclip_active := status_effect_manager != null and status_effect_manager.has_effect("noclip")
+	# Noclip: disable hurtboxes so bullets/projectiles pass through.  has_noclip()
+	# covers both the ability effect (mirrored on all peers) and the dev override
+	# (broadcast, so every peer agrees).
+	var noclip_active := has_noclip()
 	if _hurtboxes_active == noclip_active:
 		_hurtboxes_active = not noclip_active
 		_set_hurtboxes_active(_hurtboxes_active)
@@ -1648,7 +1679,7 @@ func _apply_movement_from_input(delta):
 	# Noclip is free-fly: no gravity, no collision, and WASD moves along the
 	# camera's full 3D basis (W = camera forward incl. pitch).  It replaces the
 	# normal movement simulation entirely.
-	if status_effect_manager != null and status_effect_manager.has_effect("noclip"):
+	if has_noclip():
 		_noclip_move(delta)
 		return
 	_force_update_is_on_floor()
@@ -1916,7 +1947,7 @@ func _apply_movement_from_input(delta):
 
 func change_health(health: float, changer: String, is_headshot: bool = false, falloff_mult: float = 1.0, is_backshot: bool = false):
 	# Invincible or noclipping players take no damage and are immune to effects.
-	if health < 0.0 and status_effect_manager and (status_effect_manager.is_invincible() or status_effect_manager.has_effect("noclip")):
+	if health < 0.0 and status_effect_manager and (status_effect_manager.is_invincible() or has_noclip()):
 		return
 	if health < 0.0 and shield_instance and shield_instance.active:
 		shield_instance.absorb_damage(-health)
@@ -1972,8 +2003,13 @@ func _apply_dev_health_fraction(frac: float) -> void:
 
 func dev_set_god_mode(on: bool) -> void:
 	if multiplayer.is_server():
-		_apply_dev_god_mode(on)
+		_sync_dev_god_mode(on)
 	else:
+		# Optimistic local mirror so the HUD indicator reacts immediately.  A
+		# client never applies damage, so this has no gameplay effect; the
+		# server's broadcast is the authored state.
+		if attribute_component:
+			attribute_component.dev_god_mode = on
 		_dev_god_mode_request.rpc_id(1, on)
 
 
@@ -1981,16 +2017,18 @@ func dev_set_god_mode(on: bool) -> void:
 func _dev_god_mode_request(on: bool) -> void:
 	if not multiplayer.is_server() or not _dev_request_is_owner():
 		return
-	_apply_dev_god_mode(on)
+	_sync_dev_god_mode(on)
 
 
-func _apply_dev_god_mode(on: bool) -> void:
-	# The flag lives on AttributeComponent because HurtComponent and explosions
-	# call apply_health_delta() directly; Player.change_health()'s invincibility
-	# guard never sees those hits.
+## Server -> every peer.  God mode is enforced only on the server (see the flag
+## comment in AttributeComponent), but the value is mirrored so the owning
+## client's HUD can show the indicator.  One writer: everything lands here.
+@rpc("authority", "call_local", "reliable")
+func _sync_dev_god_mode(on: bool) -> void:
 	if attribute_component:
 		attribute_component.dev_god_mode = on
-	if on and status_effect_manager:
+	# Clearing effects is a server-only operation.
+	if on and multiplayer.is_server() and status_effect_manager:
 		status_effect_manager.clear_negative_effects()
 
 
@@ -2071,6 +2109,87 @@ func _dev_infinite_ammo_request(on: bool) -> void:
 		return
 	if weapon_controller:
 		weapon_controller.set_dev_infinite_ammo(on)
+
+
+func dev_set_no_meter_drain(on: bool) -> void:
+	if ability_manager:
+		ability_manager.set_dev_no_meter_drain(on)
+	if not multiplayer.is_server():
+		_dev_no_meter_drain_request.rpc_id(1, on)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _dev_no_meter_drain_request(on: bool) -> void:
+	if not multiplayer.is_server() or not _dev_request_is_owner():
+		return
+	if ability_manager:
+		ability_manager.set_dev_no_meter_drain(on)
+
+
+func dev_set_noclip(on: bool) -> void:
+	if multiplayer.is_server():
+		_sync_dev_noclip(on)
+	else:
+		_dev_noclip_request.rpc_id(1, on)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _dev_noclip_request(on: bool) -> void:
+	if not multiplayer.is_server() or not _dev_request_is_owner():
+		return
+	_sync_dev_noclip(on)
+
+
+## Server -> every peer.  Noclip replaces the rollback movement simulation, so
+## every peer must hold the same value (same reason as dev_infinite_stamina).
+## Deliberately not set optimistically on the client: a one-RTT delay is correct,
+## local prediction of the mode flip would only add divergence.
+@rpc("authority", "call_local", "reliable")
+func _sync_dev_noclip(on: bool) -> void:
+	dev_noclip = on
+
+
+func dev_set_hidden_from_bots(on: bool) -> void:
+	dev_hidden_from_bots = on
+	if not multiplayer.is_server():
+		_dev_hidden_from_bots_request.rpc_id(1, on)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _dev_hidden_from_bots_request(on: bool) -> void:
+	if not multiplayer.is_server() or not _dev_request_is_owner():
+		return
+	dev_hidden_from_bots = on
+
+
+## Local-only visibility override; see the flag comment.
+func dev_set_hide_model(on: bool) -> void:
+	dev_hide_model = on
+	_apply_model_visibility()
+
+
+## Dev-menu "respawn now": a full reset (works dead or alive) with the respawn
+## timer dropped.  `cheat_death()` cannot be reused for the alive case — it
+## returns early while spawned.  rpc_reset clears a live noclip exit pulse.
+func dev_respawn() -> void:
+	if multiplayer.is_server():
+		_do_dev_respawn()
+	else:
+		_dev_respawn_request.rpc_id(1)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _dev_respawn_request() -> void:
+	if not multiplayer.is_server() or not _dev_request_is_owner():
+		return
+	_do_dev_respawn()
+
+
+func _do_dev_respawn() -> void:
+	# Reliable RPCs from the same node are ordered, so the spawn lands with the
+	# timer already at zero.
+	rpc_reset.rpc(_get_spawn_transform())
+	rpc_cheat_death.rpc()
 #endregion
 
 
@@ -2468,6 +2587,10 @@ func _spawn_character_model() -> void:
 	if own:
 		_set_own_head_visible(third_person)
 
+	# A character change / respawn rebuilds the model, so the dev hide override
+	# has to be re-applied after every rebuild.
+	_apply_model_visibility()
+
 
 ## Show or hide the mannequin's body/head meshes without hiding the node itself.
 ## The first-person weapon is parented to the mannequin skeleton's hand bone, so
@@ -2591,7 +2714,16 @@ func set_ghost_tier(tier: int) -> void:
 	if _ghost_tier == tier:
 		return
 	_ghost_tier = tier
+	_apply_ghost_visuals()
+	_apply_model_visibility()
 
+
+## Per-mesh ghost rendering for the current tier: the outline meshes and the
+## world weapon.  Deliberately separate from _apply_model_visibility so the dev
+## "hide my own model" toggle never rewrites per-mesh visibility — doing that
+## re-showed the head meshes that first person hides.
+func _apply_ghost_visuals() -> void:
+	var tier := _ghost_tier
 	var show := tier != GhostTier.HIDDEN
 	var override: Material = null
 	if tier == GhostTier.GLASS:
@@ -2599,8 +2731,6 @@ func set_ghost_tier(tier: int) -> void:
 	elif tier == GhostTier.BLACK:
 		override = NOCLIP_BLACK
 
-	if model != null:
-		model.visible = show
 	for m in _outline_meshes:
 		if is_instance_valid(m):
 			m.visible = show
@@ -2614,6 +2744,32 @@ func set_ghost_tier(tier: int) -> void:
 			if mesh != null:
 				mesh.visible = show
 				mesh.material_override = override
+
+
+## Node-level model visibility from the ghost tier AND the dev-menu "hide my
+## own model" override.  The dev setter calls this directly — relying on
+## set_ghost_tier would not restore the model, because that function
+## early-returns while the tier is unchanged.
+func _apply_model_visibility() -> void:
+	var tier := _ghost_tier
+	var dev_hidden := dev_hide_model and _is_own_model()
+	var show := tier != GhostTier.HIDDEN and not dev_hidden
+
+	if model == mannequin:
+		# HIDDEN owns the whole node (that is what also hides the weapon under
+		# GunAttach).  The dev override must not touch the node: it hides only
+		# the skeleton's body/head meshes, leaving the weapon in hand.
+		if tier == GhostTier.HIDDEN:
+			model.visible = false
+		else:
+			_set_mannequin_meshes_visible(show)
+	elif model != null:
+		model.visible = show
+
+	# With a custom model the mannequin is normally hidden; restoring it is only
+	# correct when debug_show_both_models asked for both.
+	if model != mannequin and _is_own_model():
+		_set_mannequin_meshes_visible(debug_show_both_models and show)
 
 ## Per-viewer update: decide, for every other player, whether the local client
 ## should reveal their outline (through walls) and/or their health bar, and
@@ -2630,7 +2786,7 @@ func _update_visibility(delta: float) -> void:
 
 	# The local player's own ghost tier (this node is the local peer's model).
 	var self_tier := GhostTier.NONE
-	if sem.has_effect("noclip"):
+	if has_noclip():
 		self_tier = GhostTier.BLACK
 	elif sem.has_effect("invisible"):
 		self_tier = GhostTier.GLASS
@@ -2669,7 +2825,9 @@ func _update_visibility(delta: float) -> void:
 			var enemy := _is_enemy_of(other)
 
 			# Ghost effect tier for this target (noclip wins over invisibility).
-			if osem.has_effect("noclip"):
+			# has_noclip() also covers that player's dev override, which is
+			# broadcast to this peer.
+			if other.has_noclip():
 				tier = GhostTier.BLACK
 			elif osem.has_effect("invisible"):
 				tier = GhostTier.HIDDEN if enemy else GhostTier.GLASS
@@ -2726,6 +2884,9 @@ func _update_visibility(delta: float) -> void:
 		else:
 			other.set_wallhack_outline(false, outline_color)
 			other.set_ghost_tier(tier)
+		# Dev-menu "hide other HUD": suppress every projected health bar.
+		if GameManager.dev_hide_world_hud:
+			show_health = false
 		other.set_public_health_visible(show_health)
 
 

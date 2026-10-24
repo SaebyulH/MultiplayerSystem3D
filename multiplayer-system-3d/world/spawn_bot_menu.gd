@@ -10,6 +10,9 @@ class_name SpawnBotMenu
 ## white text, blue accents.
 
 signal edit_bot_requested(bot_name: String)
+## Emitted whenever the live bot list is rebuilt (spawn, remove, refresh).
+## The dev menu uses it to enable/disable its "Remove all bots" button.
+signal bots_changed()
 
 const BLUE := Color(0.35, 0.65, 1.0, 1)
 const PANEL_BG := Color(0.05, 0.05, 0.08, 0.96)
@@ -285,6 +288,7 @@ func _get_bots() -> Array:
 
 
 func _refresh_bot_list() -> void:
+	bots_changed.emit()
 	if _bot_list == null:
 		return
 	for child in _bot_list.get_children():

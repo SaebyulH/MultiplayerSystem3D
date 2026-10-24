@@ -314,7 +314,6 @@ func _rebuild_leaderboard() -> void:
 		var t: int = _get_team(p)
 		teams[t].append(p)
 
-	var my_streak: int = 0
 	for team in [Player.Team.SPI, Player.Team.SCI, Player.Team.FFA]:
 		var players: Array = teams[team]
 		if players.is_empty():
@@ -322,18 +321,12 @@ func _rebuild_leaderboard() -> void:
 		players.sort_custom(func(a, b): return Leaderboard.get_kills(a) > Leaderboard.get_kills(b))
 		_lb_rows.add_child(_lb_team_header(team))
 		_lb_rows.add_child(_lb_team_grid(players, self_team))
-		for p in players:
-			if p == player_id:
-				my_streak = Leaderboard.get_killstreak(p)
 
 	var disconnected := Leaderboard.get_disconnected_players()
 	if not disconnected.is_empty():
 		disconnected.sort_custom(func(a, b): return Leaderboard.get_kills(a) > Leaderboard.get_kills(b))
 		_lb_rows.add_child(_lb_disconnected_header())
 		_lb_rows.add_child(_lb_team_grid(disconnected, self_team))
-
-	if has_node("Killstreak"):
-		$Killstreak.text = "%d kills" % my_streak if my_streak > 0 else ""
 
 
 func show_leaderboard() -> void:

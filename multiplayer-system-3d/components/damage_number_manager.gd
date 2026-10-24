@@ -20,7 +20,19 @@ func _ready() -> void:
 	_canvas = CanvasLayer.new()
 	_canvas.layer = 3
 	_canvas.name = "DamageNumberCanvas"
+	# PlayerUI may not exist yet while it is being readied, so honour the dev
+	# display flag here too; otherwise a HUD hidden at boot leaves this canvas.
+	_canvas.visible = not GameManager.dev_hide_player_hud
 	get_tree().root.add_child(_canvas)
+
+
+## Dev-menu "hide player HUD".  The canvas lives on the tree root, so it does
+## not inherit PlayerUI's visibility and has to be toggled explicitly.
+func set_dev_hidden(hidden: bool) -> void:
+	if not is_multiplayer_authority():
+		return
+	if _canvas and is_instance_valid(_canvas):
+		_canvas.visible = not hidden
 
 
 func _exit_tree() -> void:
@@ -33,6 +45,9 @@ func _exit_tree() -> void:
 
 func on_damage_dealt(target_name: String, amount: float, is_headshot: bool = false, falloff_mult: float = 1.0, is_backshot: bool = false) -> void:
 	if not is_multiplayer_authority():
+		return
+	# Dev-menu "hide player HUD": don't even build popups nobody can see.
+	if GameManager.dev_hide_player_hud:
 		return
 
 	var target: Player = GameManager.find_player(target_name)

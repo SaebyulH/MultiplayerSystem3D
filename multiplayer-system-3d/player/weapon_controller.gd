@@ -725,18 +725,31 @@ func is_dev_infinite_ammo() -> bool:
 
 ## Toggle the dev-menu override.  Enabling refills every magazine so the HUD
 ## reads full; on the server that refill is broadcast to all peers.
+##
+## Always emits `mag_changed`, even when switching the override OFF.  The HUD's
+## ammo readout is signal-driven (player_ui.gd `_on_ammo_updated`), and turning
+## the override off changes no magazine value — without this emit the readout
+## stayed on "∞" until some unrelated ammo event happened to repaint it.
 func set_dev_infinite_ammo(on: bool) -> void:
-	_dev_infinite_ammo = on
-	if not on or _weapons.is_empty():
+	if _dev_infinite_ammo == on:
 		return
-	var mags: Array[int] = []
-	for w in _weapons:
-		w.mag_current = w.mag_size
-		mags.append(w.mag_size)
-	if multiplayer.is_server():
-		_sync_all_mags.rpc(mags)
-	else:
-		_emit_weapon_changed()
+	_dev_infinite_ammo = on
+	if _weapons.is_empty():
+		return
+	if on:
+		var mags: Array[int] = []
+		for w in _weapons:
+			w.mag_current = w.mag_size
+			mags.append(w.mag_size)
+		if multiplayer.is_server():
+			# call_local: this also emits mag_changed on the server.
+			_sync_all_mags.rpc(mags)
+			return
+	# Off, or a client turning it on (the server's broadcast repaints that copy).
+	mag_changed.emit(
+		_weapons[current_weapon_index].mag_current,
+		_weapons[current_weapon_index].mag_size
+	)
 #endregion
 
 

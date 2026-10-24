@@ -55,6 +55,20 @@ func _add_player_to_game(network_id: int):
 	Leaderboard.request_add_player(entity_id)
 
 
+## Dev-menu "remove all bots".  Snapshots the names first (remove_bot frees
+## nodes, and iterating the live child list while freeing is unsafe), then goes
+## through remove_bot so the leaderboard and lobby_bots roster stay in step.
+func remove_all_bots() -> void:
+	if not multiplayer.is_server() or not is_instance_valid(spawn_parent):
+		return
+	var names: Array[String] = []
+	for child in spawn_parent.get_children():
+		if child is Player and (child as Player).is_bot and not child.is_queued_for_deletion():
+			names.append(str(child.name))
+	for entity_id in names:
+		remove_bot(entity_id)
+
+
 func remove_bot(entity_id: String) -> void:
 	var bot = spawn_parent.find_child(entity_id, false, false)
 	if bot:

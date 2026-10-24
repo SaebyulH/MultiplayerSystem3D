@@ -111,6 +111,11 @@ var _ui_timer: Timer
 
 # Targeted-ability preview discs (projected beside candidate enemies).
 var _preview_layer: CanvasLayer
+
+## Dev-state readout (GOD MODE / NOCLIP / BOTS IGNORE ME), top-left.  Composite
+## string cached so the label is only rewritten when a flag actually changes.
+var _dev_status_label: Label
+var _dev_status_cache := ""
 var _preview_icons: Array[TargetedAbilityIcon] = []
 ## Candidate discovery (players-group query + LOS raycast + sort) is throttled to
 ## 10 Hz; results are cached per ability and only the cheap disc re-projection
@@ -186,6 +191,10 @@ func _ready() -> void:
 	_rebuild_abilities()
 	_rebuild_status_effects()
 
+	# The UI is built even when the dev-menu "hide player HUD" toggle is already
+	# on, so turning it back off reveals a complete HUD without a respawn.
+	refresh_visibility()
+
 func _connect_signals() -> void:
 	if weapon_controller:
 		weapon_controller.mag_changed.connect(_on_ammo_updated)
@@ -211,6 +220,7 @@ func _build_ui() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	_build_crosshair()
+	_build_dev_status()
 	_build_aimbot_circle()
 	_build_health()
 	_build_ammo()
@@ -249,6 +259,21 @@ func _build_crosshair() -> void:
 	_crosshair.offset_bottom = 3.0
 	_crosshair.color = Color(0.25, 1.0, 0.4)
 	add_child(_crosshair)
+
+## Dev-state readout: GOD MODE / NOCLIP / BOTS IGNORE ME.  Text is set by
+## _update_dev_status(); hidden until at least one flag is on.
+func _build_dev_status() -> void:
+	_dev_status_label = Label.new()
+	_dev_status_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_dev_status_label.position = Vector2(MARGIN, 8.0)
+	_dev_status_label.size = Vector2(520.0, 26.0)
+	_dev_status_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_apply_hud_font(_dev_status_label, 18)
+	_dev_status_label.add_theme_color_override("font_color", Color(1.0, 0.82, 0.25))
+	_dev_status_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+	_dev_status_label.add_theme_constant_override("outline_size", 4)
+	_dev_status_label.visible = false
+	add_child(_dev_status_label)
 
 func _build_aimbot_circle() -> void:
 	# Aim-assist cone indicator, centered on the crosshair.  Sized and shown
@@ -785,17 +810,19 @@ func _add_border_material(id: String, shader: Shader, color: Color, pulse_speed:
 # --------------------------------------------------
 
 func _process(delta: float) -> void:
-	# Re-assert ownership visibility every frame (parent show()/hide() overrides
-	# our flag), then run continuous-only work for the owner.  Discrete state is
-	# signal-driven; coarse countdowns run on _ui_timer.
-	var should_show := is_multiplayer_authority() and not _owner_player.is_bot
-	if visible != should_show:
-		visible = should_show
-	if not should_show:
+	# Re-assert visibility every frame (parent show()/hide() and the dev toggle
+	# both write it), then run continuous-only work for the owner.  Compare the
+	# ACTUAL `visible`, not a cached desired value: despawn() hides the node
+	# directly and a cache would miss that.  Discrete state is signal-driven;
+	# coarse countdowns run on _ui_timer.
+	if visible != _should_show():
+		refresh_visibility()
+	if not visible:
 		return
 
 	_border_time += delta
 	_update_border_shader_time()
+	_update_dev_status()
 	_update_stamina()
 	_update_scope_charge_ui()
 	_update_charge_ui()
@@ -803,6 +830,48 @@ func _process(delta: float) -> void:
 	_update_targeted_previews(delta)
 	_update_aimbot_circle()
 	_update_ability_cooldowns()
+
+
+## Whether this HUD should be on screen: only the local peer's own, non-bot
+## player, and not while the dev-menu hide toggle is active.
+func _should_show() -> bool:
+	return is_multiplayer_authority() \
+		and not _owner_player.is_bot \
+		and not GameManager.dev_hide_player_hud
+
+
+## Apply the visibility rule to the Control and to the two overlays that do NOT
+## inherit it: the FPS counter is a CanvasLayer on the tree root, and the
+## targeted-ability discs live on their own child CanvasLayer.
+func refresh_visibility() -> void:
+	var show := _should_show()
+	visible = show
+	if _fps_canvas:
+		_fps_canvas.visible = show
+	if _preview_layer:
+		_preview_layer.visible = show
+	if is_instance_valid(_owner_player) and _owner_player.damage_number_manager:
+		_owner_player.damage_number_manager.set_dev_hidden(not show)
+
+
+## Compose the dev-state line.  Debug-only display, but it runs every frame for
+## the owner, so it only rewrites the label when the composed text changes.
+func _update_dev_status() -> void:
+	if _dev_status_label == null:
+		return
+	var parts := PackedStringArray()
+	if _owner_player.attribute_component and _owner_player.attribute_component.dev_god_mode:
+		parts.append("GOD MODE")
+	if _owner_player.dev_noclip:
+		parts.append("NOCLIP")
+	if _owner_player.dev_hidden_from_bots:
+		parts.append("BOTS IGNORE ME")
+	var text := " · ".join(parts)
+	if text == _dev_status_cache:
+		return
+	_dev_status_cache = text
+	_dev_status_label.text = text
+	_dev_status_label.visible = not text.is_empty()
 
 
 func _on_ui_tick() -> void:

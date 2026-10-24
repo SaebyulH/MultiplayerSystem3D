@@ -57,6 +57,12 @@ extends Node
 ## which never evaluate another player's casts.
 var dev_no_cooldowns := false
 
+## Dev-menu "infinite ability meters": a running meter does not drain.  Kept
+## separate from [member dev_no_cooldowns], which deliberately does NOT bypass
+## the meter gate (see is_ability_ready) — this is the knob that does.
+## Per-peer in the same way as the cooldowns.
+var dev_no_meter_drain := false
+
 var _parent_player: Player
 ## Absolute `Time.get_ticks_msec()` deadlines: the instant gate 2 opens.
 var _cooldowns: Array[float] = []
@@ -223,6 +229,10 @@ func _meter_at(index: int, now: int) -> float:
 		return 0.0
 	var meter: float = _meter[index]
 	var draining: bool = _meter_active[index]
+	# Dev-menu override: a running pool reads full and therefore never exhausts
+	# (the _physics_process auto-off and the HUD both read this function).
+	if draining and dev_no_meter_drain:
+		return full
 	var rate := 0.0
 	if not draining:
 		if meter >= full:
@@ -236,6 +246,18 @@ func _meter_at(index: int, now: int) -> float:
 	if draining:
 		return maxf(meter - elapsed / 1000.0, 0.0)
 	return minf(meter + rate * elapsed / 1000.0, full)
+
+
+## Toggle the dev-menu override.  Materialise every pool and re-stamp it BEFORE
+## flipping the flag: turning the override OFF must not leave a stale `_meter`
+## from when it was switched on, or the whole frozen interval would be applied
+## at once and the pool would jump to empty.
+func set_dev_no_meter_drain(on: bool) -> void:
+	var now := Time.get_ticks_msec()
+	for i in _meter_active.size():
+		_meter[i] = _meter_at(i, now)
+		_meter_stamp_ms[i] = float(now)
+	dev_no_meter_drain = on
 
 
 ## Seconds until the meter gate opens — i.e. until the pool holds

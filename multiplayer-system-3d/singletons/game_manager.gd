@@ -21,6 +21,23 @@ var spawn_manager: SpawnManager
 ## Auto-fill bots are deliberately NOT recorded here, so they're freed on exit.
 var lobby_bots: Array[Dictionary] = []
 
+# --- Dev-menu display flags (world/dev_menu.gd) ---------------------------
+# Purely local: they are never networked and only affect the peer that set
+# them.  They live on GameManager (not on the world) so they survive a world
+# swap; world_1.gd re-applies the HUD one when it builds the world again.
+
+## Hide the local player's own HUD (PlayerUI, FPS counter, ability previews,
+## damage numbers).  Menus are never affected.
+var dev_hide_player_hud := false
+
+## Hide the rest of the on-screen HUD (mode timer/score/team bars, kill feed,
+## other players' projected health bars).  Menus — including the leaderboard —
+## are never affected.
+var dev_hide_world_hud := false
+
+## Stop every bot's AI.  Server-local: bots only simulate on peer 1.
+var dev_freeze_bots := false
+
 func find_player(id: String) -> Player:
 	# `spawn_parent` is a plain reference that can be null before the world is
 	# built, or a freed node during teardown — `is_instance_valid` is the only
