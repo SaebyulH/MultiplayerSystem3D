@@ -597,6 +597,18 @@ use_collision = true
 size = Vector3(30.483429, 1.0985718, 14.890976)
 material = SubResource("StandardMaterial3D_veg8g")
 
+[node name="ground24" type="CSGBox3D" parent="." unique_id=1918905528]
+transform = Transform3D(-0.77817905, 0, 6.803057e-08, 0, 1.1429276, 0, -6.803057e-08, 0, -0.77817905, -91.772644, 1.8398657, 8.915229)
+use_collision = true
+size = Vector3(2.1098633, 8.323212, 2.4908981)
+material = SubResource("StandardMaterial3D_veg8g")
+
+[node name="ground25" type="CSGBox3D" parent="." unique_id=976837740]
+transform = Transform3D(-0.77817905, 0, 6.803057e-08, 0, 1.1429276, 0, -6.803057e-08, 0, -0.77817905, -92.777954, 1.8398657, 2.3366408)
+use_collision = true
+size = Vector3(4.6936035, 8.323212, 2.4908981)
+material = SubResource("StandardMaterial3D_veg8g")
+
 [node name="ground22" type="CSGBox3D" parent="." unique_id=2096049404]
 transform = Transform3D(-0.77817905, 0, 6.803057e-08, 0, 1.1429276, 0, -6.803057e-08, 0, -0.77817905, -92.77102, -2.5317268, 3.244748)
 use_collision = true
