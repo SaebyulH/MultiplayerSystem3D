@@ -239,6 +239,59 @@ class_name BotController
 ##   sit in separate decorative/roof islands, so a low-to-high query there is not
 ##   a fair staircase test.
 ##
+## - Stage 4 (decision / combat movement / search / damage): COMPLETE.
+##   `Decision` owns TRAVEL / SEARCH / COMBAT / HEAL / RELOAD_SAFE /
+##   RETREAT_COVER / STUCK_RECOVER.  It considers at 4 Hz, every state has a
+##   minimum duration, and new targets, damage, and traversal recovery use
+##   interrupts.  `_act()` is now a dispatch through it.
+##   Target selection scores angle-to-crosshair, distance, visible time, recent
+##   damage source, low-health bonus and stickiness, with a switch margin and a
+##   switch re-aim cost.  New detections need a recognition time scaled by
+##   distance/FOV edge/skill; the current target can be tracked outside the cone.
+##   Combat movement is event-driven: damage and shot counts force strafe
+##   changes, counter-strafing is still used, pauses are rare/short, range
+##   keeping uses a wide soft band with approach angle, close range circles, and
+##   jump/crouch are probabilistic and suppressed for precision/tight aim.
+##   Cover (`ENABLE_COVER`) searches nearby ray-verified LOS breaks, moves there,
+##   waits, peeks/fires, ducks back, and times out/falls back after 6 s or when no
+##   cover exists.
+##   SEARCH goes to the last-seen point then along remembered velocity, with
+##   glances at side corridors/last threat.  Damage awareness records the source,
+##   estimated direction, forces a strafe change, turns with a skill-scaled
+##   REACT_DAMAGE look, and can enter SEARCH or RETREAT_COVER.
+##   Objective travel gets a light per-bot `aggression`/`flank_bias` offset.
+##   Verified headlessly on `castle` with SPI vs SCI bots: damage caused a cover
+##   state and a healer state, target-loss produced SEARCH, and combat/search/
+##   heal/stuck states alternated without runtime errors.  Debug overlay shows
+##   `decide:` alongside travel.
+##
+## - Stage 5 (arsenal / reload / fire modes / explosion jump): COMPLETE.
+##   `_get_weapon_profile()` caches one profile per weapon resource: verified
+##   hitscan/falloff/projectile ranges, ideal band, melee, explosive, heal roles,
+##   charged/automatic, cooldown, DPS proxy, mag/reload/switch times, infinite
+##   ammo.  `_get_proj_info` remains the only projectile scene instantiation.
+##   Weapon choice scores every ready weapon at the target distance against the
+##   profile (falloff effective range, melee only inside real reach, explosive
+##   self-splash, heal penalties, DPS, switch cost), re-evaluates on a 0.5 s
+##   timer plus new-target/empty-mag/distance-band events, and requires a score
+##   margin.  `Buttons` now adds a 0.2-0.5 s human switch decision delay; the
+##   switch guard is derived from put-away + pullout, not a fixed 1.0 s.
+##   Reload policy is tactical: threshold rises with skill, only when safe or the
+##   target is far/out of LOS/covered; trigger released first; ready sidearms are
+##   preferred under pressure; melee only inside its verified reach.
+##   Fire-mode scoring now uses each mode's effective/ideal range and falloff
+##   band, with melee/automatic/shotgun/burst role bonuses.
+##   Medic switching has persistence/absence hysteresis (1.0 s / 1.5 s) and never
+##   fires a heal-only weapon at an enemy while waiting.
+##   Explosion jump is now aim -> fire -> jump: phase 1 requests the ground look
+##   and waits for <=5 deg error, phase 2 fires through Trigger and waits ~0.08 s
+##   before pressing jump.  Visible enemies, heal targets, stuns, weapon changes,
+##   low health with self-damage, or timeout abort and release everything.
+##   Verified headlessly on `castle` with forced Knife/Pistol and Rocket/Pistol
+##   loadouts: Knife profile reports 2.0 m, far targets switch to Pistol, close
+##   targets switch to Knife, and switches respect the decision/equip delay.  A
+##   live explosion-jump launch and reload-policy check remain manual.
+##
 ## OPEN QUESTIONS / HAZARDS FOR LATER STAGES
 ## - `_get_proj_info().heals_allies` is accurate (positive `health_delta` +
 ##   `can_hit_other_teamates`): Syringe Gun and Medpack Launcher only.
@@ -333,6 +386,7 @@ func _ready() -> void:
 	_buttons = Buttons.new(self)
 	_maneuvers = ManeuverRunner.new(self)
 	_traversal = Traversal.new(self)
+	_decision = Decision.new(self)
 	_trigger = Trigger.new(self)
 	_los_exclude_rids.clear()
 	_los_exclude_rids.append(player.get_rid())
@@ -420,8 +474,20 @@ const FIRE_CLICK_HZ_MAX: float = 9.0
 ## time itself is still the WeaponController's real switch state machine.
 const RELOAD_REACTION_MIN: float = 0.06
 const RELOAD_REACTION_MAX: float = 0.25
-const SWITCH_REACTION_MIN: float = 0.06
-const SWITCH_REACTION_MAX: float = 0.25
+## Weapon choice includes a human decision delay before the equip starts.
+const SWITCH_REACTION_MIN: float = 0.20
+const SWITCH_REACTION_MAX: float = 0.50
+
+# Arsenal (Stage 5)
+const WEAPON_CHOICE_INTERVAL: float = 0.5
+const WEAPON_SWITCH_MARGIN: float = 22.0
+const WEAPON_MELEE_ONLY_MARGIN: float = 0.5
+const WEAPON_RELOAD_RATIO_MIN: float = 0.30
+const WEAPON_RELOAD_RATIO_MAX: float = 0.58
+const MEDIC_HEAL_PERSIST: float = 1.0
+const MEDIC_HEAL_ABSENT: float = 1.5
+const EXPLOSION_JUMP_AIM_TIMEOUT: float = 1.0
+const EXPLOSION_JUMP_FIRE_WAIT: float = 0.08
 ## Path to the target's head bone — the `Physical Bone DEF-spine_006` hurtbox with
 ## `is_head = true` in player.tscn.  Bots aim at this bone's live world position
 ## rather than a fixed height, so headshots track the model's actual head.
@@ -480,8 +546,25 @@ const STEER_RAY_HEIGHT: float     = 0.5
 const WALL_FOLLOW_DISTANCE: float = 3.0
 
 # Look-request priorities.  Higher wins; a lower-priority request cannot steal
-# the crosshair from a live higher-priority one.
-enum LookPriority { SCAN, TRAVEL_LOOKAHEAD, REACT_DAMAGE, COMBAT }
+# the crosshair from a live higher-priority one.  GLANCE sits between travel and
+# damage so an idle/travel bot can check a corridor without losing the path look.
+enum LookPriority { SCAN, TRAVEL_LOOKAHEAD, GLANCE, REACT_DAMAGE, COMBAT }
+
+# Decision state machine (Stage 4).  Cover is behind a switch so an unstable
+# build can ship with it off without deleting the code.
+const ENABLE_COVER: bool = true
+const DECISION_INTERVAL: float = 0.25
+const SEARCH_DURATION: float = 5.0
+const TARGET_LOST_GRACE: float = 0.35
+const RECOGNITION_TIME_MIN: float = 0.08
+const RECOGNITION_TIME_MAX: float = 0.55
+const TARGET_SWITCH_MARGIN: float = 0.35
+const TARGET_STICKINESS: float = 0.85
+const COVER_HEALTH_THRESHOLD: float = 0.42
+const COMBAT_STRAFE_SHOT_MIN: int = 3
+const COMBAT_STRAFE_SHOT_MAX: int = 6
+const COMBAT_JUMP_MIN_INTERVAL: float = 1.8
+const COMBAT_CROUCH_MIN_INTERVAL: float = 3.0
 
 # Strafing.  The actual hold time now comes from the per-bot Style; this is only
 # the fallback used before a Style has been drawn.
@@ -631,6 +714,42 @@ var _strafe_timer: float = 0.0
 ## (objective, pursue, wander, heal approach) goes through this.
 var _traversal: Traversal = null
 
+## Stage 4 decision state machine.  `_act` dispatches through it; the state has a
+## minimum duration and only a new visible enemy or a hit interrupts it.
+var _decision: Decision = null
+
+## Target-selection memory.  `_seen_since` is player name -> first-visible time,
+## so recognition is a duration, not a single ray hit.
+var _seen_since: Dictionary = {}
+var _last_damage_source_name: String = ""
+var _last_damage_time: float = -999.0
+var _last_damage_position: Vector3 = Vector3.INF
+var _last_damage_direction: Vector3 = Vector3.ZERO
+var _last_seen_velocity: Vector3 = Vector3.ZERO
+var _target_lost_timer: float = 0.0
+var _search_timer: float = 0.0
+var _search_active: bool = false
+var _search_origin: Vector3 = Vector3.INF
+var _glance_timer: float = 0.0
+
+## Combat movement is event-driven, not a 1.5 s dice roll.
+var _strafe_force_change: bool = false
+var _strafe_reason: String = ""
+var _shots_since_strafe: int = 0
+var _last_mag_for_strafe: int = -1
+var _combat_jump_timer: float = 0.0
+var _combat_crouch_timer: float = 0.0
+
+## Cover/peek state shared by Decision and _act_retreat_cover.
+var _cover_position: Vector3 = Vector3.INF
+var _cover_threat_pos: Vector3 = Vector3.INF
+var _cover_phase: int = 0
+var _cover_timer: float = 0.0
+var _cover_total_timer: float = 0.0
+var _cover_cooldown: float = 0.0
+var _cover_peek_side: float = 1.0
+var _cover_rounds: int = 0
+
 ## Sole owner of the fire flags.  Assigned in _ready; ticked every physics
 ## frame, independently of the 20 Hz think loop.
 var _trigger: Trigger = null
@@ -661,6 +780,26 @@ var _fire_mode_weapon_key: String = ""
 var _fire_mode_mag: int = -1
 var _fire_mode_dist: float = -1.0
 var _shoot_indices_cache: Dictionary = {}
+
+## Stage 5: resource-keyed weapon profiles and the slow weapon-choice loop.
+var _weapon_profile_cache: Dictionary = {}
+var _weapon_choice_timer: float = 0.0
+var _weapon_choice_target_name: String = ""
+var _weapon_choice_band: int = -999
+var _weapon_choice_reason: String = ""
+
+## Medic switch hysteresis: the candidate must persist before committing, and
+## the absence must persist before putting the heal gun away.
+var _heal_candidate_name: String = ""
+var _heal_candidate_time: float = 0.0
+var _heal_absent_time: float = 0.0
+
+## Explosion-jump sub-sequence (Stage 5, fixes K).
+var _explosion_jump_phase: int = 0
+var _explosion_jump_timer: float = 0.0
+var _explosion_jump_fire_wait: float = 0.0
+var _explosion_jump_fire_index: int = -1
+var _explosion_jump_weapon_index: int = -1
 
 ## What the current weapon's SIGNAL fire does to its projectiles.  Classified
 ## from the projectile's own `_on_weapon_signal` implementation, never from the
@@ -761,6 +900,7 @@ func _physics_process(delta: float) -> void:
 		_mouse.cancel()
 		_buttons.cancel()
 		_maneuvers.abort()
+		_abort_explosion_jump()
 		_has_desired_aim = false
 		aim_error_deg = -1.0
 		_was_spawned = false
@@ -776,6 +916,7 @@ func _physics_process(delta: float) -> void:
 		_trigger.release_all()
 		_mouse.cancel()
 		_maneuvers.abort()
+		_abort_explosion_jump()
 		_has_desired_aim = false
 		if debug_draw:
 			_debug_tick(delta)
@@ -787,6 +928,7 @@ func _physics_process(delta: float) -> void:
 		_trigger.release_all()
 		_mouse.cancel()
 		_maneuvers.abort()
+		_abort_explosion_jump()
 		_has_desired_aim = false
 		if debug_draw:
 			_debug_tick(delta)
@@ -798,6 +940,7 @@ func _physics_process(delta: float) -> void:
 	_maneuvers.tick(delta)
 	_mouse.tick(delta)
 	_update_aim_error()
+	_tick_explosion_jump(delta)
 	_trigger.tick(delta)
 	_keyboard.tick(delta)
 	_traversal.tick(delta)
@@ -814,6 +957,8 @@ func _physics_process(delta: float) -> void:
 		_reaction_timer = maxf(_reaction_timer - delta, 0.0)
 	if _explosion_jump_cooldown_timer > 0.0:
 		_explosion_jump_cooldown_timer = maxf(_explosion_jump_cooldown_timer - delta, 0.0)
+	if _cover_cooldown > 0.0:
+		_cover_cooldown = maxf(_cover_cooldown - delta, 0.0)
 
 	# Safe-top-off clock: reset as long as an enemy is visible or nearby.
 	if _current_target != null or _enemy_nearby:
@@ -836,6 +981,7 @@ func _physics_process(delta: float) -> void:
 	_tick_preferred_distance()
 
 	_think()
+	_decision.update(PROCESS_INTERVAL)
 	if not _maneuvers.is_running():
 		_act()
 
@@ -927,8 +1073,10 @@ func _move_local(local: Vector2) -> void:
 
 func _tick_strafe() -> void:
 	_strafe_timer -= PROCESS_INTERVAL
-	if _strafe_timer > 0.0:
+	var forced := _strafe_force_change
+	if _strafe_timer > 0.0 and not forced:
 		return
+	_strafe_force_change = false
 
 	var style: Style = _style
 	if style == null:
@@ -937,14 +1085,24 @@ func _tick_strafe() -> void:
 		return
 
 	var spread := clampf(style.strafe_hold_spread, 0.0, 0.9)
-	_strafe_timer = maxf(0.12, style.strafe_hold_median * randf_range(1.0 - spread, 1.0 + spread))
+	_strafe_timer = maxf(
+		0.16, style.strafe_hold_median * randf_range(1.0 - spread, 1.0 + spread)
+	)
+	if forced:
+		# A hit or a burst of shots asks for a new direction now; humans do not
+		# wait out the old strafe timer after being shot.
+		_strafe_timer = randf_range(0.25, 0.55)
 	var old_dir := _strafe_dir
+	var in_combat := _current_target != null
 
-	# Low-skill bots pause a lot; high-skill bots rarely stand still.
-	if not style.allow_strafe or randf() < style.pause_probability:
+	# Standing still is rare and short in a fight.  Out of combat the old
+	# occasional pause is harmless.
+	var pause_chance := style.pause_probability * (0.25 if in_combat else 1.0)
+	if not style.allow_strafe or randf() < pause_chance:
 		if old_dir != 0.0:
 			_keyboard.counter_strafe()
 		_strafe_dir = 0.0
+		_strafe_timer = randf_range(0.12, 0.28) if in_combat else _strafe_timer
 		return
 
 	# Weighted left/right with a repeat penalty and a per-bot bias.  The bias
@@ -961,6 +1119,7 @@ func _tick_strafe() -> void:
 		# current lateral velocity before the new key takes over.
 		_keyboard.counter_strafe()
 	_strafe_dir = new_dir
+	_strafe_reason = "event" if forced else "timer"
 
 ## Rerolls the per-bot preferred-fighting-distance wobble every couple of
 ## seconds so combat movement doesn't lock onto one exact, robotic distance.
@@ -989,6 +1148,14 @@ func _update_aim_error() -> void:
 func _react_to_damage(ac: AttributeComponent) -> void:
 	if ac == null:
 		return
+	var now := float(Time.get_ticks_msec()) / 1000.0
+	_last_damage_time = now
+	_last_damage_direction = ac.last_hit_direction
+	_glance_timer = 0.0
+	# A hit is an event, not a timer tick: change strafe direction now.
+	_strafe_force_change = true
+	_strafe_reason = "damaged"
+
 	var attacker_name := str(ac.last_enemy_attacker)
 	if attacker_name.is_empty() or attacker_name == "NONE":
 		attacker_name = str(ac.last_attacker)
@@ -996,17 +1163,47 @@ func _react_to_damage(ac: AttributeComponent) -> void:
 		var attacker := GameManager.find_player(attacker_name)
 		if attacker != null and is_instance_valid(attacker) and attacker.spawned \
 				and attacker != player and _is_enemy_of(attacker):
+			_last_damage_source_name = attacker_name
+			_last_damage_position = attacker.global_position
+			if _current_target == null:
+				_last_seen_position = attacker.global_position
+				_last_seen_velocity = attacker.velocity
+				_search_active = true
+				_search_timer = SEARCH_DURATION
+				_search_origin = attacker.global_position
+				_decision.interrupt(Decision.State.SEARCH)
 			_mouse.request_look_at_point(
 				_get_head_position(attacker),
 				LookPriority.REACT_DAMAGE,
 				1.0,
 				"damage:" + attacker_name
 			)
+			_maybe_cover_after_damage()
 			return
+
 	var direction: Vector3 = ac.last_hit_direction
 	if direction.length_squared() > 0.001:
 		# last_hit_direction points attacker -> victim, so flip it to look back.
-		_mouse.request_look_direction(-direction, LookPriority.REACT_DAMAGE, 1.0)
+		var source_dir := -direction.normalized()
+		_last_damage_position = player.global_position + source_dir * 8.0
+		_mouse.request_look_direction(source_dir, LookPriority.REACT_DAMAGE, 1.0)
+		if _current_target == null:
+			_last_seen_position = _last_damage_position
+			_last_seen_velocity = Vector3.ZERO
+			_search_active = true
+			_search_timer = SEARCH_DURATION
+			_search_origin = _last_damage_position
+			_decision.interrupt(Decision.State.SEARCH)
+	_maybe_cover_after_damage()
+
+
+func _maybe_cover_after_damage() -> void:
+	if not ENABLE_COVER:
+		return
+	if _health_ratio() < COVER_HEALTH_THRESHOLD and _has_threat():
+		_decision.interrupt(Decision.State.RETREAT_COVER)
+	elif _current_target != null:
+		_decision.interrupt(Decision.State.COMBAT)
 
 
 func _current_aim_tolerance() -> float:
@@ -1052,7 +1249,76 @@ func aim_tolerance_for(_weapon: Weapon, fire: WeaponFire) -> float:
 
 # Think
 
+## Recognition time before a newly visible enemy becomes a target.  Distance and
+## FOV-edge position both lengthen it; skill shortens the whole scale.  An
+## already-acquired target skips this (it is tracking, not recognising).
+func _recognition_time(target: Player, dist: float, in_fov: bool) -> float:
+	var edge := 0.6
+	if in_fov:
+		var fwd := player.horizontal_forward()
+		var to := target.global_position - player.global_position
+		to.y = 0.0
+		if to.length_squared() > 0.0001:
+			var angle := rad_to_deg(fwd.angle_to(to.normalized()))
+			edge = clampf(angle / maxf(FOV_DEGREES * 0.5, 1.0), 0.0, 1.0)
+	var base := lerpf(RECOGNITION_TIME_MAX, RECOGNITION_TIME_MIN, skill)
+	return base * (
+		0.7 + clampf(dist / SHOOT_RANGE, 0.0, 1.0) * 0.9 + edge * 0.7
+	)
+
+
+## Human target score: what the crosshair is near, how close, how long it has
+## been visible, and whether it just hurt us.  Stickiness is added by the caller
+## for the current target, and the switch margin is applied after scoring.
+func _score_target(target: Player, dist: float, seen_time: float, now: float) -> float:
+	var fwd := player.horizontal_forward()
+	var to := target.global_position - player.global_position
+	to.y = 0.0
+	var angle := 0.0
+	if to.length_squared() > 0.0001:
+		angle = rad_to_deg(fwd.angle_to(to.normalized()))
+	var score := 1.3 * (1.0 - clampf(angle / 90.0, 0.0, 1.0))
+	score += 1.1 * (1.0 - clampf(dist / SHOOT_RANGE, 0.0, 1.0))
+	score += 0.8 * clampf(seen_time / 2.0, 0.0, 1.0)
+	if str(target.name) == _last_damage_source_name and now - _last_damage_time < 5.0:
+		score += 1.0
+	if _style != null:
+		score += _style.aggression * 0.12
+	var ac := target.attribute_component
+	if ac != null and ac.max_health > 0.0 and ac.health / ac.max_health < 0.4:
+		score += 0.15
+	return score
+
+
+## Idle/travel glance.  It uses GLANCE so it briefly beats the travel look but
+## never a damage reaction or combat aim.
+func _tick_glance(delta: float) -> void:
+	if _glance_timer > 0.0:
+		_glance_timer = maxf(_glance_timer - delta, 0.0)
+		return
+	if _current_target != null or _heal_target != null:
+		_glance_timer = randf_range(1.5, 3.0)
+		return
+	_glance_timer = randf_range(1.8, 3.8)
+	var pos := player.global_position
+	var look := Vector3.ZERO
+	if _last_seen_position != Vector3.INF:
+		look = _last_seen_position - pos
+	elif _last_damage_position != Vector3.INF \
+			and float(Time.get_ticks_msec()) / 1000.0 - _last_damage_time < 8.0:
+		look = _last_damage_position - pos
+	else:
+		var fwd := player.horizontal_forward()
+		look = fwd.rotated(Vector3.UP, deg_to_rad(randf_range(45.0, 80.0) * (1.0 if randf() > 0.5 else -1.0)))
+	look.y = 0.0
+	if look.length_squared() > 0.01:
+		_mouse.request_look_direction(
+			look.normalized(), LookPriority.GLANCE, 0.22
+		)
+
+
 func _think() -> void:
+	_tick_glance(PROCESS_INTERVAL)
 	var wc: WeaponController = player.weapon_controller
 	if not wc._is_ready():
 		_current_target = null
@@ -1079,6 +1345,7 @@ func _think() -> void:
 		_retarget_timer -= PROCESS_INTERVAL
 		if _current_target != null:
 			_last_seen_position = _current_target.global_position
+			_last_seen_velocity = _current_target.velocity
 		return
 
 	_retarget_timer = RETARGET_INTERVAL
@@ -1087,10 +1354,14 @@ func _think() -> void:
 	_current_target = null
 	_heal_target = null
 
-	var closest_dist_sq := SHOOT_RANGE * SHOOT_RANGE
 	var heal_dist_sq := HEAL_RANGE * HEAL_RANGE
 	var heal_best_ratio := 2.0
 	_enemy_nearby = false
+	var now := float(Time.get_ticks_msec()) / 1000.0
+	var visible_names: Dictionary = {}
+	var best_target: Player = null
+	var best_score := -INF
+	var best_visible_time := 0.0
 
 	for node in get_tree().get_nodes_in_group("players"):
 		var p := node as Player
@@ -1114,9 +1385,31 @@ func _think() -> void:
 			# Invisible players are untargetable.
 			if p.status_effect_manager and p.status_effect_manager.has_effect("invisible"):
 				continue
-			if dist_sq < closest_dist_sq and _is_in_view_cone(p) and _has_line_of_sight_to_player(p):
-				closest_dist_sq = dist_sq
-				_current_target = p
+			var name_key := str(p.name)
+			var in_fov := _is_in_view_cone(p)
+			# Already-acquired targets stay trackable outside the cone, but NEW
+			# detections still require the FOV.
+			var trackable := in_fov or p == prev_target
+			var visible := trackable and _has_line_of_sight_to_player(p)
+			if not visible:
+				_seen_since.erase(name_key)
+				continue
+			if not _seen_since.has(name_key):
+				# Re-acquiring the current target must not drop it for one scan.
+				_seen_since[name_key] = now - (2.0 if p == prev_target else 0.0)
+			var seen_time := now - float(_seen_since[name_key])
+			visible_names[name_key] = true
+			var dist := sqrt(dist_sq)
+			var recognition := _recognition_time(p, dist, in_fov)
+			if seen_time < recognition:
+				continue
+			var score := _score_target(p, dist, seen_time, now)
+			if p == prev_target:
+				score += TARGET_STICKINESS
+			if score > best_score:
+				best_score = score
+				best_target = p
+				best_visible_time = seen_time
 		elif holding_heal or heal_index >= 0:
 			# Friendly heal candidate — only CRITICAL teammates.  Healing anyone
 			# merely below max HP kept the medic on the heal gun forever, which
@@ -1131,32 +1424,86 @@ func _think() -> void:
 				heal_best_ratio = ratio
 				_heal_target = p
 
-	# Medic behaviour: put the heal gun away when nobody needs healing, and pull
-	# it out when a teammate is critically hurt.  Exception: if the medic itself
-	# is low and owns a self-heal weapon, keep it out — `_act` will heal itself.
+	# Drop recognition clocks for anyone no longer visible.
+	for key in _seen_since.keys():
+		if not visible_names.has(key):
+			_seen_since.erase(key)
+
+	# Medic behaviour with hysteresis: a heal candidate must persist before the
+	# heal gun comes out, and must be absent for a while before it goes away.
 	var needs_self_heal := _health_ratio() < MEDIC_SELF_HEAL_THRESHOLD
 	var has_self_heal_weapon := _find_self_heal_weapon_index(wc) >= 0
+	var heal_name := ""
+	if _heal_target != null and is_instance_valid(_heal_target):
+		heal_name = str(_heal_target.name)
+	if heal_name.is_empty():
+		_heal_candidate_name = ""
+		_heal_candidate_time = 0.0
+		_heal_absent_time = minf(_heal_absent_time + RETARGET_INTERVAL, 10.0)
+	else:
+		_heal_absent_time = 0.0
+		if _heal_candidate_name == heal_name:
+			_heal_candidate_time = minf(_heal_candidate_time + RETARGET_INTERVAL, 10.0)
+		else:
+			_heal_candidate_name = heal_name
+			_heal_candidate_time = 0.0
+	var self_heal_exception := needs_self_heal and has_self_heal_weapon
 	if holding_heal and _heal_target == null and heal_index >= 0 \
-			and not (needs_self_heal and has_self_heal_weapon):
+			and _heal_absent_time >= MEDIC_HEAL_ABSENT \
+			and not self_heal_exception:
 		_switch_weapon(wc, _first_damage_weapon_index(wc))
-	elif not holding_heal and heal_index >= 0 and _heal_target != null:
+	elif not holding_heal and heal_index >= 0 and _heal_target != null \
+			and _heal_candidate_time >= MEDIC_HEAL_PERSIST:
 		var ac := _heal_target.attribute_component
 		if ac != null and ac.health / ac.max_health < _medic_heal_threshold():
 			if _switch_weapon(wc, heal_index):
-				_current_target = null  # don't fight while healing
+				best_target = null  # don't fight while healing
 
+	if _heal_target != null:
+		var healing_weapon: Weapon = wc._weapons[wc.current_weapon_index]
+		if _weapon_heals_allies(healing_weapon):
+			best_target = null
+
+	# Switch cost: keep the current target unless the new one is clearly better.
+	if best_target != null and prev_target != null and best_target != prev_target \
+			and is_instance_valid(prev_target) and prev_target.spawned:
+		var prev_score := _score_target(
+			prev_target,
+			player.global_position.distance_to(prev_target.global_position),
+			maxf(best_visible_time, 0.5),
+			now
+		) + TARGET_STICKINESS
+		if best_score < prev_score + TARGET_SWITCH_MARGIN:
+			best_target = prev_target
+			best_score = prev_score
+
+	_current_target = best_target
 	if _current_target != null:
-		# Only a genuinely new target starts the reaction-delay clock — losing
-		# and re-verifying the same target every RETARGET_INTERVAL shouldn't
-		# make a skill-0 bot re-hesitate on someone it's already shooting.
+		_search_timer = 0.0
+		_search_active = false
+		_target_lost_timer = 0.0
+		_last_seen_position = _current_target.global_position
+		_last_seen_velocity = _current_target.velocity
 		if _current_target != prev_target:
-			# A newly acquired target outranks any scripted maneuver.
+			# A newly acquired/switched target outranks any scripted maneuver and
+			# pays a small re-aim cost on top of the normal reaction time.
 			_maneuvers.abort()
 			var reaction := REACTION_TIME_MAX * (1.0 - skill)
 			if _style != null:
 				reaction = _style.reaction_time
-			_reaction_timer = reaction * randf_range(0.8, 1.2)
-		_last_seen_position = _current_target.global_position
+			var switch_cost := 0.0 if prev_target == null else reaction * randf_range(0.6, 1.2)
+			_reaction_timer = maxf(_reaction_timer, reaction * randf_range(0.8, 1.2) + switch_cost)
+			_decision.interrupt(Decision.State.COMBAT)
+	else:
+		if not _search_active and _last_seen_position != Vector3.INF:
+			_search_active = true
+			_search_timer = SEARCH_DURATION
+			_search_origin = _last_seen_position
+			_target_lost_timer = TARGET_LOST_GRACE
+		elif _search_active and _target_lost_timer > 0.0:
+			_target_lost_timer = maxf(_target_lost_timer - PROCESS_INTERVAL, 0.0)
+			if _target_lost_timer <= 0.0:
+				_decision.interrupt(Decision.State.SEARCH)
 
 	_refresh_los_excludes()
 
@@ -1490,6 +1837,353 @@ func _get_proj_info(fire: WeaponFire) -> Dictionary:
 	return info
 
 
+## Range/role facts for one SHOOT fire mode.  Verified fields only:
+## `hitscan_range`, the damage-falloff band, `bullet_type`, `automatic`,
+## `post_shoot_delay`, and the cached projectile info.
+func _fire_range_info(fire: WeaponFire) -> Dictionary:
+	if fire == null:
+		return {}
+	var info := {
+		"melee": false,
+		"explosive": false,
+		"hitscan": fire.bullet_type == WeaponFire.BulletType.HITSCAN,
+		"projectile": fire.bullet_type == WeaponFire.BulletType.PROJECTILE,
+		"automatic": fire.automatic,
+		"range_hard": 0.0,
+		"range_effective": 0.0,
+		"range_ideal": 0.0,
+		"cooldown": maxf(fire.post_shoot_delay, 0.05),
+		"dps": 0.0,
+		"splash_radius": 0.0,
+		"self_damage": 0.0,
+		"heals_allies": false,
+		"heals_shooter": false,
+		"falloff_start": fire.falloff_start,
+		"falloff_end": fire.falloff_end,
+	}
+	var is_melee: bool = fire.bullet_type == WeaponFire.BulletType.HITSCAN \
+		and fire.hitscan_range <= MELEE_CONSIDER_RANGE
+	info["melee"] = is_melee
+
+	if fire.bullet_type == WeaponFire.BulletType.PROJECTILE:
+		var proj := _get_proj_info(fire)
+		var speed := float(proj.get("speed", 0.0))
+		var lifetime := float(proj.get("lifetime", 20.0))
+		var hard := clampf(speed * lifetime, 2.0, SHOOT_RANGE)
+		info["range_hard"] = hard
+		info["range_effective"] = hard
+		info["range_ideal"] = clampf(
+			minf(hard, MAX_SENSIBLE_RANGE) * 0.72, 3.0, 45.0
+		)
+		info["explosive"] = bool(proj.get("is_explosive", false))
+		info["splash_radius"] = float(proj.get("splash_radius", 0.0))
+		info["self_damage"] = float(proj.get("self_damage", 0.0))
+		info["heals_allies"] = bool(proj.get("heals_allies", false)) \
+			or float(proj.get("team_heal", 0.0)) > 0.0
+		info["heals_shooter"] = float(proj.get("self_damage", 0.0)) > 0.0 \
+			or bool(proj.get("heals_shooter", false))
+	elif is_melee:
+		var hard := maxf(fire.hitscan_range, 0.5)
+		info["range_hard"] = hard
+		info["range_effective"] = hard
+		info["range_ideal"] = MELEE_ENGAGE_RANGE
+	elif fire.has_damage_falloff and fire.falloff_end > fire.falloff_start:
+		var hard := SHOOT_RANGE
+		if fire.hitscan_range < 1.0e8:
+			hard = clampf(fire.hitscan_range, 2.0, SHOOT_RANGE)
+		info["range_hard"] = hard
+		info["range_effective"] = clampf(fire.falloff_end, 2.0, SHOOT_RANGE)
+		info["range_ideal"] = clampf(
+			lerpf(fire.falloff_start, fire.falloff_end, 0.65), 2.0, 45.0
+		)
+	else:
+		var hard := SHOOT_RANGE
+		if fire.hitscan_range < 1.0e8:
+			hard = clampf(fire.hitscan_range, 2.0, SHOOT_RANGE)
+		info["range_hard"] = hard
+		info["range_effective"] = hard
+		info["range_ideal"] = clampf(
+			minf(hard, MAX_SENSIBLE_RANGE) * 0.72, 2.0, 45.0
+		)
+
+	var shots := 1
+	if fire.multishot_mode == WeaponFire.MultishotMode.SHOTGUN:
+		shots = maxi(1, fire.multishot_data.size())
+	info["dps"] = fire.hitscan_damage * float(shots) \
+		/ maxf(float(info["cooldown"]), 0.05)
+	return info
+
+
+func _weapon_profile_key(weapon: Weapon) -> String:
+	if weapon == null:
+		return ""
+	if not weapon.resource_path.is_empty():
+		return weapon.resource_path
+	return "instance:" + str(weapon.get_instance_id())
+
+
+## Cached, scene-free weapon profile.  This is the single place weapon-choice,
+## reload, fire-mode and explosion-jump decisions read range/role data from.
+func _get_weapon_profile(weapon: Weapon) -> Dictionary:
+	if weapon == null:
+		return {}
+	var key := _weapon_profile_key(weapon)
+	if _weapon_profile_cache.has(key):
+		return _weapon_profile_cache[key]
+
+	var profile := {
+		"melee": false,
+		"explosive": false,
+		"hitscan": false,
+		"projectile": false,
+		"charged": weapon.charged,
+		"automatic": false,
+		"heals_allies": false,
+		"heals_shooter": false,
+		"range_hard": 0.0,
+		"range_effective": 0.0,
+		"range_ideal": 0.0,
+		"cooldown": 0.5,
+		"dps": 0.0,
+		"mag_size": weapon.mag_size,
+		"reload_time": weapon.reload_time,
+		"switch_time": weapon.pullout_time + weapon.put_away_time,
+		"infinite_ammo": weapon.has_infinite_ammo,
+		"fire_count": 0,
+		"best_fire_index": -1,
+		"splash_radius": 0.0,
+		"self_damage": 0.0,
+	}
+	var best_dps := -INF
+	var all_melee := true
+	for i in weapon.weapon_fires.size():
+		var fire: WeaponFire = weapon.weapon_fires[i]
+		if fire == null or fire.action_type != WeaponFire.ActionType.SHOOT:
+			continue
+		var info := _fire_range_info(fire)
+		if info.is_empty():
+			continue
+		profile["fire_count"] = int(profile["fire_count"]) + 1
+		all_melee = all_melee and bool(info["melee"])
+		profile["explosive"] = bool(profile["explosive"]) or bool(info["explosive"])
+		profile["hitscan"] = bool(profile["hitscan"]) or bool(info["hitscan"])
+		profile["projectile"] = bool(profile["projectile"]) or bool(info["projectile"])
+		profile["automatic"] = bool(profile["automatic"]) or bool(info["automatic"])
+		profile["heals_allies"] = bool(profile["heals_allies"]) or bool(info["heals_allies"])
+		profile["heals_shooter"] = bool(profile["heals_shooter"]) or bool(info["heals_shooter"])
+		profile["range_hard"] = maxf(float(profile["range_hard"]), float(info["range_hard"]))
+		profile["range_effective"] = maxf(
+			float(profile["range_effective"]), float(info["range_effective"])
+		)
+		profile["cooldown"] = minf(float(profile["cooldown"]), float(info["cooldown"]))
+		var dps := float(info["dps"])
+		if dps > best_dps:
+			best_dps = dps
+			profile["dps"] = dps
+			profile["range_ideal"] = float(info["range_ideal"])
+			profile["best_fire_index"] = i
+			profile["splash_radius"] = float(info["splash_radius"])
+			profile["self_damage"] = float(info["self_damage"])
+	if int(profile["fire_count"]) == 0 or float(profile["range_effective"]) <= 0.0:
+		profile["range_hard"] = DEFAULT_RANGED_ENGAGE_DIST
+		profile["range_effective"] = DEFAULT_RANGED_ENGAGE_DIST
+		profile["range_ideal"] = DEFAULT_RANGED_ENGAGE_DIST
+	profile["melee"] = int(profile["fire_count"]) > 0 and all_melee
+	_weapon_profile_cache[key] = profile
+	return profile
+
+
+## Score a weapon for the current target distance.  Higher is better.  Melee is
+## only ever viable inside its real hitscan reach; falloff makes a huge
+## `hitscan_range` irrelevant past `falloff_end`.
+func _weapon_situation_score(weapon: Weapon, dist: float, has_target: bool) -> float:
+	var profile := _get_weapon_profile(weapon)
+	if profile.is_empty():
+		return -INF
+	var score := 40.0
+	if bool(profile["melee"]):
+		var reach := float(profile["range_effective"]) + WEAPON_MELEE_ONLY_MARGIN
+		if not has_target:
+			score -= 80.0
+		elif dist > reach:
+			score -= 500.0 + (dist - reach) * 10.0
+		else:
+			score += 35.0
+	else:
+		var effective := float(profile["range_effective"])
+		var ideal := float(profile["range_ideal"])
+		if has_target:
+			if dist > effective:
+				score -= 120.0 + (dist - effective) * 3.0
+			else:
+				var fit := 1.0 - clampf(
+					absf(dist - ideal) / maxf(ideal, 1.0), 0.0, 1.0
+				)
+				score += 45.0 * fit
+				if dist < ideal * 0.45 and bool(profile["explosive"]):
+					score -= 45.0
+	if not bool(profile["infinite_ammo"]) and weapon.mag_current <= 0:
+		score -= 400.0
+	if bool(profile["heals_allies"]):
+		# A heal-only weapon is a poor combat pick when a damage weapon exists.
+		score -= 70.0
+	score += clampf(float(profile["dps"]) * 0.08, 0.0, 30.0)
+	score -= float(profile["switch_time"]) * 6.0
+	return score
+
+
+## Per-fire-mode reach check for the actual mode Trigger is about to use.  This
+## is what stops a long-range profile on a mixed weapon from firing a melee
+## alt-mode at range, and stops a falloff pistol firing past its useful tail.
+func _can_fire_mode(fire: WeaponFire, dist: float) -> bool:
+	var info := _fire_range_info(fire)
+	if info.is_empty():
+		return false
+	if bool(info["melee"]):
+		return dist <= float(info["range_effective"]) + WEAPON_MELEE_ONLY_MARGIN
+	var reach := minf(float(info["range_hard"]), float(info["range_effective"]) * 1.5)
+	return dist <= reach + 1.0
+
+
+func _weapon_can_engage(weapon: Weapon, dist: float) -> bool:
+	var profile := _get_weapon_profile(weapon)
+	if profile.is_empty():
+		return false
+	if bool(profile["melee"]):
+		return dist <= float(profile["range_effective"]) + WEAPON_MELEE_ONLY_MARGIN
+	# Falloff can still land weak shots past `falloff_end`; allow a short tail,
+	# but not the entire authored hitscan range.
+	var reach := minf(
+		float(profile["range_hard"]),
+		float(profile["range_effective"]) * 1.5
+	)
+	return dist <= reach + 1.0
+
+
+## Slow weapon-choice loop.  It re-scores on a timer plus events (new target,
+## empty mag, distance band change) and uses a large score margin so a bot does
+## not flip-flop between two similar guns.
+func _update_weapon_choice(wc: WeaponController, dist: float, has_target: bool) -> void:
+	if wc == null or not wc._is_ready():
+		return
+	var current := wc.current_weapon_index
+	var current_weapon: Weapon = wc._weapons[current]
+	if current_weapon == null:
+		return
+	# Never override the medic's heal weapon while it is healing, and keep it
+	# out through the absence hysteresis even when nobody is hurt right now.
+	if _weapon_heals_allies(current_weapon):
+		if _heal_target != null and is_instance_valid(_heal_target):
+			return
+		if _heal_absent_time < MEDIC_HEAL_ABSENT:
+			return
+	# Do not cancel a reload just to shuffle guns; if the enemy is on top of us,
+	# the out-of-ammo path can still swap below.
+	if wc._is_reloading and dist > MELEE_CONSIDER_RANGE * 2.0:
+		return
+
+	var target_name := ""
+	if _current_target != null and is_instance_valid(_current_target):
+		target_name = str(_current_target.name)
+	var band := int(floor(dist / 8.0))
+	var current_cost := 1
+	if _chosen_fire_index >= 0:
+		current_cost = wc._get_fire_ammo_cost(current_weapon, _chosen_fire_index)
+	var empty_now := not current_weapon.has_infinite_ammo \
+		and current_weapon.mag_current < current_cost
+	var event := target_name != _weapon_choice_target_name \
+		or band != _weapon_choice_band or empty_now
+
+	_weapon_choice_timer = maxf(_weapon_choice_timer - PROCESS_INTERVAL, 0.0)
+	if _weapon_choice_timer > 0.0 and not event:
+		return
+	_weapon_choice_timer = WEAPON_CHOICE_INTERVAL
+	_weapon_choice_target_name = target_name
+	_weapon_choice_band = band
+
+	var current_score := _weapon_situation_score(current_weapon, dist, has_target)
+	var best_score := current_score
+	var best_index := current
+	var best_reason := "keep"
+	for i in wc._weapons.size():
+		if i == current:
+			continue
+		var candidate: Weapon = wc._weapons[i]
+		if candidate == null:
+			continue
+		if not candidate.has_infinite_ammo and candidate.mag_current <= 0:
+			continue
+		if _weapon_heals_allies(candidate) \
+				and _heal_candidate_time < MEDIC_HEAL_PERSIST:
+			continue
+		var candidate_score := _weapon_situation_score(candidate, dist, has_target)
+		if candidate_score > best_score:
+			best_score = candidate_score
+			best_index = i
+			best_reason = "range" if not _weapon_can_engage(current_weapon, dist) else "value"
+	if best_index != current and best_score >= current_score + WEAPON_SWITCH_MARGIN:
+		if _switch_weapon(wc, best_index):
+			_weapon_choice_reason = best_reason
+			_weapon_choice_timer = 1.0
+
+
+func _weapon_reload_threshold(weapon: Weapon) -> float:
+	if weapon == null or weapon.mag_size <= 0:
+		return 0.0
+	return lerpf(WEAPON_RELOAD_RATIO_MIN, WEAPON_RELOAD_RATIO_MAX, skill)
+
+
+func _is_weapon_safe_to_reload(weapon: Weapon) -> bool:
+	if _current_target == null or not is_instance_valid(_current_target):
+		return true
+	if _decision != null and _decision.state == Decision.State.RETREAT_COVER:
+		return true
+	var dist := player.global_position.distance_to(_current_target.global_position)
+	var profile := _get_weapon_profile(weapon)
+	var effective := float(profile.get("range_effective", DEFAULT_RANGED_ENGAGE_DIST))
+	return dist > maxf(15.0, effective * 0.95) and not _enemy_nearby
+
+
+## Reload only when it is cheap and safe, and never while the trigger is held.
+func _maybe_tactical_reload(wc: WeaponController) -> bool:
+	if wc == null or not wc._is_ready() or wc._is_reloading:
+		return false
+	var weapon: Weapon = wc._weapons[wc.current_weapon_index]
+	if weapon == null or weapon.has_infinite_ammo or weapon.mag_size <= 0:
+		return false
+	var ratio := float(weapon.mag_current) / float(weapon.mag_size)
+	if ratio > _weapon_reload_threshold(weapon):
+		return false
+	if not _is_weapon_safe_to_reload(weapon):
+		return false
+	_trigger.release_all()
+	if _buttons.request_reload():
+		_weapon_choice_reason = "reload"
+		return true
+	return false
+
+
+## Best ready weapon for the current distance, excluding heal-only picks when a
+## damage option exists.  Returns -1 when nothing can engage.
+func _best_ready_weapon_index(wc: WeaponController, dist: float) -> int:
+	var best := -1
+	var best_score := -INF
+	for i in wc._weapons.size():
+		var weapon: Weapon = wc._weapons[i]
+		if weapon == null:
+			continue
+		if not weapon.has_infinite_ammo and weapon.mag_current <= 0:
+			continue
+		var profile := _get_weapon_profile(weapon)
+		if bool(profile.get("heals_allies", false)):
+			continue
+		var score := _weapon_situation_score(weapon, dist, true)
+		if score > best_score:
+			best_score = score
+			best = i
+	return best
+
+
 ## The target's head-bone world position (`Physical Bone DEF-spine_006`, the
 ## `is_head` hurtbox).  Falls back to a fixed height above the origin if a custom
 ## model lacks the standard mannequin skeleton path.
@@ -1524,27 +2218,13 @@ func _predict_target_pos(target: Player, fire: WeaponFire, flat_dist: float,
 	return pos
 
 
-## Best-effort melee detection. Duck-typed rather than hard-referencing an
-## exact WeaponFire.ActionType.MELEE enum member or field name, so it still
-## compiles and runs even if your schema differs — verify against your actual
-## WeaponFire class and adjust the property names below if this misfires.
+## Melee is verified data, not a guess: a MELEE action or a hitscan fire whose
+## authored `hitscan_range` is inside melee reach (Knife = 2 m, Bat = 3 m).
+## The old `WeaponFire.range` probe never existed.
 func _is_melee_weapon(weapon: Weapon) -> bool:
 	if weapon == null or weapon.weapon_fires.is_empty():
 		return false
-	var melee_enum: int = WeaponFire.ActionType.get("MELEE", -999)
-	for fire in weapon.weapon_fires:
-		if fire == null:
-			continue
-		if melee_enum != -999 and fire.action_type == melee_enum:
-			return true
-		var explicit_flag: Variant = _read_prop(fire, PROP_IS_MELEE, null, "WeaponFire.is_melee")
-		if explicit_flag is bool and explicit_flag:
-			return true
-		var configured_range: Variant = _read_prop(fire, PROP_RANGE, null, "WeaponFire.range")
-		if configured_range != null and float(configured_range) > 0.0 and float(configured_range) <= MELEE_CONSIDER_RANGE:
-			return true
-	# Last-resort name sniff — only matters if nothing above hit.
-	return weapon.resource_name.to_lower().contains("knife") or weapon.resource_name.to_lower().contains("melee")
+	return bool(_get_weapon_profile(weapon).get("melee", false))
 
 
 ## Rough "ideal distance to be at" for the currently-held weapon: melee wants
@@ -1562,19 +2242,15 @@ func _get_engagement_range(weapon: Weapon) -> float:
 func _get_engagement_range_info(weapon: Weapon) -> Dictionary:
 	if weapon == null:
 		return {"range": DEFAULT_RANGED_ENGAGE_DIST, "source": "default (null weapon)"}
-	if _is_melee_weapon(weapon):
-		return {"range": MELEE_ENGAGE_RANGE, "source": "melee"}
-	for fire in weapon.weapon_fires:
-		if fire == null:
-			continue
-		var range_info := _read_prop_ex(fire, PROP_RANGE, null, "WeaponFire.range")
-		var r: Variant = range_info["value"]
-		if r != null and float(r) > 0.0:
-			return {
-				"range": clampf(float(r), MELEE_CONSIDER_RANGE, MAX_SENSIBLE_RANGE) * 0.5,
-				"source": "WeaponFire." + str(range_info["source"]),
-			}
-	return {"range": DEFAULT_RANGED_ENGAGE_DIST, "source": "default (no range property)"}
+	var profile := _get_weapon_profile(weapon)
+	if profile.is_empty():
+		return {"range": DEFAULT_RANGED_ENGAGE_DIST, "source": "default (no profile)"}
+	return {
+		"range": clampf(float(profile["range_ideal"]), 1.0, MAX_SENSIBLE_RANGE),
+		"source": "profile (hard %.1f, effective %.1f)" % [
+			float(profile["range_hard"]), float(profile["range_effective"])
+		],
+	}
 
 
 ## Ask the button emulator for a weapon switch.  The request is accepted now but
@@ -1591,9 +2267,14 @@ func _switch_weapon(wc: WeaponController, index: int) -> bool:
 	_trigger.release_all()
 	if not _buttons.request_switch(index):
 		return false
-	_weapon_switch_guard = 1.4
+	var old_weapon: Weapon = wc._weapons[wc.current_weapon_index]
+	var new_weapon: Weapon = wc._weapons[index]
+	_weapon_switch_guard = old_weapon.put_away_time + new_weapon.pullout_time \
+		+ SWITCH_REACTION_MAX + 0.1
 	_chosen_fire_index = -1
 	_fire_mode_dirty = true
+	_last_mag_for_strafe = -1
+	_shots_since_strafe = 0
 	return true
 
 # Objective seeking
@@ -1652,13 +2333,20 @@ func _get_payload_node(gmc: GameModeComponent) -> PayloadNode:
 ## — scaled by skill — far more often at higher skill. Returns true if it
 ## fired this tick (caller should skip normal movement for that tick).
 func _try_explosion_jump(wc: WeaponController, travel_dist: float) -> bool:
+	if _explosion_jump_phase != 0:
+		return true
 	if _explosion_jump_cooldown_timer > 0.0 or travel_dist < EXPLOSION_JUMP_MIN_GAP:
 		return false
-	if not wc._is_ready() or wc._is_reloading:
+	if not wc._is_ready() or wc._is_reloading or wc._fire_cooldown > 0.0 \
+			or wc._pending_fire or wc._is_firing or wc._fire_is_blocked():
+		return false
+	# Prefer fighting to self-launching when a target is visible/close.
+	if _current_target != null and is_instance_valid(_current_target) \
+			and _current_target.spawned:
 		return false
 
 	var weapon: Weapon = wc._weapons[wc.current_weapon_index]
-	if weapon.weapon_fires.is_empty():
+	if weapon.weapon_fires.is_empty() or weapon.charged:
 		return false
 	var fire_index := _select_explosive_fire_index(weapon)
 	if fire_index < 0:
@@ -1666,9 +2354,13 @@ func _try_explosion_jump(wc: WeaponController, travel_dist: float) -> bool:
 	var fire: WeaponFire = weapon.weapon_fires[fire_index]
 	if fire.bullet_type != WeaponFire.BulletType.PROJECTILE:
 		return false
-	if not bool(_get_proj_info(fire).get("is_explosive", false)):
+	var info := _get_proj_info(fire)
+	if not bool(info.get("is_explosive", false)):
 		return false
 	if weapon.mag_current <= 0 and not weapon.has_infinite_ammo:
+		return false
+	# Low health + a self-damaging blast is not a good trade.
+	if float(info.get("self_damage", 0.0)) < 0.0 and _health_ratio() < 0.6:
 		return false
 
 	# A skill-0 bot almost never pulls this off cleanly; a skill-1 bot does it
@@ -1676,16 +2368,77 @@ func _try_explosion_jump(wc: WeaponController, travel_dist: float) -> bool:
 	if randf() > lerpf(0.02, 0.35, skill):
 		return false
 
-	var feet := player.global_position
-	_desired_aim_point = feet
+	_explosion_jump_phase = 1
+	_explosion_jump_timer = 0.0
+	_explosion_jump_fire_wait = 0.0
+	_explosion_jump_fire_index = fire_index
+	_explosion_jump_weapon_index = wc.current_weapon_index
+	_trigger.release_all()
+	_desired_aim_point = player.global_position
 	_has_desired_aim = true
-	# The mouse emulator owns facing; request the look like any other aim.  The
-	# shot is still forced (aim -> fire -> jump sequencing is Stage 5).
-	_mouse.request_look_at_point(feet, LookPriority.COMBAT, 1.0, "explosion_jump")
-	_trigger.request_fire(fire_index, true, true)
-	_keyboard.jump_tap(false)
-	_explosion_jump_cooldown_timer = EXPLOSION_JUMP_COOLDOWN
+	_mouse.request_look_at_point(
+		_desired_aim_point, LookPriority.COMBAT, 1.0, "explosion_jump"
+	)
 	return true
+
+
+## (1) aim at the ground -> (2) fire through Trigger -> (3) jump.  Any visible
+## target, weapon change, stun or timeout aborts and releases everything.
+func _tick_explosion_jump(delta: float) -> void:
+	if _explosion_jump_phase == 0:
+		return
+	if not player.spawned:
+		_abort_explosion_jump()
+		return
+	if _current_target != null and is_instance_valid(_current_target):
+		_abort_explosion_jump()
+		return
+	if _heal_target != null and is_instance_valid(_heal_target):
+		_abort_explosion_jump()
+		return
+	if player.status_effect_manager and (
+			player.status_effect_manager.is_stunned()
+			or player.status_effect_manager.is_pinned()
+			or player.status_effect_manager.is_action_blocked()):
+		_abort_explosion_jump()
+		return
+	var wc: WeaponController = player.weapon_controller
+	if wc == null or not wc._is_ready() or wc._is_reloading \
+			or wc.is_switching() or wc.current_weapon_index != _explosion_jump_weapon_index:
+		_abort_explosion_jump()
+		return
+
+	match _explosion_jump_phase:
+		1:
+			_explosion_jump_timer += delta
+			_desired_aim_point = player.global_position
+			_has_desired_aim = true
+			_mouse.request_look_at_point(
+				_desired_aim_point, LookPriority.COMBAT, 1.0, "explosion_jump"
+			)
+			if aim_error_deg >= 0.0 and aim_error_deg <= 5.0:
+				_explosion_jump_phase = 2
+				_explosion_jump_fire_wait = 0.0
+				_trigger.request_fire(_explosion_jump_fire_index, true, true)
+			elif _explosion_jump_timer >= EXPLOSION_JUMP_AIM_TIMEOUT:
+				_abort_explosion_jump()
+		2:
+			_explosion_jump_fire_wait += delta
+			if _explosion_jump_fire_wait >= EXPLOSION_JUMP_FIRE_WAIT:
+				if player.is_on_floor():
+					_keyboard.jump_tap(false)
+					_explosion_jump_cooldown_timer = EXPLOSION_JUMP_COOLDOWN
+				_abort_explosion_jump()
+
+
+func _abort_explosion_jump() -> void:
+	_explosion_jump_phase = 0
+	_explosion_jump_timer = 0.0
+	_explosion_jump_fire_wait = 0.0
+	_explosion_jump_fire_index = -1
+	_explosion_jump_weapon_index = -1
+	_trigger.release_all()
+	_has_desired_aim = false
 
 # Act
 
@@ -1693,28 +2446,10 @@ func _act() -> void:
 	var wc: WeaponController = player.weapon_controller
 	if not wc._is_ready():
 		return
-	var weapon := wc._weapons[wc.current_weapon_index]
-
-	# Self-preservation comes first.  If we are low and have a weapon that can
-	# heal its own shooter, use it before healing anyone else or fighting.
-	if _health_ratio() < MEDIC_SELF_HEAL_THRESHOLD:
-		var self_heal_index := _find_self_heal_weapon_index(wc)
-		if self_heal_index >= 0:
-			if wc.current_weapon_index == self_heal_index:
-				_act_self_heal(wc, wc._weapons[self_heal_index])
-				return
-			if _switch_weapon(wc, self_heal_index):
-				_trigger.release_all()
-				return
-
-	if _heal_target != null and _weapon_heals_allies(weapon):
-		_act_heal()
-	elif _current_target != null:
-		_act_combat()
-	elif _last_seen_position != Vector3.INF:
-		_act_pursue_last_seen()
-	else:
-		_act_seek_objective_or_wander()
+	# The explosion-jump sub-sequence owns aim/fire/jump until it finishes.
+	if _explosion_jump_phase != 0:
+		return
+	_decision.act()
 
 func _act_seek_objective_or_wander() -> void:
 	var obj := _get_objective_target()
@@ -1730,19 +2465,35 @@ func _act_seek_objective_or_wander() -> void:
 	var wc: WeaponController = player.weapon_controller
 	if _try_explosion_jump(wc, dist):
 		return
+	_update_weapon_choice(wc, 15.0, false)
+	if _buttons.is_switch_pending() or wc.is_switching():
+		_trigger.release_all()
+		return
 
 	_trigger.release_all()
 	_has_desired_aim = false
-	_traversal.move_to(obj, 0.6, 1.5, 0.15)
+	var goal := obj
+	if _style != null:
+		# Cautious bots approach from a slight flank; aggressive bots beeline.
+		var to_obj := obj - player.global_position
+		var perp := Vector3(-to_obj.z, 0.0, to_obj.x)
+		if perp.length_squared() > 0.01:
+			goal += perp.normalized() * _style.flank_bias \
+				* (1.0 - _style.aggression) * 6.0
+	_traversal.move_to(goal, 0.6, 1.5, 0.15)
 
-	if wc._is_ready() and not wc._is_reloading:
-		var cw: Weapon = wc._weapons[wc.current_weapon_index]
-		if cw.mag_current < cw.mag_size and not cw.has_infinite_ammo:
-			_buttons.request_reload()
+	_maybe_tactical_reload(wc)
 
 func _act_combat() -> void:
+	if _current_target == null or not is_instance_valid(_current_target) \
+			or not _current_target.spawned:
+		_trigger.release_all()
+		return
 	var wc: WeaponController = player.weapon_controller
 	if not wc._is_ready():
+		_trigger.release_all()
+		return
+	if wc.is_switching() or _buttons.is_switch_pending():
 		_trigger.release_all()
 		return
 
@@ -1755,6 +2506,11 @@ func _act_combat() -> void:
 	var flat := Vector3(to_target.x, 0, to_target.z)
 	var dist := flat.length()
 
+	_update_weapon_choice(wc, dist, true)
+	if _buttons.is_switch_pending() or wc.is_switching():
+		_trigger.release_all()
+		return
+	weapon = wc._weapons[wc.current_weapon_index]
 	_update_fire_mode(weapon, dist)
 	var fire_index := _chosen_fire_index
 	if fire_index < 0:
@@ -1795,25 +2551,66 @@ func _act_combat() -> void:
 		aim_pos, LookPriority.COMBAT, 1.0, str(_current_target.get_instance_id())
 	)
 
-	# Weapon-aware engagement distance (melee closes all the way in; ranged
-	# weapons fight at roughly half their configured range) plus a slowly
-	# re-rolled per-bot jitter.  Combat movement is expressed in the keyboard's
-	# LOCAL frame (strafe, backward), not world space: only the obstacle-steer
-	# ray is converted through the facing helper.
-	var desired_dist := maxf(_get_engagement_range(weapon) + _preferred_dist_offset, MELEE_ENGAGE_RANGE * 0.5)
-	var radial := clampf((dist - desired_dist) / 4.0, -1.0, 1.0)
+	# Weapon-aware engagement distance with a wide soft band, a slight approach
+	# angle, and close-range circling.  Movement is expressed in the keyboard's
+	# LOCAL frame (strafe, backward); only the obstacle-steer ray goes through the
+	# facing helper.  The world-space steer is safety, not the primary motion.
+	var desired_dist := maxf(
+		_get_engagement_range(weapon) + _preferred_dist_offset,
+		MELEE_ENGAGE_RANGE * 0.5
+	)
+	var band := maxf(3.0, desired_dist * 0.35)
+	var radial := clampf((dist - desired_dist) / band, -1.0, 1.0)
 	var steer_world := _steer_toward(_current_target.global_position)
 	var steer_local := _keyboard.world_to_input_local(steer_world)
-	var local := steer_local * 0.6 + Vector2(_strafe_dir, -radial) * 0.6
+	if dist < MELEE_CONSIDER_RANGE or dist < 4.0:
+		# Close range: circle rather than line up.
+		radial *= 0.3
+		if _strafe_dir == 0.0:
+			_strafe_dir = 1.0 if _strafe_bias >= 0.0 else -1.0
+	var approach_lateral := _strafe_bias * 0.45
+	var local := steer_local * 0.5 \
+		+ Vector2(_strafe_dir * 0.85 + approach_lateral * (1.0 - absf(radial)), -radial) * 0.7
 	if local.length() > 0.001:
 		local = local.normalized()
 	else:
 		local = Vector2(_strafe_dir, 0.0)
+	local = _combat_strafe_safe(local)
 	_move_local(local)
 
+	# Event-driven strafe trigger: shots fired, not a fixed 1.5 s dice roll.
+	var mag := weapon.mag_current
+	if _last_mag_for_strafe >= 0 and mag < _last_mag_for_strafe:
+		_shots_since_strafe += _last_mag_for_strafe - mag
+	_last_mag_for_strafe = mag
+	if _shots_since_strafe >= COMBAT_STRAFE_SHOT_MIN + 2:
+		_strafe_force_change = true
+		_strafe_reason = "shots"
+		_shots_since_strafe = 0
+
+	# Occasional human movement, suppressed while the shot is tight/precise.
+	_combat_jump_timer = maxf(_combat_jump_timer - PROCESS_INTERVAL, 0.0)
+	_combat_crouch_timer = maxf(_combat_crouch_timer - PROCESS_INTERVAL, 0.0)
+	var tight_aim := aim_error_deg >= 0.0 and aim_error_deg < 2.0
+	if not tight_aim and not _is_precision_weapon(weapon) and dist > 3.0:
+		if _combat_jump_timer <= 0.0 and _style != null \
+				and randf() < _style.jump_rate * 0.12:
+			_keyboard.jump_tap(false)
+			_combat_jump_timer = COMBAT_JUMP_MIN_INTERVAL * randf_range(0.8, 1.5)
+		if _combat_crouch_timer <= 0.0 and _style != null \
+				and randf() < _style.crouch_rate * 0.12:
+			_keyboard.crouch_hold(randf_range(0.2, 0.45))
+			_combat_crouch_timer = COMBAT_CROUCH_MIN_INTERVAL * randf_range(0.8, 1.5)
+
 	# Firing: the Trigger owns the flags and applies the aim gate.  `wants` only
-	# expresses intent (reaction delay, and not blowing ourselves up point-blank).
-	var wants := _reaction_timer <= 0.0 and not _too_close_for_explosive(fire, dist)
+	# expresses intent (reaction delay, not blowing ourselves up point-blank,
+	# never swinging a knife at a target outside its real reach, and never
+	# firing a heal-only weapon at an enemy while waiting out medic hysteresis).
+	var heal_idle := _weapon_heals_allies(weapon) and _heal_target == null
+	var wants := _reaction_timer <= 0.0 \
+		and not heal_idle \
+		and _can_fire_mode(fire, dist) \
+		and not _too_close_for_explosive(fire, dist)
 	if not wants and _reaction_timer <= 0.0:
 		# Point-blank with a self-damaging explosive: draw a sidearm instead of
 		# standing there aiming at the ground while backing away.
@@ -1824,6 +2621,10 @@ func _act_combat() -> void:
 	_trigger.request_fire(fire_index, wants)
 
 func _act_heal() -> void:
+	if _heal_target == null or not is_instance_valid(_heal_target) \
+			or not _heal_target.spawned:
+		_trigger.release_all()
+		return
 	var wc: WeaponController = player.weapon_controller
 	if not wc._is_ready():
 		_trigger.release_all()
@@ -1917,10 +2718,12 @@ func _act_wander() -> void:
 	_has_desired_aim = false
 
 	var wc: WeaponController = player.weapon_controller
-	if wc._is_ready() and not wc._is_reloading:
-		var current_weapon: Weapon = wc._weapons[wc.current_weapon_index]
-		if current_weapon.mag_current < current_weapon.mag_size and not current_weapon.has_infinite_ammo:
-			_buttons.request_reload()
+	if wc._is_ready():
+		_update_weapon_choice(wc, 15.0, false)
+		if _buttons.is_switch_pending() or wc.is_switching():
+			_trigger.release_all()
+			return
+		_maybe_tactical_reload(wc)
 
 	var to_wander := _wander_target - player.global_position
 	var flat := Vector2(to_wander.x, to_wander.z)
@@ -1929,8 +2732,359 @@ func _act_wander() -> void:
 		_keyboard.set_move(0, 0)
 		_pick_wander_target()
 		return
+	if _try_explosion_jump(wc, flat.length()):
+		return
 
 	_traversal.move_to(_wander_target, 0.25, 1.2, 0.35)
+
+
+## SEARCH: go to the last-seen point, then continue along the target's remembered
+## velocity for a few seconds.  Glances are issued by `_tick_glance`.
+func _act_search() -> void:
+	_trigger.release_all()
+	_has_desired_aim = false
+	if _search_timer > 0.0:
+		_search_timer = maxf(_search_timer - PROCESS_INTERVAL, 0.0)
+	if _search_timer <= 0.0 or _last_seen_position == Vector3.INF:
+		_search_active = false
+		_last_seen_position = Vector3.INF
+		_act_seek_objective_or_wander()
+		return
+
+	var pos := player.global_position
+	var dest := _last_seen_position
+	var flat_to := Vector2(dest.x - pos.x, dest.z - pos.z)
+	if flat_to.length() < 2.0:
+		var vel := Vector3(_last_seen_velocity.x, 0.0, _last_seen_velocity.z)
+		if vel.length() > 0.5:
+			dest += vel.normalized() * 6.0
+		else:
+			dest += player.horizontal_forward() * 5.0
+	_traversal.move_to(dest, 0.9, 1.2, 0.15)
+	var wc: WeaponController = player.weapon_controller
+	if wc != null and wc._is_ready():
+		_update_weapon_choice(wc, 15.0, false)
+		if _buttons.is_switch_pending() or wc.is_switching():
+			return
+		_maybe_tactical_reload(wc)
+
+
+## RELOAD_SAFE: keep eyes on the threat, break line of sight if cover is near,
+## and reload.  Falls back to backing up when no cover is found.
+func _act_reload_safe() -> void:
+	_trigger.release_all()
+	_has_desired_aim = false
+	var wc: WeaponController = player.weapon_controller
+	if not wc._is_ready():
+		return
+	var weapon: Weapon = wc._weapons[wc.current_weapon_index]
+	if weapon != null and not weapon.has_infinite_ammo \
+			and weapon.mag_current < weapon.mag_size and not wc._is_reloading:
+		_buttons.request_reload()
+
+	if _current_target == null or not is_instance_valid(_current_target):
+		_act_seek_objective_or_wander()
+		return
+
+	var threat := _current_target.global_position
+	if ENABLE_COVER:
+		if _cover_position == Vector3.INF:
+			_cover_position = _find_cover_position(threat)
+		if _cover_position != Vector3.INF:
+			_traversal.move_to(_cover_position, 1.0, 0.8, 0.0)
+		else:
+			_move_local(Vector2(_strafe_dir, 1.0))
+	else:
+		_move_local(Vector2(_strafe_dir, 1.0))
+	_mouse.request_look_at_point(
+		_get_head_position(_current_target), LookPriority.COMBAT, 0.8,
+		str(_current_target.get_instance_id())
+	)
+
+
+## RETREAT_COVER: move behind cover, wait, peek/fire, duck back.  It deliberately
+## falls back to normal combat if no usable cover is found.
+func _act_retreat_cover() -> void:
+	if not ENABLE_COVER:
+		_decision.interrupt(
+			Decision.State.COMBAT if _current_target != null else Decision.State.TRAVEL
+		)
+		_act_context()
+		return
+
+	var wc: WeaponController = player.weapon_controller
+	if not wc._is_ready():
+		return
+
+	if _current_target != null and is_instance_valid(_current_target):
+		_cover_threat_pos = _current_target.global_position
+	if _cover_position == Vector3.INF:
+		_cover_position = _find_cover_position(_cover_threat_pos)
+		if _cover_position == Vector3.INF:
+			_cover_cooldown = 6.0
+			_decision.interrupt(
+				Decision.State.COMBAT if _current_target != null else Decision.State.TRAVEL
+			)
+			_act_context()
+			return
+
+	_cover_total_timer = maxf(_cover_total_timer - PROCESS_INTERVAL, 0.0)
+	if _cover_total_timer <= 0.0:
+		_cover_cooldown = 3.0
+		_decision.interrupt(
+			Decision.State.COMBAT if _current_target != null else Decision.State.TRAVEL
+		)
+		_act_context()
+		return
+	_cover_timer = maxf(_cover_timer - PROCESS_INTERVAL, 0.0)
+	match _cover_phase:
+		0:
+			# Move behind the chosen cover.
+			_trigger.release_all()
+			_has_desired_aim = false
+			_traversal.move_to(_cover_position, 1.0, 0.7, 0.0)
+			var flat := _cover_position - player.global_position
+			flat.y = 0.0
+			if flat.length() <= 0.9:
+				_cover_phase = 1
+				_cover_timer = randf_range(0.6, 1.4)
+				_keyboard.set_move(0, 0)
+		1:
+			# Catch breath behind cover; keep the threat watched.
+			_keyboard.set_move(0, 0)
+			if _style != null and randf() < _style.crouch_rate * 0.5:
+				_keyboard.crouch_hold(0.25)
+			if _cover_threat_pos != Vector3.INF:
+				_mouse.request_look_at_point(
+					_cover_threat_pos + Vector3.UP * AIM_CENTER_HEIGHT,
+					LookPriority.COMBAT, 0.6, "cover_wait"
+				)
+			if _cover_timer <= 0.0:
+				_cover_phase = 2
+				_cover_timer = randf_range(0.35, 0.55)
+				_cover_peek_side = 1.0 if _strafe_bias >= 0.0 else -1.0
+		2:
+			# Step out and take the shot(s).
+			if _current_target != null and is_instance_valid(_current_target):
+				_act_combat()
+			_has_desired_aim = _current_target != null
+			if _current_target != null:
+				_mouse.request_look_at_point(
+					_get_head_position(_current_target), LookPriority.COMBAT, 0.9,
+					str(_current_target.get_instance_id())
+				)
+			_move_local(Vector2(_cover_peek_side, -1.0))
+			if _cover_timer <= 0.0:
+				_cover_phase = 3
+				_cover_timer = randf_range(0.3, 0.45)
+		3:
+			# Duck back to cover.
+			_trigger.release_all()
+			_has_desired_aim = false
+			_traversal.move_to(_cover_position, 1.0, 0.7, 0.0)
+			if _cover_timer <= 0.0:
+				_cover_rounds += 1
+				if _cover_rounds >= 3 and (
+						_health_ratio() > COVER_HEALTH_THRESHOLD + 0.1
+						or _current_target == null):
+					_decision.interrupt(
+						Decision.State.COMBAT if _current_target != null else Decision.State.SEARCH
+					)
+				else:
+					_cover_phase = 1
+					_cover_timer = randf_range(0.5, 1.2)
+
+
+## Shared fallback used by STUCK_RECOVER and by cover/reload exits.
+func _act_context() -> void:
+	var wc: WeaponController = player.weapon_controller
+	if not wc._is_ready():
+		return
+	var weapon: Weapon = wc._weapons[wc.current_weapon_index]
+	if _health_ratio() < MEDIC_SELF_HEAL_THRESHOLD:
+		var self_heal_index := _find_self_heal_weapon_index(wc)
+		if self_heal_index >= 0:
+			if wc.current_weapon_index == self_heal_index:
+				_act_self_heal(wc, wc._weapons[self_heal_index])
+				return
+			if _switch_weapon(wc, self_heal_index):
+				_trigger.release_all()
+				return
+	if _heal_target != null and is_instance_valid(_heal_target) \
+			and _weapon_heals_allies(weapon):
+		_act_heal()
+	elif _current_target != null and is_instance_valid(_current_target) \
+			and _current_target.spawned:
+		_act_combat()
+	elif _search_active:
+		_act_search()
+	else:
+		_act_seek_objective_or_wander()
+
+
+func _reload_while_travelling() -> void:
+	var wc: WeaponController = player.weapon_controller
+	if wc == null or not wc._is_ready() or wc._is_reloading:
+		return
+	var weapon: Weapon = wc._weapons[wc.current_weapon_index]
+	if weapon != null and not weapon.has_infinite_ammo \
+			and weapon.mag_current < weapon.mag_size:
+		_buttons.request_reload()
+
+
+func _has_threat() -> bool:
+	var now := float(Time.get_ticks_msec()) / 1000.0
+	if _current_target != null:
+		return true
+	if _last_damage_position != Vector3.INF and now - _last_damage_time < 6.0:
+		return true
+	return _search_active and _last_seen_position != Vector3.INF
+
+
+## Called by Decision on state entry for state-specific setup.
+func _on_decision_enter(state: int) -> void:
+	match state:
+		Decision.State.COMBAT:
+			_traversal.cancel_recovery()
+			_strafe_force_change = true
+			_shots_since_strafe = 0
+			_cover_position = Vector3.INF
+			_cover_phase = 0
+			_cover_rounds = 0
+		Decision.State.SEARCH:
+			_search_active = true
+			if _search_timer <= 0.0:
+				_search_timer = SEARCH_DURATION
+			_search_origin = _last_seen_position
+		Decision.State.RELOAD_SAFE:
+			_traversal.cancel_recovery()
+			_trigger.release_all()
+			_cover_position = Vector3.INF
+			_cover_phase = 0
+			_cover_rounds = 0
+			_buttons.request_reload()
+		Decision.State.RETREAT_COVER:
+			_traversal.cancel_recovery()
+			_trigger.release_all()
+			_has_desired_aim = false
+			_cover_position = Vector3.INF
+			_cover_phase = 0
+			_cover_rounds = 0
+			_cover_timer = 0.0
+			_cover_total_timer = 6.0
+			if _current_target != null:
+				_cover_threat_pos = _current_target.global_position
+			elif _last_damage_position != Vector3.INF:
+				_cover_threat_pos = _last_damage_position
+			else:
+				_cover_threat_pos = _last_seen_position
+		Decision.State.HEAL:
+			_traversal.cancel_recovery()
+			_trigger.release_all()
+		_:
+			pass
+
+
+## Find a nearby spot that breaks line of sight from [param threat].  Conservative:
+## requires a floor, a reasonably clear path, and a blocked threat->candidate ray.
+func _find_cover_position(threat: Vector3) -> Vector3:
+	if not ENABLE_COVER:
+		return Vector3.INF
+	var origin := player.global_position
+	var threat_pos := threat
+	if threat_pos == Vector3.INF:
+		if _last_damage_position != Vector3.INF:
+			threat_pos = _last_damage_position
+		elif _last_seen_position != Vector3.INF:
+			threat_pos = _last_seen_position
+		else:
+			return Vector3.INF
+	var space := player.get_world_3d().direct_space_state
+	var best := Vector3.INF
+	var best_score := -INF
+	for i in 8:
+		var angle := TAU * float(i) / 8.0 + randf_range(-0.15, 0.15)
+		var dir := Vector3(cos(angle), 0.0, sin(angle))
+		var distances: Array[float] = [3.0, 5.0, 7.0]
+		for distance in distances:
+			var candidate := origin + dir * distance
+			# Must have floor under the candidate.
+			_steer_query.from = candidate + Vector3.UP * 1.5
+			_steer_query.to = candidate - Vector3.UP * 3.0
+			var floor_hit := space.intersect_ray(_steer_query)
+			if floor_hit.is_empty():
+				continue
+			var floor_pos: Vector3 = floor_hit.position
+			if floor_pos.y < origin.y - 2.0:
+				continue
+			if (floor_hit.normal as Vector3).angle_to(Vector3.UP) \
+					> deg_to_rad(FLOOR_MAX_ANGLE_DEG):
+				continue
+			candidate.y = floor_pos.y
+			# Path toward the spot must be broadly clear.
+			var to_candidate := Vector2(candidate.x - origin.x, candidate.z - origin.z)
+			if to_candidate.length() < 0.5:
+				continue
+			if _score_direction(origin + Vector3.UP * STEER_RAY_HEIGHT,
+					to_candidate.normalized()) < minf(distance * 0.6, 4.0):
+				continue
+			# Covered from the threat?
+			_los_query.from = threat_pos + Vector3.UP * 1.2
+			_los_query.to = candidate + Vector3.UP * 1.0
+			if space.intersect_ray(_los_query).is_empty():
+				continue
+			var score := candidate.distance_to(threat_pos) * 0.4 \
+				- distance * 0.25 + randf_range(0.0, 0.25)
+			if score > best_score:
+				best_score = score
+				best = candidate
+	return best
+
+
+## Precision weapons should not be jumping/crouching mid-shot.
+func _is_precision_weapon(weapon: Weapon) -> bool:
+	if weapon == null:
+		return false
+	if weapon.charged:
+		return true
+	for fire in weapon.weapon_fires:
+		if fire != null and fire.bullet_type == WeaponFire.BulletType.HITSCAN \
+				and fire.hitscan_range > 60.0:
+			return true
+	return false
+
+
+## Keep a combat strafe from walking into a wall or off a ledge.
+func _combat_strafe_safe(local: Vector2) -> Vector2:
+	if absf(local.x) < 0.1:
+		return local
+	var forward := player.horizontal_forward()
+	var right := Vector3.UP.cross(forward).normalized()
+	var side_sign := signf(local.x)
+	var side := right * side_sign
+	var origin := player.global_position + Vector3.UP * STEER_RAY_HEIGHT
+	var flat := Vector2(side.x, side.z)
+	var score := _score_direction(origin, flat)
+	if score >= 1.5 and _has_floor_side(side):
+		return local
+	var other_score := _score_direction(origin, -flat)
+	if other_score > score and _has_floor_side(-side):
+		local.x = -local.x
+		return local
+	local.x = 0.0
+	return local
+
+
+func _has_floor_side(side: Vector3) -> bool:
+	var from := player.global_position + side * 1.2 + Vector3.UP * 0.6
+	var to := from - Vector3.UP * 3.0
+	var space := player.get_world_3d().direct_space_state
+	_steer_query.from = from
+	_steer_query.to = to
+	var hit := space.intersect_ray(_steer_query)
+	if hit.is_empty():
+		return false
+	return (hit.position as Vector3).y > player.global_position.y - 2.0
 
 
 # Diagnostics
@@ -2018,6 +3172,7 @@ func _update_debug_label() -> void:
 		_mouse.get_state_text() if _mouse != null else "-",
 		_mouse.get_delta_text() if _mouse != null else "-",
 	])
+	lines.append("decide: %s" % (_decision.get_state_text() if _decision != null else "-"))
 	lines.append("travel: %s" % (_traversal.get_debug_text() if _traversal != null else "-"))
 	lines.append("weapon: %s" % _debug_weapon_text())
 	lines.append("scans: %d" % _full_scan_count)
@@ -2293,13 +3448,25 @@ func _select_fire_mode(weapon: Weapon, dist: float) -> int:
 
 func _score_fire_mode(weapon: Weapon, index: int, dist: float) -> float:
 	var fire: WeaponFire = weapon.weapon_fires[index]
-	var effective := _mode_effective_range(fire)
+	var range_info := _fire_range_info(fire)
+	var effective := float(range_info.get("range_effective", _mode_effective_range(fire)))
+	var ideal := float(range_info.get("range_ideal", effective * 0.75))
 	var score := 100.0
-	# Prefer fighting around 75% of the mode's reach; heavily punish a mode
-	# whose shots cannot reach the target at all.
-	score -= 20.0 * absf(dist - effective * 0.75) / maxf(effective, 1.0)
+	# Prefer the mode's ideal band; heavily punish a mode whose shots cannot
+	# reach the target at all.  Falloff is already folded into `effective`.
+	score -= 18.0 * absf(dist - ideal) / maxf(ideal, 1.0)
 	if dist > effective:
-		score -= 200.0
+		score -= 220.0
+	if bool(range_info.get("melee", false)):
+		score += 45.0 if dist <= effective + WEAPON_MELEE_ONLY_MARGIN else -420.0
+	if bool(range_info.get("automatic", false)) and dist < effective * 0.75:
+		score += 8.0
+	if fire.has_damage_falloff and fire.falloff_end > fire.falloff_start:
+		var falloff_t := clampf(
+			(dist - fire.falloff_start) / (fire.falloff_end - fire.falloff_start),
+			0.0, 1.0
+		)
+		score -= 24.0 * falloff_t
 
 	var wc: WeaponController = player.weapon_controller
 	var cost := 0
@@ -2339,14 +3506,10 @@ func _score_fire_mode(weapon: Weapon, index: int, dist: float) -> float:
 func _mode_effective_range(fire: WeaponFire) -> float:
 	if fire == null:
 		return DEFAULT_RANGED_ENGAGE_DIST
-	if fire.bullet_type == WeaponFire.BulletType.HITSCAN:
-		if fire.hitscan_range >= 1.0e8:
-			return SHOOT_RANGE
-		return maxf(fire.hitscan_range, MELEE_CONSIDER_RANGE * 0.5)
-	var info := _get_proj_info(fire)
-	var speed := float(info.get("speed", 0.0))
-	var lifetime := float(info.get("lifetime", 20.0))
-	return clampf(speed * lifetime, 5.0, SHOOT_RANGE)
+	var info := _fire_range_info(fire)
+	if info.is_empty():
+		return DEFAULT_RANGED_ENGAGE_DIST
+	return float(info["range_effective"])
 
 
 func _select_explosive_fire_index(weapon: Weapon) -> int:
@@ -2382,6 +3545,8 @@ func _first_safe_weapon_index(wc: WeaponController, dist: float) -> int:
 		if weapon == null or _weapon_heals_allies(weapon):
 			continue
 		if not wc.weapon_has_infinite_ammo(weapon) and weapon.mag_current <= 0:
+			continue
+		if not _weapon_can_engage(weapon, dist):
 			continue
 		var dangerous := false
 		for index in _shoot_indices_for(weapon):
@@ -2517,37 +3682,40 @@ func _bot_find_ammo_or_reload(wc: WeaponController) -> void:
 	_trigger.release_all()
 	var cur: Weapon = wc._weapons[wc.current_weapon_index]
 	var dist := INF
-	if _current_target != null:
+	if _current_target != null and is_instance_valid(_current_target):
 		dist = player.global_position.distance_to(_current_target.global_position)
-
+	var cur_profile := _get_weapon_profile(cur)
 	var can_reload_current := not cur.has_infinite_ammo and cur.mag_current < cur.mag_size
 
-	# No immediate pressure — just reload in place instead of juggling weapons.
-	if can_reload_current and not wc._is_reloading and dist > MELEE_CONSIDER_RANGE * 2.0:
+	# A reload already in flight should finish unless the fight is on top of us.
+	if wc._is_reloading and dist > MELEE_CONSIDER_RANGE * 2.0:
+		return
+
+	# Reload in place when it is safe (or the target is far/out of LOS).
+	if can_reload_current and _is_weapon_safe_to_reload(cur):
 		_buttons.request_reload()
 		return
 
-	# Under pressure: look for another weapon with ammo ready right now,
-	# preferring anything ranged over melee.
-	var fallback_melee := -1
+	# Under pressure: pick the best ready weapon by range fit, not "anything
+	# ranged".  Melee is a last resort and only inside its real reach.
+	var best := _best_ready_weapon_index(wc, dist)
+	if best >= 0 and best != wc.current_weapon_index:
+		var best_weapon: Weapon = wc._weapons[best]
+		if _weapon_can_engage(best_weapon, dist) or dist > float(cur_profile.get("range_effective", 8.0)):
+			_switch_weapon(wc, best)
+			return
 	for i in wc._weapons.size():
 		if i == wc.current_weapon_index:
 			continue
-		var w: Weapon = wc._weapons[i]
-		if w.mag_current <= 0 and not w.has_infinite_ammo:
+		var melee: Weapon = wc._weapons[i]
+		if melee == null or not _is_melee_weapon(melee):
 			continue
-		if _is_melee_weapon(w):
-			fallback_melee = i
+		if melee.mag_current <= 0 and not melee.has_infinite_ammo:
 			continue
-		_switch_weapon(wc, i)
-		return
-
-	# Nothing but melee is ready. Only take it if we're already close (or
-	# close enough that closing the rest of the gap is trivial) — otherwise
-	# just reload and try to fight at range instead.
-	if fallback_melee >= 0 and dist <= MELEE_CONSIDER_RANGE:
-		_switch_weapon(wc, fallback_melee)
-		return
+		var melee_profile := _get_weapon_profile(melee)
+		if dist <= float(melee_profile["range_effective"]) + WEAPON_MELEE_ONLY_MARGIN:
+			_switch_weapon(wc, i)
+			return
 
 	if can_reload_current and not wc._is_reloading:
 		_buttons.request_reload()
@@ -2562,6 +3730,31 @@ func _reset_for_spawn() -> void:
 	_buttons.cancel()
 	_maneuvers.abort()
 	_traversal.reset()
+	_decision.reset()
+	_seen_since.clear()
+	_last_damage_source_name = ""
+	_last_damage_time = -999.0
+	_last_damage_position = Vector3.INF
+	_last_damage_direction = Vector3.ZERO
+	_last_seen_velocity = Vector3.ZERO
+	_target_lost_timer = 0.0
+	_search_timer = 0.0
+	_search_active = false
+	_search_origin = Vector3.INF
+	_glance_timer = 0.0
+	_strafe_force_change = false
+	_strafe_reason = ""
+	_shots_since_strafe = 0
+	_last_mag_for_strafe = -1
+	_combat_jump_timer = 0.0
+	_combat_crouch_timer = 0.0
+	_cover_position = Vector3.INF
+	_cover_threat_pos = Vector3.INF
+	_cover_phase = 0
+	_cover_timer = 0.0
+	_cover_total_timer = 0.0
+	_cover_cooldown = 0.0
+	_cover_rounds = 0
 	# A fresh body, a fresh style: the per-bot mouse/keyboard personality is
 	# drawn once per life, so two bots at the same skill still differ.
 	_style.draw(skill)
@@ -2580,6 +3773,18 @@ func _reset_for_spawn() -> void:
 	_fire_mode_weapon_key = ""
 	_fire_mode_mag = -1
 	_fire_mode_dist = -1.0
+	_weapon_choice_timer = 0.0
+	_weapon_choice_target_name = ""
+	_weapon_choice_band = -999
+	_weapon_choice_reason = ""
+	_heal_candidate_name = ""
+	_heal_candidate_time = 0.0
+	_heal_absent_time = 0.0
+	_explosion_jump_phase = 0
+	_explosion_jump_timer = 0.0
+	_explosion_jump_fire_wait = 0.0
+	_explosion_jump_fire_index = -1
+	_explosion_jump_weapon_index = -1
 	_reaction_timer = 0.0
 	_last_health = -1.0
 	_explosion_jump_cooldown_timer = 0.0
@@ -2625,6 +3830,174 @@ func _weighted_choice(weights: Array[float], key: String) -> int:
 ## Decision code (_act_*) states intent; it never touches PlayerInput, body
 ## rotation, head rotation or the fire flags directly.
 ## ============================================================================
+
+## ============================================================================
+## STAGE 4 — DECISION STATE MACHINE
+## ============================================================================
+
+## Committed high-level intent.  Each state has a minimum duration; only a new
+## visible enemy, a fresh hit, or a state-specific interrupt can cut it short.
+## States call the existing act/aim/locomotion APIs and never write inputs.
+class Decision extends RefCounted:
+	enum State { TRAVEL, SEARCH, COMBAT, HEAL, RELOAD_SAFE, RETREAT_COVER, STUCK_RECOVER }
+
+	var bot: BotController
+	var state: State = State.TRAVEL
+	var _min_timer: float = 0.0
+	var _consider_timer: float = 0.0
+	var _stuck_hold: float = 0.0
+	var _reason: String = "spawn"
+
+	func _init(owner_bot: BotController) -> void:
+		bot = owner_bot
+
+	func reset() -> void:
+		state = State.TRAVEL
+		_min_timer = 0.0
+		_consider_timer = 0.0
+		_stuck_hold = 0.0
+		_reason = "spawn"
+
+	func interrupt(next: State) -> void:
+		if next != state:
+			_enter(next)
+
+	func update(delta: float) -> void:
+		_min_timer = maxf(_min_timer - delta, 0.0)
+		_stuck_hold = maxf(_stuck_hold - delta, 0.0)
+		_consider_timer -= delta
+		if _consider_timer > 0.0:
+			return
+		_consider_timer = DECISION_INTERVAL
+		_consider()
+
+	func _consider() -> void:
+		var desired := _desired_state()
+		if desired == state:
+			return
+		if _min_timer > 0.0:
+			return
+		_enter(desired)
+
+	func _desired_state() -> State:
+		if not bot.player.spawned:
+			return State.TRAVEL
+		# Stuck recovery is a locomotion state, not a reason to stop shooting.
+		if bot._traversal.is_recovering() and bot._current_target == null \
+				and bot._heal_target == null:
+			return State.STUCK_RECOVER
+		if state == State.STUCK_RECOVER and _stuck_hold > 0.0:
+			return State.STUCK_RECOVER
+		var wc: WeaponController = bot.player.weapon_controller
+		if wc != null and wc._is_ready():
+			# Self-heal outranks cover: a medic's own heal is the fastest exit.
+			if bot._health_ratio() < MEDIC_SELF_HEAL_THRESHOLD \
+					and bot._find_self_heal_weapon_index(wc) >= 0:
+				return State.HEAL
+		if ENABLE_COVER and bot._cover_cooldown <= 0.0 \
+				and bot._health_ratio() < COVER_HEALTH_THRESHOLD \
+				and bot._has_threat():
+			return State.RETREAT_COVER
+		if wc != null and wc._is_ready():
+			var weapon: Weapon = wc._weapons[wc.current_weapon_index]
+			if bot._heal_target != null and is_instance_valid(bot._heal_target) \
+					and bot._weapon_heals_allies(weapon):
+				return State.HEAL
+			if bot._current_target != null and is_instance_valid(bot._current_target) \
+					and _should_reload_safe(wc, weapon):
+				return State.RELOAD_SAFE
+		if bot._current_target != null and is_instance_valid(bot._current_target):
+			return State.COMBAT
+		if bot._search_active and bot._last_seen_position != Vector3.INF:
+			return State.SEARCH
+		return State.TRAVEL
+
+	func _should_reload_safe(wc: WeaponController, weapon: Weapon) -> bool:
+		if weapon == null or weapon.has_infinite_ammo or wc._is_reloading:
+			return false
+		if bot._current_target == null or not is_instance_valid(bot._current_target):
+			return false
+		var cost := 1
+		if bot._chosen_fire_index >= 0:
+			cost = wc._get_fire_ammo_cost(weapon, bot._chosen_fire_index)
+		if weapon.mag_current >= cost:
+			return false
+		var dist := bot.player.global_position.distance_to(
+			bot._current_target.global_position
+		)
+		return dist > MELEE_CONSIDER_RANGE * 2.0
+
+	func _enter(next: State) -> void:
+		state = next
+		_reason = "enter"
+		match next:
+			State.TRAVEL:
+				_min_timer = 0.35
+			State.SEARCH:
+				_min_timer = 1.2
+			State.COMBAT:
+				_min_timer = 0.5
+			State.HEAL:
+				_min_timer = 0.4
+			State.RELOAD_SAFE:
+				_min_timer = 0.55
+			State.RETREAT_COVER:
+				_min_timer = 0.9
+			State.STUCK_RECOVER:
+				_min_timer = 0.3
+				_stuck_hold = 0.8
+		bot._on_decision_enter(int(next))
+
+	func act() -> void:
+		match state:
+			State.TRAVEL:
+				bot._act_seek_objective_or_wander()
+			State.SEARCH:
+				bot._act_search()
+			State.COMBAT:
+				if bot._current_target != null and is_instance_valid(bot._current_target):
+					bot._act_combat()
+				else:
+					bot._act_context()
+			State.HEAL:
+				_act_heal_state()
+			State.RELOAD_SAFE:
+				bot._act_reload_safe()
+			State.RETREAT_COVER:
+				bot._act_retreat_cover()
+			State.STUCK_RECOVER:
+				bot._act_context()
+			_:
+				bot._act_context()
+
+	func _act_heal_state() -> void:
+		var wc: WeaponController = bot.player.weapon_controller
+		if wc == null or not wc._is_ready():
+			return
+		if bot._health_ratio() < MEDIC_SELF_HEAL_THRESHOLD:
+			var self_index := bot._find_self_heal_weapon_index(wc)
+			if self_index >= 0:
+				if wc.current_weapon_index == self_index:
+					bot._act_self_heal(wc, wc._weapons[self_index])
+					return
+				if bot._switch_weapon(wc, self_index):
+					bot._trigger.release_all()
+					return
+		var weapon: Weapon = wc._weapons[wc.current_weapon_index]
+		if bot._heal_target != null and bot._weapon_heals_allies(weapon):
+			bot._act_heal()
+		else:
+			bot._act_context()
+
+	func get_state_text() -> String:
+		var names: Array[String] = [
+			"travel", "search", "combat", "heal", "reload", "cover", "stuck"
+		]
+		return "%s %.2f %s" % [names[int(state)], _min_timer, _reason]
+
+	func reason(text: String) -> void:
+		_reason = text
+
 
 ## ============================================================================
 ## STAGE 3 — TRAVERSAL
@@ -3377,6 +4750,15 @@ class Traversal extends RefCounted:
 	func is_recovering() -> bool:
 		return _recovery != Recovery.NONE
 
+	## A combat/heal/cover decision outranks locomotion recovery; stop the
+	## recovery verbs before the new state sets its own movement.
+	func cancel_recovery() -> void:
+		_recovery = Recovery.NONE
+		_recovery_timer = 0.0
+		_recovery_applied = false
+		_recovery_stage = 0
+		_progress_timer = 0.0
+
 	func tick(delta: float) -> void:
 		_ray_clock += delta
 		if _ray_clock >= 1.0:
@@ -3951,6 +5333,10 @@ class Style extends RefCounted:
 	var key_min_hold: float = BotController.KEY_MIN_HOLD_MIN
 	var key_flip_rate: float = BotController.KEY_FLIP_RATE_MAX
 	var aim_jitter: float = 0.0
+	## 0 = cautious/flanking, 1 = direct/aggressive.  Used for target weighting
+	## and a mild objective approach offset, not for a different ruleset.
+	var aggression: float = 0.5
+	var flank_bias: float = 0.0
 
 	func draw(skill_value: float) -> void:
 		var s: float = clampf(skill_value, 0.0, 1.0)
@@ -3993,6 +5379,8 @@ class Style extends RefCounted:
 			BotController.KEY_FLIP_RATE_MIN, BotController.KEY_FLIP_RATE_MAX, s
 		) * randf_range(0.9, 1.1)
 		aim_jitter = BotController.AIM_NOISE_MAX * (1.0 - s) * 0.5
+		aggression = clampf(0.5 + randf_range(-0.35, 0.35) + (s - 0.5) * 0.2, 0.0, 1.0)
+		flank_bias = randf_range(-1.0, 1.0)
 
 
 ## The keyboard emulator.  Owns `input_dir`, `jump_input`, `crouch`, `dash_input`.
