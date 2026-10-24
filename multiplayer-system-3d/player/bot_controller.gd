@@ -130,8 +130,8 @@ class_name BotController
 ##   Verified headlessly with two auto-spawned bots: both acquired targets and
 ##   pressed the trigger repeatedly, with aim error ~1-2 deg against a ~5 deg
 ##   gate.  In-game cadence/charged checks remain manual.
-##   Follow-up tuning: `skill` now defaults to 1.0 and AIM_SMOOTH_MAX is 20/s
-##   (max skill is meant to be aimbot-sharp).  Explosive self-damage is now read from
+##   Follow-up tuning: `skill` now defaults to 1.0.  (Stage 2 later replaced the
+##   exponential aim smoothing entirely — see below.)  Explosive self-damage is now read from
 ##   `splash_health_delta * self_health_delta_multiplier`, so the Heal Grenade
 ##   Launcher (which heals its shooter) is no longer blocked point-blank.
 ##   Special-weapon layer: `_refresh_weapon_specialty()` classifies a weapon
@@ -176,7 +176,68 @@ class_name BotController
 ##   refreshed on each target rescan and counts enemies through walls/FOV.
 ##   Verified headlessly: a 70%-HP SCI teammate made the medic switch from its
 ##   Pistol to the Heal Grenade Launcher, heal, then switch back.
-## - Stage 2+: not started.
+## - Stage 2 (human input emulation): COMPLETE.
+##   `Style` is drawn per spawn from skill + variance (strafe holds, pause rate,
+##   jump/crouch rates, peek weights, reaction, mouse speed/accuracy/lag, click
+##   tap/hz, key min-hold/flip-rate, vocabulary gates, aim jitter).  Same-skill
+##   bots therefore differ.
+##   `Keyboard` is the ONLY writer of `input_dir` / `jump_input` / `crouch` /
+##   `dash_input`.  Values are -1/0/1 keys, never analog; keys are held for a
+##   per-bot 60-120 ms minimum and direction flips are capped at 6-8/s.  A
+##   zero->nonzero request starts a reaction delay.  Jump is a short tap with a
+##   cooldown; counter_strafe taps the opposite key.  `keys_for_world_dir()` is
+##   the rare world->8-way adapter (navigation/stuck); combat and heal movement
+##   are built in the local frame and never round-trip through world space, so
+##   the old world/local mismatch (Known Issue D) is gone.
+##   `Mouse` is the ONLY writer of facing, through `Body._apply_mouse_look`
+##   (the real look path, including the pitch clamp).  Requests carry priorities
+##   COMBAT > REACT_DAMAGE > TRAVEL_LOOKAHEAD > SCAN and a TTL.  A new stimulus
+##   waits a skill-scaled reaction, then a Fitts-like bell-shaped flick (duration
+##   grows with log distance; landing error scales with 1-accuracy), followed by
+##   1-3 corrective submovements (3 at low skill, 1 at high), then second-order
+##   pursuit tracking with skill-scaled lag and jitter.  Vertical moves are
+##   slower/less accurate.  Integer mouse counts carry a residual.  Idle holds
+##   yaw and settles pitch to eye level with a small drift; travel looks along
+##   movement.  `current_aim_error_to()` exposes the real head-ray error.
+##   `Buttons` is the single reload/switch helper: human reaction delay, then
+##   `start_reload()` / `current_weapon_index` (the real equip state machine).
+##   `ManeuverRunner` executes `ManeuverStep` timelines with randomized
+##   durations, priority preemption, and abort on new target/damage/stun.
+##   `_weighted_choice()` supplies repeat-penalised, per-bot-biased entropy.
+##   Verified headlessly with two fighting bots: every sampled `input_dir`
+##   component was exactly -1/0/1; keys moved between W/A/S/D; mouse modes showed
+##   idle/track/flick/corr; both fired and damaged each other; aim error settled
+##   sub-degree.  The in-game overlay now shows key states + mouse delta; a
+##   manual visual check of flick feel remains.
+##
+## - Stage 3 (human traversal): IMPLEMENTED; cross-floor route validation is
+##   still manual (see the verification note at the end of this block).
+##   All non-combat movement (objective, last-seen pursuit, wander, heal
+##   approach) now goes through `Traversal.move_to(goal, urgency, arrival,
+##   caution)`.  It holds W and steers with the mouse via TRAVEL_LOOKAHEAD, uses
+##   short A/D taps for cross-track correction, and never emits analog input or
+##   rotates the body itself.
+##   Local perception (20 Hz) uses knee/chest/full-height rays, a forward capsule
+##   cast, a ledge probe, and side probes only when forward is blocked.  It emits
+##   discrete actions: continue, tap left/right, jump, crouch, stop, back up,
+##   re-route.  Counters are shown as `rays/s` in the overlay.
+##   `TravelGraph` is a shared, static, time-sliced AStar3D cache keyed by Map
+##   instance id.  Bake: recursive visual/collision AABB scan, 2.5 m columns,
+##   repeated downward casts for stacked floors, capsule headroom (stand vs
+##   crouch), dynamic-body RID exclusion.  Edges are typed WALK / JUMP / CROUCH /
+##   DROP / STAIRS; ramps are detected by sampling the surface, staircases by
+##   intermediate surfaces.  Node lookup is vertical-first; AStar3D supplies the
+##   path and temporary point weights provide flat-route preference, recent-route
+##   penalties and per-bot goal bias.  Bake cost is capped at 1.5 ms/frame.
+##   Stuck recovery escalates: jump -> open-side strafe -> back up + re-aim ->
+##   graph re-route with blocked/recent positions penalized -> turn around.
+##   Positions are remembered for 10 s; no body rotation is ever written.
+##   Verified headlessly on `castle`: graph baked ~1600 nodes / ~10k edges in
+##   ~2-3 s with no frame errors; bots held long W with short A/D taps, followed
+##   graph paths when direct line failed, and did not leave the playable floor.
+##   Cross-floor route validation is still manual; the tested maps' extreme nodes
+##   sit in separate decorative/roof islands, so a low-to-high query there is not
+##   a fair staircase test.
 ##
 ## OPEN QUESTIONS / HAZARDS FOR LATER STAGES
 ## - `_get_proj_info().heals_allies` is accurate (positive `health_delta` +
@@ -227,10 +288,10 @@ class_name BotController
 @export var debug_log_weapons: bool = false
 
 ## Cached head node.  This is the bot's OWN aim origin + pitch node — the camera
-## head (`%Head` = Body/Recoil/Head), NOT the physical head bone.  `_apply_smooth_aim`
-## pitches `_head_node.rotation.x`, which must rotate the camera/weapon ray, not a
-## ragdoll bone.  (The *target's* head bone is resolved separately in
-## `_get_head_position()`.)
+## head (`%Head` = Body/Recoil/Head), NOT the physical head bone.  The Mouse
+## emulator drives it through `Body._apply_mouse_look`, so pitch rotates the
+## camera/weapon ray, not a ragdoll bone.  (The *target's* head bone is resolved
+## separately in `_get_head_position()`.)
 @onready var _head_node: Node3D = player.get_node("%Head") as Node3D
 
 ## Reused raycast queries — avoids allocating a fresh PhysicsRayQueryParameters3D
@@ -265,6 +326,13 @@ func _ready() -> void:
 
 	_fov_dot_threshold = cos(deg_to_rad(FOV_DEGREES * 0.5))
 
+	_style = Style.new()
+	_style.draw(skill)
+	_keyboard = Keyboard.new(self)
+	_mouse = Mouse.new(self)
+	_buttons = Buttons.new(self)
+	_maneuvers = ManeuverRunner.new(self)
+	_traversal = Traversal.new(self)
 	_trigger = Trigger.new(self)
 	_los_exclude_rids.clear()
 	_los_exclude_rids.append(player.get_rid())
@@ -300,13 +368,60 @@ const SAFE_TOP_OFF_RADIUS: float = 30.0
 ## Bots only detect enemies within this horizontal field-of-view cone (degrees),
 ## centred on their facing direction.  Matches a human's ~120° peripheral vision.
 const FOV_DEGREES: float = 120.0
-## Aim tracking speed at skill 0 / skill 1 — low skill trails the target
-## noticeably instead of only missing via spread noise.
-const AIM_SMOOTH_MIN: float      = 3.0
-## 20/s at skill 1 is a ~50 ms time constant, i.e. genuinely "max skill":
-## fast enough to snap onto a strafing target, while still leaving the weapon's
-## own authored spread as the limiting factor.
-const AIM_SMOOTH_MAX: float      = 20.0
+## Human mouse model (Stage 2).  The old exponential aim smoothing is gone;
+## these describe a ballistic flick plus a pursuit tracker, both scaled by the
+## per-bot Style drawn at spawn.
+const LOOK_FLICK_START_DEG: float = 6.0
+const LOOK_CORRECTION_DEG: float = 1.2
+const LOOK_FLICK_BASE_TIME: float = 0.06
+const LOOK_FLICK_LOG_TIME: float = 0.045
+const LOOK_FLICK_MIN_TIME: float = 0.07
+const LOOK_FLICK_MAX_TIME: float = 0.32
+const LOOK_TRACK_GAIN: float = 7.0
+const LOOK_TRACK_ACCEL: float = 60.0
+const LOOK_TRACK_MAX_SPEED: float = 14.0
+## How long a look request survives without being refreshed by the 20 Hz think
+## tick.  A lost target keeps the old aim for a fraction of a second, like a
+## human who has not yet reacted to the target disappearing.
+const LOOK_REQUEST_TTL: float = 0.30
+## Idle pitch drift (radians).  The crosshair rests near eye level; this is the
+## small breathing motion around it, never a snap to the floor or sky.
+const LOOK_IDLE_DRIFT: float = 0.012
+## Head pitch limit, matching Body._apply_mouse_look's clamp.  Kept here so the
+## request never aims beyond what the real look path can actually reach.
+const LOOK_PITCH_LIMIT: float = PI * 0.5 - 0.001
+## Optional mouse-count quantisation.  One count is one physical mouse step;
+## the residual is carried to the next tick so slow tracking still moves.
+const MOUSE_COUNT_STEP: float = 1.0
+
+## Keyboard human limits.  A key must stay down long enough to be registered by
+## the rollback tick (Stage 0: >= 2 ticks = 22.2 ms; 60 ms is a safe floor), and
+## direction changes are rate-limited to a fast human's A/D cadence.
+const KEY_MIN_HOLD_MIN: float = 0.06
+const KEY_MIN_HOLD_MAX: float = 0.12
+const KEY_FLIP_RATE_MIN: float = 6.0
+const KEY_FLIP_RATE_MAX: float = 8.0
+const KEY_REACTION_MIN: float = 0.04
+const KEY_REACTION_MAX: float = 0.25
+## Verified Stage 0: input_dir is CAMERA-relative.  The camera's yaw follows the
+## body yaw horizontally, so camera-local keys are body-local keys for WASD.
+## If the camera ever decouples from the body, flip this and route every
+## set_move through keys_for_world_dir.
+const INPUT_DIR_IS_BODY_LOCAL: bool = true
+
+## Human click timing.  A semi-auto press is a real click, not a one-frame flag;
+## the click rate cap is the fastest a human can mash at high skill.
+const FIRE_TAP_MIN: float = 0.04
+const FIRE_TAP_MAX: float = 0.10
+const FIRE_CLICK_HZ_MIN: float = 6.0
+const FIRE_CLICK_HZ_MAX: float = 9.0
+
+## Reload / weapon-switch reaction before the action is committed.  The equip
+## time itself is still the WeaponController's real switch state machine.
+const RELOAD_REACTION_MIN: float = 0.06
+const RELOAD_REACTION_MAX: float = 0.25
+const SWITCH_REACTION_MIN: float = 0.06
+const SWITCH_REACTION_MAX: float = 0.25
 ## Path to the target's head bone — the `Physical Bone DEF-spine_006` hurtbox with
 ## `is_head = true` in player.tscn.  Bots aim at this bone's live world position
 ## rather than a fixed height, so headshots track the model's actual head.
@@ -317,19 +432,59 @@ const AIM_NOISE_MAX: float        = 0.2
 ## Max projectile-lead time so prediction never overshoots on slow projectiles.
 const LEAD_TIME_MAX: float        = 0.6
 
-# Stuck detection
-const STUCK_CHECK_INTERVAL: float    = 0.5
-const STUCK_DISTANCE_THRESHOLD: float = 0.3
-const STUCK_JUMP_ATTEMPTS: int        = 2
+# Traversal (Stage 3).  The graph is baked at 2.5 m and time-sliced; these
+# numbers come from the verified Player physics (capsule 0.4243 r, stand 2.0,
+# crouch 1.3333, jump v=5 under g=9.8 -> 1.27 m high / ~3 m long).
+const TRAVEL_GRID: float = 2.5
+const TRAVEL_BOUNDS_MARGIN: float = 8.0
+const TRAVEL_MAX_COLUMNS: int = 20000
+const TRAVEL_MAX_FLOORS_PER_COLUMN: int = 8
+const BAKE_BUDGET_USEC: int = 1500
+const WALK_STEP_MAX: float = 0.4
+const JUMP_STEP_MAX: float = 1.1
+const DROP_MAX: float = 6.0
+const NODE_LOOKUP_RADIUS: float = 1.5
+const DIRECT_LINE_MAX_RISE: float = 1.0
+const LOOKAHEAD_MIN: float = 3.0
+const LOOKAHEAD_MAX: float = 6.0
+const CROSS_TRACK_TAP: float = 0.55
+const CORNER_SLOW_RADIUS: float = 1.5
+const REPATH_INTERVAL: float = 0.55
+const STUCK_TIME: float = 0.5
+const STUCK_DISTANCE: float = 0.25
+const STUCK_MEMORY: float = 10.0
+const CAPSULE_RADIUS: float = 0.4243164
+const STAND_HEIGHT: float = 2.0
+const CROUCH_HEIGHT: float = 1.3333
+const FLOOR_MAX_ANGLE_DEG: float = 45.0
+const JUMP_VELOCITY: float = 5.0
+const GRAVITY: float = 9.8
+const WALK_SPEED: float = 3.0
+const PROBE_KNEE_HEIGHT: float = 0.45
+const PROBE_CHEST_HEIGHT: float = 1.1
+const PROBE_FULL_HEIGHT: float = 1.75
+const LEDGE_PROBE_AHEAD: float = 1.5
+const LEDGE_DROP_DANGER: float = 2.5
+const SIDE_PROBE_DISTANCE: float = 2.5
+const TRAVEL_ARRIVE_DEFAULT: float = 1.0
+## Travel look points are floor positions; add eye height so the bot looks
+## where it is going, not down at its own feet.
+const TRAVEL_EYE_HEIGHT: float = 1.5
 
 # Steering — a reduced fan (7 rays instead of 11) keeps wall-following smooth
-# while cutting the steering raycast cost by ~40%.
+# while cutting the steering raycast cost by ~40%.  Still used by combat only;
+# all non-combat travel goes through Traversal.
 const STEER_DISTANCE: float       = 8.0
 const STEER_ANGLES: Array[float]  = [-55, -35, -20, 0, 20, 35, 55]
 const STEER_RAY_HEIGHT: float     = 0.5
 const WALL_FOLLOW_DISTANCE: float = 3.0
 
-# Strafing
+# Look-request priorities.  Higher wins; a lower-priority request cannot steal
+# the crosshair from a live higher-priority one.
+enum LookPriority { SCAN, TRAVEL_LOOKAHEAD, REACT_DAMAGE, COMBAT }
+
+# Strafing.  The actual hold time now comes from the per-bot Style; this is only
+# the fallback used before a Style has been drawn.
 const STRAFE_CHANGE_INTERVAL: float = 1.5
 
 # Trigger — the only writer of the fire flags.  See class Trigger.
@@ -469,20 +624,20 @@ const PROP_TEAM_HEALTH_MULT: Array[String] = ["team_health_delta_multiplier"]
 
 # Runtime state
 
-var _stuck_check_timer:  float = 0.0
-var _last_position: Vector3    = Vector3.ZERO
-var _stuck_jump_count: int     = 0
-var _force_wander_timer: float = 0.0
-
 var _strafe_dir: float   = 0.0
 var _strafe_timer: float = 0.0
+
+## Stage 3: per-bot route/perception/stuck state.  All non-combat movement
+## (objective, pursue, wander, heal approach) goes through this.
+var _traversal: Traversal = null
 
 ## Sole owner of the fire flags.  Assigned in _ready; ticked every physics
 ## frame, independently of the 20 Hz think loop.
 var _trigger: Trigger = null
 
 ## The point `_act_combat`/`_act_heal` want the head ray to point at.  The aim
-## gate measures the REAL head ray against this, not `_current_body_y/_x`.
+## gate measures the REAL head ray against this, not the angles the Mouse is
+## currently trying to reach.
 var _desired_aim_point: Vector3 = Vector3.ZERO
 var _has_desired_aim: bool = false
 ## Public for the debug overlay and for Trigger's gate.
@@ -540,15 +695,27 @@ var _retarget_timer: float        = 0.0
 var _weapon_switch_guard: float   = 0.0
 var _fov_dot_threshold: float     = 0.5  # cos(FOV_DEGREES / 2), set in _ready
 
-var _aim_noise_y: float  = 0.0
-var _aim_noise_x: float  = 0.0
-var _noise_timer: float  = 0.0
-var _current_body_y: float = 0.0
-var _current_head_x: float = 0.0
+## Stage 2 verb layer.  These are the ONLY writers of movement keys, jump,
+## crouch, facing and (through Trigger) fire flags.  Decisions in _act_* call
+## their intent-level APIs; they never poke PlayerInput or body/head rotations.
+var _style: Style = null
+var _keyboard: Keyboard = null
+var _mouse: Mouse = null
+var _buttons: Buttons = null
+var _maneuvers: ManeuverRunner = null
+
+## Per-bot entropy state: last weighted choice per decision key, plus a small
+## strafe preference so two bots at the same skill do not mirror each other.
+var _choice_history: Dictionary = {}
+var _strafe_bias: float = 0.0
 
 ## Counts down after acquiring a new target; firing is held off until it hits
 ## zero (see REACTION_TIME_MAX). Aiming/steering are never gated by this.
 var _reaction_timer: float = 0.0
+
+## Last observed health, used to abort a running maneuver the moment the bot is
+## hit.  -1 until the first sample after respawn.
+var _last_health: float = -1.0
 
 ## Rerolled periodically so the "ideal" fighting distance isn't a fixed number.
 var _preferred_dist_offset: float = 0.0
@@ -587,9 +754,13 @@ func _physics_process(delta: float) -> void:
 	if not multiplayer.is_server():
 		return
 	if not player.spawned:
-		# The weapon controller's fire flags are plain bools that survive death;
-		# release them or the corpse keeps "holding" until respawn.
+		# The fire flags are plain bools that survive death, and the key state
+		# would otherwise resume on respawn.  Release everything.
 		_trigger.release_all()
+		_keyboard.release_all()
+		_mouse.cancel()
+		_buttons.cancel()
+		_maneuvers.abort()
 		_has_desired_aim = false
 		aim_error_deg = -1.0
 		_was_spawned = false
@@ -598,13 +769,13 @@ func _physics_process(delta: float) -> void:
 		_was_spawned = true
 		_reset_for_spawn()
 
-	# Dev-menu "freeze all bots": park them exactly like a stun, clearing the
-	# inputs BotController normally writes so nothing is left held down.
+	# Dev-menu "freeze all bots": park them exactly like a stun.  Going through
+	# the emulators keeps them the only writers of input/facing state.
 	if GameManager.dev_freeze_bots:
-		player.player_input.input_dir = Vector2.ZERO
-		player.player_input.jump_input = false
-		player.player_input.crouch = false
+		_keyboard.release_all()
 		_trigger.release_all()
+		_mouse.cancel()
+		_maneuvers.abort()
 		_has_desired_aim = false
 		if debug_draw:
 			_debug_tick(delta)
@@ -612,19 +783,33 @@ func _physics_process(delta: float) -> void:
 
 	# Stunned, pinned, or mid-channel bots cannot move, aim, or fire.
 	if player.status_effect_manager and (player.status_effect_manager.is_stunned() or player.status_effect_manager.is_pinned() or player.status_effect_manager.is_action_blocked()):
-		player.player_input.input_dir = Vector2.ZERO
-		player.player_input.jump_input = false
+		_keyboard.release_all()
 		_trigger.release_all()
+		_mouse.cancel()
+		_maneuvers.abort()
 		_has_desired_aim = false
 		if debug_draw:
 			_debug_tick(delta)
 		return
 
-	# Physics-rate work: smooth the real head, measure the real aim error, and
-	# run the trigger state machine.  None of this waits for the 20 Hz think.
-	_apply_smooth_aim(delta)
+	# Physics-rate verb layer.  Mouse movement, aim measurement, fire state and
+	# keyboard state run every physics frame; only decisions wait for 20 Hz.
+	_buttons.tick(delta)
+	_maneuvers.tick(delta)
+	_mouse.tick(delta)
 	_update_aim_error()
 	_trigger.tick(delta)
+	_keyboard.tick(delta)
+	_traversal.tick(delta)
+
+	# A hit is a higher-priority event than whatever maneuver is running.
+	var ac: AttributeComponent = player.attribute_component
+	var health_now: float = ac.health if ac != null else 0.0
+	if _last_health >= 0.0 and health_now < _last_health - 1.0:
+		_maneuvers.abort()
+		_react_to_damage(ac)
+	_last_health = health_now
+
 	if _reaction_timer > 0.0:
 		_reaction_timer = maxf(_reaction_timer - delta, 0.0)
 	if _explosion_jump_cooldown_timer > 0.0:
@@ -647,30 +832,12 @@ func _physics_process(delta: float) -> void:
 		return
 	_timer = 0.0
 
-	# Stuck bots force-wander for a few seconds. Only re-steer at the normal tick
-	# rate — steering every physics frame (~60 Hz) tripled the raycasts for a bot
-	# that is merely walking away from an obstacle.
-	if _force_wander_timer > 0.0:
-		_trigger.release_all()
-		_has_desired_aim = false
-		_force_wander_timer -= PROCESS_INTERVAL
-		var sd := _steer_toward(_wander_target)
-		_apply_movement(sd)
-		return
-
-	_tick_stuck_detection()
 	_tick_strafe()
 	_tick_preferred_distance()
 
-	_noise_timer += PROCESS_INTERVAL
-	if _noise_timer >= NOISE_INTERVAL:
-		_noise_timer = 0.0
-		var spread := AIM_NOISE_MAX * (1.0 - skill)
-		_aim_noise_y = randf_range(-spread, spread)
-		_aim_noise_x = randf_range(-spread, spread)
-
 	_think()
-	_act()
+	if not _maneuvers.is_running():
+		_act()
 
 # Steering
 
@@ -743,62 +910,57 @@ func _score_direction(origin: Vector3, dir: Vector2) -> float:
 		return STEER_DISTANCE
 	return -hit.position.distance_to(origin)
 
+## World-space movement adapter, retained for the few combat/heal fallbacks that
+## naturally think in world space.  Normal travel never uses it: Traversal holds
+## W and turns the mouse.  `keys_for_world_dir` converts to the nearest 8-way key
+## combination using the current camera yaw.
 func _apply_movement(sd: Vector2) -> void:
-	player.player_input.input_dir = sd
+	_keyboard.set_move_world(sd)
 
-# Stuck detection
 
-func _tick_stuck_detection() -> void:
-	_stuck_check_timer += PROCESS_INTERVAL
-	if _stuck_check_timer < STUCK_CHECK_INTERVAL:
-		return
-	_stuck_check_timer = 0.0
-
-	var moved := player.global_position.distance_to(_last_position)
-	_last_position = player.global_position
-
-	var is_trying := player.player_input.input_dir.length() > 0.1
-	if not is_trying:
-		_stuck_jump_count = 0
-		return
-
-	if moved < STUCK_DISTANCE_THRESHOLD:
-		_stuck_jump_count += 1
-		if _stuck_jump_count <= STUCK_JUMP_ATTEMPTS:
-			player.player_input.jump_input = true
-		else:
-			player.body.rotate_y(PI + randf_range(-0.5, 0.5))
-			_stuck_jump_count = 0
-			_force_wander_timer = 3.0
-			player.player_input.jump_input = false
-			_pick_wander_target()
-			_wall_hug_side *= -1
-	else:
-		_stuck_jump_count = 0
-		player.player_input.jump_input = false
-
-# Aim smoothing
-
-func _apply_smooth_aim(delta: float) -> void:
-	# Higher skill tracks tighter and faster; low skill visibly trails the
-	# target instead of only missing via random spread.
-	var smooth := lerpf(AIM_SMOOTH_MIN, AIM_SMOOTH_MAX, skill)
-	player.body.rotation.y = lerp_angle(
-		player.body.rotation.y, _current_body_y, smooth * delta
-	)
-	var head_node: Node3D = _head_node
-	head_node.rotation.x = lerp_angle(
-		head_node.rotation.x, _current_head_x, smooth * delta
-	)
+## Camera/body-local movement (x = strafe, y = +1 backward, exactly the
+## `input_dir` convention).  Quantised to keys inside the Keyboard.
+func _move_local(local: Vector2) -> void:
+	_keyboard.set_move_input_vector(local)
 
 # Strafing
 
 func _tick_strafe() -> void:
 	_strafe_timer -= PROCESS_INTERVAL
-	if _strafe_timer <= 0.0:
+	if _strafe_timer > 0.0:
+		return
+
+	var style: Style = _style
+	if style == null:
 		_strafe_timer = STRAFE_CHANGE_INTERVAL
-		var roll := randi() % 3
-		_strafe_dir = [-1.0, 0.0, 1.0][roll]
+		_strafe_dir = float([-1, 0, 1][randi() % 3])
+		return
+
+	var spread := clampf(style.strafe_hold_spread, 0.0, 0.9)
+	_strafe_timer = maxf(0.12, style.strafe_hold_median * randf_range(1.0 - spread, 1.0 + spread))
+	var old_dir := _strafe_dir
+
+	# Low-skill bots pause a lot; high-skill bots rarely stand still.
+	if not style.allow_strafe or randf() < style.pause_probability:
+		if old_dir != 0.0:
+			_keyboard.counter_strafe()
+		_strafe_dir = 0.0
+		return
+
+	# Weighted left/right with a repeat penalty and a per-bot bias.  The bias
+	# makes one bot prefer right peeks and another prefer left, so same-skill
+	# bots do not look like copies.
+	var weights: Array[float] = [
+		maxf(0.05, 1.0 - _strafe_bias),
+		maxf(0.05, 1.0 + _strafe_bias),
+	]
+	var pick := _weighted_choice(weights, "strafe")
+	var new_dir := -1.0 if pick == 0 else 1.0
+	if old_dir != 0.0 and not is_equal_approx(old_dir, new_dir):
+		# Change direction the way a human would: a short opposite tap stops the
+		# current lateral velocity before the new key takes over.
+		_keyboard.counter_strafe()
+	_strafe_dir = new_dir
 
 ## Rerolls the per-bot preferred-fighting-distance wobble every couple of
 ## seconds so combat movement doesn't lock onto one exact, robotic distance.
@@ -811,20 +973,40 @@ func _tick_preferred_distance() -> void:
 # Aim error
 
 ## Angle (degrees) between the head's REAL forward ray and the desired aim
-## point.  Deliberately not derived from `_current_body_y/_current_head_x`:
-## those are the smoothed-aim targets and can be well ahead of the actual head.
+## point.  The Mouse exposes this from the real camera ray, not from the angles
+## it is trying to reach, so the Trigger gates on what the gun will actually do.
 func _update_aim_error() -> void:
 	aim_tolerance_deg = _current_aim_tolerance()
 	if not _has_desired_aim:
 		aim_error_deg = -1.0
 		return
-	var head_pos := _head_node.global_position
-	var to_aim := _desired_aim_point - head_pos
-	if to_aim.length_squared() < 0.000001:
-		aim_error_deg = 0.0
+	aim_error_deg = _mouse.current_aim_error_to(_desired_aim_point)
+
+
+## Reflex look toward whoever just shot us.  REACT_DAMAGE sits below COMBAT, so
+## a live target keeps the crosshair; this only steers a bot that was looking
+## elsewhere (travel/idle) when it gets hit.
+func _react_to_damage(ac: AttributeComponent) -> void:
+	if ac == null:
 		return
-	var forward := -_head_node.global_transform.basis.z
-	aim_error_deg = rad_to_deg(forward.angle_to(to_aim.normalized()))
+	var attacker_name := str(ac.last_enemy_attacker)
+	if attacker_name.is_empty() or attacker_name == "NONE":
+		attacker_name = str(ac.last_attacker)
+	if not attacker_name.is_empty() and attacker_name != "NONE":
+		var attacker := GameManager.find_player(attacker_name)
+		if attacker != null and is_instance_valid(attacker) and attacker.spawned \
+				and attacker != player and _is_enemy_of(attacker):
+			_mouse.request_look_at_point(
+				_get_head_position(attacker),
+				LookPriority.REACT_DAMAGE,
+				1.0,
+				"damage:" + attacker_name
+			)
+			return
+	var direction: Vector3 = ac.last_hit_direction
+	if direction.length_squared() > 0.001:
+		# last_hit_direction points attacker -> victim, so flip it to look back.
+		_mouse.request_look_direction(-direction, LookPriority.REACT_DAMAGE, 1.0)
 
 
 func _current_aim_tolerance() -> float:
@@ -968,7 +1150,12 @@ func _think() -> void:
 		# and re-verifying the same target every RETARGET_INTERVAL shouldn't
 		# make a skill-0 bot re-hesitate on someone it's already shooting.
 		if _current_target != prev_target:
-			_reaction_timer = REACTION_TIME_MAX * (1.0 - skill)
+			# A newly acquired target outranks any scripted maneuver.
+			_maneuvers.abort()
+			var reaction := REACTION_TIME_MAX * (1.0 - skill)
+			if _style != null:
+				reaction = _style.reaction_time
+			_reaction_timer = reaction * randf_range(0.8, 1.2)
 		_last_seen_position = _current_target.global_position
 
 	_refresh_los_excludes()
@@ -1337,18 +1524,6 @@ func _predict_target_pos(target: Player, fire: WeaponFire, flat_dist: float,
 	return pos
 
 
-## Perfect counter-aim at skill 1.0, none at skill 0.0. Replaces stopping fire
-## until recoil settles — that gave even a max-skill bot the same shaky
-## aim as a low-skill one, just delayed, which is backwards for a skill dial.
-## Returns (pitch, yaw) angle offsets to subtract from the intended aim.
-## NOTE: this assumes wc.recoil.rotation adds visually on top of the aim the
-## same way it does for a human camera. Flip the sign here if compensation
-## pushes the aim the wrong way on your rig.
-func _get_recoil_compensation(wc: WeaponController) -> Vector2:
-	var r: Vector3 = wc.recoil.rotation
-	return Vector2(r.x, r.y) * skill
-
-
 ## Best-effort melee detection. Duck-typed rather than hard-referencing an
 ## exact WeaponFire.ActionType.MELEE enum member or field name, so it still
 ## compiles and runs even if your schema differs — verify against your actual
@@ -1402,14 +1577,21 @@ func _get_engagement_range_info(weapon: Weapon) -> Dictionary:
 	return {"range": DEFAULT_RANGED_ENGAGE_DIST, "source": "default (no range property)"}
 
 
+## Ask the button emulator for a weapon switch.  The request is accepted now but
+## committed after the per-bot human reaction delay; the WeaponController's real
+## switch state machine still owns the equip time.  Returning true means "a
+## switch to this slot is in flight", so callers stop acting on the old weapon.
 func _switch_weapon(wc: WeaponController, index: int) -> bool:
 	if index < 0 or index >= wc._weapons.size() or index == wc.current_weapon_index:
 		return false
+	if _buttons != null and _buttons.is_switch_pending():
+		return _buttons.pending_index() == index
 	if _weapon_switch_guard > 0.0:
 		return false
-	_weapon_switch_guard = 1.0
 	_trigger.release_all()
-	wc.current_weapon_index = index
+	if not _buttons.request_switch(index):
+		return false
+	_weapon_switch_guard = 1.4
 	_chosen_fire_index = -1
 	_fire_mode_dirty = true
 	return true
@@ -1494,13 +1676,14 @@ func _try_explosion_jump(wc: WeaponController, travel_dist: float) -> bool:
 	if randf() > lerpf(0.02, 0.35, skill):
 		return false
 
-	_current_head_x = -1.4  # nearly straight down at our own feet
-	_desired_aim_point = player.global_position
+	var feet := player.global_position
+	_desired_aim_point = feet
 	_has_desired_aim = true
-	# `force` skips the aim gate: the shot leaves while the head is still
-	# pitching down.  Full aim -> fire -> jump sequencing is Stage 5.
+	# The mouse emulator owns facing; request the look like any other aim.  The
+	# shot is still forced (aim -> fire -> jump sequencing is Stage 5).
+	_mouse.request_look_at_point(feet, LookPriority.COMBAT, 1.0, "explosion_jump")
 	_trigger.request_fire(fire_index, true, true)
-	player.player_input.jump_input = true
+	_keyboard.jump_tap(false)
 	_explosion_jump_cooldown_timer = EXPLOSION_JUMP_COOLDOWN
 	return true
 
@@ -1550,15 +1733,12 @@ func _act_seek_objective_or_wander() -> void:
 
 	_trigger.release_all()
 	_has_desired_aim = false
-	_current_body_y = atan2(-(obj.x - player.global_position.x), -(obj.z - player.global_position.z))
-	_current_head_x = 0.0
-	var sd := _steer_toward(obj)
-	_apply_movement(sd)
+	_traversal.move_to(obj, 0.6, 1.5, 0.15)
 
 	if wc._is_ready() and not wc._is_reloading:
 		var cw: Weapon = wc._weapons[wc.current_weapon_index]
 		if cw.mag_current < cw.mag_size and not cw.has_infinite_ammo:
-			wc.start_reload()
+			_buttons.request_reload()
 
 func _act_combat() -> void:
 	var wc: WeaponController = player.weapon_controller
@@ -1606,32 +1786,30 @@ func _act_combat() -> void:
 	var aim_pos: Vector3 = _get_head_position(_current_target)
 	if fire.bullet_type == WeaponFire.BulletType.PROJECTILE:
 		aim_pos = _predict_target_pos(_current_target, fire, dist, aim_point)
-	# The aim gate measures the real head ray against THIS point, so lead and
-	# recoil compensation flow into it automatically.
+	# Request, do not write.  The Mouse owns recoil compensation, the flick and
+	# the tracking lag; the aim gate still measures the real head ray against
+	# this point, so lead and recoil flow through automatically.
 	_desired_aim_point = aim_pos
 	_has_desired_aim = true
-
-	var to_aim := aim_pos - _head_node.global_position
-	var flat_to_aim := Vector3(to_aim.x, 0, to_aim.z).length()
-	var target_body_y := atan2(-to_aim.x, -to_aim.z)
-	var target_head_x := atan2(to_aim.y, maxf(flat_to_aim, 0.001))
-
-	# Recoil compensation: perfect counter-aim at skill 1.0, none at 0.0 —
-	# see _get_recoil_compensation for why this replaces waiting out recoil.
-	var comp := _get_recoil_compensation(wc)
-	_current_body_y = target_body_y + _aim_noise_y - comp.y
-	_current_head_x = target_head_x + _aim_noise_x - comp.x
+	_mouse.request_look_at_point(
+		aim_pos, LookPriority.COMBAT, 1.0, str(_current_target.get_instance_id())
+	)
 
 	# Weapon-aware engagement distance (melee closes all the way in; ranged
 	# weapons fight at roughly half their configured range) plus a slowly
-	# re-rolled per-bot jitter, blended continuously with steering instead of
-	# hard distance bands — removes the "always exactly N units away" feel.
+	# re-rolled per-bot jitter.  Combat movement is expressed in the keyboard's
+	# LOCAL frame (strafe, backward), not world space: only the obstacle-steer
+	# ray is converted through the facing helper.
 	var desired_dist := maxf(_get_engagement_range(weapon) + _preferred_dist_offset, MELEE_ENGAGE_RANGE * 0.5)
-	var sd := _steer_toward(_current_target.global_position)
 	var radial := clampf((dist - desired_dist) / 4.0, -1.0, 1.0)
-	sd = sd * 0.6 + Vector2(_strafe_dir, -radial) * 0.6
-	sd = sd.normalized() if sd.length() > 0.001 else Vector2(_strafe_dir, 0.0)
-	_apply_movement(sd)
+	var steer_world := _steer_toward(_current_target.global_position)
+	var steer_local := _keyboard.world_to_input_local(steer_world)
+	var local := steer_local * 0.6 + Vector2(_strafe_dir, -radial) * 0.6
+	if local.length() > 0.001:
+		local = local.normalized()
+	else:
+		local = Vector2(_strafe_dir, 0.0)
+	_move_local(local)
 
 	# Firing: the Trigger owns the flags and applies the aim gate.  `wants` only
 	# expresses intent (reaction delay, and not blowing ourselves up point-blank).
@@ -1672,27 +1850,25 @@ func _act_heal() -> void:
 		_trigger.release_all()
 		return
 
-	_current_body_y = atan2(-flat.x, -flat.z) + _aim_noise_y
 	var aim_pos := _predict_target_pos(_heal_target, fire, dist)
 	_desired_aim_point = aim_pos
 	_has_desired_aim = true
-	var to_aim := aim_pos - _head_node.global_position
-	var flat_to_aim := Vector3(to_aim.x, 0, to_aim.z).length()
-	_current_head_x = atan2(to_aim.y, maxf(flat_to_aim, 0.001)) + _aim_noise_x
+	_mouse.request_look_at_point(
+		aim_pos, LookPriority.COMBAT, 0.9, str(_heal_target.get_instance_id())
+	)
 
-	# Move to a comfortable heal distance; back off if hugging the target.
-	var flat2 := Vector2(flat.x, flat.z)
-	var sd: Vector2
+	# Move to a comfortable heal distance; back off if hugging the target.  The
+	# route follower owns the approach, so a target on another floor is usable.
 	if dist > HEAL_RANGE * 0.7:
-		sd = _steer_toward(_heal_target.global_position)
+		_traversal.move_to(
+			_heal_target.global_position, 0.7, HEAL_RANGE * 0.7, 0.05
+		)
 	elif dist < 3.0:
-		var back_off := -flat2.normalized() if flat2.length() > 0.001 else Vector2.ZERO
-		sd = _steer_toward(_heal_target.global_position) * 0.3 + back_off * 0.7
-		if sd.length() > 0.001:
-			sd = sd.normalized()
+		# Back away in the body-local frame (S), with a little steering if a wall
+		# is in the way.
+		_move_local(Vector2(_strafe_dir * 0.35, 1.0))
 	else:
-		sd = Vector2(_strafe_dir * 0.6, 0.0).normalized()
-	_apply_movement(sd)
+		_move_local(Vector2(_strafe_dir * 0.6, 0.0))
 
 	_trigger.request_fire(fire_index, true)
 
@@ -1713,11 +1889,9 @@ func _act_self_heal(wc: WeaponController, weapon: Weapon) -> void:
 	var feet := player.global_position
 	_desired_aim_point = feet
 	_has_desired_aim = true
-	var to_feet := feet - _head_node.global_position
-	var flat_to_feet := Vector2(to_feet.x, to_feet.z).length()
-	_current_head_x = atan2(to_feet.y, maxf(flat_to_feet, 0.001))
-	# A self-heal is a standstill action; the head pitch does the aiming.
-	_apply_movement(Vector2.ZERO)
+	_mouse.request_look_at_point(feet, LookPriority.COMBAT, 1.0, "self_heal")
+	# A self-heal is a standstill action; the mouse pitches down.
+	_move_local(Vector2.ZERO)
 	_trigger.request_fire(fire_index, true)
 
 func _act_pursue_last_seen() -> void:
@@ -1736,12 +1910,7 @@ func _act_pursue_last_seen() -> void:
 
 	_trigger.release_all()
 	_has_desired_aim = false
-	_current_body_y = atan2(-flat.x, -flat.z)
-	_current_head_x = 0.0
-
-	var sd := _steer_toward(_last_seen_position)
-	_apply_movement(sd)
-	player.player_input.jump_input = _last_seen_position.y > player.global_position.y + 1.5
+	_traversal.move_to(_last_seen_position, 1.0, 1.0, 0.0)
 
 func _act_wander() -> void:
 	_trigger.release_all()
@@ -1751,21 +1920,17 @@ func _act_wander() -> void:
 	if wc._is_ready() and not wc._is_reloading:
 		var current_weapon: Weapon = wc._weapons[wc.current_weapon_index]
 		if current_weapon.mag_current < current_weapon.mag_size and not current_weapon.has_infinite_ammo:
-			wc.start_reload()
+			_buttons.request_reload()
 
 	var to_wander := _wander_target - player.global_position
 	var flat := Vector2(to_wander.x, to_wander.z)
 
-	if flat.length() < 1.0:
-		player.player_input.input_dir = Vector2.ZERO
+	if flat.length() < 1.5:
+		_keyboard.set_move(0, 0)
 		_pick_wander_target()
 		return
 
-	_current_body_y = atan2(-flat.x, -flat.y)
-	_current_head_x = 0.0
-
-	var sd := _steer_toward(_wander_target)
-	_apply_movement(sd)
+	_traversal.move_to(_wander_target, 0.25, 1.2, 0.35)
 
 
 # Diagnostics
@@ -1848,6 +2013,12 @@ func _update_debug_label() -> void:
 	lines.append("target: %s" % target_name)
 	lines.append("fire: %d  trig: %s" % [_chosen_fire_index, _debug_trigger_text()])
 	lines.append("aim err: %s deg" % _debug_aim_error(target_name != "-"))
+	lines.append("keys: %s  mouse: %s %s" % [
+		_keyboard.get_state_text() if _keyboard != null else "-",
+		_mouse.get_state_text() if _mouse != null else "-",
+		_mouse.get_delta_text() if _mouse != null else "-",
+	])
+	lines.append("travel: %s" % (_traversal.get_debug_text() if _traversal != null else "-"))
 	lines.append("weapon: %s" % _debug_weapon_text())
 	lines.append("scans: %d" % _full_scan_count)
 	_debug_label.text = "\n".join(lines)
@@ -1856,7 +2027,7 @@ func _update_debug_label() -> void:
 func _debug_state_text() -> String:
 	if GameManager.dev_freeze_bots:
 		return "frozen"
-	if _force_wander_timer > 0.0:
+	if _traversal != null and _traversal.is_recovering():
 		return "unstuck"
 	if _heal_target != null and is_instance_valid(_heal_target):
 		return "heal"
@@ -2314,6 +2485,14 @@ func _own_projectile_near_target(blast_radius: float) -> bool:
 	return false
 
 func _pick_wander_target() -> void:
+	# Prefer a genuinely reachable graph node (it may be on another floor);
+	# fall back to the old local ray-checked random offset while the graph bakes.
+	if _traversal != null:
+		var graph_point := _traversal.pick_wander_point(8.0, 20.0)
+		if graph_point != Vector3.INF:
+			_wander_target = graph_point
+			return
+
 	var origin := player.global_position + Vector3(0, STEER_RAY_HEIGHT, 0)
 	for _attempt in 8:
 		var offset := Vector3(
@@ -2345,7 +2524,7 @@ func _bot_find_ammo_or_reload(wc: WeaponController) -> void:
 
 	# No immediate pressure — just reload in place instead of juggling weapons.
 	if can_reload_current and not wc._is_reloading and dist > MELEE_CONSIDER_RANGE * 2.0:
-		wc.start_reload()
+		_buttons.request_reload()
 		return
 
 	# Under pressure: look for another weapon with ammo ready right now,
@@ -2371,13 +2550,25 @@ func _bot_find_ammo_or_reload(wc: WeaponController) -> void:
 		return
 
 	if can_reload_current and not wc._is_reloading:
-		wc.start_reload()
+		_buttons.request_reload()
 
 ## Reset bot-local state on a false -> true `player.spawned` edge.  `rpc_reset`
 ## resets the Player and its weapons but knows nothing about this controller, so
 ## a stale target/trigger from the previous life would otherwise survive.
 func _reset_for_spawn() -> void:
 	_trigger.release_all()
+	_keyboard.release_all()
+	_mouse.cancel()
+	_buttons.cancel()
+	_maneuvers.abort()
+	_traversal.reset()
+	# A fresh body, a fresh style: the per-bot mouse/keyboard personality is
+	# drawn once per life, so two bots at the same skill still differ.
+	_style.draw(skill)
+	_strafe_bias = randf_range(-0.25, 0.25)
+	_choice_history.clear()
+	_strafe_dir = 0.0
+	_strafe_timer = 0.0
 	_current_target = null
 	_heal_target = null
 	_last_seen_position = Vector3.INF
@@ -2390,19 +2581,2394 @@ func _reset_for_spawn() -> void:
 	_fire_mode_mag = -1
 	_fire_mode_dist = -1.0
 	_reaction_timer = 0.0
+	_last_health = -1.0
 	_explosion_jump_cooldown_timer = 0.0
 	_safe_top_off_timer = 0.0
 	_enemy_nearby = false
-	_last_position = player.global_position
-	_stuck_check_timer = 0.0
-	_stuck_jump_count = 0
-	_force_wander_timer = 0.0
-	_aim_noise_x = 0.0
-	_aim_noise_y = 0.0
-	_noise_timer = 0.0
 	_has_desired_aim = false
 	aim_error_deg = -1.0
 	_refresh_los_excludes()
+
+
+## Weighted choice with a repeat penalty and optional bias, for the entropy the
+## stage asks for.  `_choice_history` stores the last index chosen per key; a
+## repeat is down-weighted rather than forbidden, so even a predictable bot
+## occasionally changes its mind.
+func _weighted_choice(weights: Array[float], key: String) -> int:
+	if weights.is_empty():
+		return -1
+	var adjusted: Array[float] = []
+	var total := 0.0
+	var previous := int(_choice_history.get(key, -1))
+	for i in weights.size():
+		var weight := maxf(weights[i], 0.0)
+		if i == previous:
+			weight *= 0.35
+		adjusted.append(weight)
+		total += weight
+	if total <= 0.0:
+		return randi() % weights.size()
+	var roll := randf() * total
+	for i in adjusted.size():
+		roll -= adjusted[i]
+		if roll <= 0.0:
+			_choice_history[key] = i
+			return i
+	_choice_history[key] = adjusted.size() - 1
+	return adjusted.size() - 1
+
+
+## ============================================================================
+## STAGE 2 VERB LAYER
+## ----------------------------------------------------------------------------
+## These inner classes are the only writers of the player's input and facing.
+## Decision code (_act_*) states intent; it never touches PlayerInput, body
+## rotation, head rotation or the fire flags directly.
+## ============================================================================
+
+## ============================================================================
+## STAGE 3 — TRAVERSAL
+## ============================================================================
+
+## Shared, time-sliced waypoint graph.  Baked once per map, reused by every bot
+## on the server.  AStar3D stores topology; edge types are kept beside it because
+## AStar3D has no per-edge metadata or weight.
+class TravelGraph extends RefCounted:
+	enum EdgeType { WALK, JUMP, CROUCH, DROP, STAIRS }
+	enum BakeState { BOUNDS, COLUMNS, EDGES, READY, FAILED }
+
+	static var _shared: TravelGraph = null
+	static var _last_bake_frame: int = -1
+
+	var _map_id: int = 0
+	var _map_origin: Vector3 = Vector3.ZERO
+	var _world: World3D = null
+	var _astar: AStar3D = null
+	var _state: BakeState = BakeState.BOUNDS
+
+	var _node_positions: Array[Vector3] = []
+	var _node_crouch: Array[bool] = []
+	var _node_cells: Array[Vector2i] = []
+	## cell -> Array[int] of point ids.  Untyped inner arrays on purpose:
+	## Dictionary values come back as Variant (see CLAUDE.md).
+	var _cells: Dictionary = {}
+	## "a:b" -> EdgeType for the direction a -> b.
+	var _edge_types: Dictionary = {}
+
+	var _bounds: AABB = AABB()
+	var _bounds_valid: bool = false
+	var _spawn_points: Array[Vector3] = []
+	var _scan_stack: Array[Node] = []
+	var _exclude_rids: Array[RID] = []
+
+	var _ray: PhysicsRayQueryParameters3D = null
+	var _shape_query: PhysicsShapeQueryParameters3D = null
+	var _stand_shape: CapsuleShape3D = null
+	var _crouch_shape: CapsuleShape3D = null
+
+	var _col_start: Vector2 = Vector2.ZERO
+	var _col_step: float = TRAVEL_GRID
+	var _col_x: int = 0
+	var _col_z: int = 0
+	var _col_index: int = 0
+	var _edge_index: int = 0
+	var _columns_done: int = 0
+	var _columns_total: int = 0
+	var _bake_queries: int = 0
+
+	static func shared_for(world_player: Player) -> TravelGraph:
+		var map := _find_map()
+		if map == null or world_player == null or not is_instance_valid(world_player):
+			return _shared
+		var map_id := int(map.get_instance_id())
+		if _shared == null or _shared._map_id != map_id:
+			_shared = TravelGraph.new()
+			_shared._begin(map, world_player)
+			_last_bake_frame = -1
+		return _shared
+
+	static func _find_map() -> Node3D:
+		if not is_instance_valid(GameManager.spawn_parent):
+			return null
+		for child in GameManager.spawn_parent.get_children():
+			if child is Map:
+				return child as Node3D
+		return null
+
+	func _begin(map: Node3D, world_player: Player) -> void:
+		_map_id = int(map.get_instance_id())
+		_map_origin = map.global_position
+		_world = world_player.get_world_3d()
+		_astar = AStar3D.new()
+		_ray = PhysicsRayQueryParameters3D.new()
+		_ray.collision_mask = 1 << 0
+		_ray.collide_with_bodies = true
+		_ray.collide_with_areas = false
+		_shape_query = PhysicsShapeQueryParameters3D.new()
+		_shape_query.collision_mask = 1 << 0
+		_shape_query.collide_with_bodies = true
+		_shape_query.collide_with_areas = false
+		_stand_shape = CapsuleShape3D.new()
+		_stand_shape.radius = CAPSULE_RADIUS
+		_stand_shape.height = STAND_HEIGHT
+		_crouch_shape = CapsuleShape3D.new()
+		_crouch_shape.radius = CAPSULE_RADIUS
+		_crouch_shape.height = CROUCH_HEIGHT
+
+		# Dynamic colliders live on the same layer as the world, so they must be
+		# named explicitly.  (Payload, movers, rotating brushes, physics props.)
+		_exclude_rids.clear()
+		_exclude_rids.append(world_player.get_rid())
+		for node in world_player.get_tree().get_nodes_in_group("players"):
+			if node is Player:
+				_exclude_rids.append((node as Player).get_rid())
+		var projectile_parent: Node3D = GameManager.projectile_parent
+		if projectile_parent != null and is_instance_valid(projectile_parent):
+			for child in projectile_parent.get_children():
+				if child is CollisionObject3D:
+					_exclude_rids.append((child as CollisionObject3D).get_rid())
+
+		_scan_stack.clear()
+		_scan_stack.append(map)
+		_state = BakeState.BOUNDS
+
+	func get_excludes() -> Array[RID]:
+		return _exclude_rids
+
+	func is_ready() -> bool:
+		return _state == BakeState.READY
+
+	func has_failed() -> bool:
+		return _state == BakeState.FAILED
+
+	func get_progress() -> float:
+		if _state == BakeState.READY:
+			return 1.0
+		if _state == BakeState.FAILED or _state == BakeState.BOUNDS:
+			return 0.0
+		if _state == BakeState.COLUMNS:
+			return 0.6 * float(_columns_done) / maxf(1.0, float(_columns_total))
+		return 0.6 + 0.4 * float(_edge_index) / maxf(1.0, float(_node_positions.size()))
+
+	func get_status_text() -> String:
+		var names: Array[String] = ["bounds", "columns", "edges", "ready", "failed"]
+		return "%s %.0f%% n=%d e=%d q=%d" % [
+			names[int(_state)], get_progress() * 100.0,
+			_node_positions.size(), _edge_types.size(), _bake_queries
+		]
+
+	func tick_bake() -> void:
+		if _state == BakeState.READY or _state == BakeState.FAILED:
+			return
+		var frame := Engine.get_physics_frames()
+		if frame == _last_bake_frame:
+			return
+		_last_bake_frame = frame
+
+		var start := Time.get_ticks_usec()
+		var guard := 0
+		while Time.get_ticks_usec() - start < BAKE_BUDGET_USEC and guard < 20000:
+			guard += 1
+			match _state:
+				BakeState.BOUNDS:
+					if not _scan_step():
+						_finish_bounds()
+				BakeState.COLUMNS:
+					if _col_index >= _columns_total:
+						_state = BakeState.EDGES
+					else:
+						_bake_column(_col_index)
+						_col_index += 1
+						_columns_done += 1
+				BakeState.EDGES:
+					if _edge_index >= _node_positions.size():
+						_state = BakeState.READY
+					else:
+						_bake_edges_for(_edge_index)
+						_edge_index += 1
+				_:
+					return
+
+	func _space() -> PhysicsDirectSpaceState3D:
+		if _world == null:
+			return null
+		return _world.direct_space_state
+
+	func _scan_step() -> bool:
+		if _scan_stack.is_empty():
+			return false
+		var node: Node = _scan_stack.pop_back()
+		if node == null or not is_instance_valid(node):
+			return true
+		if node is AnimatableBody3D or node is RigidBody3D:
+			_exclude_rids.append((node as CollisionObject3D).get_rid())
+		if node is MeshInstance3D:
+			var mi := node as MeshInstance3D
+			_add_bounds(mi.global_transform * mi.get_aabb())
+		if node is CSGShape3D and node.has_method("get_aabb"):
+			var result: Variant = node.call("get_aabb")
+			if result is AABB:
+				_add_bounds((node as Node3D).global_transform * (result as AABB))
+		if node is CollisionShape3D:
+			var cs := node as CollisionShape3D
+			if cs.shape != null:
+				var debug_mesh := cs.shape.get_debug_mesh()
+				if debug_mesh != null:
+					_add_bounds(cs.global_transform * debug_mesh.get_aabb())
+		if node is Marker3D:
+			var marker := node as Marker3D
+			_spawn_points.append(marker.global_position)
+			_add_bounds(AABB(marker.global_position - Vector3.ONE, Vector3.ONE * 2.0))
+		for child in node.get_children():
+			_scan_stack.append(child)
+		return true
+
+	func _add_bounds(box: AABB) -> void:
+		if box.size.length_squared() < 0.000001:
+			return
+		if not _bounds_valid:
+			_bounds = box
+			_bounds_valid = true
+		else:
+			_bounds = _bounds.merge(box)
+
+	func _finish_bounds() -> void:
+		if not _bounds_valid:
+			var center := _map_origin
+			if not _spawn_points.is_empty():
+				center = Vector3.ZERO
+				for p in _spawn_points:
+					center += p
+				center /= float(_spawn_points.size())
+			_bounds = AABB(center - Vector3(60, 30, 60), Vector3(120, 60, 120))
+			_bounds_valid = true
+		_bounds = _bounds.grow(TRAVEL_BOUNDS_MARGIN)
+		var center := _bounds.get_center()
+		var size := _bounds.size
+		size.x = minf(size.x, 400.0)
+		size.z = minf(size.z, 400.0)
+		size.y = minf(size.y, 300.0)
+		_bounds = AABB(center - size * 0.5, size)
+		_bounds = _bounds.grow(TRAVEL_BOUNDS_MARGIN)
+
+		var area := _bounds.size.x * _bounds.size.z
+		_col_step = maxf(TRAVEL_GRID, sqrt(area / float(TRAVEL_MAX_COLUMNS)))
+		_col_x = maxi(1, int(_bounds.size.x / _col_step))
+		_col_z = maxi(1, int(_bounds.size.z / _col_step))
+		_columns_total = _col_x * _col_z
+		_col_start = Vector2(
+			_bounds.position.x + _col_step * 0.5,
+			_bounds.position.z + _col_step * 0.5
+		)
+		_state = BakeState.COLUMNS
+
+	func _bake_column(index: int) -> void:
+		var space := _space()
+		if space == null:
+			_state = BakeState.FAILED
+			return
+		var ix := index % _col_x
+		var iz := index / _col_x
+		var x := _col_start.x + float(ix) * _col_step
+		var z := _col_start.y + float(iz) * _col_step
+		var from := Vector3(x, _bounds.end.y + 2.0, z)
+		var to := Vector3(x, _bounds.position.y - 1.0, z)
+
+		for _floor in TRAVEL_MAX_FLOORS_PER_COLUMN:
+			_ray.from = from
+			_ray.to = to
+			_ray.exclude = _exclude_rids
+			var hit := space.intersect_ray(_ray)
+			_bake_queries += 1
+			if hit.is_empty():
+				break
+			var pos: Vector3 = hit.position
+			var normal: Vector3 = hit.normal
+			if normal.angle_to(Vector3.UP) <= deg_to_rad(FLOOR_MAX_ANGLE_DEG):
+				var head := _headroom(space, pos)
+				if head > 0:
+					_add_node(pos, head == 1)
+			from = Vector3(x, pos.y - 0.05, z)
+			if from.y <= to.y:
+				break
+
+	func _headroom(space: PhysicsDirectSpaceState3D, feet: Vector3) -> int:
+		if _shape_is_clear(space, _stand_shape, feet, STAND_HEIGHT):
+			return 2
+		if _shape_is_clear(space, _crouch_shape, feet, CROUCH_HEIGHT):
+			return 1
+		return 0
+
+	func _shape_is_clear(space: PhysicsDirectSpaceState3D, shape: CapsuleShape3D,
+			feet: Vector3, height: float) -> bool:
+		_shape_query.shape = shape
+		_shape_query.transform = Transform3D(
+			Basis.IDENTITY, feet + Vector3.UP * (height * 0.5 + 0.05)
+		)
+		_shape_query.exclude = _exclude_rids
+		var hits := space.intersect_shape(_shape_query, 1)
+		_bake_queries += 1
+		return hits.is_empty()
+
+	func _add_node(pos: Vector3, crouch_only: bool) -> void:
+		var cell := _cell_of(pos)
+		if _cells.has(cell):
+			for value in _cells[cell]:
+				var other := int(value)
+				if other >= 0 and other < _node_positions.size() \
+						and _node_positions[other].distance_squared_to(pos) < 0.1225:
+					return
+		var id := _node_positions.size()
+		_node_positions.append(pos)
+		_node_crouch.append(crouch_only)
+		_node_cells.append(cell)
+		_astar.add_point(id, pos, 1.0)
+		var bucket: Array = []
+		if _cells.has(cell):
+			bucket = _cells[cell]
+		bucket.append(id)
+		_cells[cell] = bucket
+
+	func _cell_of(pos: Vector3) -> Vector2i:
+		return Vector2i(
+			int(round((pos.x - _col_start.x) / _col_step)),
+			int(round((pos.z - _col_start.y) / _col_step))
+		)
+
+	func _bake_edges_for(id: int) -> void:
+		var cell := _node_cells[id]
+		var cardinal: Array[Vector2i] = [
+			Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)
+		]
+		var cardinal_ok: Dictionary = {}
+		for dir in cardinal:
+			cardinal_ok[dir] = _try_edge(id, cell + dir)
+		var diagonals: Array[Vector2i] = [
+			Vector2i(1, 1), Vector2i(1, -1), Vector2i(-1, 1), Vector2i(-1, -1)
+		]
+		for dir in diagonals:
+			var horizontal := Vector2i(int(sign(dir.x)), 0)
+			var vertical := Vector2i(0, int(sign(dir.y)))
+			if bool(cardinal_ok.get(horizontal, false)) \
+					and bool(cardinal_ok.get(vertical, false)):
+				_try_edge(id, cell + dir)
+
+	## Connect to EVERY plausible node in the neighbouring cell, not just the
+	## vertically closest one.  A cell can hold a ground node and the stair/upper
+	## floor above it; picking only the closest silently disconnected stacked
+	## floors.
+	func _try_edge(id: int, neighbor_cell: Vector2i) -> bool:
+		if not _cells.has(neighbor_cell):
+			return false
+		var a := _node_positions[id]
+		var any := false
+		for value in _cells[neighbor_cell]:
+			var other := int(value)
+			if other == id:
+				continue
+			var b := _node_positions[other]
+			var dy := b.y - a.y
+			# A ramp can climb more than the jump height over one grid step; the
+			# exact type is decided later by sampling the surface between nodes.
+			if dy > TRAVEL_GRID * 1.6 or dy < -DROP_MAX:
+				continue
+			var horiz := Vector2(b.x - a.x, b.z - a.z).length()
+			if horiz > TRAVEL_GRID * 1.8:
+				continue
+			if _connect_pair(id, other):
+				any = true
+		return any
+
+	func _connect_pair(a: int, b: int) -> bool:
+		if a == b:
+			return false
+		var pa := _node_positions[a]
+		var pb := _node_positions[b]
+		var dy := pb.y - pa.y
+		var crouch := _node_crouch[a] or _node_crouch[b]
+		var ramp := _is_ramp(pa, pb)
+		var type := EdgeType.WALK
+		if crouch:
+			type = EdgeType.CROUCH
+		elif ramp:
+			# A ramp is walkable even though its rise per grid cell is large.
+			type = EdgeType.WALK
+		elif absf(dy) <= 0.12:
+			type = EdgeType.WALK
+		elif dy > 0.12 and dy <= JUMP_STEP_MAX:
+			type = EdgeType.JUMP
+		elif dy > JUMP_STEP_MAX and dy <= TRAVEL_GRID * 1.6 \
+				and _is_stairs(pa, pb):
+			# A staircase sampled at a coarse grid can rise more than one jump
+			# over a cell.  The follower walks into it; local perception jumps
+			# each step as it appears.
+			type = EdgeType.STAIRS
+		elif dy < -0.12 and dy >= -DROP_MAX:
+			type = EdgeType.DROP
+		else:
+			return false
+
+		var space := _space()
+		if space == null:
+			return false
+		if type == EdgeType.JUMP or type == EdgeType.STAIRS:
+			if not _jump_clear(space, pa, pb):
+				return false
+		elif not _edge_clear(space, pa, pb, crouch):
+			return false
+
+		if type == EdgeType.DROP:
+			_astar.connect_points(a, b, false)
+			_set_edge_type(a, b, type)
+			return true
+		_astar.connect_points(a, b, true)
+		_set_edge_type(a, b, type)
+		_set_edge_type(b, a, type)
+		return true
+
+	## True when the surface between two nodes follows the straight line between
+	## them — a ramp/slope, not a stair step or a drop.  Two samples are enough at
+	## a 2.5 m grid; a real step's midpoint sits at one level, not halfway.
+	func _is_ramp(a: Vector3, b: Vector3) -> bool:
+		var dy := b.y - a.y
+		if absf(dy) < 0.12:
+			return true
+		var space := _space()
+		if space == null:
+			return false
+		for i in 2:
+			var t := 0.33 + 0.33 * float(i)
+			var p := a.lerp(b, t)
+			var from := Vector3(p.x, maxf(a.y, b.y) + 2.0, p.z)
+			var to := Vector3(p.x, minf(a.y, b.y) - 1.0, p.z)
+			_ray.from = from
+			_ray.to = to
+			_ray.exclude = _exclude_rids
+			var hit := space.intersect_ray(_ray)
+			_bake_queries += 1
+			if hit.is_empty():
+				return false
+			if absf((hit.position as Vector3).y - p.y) > 0.12:
+				return false
+			if (hit.normal as Vector3).angle_to(Vector3.UP) > deg_to_rad(FLOOR_MAX_ANGLE_DEG):
+				return false
+		return true
+
+	## True when the space between two nodes contains intermediate horizontal
+	## surfaces — a staircase.  A coarse grid cannot sample every step, so this
+	## recognises the pattern and lets the follower climb it with repeated jumps.
+	func _is_stairs(a: Vector3, b: Vector3) -> bool:
+		var space := _space()
+		if space == null:
+			return false
+		var min_y := minf(a.y, b.y)
+		var max_y := maxf(a.y, b.y)
+		var last_y := a.y
+		var intermediates := 0
+		for i in 4:
+			var t := 0.2 + 0.2 * float(i)
+			var p := a.lerp(b, t)
+			var from := Vector3(p.x, max_y + 2.0, p.z)
+			var to := Vector3(p.x, min_y - 1.0, p.z)
+			_ray.from = from
+			_ray.to = to
+			_ray.exclude = _exclude_rids
+			var hit := space.intersect_ray(_ray)
+			_bake_queries += 1
+			if hit.is_empty():
+				return false
+			var hy: float = (hit.position as Vector3).y
+			if hy < min_y - 0.3 or hy > max_y + 0.3:
+				return false
+			if (hit.normal as Vector3).angle_to(Vector3.UP) > deg_to_rad(FLOOR_MAX_ANGLE_DEG):
+				return false
+			if hy < last_y - 0.1:
+				return false
+			last_y = hy
+			if absf(hy - a.y) > 0.1 and absf(hy - b.y) > 0.1:
+				intermediates += 1
+		return intermediates >= 2
+
+	## Jump edge clearance: check the air at the HIGHER endpoint's chest height.
+	## A capsule sweep along the floor would collide with the very stair/ledge the
+	## bot is supposed to jump onto, so it would disconnect every staircase.
+	func _jump_clear(space: PhysicsDirectSpaceState3D, a: Vector3, b: Vector3) -> bool:
+		var higher := maxf(a.y, b.y)
+		var a_height := higher - a.y + PROBE_CHEST_HEIGHT
+		var b_height := higher - b.y + PROBE_CHEST_HEIGHT
+		_ray.from = a + Vector3.UP * a_height
+		_ray.to = b + Vector3.UP * b_height
+		_ray.exclude = _exclude_rids
+		_bake_queries += 1
+		return space.intersect_ray(_ray).is_empty()
+
+	func _edge_clear(space: PhysicsDirectSpaceState3D, from: Vector3, to: Vector3,
+			crouch: bool) -> bool:
+		# Cheap chest ray first; only a hit justifies the capsule sweep.
+		_ray.from = from + Vector3.UP * PROBE_CHEST_HEIGHT
+		_ray.to = to + Vector3.UP * PROBE_CHEST_HEIGHT
+		_ray.exclude = _exclude_rids
+		var hit := space.intersect_ray(_ray)
+		_bake_queries += 1
+		if hit.is_empty():
+			return true
+
+		var shape: CapsuleShape3D = _crouch_shape if crouch else _stand_shape
+		var height := CROUCH_HEIGHT if crouch else STAND_HEIGHT
+		_shape_query.shape = shape
+		_shape_query.transform = Transform3D(
+			Basis.IDENTITY, from + Vector3.UP * (height * 0.5 + 0.05)
+		)
+		_shape_query.motion = to - from
+		_shape_query.exclude = _exclude_rids
+		var result := space.cast_motion(_shape_query)
+		_bake_queries += 1
+		return result.size() >= 2 and result[0] >= 0.999
+
+	func _edge_key(a: int, b: int) -> String:
+		return "%d:%d" % [a, b]
+
+	func _set_edge_type(a: int, b: int, type: int) -> void:
+		_edge_types[_edge_key(a, b)] = type
+
+	func _get_edge_type(a: int, b: int) -> int:
+		return int(_edge_types.get(_edge_key(a, b), EdgeType.WALK))
+
+	## Find a node near a position by vertical proximity first.  Plain
+	## `get_closest_point` can return the floor above/below, which is exactly the
+	## stacked-floor bug this graph exists to avoid.
+	func find_node(pos: Vector3, vertical: float = NODE_LOOKUP_RADIUS) -> int:
+		var cell := _cell_of(pos)
+		var best := -1
+		var best_score := INF
+		for dz in range(-1, 2):
+			for dx in range(-1, 2):
+				var key := cell + Vector2i(dx, dz)
+				if not _cells.has(key):
+					continue
+				for value in _cells[key]:
+					var id := int(value)
+					var p := _node_positions[id]
+					if absf(p.y - pos.y) > vertical:
+						continue
+					var horiz := Vector2(p.x - pos.x, p.z - pos.z).length()
+					if horiz > TRAVEL_GRID * 1.6:
+						continue
+					var score := horiz + absf(p.y - pos.y) * 0.5
+					if score < best_score:
+						best_score = score
+						best = id
+		return best
+
+	func find_goal_node(pos: Vector3, bias: float) -> int:
+		var cell := _cell_of(pos)
+		var candidates: Array[int] = []
+		var scores: Array[float] = []
+		for dz in range(-2, 3):
+			for dx in range(-2, 3):
+				var key := cell + Vector2i(dx, dz)
+				if not _cells.has(key):
+					continue
+				for value in _cells[key]:
+					var id := int(value)
+					var p := _node_positions[id]
+					if absf(p.y - pos.y) > 2.5:
+						continue
+					var horiz := Vector2(p.x - pos.x, p.z - pos.z).length()
+					if horiz > TRAVEL_GRID * 2.2:
+						continue
+					# Insertion sort by distance; the list is tiny.
+					var score := horiz + absf(p.y - pos.y) * 0.5
+					var insert_at := candidates.size()
+					while insert_at > 0 and scores[insert_at - 1] > score:
+						insert_at -= 1
+					candidates.insert(insert_at, id)
+					scores.insert(insert_at, score)
+		if candidates.is_empty():
+			return -1
+		var index := clampi(
+			int(round((bias + 1.0) * 0.5 * float(candidates.size() - 1))),
+			0, candidates.size() - 1
+		)
+		return candidates[index]
+
+	func query(start_pos: Vector3, goal_pos: Vector3, recent_ids: Array[int],
+			avoid_points: Array[Vector3], bias: float) -> Dictionary:
+		if _state != BakeState.READY:
+			return {}
+		var start := find_node(start_pos)
+		var goal := find_goal_node(goal_pos, bias)
+		if start < 0 or goal < 0:
+			return {}
+
+		var penalties: Dictionary = {}
+		# Penalise the route this bot just used: two equal-cost routes should not
+		# produce identical copy-paste paths for every bot.
+		for id in recent_ids:
+			_penalize(penalties, id, 1.6)
+		# Avoid nodes near recently stuck positions / the blocked edge.
+		for point in avoid_points:
+			var avoid_id := find_node(point, 2.0)
+			if avoid_id >= 0:
+				_penalize(penalties, avoid_id, 2.2)
+		for id in penalties.keys():
+			_astar.set_point_weight_scale(int(id), float(penalties[id]))
+
+		var path := _astar.get_id_path(start, goal)
+		# Soft vertical preference: if the first path climbs a lot, re-query with
+		# its steep nodes penalised and keep the flatter of the two.
+		if path.size() > 2:
+			var vertical := _path_vertical_cost(path)
+			if vertical > 2.0:
+				var steep: Array[int] = []
+				for i in range(1, path.size()):
+					var a_id := int(path[i - 1])
+					var b_id := int(path[i])
+					if absf(_node_positions[a_id].y - _node_positions[b_id].y) > 0.5:
+						steep.append(b_id)
+				if not steep.is_empty():
+					for id in steep:
+						_astar.set_point_weight_scale(id, 1.35)
+					var alt := _astar.get_id_path(start, goal)
+					if not alt.is_empty() \
+							and _path_vertical_cost(alt) < vertical * 0.85 \
+							and alt.size() <= path.size() + 8:
+						path = alt
+					for id in steep:
+						_astar.set_point_weight_scale(id, float(penalties.get(id, 1.0)))
+
+		for id in penalties.keys():
+			_astar.set_point_weight_scale(int(id), 1.0)
+
+		if path.is_empty():
+			return {}
+		var points: Array[Vector3] = []
+		var types: Array[int] = []
+		var ids: Array[int] = []
+		for value in path:
+			var id := int(value)
+			ids.append(id)
+			points.append(_node_positions[id])
+			if ids.size() == 1:
+				types.append(EdgeType.WALK)
+			else:
+				types.append(_get_edge_type(ids[ids.size() - 2], id))
+		return {"points": points, "types": types, "ids": ids}
+
+	func _penalize(penalties: Dictionary, id: int, weight: float) -> void:
+		if id < 0 or id >= _node_positions.size():
+			return
+		penalties[id] = maxf(float(penalties.get(id, 1.0)), weight)
+
+	func _path_vertical_cost(path: PackedInt64Array) -> float:
+		var total := 0.0
+		for i in range(1, path.size()):
+			var a := int(path[i - 1])
+			var b := int(path[i])
+			total += absf(_node_positions[a].y - _node_positions[b].y)
+		return total
+
+	func pick_wander_point(start_pos: Vector3, min_dist: float, max_dist: float) -> Vector3:
+		if _state != BakeState.READY or _node_positions.is_empty():
+			return Vector3.INF
+		var start := find_node(start_pos)
+		if start < 0:
+			return Vector3.INF
+		for _attempt in 8:
+			var id := randi() % _node_positions.size()
+			var p := _node_positions[id]
+			var d := Vector2(p.x - start_pos.x, p.z - start_pos.z).length()
+			if d < min_dist or d > max_dist:
+				continue
+			if _astar.get_id_path(start, id).is_empty():
+				continue
+			return p
+		return Vector3.INF
+
+
+## Per-bot traversal state machine.  It turns a goal into W + a mouse look
+## request, with short A/D taps and digital jump/crouch/back-up actions.  It
+## never writes input directly; all verbs go through Keyboard/Mouse.
+class Traversal extends RefCounted:
+	enum Action { CONTINUE, TAP_LEFT, TAP_RIGHT, JUMP, CROUCH, STOP, BACK_UP, REROUTE }
+	enum Recovery { NONE, JUMP, STRAFE, BACKUP, REROUTE, TURN }
+
+	var bot: BotController
+	var _graph: TravelGraph = null
+	var _goal: Vector3 = Vector3.INF
+	var _has_goal: bool = false
+	var _urgency: float = 0.5
+	var _arrival: float = 1.0
+	var _caution: float = 0.0
+
+	var _path_points: Array[Vector3] = []
+	var _path_types: Array[int] = []
+	var _path_ids: Array[int] = []
+	var _path_index: int = 0
+	var _path_origin: Vector3 = Vector3.ZERO
+	var _repath_timer: float = 0.0
+	var _query_goal: Vector3 = Vector3.INF
+	var _force_repath: bool = false
+
+	var _progress_pos: Vector3 = Vector3.ZERO
+	var _progress_timer: float = 0.0
+	var _recovery: Recovery = Recovery.NONE
+	var _recovery_timer: float = 0.0
+	var _recovery_stage: int = 0
+	var _recovery_applied: bool = false
+	var _open_side: int = 0
+	var _recent_stuck: Array[Dictionary] = []
+	var _route_bias: float = 0.0
+	var _state_text: String = "idle"
+
+	var _ray: PhysicsRayQueryParameters3D = null
+	var _shape_query: PhysicsShapeQueryParameters3D = null
+	var _stand_shape: CapsuleShape3D = null
+	var _crouch_shape: CapsuleShape3D = null
+	var _own_exclude: Array[RID] = []
+	var _ray_clock: float = 0.0
+	var _rays_this_second: int = 0
+	var _rays_per_second: int = 0
+	var _tempo_timer: float = 0.0
+	var _tempo_moving: bool = true
+
+	func _init(owner_bot: BotController) -> void:
+		bot = owner_bot
+		_ray = PhysicsRayQueryParameters3D.new()
+		_ray.collision_mask = 1 << 0
+		_ray.collide_with_bodies = true
+		_ray.collide_with_areas = false
+		_shape_query = PhysicsShapeQueryParameters3D.new()
+		_shape_query.collision_mask = 1 << 0
+		_shape_query.collide_with_bodies = true
+		_shape_query.collide_with_areas = false
+		_stand_shape = CapsuleShape3D.new()
+		_stand_shape.radius = CAPSULE_RADIUS
+		_stand_shape.height = STAND_HEIGHT
+		_crouch_shape = CapsuleShape3D.new()
+		_crouch_shape.radius = CAPSULE_RADIUS
+		_crouch_shape.height = CROUCH_HEIGHT
+		_own_exclude.append(bot.player.get_rid())
+		_route_bias = randf_range(-1.0, 1.0)
+
+	func reset() -> void:
+		_has_goal = false
+		_goal = Vector3.INF
+		_query_goal = Vector3.INF
+		_path_points.clear()
+		_path_types.clear()
+		_path_ids.clear()
+		_path_index = 0
+		_path_origin = Vector3.ZERO
+		_repath_timer = 0.0
+		_force_repath = false
+		_progress_timer = 0.0
+		_recovery = Recovery.NONE
+		_recovery_timer = 0.0
+		_recovery_stage = 0
+		_recovery_applied = false
+		_recent_stuck.clear()
+		_state_text = "idle"
+		_graph = null
+		_route_bias = randf_range(-1.0, 1.0)
+		_tempo_timer = 0.0
+		_tempo_moving = true
+
+	func is_recovering() -> bool:
+		return _recovery != Recovery.NONE
+
+	func tick(delta: float) -> void:
+		_ray_clock += delta
+		if _ray_clock >= 1.0:
+			_ray_clock -= 1.0
+			_rays_per_second = _rays_this_second
+			_rays_this_second = 0
+		_repath_timer = maxf(_repath_timer - delta, 0.0)
+
+		var graph := TravelGraph.shared_for(bot.player)
+		if graph != null and graph != _graph:
+			_graph = graph
+			_path_points.clear()
+			_path_types.clear()
+			_path_ids.clear()
+			_path_index = 0
+		if _graph != null:
+			_graph.tick_bake()
+
+		if _caution > 0.4:
+			_tempo_timer -= delta
+			if _tempo_timer <= 0.0:
+				_tempo_moving = not _tempo_moving
+				_tempo_timer = randf_range(0.3, 0.6) if _tempo_moving \
+					else randf_range(0.1, 0.2)
+		else:
+			_tempo_moving = true
+
+		if _recovery != Recovery.NONE:
+			_tick_recovery(delta)
+			return
+		if not _has_goal or not bot.player.spawned:
+			return
+
+		var pos := bot.player.global_position
+		if pos.distance_to(_goal) <= _arrival:
+			_progress_timer = 0.0
+			return
+
+		# Intentional stoppage is not "stuck": combat aim, reload/switch, or a
+		# tempo pause.  Only a held movement key that produces no displacement
+		# escalates recovery.
+		var wc: WeaponController = bot.player.weapon_controller
+		var intentional := bot._current_target != null \
+			or bot._reaction_timer > 0.0 \
+			or (wc != null and (wc._is_reloading or wc.is_switching())) \
+			or not bot._keyboard.is_moving()
+		if intentional:
+			_progress_timer = 0.0
+			_progress_pos = pos
+			return
+
+		var moved := Vector2(pos.x - _progress_pos.x, pos.z - _progress_pos.z).length()
+		if moved > STUCK_DISTANCE:
+			_progress_pos = pos
+			_progress_timer = 0.0
+			_recovery_stage = 0
+			return
+		_progress_timer += delta
+		if _progress_timer >= STUCK_TIME:
+			_trigger_stuck()
+
+	func move_to(goal: Vector3, urgency: float = 0.5,
+			arrival_radius: float = TRAVEL_ARRIVE_DEFAULT,
+			caution: float = 0.0) -> void:
+		if goal == Vector3.INF or not bot.player.spawned:
+			_has_goal = false
+			bot._keyboard.set_move(0, 0)
+			_state_text = "idle"
+			return
+		if not _has_goal or goal.distance_squared_to(_goal) > 9.0:
+			_force_repath = true
+		_has_goal = true
+		_goal = goal
+		_urgency = clampf(urgency, 0.0, 1.0)
+		_arrival = maxf(0.2, arrival_radius)
+		_caution = clampf(caution, 0.0, 1.0)
+		if _recovery != Recovery.NONE:
+			return
+
+		var pos := bot.player.global_position
+		var flat := Vector2(goal.x - pos.x, goal.z - pos.z)
+		if flat.length() <= _arrival and absf(goal.y - pos.y) <= 1.5:
+			bot._keyboard.set_move(0, 0)
+			_state_text = "arrived"
+			return
+
+		if _graph != null and _graph.is_ready() and not _direct_clear(goal):
+			_follow_path(goal)
+			return
+		_follow_direct(goal)
+
+	func _follow_direct(goal: Vector3) -> void:
+		var pos := bot.player.global_position
+		var to_goal := Vector3(goal.x - pos.x, 0.0, goal.z - pos.z)
+		var flat_dist := to_goal.length()
+		if flat_dist < 0.001:
+			bot._keyboard.set_move(0, 0)
+			return
+		var dir := to_goal / flat_dist
+		var lookahead := _lookahead_distance()
+		var look := pos + dir * minf(flat_dist, lookahead)
+		if flat_dist <= lookahead:
+			look = goal
+		_request_look(look)
+		_state_text = "direct"
+		var action := _perceive(dir, lookahead, TravelGraph.EdgeType.WALK)
+		if _apply_action(action):
+			return
+		if _tempo_ok():
+			bot._keyboard.set_move(1, 0)
+		else:
+			bot._keyboard.set_move(0, 0)
+
+	func _follow_path(goal: Vector3) -> void:
+		var pos := bot.player.global_position
+		var need_query := _path_points.is_empty() or _force_repath \
+			or _repath_timer <= 0.0 \
+			or _query_goal.distance_squared_to(goal) > 9.0
+		if need_query:
+			_query_graph(goal)
+		if _path_points.is_empty():
+			_follow_direct(goal)
+			return
+
+		# Drop waypoints already reached, and skip a later one when a straight
+		# line to it is clear (route smoothing).
+		while _path_index < _path_points.size():
+			var p := _path_points[_path_index]
+			if Vector2(p.x - pos.x, p.z - pos.z).length() < 0.75 \
+					and absf(p.y - pos.y) < 1.5:
+				_path_index += 1
+				continue
+			if _path_index + 1 < _path_points.size():
+				var next := _path_points[_path_index + 1]
+				if Vector2(next.x - pos.x, next.z - pos.z).length() < 5.0 \
+						and absf(next.y - pos.y) < WALK_STEP_MAX \
+						and _line_clear(pos, next):
+					_path_index += 1
+					continue
+			break
+
+		if _path_index >= _path_points.size():
+			_follow_direct(goal)
+			return
+
+		var waypoint := _path_points[_path_index]
+		var dir := Vector3(waypoint.x - pos.x, 0.0, waypoint.z - pos.z)
+		var flat_dist := dir.length()
+		if flat_dist < 0.001:
+			dir = bot.player.horizontal_forward()
+		else:
+			dir = dir / flat_dist
+		var edge := int(TravelGraph.EdgeType.WALK)
+		if _path_index < _path_types.size():
+			edge = _path_types[_path_index]
+
+		var look := waypoint
+		if flat_dist < 2.0 and _path_index + 1 < _path_points.size():
+			look = _path_points[_path_index + 1]
+		_request_look(look)
+
+		if edge == TravelGraph.EdgeType.JUMP:
+			var takeoff := WALK_SPEED * (2.0 * JUMP_VELOCITY / GRAVITY) * 0.55
+			if flat_dist <= takeoff and flat_dist > 0.35:
+				bot._keyboard.jump_tap(false)
+		elif edge == TravelGraph.EdgeType.CROUCH:
+			bot._keyboard.crouch_hold(0.18)
+
+		var lookahead := _lookahead_distance()
+		var action := _perceive(dir, lookahead, edge)
+		if _apply_action(action):
+			return
+
+		var line_start := _path_origin
+		if _path_index > 0:
+			line_start = _path_points[_path_index - 1]
+		_cross_track_tap(pos, line_start, waypoint)
+
+		# A blind or sharp corner under caution gets a brief stop; otherwise W.
+		var turn_angle := rad_to_deg(
+			bot.player.horizontal_forward().angle_to(dir)
+		)
+		var cautious_stop := _caution > 0.35 and turn_angle > 65.0 \
+			and flat_dist < CORNER_SLOW_RADIUS
+		if cautious_stop or not _tempo_ok():
+			bot._keyboard.set_move(0, 0)
+		else:
+			bot._keyboard.set_move(1, 0)
+		_state_text = "path"
+
+	func _query_graph(goal: Vector3) -> void:
+		if _graph == null:
+			return
+		var avoids: Array[Vector3] = []
+		var now := float(Time.get_ticks_msec()) / 1000.0
+		for i in range(_recent_stuck.size() - 1, -1, -1):
+			var entry: Dictionary = _recent_stuck[i]
+			if float(entry.get("until", 0.0)) < now:
+				_recent_stuck.remove_at(i)
+			else:
+				avoids.append(entry.get("pos", Vector3.ZERO) as Vector3)
+		var result := _graph.query(
+			bot.player.global_position, goal, _path_ids, avoids, _route_bias
+		)
+		_force_repath = false
+		_repath_timer = REPATH_INTERVAL
+		_query_goal = goal
+		if result.is_empty():
+			_path_points.clear()
+			_path_types.clear()
+			_path_ids.clear()
+			_path_index = 0
+			return
+		var points_variant: Variant = result.get("points", [])
+		var types_variant: Variant = result.get("types", [])
+		var ids_variant: Variant = result.get("ids", [])
+		_path_points.clear()
+		_path_types.clear()
+		_path_ids.clear()
+		_path_origin = bot.player.global_position
+		for value in points_variant:
+			_path_points.append(value as Vector3)
+		for value in types_variant:
+			_path_types.append(int(value))
+		for value in ids_variant:
+			_path_ids.append(int(value))
+		_path_index = 0
+
+	func _request_look(point: Vector3) -> void:
+		# Floor points become a look at body/eye height; a player looks ahead,
+		# not at their feet.
+		bot._mouse.request_look_at_point(
+			point + Vector3.UP * TRAVEL_EYE_HEIGHT,
+			LookPriority.TRAVEL_LOOKAHEAD,
+			_urgency
+		)
+
+	func _lookahead_distance() -> float:
+		return lerpf(LOOKAHEAD_MIN, LOOKAHEAD_MAX, _urgency) \
+			* (1.0 - _caution * 0.35)
+
+	func _tempo_ok() -> bool:
+		return _tempo_moving
+
+	func _cross_track_tap(pos: Vector3, line_start: Vector3, waypoint: Vector3) -> void:
+		var segment := Vector3(waypoint.x - line_start.x, 0.0, waypoint.z - line_start.z)
+		if segment.length_squared() < 0.01:
+			return
+		var seg_dir := segment.normalized()
+		var right := Vector3.UP.cross(seg_dir).normalized()
+		var lateral := Vector3(pos.x - line_start.x, 0.0, pos.z - line_start.z).dot(right)
+		if absf(lateral) < CROSS_TRACK_TAP:
+			return
+		if lateral > 0.0:
+			bot._keyboard.tap(&"left", randf_range(0.07, 0.12))
+		else:
+			bot._keyboard.tap(&"right", randf_range(0.07, 0.12))
+
+	func _direct_clear(goal: Vector3) -> bool:
+		var pos := bot.player.global_position
+		if absf(goal.y - pos.y) > DIRECT_LINE_MAX_RISE:
+			return false
+		var flat := Vector2(goal.x - pos.x, goal.z - pos.z)
+		if flat.length() < 0.6:
+			return true
+		var chest_from := pos + Vector3.UP * PROBE_CHEST_HEIGHT
+		var chest_to := goal + Vector3.UP * PROBE_CHEST_HEIGHT
+		if not _ray_clear(chest_from, chest_to):
+			return false
+		var knee_from := pos + Vector3.UP * PROBE_KNEE_HEIGHT
+		var knee_to := goal + Vector3.UP * PROBE_KNEE_HEIGHT
+		var hit := _ray_hit(knee_from, knee_to)
+		if hit.is_empty():
+			return true
+		var normal: Vector3 = hit.normal
+		return normal.angle_to(Vector3.UP) <= deg_to_rad(FLOOR_MAX_ANGLE_DEG)
+
+	func _line_clear(from: Vector3, to: Vector3) -> bool:
+		return _ray_clear(from + Vector3.UP * PROBE_CHEST_HEIGHT,
+			to + Vector3.UP * PROBE_CHEST_HEIGHT)
+
+	func _perceive(dir: Vector3, lookahead: float, edge: int) -> int:
+		var pos := bot.player.global_position
+		var flat := Vector3(dir.x, 0.0, dir.z)
+		if flat.length_squared() < 0.0001:
+			flat = bot.player.horizontal_forward()
+		flat = flat.normalized()
+		var dist := maxf(1.0, lookahead)
+
+		var knee_hit := _ray_hit(pos + Vector3.UP * PROBE_KNEE_HEIGHT,
+			pos + Vector3.UP * PROBE_KNEE_HEIGHT + flat * dist)
+		var chest_hit := _ray_hit(pos + Vector3.UP * PROBE_CHEST_HEIGHT,
+			pos + Vector3.UP * PROBE_CHEST_HEIGHT + flat * dist)
+		var full_hit := _ray_hit(pos + Vector3.UP * PROBE_FULL_HEIGHT,
+			pos + Vector3.UP * PROBE_FULL_HEIGHT + flat * dist)
+
+		# Chest/full-height obstruction = wall or low ceiling, not a ramp.
+		if not chest_hit.is_empty() or not full_hit.is_empty():
+			if not full_hit.is_empty() and chest_hit.is_empty():
+				if _headroom_clear(pos, false) and not _headroom_clear(pos, true):
+					return Action.CROUCH
+			var left := _side_clear(pos, flat, -1.0)
+			var right := _side_clear(pos, flat, 1.0)
+			if left and not right:
+				_open_side = -1
+				return Action.TAP_LEFT
+			if right and not left:
+				_open_side = 1
+				return Action.TAP_RIGHT
+			return Action.REROUTE
+
+		# Knee hit with a walkable normal is a ramp, step or stair.  Without a
+		# step-up helper even a small stair needs a jump, so only a near-flat ramp
+		# is a continue.
+		if not knee_hit.is_empty():
+			var normal: Vector3 = knee_hit.normal
+			if normal.angle_to(Vector3.UP) <= deg_to_rad(FLOOR_MAX_ANGLE_DEG):
+				var rise: float = (knee_hit.position as Vector3).y - pos.y
+				if rise > 0.15:
+					if _headroom_clear(pos, false):
+						return Action.JUMP
+					if _headroom_clear(pos, true):
+						return Action.CROUCH
+			# A knee-height vertical face is still a wall.
+			var left := _side_clear(pos, flat, -1.0)
+			var right := _side_clear(pos, flat, 1.0)
+			if left and not right:
+				_open_side = -1
+				return Action.TAP_LEFT
+			if right and not left:
+				_open_side = 1
+				return Action.TAP_RIGHT
+			return Action.REROUTE
+
+		# Safe drop check.  A route that intentionally drops is allowed to step
+		# off; everything else stops before the ledge.
+		if edge != TravelGraph.EdgeType.DROP:
+			var ledge_from := pos + flat * LEDGE_PROBE_AHEAD + Vector3.UP * 0.2
+			var ledge_to := ledge_from + Vector3.DOWN * (LEDGE_DROP_DANGER + 0.5)
+			var ledge_hit := _ray_hit(ledge_from, ledge_to)
+			if ledge_hit.is_empty():
+				return Action.BACK_UP
+
+		# Capsule fits on the intended line?  This is the expensive check, run
+		# only after the cheap rays found nothing.
+		if not _forward_shape_clear(pos, flat, dist):
+			var left := _side_clear(pos, flat, -1.0)
+			var right := _side_clear(pos, flat, 1.0)
+			if left and not right:
+				_open_side = -1
+				return Action.TAP_LEFT
+			if right and not left:
+				_open_side = 1
+				return Action.TAP_RIGHT
+			return Action.REROUTE
+		return Action.CONTINUE
+
+	func _apply_action(action: int) -> bool:
+		match action:
+			Action.TAP_LEFT:
+				bot._keyboard.tap(&"left", randf_range(0.08, 0.12))
+				return true
+			Action.TAP_RIGHT:
+				bot._keyboard.tap(&"right", randf_range(0.08, 0.12))
+				return true
+			Action.JUMP:
+				bot._keyboard.jump_tap(false)
+				return false
+			Action.CROUCH:
+				bot._keyboard.crouch_hold(0.2)
+				return false
+			Action.STOP:
+				bot._keyboard.set_move(0, 0)
+				return true
+			Action.BACK_UP:
+				bot._keyboard.set_move(-1, 0)
+				return true
+			Action.REROUTE:
+				_force_repath = true
+				bot._keyboard.set_move(0, 0)
+				_begin_recovery(Recovery.REROUTE, 0.3)
+				return true
+			_:
+				return false
+
+	func _ray_hit(from: Vector3, to: Vector3) -> Dictionary:
+		_rays_this_second += 1
+		var space := _space()
+		if space == null:
+			return {}
+		_ray.from = from
+		_ray.to = to
+		_ray.exclude = _excludes()
+		return space.intersect_ray(_ray)
+
+	func _ray_clear(from: Vector3, to: Vector3) -> bool:
+		return _ray_hit(from, to).is_empty()
+
+	func _side_clear(pos: Vector3, forward: Vector3, sign_side: float) -> bool:
+		var right := Vector3.UP.cross(forward).normalized()
+		var dir := right * sign_side
+		var from := pos + Vector3.UP * PROBE_CHEST_HEIGHT
+		return _ray_clear(from, from + dir * SIDE_PROBE_DISTANCE)
+
+	func _headroom_clear(pos: Vector3, crouch: bool) -> bool:
+		var shape: CapsuleShape3D = _crouch_shape if crouch else _stand_shape
+		var height := CROUCH_HEIGHT if crouch else STAND_HEIGHT
+		var space := _space()
+		if space == null:
+			return true
+		_rays_this_second += 1
+		_shape_query.shape = shape
+		_shape_query.transform = Transform3D(
+			Basis.IDENTITY, pos + Vector3.UP * (height * 0.5 + 0.05)
+		)
+		_shape_query.exclude = _excludes()
+		return space.intersect_shape(_shape_query, 1).is_empty()
+
+	func _forward_shape_clear(pos: Vector3, dir: Vector3, dist: float) -> bool:
+		var space := _space()
+		if space == null:
+			return true
+		var crouch := bot.player.is_crouching
+		var shape: CapsuleShape3D = _crouch_shape if crouch else _stand_shape
+		var height := CROUCH_HEIGHT if crouch else STAND_HEIGHT
+		_rays_this_second += 1
+		_shape_query.shape = shape
+		_shape_query.transform = Transform3D(
+			Basis.IDENTITY, pos + Vector3.UP * (height * 0.5 + 0.05)
+		)
+		_shape_query.motion = dir * dist
+		_shape_query.exclude = _excludes()
+		var result := space.cast_motion(_shape_query)
+		return result.size() >= 2 and result[0] >= 0.75
+
+	func _excludes() -> Array[RID]:
+		if _graph != null:
+			return _graph.get_excludes()
+		return _own_exclude
+
+	func _space() -> PhysicsDirectSpaceState3D:
+		return bot.player.get_world_3d().direct_space_state
+
+	## Escalating recovery.  Never rotates the body; every stage is a Stage 2
+	## verb, and progress clears the staircase so a single snag does not make the
+	## bot permanently jumpy.
+	func _trigger_stuck() -> void:
+		if _recovery != Recovery.NONE:
+			return
+		_recovery_stage = mini(_recovery_stage + 1, 5)
+		var pos := bot.player.global_position
+		_recent_stuck.append({
+			"pos": pos,
+			"until": float(Time.get_ticks_msec()) / 1000.0 + STUCK_MEMORY,
+		})
+		_progress_timer = 0.0
+		_progress_pos = pos
+		match _recovery_stage:
+			1:
+				_begin_recovery(Recovery.JUMP, randf_range(0.35, 0.6))
+			2:
+				_begin_recovery(Recovery.STRAFE, randf_range(0.3, 0.5))
+			3:
+				_begin_recovery(Recovery.BACKUP, randf_range(0.35, 0.6))
+			4:
+				_force_repath = true
+				_begin_recovery(Recovery.REROUTE, randf_range(0.3, 0.5))
+			_:
+				_begin_recovery(Recovery.TURN, randf_range(0.4, 0.7))
+
+	func _begin_recovery(state: Recovery, duration: float) -> void:
+		_recovery = state
+		_recovery_timer = duration
+		_recovery_applied = false
+
+	func _tick_recovery(delta: float) -> void:
+		var pos := bot.player.global_position
+		if not _recovery_applied:
+			_recovery_applied = true
+			match _recovery:
+				Recovery.JUMP:
+					bot._keyboard.jump_tap(true)
+				Recovery.STRAFE:
+					if _open_side > 0:
+						bot._keyboard.tap(&"right", 0.1)
+					elif _open_side < 0:
+						bot._keyboard.tap(&"left", 0.1)
+					else:
+						bot._keyboard.tap(
+							&"right" if randf() > 0.5 else &"left", 0.1
+						)
+				Recovery.BACKUP:
+					bot._keyboard.set_move(-1, 0)
+					_request_look(_goal)
+				Recovery.REROUTE:
+					bot._keyboard.set_move(0, 0)
+					_force_repath = true
+				Recovery.TURN:
+					var away := pos - _goal
+					if away.length_squared() < 0.001:
+						away = -bot.player.horizontal_forward()
+					bot._mouse.request_look_direction(
+						away, LookPriority.TRAVEL_LOOKAHEAD, 0.8
+					)
+					bot._keyboard.set_move(1, 0)
+				_:
+					pass
+
+		match _recovery:
+			Recovery.BACKUP:
+				bot._keyboard.set_move(-1, 0)
+				_request_look(_goal)
+			Recovery.TURN:
+				bot._keyboard.set_move(1, 0)
+			Recovery.JUMP, Recovery.STRAFE:
+				bot._keyboard.set_move(1, 0)
+			_:
+				bot._keyboard.set_move(0, 0)
+
+		_recovery_timer -= delta
+		if _recovery_timer <= 0.0:
+			_recovery = Recovery.NONE
+			_recovery_timer = 0.0
+			_recovery_applied = false
+			_progress_pos = pos
+			_progress_timer = 0.0
+			_state_text = "recovered%d" % _recovery_stage
+
+	func pick_wander_point(min_dist: float, max_dist: float) -> Vector3:
+		if _graph == null:
+			_graph = TravelGraph.shared_for(bot.player)
+		if _graph == null or not _graph.is_ready():
+			return Vector3.INF
+		return _graph.pick_wander_point(bot.player.global_position, min_dist, max_dist)
+
+	func get_state_text() -> String:
+		return _state_text
+
+	func get_debug_text() -> String:
+		var graph_text := "-"
+		if _graph != null:
+			graph_text = _graph.get_status_text()
+		return "%s path=%d rays/s=%d %s" % [
+			_state_text, _path_points.size(), _rays_per_second, graph_text
+		]
+
+
+## Per-bot movement/mouse personality, drawn once per spawn from `skill` plus
+## variance.  Skill sets the average; these fields make two same-skill bots
+## behave differently.
+class Style extends RefCounted:
+	var strafe_hold_median: float = 1.0
+	var strafe_hold_spread: float = 0.25
+	var pause_probability: float = 0.2
+	var jump_rate: float = 0.08
+	var crouch_rate: float = 0.02
+	var peek_style_weights: Array[float] = [0.5, 0.3, 0.2, 0.0]
+	var counter_strafe_skill: float = 0.5
+	var reaction_time: float = 0.2
+	var mouse_speed: float = 0.8
+	var flick_accuracy: float = 0.8
+	var tracking_lag: float = 0.12
+	var bhop_ability: float = 0.5
+	var allow_strafe: bool = true
+	var allow_back: bool = true
+	var allow_diagonal: bool = true
+	var allow_jump: bool = true
+	var allow_crouch: bool = true
+	var fire_tap_min: float = BotController.FIRE_TAP_MIN
+	var fire_tap_max: float = BotController.FIRE_TAP_MAX
+	var fire_click_hz: float = BotController.FIRE_CLICK_HZ_MAX
+	var key_min_hold: float = BotController.KEY_MIN_HOLD_MIN
+	var key_flip_rate: float = BotController.KEY_FLIP_RATE_MAX
+	var aim_jitter: float = 0.0
+
+	func draw(skill_value: float) -> void:
+		var s: float = clampf(skill_value, 0.0, 1.0)
+		reaction_time = lerpf(
+			BotController.KEY_REACTION_MAX, BotController.KEY_REACTION_MIN, s
+		) * randf_range(0.8, 1.2)
+		strafe_hold_median = lerpf(1.2, 0.4, s) * randf_range(0.8, 1.25)
+		strafe_hold_spread = lerpf(0.45, 0.15, s)
+		pause_probability = lerpf(0.35, 0.06, s) * randf_range(0.7, 1.3)
+		jump_rate = lerpf(0.02, 0.16, s) * randf_range(0.7, 1.3)
+		crouch_rate = lerpf(0.0, 0.06, s)
+		var low: Array[float] = [0.7, 0.2, 0.1, 0.0]
+		var high: Array[float] = [0.3, 0.25, 0.3, 0.15]
+		var weights: Array[float] = []
+		for i in 4:
+			weights.append(lerpf(low[i], high[i], s))
+		peek_style_weights = weights
+		counter_strafe_skill = s * randf_range(0.75, 1.0)
+		mouse_speed = lerpf(0.55, 1.0, s) * randf_range(0.9, 1.1)
+		flick_accuracy = clampf(
+			lerpf(0.55, 0.97, s) * randf_range(0.95, 1.03), 0.1, 0.995
+		)
+		tracking_lag = lerpf(0.28, 0.04, s) * randf_range(0.85, 1.2)
+		bhop_ability = s * randf_range(0.5, 1.0)
+		# Low skill unlocks only a small vocabulary; max skill unlocks everything.
+		allow_strafe = s > 0.12
+		allow_back = s > 0.35
+		allow_diagonal = s > 0.5
+		allow_jump = s > 0.25
+		allow_crouch = s > 0.6
+		fire_tap_min = lerpf(0.10, BotController.FIRE_TAP_MIN, s) * randf_range(0.9, 1.1)
+		fire_tap_max = lerpf(0.12, BotController.FIRE_TAP_MAX, s) * randf_range(0.9, 1.1)
+		fire_click_hz = lerpf(
+			BotController.FIRE_CLICK_HZ_MIN, BotController.FIRE_CLICK_HZ_MAX, s
+		) * randf_range(0.9, 1.1)
+		key_min_hold = lerpf(
+			BotController.KEY_MIN_HOLD_MAX, BotController.KEY_MIN_HOLD_MIN, s
+		) * randf_range(0.85, 1.15)
+		key_flip_rate = lerpf(
+			BotController.KEY_FLIP_RATE_MIN, BotController.KEY_FLIP_RATE_MAX, s
+		) * randf_range(0.9, 1.1)
+		aim_jitter = BotController.AIM_NOISE_MAX * (1.0 - s) * 0.5
+
+
+## The keyboard emulator.  Owns `input_dir`, `jump_input`, `crouch`, `dash_input`.
+## Intent-level API:
+##   set_move(forward, strafe)   +1/-1/0, human key terms (W positive)
+##   set_move_world(dir)         rare adapter for navigation code
+##   set_move_input_vector(v)    camera/body-local (x=strafe, y=backward)
+##   tap(key, duration), hold(key), release(key), counter_strafe()
+##   jump_tap(), crouch_hold(duration), dash_tap()
+class Keyboard extends RefCounted:
+	var bot: BotController
+
+	## Desired and actually-held key signs.  Held state is what PlayerInput sees.
+	var _desired_forward: int = 0
+	var _desired_strafe: int = 0
+	var _held_forward: int = 0
+	var _held_strafe: int = 0
+
+	## Minimum time a key stays down / cooldown before this axis may change sign.
+	var _forward_hold: float = 0.0
+	var _strafe_hold: float = 0.0
+	var _forward_cooldown: float = 0.0
+	var _strafe_cooldown: float = 0.0
+	var _reaction_forward: float = 0.0
+	var _reaction_strafe: float = 0.0
+
+	## Short forced taps.  The axis returns to `_desired_*` when the tap expires.
+	var _tap_forward_timer: float = 0.0
+	var _tap_forward_sign: int = 0
+	var _tap_strafe_timer: float = 0.0
+	var _tap_strafe_sign: int = 0
+
+	var _jump_timer: float = 0.0
+	var _jump_cooldown: float = 0.0
+	var _jump_held: bool = false
+	var _crouch_timer: float = 0.0
+	var _crouch_latched: bool = false
+	var _dash_timer: float = 0.0
+	var _dash_cooldown: float = 0.0
+
+	func _init(owner_bot: BotController) -> void:
+		bot = owner_bot
+
+	func set_move(forward: int, strafe: int) -> void:
+		forward = clampi(forward, -1, 1)
+		strafe = clampi(strafe, -1, 1)
+		var style: BotController.Style = bot._style
+		if style != null:
+			if not style.allow_strafe:
+				strafe = 0
+			if not style.allow_back and forward < 0:
+				forward = 0
+			if not style.allow_diagonal and forward != 0 and strafe != 0:
+				# Low skill: no simultaneous W+A/W+D.  Pick the dominant intent.
+				if absi(forward) >= absi(strafe):
+					strafe = 0
+				else:
+					forward = 0
+		if _desired_forward == 0 and forward != 0:
+			_reaction_forward = _reaction_delay()
+		if _desired_strafe == 0 and strafe != 0:
+			_reaction_strafe = _reaction_delay()
+		_desired_forward = forward
+		_desired_strafe = strafe
+
+	func set_move_world(world_dir: Vector2) -> void:
+		var keys := keys_for_world_dir(world_dir)
+		set_move(keys.y, keys.x)
+
+	func set_move_input_vector(local: Vector2) -> void:
+		var forward := -local.y
+		var keys := _quantise(local.x, forward)
+		set_move(keys.y, keys.x)
+
+	## Convert world direction to the nearest 8-way key pair.  Returns
+	## (strafe, forward), both -1/0/1, in HUMAN key terms (+forward = W).
+	## This is the rare adapter used by navigation and stuck recovery; normal
+	## combat movement is built in the local frame and never round-trips here.
+	func keys_for_world_dir(world_dir: Vector2) -> Vector2i:
+		var local := world_to_input_local(world_dir)
+		return _quantise(local.x, -local.y)
+
+	## World direction -> input_dir convention (x = strafe, y = +1 backward).
+	func world_to_input_local(world_dir: Vector2) -> Vector2:
+		if world_dir.length_squared() < 0.000001:
+			return Vector2.ZERO
+		var forward := _movement_forward()
+		var right := Vector3.UP.cross(forward).normalized()
+		var world := Vector3(world_dir.x, 0.0, world_dir.y)
+		return Vector2(world.dot(right), -world.dot(forward))
+
+	func _movement_forward() -> Vector3:
+		var fwd: Vector3 = bot.player.horizontal_forward()
+		if fwd.length_squared() < 0.0001:
+			var yaw: float = bot.player.body.rotation.y
+			fwd = Vector3(-sin(yaw), 0.0, -cos(yaw))
+		return fwd.normalized()
+
+	func _quantise(strafe: float, forward: float) -> Vector2i:
+		if absf(strafe) < 0.001 and absf(forward) < 0.001:
+			return Vector2i.ZERO
+		var angle := atan2(strafe, forward)
+		var sector := posmod(int(round(angle / (PI / 4.0))), 8)
+		match sector:
+			0:
+				return Vector2i(0, 1)
+			1:
+				return Vector2i(1, 1)
+			2:
+				return Vector2i(1, 0)
+			3:
+				return Vector2i(1, -1)
+			4:
+				return Vector2i(0, -1)
+			5:
+				return Vector2i(-1, -1)
+			6:
+				return Vector2i(-1, 0)
+			_:
+				return Vector2i(-1, 1)
+
+	func tap(key: StringName, duration: float) -> void:
+		var hold := maxf(duration, _min_hold())
+		match key:
+			&"jump":
+				jump_tap(true)
+			&"crouch":
+				crouch_hold(hold)
+			&"dash":
+				dash_tap()
+			&"forward":
+				_tap_forward_timer = hold
+				_tap_forward_sign = 1
+			&"back":
+				_tap_forward_timer = hold
+				_tap_forward_sign = -1
+			&"left":
+				_tap_strafe_timer = hold
+				_tap_strafe_sign = -1
+			&"right":
+				_tap_strafe_timer = hold
+				_tap_strafe_sign = 1
+
+	func hold(key: StringName) -> void:
+		match key:
+			&"jump":
+				_jump_held = true
+			&"crouch":
+				_crouch_latched = true
+			&"forward":
+				set_move(1, _desired_strafe)
+			&"back":
+				set_move(-1, _desired_strafe)
+			&"left":
+				set_move(_desired_forward, -1)
+			&"right":
+				set_move(_desired_forward, 1)
+
+	func release(key: StringName) -> void:
+		match key:
+			&"jump":
+				_jump_held = false
+			&"crouch":
+				_crouch_latched = false
+			&"forward":
+				if _desired_forward > 0:
+					set_move(0, _desired_strafe)
+			&"back":
+				if _desired_forward < 0:
+					set_move(0, _desired_strafe)
+			&"left":
+				if _desired_strafe < 0:
+					set_move(_desired_forward, 0)
+			&"right":
+				if _desired_strafe > 0:
+					set_move(_desired_forward, 0)
+
+	## Brief opposite-strafe tap.  The keyboard resolves one strafe sign at a
+	## time, so this is a short opposite tap (not a simultaneous A+D press) that
+	## bleeds lateral velocity before the next direction.
+	func counter_strafe() -> void:
+		var style: BotController.Style = bot._style
+		if style != null and randf() > style.counter_strafe_skill:
+			return
+		if _held_strafe == 0 or _tap_strafe_timer > 0.0:
+			return
+		_tap_strafe_sign = -_held_strafe
+		_tap_strafe_timer = maxf(_min_hold(), lerpf(0.09, 0.05, bot.skill))
+
+	func jump_tap(allow_air: bool = false) -> void:
+		var style: BotController.Style = bot._style
+		if style != null and not style.allow_jump:
+			return
+		if _jump_timer > 0.0 or _jump_cooldown > 0.0:
+			return
+		if not allow_air and not bot.player.is_on_floor():
+			return
+		_jump_timer = maxf(BotController.KEY_MIN_HOLD_MIN, 0.06)
+		_jump_cooldown = randf_range(0.18, 0.34)
+
+	func crouch_hold(duration: float) -> void:
+		var style: BotController.Style = bot._style
+		if style != null and not style.allow_crouch:
+			return
+		_crouch_timer = maxf(
+			_crouch_timer, maxf(duration, BotController.KEY_MIN_HOLD_MIN)
+		)
+
+	func dash_tap() -> void:
+		if _dash_timer > 0.0 or _dash_cooldown > 0.0:
+			return
+		_dash_timer = maxf(BotController.KEY_MIN_HOLD_MIN, 0.06)
+		_dash_cooldown = randf_range(0.4, 0.8)
+
+	func tick(delta: float) -> void:
+		_forward_hold = maxf(_forward_hold - delta, 0.0)
+		_strafe_hold = maxf(_strafe_hold - delta, 0.0)
+		_forward_cooldown = maxf(_forward_cooldown - delta, 0.0)
+		_strafe_cooldown = maxf(_strafe_cooldown - delta, 0.0)
+		_reaction_forward = maxf(_reaction_forward - delta, 0.0)
+		_reaction_strafe = maxf(_reaction_strafe - delta, 0.0)
+		_tap_forward_timer = maxf(_tap_forward_timer - delta, 0.0)
+		_tap_strafe_timer = maxf(_tap_strafe_timer - delta, 0.0)
+		_jump_timer = maxf(_jump_timer - delta, 0.0)
+		_jump_cooldown = maxf(_jump_cooldown - delta, 0.0)
+		_crouch_timer = maxf(_crouch_timer - delta, 0.0)
+		_dash_timer = maxf(_dash_timer - delta, 0.0)
+		_dash_cooldown = maxf(_dash_cooldown - delta, 0.0)
+
+		var want_forward := _desired_forward
+		if _tap_forward_timer > 0.0:
+			want_forward = _tap_forward_sign
+		if want_forward != _held_forward \
+				and _forward_hold <= 0.0 \
+				and _forward_cooldown <= 0.0 \
+				and _reaction_forward <= 0.0:
+			_held_forward = want_forward
+			_forward_hold = _min_hold()
+			_forward_cooldown = maxf(1.0 / _flip_rate(), _forward_hold)
+
+		var want_strafe := _desired_strafe
+		if _tap_strafe_timer > 0.0:
+			want_strafe = _tap_strafe_sign
+		if want_strafe != _held_strafe \
+				and _strafe_hold <= 0.0 \
+				and _strafe_cooldown <= 0.0 \
+				and _reaction_strafe <= 0.0:
+			_held_strafe = want_strafe
+			_strafe_hold = _min_hold()
+			_strafe_cooldown = maxf(1.0 / _flip_rate(), _strafe_hold)
+
+		var input: PlayerInput = bot.player.player_input
+		input.input_dir = Vector2(float(_held_strafe), -float(_held_forward))
+		input.jump_input = _jump_timer > 0.0 or _jump_held
+		input.crouch = _crouch_timer > 0.0 or _crouch_latched
+		input.dash_input = _dash_timer > 0.0
+
+	func release_all() -> void:
+		_desired_forward = 0
+		_desired_strafe = 0
+		_held_forward = 0
+		_held_strafe = 0
+		_forward_hold = 0.0
+		_strafe_hold = 0.0
+		_forward_cooldown = 0.0
+		_strafe_cooldown = 0.0
+		_reaction_forward = 0.0
+		_reaction_strafe = 0.0
+		_tap_forward_timer = 0.0
+		_tap_strafe_timer = 0.0
+		_jump_timer = 0.0
+		_jump_cooldown = 0.0
+		_jump_held = false
+		_crouch_timer = 0.0
+		_crouch_latched = false
+		_dash_timer = 0.0
+		_dash_cooldown = 0.0
+		if bot != null and is_instance_valid(bot.player) and bot.player.player_input != null:
+			var input: PlayerInput = bot.player.player_input
+			input.input_dir = Vector2.ZERO
+			input.jump_input = false
+			input.crouch = false
+			input.dash_input = false
+
+	func is_moving() -> bool:
+		return _held_forward != 0 or _held_strafe != 0 \
+			or _desired_forward != 0 or _desired_strafe != 0
+
+	func _min_hold() -> float:
+		var style: BotController.Style = bot._style
+		if style == null:
+			return BotController.KEY_MIN_HOLD_MIN
+		return clampf(
+			style.key_min_hold,
+			BotController.KEY_MIN_HOLD_MIN,
+			BotController.KEY_MIN_HOLD_MAX
+		)
+
+	func _flip_rate() -> float:
+		var style: BotController.Style = bot._style
+		if style == null:
+			return BotController.KEY_FLIP_RATE_MIN
+		return clampf(
+			style.key_flip_rate,
+			BotController.KEY_FLIP_RATE_MIN,
+			BotController.KEY_FLIP_RATE_MAX
+		)
+
+	func _reaction_delay() -> float:
+		var style: BotController.Style = bot._style
+		if style == null:
+			return BotController.KEY_REACTION_MIN
+		return clampf(style.reaction_time, 0.0, BotController.KEY_REACTION_MAX) \
+			* randf_range(0.6, 1.2)
+
+	func get_state_text() -> String:
+		var text := ""
+		if _held_forward > 0:
+			text += "W"
+		if _held_forward < 0:
+			text += "S"
+		if _held_strafe < 0:
+			text += "A"
+		if _held_strafe > 0:
+			text += "D"
+		if text.is_empty():
+			text = "-"
+		if _jump_timer > 0.0 or _jump_held:
+			text += "J"
+		if _crouch_timer > 0.0 or _crouch_latched:
+			text += "C"
+		return text
+
+
+## The mouse emulator.  Sole owner of body yaw and head pitch.  Other code
+## places look REQUESTS with priorities; this class turns them into a ballistic
+## flick, corrective submovements and pursuit tracking, then applies integer
+## mouse counts through Body._apply_mouse_look (the real look path, including its
+## pitch clamp).
+class Mouse extends RefCounted:
+	enum Mode { IDLE, TRAVEL, FLICK, TRACK, CORRECT }
+
+	var bot: BotController
+	var _event: InputEventMouseMotion = InputEventMouseMotion.new()
+
+	var _has_request: bool = false
+	var _priority: int = 0
+	var _request_ttl: float = 0.0
+	var _point: Vector3 = Vector3.ZERO
+	var _direction: Vector3 = Vector3.ZERO
+	var _use_direction: bool = false
+	var _provider: Variant = null
+	var _urgency: float = 0.5
+	var _stimulus_key: String = ""
+
+	var _reaction_timer: float = 0.0
+	var _mode: Mode = Mode.IDLE
+	var _flick_timer: float = 0.0
+	var _flick_duration: float = 0.1
+	var _flick_start_yaw: float = 0.0
+	var _flick_start_pitch: float = 0.0
+	var _flick_total_yaw: float = 0.0
+	var _flick_total_pitch: float = 0.0
+	var _flick_correction: bool = false
+	var _corrections_left: int = 0
+	var _correction_timer: float = 0.0
+
+	var _track_vel_yaw: float = 0.0
+	var _track_vel_pitch: float = 0.0
+	var _target_vel_yaw: float = 0.0
+	var _target_vel_pitch: float = 0.0
+	var _prev_desired_yaw: float = 0.0
+	var _prev_desired_pitch: float = 0.0
+	var _has_prev: bool = false
+
+	var _jitter_timer: float = 0.0
+	var _jitter_yaw: float = 0.0
+	var _jitter_pitch: float = 0.0
+	var _idle_phase: float = 0.0
+	var _residual_x: float = 0.0
+	var _residual_y: float = 0.0
+	var _last_dx: float = 0.0
+	var _last_dy: float = 0.0
+
+	func _init(owner_bot: BotController) -> void:
+		bot = owner_bot
+
+	## Request the crosshair be placed on a world point.  `priority` is a
+	## BotController.LookPriority; a lower-priority request is ignored while a
+	## live higher-priority one exists.  `stimulus_key` identifies a NEW stimulus
+	## (target instance id); the same key refreshed every think tick does not
+	## restart the reaction delay.
+	func request_look_at_point(point: Vector3, priority: int, urgency: float = 0.5,
+			stimulus_key: String = "") -> void:
+		if _has_request and priority < _priority and _request_ttl > 0.0:
+			return
+		var changed := not _has_request or priority > _priority \
+			or (not stimulus_key.is_empty() and stimulus_key != _stimulus_key)
+		_has_request = true
+		_priority = priority
+		_request_ttl = BotController.LOOK_REQUEST_TTL
+		_point = point
+		_use_direction = false
+		_provider = null
+		_urgency = urgency
+		_stimulus_key = stimulus_key
+		if changed:
+			_begin_stimulus()
+
+	func request_look_direction(direction: Vector3, priority: int,
+			urgency: float = 0.3) -> void:
+		if _has_request and priority < _priority and _request_ttl > 0.0:
+			return
+		var changed := not _has_request or priority > _priority \
+			or not _use_direction
+		if not changed and direction.length_squared() > 0.000001 \
+				and _direction.length_squared() > 0.000001 \
+				and direction.angle_to(_direction) > deg_to_rad(25.0):
+			# A travel target changing by more than ~25 deg is a new stimulus:
+			# a human does not snap the view to every path correction.
+			changed = true
+		_has_request = true
+		_priority = priority
+		_request_ttl = BotController.LOOK_REQUEST_TTL
+		_direction = direction
+		_use_direction = true
+		_provider = null
+		_urgency = urgency
+		_stimulus_key = "dir"
+		if changed:
+			_begin_stimulus()
+
+	## Hold the crosshair on a Node3D (for a Player this is the head bone) or on
+	## a Callable that returns a world Vector3.  The provider is re-evaluated
+	## every physics frame.
+	func hold_crosshair_on(provider: Variant, priority: int,
+			urgency: float = 0.5) -> void:
+		if _has_request and priority < _priority and _request_ttl > 0.0:
+			return
+		var key := str(provider)
+		var changed := not _has_request or priority > _priority or key != _stimulus_key
+		_has_request = true
+		_priority = priority
+		_request_ttl = BotController.LOOK_REQUEST_TTL
+		_provider = provider
+		_use_direction = false
+		_urgency = urgency
+		_stimulus_key = key
+		if changed:
+			_begin_stimulus()
+
+	func _begin_stimulus() -> void:
+		_reaction_timer = _reaction_delay()
+		_mode = Mode.IDLE
+		_flick_timer = 0.0
+		_correction_timer = 0.0
+		_corrections_left = 0
+		_track_vel_yaw = 0.0
+		_track_vel_pitch = 0.0
+
+	func _reaction_delay() -> float:
+		var style: BotController.Style = bot._style
+		var base := BotController.KEY_REACTION_MIN
+		if style != null:
+			base = maxf(style.reaction_time, BotController.KEY_REACTION_MIN)
+		var urgency := clampf(_urgency, 0.0, 1.0)
+		var scale := lerpf(1.6, 0.35, urgency)
+		if _priority <= BotController.LookPriority.TRAVEL_LOOKAHEAD:
+			scale *= 1.5
+		return base * scale * randf_range(0.7, 1.3)
+
+	func tick(delta: float) -> void:
+		_idle_phase += delta
+		_jitter_timer -= delta
+		if _jitter_timer <= 0.0:
+			_jitter_timer = BotController.NOISE_INTERVAL
+			var style: BotController.Style = bot._style
+			var amount := 0.0
+			if style != null:
+				amount = style.aim_jitter
+			_jitter_yaw = randf_range(-amount, amount)
+			_jitter_pitch = randf_range(-amount, amount)
+
+		if _has_request:
+			_request_ttl -= delta
+			if _request_ttl <= 0.0:
+				_has_request = false
+				_provider = null
+
+		if _provider != null and not _resolve_provider():
+			_has_request = false
+			_provider = null
+
+		var desired := _desired_angles()
+		var target_yaw: float = desired.x
+		var target_pitch: float = desired.y
+
+		# Recoil is part of the real camera ray but not of Body yaw / Head pitch.
+		# Compensating it here (scaled by skill) keeps the old skill dial: a max
+		# skill bot counters recoil perfectly, a low-skill bot does not.  Only
+		# while there is an actual aim request — idle/travel must not fight
+		# recoil with a crosshair nobody asked to place.
+		var wc: WeaponController = bot.player.weapon_controller
+		if _has_request and wc != null and is_instance_valid(wc) and wc.recoil != null:
+			var recoil: Vector3 = wc.recoil.rotation
+			target_yaw -= recoil.y * bot.skill
+			target_pitch -= recoil.x * bot.skill
+
+		target_yaw += _jitter_yaw
+		target_pitch += _jitter_pitch
+		target_pitch = clampf(
+			target_pitch, -BotController.LOOK_PITCH_LIMIT, BotController.LOOK_PITCH_LIMIT
+		)
+
+		var body: Node3D = bot.player.body
+		var current_yaw: float = body.rotation.y
+		var current_pitch: float = bot._head_node.rotation.x
+		var err_yaw := wrapf(target_yaw - current_yaw, -PI, PI)
+		var err_pitch := wrapf(target_pitch - current_pitch, -PI, PI)
+		var err_deg := rad_to_deg(sqrt(err_yaw * err_yaw + err_pitch * err_pitch))
+
+		if _reaction_timer > 0.0:
+			_reaction_timer = maxf(_reaction_timer - delta, 0.0)
+			_remember_desired(target_yaw, target_pitch)
+			return
+
+		if _mode == Mode.FLICK or _mode == Mode.CORRECT:
+			_tick_ballistic(delta, target_yaw, target_pitch)
+			_remember_desired(target_yaw, target_pitch)
+			return
+
+		if _correction_timer > 0.0:
+			_correction_timer = maxf(_correction_timer - delta, 0.0)
+			if _correction_timer <= 0.0 and err_deg > BotController.LOOK_CORRECTION_DEG:
+				_start_flick(target_yaw, target_pitch, true)
+			_remember_desired(target_yaw, target_pitch)
+			return
+
+		if err_deg > BotController.LOOK_FLICK_START_DEG:
+			_start_flick(target_yaw, target_pitch, false)
+			_remember_desired(target_yaw, target_pitch)
+			return
+
+		_mode = Mode.TRAVEL if not _has_request else Mode.TRACK
+		_tick_tracking(delta, target_yaw, target_pitch, err_yaw, err_pitch)
+		_remember_desired(target_yaw, target_pitch)
+
+	func _desired_angles() -> Vector2:
+		if _has_request:
+			if _use_direction:
+				var dir := _direction
+				if dir.length_squared() > 0.000001:
+					var flat := Vector2(dir.x, dir.z).length()
+					return Vector2(
+						atan2(-dir.x, -dir.z),
+						atan2(dir.y, maxf(flat, 0.001))
+					)
+			else:
+				return _angles_for_point(_point)
+		return _fallback_angles()
+
+	func _angles_for_point(point: Vector3) -> Vector2:
+		var head := bot._head_node.global_position
+		var to := point - head
+		if to.length_squared() < 0.000001:
+			return Vector2(bot.player.body.rotation.y, bot._head_node.rotation.x)
+		var flat := Vector2(to.x, to.z).length()
+		return Vector2(
+			atan2(-to.x, -to.z),
+			atan2(to.y, maxf(flat, 0.001))
+		)
+
+	func _fallback_angles() -> Vector2:
+		var velocity := bot.player.velocity
+		var flat := Vector3(velocity.x, 0.0, velocity.z)
+		var look_dir := Vector3.ZERO
+		if flat.length() > 0.5:
+			look_dir = flat.normalized()
+		else:
+			var input := bot.player.player_input.input_dir
+			if input.length() > 0.1:
+				var forward := bot.player.horizontal_forward()
+				var right := Vector3.UP.cross(forward).normalized()
+				look_dir = (forward * -input.y + right * input.x).normalized()
+		if look_dir.length_squared() > 0.000001:
+			return Vector2(atan2(-look_dir.x, -look_dir.z), 0.0)
+		# Idle: hold the yaw, settle the pitch to eye level with a tiny drift.
+		return Vector2(
+			bot.player.body.rotation.y,
+			sin(_idle_phase * 0.7) * BotController.LOOK_IDLE_DRIFT
+		)
+
+	func _resolve_provider() -> bool:
+		if _provider is Callable:
+			var callback := _provider as Callable
+			if not callback.is_valid():
+				return false
+			var result: Variant = callback.call()
+			if result is Vector3:
+				_point = result as Vector3
+				return true
+			return false
+		if _provider is Player:
+			var target := _provider as Player
+			if not is_instance_valid(target) or not target.spawned:
+				return false
+			_point = bot._get_head_position(target)
+			return true
+		if _provider is Node3D:
+			var node := _provider as Node3D
+			if not is_instance_valid(node):
+				return false
+			_point = node.global_position + Vector3(0.0, BotController.AIM_CENTER_HEIGHT, 0.0)
+			return true
+		return false
+
+	func _start_flick(target_yaw: float, target_pitch: float, correction: bool) -> void:
+		var body: Node3D = bot.player.body
+		var start_yaw: float = body.rotation.y
+		var start_pitch: float = bot._head_node.rotation.x
+		var total_yaw := wrapf(target_yaw - start_yaw, -PI, PI)
+		var total_pitch := wrapf(target_pitch - start_pitch, -PI, PI)
+		var style: BotController.Style = bot._style
+		var accuracy := 0.8
+		var mouse_speed := 0.8
+		if style != null:
+			accuracy = style.flick_accuracy
+			mouse_speed = style.mouse_speed
+		var error := 1.0 - clampf(accuracy, 0.0, 1.0)
+		# Landing error: undershoot/overshoot plus a little lateral error, both
+		# proportional to the distance travelled.  High skill barely misses; low
+		# skill visibly corrects afterwards.
+		var scale := 1.0 + randf_range(-error * 0.6, error * 0.6)
+		total_yaw *= scale
+		total_pitch *= scale
+		var magnitude := sqrt(total_yaw * total_yaw + total_pitch * total_pitch)
+		var lateral := magnitude * error * 0.12
+		total_yaw += randf_range(-1.0, 1.0) * lateral
+		total_pitch += randf_range(-1.0, 1.0) * lateral * 0.8
+
+		var deg := rad_to_deg(sqrt(total_yaw * total_yaw + total_pitch * total_pitch))
+		var duration := clampf(
+			BotController.LOOK_FLICK_BASE_TIME
+				+ BotController.LOOK_FLICK_LOG_TIME * log(1.0 + deg / 3.0),
+			BotController.LOOK_FLICK_MIN_TIME,
+			BotController.LOOK_FLICK_MAX_TIME
+		)
+		duration *= lerpf(1.35, 0.85, bot.skill) / maxf(mouse_speed, 0.4)
+		if correction:
+			duration *= 0.6
+		# Vertical movement is slower and less accurate than horizontal.
+		if absf(total_pitch) > absf(total_yaw):
+			duration *= 1.2
+
+		_flick_start_yaw = start_yaw
+		_flick_start_pitch = start_pitch
+		_flick_total_yaw = total_yaw
+		_flick_total_pitch = total_pitch
+		_flick_duration = duration
+		_flick_timer = 0.0
+		_flick_correction = correction
+		_mode = Mode.CORRECT if correction else Mode.FLICK
+		if correction:
+			_corrections_left = maxi(_corrections_left - 1, 0)
+		else:
+			# Fewer, tighter corrections at high skill: 3 at skill 0, 1 at skill 1.
+			_corrections_left = maxi(1, int(round(lerpf(3.0, 1.0, bot.skill))))
+
+	func _tick_ballistic(delta: float, _target_yaw: float, _target_pitch: float) -> void:
+		_flick_timer += delta
+		var t := clampf(_flick_timer / maxf(_flick_duration, 0.001), 0.0, 1.0)
+		# Bell-shaped velocity: 1 - cos(2*pi*t), whose integral over [0,1] is 1.
+		var progress := t - sin(TAU * t) / TAU
+		var want_yaw := _flick_start_yaw + _flick_total_yaw * progress
+		var want_pitch := _flick_start_pitch + _flick_total_pitch * progress
+		var body: Node3D = bot.player.body
+		_move_angles(
+			wrapf(want_yaw - body.rotation.y, -PI, PI),
+			want_pitch - bot._head_node.rotation.x
+		)
+		if t >= 1.0:
+			_track_vel_yaw = 0.0
+			_track_vel_pitch = 0.0
+			_mode = Mode.TRACK
+			if _corrections_left > 0:
+				_correction_timer = randf_range(0.02, 0.08)
+
+	func _tick_tracking(delta: float, target_yaw: float, target_pitch: float,
+			err_yaw: float, err_pitch: float) -> void:
+		var style: BotController.Style = bot._style
+		var lag := 0.12
+		var mouse_speed := 0.8
+		if style != null:
+			lag = maxf(style.tracking_lag, 0.02)
+			mouse_speed = style.mouse_speed
+		if _has_prev and delta > 0.000001:
+			var raw_yaw := wrapf(target_yaw - _prev_desired_yaw, -PI, PI) / delta
+			var raw_pitch := wrapf(target_pitch - _prev_desired_pitch, -PI, PI) / delta
+			var alpha := clampf(delta / lag, 0.0, 1.0)
+			_target_vel_yaw = lerpf(_target_vel_yaw, raw_yaw, alpha)
+			_target_vel_pitch = lerpf(_target_vel_pitch, raw_pitch, alpha)
+		var max_speed := BotController.LOOK_TRACK_MAX_SPEED * maxf(mouse_speed, 0.3)
+		var gain := BotController.LOOK_TRACK_GAIN
+		var want_yaw := _target_vel_yaw + clampf(err_yaw * gain, -max_speed, max_speed)
+		var want_pitch := _target_vel_pitch \
+			+ clampf(err_pitch * gain * 0.8, -max_speed * 0.8, max_speed * 0.8)
+		var accel := BotController.LOOK_TRACK_ACCEL * lerpf(0.5, 1.0, bot.skill)
+		_track_vel_yaw = move_toward(_track_vel_yaw, want_yaw, accel * delta)
+		_track_vel_pitch = move_toward(_track_vel_pitch, want_pitch, accel * delta)
+		_track_vel_yaw = clampf(_track_vel_yaw, -max_speed, max_speed)
+		_track_vel_pitch = clampf(_track_vel_pitch, -max_speed * 0.8, max_speed * 0.8)
+		_move_angles(_track_vel_yaw * delta, _track_vel_pitch * delta)
+
+	func _remember_desired(target_yaw: float, target_pitch: float) -> void:
+		_prev_desired_yaw = target_yaw
+		_prev_desired_pitch = target_pitch
+		_has_prev = true
+
+	## Convert an angular delta to integer mouse counts, carry the remainder, and
+	## apply it through Body._apply_mouse_look — the same path a human mouse uses,
+	## including its pitch clamp.  Never writes body/head rotation directly.
+	func _move_angles(delta_yaw: float, delta_pitch: float) -> void:
+		var body: Node3D = bot.player.body
+		var sens_x := 0.002
+		var sens_y := 0.002
+		var raw_x: Variant = body.get("mouse_sens_x")
+		var raw_y: Variant = body.get("mouse_sens_y")
+		if raw_x != null:
+			sens_x = maxf(float(raw_x), 0.00001)
+		if raw_y != null:
+			sens_y = maxf(float(raw_y), 0.00001)
+		_residual_x += -delta_yaw / sens_x
+		_residual_y += -delta_pitch / sens_y
+		var dx := roundf(_residual_x / BotController.MOUSE_COUNT_STEP) \
+			* BotController.MOUSE_COUNT_STEP
+		var dy := roundf(_residual_y / BotController.MOUSE_COUNT_STEP) \
+			* BotController.MOUSE_COUNT_STEP
+		if absf(dx) < 0.5 and absf(dy) < 0.5:
+			return
+		_residual_x -= dx
+		_residual_y -= dy
+		_last_dx = dx
+		_last_dy = dy
+		_event.relative = Vector2(dx, dy)
+		body.call("_apply_mouse_look", _event)
+
+	func current_aim_error_to(point: Vector3) -> float:
+		var head := bot._head_node.global_position
+		var to_aim := point - head
+		if to_aim.length_squared() < 0.000001:
+			return 0.0
+		var forward := -bot._head_node.global_transform.basis.z
+		return rad_to_deg(forward.angle_to(to_aim.normalized()))
+
+	func cancel() -> void:
+		_has_request = false
+		_provider = null
+		_priority = 0
+		_request_ttl = 0.0
+		_reaction_timer = 0.0
+		_mode = Mode.IDLE
+		_flick_timer = 0.0
+		_correction_timer = 0.0
+		_corrections_left = 0
+		_track_vel_yaw = 0.0
+		_track_vel_pitch = 0.0
+		_target_vel_yaw = 0.0
+		_target_vel_pitch = 0.0
+		_has_prev = false
+		_residual_x = 0.0
+		_residual_y = 0.0
+		_last_dx = 0.0
+		_last_dy = 0.0
+
+	func get_state_text() -> String:
+		var names: Array[String] = ["idle", "travel", "flick", "track", "corr"]
+		return names[int(_mode)]
+
+	func get_delta_text() -> String:
+		return "%.0f,%.0f" % [_last_dx, _last_dy]
+
+
+## Reload / weapon-switch button emulator.  Both actions are preceded by a
+## human reaction delay; the WeaponController's real state machine still owns
+## reload time and equip time.
+class Buttons extends RefCounted:
+	var bot: BotController
+	var _reload_timer: float = -1.0
+	var _switch_timer: float = -1.0
+	var _switch_index: int = -1
+
+	func _init(owner_bot: BotController) -> void:
+		bot = owner_bot
+
+	func request_reload() -> bool:
+		if _reload_timer >= 0.0 or _switch_timer >= 0.0:
+			return false
+		var wc: WeaponController = bot.player.weapon_controller
+		if wc == null or not is_instance_valid(wc) or wc._is_reloading or wc.is_switching():
+			return false
+		var weapon: Weapon = wc._weapons[wc.current_weapon_index]
+		if weapon == null or weapon.has_infinite_ammo:
+			return false
+		if weapon.mag_current >= weapon.mag_size:
+			return false
+		_reload_timer = _reaction_delay(
+			BotController.RELOAD_REACTION_MIN, BotController.RELOAD_REACTION_MAX
+		)
+		return true
+
+	func request_switch(index: int) -> bool:
+		var wc: WeaponController = bot.player.weapon_controller
+		if wc == null or not is_instance_valid(wc) or not wc._is_ready():
+			return false
+		if index < 0 or index >= wc._weapons.size():
+			return false
+		if index == wc.current_weapon_index or wc.is_switching():
+			return false
+		if _switch_timer >= 0.0:
+			return false
+		_switch_index = index
+		_switch_timer = _reaction_delay(
+			BotController.SWITCH_REACTION_MIN, BotController.SWITCH_REACTION_MAX
+		)
+		return true
+
+	func tick(delta: float) -> void:
+		var wc: WeaponController = bot.player.weapon_controller
+		if wc == null or not is_instance_valid(wc):
+			cancel()
+			return
+		if _switch_timer >= 0.0:
+			_switch_timer -= delta
+			if _switch_timer <= 0.0:
+				var index := _switch_index
+				_switch_index = -1
+				_switch_timer = -1.0
+				if wc._is_ready() and not wc.is_switching() \
+						and index >= 0 and index < wc._weapons.size() \
+						and index != wc.current_weapon_index:
+					wc.current_weapon_index = index
+		if _reload_timer >= 0.0:
+			_reload_timer -= delta
+			if _reload_timer <= 0.0:
+				_reload_timer = -1.0
+				var weapon: Weapon = wc._weapons[wc.current_weapon_index]
+				if wc._is_ready() and not wc._is_reloading and not wc.is_switching() \
+						and weapon != null and not weapon.has_infinite_ammo \
+						and weapon.mag_current < weapon.mag_size:
+					wc.start_reload()
+
+	func is_switch_pending() -> bool:
+		return _switch_timer >= 0.0
+
+	func pending_index() -> int:
+		return _switch_index
+
+	func cancel() -> void:
+		_reload_timer = -1.0
+		_switch_timer = -1.0
+		_switch_index = -1
+
+	func _reaction_delay(minimum: float, maximum: float) -> float:
+		return lerpf(maximum, minimum, clampf(bot.skill, 0.0, 1.0)) \
+			* randf_range(0.7, 1.3)
+
+
+## One step of a maneuver: a scripted, interruptible timeline of key/mouse/fire
+## verbs.  Stage 4 selects maneuvers; this only executes them.
+class ManeuverStep extends RefCounted:
+	enum Kind {
+		MOVE_KEYS, MOVE_WORLD, KEY_TAP, KEY_HOLD,
+		LOOK_POINT, LOOK_DIRECTION, WAIT, FIRE,
+	}
+
+	var kind: Kind = Kind.WAIT
+	var duration_min: float = 0.1
+	var duration_max: float = 0.2
+	var forward: int = 0
+	var strafe: int = 0
+	var world_dir: Vector2 = Vector2.ZERO
+	var key_name: StringName = &""
+	var look_point: Vector3 = Vector3.ZERO
+	var look_direction: Vector3 = Vector3.ZERO
+	var look_priority: int = int(BotController.LookPriority.TRAVEL_LOOKAHEAD)
+	var fire_index: int = -1
+	var condition: Callable = Callable()
+
+	func _init(kind_value: Kind) -> void:
+		kind = kind_value
+
+
+## Executes a maneuver step by step with randomized durations.  Aborts when a
+## higher-priority maneuver or an external event (target, damage, stun) calls
+## abort(); the next decision tick then chooses again.
+class ManeuverRunner extends RefCounted:
+	var bot: BotController
+	var _steps: Array[BotController.ManeuverStep] = []
+	var _index: int = -1
+	var _timer: float = 0.0
+	var _priority: int = 0
+	var _running: bool = false
+	var _was_fire: bool = false
+
+	func _init(owner_bot: BotController) -> void:
+		bot = owner_bot
+
+	func start(steps: Array[BotController.ManeuverStep], priority: int) -> bool:
+		if _running and priority < _priority:
+			return false
+		if steps.is_empty():
+			abort()
+			return false
+		_steps = steps
+		_index = -1
+		_priority = priority
+		_running = true
+		_advance()
+		return true
+
+	func abort() -> void:
+		if _was_fire and bot._trigger != null:
+			bot._trigger.release_all()
+		_was_fire = false
+		_running = false
+		_steps.clear()
+		_index = -1
+		_timer = 0.0
+
+	func is_running() -> bool:
+		return _running
+
+	func tick(delta: float) -> void:
+		if not _running:
+			return
+		_timer -= delta
+		if _timer > 0.0:
+			return
+		_advance()
+
+	func _advance() -> void:
+		if _was_fire and bot._trigger != null:
+			bot._trigger.release_all()
+		_was_fire = false
+		_index += 1
+		if _index >= _steps.size():
+			_running = false
+			_steps.clear()
+			return
+		var step: BotController.ManeuverStep = _steps[_index]
+		if step.condition.is_valid() and not bool(step.condition.call()):
+			abort()
+			return
+		_timer = maxf(0.02, randf_range(step.duration_min, step.duration_max))
+		match step.kind:
+			BotController.ManeuverStep.Kind.MOVE_KEYS:
+				bot._keyboard.set_move(step.forward, step.strafe)
+			BotController.ManeuverStep.Kind.MOVE_WORLD:
+				bot._keyboard.set_move_world(step.world_dir)
+			BotController.ManeuverStep.Kind.KEY_TAP:
+				bot._keyboard.tap(step.key_name, _timer)
+			BotController.ManeuverStep.Kind.KEY_HOLD:
+				bot._keyboard.hold(step.key_name)
+			BotController.ManeuverStep.Kind.LOOK_POINT:
+				bot._mouse.request_look_at_point(
+					step.look_point, step.look_priority, 0.8
+				)
+			BotController.ManeuverStep.Kind.LOOK_DIRECTION:
+				bot._mouse.request_look_direction(
+					step.look_direction, step.look_priority, 0.8
+				)
+			BotController.ManeuverStep.Kind.FIRE:
+				bot._trigger.request_fire(step.fire_index, true)
+				_was_fire = true
+			BotController.ManeuverStep.Kind.WAIT:
+				pass
 
 
 ## Sole owner of the three fire flags.  The rest of the controller only states
@@ -2584,12 +5150,12 @@ class Trigger extends RefCounted:
 					return
 				_press(_fire_index)
 				_state = State.PRESSING
-				_press_frames = BotController.SEMI_PRESS_FRAMES
+				_press_frames = _tap_frames()
 				if fire.hold_required_for_pre_shoot_delay:
 					# Releasing before the pre-shoot delay elapses cancels the
 					# shot (Derringer).  Keep the flag down long enough for it.
 					_press_frames = maxi(
-						BotController.SEMI_PRESS_FRAMES,
+						_press_frames,
 						int(ceil((fire.pre_shoot_delay + 2.0 / 90.0) * 90.0))
 					)
 
@@ -2624,7 +5190,7 @@ class Trigger extends RefCounted:
 				_release_flags()
 				_state = State.WAITING
 				_begin_special()
-				_wait_timer = maxf(wc._fire_cooldown, 0.0) + _skill_gap()
+				_wait_timer = _semi_gap(wc)
 			_:
 				if not _ready_to_start(wc, fire):
 					return
@@ -2708,7 +5274,9 @@ class Trigger extends RefCounted:
 				if _special_elapsed < BotController.SIGNAL_MAX_HOLD:
 					return
 			_signal_active = true
-			_signal_press_frames = BotController.SIGNAL_PRESS_FRAMES
+			_signal_press_frames = maxi(
+				BotController.SIGNAL_PRESS_FRAMES, _tap_frames()
+			)
 		elif bot._signal_mode == BotController.SignalMode.REDIRECT:
 			if not bot._has_live_own_projectile():
 				_special_pending = false
@@ -2716,7 +5284,9 @@ class Trigger extends RefCounted:
 			if not aim_open:
 				return
 			_signal_active = true
-			_signal_press_frames = BotController.SIGNAL_PRESS_FRAMES
+			_signal_press_frames = maxi(
+				BotController.SIGNAL_PRESS_FRAMES, _tap_frames()
+			)
 		else:
 			_special_pending = false
 
@@ -2757,6 +5327,24 @@ class Trigger extends RefCounted:
 		return lerpf(
 			BotController.SEMI_GAP_MAX, BotController.SEMI_GAP_MIN, bot.skill
 		) * randf_range(0.7, 1.4)
+
+	## Human click length, in physics frames.  Always at least the 3-frame
+	## guaranteed-sampled press; the style's 40-100 ms click is used when longer.
+	func _tap_frames() -> int:
+		var duration := BotController.FIRE_TAP_MIN
+		var style: BotController.Style = bot._style
+		if style != null:
+			duration = randf_range(style.fire_tap_min, style.fire_tap_max)
+		return maxi(BotController.SEMI_PRESS_FRAMES, int(ceil(duration * 90.0)))
+
+	## Semi-auto gap: the weapon's real cooldown, a skill-scaled human pause, and
+	## the bot's own click-rate cap (6-9 Hz).
+	func _semi_gap(wc: WeaponController) -> float:
+		var gap := maxf(wc._fire_cooldown, 0.0) + _skill_gap()
+		var style: BotController.Style = bot._style
+		if style != null:
+			gap = maxf(gap, 1.0 / maxf(style.fire_click_hz, 0.1))
+		return gap
 
 	func _press(index: int) -> void:
 		var input: PlayerInput = bot.player.player_input
