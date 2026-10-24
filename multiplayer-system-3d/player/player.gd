@@ -654,6 +654,18 @@ func _spawn_ragdoll(ragdoll_transform: Transform3D, death_impulse: Vector3) -> v
 	if mannequin == null:
 		return
 
+	# One corpse per player.  A player can die again long before the 25 s corpse
+	# timer expires, so without this every death left another ragdoll behind.
+	# Rename the old one before queue_free so the new corpse keeps the canonical
+	# name the bone-impulse / explosion RPCs look up for this player.
+	var corpse_name := "Ragdoll_" + name
+	for node in get_tree().get_nodes_in_group("ragdolls"):
+		if not is_instance_valid(node) or node.is_queued_for_deletion():
+			continue
+		if str(node.name) == corpse_name:
+			node.name = "Ragdoll_replaced_" + str(node.get_instance_id())
+			node.queue_free()
+
 	# Ragdoll the player's current third-person model: the character skin when one
 	# is active, otherwise the built-in mannequin.
 	var source: Node3D = mannequin
@@ -661,7 +673,7 @@ func _spawn_ragdoll(ragdoll_transform: Transform3D, death_impulse: Vector3) -> v
 		source = model
 
 	var corpse: Node3D = source.duplicate()
-	corpse.name = "Ragdoll_" + name
+	corpse.name = corpse_name
 	get_parent().add_child(corpse)
 	corpse.global_transform = ragdoll_transform
 	corpse.visible = true

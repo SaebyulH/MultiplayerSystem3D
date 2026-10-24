@@ -65,7 +65,7 @@ The automatic-weapon fire path no longer allocates per shot:
 - `player/player.gd` `_rollback_tick` (`968`): `get_tree().get_nodes_in_group("players")` (`1025`) while `charge_time > 0` — **inside the rollback tick**, so re-simulated every tick (and it's a group query in the deterministic path). Also `GameManager.find_player(pinned_charger_name)` (`1005`) every tick while pinned.
 - `player/player.gd` `_grab_nearby_enemies` (`1271`): group query (`1273`) every frame while charging.
 - `player/player.gd` `aimbot_find_target` (`1970`): group query (`1980`) every frame while firing; `_aimbot_rotate_to` (`2047`) does `target.get_node(".../Physical Bone DEF-spine_006")` (`2048`) every frame.
-- `weapon/projectiles/explosion_component.gd` `_apply_explosion_tick` (`74`): group query (`78`), per-player raycast (`98`,`104`), `find_player` scans via `apply_health_delta` (`129`), and `get_nodes_in_group("ragdolls")` (`152`) — per explosion tick (explosions can pulse).
+- `weapon/projectiles/explosion_component.gd` `_apply_explosion_tick` (`74`): group query (`78`), per-player raycast (`98`,`104`), `find_player` scans via `apply_health_delta` (`129`), and `get_nodes_in_group("ragdolls")` (`152`) — per explosion tick (explosions can pulse). The `"ragdolls"` group is now capped at **one corpse per player**: `_spawn_ragdoll` renames and queue-frees the previous `Ragdoll_<player>` before adding the new one, so repeated deaths no longer grow the set that every explosion pulse scans.
 
 ## Charged-weapon draw (per-frame, all peers) — negligible
 
