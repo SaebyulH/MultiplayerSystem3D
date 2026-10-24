@@ -388,6 +388,8 @@ func _ready() -> void:
 	_traversal = Traversal.new(self)
 	_decision = Decision.new(self)
 	_trigger = Trigger.new(self)
+	if player.is_bot and not GameManager.sound_made.is_connected(_on_sound_made):
+		GameManager.sound_made.connect(_on_sound_made)
 	_los_exclude_rids.clear()
 	_los_exclude_rids.append(player.get_rid())
 	_los_query.exclude = _los_exclude_rids
@@ -419,9 +421,9 @@ const MEDIC_SELF_HEAL_THRESHOLD: float = 0.5
 const SAFE_TOP_OFF_DELAY: float = 3.0
 ## Any living enemy inside this radius counts as "around" even through walls.
 const SAFE_TOP_OFF_RADIUS: float = 30.0
-## Bots only detect enemies within this horizontal field-of-view cone (degrees),
-## centred on their facing direction.  Matches a human's ~120° peripheral vision.
-const FOV_DEGREES: float = 120.0
+## Bots detect enemies within the same horizontal cone a human camera renders.
+## `player.tscn` sets `Camera3D.fov = 90`, so the bot FOV is 90° too.
+const FOV_DEGREES: float = 90.0
 ## Human mouse model (Stage 2).  The old exponential aim smoothing is gone;
 ## these describe a ballistic flick plus a pursuit tracker, both scaled by the
 ## per-bot Style drawn at spawn.
@@ -488,6 +490,10 @@ const MEDIC_HEAL_PERSIST: float = 1.0
 const MEDIC_HEAL_ABSENT: float = 1.5
 const EXPLOSION_JUMP_AIM_TIMEOUT: float = 1.0
 const EXPLOSION_JUMP_FIRE_WAIT: float = 0.08
+
+# Bot hearing.  The emitter supplies the radius; the bot only checks distance.
+const HEARING_LOOK_TIME: float = 1.0
+const HEARING_NEAREST_MARGIN: float = 2.0
 ## Path to the target's head bone — the `Physical Bone DEF-spine_006` hurtbox with
 ## `is_head = true` in player.tscn.  Bots aim at this bone's live world position
 ## rather than a fixed height, so headshots track the model's actual head.
@@ -725,6 +731,10 @@ var _last_damage_source_name: String = ""
 var _last_damage_time: float = -999.0
 var _last_damage_position: Vector3 = Vector3.INF
 var _last_damage_direction: Vector3 = Vector3.ZERO
+var _heard_position: Vector3 = Vector3.INF
+var _heard_distance: float = INF
+var _heard_timer: float = 0.0
+var _heard_kind: StringName = &""
 var _last_seen_velocity: Vector3 = Vector3.ZERO
 var _target_lost_timer: float = 0.0
 var _search_timer: float = 0.0
@@ -1290,9 +1300,64 @@ func _score_target(target: Player, dist: float, seen_time: float, now: float) ->
 	return score
 
 
+## A sound event from GameManager.  Footsteps, shots and reloads carry their own
+## hearing radius.  Sound is a distance check only (no FOV/LOS), but it never
+## distracts a bot that is already engaging an enemy.
+func _on_sound_made(position: Vector3, radius: float, source_name: String,
+		kind: StringName) -> void:
+	if not player.is_bot or not multiplayer.is_server() or not player.spawned:
+		return
+	if source_name == str(player.name):
+		return
+	if _is_engaging_enemy():
+		return
+	var dist := player.global_position.distance_to(position)
+	if dist > radius:
+		return
+	# A new sound only replaces an existing curiosity target if it is closer.
+	if _heard_timer > 0.0 and dist > _heard_distance + HEARING_NEAREST_MARGIN:
+		return
+	_heard_position = position
+	_heard_distance = dist
+	_heard_timer = HEARING_LOOK_TIME
+	_heard_kind = kind
+
+
+func _is_engaging_enemy() -> bool:
+	if _current_target != null and is_instance_valid(_current_target):
+		return true
+	if _decision != null and _decision.state in [
+			Decision.State.COMBAT, Decision.State.HEAL,
+			Decision.State.RETREAT_COVER, Decision.State.RELOAD_SAFE]:
+		return true
+	return false
+
+
+## Refresh the curiosity look while the sound is recent.  GLANCE beats the travel
+## look but never combat/damage aim.
+func _tick_hearing(delta: float) -> void:
+	if _heard_timer <= 0.0:
+		return
+	_heard_timer = maxf(_heard_timer - delta, 0.0)
+	if _heard_timer <= 0.0 or _heard_position == Vector3.INF:
+		return
+	if _is_engaging_enemy():
+		_heard_timer = 0.0
+		return
+	_mouse.request_look_at_point(
+		_heard_position + Vector3.UP * TRAVEL_EYE_HEIGHT,
+		LookPriority.GLANCE,
+		0.3,
+		"heard:" + str(_heard_kind)
+	)
+
+
 ## Idle/travel glance.  It uses GLANCE so it briefly beats the travel look but
 ## never a damage reaction or combat aim.
 func _tick_glance(delta: float) -> void:
+	# A recent sound is the more interesting thing to look at.
+	if _heard_timer > 0.0:
+		return
 	if _glance_timer > 0.0:
 		_glance_timer = maxf(_glance_timer - delta, 0.0)
 		return
@@ -1318,6 +1383,7 @@ func _tick_glance(delta: float) -> void:
 
 
 func _think() -> void:
+	_tick_hearing(PROCESS_INTERVAL)
 	_tick_glance(PROCESS_INTERVAL)
 	var wc: WeaponController = player.weapon_controller
 	if not wc._is_ready():
@@ -3736,6 +3802,10 @@ func _reset_for_spawn() -> void:
 	_last_damage_time = -999.0
 	_last_damage_position = Vector3.INF
 	_last_damage_direction = Vector3.ZERO
+	_heard_position = Vector3.INF
+	_heard_distance = INF
+	_heard_timer = 0.0
+	_heard_kind = &""
 	_last_seen_velocity = Vector3.ZERO
 	_target_lost_timer = 0.0
 	_search_timer = 0.0

@@ -67,6 +67,10 @@ The automatic-weapon fire path no longer allocates per shot:
 - `player/player.gd` `aimbot_find_target` (`1970`): group query (`1980`) every frame while firing; `_aimbot_rotate_to` (`2047`) does `target.get_node(".../Physical Bone DEF-spine_006")` (`2048`) every frame.
 - `weapon/projectiles/explosion_component.gd` `_apply_explosion_tick` (`74`): group query (`78`), per-player raycast (`98`,`104`), `find_player` scans via `apply_health_delta` (`129`), and `get_nodes_in_group("ragdolls")` (`152`) — per explosion tick (explosions can pulse). The `"ragdolls"` group is now capped at **one corpse per player**: `_spawn_ragdoll` renames and queue-frees the previous `Ragdoll_<player>` before adding the new one, so repeated deaths no longer grow the set that every explosion pulse scans.
 
+## Bot hearing (event-driven, server only)
+
+- `GameManager.sound_made` is emitted from the existing sound sites (footsteps, weapon shots, reloads) only when `multiplayer.is_server()`. Each bot connects once and does a single distance check when an event arrives — there is no per-frame audio scan. Crouched movement is suppressed in `player.gd:_update_footsteps`, so it produces neither a footstep sound nor a hearing event.
+
 ## Charged-weapon draw (per-frame, all peers) — negligible
 
 Added 2026-09-25 with the `Weapon.charged` feature. Recorded here so it is not mistaken for a new hot path later.

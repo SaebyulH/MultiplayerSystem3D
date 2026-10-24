@@ -4,7 +4,17 @@ extends Node
 ## explosions).  Bump this to make corpses react harder to being shot/blasted.
 const RAGDOLL_KNOCKBACK_MULTIPLIER := 20.0
 
+## Server-side "a sound happened here" notification.  Emitters supply a hearing
+## radius; BotController connects while alive, checks distance, and only turns
+## to it when it is not already engaging an enemy.  Never networked.
+signal sound_made(position: Vector3, radius: float, source_name: String, kind: StringName)
+
 var spawn_parent: Node3D
+
+
+func report_sound(position: Vector3, radius: float, source_name: String,
+		kind: StringName = &"sound") -> void:
+	sound_made.emit(position, radius, source_name, kind)
 
 ## Where projectiles (and the tracer / decal / impact effects that ride the same
 ## parent) are added.  Lives on the world scene, not on the Player: a Player can be

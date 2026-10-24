@@ -924,6 +924,13 @@ func _ensure_bg_arrays() -> void:
 
 
 #region Helpers
+func _report_gunshot_sound() -> void:
+	if multiplayer.is_server() and _parent_player != null:
+		GameManager.report_sound(
+			_parent_player.global_position, 35.0, str(_parent_player.name), &"gunshot"
+		)
+
+
 func _play_sound(stream: AudioStream, speed: float = 1.0, volume_db: float = 0.0) -> void:
 	if stream == null:
 		return
@@ -1756,6 +1763,10 @@ func _notify_reload_started(timer_value: float) -> void:
 	var reload_stream := _weapons[current_weapon_index].reload_sound
 	var sound_len := reload_stream.get_length() if reload_stream else 1.0
 	_play_sound(reload_stream, sound_len / max(timer_value, 0.01))
+	if multiplayer.is_server():
+		GameManager.report_sound(
+			_parent_player.global_position, 12.0, str(_parent_player.name), &"reload"
+		)
 	if shoot_animation and shoot_animation.has_animation("reload"):
 		_save_transform_for_reload()
 		shoot_animation.stop()
@@ -2332,6 +2343,7 @@ func fire_weapon_fire(fire: WeaponFire, interrupt_shooting: bool = true, ability
 			for shot_dir in fire.multishot_data:
 				_fire_projectile(fire, shot_dir)
 		_play_sound(fire.shoot_sound)
+		_report_gunshot_sound()
 		return
 
 	# HITSCAN (single / shotgun / burst / shape) — reuse the fire pipeline by
@@ -2356,6 +2368,7 @@ func fire_weapon_fire(fire: WeaponFire, interrupt_shooting: bool = true, ability
 		_execute_fire(weapon, 0)
 
 	_play_sound(fire.shoot_sound)
+	_report_gunshot_sound()
 
 
 ## Name of the ability currently mid-burst/volley (empty when none).
@@ -3147,6 +3160,7 @@ func _play_shoot_sound(weapon_fire_index: int) -> void:
 		return
 	var fire: WeaponFire = _weapons[current_weapon_index].weapon_fires[weapon_fire_index]
 	_play_sound(fire.shoot_sound)
+	_report_gunshot_sound()
 	if shoot_animation and shoot_animation.has_animation("shoot"):
 		shoot_animation.stop()
 		shoot_animation.play("shoot")

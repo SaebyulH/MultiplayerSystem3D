@@ -1059,7 +1059,9 @@ func _update_footsteps(delta: float) -> void:
 		_footstep_timer = FOOTSTEP_INTERVAL
 		return
 	var h_speed := Vector2(velocity.x, velocity.z).length()
-	if is_on_floor() and h_speed > 0.1:
+	# Crouched movement is silent: no footstep sound and consequently no sound
+	# event for bots to hear.
+	if is_on_floor() and h_speed > 0.1 and not is_crouching:
 		_footstep_timer += delta
 		if _footstep_timer >= FOOTSTEP_INTERVAL:
 			_footstep_timer = 0.0
@@ -1069,7 +1071,7 @@ func _update_footsteps(delta: float) -> void:
 		_footstep_timer = FOOTSTEP_INTERVAL
 
 func _play_footstep() -> void:
-	if _footstep_sounds.is_empty():
+	if is_crouching or _footstep_sounds.is_empty():
 		return
 	# Pooled one-shot audio player (see AudioPool) instead of a fresh node per step.
 	AudioPool.play(
@@ -1078,6 +1080,8 @@ func _play_footstep() -> void:
 		Transform3D(Basis(), global_position),
 		1.0 + randf_range(-FOOTSTEP_PITCH_RANGE, FOOTSTEP_PITCH_RANGE)
 	)
+	if multiplayer.is_server():
+		GameManager.report_sound(global_position, 12.0, str(name), &"footstep")
 
 func _rollback_tick(delta, tick, is_fresh):
 	# Re-derive the player scale from the size multiplier every tick.  This is the
