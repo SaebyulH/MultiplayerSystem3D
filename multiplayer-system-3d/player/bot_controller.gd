@@ -322,7 +322,10 @@ class_name BotController
 ##   grenade-primary kept its slot against a pistol at 6/12/25 m while a
 ##   sniper@8 m lost to the pistol and sniper@2 m lost to the knife; live
 ##   grenade-vs-pistol bots acquired, aimed and damaged each other with no
-##   script errors.  Visual flick/drift feel and a real wall-blocked arc still
+##   script errors.  Heal projectiles use `_predict_aim_point()` (the launch
+##   direction), never the impact point: at 15 m a syringe solution aimed
+##   2.34 m above the impact point and a live healer restored an ally from
+##   63 to 125 HP.  Visual flick/drift feel and a real wall-blocked arc still
 ##   need manual checks.
 ##
 ## OPEN QUESTIONS / HAZARDS FOR LATER STAGES
@@ -359,9 +362,17 @@ class_name BotController
 ## compensation, instant tracking and reactions).
 @export_range(0.0, 1.0) var skill: float = 1.0
 
-## Optional deterministic trait roll.  0 picks a fresh random seed per spawn;
-## any other value reproduces the same per-bot variance for the same skill.
+## Optional deterministic trait roll.  0 draws one seed for this bot and keeps
+## it for its lifetime (so moving the skill slider does not re-roll its
+## personality); any other value reproduces the same per-bot variance.
 @export var random_seed: int = 0
+
+## The editable traits exposed by the dev menu's Advanced dropdown.  Keys are
+## Style field names so the menu can read/write them without a parallel table.
+const BOT_TRAIT_KEYS: Array[String] = [
+	"reaction_time", "tracking_speed", "accuracy", "aggression",
+	"lead_quality", "movement_quality", "awareness",
+]
 
 ## Draws a live state label above this bot (action, target, fire mode, trigger
 ## flags, aim error, weapon/ammo) plus the steering rays it just cast.  Server
@@ -409,6 +420,11 @@ static var _proj_speed_measurements: Dictionary = {}
 var _arc_validation_timer: float = 0.0
 var _arc_validation_blocked: bool = false
 var _arc_validation_high: bool = false
+## Stable style roll + explicit dev-menu overrides.  The seed is chosen once,
+## so dragging the skill slider redraws the derived stats without changing the
+## bot's random variance.  Overrides survive respawns until cleared.
+var _style_seed: int = 0
+var _trait_overrides: Dictionary = {}
 
 
 func _ready() -> void:
@@ -436,8 +452,10 @@ func _ready() -> void:
 
 	_fov_dot_threshold = cos(deg_to_rad(FOV_DEGREES * 0.5))
 
+	_style_seed = random_seed if random_seed != 0 else randi()
 	_style = Style.new()
-	_style.draw(skill, random_seed)
+	_style.draw(skill, _style_seed)
+	_apply_trait_overrides()
 	if player.is_bot:
 		add_to_group("bot_controllers")
 	_keyboard = Keyboard.new(self)
@@ -464,6 +482,82 @@ func _ready() -> void:
 func _exit_tree() -> void:
 	if get_tree() != null and get_tree().node_added.is_connected(_on_node_added):
 		get_tree().node_added.disconnect(_on_node_added)
+
+
+# ── Dev-menu skill editing (server-local; bots only simulate on peer 1) ──
+
+## Set the master skill and redraw the derived style immediately.  The stable
+## per-bot seed keeps the random variance from changing while the slider moves.
+func set_bot_skill(value: float) -> void:
+	skill = clampf(value, 0.0, 1.0)
+	if _style != null:
+		_style.draw(skill, _style_seed)
+		_apply_trait_overrides()
+
+
+## Current value of one editable trait, in its native unit (seconds for
+## reaction_time, 0..1 for the rest).
+func get_bot_trait(key: String) -> float:
+	if _style == null or not BOT_TRAIT_KEYS.has(key):
+		return 0.0
+	return float(_style.get(key))
+
+
+## Override one trait independently of the master skill.  The override is
+## reapplied on every master-skill redraw and survives respawns.
+func set_bot_trait(key: String, value: float) -> void:
+	if _style == null or not BOT_TRAIT_KEYS.has(key):
+		return
+	var lo := KEY_REACTION_MIN if key == "reaction_time" else 0.0
+	var hi := KEY_REACTION_MAX if key == "reaction_time" else 1.0
+	var clamped := clampf(value, lo, hi)
+	_trait_overrides[key] = clamped
+	_apply_trait_override(key, clamped)
+
+
+func clear_bot_traits() -> void:
+	_trait_overrides.clear()
+	if _style != null:
+		_style.draw(skill, _style_seed)
+
+
+func has_bot_trait_override(key: String) -> bool:
+	return _trait_overrides.has(key)
+
+
+func get_bot_trait_overrides() -> Dictionary:
+	return _trait_overrides.duplicate()
+
+
+func set_bot_trait_overrides(overrides: Dictionary) -> void:
+	_trait_overrides.clear()
+	for key in overrides.keys():
+		if BOT_TRAIT_KEYS.has(str(key)):
+			_trait_overrides[str(key)] = float(overrides[key])
+	if _style != null:
+		_style.draw(skill, _style_seed)
+		_apply_trait_overrides()
+
+
+## Dev-menu "Randomize bot skills": new master skill, new variance roll, and no
+## stale overrides from the previous personality.
+func randomize_bot_skill() -> void:
+	skill = randf()
+	_style_seed = randi()
+	_trait_overrides.clear()
+	if _style != null:
+		_style.draw(skill, _style_seed)
+
+
+func _apply_trait_overrides() -> void:
+	for key in _trait_overrides.keys():
+		_apply_trait_override(str(key), float(_trait_overrides[key]))
+
+
+func _apply_trait_override(key: String, value: float) -> void:
+	if _style == null:
+		return
+	_style.apply_trait(key, value)
 
 # Tuning constants
 
@@ -1989,7 +2083,7 @@ func _first_damage_weapon_index(wc: WeaponController) -> int:
 ## actually fired (typically once it's added to the tree) — instantiate()
 ## alone never reaches that point, and _ready() doesn't even run on a node
 ## that's never entered the tree. So `speed` was reading 0.0 on every single
-## call, `speed > 1.0` in _predict_target_pos was always false, and no lead
+## call, `speed > 1.0` in the old prediction helper was always false, and no lead
 ## was ever applied — bots aimed straight at the target's current position
 ## with zero prediction, which reads exactly like "leading doesn't work"
 ## against anyone strafing. Fixed by preferring a value that's actually
@@ -2835,9 +2929,13 @@ func _solve_ballistic_lead(origin: Vector3, target_point: Vector3,
 	}
 
 
-## Predicted aim point for the simple callers (heal targeting).  Combat uses
-## [_solve_projectile_solution] so it can also test the arc.
-func _predict_target_pos(target: Player, fire: WeaponFire, _flat_dist: float,
+## Aim point for the simple callers (heal targeting).  Combat uses
+## [_solve_projectile_solution] directly because it also validates the arc.
+##
+## Return the point ALONG THE LAUNCH DIRECTION, not the predicted impact point:
+## a gravity projectile must be fired above the target.  Looking at
+## `target_point` made the syringe/heal-grenade bots aim flat and fall short.
+func _predict_aim_point(target: Player, fire: WeaponFire, _flat_dist: float,
 		aim_point: int = AimPoint.HEAD) -> Vector3:
 	var base := _aim_base_position(target, aim_point, false)
 	if fire == null or fire.bullet_type != WeaponFire.BulletType.PROJECTILE:
@@ -2848,7 +2946,7 @@ func _predict_target_pos(target: Player, fire: WeaponFire, _flat_dist: float,
 	)
 	if solution.is_empty():
 		return base
-	return solution["target_point"]
+	return solution["point"]
 
 
 ## Sample the predicted path with world-only rays.  Only called when the bot is
@@ -3368,7 +3466,7 @@ func _act_heal() -> void:
 		_trigger.release_all()
 		return
 
-	var aim_pos := _predict_target_pos(_heal_target, fire, dist)
+	var aim_pos := _predict_aim_point(_heal_target, fire, dist)
 	_desired_aim_point = aim_pos
 	_has_desired_aim = true
 	_mouse.request_look_at_point(
@@ -4493,9 +4591,10 @@ func _reset_for_spawn() -> void:
 	_cover_total_timer = 0.0
 	_cover_cooldown = 0.0
 	_cover_rounds = 0
-	# A fresh body, a fresh style: the per-bot mouse/keyboard personality is
-	# drawn once per life, so two bots at the same skill still differ.
-	_style.draw(skill, random_seed)
+	# A fresh body, the same personality: the stable seed keeps this bot's
+	# variance while still drawing a fresh style for the current skill.
+	_style.draw(skill, _style_seed)
+	_apply_trait_overrides()
 	_strafe_bias = randf_range(-0.25, 0.25)
 	_choice_history.clear()
 	_strafe_dir = 0.0
@@ -6147,6 +6246,59 @@ class Style extends RefCounted:
 			BotController.KEY_FLIP_RATE_MIN, BotController.KEY_FLIP_RATE_MAX, movement_quality
 		) * rng.randf_range(0.9, 1.1)
 		flank_bias = rng.randf_range(-1.0, 1.0)
+
+	## Apply one dev-menu trait override and keep every field derived from it in
+	## sync.  The master Skill slider redraws the whole style first, then these
+	## overrides are re-applied on top.
+	func apply_trait(key: String, value: float) -> void:
+		match key:
+			"reaction_time":
+				reaction_time = clampf(
+					value, BotController.KEY_REACTION_MIN, BotController.KEY_REACTION_MAX
+				)
+			"tracking_speed":
+				tracking_speed = clampf(value, 0.0, 1.0)
+				tracking_lag = lerpf(0.30, 0.03, tracking_speed)
+			"accuracy":
+				accuracy = clampf(value, 0.0, 1.0)
+				flick_accuracy = accuracy
+				mouse_speed = lerpf(0.55, 1.0, accuracy)
+				fire_tap_min = lerpf(0.10, BotController.FIRE_TAP_MIN, accuracy)
+				fire_tap_max = lerpf(0.12, BotController.FIRE_TAP_MAX, accuracy)
+				fire_click_hz = lerpf(
+					BotController.FIRE_CLICK_HZ_MIN, BotController.FIRE_CLICK_HZ_MAX,
+					accuracy
+				)
+			"aggression":
+				aggression = clampf(value, 0.0, 1.0)
+			"lead_quality":
+				lead_quality = clampf(value, 0.0, 1.0)
+			"movement_quality":
+				movement_quality = clampf(value, 0.0, 1.0)
+				strafe_hold_median = lerpf(1.2, 0.4, movement_quality)
+				strafe_hold_spread = lerpf(0.45, 0.15, movement_quality)
+				pause_probability = lerpf(0.35, 0.06, movement_quality)
+				jump_rate = lerpf(0.02, 0.16, movement_quality)
+				crouch_rate = lerpf(0.0, 0.06, movement_quality)
+				counter_strafe_skill = movement_quality
+				bhop_ability = movement_quality
+				key_min_hold = lerpf(
+					BotController.KEY_MIN_HOLD_MAX,
+					BotController.KEY_MIN_HOLD_MIN,
+					movement_quality
+				)
+				key_flip_rate = lerpf(
+					BotController.KEY_FLIP_RATE_MIN,
+					BotController.KEY_FLIP_RATE_MAX,
+					movement_quality
+				)
+				allow_strafe = movement_quality > 0.20
+				allow_back = movement_quality > 0.38
+				allow_diagonal = movement_quality > 0.52
+				allow_jump = movement_quality > 0.28
+				allow_crouch = movement_quality > 0.60
+			"awareness":
+				awareness = clampf(value, 0.0, 1.0)
 
 	## Interpolate one row of SKILL_TRAIT_TABLE.  Kept here so every trait has a
 	## single documented source and per-bot variance is applied by the caller.

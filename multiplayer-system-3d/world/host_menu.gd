@@ -426,10 +426,11 @@ func _refresh_assignment_area() -> void:
 	row.add_theme_constant_override("separation", 12)
 	_team_area.add_child(row)
 
-	var sci := _make_team_column(Player.Team.SCI, "TEAM SCI")
+	# Canonical team order: SPI first, then SCI everywhere in the UI.
 	var spi := _make_team_column(Player.Team.SPI, "TEAM SPI")
-	row.add_child(sci)
+	var sci := _make_team_column(Player.Team.SCI, "TEAM SCI")
 	row.add_child(spi)
+	row.add_child(sci)
 
 	for id in _assignment:
 		var p := GameManager.find_player(id)
@@ -437,10 +438,10 @@ func _refresh_assignment_area() -> void:
 			continue
 		var team: Player.Team = _assignment[id]
 		var card := _make_player_card(p, team)
-		if team == Player.Team.SCI:
-			sci.add_child(card)
-		else:
+		if team == Player.Team.SPI:
 			spi.add_child(card)
+		else:
+			sci.add_child(card)
 
 
 func _build_players_list() -> Control:

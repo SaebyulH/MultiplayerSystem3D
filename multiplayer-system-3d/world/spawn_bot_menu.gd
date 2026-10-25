@@ -29,6 +29,24 @@ const CLASS_PATHS: Array[String] = [
 	"res://player/player_classes/assistance.tres",
 ]
 
+## Canonical team order everywhere in this menu and the dev menu.
+const TEAM_ORDER: Array[int] = [
+	Player.Team.SPI, Player.Team.SCI, Player.Team.FFA,
+]
+
+## Keep these keyed by BotController.BOT_TRAIT_KEYS; the dropdown reads the
+## controller directly so a trait added there only needs a label here.
+const TRAIT_LABELS := {
+	"reaction_time": "Reaction time",
+	"tracking_speed": "Tracking speed",
+	"accuracy": "Accuracy",
+	"aggression": "Aggression",
+	"lead_quality": "Lead quality",
+	"movement_quality": "Movement quality",
+	"awareness": "Awareness",
+}
+const TRAIT_DEFAULT_INDEX: int = 2  # Accuracy
+
 
 var _classes: Array[Class] = []
 var _char_to_class: Dictionary = {}   # character.resource_path -> Class
@@ -124,8 +142,8 @@ func build_into(host: Control) -> void:
 	team_row.add_theme_constant_override("separation", 8)
 	left.add_child(team_row)
 
-	team_row.add_child(_make_team_button(Player.Team.SCI, "SCI"))
 	team_row.add_child(_make_team_button(Player.Team.SPI, "SPI"))
+	team_row.add_child(_make_team_button(Player.Team.SCI, "SCI"))
 	team_row.add_child(_make_team_button(Player.Team.FFA, "FFA"))
 
 	var confirm := Button.new()
@@ -284,7 +302,42 @@ func _get_bots() -> Array:
 	for child in GameManager.spawn_parent.get_children():
 		if child is Player and child.is_bot and not child.is_queued_for_deletion():
 			out.append(child)
+	# Canonical team order: SPI, then SCI, then FFA.  Names keep same-team bots
+	# stable between refreshes.
+	out.sort_custom(_bot_less)
 	return out
+
+
+func _bot_less(a: Player, b: Player) -> bool:
+	var ra := TEAM_ORDER.find(int(a.team))
+	var rb := TEAM_ORDER.find(int(b.team))
+	if ra != rb:
+		return ra < rb
+	return str(a.name) < str(b.name)
+
+
+## Dev-menu "Randomize bot skills": roll every bot's master skill and style
+## variance, then rebuild the rows so the sliders show the new values.
+func randomize_bot_skills() -> void:
+	if not multiplayer.is_server():
+		return
+	var sm := GameManager.spawn_manager
+	for bot in _get_bots():
+		var bc := bot.get_node_or_null("BotController") as BotController
+		if bc != null:
+			bc.randomize_bot_skill()
+		if sm != null:
+			sm.update_lobby_bot_entry(str(bot.name))
+	_refresh_bot_list()
+
+
+## Dev-menu team/skill edits write through to the manual-bot roster so a
+## return-to-lobby does not silently restore the old value.  Autofill bots have
+## no entry and stay session-local.
+func _persist_bot_runtime(bot_name: String) -> void:
+	var sm := GameManager.spawn_manager
+	if sm != null:
+		sm.update_lobby_bot_entry(bot_name)
 
 
 func _refresh_bot_list() -> void:
@@ -315,10 +368,16 @@ func _make_bot_entry(bot: Player) -> Control:
 	entry.mouse_entered.connect(_on_bot_hover.bind(entry, str(bot.name)))
 	entry.mouse_exited.connect(_on_bot_row_exited.bind(entry))
 
+	var vb := VBoxContainer.new()
+	vb.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vb.add_theme_constant_override("separation", 4)
+	entry.add_child(vb)
+
+	# ── Identity row: portrait, name, team, loadout edit, remove ──
 	var hb := HBoxContainer.new()
 	hb.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hb.add_theme_constant_override("separation", 8)
-	entry.add_child(hb)
+	vb.add_child(hb)
 
 	var portrait := TextureRect.new()
 	if bot._character:
@@ -337,6 +396,16 @@ func _make_bot_entry(bot: Player) -> Control:
 	name_lbl.add_theme_color_override("font_color", TEXT)
 	name_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hb.add_child(name_lbl)
+
+	var team_picker := OptionButton.new()
+	team_picker.focus_mode = Control.FOCUS_NONE
+	team_picker.custom_minimum_size = Vector2(74, 26)
+	team_picker.tooltip_text = "Change this bot's team"
+	for team in TEAM_ORDER:
+		team_picker.add_item(_team_name(team))
+	team_picker.select(maxi(TEAM_ORDER.find(int(bot.team)), 0))
+	team_picker.item_selected.connect(_on_bot_team_selected.bind(str(bot.name)))
+	hb.add_child(team_picker)
 
 	var edit_btn := Button.new()
 	edit_btn.text = "EDIT"
@@ -358,7 +427,194 @@ func _make_bot_entry(bot: Player) -> Control:
 	x_btn.mouse_exited.connect(_on_bot_row_exited.bind(entry))
 	hb.add_child(x_btn)
 
+	var bc := bot.get_node_or_null("BotController") as BotController
+	var trait_keys := BotController.BOT_TRAIT_KEYS
+
+	# ── General skill row ──
+	var skill_row := HBoxContainer.new()
+	skill_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	skill_row.add_theme_constant_override("separation", 8)
+	vb.add_child(skill_row)
+
+	var skill_label := _preview_label("SKILL", 12, Color(0.65, 0.68, 0.75))
+	skill_label.custom_minimum_size = Vector2(44, 0)
+	skill_row.add_child(skill_label)
+
+	var skill_slider := HSlider.new()
+	skill_slider.min_value = 0.0
+	skill_slider.max_value = 1.0
+	skill_slider.step = 0.01
+	skill_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	skill_slider.value = bc.skill if bc != null else 1.0
+	skill_row.add_child(skill_slider)
+
+	var skill_value := _preview_label("%.2f" % skill_slider.value, 13, TEXT)
+	skill_value.custom_minimum_size = Vector2(40, 0)
+	skill_row.add_child(skill_value)
+
+	# ── Advanced trait row: dropdown + slider for the selected aspect ──
+	var trait_row := HBoxContainer.new()
+	trait_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	trait_row.add_theme_constant_override("separation", 8)
+	vb.add_child(trait_row)
+
+	var trait_label := _preview_label("ADV", 12, Color(0.65, 0.68, 0.75))
+	trait_label.custom_minimum_size = Vector2(44, 0)
+	trait_row.add_child(trait_label)
+
+	var trait_picker := OptionButton.new()
+	trait_picker.focus_mode = Control.FOCUS_NONE
+	trait_picker.custom_minimum_size = Vector2(142, 26)
+	trait_picker.tooltip_text = "Choose an advanced skill trait to tune"
+	for key in trait_keys:
+		trait_picker.add_item(str(TRAIT_LABELS.get(key, key)))
+	trait_picker.select(mini(TRAIT_DEFAULT_INDEX, trait_keys.size() - 1))
+	trait_row.add_child(trait_picker)
+
+	var trait_slider := HSlider.new()
+	trait_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	trait_row.add_child(trait_slider)
+
+	var trait_value := _preview_label("", 13, TEXT)
+	trait_value.custom_minimum_size = Vector2(46, 0)
+	trait_row.add_child(trait_value)
+
+	var reset_trait := Button.new()
+	reset_trait.text = "RESET"
+	reset_trait.focus_mode = Control.FOCUS_NONE
+	reset_trait.custom_minimum_size = Vector2(52, 26)
+	reset_trait.tooltip_text = "Clear all advanced trait overrides and return to the skill curve"
+	trait_row.add_child(reset_trait)
+
+	var selected_key: String = trait_keys[mini(TRAIT_DEFAULT_INDEX, trait_keys.size() - 1)]
+	_sync_trait_slider(bc, selected_key, trait_slider, trait_value)
+
+	skill_slider.value_changed.connect(
+		_on_bot_skill_changed.bind(
+			str(bot.name), skill_value, trait_picker, trait_slider, trait_value
+		)
+	)
+	trait_picker.item_selected.connect(
+		_on_bot_trait_selected.bind(
+			str(bot.name), trait_picker, trait_slider, trait_value
+		)
+	)
+	trait_slider.value_changed.connect(
+		_on_bot_trait_changed.bind(str(bot.name), trait_picker, trait_value)
+	)
+	reset_trait.pressed.connect(
+		_on_bot_traits_reset.bind(
+			str(bot.name), trait_picker, trait_slider, trait_value
+		)
+	)
+
 	return entry
+
+
+func _on_bot_team_selected(index: int, bot_name: String) -> void:
+	var bot := GameManager.find_player(bot_name)
+	if bot == null or not bot.is_bot:
+		_refresh_bot_list()
+		return
+	var team_index := clampi(index, 0, TEAM_ORDER.size() - 1)
+	bot.dev_set_team(int(TEAM_ORDER[team_index]))
+	_persist_bot_runtime(bot_name)
+	# Re-sort so the row moves into its canonical team group.
+	_refresh_bot_list.call_deferred()
+
+
+func _on_bot_skill_changed(value: float, bot_name: String, value_label: Label,
+		trait_picker: OptionButton, trait_slider: HSlider,
+		trait_value: Label) -> void:
+	var bot := GameManager.find_player(bot_name)
+	if bot == null or not bot.is_bot:
+		return
+	var bc := bot.get_node_or_null("BotController") as BotController
+	if bc == null:
+		return
+	bc.set_bot_skill(value)
+	value_label.text = "%.2f" % value
+	_sync_trait_slider(
+		bc, _selected_trait_key(trait_picker), trait_slider, trait_value
+	)
+	_persist_bot_runtime(bot_name)
+
+
+func _on_bot_trait_selected(_index: int, bot_name: String,
+		trait_picker: OptionButton, trait_slider: HSlider,
+		trait_value: Label) -> void:
+	var bot := GameManager.find_player(bot_name)
+	if bot == null or not bot.is_bot:
+		return
+	var bc := bot.get_node_or_null("BotController") as BotController
+	if bc == null:
+		return
+	_sync_trait_slider(
+		bc, _selected_trait_key(trait_picker), trait_slider, trait_value
+	)
+
+
+func _on_bot_trait_changed(value: float, bot_name: String,
+		trait_picker: OptionButton, trait_value: Label) -> void:
+	var bot := GameManager.find_player(bot_name)
+	if bot == null or not bot.is_bot:
+		return
+	var bc := bot.get_node_or_null("BotController") as BotController
+	if bc == null:
+		return
+	var key := _selected_trait_key(trait_picker)
+	bc.set_bot_trait(key, value)
+	trait_value.text = _trait_value_text(bc, key)
+	_persist_bot_runtime(bot_name)
+
+
+func _on_bot_traits_reset(bot_name: String, trait_picker: OptionButton,
+		trait_slider: HSlider, trait_value: Label) -> void:
+	var bot := GameManager.find_player(bot_name)
+	if bot == null or not bot.is_bot:
+		return
+	var bc := bot.get_node_or_null("BotController") as BotController
+	if bc == null:
+		return
+	bc.clear_bot_traits()
+	_sync_trait_slider(
+		bc, _selected_trait_key(trait_picker), trait_slider, trait_value
+	)
+	_persist_bot_runtime(bot_name)
+
+
+func _selected_trait_key(picker: OptionButton) -> String:
+	if picker == null:
+		return ""
+	var index := clampi(picker.selected, 0, BotController.BOT_TRAIT_KEYS.size() - 1)
+	return BotController.BOT_TRAIT_KEYS[index]
+
+
+## Point the advanced slider at the currently selected trait and mirror its
+## live (possibly overridden) value.  `set_value_no_signal` is essential: the
+## refresh must not write a second override back through value_changed.
+func _sync_trait_slider(bc: BotController, key: String, slider: HSlider,
+		value_label: Label) -> void:
+	if slider == null or value_label == null:
+		return
+	if key == "reaction_time":
+		slider.min_value = BotController.KEY_REACTION_MIN
+		slider.max_value = BotController.KEY_REACTION_MAX
+	else:
+		slider.min_value = 0.0
+		slider.max_value = 1.0
+	slider.step = 0.01
+	var value: float = bc.get_bot_trait(key) if bc != null else 0.0
+	value = clampf(value, slider.min_value, slider.max_value)
+	slider.set_value_no_signal(value)
+	value_label.text = _trait_value_text(bc, key)
+
+
+func _trait_value_text(bc: BotController, key: String) -> String:
+	if bc == null:
+		return "-"
+	var suffix := " *" if bc.has_bot_trait_override(key) else ""
+	return "%.2f%s" % [bc.get_bot_trait(key), suffix]
 
 
 func _request_edit(bot_name: String) -> void:

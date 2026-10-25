@@ -85,7 +85,7 @@ The engine then loads the main scene `res://world/main.tscn` (a `Control` root `
 `world/spawn_manager.gd:12-18` — `_ready()`:
 - connects `peer_connected`/`peer_disconnected`.
 - `_add_player_to_game(1)` (line 15) — **hardcoded peer 1**; the host is also a player.
-- `randomize()`. Bot spawning/editing lives in the dev menu's Bots tab now; `SpawnManager` no longer instantiates or toggles a menu.
+- `randomize()`. Bot spawning/editing lives in the dev menu's Bots tab now; `SpawnManager` no longer instantiates or toggles a menu. New bots start at **skill 1.0** (`SpawnManager.DEFAULT_BOT_SKILL`), and the list row itself carries team, a general Skill slider, and an Advanced trait dropdown. A manual bot's team, skill and trait overrides are written back to `GameManager.lobby_bots`, so they survive return-to-lobby; auto-fill bots are session-only.
 
 `world/spawn_manager.gd:54-62` — `_add_player_to_game(1)`: `entity_id = str(1)`, instantiate `player_scene`, `name = "1"`, `set_multiplayer_authority(1)`, `spawn_manager = self`, `add_child` to `spawn_parent`, position `(0,100,0)`, `Leaderboard.request_add_player`.
 
@@ -111,6 +111,14 @@ current character and weapons (weapons by `display_name` — bots hold deep copi
 calls the normal `_request_loadout` for the bot and therefore respawns it; cancel (Esc/H)
 or a confirm both restore the snapshot via `_finish_bot_edit()`, which emits
 `bot_edit_finished` so the dev menu reopens on its Bots tab.
+
+**Team and skill are deliberately not in this editor.** They are edited in the Bots list
+(`world/spawn_bot_menu.gd`): a team `OptionButton`, a general Skill `HSlider`, and an
+Advanced `OptionButton` that selects one `BotController.BOT_TRAIT_KEYS` trait for its
+slider. A per-row RESET clears overrides. The dev menu's Bots tools row also has a
+**Randomize bot skills** button; it rolls each bot's master skill and stable style seed
+and clears overrides. Skill/trait edits redraw `Style` immediately and are server-local
+(bots only simulate on peer 1).
 
 ### Portrait assets behind the character picker
 

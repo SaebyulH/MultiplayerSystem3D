@@ -76,6 +76,7 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 | 96 | 🟡 Medium | Authoring | The painted-toon world preview is derived state — stripped before the scene is written and rebuilt from the `Map` node on load, so breaking that round-trip silently bakes thousands of SubResources |
 | 104 | 🟡 Medium | Crash | ✅ FIXED — Removing a bot left dangling name lookups / node references; a projectile, DoT tick, stuck projectile or pusher list could deref the freed bot |
 | 105 | 🟡 Medium | Correctness | Bot projectile lead ignores the shooter's `forward_boost` (and the actual fired recoil), so a fast-moving bot can slightly over-lead |
+| 106 | 🟡 Medium | Correctness | ✅ FIXED — Bots aimed healing gravity projectiles at the impact point instead of along the lofted launch direction, so syringes fell short/low |
 
 
 ---
@@ -1190,6 +1191,14 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 - **Symptom:** none observed in a stationary test, but a bot firing while running toward the lead direction can over-lead by roughly `velocity_projectile / forward_boost`. The arc validation also models the shot from the desired camera direction, which is close to but not exactly the fired ray while recoil is nonzero.
 - **Why:** the solver uses the projectile's authored speed and the estimated target velocity, while the real launch is `world_dir * speed + world_dir * max(shooter.velocity.dot(world_dir), 0)`. The solver has no shooter-velocity term, and it does not read `Body/Recoil` when sampling the path. Both are second-order for a walking bot (3 m/s vs 20-50 m/s) and deliberately ignored in Stage 6 rather than adding a coupled solver.
 - **Suggested fix:** after the first solve, set `effective_speed = speed + max(player.velocity.dot(dir), 0)` and re-run one iteration; for validation, transform the direction by the current recoil rotation. Do not add `forward_boost` to `_get_proj_info` itself — it is per-shot and per-shooter, not a property of the scene.
+
+### 106. Bots aimed healing gravity projectiles at the impact point, not along the launch arc — `[FIXED 2026-10-25]`
+
+- **Files:** `player/bot_controller.gd` (`_predict_aim_point`, `_act_heal`, `_solve_ballistic_lead`)
+- **Symptom:** a bot using the Syringe Gun visibly aimed low and the syringe dropped below the ally. Heal Grenade Launcher and Medpack Launcher had the same failure mode.
+- **Why:** the ballistic solver returns both `target_point` (the predicted impact) and `point` (a far point along the lofted launch direction). Combat used `point`, but the heal wrapper `_predict_target_pos` returned `target_point` and `_act_heal` fed that to the Mouse. The bot therefore looked straight at the ally and fired flat, discarding the gravity compensation the solver had just computed.
+- **Fix:** the heal helper is now `_predict_aim_point` and returns `solution["point"]`. For non-arc projectiles the two points are identical. Keep this distinction: `target_point` is for validation/lead maths, `point` is the look target.
+- **Verified:** at 15 m a syringe solution had `dir.y = 0.075`, `target_y = 3.00`, `aim_y = 5.34`; the wrapper returned exactly the launch `point`. A live bot healed an ally from 63 to 125 HP.
 
 ## Not bugs, but worth knowing
 

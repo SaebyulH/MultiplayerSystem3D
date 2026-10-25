@@ -82,8 +82,9 @@ func remove_bot(entity_id: String) -> void:
 	
 	
 	
-## Keep a manual bot's persisted roster entry in step after its loadout was
-## edited from the dev menu.  Autofill bots have no entry; that is a no-op.
+## Keep a manual bot's persisted roster entry in step after its loadout, team or
+## skill was edited from the dev menu.  Autofill bots have no entry; that is a
+## no-op.
 func update_lobby_bot_entry(bot_name: String) -> void:
 	var bot := GameManager.find_player(bot_name)
 	if bot == null:
@@ -94,6 +95,11 @@ func update_lobby_bot_entry(bot_name: String) -> void:
 			entry["primary_path"] = bot._loadout_primary_path
 			entry["secondary_path"] = bot._loadout_secondary_path
 			entry["melee_path"] = bot._loadout_melee_path
+			entry["team"] = int(bot.team)
+			var bc := bot.get_node_or_null("BotController") as BotController
+			if bc != null:
+				entry["skill"] = bc.skill
+				entry["trait_overrides"] = bc.get_bot_trait_overrides()
 			return
 
 
@@ -103,6 +109,9 @@ const BOT_CLASSES: Array[String] = [
 	"res://player/player_classes/assault.tres",
 	"res://player/player_classes/assistance.tres",
 ]
+## Every newly spawned bot starts at full skill.  The dev menu can change it
+## afterwards; Randomize bot skills is the only thing that rolls it.
+const DEFAULT_BOT_SKILL: float = 1.0
 
 func add_bot(team: Player.Team) -> String:
 	if not multiplayer.is_server():
@@ -144,6 +153,11 @@ func _spawn_bot(team: Player.Team) -> String:
 	bot.team = team  # set BEFORE add_child so _ready() sees correct team
 	bot.set_multiplayer_authority(1)
 	bot.spawn_manager = self
+	# Explicit rather than relying on the scene default: every new bot starts
+	# with a full skill dial, and only the dev menu's Randomize button rolls it.
+	var bc := bot.get_node_or_null("BotController") as BotController
+	if bc != null:
+		bc.skill = DEFAULT_BOT_SKILL
 	spawn_parent.add_child(bot)
 	bot.global_position = Vector3(0, 100, 0)
 	Leaderboard.request_add_player(entity_id)
@@ -208,6 +222,8 @@ func _apply_bot_loadout_with(entity_id: String, character: Character, bot_class:
 		"primary_path": primary.resource_path,
 		"secondary_path": secondary.resource_path,
 		"melee_path": melee.resource_path if melee else "",
+		"skill": DEFAULT_BOT_SKILL,
+		"trait_overrides": {},
 	}
 
 
@@ -228,6 +244,11 @@ func _apply_saved_bot_loadout(entity_id: String, entry: Dictionary) -> void:
 		_apply_bot_weapons(player, primary, secondary, melee)
 	if character:
 		player.set_character(character)
+
+	var bc := player.get_node_or_null("BotController") as BotController
+	if bc != null:
+		bc.set_bot_skill(float(entry.get("skill", DEFAULT_BOT_SKILL)))
+		bc.set_bot_trait_overrides(entry.get("trait_overrides", {}))
 
 	var spawn_tf: Transform3D = player._get_spawn_transform()
 	player.rpc_reset.rpc(spawn_tf)

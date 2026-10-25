@@ -44,6 +44,7 @@ var _world_hud_check: CheckButton
 var _model_check: CheckButton
 # Bots-tab widgets (server only).
 var _freeze_bots_check: CheckButton
+var _randomize_skills_button: Button
 var _remove_all_button: Button
 var _team_buttons: Dictionary = {}   # Player.Team -> Button
 var _team: Player.Team = Player.Team.FFA
@@ -279,6 +280,11 @@ func _build_bots_tab() -> Control:
 	vb.add_child(tools_row)
 	_freeze_bots_check = _make_check("Freeze all bots", _on_freeze_bots_toggled)
 	tools_row.add_child(_freeze_bots_check)
+	_randomize_skills_button = _dev_button(
+		"Randomize bot skills", _on_randomize_bot_skills
+	)
+	_randomize_skills_button.tooltip_text = "Roll a new general skill and trait variance for every bot"
+	tools_row.add_child(_randomize_skills_button)
 	_remove_all_button = _dev_button("Remove all bots", _on_remove_all_bots)
 	_remove_all_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	tools_row.add_child(_remove_all_button)
@@ -463,6 +469,12 @@ func _on_freeze_bots_toggled(on: bool) -> void:
 	GameManager.dev_freeze_bots = on
 
 
+func _on_randomize_bot_skills() -> void:
+	if not multiplayer.is_server() or _bot_panel == null:
+		return
+	_bot_panel.randomize_bot_skills()
+
+
 func _on_remove_all_bots() -> void:
 	if not multiplayer.is_server():
 		return
@@ -484,8 +496,11 @@ func _has_bots() -> bool:
 
 
 func _update_remove_all_enabled() -> void:
+	var has_bots := _has_bots()
 	if _remove_all_button:
-		_remove_all_button.disabled = not _has_bots()
+		_remove_all_button.disabled = not has_bots
+	if _randomize_skills_button:
+		_randomize_skills_button.disabled = not has_bots
 
 
 func _make_team_button(team: Player.Team, text: String) -> Button:
