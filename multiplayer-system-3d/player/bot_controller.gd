@@ -292,11 +292,46 @@ class_name BotController
 ##   targets switch to Knife, and switches respect the decision/equip delay.  A
 ##   live explosion-jump launch and reload-policy check remain manual.
 ##
+## - Stage 6 (aim feel / lead / skill traits / weapon preference): COMPLETE.
+##   `SKILL_TRAIT_TABLE` maps skill 0 / 0.5 / 1 to reaction, tracking_speed,
+##   accuracy, aggression, lead_quality, movement_quality and awareness; `Style`
+##   applies seeded per-bot variance (`random_seed`, 0 = fresh roll per spawn).
+##   Aim noise is continuous (two low sines + micro tremor) and widens with
+##   target speed; flicks/corrections/tracking read the accuracy and
+##   tracking_speed traits.  Low accuracy aims centre mass, high accuracy takes
+##   the head bone only when visible.  Target velocity is sampled at the 20 Hz
+##   think rate, smoothed over 0.18 s, and reversal-damped.  Projectiles use a
+##   quadratic intercept (gravity 0) or a 4-iteration low-arc ballistic solve,
+##   with high arc as fallback; the chosen arc is validated with world rays only
+##   when the bot is about to fire.  Unreadable projectile speeds are measured
+##   from two physics-frame samples and cached statically.  Recoil compensation
+##   is scaled by accuracy and controlled by `RECOIL_COMP_SIGN`.
+##   Slot 0 (primary) gets a large preference bonus while viable at the range;
+##   `_primary_viable_at` reads the authored falloff curve, so a sniper at knife
+##   range loses the bonus (knife/sidearm wins) but a grenade launcher keeps it
+##   instead of being abandoned for a higher nominal-DPS pistol.  Projectile DPS
+##   now reads the spawned scene's hitbox/splash damage (a grenade no longer
+##   looks like 10 damage), and the explosive self-splash penalty uses the real
+##   splash radius instead of 45% of the ideal range, so secondary explosives are
+##   scored fairly too.  Explosion jump now requires `explodes_on_world`;
+##   grenade/molotov/poison-jar arcs can no longer be used as a "rocket jump".
+##   Verified headlessly: traits interpolate correctly at skill 0/0.5/1;
+##   grenade (27 m/s, g=9.8, t=0.22/0.56/1.13 s at 6/15/30 m) and rocket
+##   (20 m/s, g=0, straight-line t=1.00 s at 20 m) solve as expected; low
+##   accuracy chooses centre, high accuracy chooses the visible head bone;
+##   grenade-primary kept its slot against a pistol at 6/12/25 m while a
+##   sniper@8 m lost to the pistol and sniper@2 m lost to the knife; live
+##   grenade-vs-pistol bots acquired, aimed and damaged each other with no
+##   script errors.  Visual flick/drift feel and a real wall-blocked arc still
+##   need manual checks.
+##
 ## OPEN QUESTIONS / HAZARDS FOR LATER STAGES
 ## - `_get_proj_info().heals_allies` is accurate (positive `health_delta` +
 ##   `can_hit_other_teamates`): Syringe Gun and Medpack Launcher only.
-## - Projectile lead currently uses `flat_dist / speed` with no gravity; arcs
-##   (arrow, grenade, rocket with gravity_scale) need an iterative solve.
+## - Projectile lead uses a full 3D intercept/ballistic solve, but the actual
+##   launch inherits the shooter's forward velocity (`forward_boost` in
+##   WeaponController._spawn_projectile); the solver ignores that boost, so a
+##   fast-moving shooter can slightly over-lead.
 ## - The `_get_engagement_range` probes are dead (no range property).  Real
 ##   numbers must come from `hitscan_range` (hitscan) or projectile speed x
 ##   lifetime / engagement preference (projectile).
@@ -323,6 +358,10 @@ class_name BotController
 ## 1.0 = aimbotter (zero spread, full projectile lead, perfect recoil
 ## compensation, instant tracking and reactions).
 @export_range(0.0, 1.0) var skill: float = 1.0
+
+## Optional deterministic trait roll.  0 picks a fresh random seed per spawn;
+## any other value reproduces the same per-bot variance for the same skill.
+@export var random_seed: int = 0
 
 ## Draws a live state label above this bot (action, target, fire mode, trigger
 ## flags, aim error, weapon/ammo) plus the steering rays it just cast.  Server
@@ -351,13 +390,25 @@ class_name BotController
 ## for every ray (thousands/sec when many bots are fighting).
 var _steer_query: PhysicsRayQueryParameters3D
 var _los_query: PhysicsRayQueryParameters3D
+## World-only ray used by shot-arc validation.  Separate from LOS/steer so a
+## validation pass cannot disturb a perception query mid-flight.
+var _shot_query: PhysicsRayQueryParameters3D
 
 ## Cache of projectile-scene introspection: resource_path -> {
-##   "speed": float, "speed_source": String, "heals_allies": bool,
-##   "is_explosive": bool }.  `speed_source` names the property the value came
-##   from, for the one-shot introspection log.
+##   "speed": float, "speed_source": String, "gravity": float,
+##   "heals_allies": bool, "is_explosive": bool }.  `speed_source` names the
+##   property the value came from, for the one-shot introspection log.
 ## Avoids instantiating a projectile every think just to read its HitboxComponent.
 var _proj_cache: Dictionary = {}
+## Speeds actually observed in flight, keyed by projectile scene path.  Shared
+## across every bot: a projectile only has to be measured once per scene.
+static var _learned_proj_speeds: Dictionary = {}
+static var _proj_speed_measurements: Dictionary = {}
+## Shot-arc validation throttle.  Only armed when the bot is otherwise ready to
+## fire; it never runs every physics tick.
+var _arc_validation_timer: float = 0.0
+var _arc_validation_blocked: bool = false
+var _arc_validation_high: bool = false
 
 
 func _ready() -> void:
@@ -377,10 +428,18 @@ func _ready() -> void:
 	_los_query.collide_with_bodies = true
 	_los_query.collide_with_areas = false
 
+	_shot_query = PhysicsRayQueryParameters3D.new()
+	_shot_query.exclude = [player.get_rid()]
+	_shot_query.collision_mask = 1 << 0
+	_shot_query.collide_with_bodies = true
+	_shot_query.collide_with_areas = false
+
 	_fov_dot_threshold = cos(deg_to_rad(FOV_DEGREES * 0.5))
 
 	_style = Style.new()
-	_style.draw(skill)
+	_style.draw(skill, random_seed)
+	if player.is_bot:
+		add_to_group("bot_controllers")
 	_keyboard = Keyboard.new(self)
 	_mouse = Mouse.new(self)
 	_buttons = Buttons.new(self)
@@ -390,9 +449,21 @@ func _ready() -> void:
 	_trigger = Trigger.new(self)
 	if player.is_bot and not GameManager.sound_made.is_connected(_on_sound_made):
 		GameManager.sound_made.connect(_on_sound_made)
+	# Runtime speed measurement is a fallback for projectile scenes whose authored
+	# launch speed is not readable statically (Stage 0 says all current scenes are,
+	# but custom scenes need not be).  Server-only, shared cache.
+	if player.is_bot and multiplayer.is_server() \
+			and not get_tree().node_added.is_connected(_on_node_added):
+		get_tree().node_added.connect(_on_node_added)
 	_los_exclude_rids.clear()
 	_los_exclude_rids.append(player.get_rid())
 	_los_query.exclude = _los_exclude_rids
+	_shot_query.exclude = _los_exclude_rids
+
+
+func _exit_tree() -> void:
+	if get_tree() != null and get_tree().node_added.is_connected(_on_node_added):
+		get_tree().node_added.disconnect(_on_node_added)
 
 # Tuning constants
 
@@ -458,7 +529,9 @@ const KEY_MIN_HOLD_MAX: float = 0.12
 const KEY_FLIP_RATE_MIN: float = 6.0
 const KEY_FLIP_RATE_MAX: float = 8.0
 const KEY_REACTION_MIN: float = 0.04
-const KEY_REACTION_MAX: float = 0.25
+## Skill 0 is deliberately allowed to be slow here; the trait table gives it a
+## 0.38 s reaction, which must not be silently clamped back to a 0.25 s floor.
+const KEY_REACTION_MAX: float = 0.45
 ## Verified Stage 0: input_dir is CAMERA-relative.  The camera's yaw follows the
 ## body yaw horizontally, so camera-local keys are body-local keys for WASD.
 ## If the camera ever decouples from the body, flip this and route every
@@ -490,6 +563,75 @@ const MEDIC_HEAL_PERSIST: float = 1.0
 const MEDIC_HEAL_ABSENT: float = 1.5
 const EXPLOSION_JUMP_AIM_TIMEOUT: float = 1.0
 const EXPLOSION_JUMP_FIRE_WAIT: float = 0.08
+## Preferred slot 0 must be genuinely useful at the current distance to keep its
+## bonus.  A sniper's close-range falloff value is ~0.095, so it drops out and a
+## sidearm/knife wins; a grenade launcher (no falloff) keeps the bonus and is not
+## abandoned for a higher-DPS pistol.
+const PRIMARY_WEAPON_PREFERENCE: float = 95.0
+const PRIMARY_MIN_DAMAGE_MULT: float = 0.35
+const MELEE_USELESS_PRIMARY_BONUS: float = 45.0
+
+# Stage 6 — skill traits, aim feel, lead, recoil.
+#
+# ONE TABLE, interpolated at the bot's skill.  Every skill-scaled decision reads
+# a trait from here (with per-bot variance) rather than raw `skill`, so tuning
+# the whole difficulty curve means editing these three rows only.
+##   reaction          seconds before reacting (lower is better)
+##   tracking_speed    0..1 pursuit gain (higher is better)
+##   accuracy          0..1 flick/aim-point/recoil/noise quality
+##   aggression        0..1 target/approach flavour
+##   lead_quality      0..1 trust in the target-velocity estimate
+##   movement_quality  0..1 strafe/jump/explosion-jump competence
+##   awareness         0..1 recognition/hearing/scan quality
+const SKILL_TRAIT_TABLE := [
+	{
+		"skill": 0.0, "reaction": 0.38, "tracking_speed": 0.25,
+		"accuracy": 0.30, "aggression": 0.30, "lead_quality": 0.0,
+		"movement_quality": 0.25, "awareness": 0.35,
+	},
+	{
+		"skill": 0.5, "reaction": 0.18, "tracking_speed": 0.62,
+		"accuracy": 0.70, "aggression": 0.50, "lead_quality": 0.65,
+		"movement_quality": 0.62, "awareness": 0.68,
+	},
+	{
+		"skill": 1.0, "reaction": 0.07, "tracking_speed": 0.98,
+		"accuracy": 0.97, "aggression": 0.65, "lead_quality": 1.0,
+		"movement_quality": 1.0, "awareness": 1.0,
+	},
+]
+## Continuous aim wander, in radians at zero accuracy.  Two low-frequency
+## sines plus micro-jitter replace the old 0.4 s random step.
+const AIM_DRIFT_BASE: float = 0.045
+const AIM_MICRO_MAX: float = 0.008
+const AIM_DRIFT_RATE_A_MIN: float = 0.22
+const AIM_DRIFT_RATE_A_MAX: float = 0.48
+const AIM_DRIFT_RATE_B_MIN: float = 0.7
+const AIM_DRIFT_RATE_B_MAX: float = 1.25
+const AIM_MICRO_RATE_MIN: float = 7.0
+const AIM_MICRO_RATE_MAX: float = 12.0
+## Moving targets widen the drift; this is the speed at which the factor doubles
+## (roughly a strafing player at walk speed).
+const AIM_TARGET_SPEED_REF: float = 6.0
+## Above this accuracy a bot trusts the head bone when it is visible; below it,
+## it aims at centre mass.  This is the main skill-0 vs skill-1 visual difference.
+const AIM_HEAD_ACCURACY: float = 0.80
+## Projectile lead.  The velocity estimate is smoothed over this window; a
+## direction reversal damps the old estimate so a strafe does not overshoot.
+const VELOCITY_ESTIMATE_SMOOTH: float = 0.18
+const VELOCITY_REVERSAL_DAMP: float = 0.25
+## Long enough for a slow rocket at the far edge of its engagement band, while
+## still refusing physically absurd lofted arcs (a 27 m/s grenade high arc can
+## take >5 s and would outlive its fuse).
+const LEAD_TIME_MAX: float = 3.0
+## Ballistic solve quality/validation.  The solver refines the target position
+## 4x; validation samples the arc 6x and runs at most every 0.12 s per bot.
+const BALLISTIC_ITERATIONS: int = 4
+const ARC_VALIDATION_SAMPLES: int = 6
+const ARC_VALIDATION_INTERVAL: float = 0.12
+## Conservative muzzle speed until a projectile's speed has actually been
+## measured at runtime (only used when the scene exposes no readable speed).
+const PROJECTILE_FALLBACK_SPEED: float = 20.0
 
 # Bot hearing.  The emitter supplies the radius; the bot only checks distance.
 const HEARING_LOOK_TIME: float = 1.0
@@ -498,11 +640,10 @@ const HEARING_NEAREST_MARGIN: float = 2.0
 ## `is_head = true` in player.tscn.  Bots aim at this bone's live world position
 ## rather than a fixed height, so headshots track the model's actual head.
 const HEAD_BONE_PATH: String = "Body/Mannequin/mannequin/Skeleton3D/PhysicalBoneSimulator3D/Physical Bone DEF-spine_006"
-const NOISE_INTERVAL: float       = 0.4
-## Max aim spread (radians) at skill 0; scaled to 0 at skill 1.
-const AIM_NOISE_MAX: float        = 0.2
-## Max projectile-lead time so prediction never overshoots on slow projectiles.
-const LEAD_TIME_MAX: float        = 0.6
+## Recoil compensation sign.  Shots add POSITIVE pitch/yaw to Body/Recoil
+## (weapon_controller.gd:2163-2170), so the camera must counter-rotate by
+## subtracting it.  Flip to -1.0 to prove the opposite in game.
+const RECOIL_COMP_SIGN: float = 1.0
 
 # Traversal (Stage 3).  The graph is baked at 2.5 m and time-sliced; these
 # numbers come from the verified Player physics (capsule 0.4243 r, stand 2.0,
@@ -700,6 +841,7 @@ const DEBUG_MAX_RAY_VERTICES: int = 512
 const PROP_FIRE_LAUNCH_SPEED: Array[String] = ["projectile_speed", "speed"]
 const PROP_PROJECTILE_LAUNCH_SPEED: Array[String] = ["speed", "projectile_speed"]
 const PROP_LINEAR_VELOCITY: Array[String] = ["linear_velocity"]
+const PROP_GRAVITY_SCALE: Array[String] = ["gravity_scale"]
 const PROP_RANGE: Array[String] = ["max_range", "range"]
 const PROP_IS_MELEE: Array[String] = ["is_melee"]
 const PROP_SPLASH_RADIUS: Array[String] = ["splash_radius"]
@@ -736,6 +878,13 @@ var _heard_distance: float = INF
 var _heard_timer: float = 0.0
 var _heard_kind: StringName = &""
 var _last_seen_velocity: Vector3 = Vector3.ZERO
+## Target-velocity estimator (Stage 6).  Samples the target position at the
+## 20 Hz think rate and smooths over ~0.18 s; a sign reversal damps the old
+## estimate so a strafing player does not get over-led.
+var _est_velocity: Vector3 = Vector3.ZERO
+var _est_last_position: Vector3 = Vector3.ZERO
+var _est_last_time: float = 0.0
+var _est_target_name: String = ""
 var _target_lost_timer: float = 0.0
 var _search_timer: float = 0.0
 var _search_active: bool = false
@@ -981,6 +1130,8 @@ func _physics_process(delta: float) -> void:
 
 	if _weapon_switch_guard > 0.0:
 		_weapon_switch_guard -= delta
+	if _arc_validation_timer > 0.0:
+		_arc_validation_timer = maxf(_arc_validation_timer - delta, 0.0)
 
 	_timer += delta
 	if _timer < PROCESS_INTERVAL:
@@ -1254,7 +1405,8 @@ func aim_tolerance_for(_weapon: Weapon, fire: WeaponFire) -> float:
 			var splash := float(info.get("splash_radius", 0.0))
 			base = maxf(base, rad_to_deg(atan(splash / dist)))
 			kind = AIM_EXPLOSIVE_MULT
-	var skill_mult := lerpf(AIM_SKILL_MULT_MAX, AIM_SKILL_MULT_MIN, skill)
+	var accuracy := _style.accuracy if _style != null else lerpf(0.3, 0.97, skill)
+	var skill_mult := lerpf(AIM_SKILL_MULT_MAX, AIM_SKILL_MULT_MIN, accuracy)
 	return clampf(base * kind * skill_mult, AIM_TOL_MIN_DEG, AIM_TOL_MAX_DEG)
 
 # Think
@@ -1271,7 +1423,8 @@ func _recognition_time(target: Player, dist: float, in_fov: bool) -> float:
 		if to.length_squared() > 0.0001:
 			var angle := rad_to_deg(fwd.angle_to(to.normalized()))
 			edge = clampf(angle / maxf(FOV_DEGREES * 0.5, 1.0), 0.0, 1.0)
-	var base := lerpf(RECOGNITION_TIME_MAX, RECOGNITION_TIME_MIN, skill)
+	var awareness := _style.awareness if _style != null else lerpf(0.35, 1.0, skill)
+	var base := lerpf(RECOGNITION_TIME_MAX, RECOGNITION_TIME_MIN, awareness)
 	return base * (
 		0.7 + clampf(dist / SHOOT_RANGE, 0.0, 1.0) * 0.9 + edge * 0.7
 	)
@@ -1312,7 +1465,10 @@ func _on_sound_made(position: Vector3, radius: float, source_name: String,
 	if _is_engaging_enemy():
 		return
 	var dist := player.global_position.distance_to(position)
-	if dist > radius:
+	# Awareness scales how far a sound carries for this bot; the emitter's radius
+	# is still the maximum, so two bots hear the same shot at different ranges.
+	var awareness := _style.awareness if _style != null else 0.6
+	if dist > radius * lerpf(0.65, 1.1, awareness):
 		return
 	# A new sound only replaces an existing curiosity target if it is closer.
 	if _heard_timer > 0.0 and dist > _heard_distance + HEARING_NEAREST_MARGIN:
@@ -1383,6 +1539,8 @@ func _tick_glance(delta: float) -> void:
 
 
 func _think() -> void:
+	var now := float(Time.get_ticks_msec()) / 1000.0
+	_update_target_velocity_estimate(_current_target, now)
 	_tick_hearing(PROCESS_INTERVAL)
 	_tick_glance(PROCESS_INTERVAL)
 	var wc: WeaponController = player.weapon_controller
@@ -1411,7 +1569,7 @@ func _think() -> void:
 		_retarget_timer -= PROCESS_INTERVAL
 		if _current_target != null:
 			_last_seen_position = _current_target.global_position
-			_last_seen_velocity = _current_target.velocity
+			_last_seen_velocity = _estimated_velocity_for(_current_target)
 		return
 
 	_retarget_timer = RETARGET_INTERVAL
@@ -1423,7 +1581,6 @@ func _think() -> void:
 	var heal_dist_sq := HEAL_RANGE * HEAL_RANGE
 	var heal_best_ratio := 2.0
 	_enemy_nearby = false
-	var now := float(Time.get_ticks_msec()) / 1000.0
 	var visible_names: Dictionary = {}
 	var best_target: Player = null
 	var best_score := -INF
@@ -1545,11 +1702,12 @@ func _think() -> void:
 
 	_current_target = best_target
 	if _current_target != null:
+		_update_target_velocity_estimate(_current_target, now)
 		_search_timer = 0.0
 		_search_active = false
 		_target_lost_timer = 0.0
 		_last_seen_position = _current_target.global_position
-		_last_seen_velocity = _current_target.velocity
+		_last_seen_velocity = _estimated_velocity_for(_current_target)
 		if _current_target != prev_target:
 			# A newly acquired/switched target outranks any scripted maneuver and
 			# pays a small re-aim cost on top of the normal reaction time.
@@ -1572,6 +1730,60 @@ func _think() -> void:
 				_decision.interrupt(Decision.State.SEARCH)
 
 	_refresh_los_excludes()
+
+
+## Smoothed target velocity sampled from position over time.  Deliberately not
+## `target.velocity`: that is the simulation's instantaneous value (and can be a
+## rollback-corrected value), while a human reads motion over ~0.2 s.
+func _update_target_velocity_estimate(target: Player, now: float) -> void:
+	if target == null or not is_instance_valid(target) or not target.spawned:
+		_est_target_name = ""
+		_est_velocity = Vector3.ZERO
+		return
+	var target_name := str(target.name)
+	var pos := target.global_position
+	if target_name != _est_target_name:
+		_est_target_name = target_name
+		_est_last_position = pos
+		_est_last_time = now
+		_est_velocity = Vector3.ZERO
+		return
+	var dt := now - _est_last_time
+	if dt < 0.025 or dt > 0.6:
+		# Too soon for a stable sample, or the stale gap (target lost/reacquired)
+		# makes the old velocity meaningless.
+		_est_last_position = pos
+		_est_last_time = now
+		if dt > 0.6:
+			_est_velocity = Vector3.ZERO
+		return
+	var sample := (pos - _est_last_position) / dt
+	# Reversal damping: a strafe change makes the single-frame sample point the
+	# other way.  Bleed the stale estimate first instead of averaging through
+	# the turn, which would keep aiming where the target no longer is.
+	if sample.length_squared() > 0.01 and _est_velocity.length_squared() > 0.01 \
+			and sample.dot(_est_velocity) < 0.0:
+		_est_velocity *= VELOCITY_REVERSAL_DAMP
+	var alpha := 1.0 - exp(-dt / VELOCITY_ESTIMATE_SMOOTH)
+	_est_velocity = _est_velocity.lerp(sample, alpha)
+	# Guard against teleports/respawns producing an absurd lead.
+	if _est_velocity.length() > 20.0:
+		_est_velocity = _est_velocity.normalized() * 20.0
+	_est_last_position = pos
+	_est_last_time = now
+
+
+func _estimated_velocity_for(target: Player) -> Vector3:
+	if target != null and is_instance_valid(target) \
+			and str(target.name) == _est_target_name:
+		return _est_velocity
+	if target != null and is_instance_valid(target):
+		return target.velocity
+	return Vector3.ZERO
+
+
+func _current_lead_quality() -> float:
+	return _style.lead_quality if _style != null else 0.5
 
 # Line-of-sight
 
@@ -1651,6 +1863,7 @@ func _refresh_los_excludes() -> void:
 	if _heal_target != null and is_instance_valid(_heal_target) and _heal_target != _current_target:
 		_los_exclude_rids.append(_heal_target.get_rid())
 	_los_query.exclude = _los_exclude_rids
+	_shot_query.exclude = _los_exclude_rids
 
 
 ## Whether [param target] is on an opposing team (or everyone, in FFA).
@@ -1796,8 +2009,18 @@ func _get_proj_info(fire: WeaponFire) -> Dictionary:
 	var info := {
 		"speed": 0.0,
 		"speed_source": "none",
+		## World-space downward acceleration at launch.  Read from the scene's
+		## `gravity_scale`; rockets are 0, grenades/arrows use 9.8, gravity rocket 14.7.
+		"gravity": float(ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)),
 		"lifetime": 20.0,
 		"splash_radius": 0.0,
+		## Damage dealt by a direct hit / by the blast.  These are read from the
+		## projectile's own HitboxComponent and ExplosionComponent because a
+		## projectile's WeaponFire has no damage field of its own.  Used only for
+		## the AI's DPS proxy, so a grenade is not judged by the default 10 damage
+		## `hitscan_damage` value it never fires.
+		"impact_damage": 0.0,
+		"splash_damage": 0.0,
 		## Negative = the blast hurts the shooter, positive = it heals them.
 		## Heal Grenade Launcher is +45; every rocket/grenade is negative.
 		"self_damage": -1.0,
@@ -1809,6 +2032,9 @@ func _get_proj_info(fire: WeaponFire) -> Dictionary:
 		## geometry (explodes_on_world == false) must hit the body; a rocket that
 		## explodes on contact can be aimed at the ground for splash.
 		"explodes_on_world": false,
+		## WorldHitMode.NOTHING: the round passes through geometry, so a wall is
+		## not an obstruction to validate against.
+		"world_passthrough": false,
 		"explodes_on_hurtbox": false,
 		"explodes_on_timeout": false,
 		"heals_allies": false,
@@ -1854,10 +2080,32 @@ func _get_proj_info(fire: WeaponFire) -> Dictionary:
 					info["speed"] = (lv as Vector3).length()
 					info["speed_source"] = "Projectile.linear_velocity"
 
+			var gravity_scale_info := _read_prop_ex(
+				proj, PROP_GRAVITY_SCALE, 1.0, "Projectile.gravity_scale"
+			)
+			var gravity_scale: float = float(gravity_scale_info["value"])
+			var world_gravity: float = float(
+				ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)
+			)
+			info["gravity"] = world_gravity * gravity_scale
+
+		# A scene with no statically readable speed uses the runtime measurement
+		# (shared across bots), and a conservative value until that lands.
+		if float(info["speed"]) <= 1.0:
+			var learned: Variant = _learned_proj_speeds.get(path)
+			if learned != null:
+				info["speed"] = float(learned)
+				info["speed_source"] = "measured"
+			else:
+				info["speed"] = PROJECTILE_FALLBACK_SPEED
+				info["speed_source"] = "conservative fallback"
+
 		var hb := proj.get_node_or_null("HitboxComponent") as HitboxComponent
 		if hb != null:
 			info["heals_allies"] = hb.health_delta > 0.0 and hb.can_hit_other_teamates
 			info["heals_shooter"] = hb.health_delta > 0.0 and hb.can_hit_shooter
+			# Positive health_delta is a heal, not damage; do not score it as DPS.
+			info["impact_damage"] = maxf(-hb.health_delta, 0.0)
 
 		# Flight time, used for a projectile mode's effective range.
 		var lifetime: Variant = _read_prop(proj, PROP_LIFETIME, 20.0, "Projectile.lifetime")
@@ -1895,12 +2143,57 @@ func _get_proj_info(fire: WeaponFire) -> Dictionary:
 			var on_timeout: bool = timeout is bool and timeout
 			info["explodes_on_hurtbox"] = on_hurtbox
 			info["explodes_on_world"] = on_world
+			info["world_passthrough"] = world_mode != null \
+				and int(world_mode) == SimpleProjectile.WorldHitMode.NOTHING
 			info["explodes_on_timeout"] = on_timeout
 			info["is_explosive"] = on_hurtbox or on_world or on_timeout
+			# Only count splash damage for a projectile that actually detonates.
+			# Every projectile inherits an ExplosionComponent, so presence is not
+			# enough (arrows, syringes and balls carry one but never use it).
+			if info["is_explosive"] and splash_delta != null:
+				info["splash_damage"] = maxf(-float(splash_delta), 0.0)
 
 		proj.free()
 	_proj_cache[path] = info
 	return info
+
+
+## Watch projectiles entering the world and measure their muzzle speed from two
+## physics-frame position samples.  This is a fallback only: every current
+## projectile scene exposes `linear_velocity`, but a future custom scene may not.
+## The cache is static, so the first projectile of a given scene pays the cost and
+## every bot afterwards uses the learned value.
+func _on_node_added(node: Node) -> void:
+	if not multiplayer.is_server() or not player.spawned:
+		return
+	if not node is SimpleProjectile:
+		return
+	var proj := node as SimpleProjectile
+	var path := proj.scene_file_path
+	if path.is_empty() or _learned_proj_speeds.has(path) \
+			or _proj_speed_measurements.has(path):
+		return
+	_proj_speed_measurements[path] = true
+	_measure_projectile_speed(proj, path)
+
+
+func _measure_projectile_speed(proj: SimpleProjectile, path: String) -> void:
+	var start := proj.global_position
+	var start_us := Time.get_ticks_usec()
+	# Two physics frames gives a baseline long enough to beat per-frame jitter
+	# without letting gravity dominate the horizontal launch speed.
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	if is_instance_valid(proj) and not proj.is_queued_for_deletion():
+		var dt := float(Time.get_ticks_usec() - start_us) / 1_000_000.0
+		var distance := start.distance_to(proj.global_position)
+		if dt > 0.005 and distance > 0.01:
+			_learned_proj_speeds[path] = distance / dt
+			# Any bot that cached the conservative default must refresh.
+			for bot in get_tree().get_nodes_in_group("bot_controllers"):
+				if bot is BotController:
+					(bot as BotController)._proj_cache.clear()
+	_proj_speed_measurements.erase(path)
 
 
 ## Range/role facts for one SHOOT fire mode.  Verified fields only:
@@ -1975,7 +2268,17 @@ func _fire_range_info(fire: WeaponFire) -> Dictionary:
 	var shots := 1
 	if fire.multishot_mode == WeaponFire.MultishotMode.SHOTGUN:
 		shots = maxi(1, fire.multishot_data.size())
-	info["dps"] = fire.hitscan_damage * float(shots) \
+	# A projectile does not use `hitscan_damage`; its damage lives on the spawned
+	# scene.  Take the larger of a direct hit and the blast so a grenade/rocket is
+	# scored on what it actually does rather than on the 10-damage default.
+	var damage_per_shot := fire.hitscan_damage
+	if fire.bullet_type == WeaponFire.BulletType.PROJECTILE:
+		var proj := _get_proj_info(fire)
+		damage_per_shot = maxf(
+			float(proj.get("impact_damage", 0.0)),
+			float(proj.get("splash_damage", 0.0))
+		)
+	info["dps"] = damage_per_shot * float(shots) \
 		/ maxf(float(info["cooldown"]), 0.05)
 	return info
 
@@ -2059,14 +2362,77 @@ func _get_weapon_profile(weapon: Weapon) -> Dictionary:
 	return profile
 
 
+## Damage multiplier a hitscan mode still has at [param dist].  Reads the
+## authored falloff curve exactly like WeaponController._compute_falloff_multiplier.
+## A rising curve (the sniper's 0.095 -> 1.0) means "bad up close", not "bad far".
+func _best_falloff_multiplier_at(weapon: Weapon, dist: float) -> float:
+	if weapon == null:
+		return 1.0
+	var best := 0.0
+	var found := false
+	for i in weapon.weapon_fires.size():
+		var fire: WeaponFire = weapon.weapon_fires[i]
+		if fire == null or fire.action_type != WeaponFire.ActionType.SHOOT:
+			continue
+		found = true
+		if fire.bullet_type == WeaponFire.BulletType.PROJECTILE:
+			return 1.0
+		if not fire.has_damage_falloff or fire.falloff_curve == null \
+				or fire.falloff_curve.curve == null:
+			return 1.0
+		var t := 0.0
+		if fire.falloff_end != fire.falloff_start:
+			t = (dist - fire.falloff_start) / (fire.falloff_end - fire.falloff_start)
+		t = clampf(t, 0.0, 1.0)
+		best = maxf(best, fire.falloff_curve.curve.sample(t))
+	return best if found else 1.0
+
+
+## "Viable" means the weapon can reach the target AND still deals a meaningful
+## fraction of its peak damage there.  A sniper at knife range (0.095x) fails;
+## a grenade launcher (no falloff) passes.  This is per-weapon so the choice loop
+## can also tell that the *current* gun is the one that became useless.
+func _weapon_damage_viable_at(weapon: Weapon, dist: float) -> bool:
+	if weapon == null or _weapon_heals_allies(weapon):
+		return false
+	if not _weapon_can_engage(weapon, dist):
+		return false
+	if _is_melee_weapon(weapon):
+		return true
+	var profile := _get_weapon_profile(weapon)
+	if bool(profile.get("explosive", false)) \
+			and float(profile.get("self_damage", 0.0)) < 0.0 \
+			and dist < float(profile.get("splash_radius", 0.0)) + EXPLOSIVE_SAFE_MARGIN:
+		# Point-blank with an explosive that can hurt us is not "viable", even
+		# though DPS/range look fine.  Without this the primary bonus would pull
+		# the bot back to it immediately after _act_combat swapped to a sidearm.
+		return false
+	if bool(profile.get("projectile", false)):
+		# Projectile damage falloff is handled by SimpleProjectile itself and is
+		# not the hitscan curve; range alone is the useful test here.
+		return true
+	return _best_falloff_multiplier_at(weapon, dist) >= PRIMARY_MIN_DAMAGE_MULT
+
+
+## Is the slot-0 weapon worth keeping out?  A grenade launcher keeping the bonus
+## is what stops a bot abandoning it for a nominally higher-DPS pistol.
+func _primary_viable_at(dist: float) -> bool:
+	var wc: WeaponController = player.weapon_controller
+	if wc == null or not is_instance_valid(wc) or wc._weapons.is_empty():
+		return false
+	return _weapon_damage_viable_at(wc._weapons[0], dist)
+
+
 ## Score a weapon for the current target distance.  Higher is better.  Melee is
 ## only ever viable inside its real hitscan reach; falloff makes a huge
 ## `hitscan_range` irrelevant past `falloff_end`.
-func _weapon_situation_score(weapon: Weapon, dist: float, has_target: bool) -> float:
+func _weapon_situation_score(weapon: Weapon, dist: float, has_target: bool,
+		slot: int = -1) -> float:
 	var profile := _get_weapon_profile(weapon)
 	if profile.is_empty():
 		return -INF
 	var score := 40.0
+	var primary_viable := _primary_viable_at(dist)
 	if bool(profile["melee"]):
 		var reach := float(profile["range_effective"]) + WEAPON_MELEE_ONLY_MARGIN
 		if not has_target:
@@ -2075,6 +2441,10 @@ func _weapon_situation_score(weapon: Weapon, dist: float, has_target: bool) -> f
 			score -= 500.0 + (dist - reach) * 10.0
 		else:
 			score += 35.0
+			# The sniper's close-range tail is weaker than a knife; reward the
+			# melee swap only while the primary is genuinely bad at this range.
+			if slot != 0 and not primary_viable:
+				score += MELEE_USELESS_PRIMARY_BONUS
 	else:
 		var effective := float(profile["range_effective"])
 		var ideal := float(profile["range_ideal"])
@@ -2086,8 +2456,15 @@ func _weapon_situation_score(weapon: Weapon, dist: float, has_target: bool) -> f
 					absf(dist - ideal) / maxf(ideal, 1.0), 0.0, 1.0
 				)
 				score += 45.0 * fit
-				if dist < ideal * 0.45 and bool(profile["explosive"]):
-					score -= 45.0
+			# Self-splash safety uses the projectile's actual blast radius, not a
+			# fraction of its ideal range.  The old `dist < ideal * 0.45` check
+			# treated a 3 m grenade as dangerous out to ~13 m and made every
+			# secondary explosive look worthless at normal combat distance.
+			if bool(profile["explosive"]) \
+					and float(profile["self_damage"]) < 0.0:
+				var danger := float(profile["splash_radius"]) + EXPLOSIVE_SAFE_MARGIN
+				if dist < danger:
+					score -= 300.0 + (danger - dist) * 20.0
 	if not bool(profile["infinite_ammo"]) and weapon.mag_current <= 0:
 		score -= 400.0
 	if bool(profile["heals_allies"]):
@@ -2095,6 +2472,11 @@ func _weapon_situation_score(weapon: Weapon, dist: float, has_target: bool) -> f
 		score -= 70.0
 	score += clampf(float(profile["dps"]) * 0.08, 0.0, 30.0)
 	score -= float(profile["switch_time"]) * 6.0
+	# Slot 0 is the class primary.  Humans do not constantly juggle to a sidearm
+	# just because its DPS number is better; they switch when the primary cannot
+	# do the job at this range.
+	if has_target and slot == 0 and primary_viable:
+		score += PRIMARY_WEAPON_PREFERENCE
 	return score
 
 
@@ -2167,7 +2549,7 @@ func _update_weapon_choice(wc: WeaponController, dist: float, has_target: bool) 
 	_weapon_choice_target_name = target_name
 	_weapon_choice_band = band
 
-	var current_score := _weapon_situation_score(current_weapon, dist, has_target)
+	var current_score := _weapon_situation_score(current_weapon, dist, has_target, current)
 	var best_score := current_score
 	var best_index := current
 	var best_reason := "keep"
@@ -2182,12 +2564,21 @@ func _update_weapon_choice(wc: WeaponController, dist: float, has_target: bool) 
 		if _weapon_heals_allies(candidate) \
 				and _heal_candidate_time < MEDIC_HEAL_PERSIST:
 			continue
-		var candidate_score := _weapon_situation_score(candidate, dist, has_target)
+		var candidate_score := _weapon_situation_score(candidate, dist, has_target, i)
 		if candidate_score > best_score:
 			best_score = candidate_score
 			best_index = i
 			best_reason = "range" if not _weapon_can_engage(current_weapon, dist) else "value"
-	if best_index != current and best_score >= current_score + WEAPON_SWITCH_MARGIN:
+	# Switch hysteresis exists to stop two similar guns flip-flopping, not to
+	# keep a gun that has become useless.  A viable primary is worth drawing
+	# even for a small gain; a primary whose falloff has made it a pea-shooter
+	# at this range loses to any genuinely better option.
+	var required_margin := WEAPON_SWITCH_MARGIN
+	if best_index == 0 and _primary_viable_at(dist):
+		required_margin = 2.0
+	elif not _weapon_damage_viable_at(current_weapon, dist):
+		required_margin = 2.0
+	if best_index != current and best_score >= current_score + required_margin:
 		if _switch_weapon(wc, best_index):
 			_weapon_choice_reason = best_reason
 			_weapon_choice_timer = 1.0
@@ -2196,7 +2587,8 @@ func _update_weapon_choice(wc: WeaponController, dist: float, has_target: bool) 
 func _weapon_reload_threshold(weapon: Weapon) -> float:
 	if weapon == null or weapon.mag_size <= 0:
 		return 0.0
-	return lerpf(WEAPON_RELOAD_RATIO_MIN, WEAPON_RELOAD_RATIO_MAX, skill)
+	var accuracy := _style.accuracy if _style != null else skill
+	return lerpf(WEAPON_RELOAD_RATIO_MIN, WEAPON_RELOAD_RATIO_MAX, accuracy)
 
 
 func _is_weapon_safe_to_reload(weapon: Weapon) -> bool:
@@ -2243,7 +2635,7 @@ func _best_ready_weapon_index(wc: WeaponController, dist: float) -> int:
 		var profile := _get_weapon_profile(weapon)
 		if bool(profile.get("heals_allies", false)):
 			continue
-		var score := _weapon_situation_score(weapon, dist, true)
+		var score := _weapon_situation_score(weapon, dist, true, i)
 		if score > best_score:
 			best_score = score
 			best = i
@@ -2260,28 +2652,233 @@ func _get_head_position(target: Player) -> Vector3:
 	return target.global_position + Vector3(0, 1.6, 0)
 
 
-## Aim at a predicted position: lead the target's velocity so the bot actually
-## hits a strafing player (projectiles only — hitscan is instantaneous).
-##
-## The aim point matters per projectile: a rocket that explodes on world contact
-## is best aimed at the feet (splash), whereas a grenade that passes through
-## world geometry only detonates on a hurtbox and must be aimed at the body.
-func _predict_target_pos(target: Player, fire: WeaponFire, flat_dist: float,
-		aim_point: AimPoint = AimPoint.HEAD) -> Vector3:
-	var pos: Vector3
+## Base aim point for [param aim_point].  `ground_aim` projects an explosive
+## shot onto the floor below the target (an airborne target gets the floor
+## beneath them, which is what a rocket/grenade splash wants).
+func _aim_base_position(target: Player, aim_point: int,
+		ground_aim: bool) -> Vector3:
+	if ground_aim:
+		return _ground_below(target.global_position)
 	match aim_point:
 		AimPoint.FEET:
-			pos = target.global_position
+			return target.global_position
 		AimPoint.CENTER:
-			pos = target.global_position + Vector3(0.0, AIM_CENTER_HEIGHT, 0.0)
+			return target.global_position + Vector3(0.0, AIM_CENTER_HEIGHT, 0.0)
 		_:
-			pos = _get_head_position(target)
-	if fire != null and fire.bullet_type == WeaponFire.BulletType.PROJECTILE:
-		var speed: float = _get_proj_info(fire).get("speed", 0.0)
-		if speed > 1.0:
-			var t := clampf(flat_dist / speed, 0.0, LEAD_TIME_MAX)
-			pos += target.velocity * t * skill
-	return pos
+			return _get_head_position(target)
+
+
+func _ground_below(position: Vector3) -> Vector3:
+	_shot_query.from = position + Vector3.UP * 0.25
+	_shot_query.to = position - Vector3.UP * 8.0
+	var hit := player.get_world_3d().direct_space_state.intersect_ray(_shot_query)
+	if not hit.is_empty():
+		return hit.position
+	return position - Vector3.UP * 1.0
+
+
+func _lead_velocity_for(target: Player, ground_aim: bool) -> Vector3:
+	var velocity := _estimated_velocity_for(target) * _current_lead_quality()
+	if ground_aim:
+		# Predicting a floor point: only horizontal motion moves the impact.
+		velocity.y = 0.0
+	return velocity
+
+
+func _lead_point(base: Vector3, velocity: Vector3, time: float,
+		ground_aim: bool, ground_y: float) -> Vector3:
+	var point := base + velocity * time
+	if ground_aim:
+		point.y = ground_y
+	return point
+
+
+## True when there is a clear ray from the bot's eye to [param point].
+func _is_aim_point_visible(point: Vector3) -> bool:
+	_shot_query.from = _head_node.global_position
+	_shot_query.to = point
+	return player.get_world_3d().direct_space_state.intersect_ray(_shot_query).is_empty()
+
+
+## Pick centre mass vs the head bone.  Low-accuracy bots aim at the body;
+## high-accuracy bots trust the head bone only when it is actually visible (a
+## target behind low cover still gets a centre-mass shot).
+func _choose_aim_point(target: Player, _fire: WeaponFire,
+		proj_info: Dictionary) -> Dictionary:
+	var aim_point := AimPoint.CENTER
+	var ground_aim := false
+	var explosive := bool(proj_info.get("is_explosive", false))
+	if explosive:
+		# A rocket that detonates on world contact wants the floor; a grenade
+		# that passes through geometry only hurts on a direct hurtbox hit and
+		# must stay on the body.  Sticky signal mines are body shots too.
+		ground_aim = bool(proj_info.get("explodes_on_world", false)) \
+			and _signal_mode != SignalMode.EXPLODE
+	else:
+		var accuracy := _style.accuracy if _style != null else skill
+		if accuracy >= AIM_HEAD_ACCURACY \
+				and _is_aim_point_visible(_get_head_position(target)):
+			aim_point = AimPoint.HEAD
+	return {"point": aim_point, "ground": ground_aim}
+
+
+## Solve the launch direction for [param fire] against a moving target.
+## Non-gravity projectiles use the quadratic intercept; gravity projectiles use
+## a low-arc ballistic solve refined 4x, with the high arc available as a
+## fallback when the low arc is blocked.
+func _solve_projectile_solution(target: Player, fire: WeaponFire,
+		aim_point: int, ground_aim: bool, high_arc: bool = false) -> Dictionary:
+	var info := _get_proj_info(fire)
+	var speed := float(info.get("speed", PROJECTILE_FALLBACK_SPEED))
+	var gravity := maxf(float(info.get("gravity", 0.0)), 0.0)
+	var lifetime := float(info.get("lifetime", 20.0))
+	# The projectile must still be alive when it arrives.  This is what rejects
+	# a huge lofted grenade arc that would burst in mid-air long before impact.
+	var max_time := minf(LEAD_TIME_MAX, maxf(lifetime - 0.05, 0.1))
+	var origin := _head_node.global_position
+	var base := _aim_base_position(target, aim_point, ground_aim)
+	var target_velocity := _lead_velocity_for(target, ground_aim)
+	if gravity <= 0.05:
+		return _solve_linear_lead(
+			origin, base, target_velocity, speed, ground_aim, max_time
+		)
+	return _solve_ballistic_lead(
+		origin, base, target_velocity, speed, gravity, ground_aim, high_arc, max_time
+	)
+
+
+func _solve_linear_lead(origin: Vector3, target_point: Vector3,
+		target_velocity: Vector3, speed: float, ground_aim: bool,
+		max_time: float) -> Dictionary:
+	var to_target := target_point - origin
+	var time := 0.0
+	if speed > 0.5:
+		var a := target_velocity.dot(target_velocity) - speed * speed
+		var b := 2.0 * to_target.dot(target_velocity)
+		var c := to_target.dot(to_target)
+		if absf(a) < 0.0001:
+			if absf(b) > 0.0001:
+				time = -c / b
+		else:
+			var disc := b * b - 4.0 * a * c
+			if disc >= 0.0:
+				var root := sqrt(disc)
+				var t1 := (-b - root) / (2.0 * a)
+				var t2 := (-b + root) / (2.0 * a)
+				if t1 > 0.0 and t2 > 0.0:
+					time = minf(t1, t2)
+				else:
+					time = maxf(t1, t2)
+		if time <= 0.0:
+			# No intercept inside the model (e.g. the target outruns the round).
+			# A straight shot at the predicted position is still better than
+			# aiming at where it used to be.
+			time = clampf(to_target.length() / speed, 0.0, max_time)
+	time = clampf(time, 0.0, max_time)
+	var predicted := _lead_point(
+		target_point, target_velocity, time, ground_aim, target_point.y
+	)
+	var dir := predicted - origin
+	if dir.length_squared() < 0.0001:
+		dir = -_head_node.global_transform.basis.z
+	dir = dir.normalized()
+	return {
+		"ok": true, "arc": false, "high": false, "origin": origin,
+		"dir": dir, "point": predicted, "target_point": predicted,
+		"time": time, "speed": speed, "gravity": 0.0, "ground": ground_aim,
+	}
+
+
+func _solve_ballistic_lead(origin: Vector3, target_point: Vector3,
+		target_velocity: Vector3, speed: float, gravity: float,
+		ground_aim: bool, high_arc: bool, max_time: float) -> Dictionary:
+	if speed < 1.0:
+		return {}
+	var predicted := target_point
+	var direction := Vector3.ZERO
+	var time := 0.0
+	var horizontal_unit := Vector3.ZERO
+	for _i in BALLISTIC_ITERATIONS:
+		var to_target := predicted - origin
+		horizontal_unit = Vector3(to_target.x, 0.0, to_target.z)
+		var x := horizontal_unit.length()
+		if x < 0.25:
+			return {}
+		horizontal_unit /= x
+		var y := to_target.y
+		var v2 := speed * speed
+		var gx := gravity * x
+		var disc := 1.0 - 2.0 * gravity * y / v2 - (gx / v2) * (gx / v2)
+		if disc < 0.0:
+			return {}
+		var root := sqrt(disc)
+		var u := (v2 / maxf(gravity * x, 0.0001)) * (1.0 + (root if high_arc else -root))
+		var theta := atan(u)
+		var cos_theta := cos(theta)
+		if cos_theta <= 0.03:
+			return {}
+		time = x / (speed * cos_theta)
+		if time <= 0.0 or time > max_time:
+			return {}
+		predicted = _lead_point(
+			target_point, target_velocity, time, ground_aim, target_point.y
+		)
+		direction = horizontal_unit * cos_theta + Vector3.UP * sin(theta)
+	# Aim the mouse along the launch direction, not at the target point: for a
+	# lofted arc those are different directions.
+	var aim_distance := maxf(origin.distance_to(predicted) * 1.5, 12.0)
+	return {
+		"ok": true, "arc": true, "high": high_arc, "origin": origin,
+		"dir": direction.normalized(), "point": origin + direction.normalized() * aim_distance,
+		"target_point": predicted, "time": time, "speed": speed,
+		"gravity": gravity, "ground": ground_aim,
+	}
+
+
+## Predicted aim point for the simple callers (heal targeting).  Combat uses
+## [_solve_projectile_solution] so it can also test the arc.
+func _predict_target_pos(target: Player, fire: WeaponFire, _flat_dist: float,
+		aim_point: int = AimPoint.HEAD) -> Vector3:
+	var base := _aim_base_position(target, aim_point, false)
+	if fire == null or fire.bullet_type != WeaponFire.BulletType.PROJECTILE:
+		return base
+	var choice := _choose_aim_point(target, fire, _get_proj_info(fire))
+	var solution := _solve_projectile_solution(
+		target, fire, int(choice["point"]), bool(choice["ground"])
+	)
+	if solution.is_empty():
+		return base
+	return solution["target_point"]
+
+
+## Sample the predicted path with world-only rays.  Only called when the bot is
+## otherwise ready to fire, and at most once per ARC_VALIDATION_INTERVAL.
+func _shot_arc_blocked(solution: Dictionary, allow_impact_radius: float) -> bool:
+	if solution.is_empty() or not bool(solution.get("ok", false)):
+		return true
+	var origin: Vector3 = solution["origin"]
+	var dir: Vector3 = solution["dir"]
+	var speed: float = solution["speed"]
+	var gravity: float = solution["gravity"]
+	var time: float = solution["time"]
+	var target_point: Vector3 = solution["target_point"]
+	var previous := origin
+	var space := player.get_world_3d().direct_space_state
+	for i in range(1, ARC_VALIDATION_SAMPLES + 1):
+		var t := time * float(i) / float(ARC_VALIDATION_SAMPLES)
+		var point := origin + dir * speed * t \
+			- Vector3.UP * 0.5 * gravity * t * t
+		_shot_query.from = previous
+		_shot_query.to = point
+		var hit := space.intersect_ray(_shot_query)
+		if not hit.is_empty():
+			var hit_pos: Vector3 = hit.position
+			# Hitting the floor at the target is the intended splash impact, not
+			# an obstruction.
+			if hit_pos.distance_to(target_point) > allow_impact_radius + 0.35:
+				return true
+		previous = point
+	return false
 
 
 ## Melee is verified data, not a guess: a MELEE action or a hitscan fire whose
@@ -2341,6 +2938,9 @@ func _switch_weapon(wc: WeaponController, index: int) -> bool:
 	_fire_mode_dirty = true
 	_last_mag_for_strafe = -1
 	_shots_since_strafe = 0
+	_arc_validation_timer = 0.0
+	_arc_validation_blocked = false
+	_arc_validation_high = false
 	return true
 
 # Objective seeking
@@ -2396,8 +2996,10 @@ func _get_payload_node(gmc: GameModeComponent) -> PayloadNode:
 ## and jump on the same tick as firing, launching the bot into the air. Only
 ## attempted while already holding an explosive weapon (never forces a weapon
 ## switch to do this), while there's real ground to cover, off cooldown, and
-## — scaled by skill — far more often at higher skill. Returns true if it
-## fired this tick (caller should skip normal movement for that tick).
+## — scaled by movement_quality — far more often at higher skill.  Only weapons
+## whose projectile detonates on world contact qualify: a grenade that passes
+## through the floor cannot launch anyone.  Returns true if it fired this tick
+## (caller should skip normal movement for that tick).
 func _try_explosion_jump(wc: WeaponController, travel_dist: float) -> bool:
 	if _explosion_jump_phase != 0:
 		return true
@@ -2423,15 +3025,21 @@ func _try_explosion_jump(wc: WeaponController, travel_dist: float) -> bool:
 	var info := _get_proj_info(fire)
 	if not bool(info.get("is_explosive", false)):
 		return false
+	# A rocket jump needs the blast to actually detonate on the floor it is fired
+	# at.  Grenades, molotovs and poison jars pass through world geometry, so
+	# firing one at our feet just wastes it and leaves the bot standing there.
+	if not bool(info.get("explodes_on_world", false)):
+		return false
 	if weapon.mag_current <= 0 and not weapon.has_infinite_ammo:
 		return false
 	# Low health + a self-damaging blast is not a good trade.
 	if float(info.get("self_damage", 0.0)) < 0.0 and _health_ratio() < 0.6:
 		return false
 
-	# A skill-0 bot almost never pulls this off cleanly; a skill-1 bot does it
-	# readily whenever there's a good reason to.
-	if randf() > lerpf(0.02, 0.35, skill):
+	# Movement competence, not raw skill: a clumsy bot almost never chains
+	# aim->fire->jump; a good one does it readily when there is ground to cover.
+	var movement_quality := _style.movement_quality if _style != null else skill
+	if randf() > lerpf(0.02, 0.35, movement_quality):
 		return false
 
 	_explosion_jump_phase = 1
@@ -2589,32 +3197,79 @@ func _act_combat() -> void:
 		_trigger.release_all()
 		return
 
-	# Aim at the target's head bone — or its feet for splash weapons, where a
-	# near-miss on the ground still counts and the target area is far bigger
-	# — leading moving targets for projectiles, aiming the bone directly for
-	# hitscan (headshots register a crit when the weapon has one).
+	# Aim point depends on skill and weapon role: body for low-accuracy bots and
+	# for weapons whose headshot cannot be trusted, head bone only when a
+	# high-accuracy bot can actually see it, floor for world-contact explosives.
 	var proj_info := _get_proj_info(fire)
+	var is_projectile: bool = fire.bullet_type == WeaponFire.BulletType.PROJECTILE
 	var is_explosive: bool = bool(proj_info.get("is_explosive", false))
-	var aim_point := AimPoint.HEAD
-	if fire.bullet_type == WeaponFire.BulletType.PROJECTILE:
-		if _signal_mode == SignalMode.EXPLODE:
-			# Sticky signal charges attach where they hit; aim at the body.
-			aim_point = AimPoint.CENTER
-		elif is_explosive:
-			# Rockets explode on world contact -> feet for splash.  Grenades,
-			# molotovs and poison jars pass through world geometry and only
-			# detonate on a hurtbox -> mid-body for a direct hit.
-			aim_point = AimPoint.FEET if bool(proj_info.get("explodes_on_world", false)) else AimPoint.CENTER
-	var aim_pos: Vector3 = _get_head_position(_current_target)
-	if fire.bullet_type == WeaponFire.BulletType.PROJECTILE:
-		aim_pos = _predict_target_pos(_current_target, fire, dist, aim_point)
+	var choice := _choose_aim_point(_current_target, fire, proj_info)
+	var aim_point: int = int(choice["point"])
+	var ground_aim := bool(choice["ground"])
+	var aims := _aim_base_position(_current_target, aim_point, ground_aim)
+	var shot_blocked := false
+
+	# Only validate a projectile path once the bot is otherwise ready to pull the
+	# trigger.  The result is cached for ARC_VALIDATION_INTERVAL: this is a
+	# ray-heavy check, not a per-tick perception query.
+	var heal_idle := _weapon_heals_allies(weapon) and _heal_target == null
+	var wants_base := _reaction_timer <= 0.0 \
+		and not heal_idle \
+		and _can_fire_mode(fire, dist) \
+		and not _too_close_for_explosive(fire, dist)
+	if is_projectile:
+		var high := false
+		var can_validate := not bool(proj_info.get("world_passthrough", false))
+		if can_validate and _arc_validation_timer > 0.0:
+			high = _arc_validation_high
+			shot_blocked = _arc_validation_blocked
+		var solution := _solve_projectile_solution(
+			_current_target, fire, aim_point, ground_aim, high
+		)
+		if solution.is_empty():
+			# No ballistic solution (out of reach / impossible arc): keep looking
+			# at a sensible point, but do not fire a shot that cannot arrive.
+			aims = _aim_base_position(_current_target, AimPoint.CENTER, false)
+			shot_blocked = true
+			_arc_validation_blocked = true
+			_arc_validation_high = false
+		else:
+			# Only spend the arc rays when the crosshair is close enough that the
+			# Trigger could actually pull in the next few ticks.  Aiming and
+			# travelling never validate.
+			var about_to_fire := wants_base and aim_error_deg >= 0.0 \
+				and aim_error_deg <= aim_tolerance_for(weapon, fire) * 1.25
+			if about_to_fire and can_validate and _arc_validation_timer <= 0.0:
+				_arc_validation_timer = ARC_VALIDATION_INTERVAL
+				var impact_radius := 0.35
+				if is_explosive:
+					impact_radius = maxf(
+						float(proj_info.get("splash_radius", 0.0)), impact_radius
+					)
+				var blocked := _shot_arc_blocked(solution, impact_radius)
+				var chosen := solution
+				if blocked and bool(solution.get("arc", false)):
+					var high_solution := _solve_projectile_solution(
+						_current_target, fire, aim_point, ground_aim, true
+					)
+					if not high_solution.is_empty() \
+							and not _shot_arc_blocked(high_solution, impact_radius):
+						chosen = high_solution
+						high = true
+						blocked = false
+				shot_blocked = blocked
+				_arc_validation_blocked = blocked
+				_arc_validation_high = high
+				solution = chosen
+			aims = solution["point"]
+
 	# Request, do not write.  The Mouse owns recoil compensation, the flick and
 	# the tracking lag; the aim gate still measures the real head ray against
 	# this point, so lead and recoil flow through automatically.
-	_desired_aim_point = aim_pos
+	_desired_aim_point = aims
 	_has_desired_aim = true
 	_mouse.request_look_at_point(
-		aim_pos, LookPriority.COMBAT, 1.0, str(_current_target.get_instance_id())
+		aims, LookPriority.COMBAT, 1.0, str(_current_target.get_instance_id())
 	)
 
 	# Weapon-aware engagement distance with a wide soft band, a slight approach
@@ -2668,16 +3323,12 @@ func _act_combat() -> void:
 			_keyboard.crouch_hold(randf_range(0.2, 0.45))
 			_combat_crouch_timer = COMBAT_CROUCH_MIN_INTERVAL * randf_range(0.8, 1.5)
 
-	# Firing: the Trigger owns the flags and applies the aim gate.  `wants` only
-	# expresses intent (reaction delay, not blowing ourselves up point-blank,
-	# never swinging a knife at a target outside its real reach, and never
-	# firing a heal-only weapon at an enemy while waiting out medic hysteresis).
-	var heal_idle := _weapon_heals_allies(weapon) and _heal_target == null
-	var wants := _reaction_timer <= 0.0 \
-		and not heal_idle \
-		and _can_fire_mode(fire, dist) \
-		and not _too_close_for_explosive(fire, dist)
-	if not wants and _reaction_timer <= 0.0:
+	# Firing: the Trigger owns the flags and applies the aim gate.  `wants_base`
+	# was computed before the arc test so validation only ran when the bot was
+	# otherwise ready; a blocked arc vetoes the shot but does not make the bot
+	# stand still holding the trigger.
+	var wants := wants_base and not shot_blocked
+	if not wants and _reaction_timer <= 0.0 and _too_close_for_explosive(fire, dist):
 		# Point-blank with a self-damaging explosive: draw a sidearm instead of
 		# standing there aiming at the ground while backing away.
 		var safe_index := _first_safe_weapon_index(wc, dist)
@@ -3233,6 +3884,18 @@ func _update_debug_label() -> void:
 	lines.append("target: %s" % target_name)
 	lines.append("fire: %d  trig: %s" % [_chosen_fire_index, _debug_trigger_text()])
 	lines.append("aim err: %s deg" % _debug_aim_error(target_name != "-"))
+	if _style != null:
+		lines.append("traits: acc=%.2f trk=%.2f lead=%.2f move=%.2f aware=%.2f" % [
+			_style.accuracy, _style.tracking_speed, _style.lead_quality,
+			_style.movement_quality, _style.awareness,
+		])
+	if _current_target != null and is_instance_valid(_current_target):
+		var tv := _estimated_velocity_for(_current_target)
+		lines.append("lead: v=(%.1f,%.1f) arc=%s%s" % [
+			tv.x, tv.z,
+			"high" if _arc_validation_high else "low",
+			" BLOCKED" if _arc_validation_blocked else "",
+		])
 	lines.append("keys: %s  mouse: %s %s" % [
 		_keyboard.get_state_text() if _keyboard != null else "-",
 		_mouse.get_state_text() if _mouse != null else "-",
@@ -3797,6 +4460,11 @@ func _reset_for_spawn() -> void:
 	_maneuvers.abort()
 	_traversal.reset()
 	_decision.reset()
+	_arc_validation_timer = 0.0
+	_arc_validation_blocked = false
+	_arc_validation_high = false
+	_est_target_name = ""
+	_est_velocity = Vector3.ZERO
 	_seen_since.clear()
 	_last_damage_source_name = ""
 	_last_damage_time = -999.0
@@ -3827,7 +4495,7 @@ func _reset_for_spawn() -> void:
 	_cover_rounds = 0
 	# A fresh body, a fresh style: the per-bot mouse/keyboard personality is
 	# drawn once per life, so two bots at the same skill still differ.
-	_style.draw(skill)
+	_style.draw(skill, random_seed)
 	_strafe_bias = randf_range(-0.25, 0.25)
 	_choice_history.clear()
 	_strafe_dir = 0.0
@@ -5402,55 +6070,105 @@ class Style extends RefCounted:
 	var fire_click_hz: float = BotController.FIRE_CLICK_HZ_MAX
 	var key_min_hold: float = BotController.KEY_MIN_HOLD_MIN
 	var key_flip_rate: float = BotController.KEY_FLIP_RATE_MAX
-	var aim_jitter: float = 0.0
+	## --- Stage 6 skill traits (see SKILL_TRAIT_TABLE) ---------------------
+	var accuracy: float = 0.7
+	var tracking_speed: float = 0.6
+	var lead_quality: float = 0.5
+	var movement_quality: float = 0.5
+	var awareness: float = 0.6
 	## 0 = cautious/flanking, 1 = direct/aggressive.  Used for target weighting
 	## and a mild objective approach offset, not for a different ruleset.
 	var aggression: float = 0.5
 	var flank_bias: float = 0.0
 
-	func draw(skill_value: float) -> void:
+	func draw(skill_value: float, seed_value: int = 0) -> void:
 		var s: float = clampf(skill_value, 0.0, 1.0)
-		reaction_time = lerpf(
-			BotController.KEY_REACTION_MAX, BotController.KEY_REACTION_MIN, s
-		) * randf_range(0.8, 1.2)
-		strafe_hold_median = lerpf(1.2, 0.4, s) * randf_range(0.8, 1.25)
-		strafe_hold_spread = lerpf(0.45, 0.15, s)
-		pause_probability = lerpf(0.35, 0.06, s) * randf_range(0.7, 1.3)
-		jump_rate = lerpf(0.02, 0.16, s) * randf_range(0.7, 1.3)
-		crouch_rate = lerpf(0.0, 0.06, s)
+		var rng := RandomNumberGenerator.new()
+		rng.seed = seed_value if seed_value != 0 else randi()
+		var traits := _traits_at(s)
+		accuracy = clampf(
+			float(traits["accuracy"]) * rng.randf_range(0.94, 1.04), 0.05, 0.995
+		)
+		tracking_speed = clampf(
+			float(traits["tracking_speed"]) * rng.randf_range(0.9, 1.08), 0.05, 1.0
+		)
+		lead_quality = clampf(
+			float(traits["lead_quality"]) * rng.randf_range(0.85, 1.08), 0.0, 1.0
+		)
+		movement_quality = clampf(
+			float(traits["movement_quality"]) * rng.randf_range(0.88, 1.08),
+			0.05, 1.0
+		)
+		awareness = clampf(
+			float(traits["awareness"]) * rng.randf_range(0.92, 1.06), 0.05, 1.0
+		)
+		aggression = clampf(
+			float(traits["aggression"]) + rng.randf_range(-0.28, 0.28), 0.0, 1.0
+		)
+		reaction_time = clampf(
+			float(traits["reaction"]) * rng.randf_range(0.82, 1.22),
+			BotController.KEY_REACTION_MIN, BotController.KEY_REACTION_MAX
+		)
+		strafe_hold_median = lerpf(1.2, 0.4, movement_quality) * rng.randf_range(0.8, 1.25)
+		strafe_hold_spread = lerpf(0.45, 0.15, movement_quality)
+		pause_probability = lerpf(0.35, 0.06, movement_quality) * rng.randf_range(0.7, 1.3)
+		jump_rate = lerpf(0.02, 0.16, movement_quality) * rng.randf_range(0.7, 1.3)
+		crouch_rate = lerpf(0.0, 0.06, movement_quality)
 		var low: Array[float] = [0.7, 0.2, 0.1, 0.0]
 		var high: Array[float] = [0.3, 0.25, 0.3, 0.15]
 		var weights: Array[float] = []
 		for i in 4:
-			weights.append(lerpf(low[i], high[i], s))
+			weights.append(lerpf(low[i], high[i], movement_quality))
 		peek_style_weights = weights
-		counter_strafe_skill = s * randf_range(0.75, 1.0)
-		mouse_speed = lerpf(0.55, 1.0, s) * randf_range(0.9, 1.1)
-		flick_accuracy = clampf(
-			lerpf(0.55, 0.97, s) * randf_range(0.95, 1.03), 0.1, 0.995
-		)
-		tracking_lag = lerpf(0.28, 0.04, s) * randf_range(0.85, 1.2)
-		bhop_ability = s * randf_range(0.5, 1.0)
+		counter_strafe_skill = movement_quality * rng.randf_range(0.75, 1.0)
+		mouse_speed = lerpf(0.55, 1.0, accuracy) * rng.randf_range(0.9, 1.1)
+		flick_accuracy = accuracy
+		# Tracking lag is the inverse of the trait: a high tracking_speed settles
+		# in ~0.03 s, a low one visibly trails at ~0.3 s.
+		tracking_lag = lerpf(0.30, 0.03, tracking_speed) * rng.randf_range(0.85, 1.2)
+		bhop_ability = movement_quality * rng.randf_range(0.5, 1.0)
 		# Low skill unlocks only a small vocabulary; max skill unlocks everything.
-		allow_strafe = s > 0.12
-		allow_back = s > 0.35
-		allow_diagonal = s > 0.5
-		allow_jump = s > 0.25
-		allow_crouch = s > 0.6
-		fire_tap_min = lerpf(0.10, BotController.FIRE_TAP_MIN, s) * randf_range(0.9, 1.1)
-		fire_tap_max = lerpf(0.12, BotController.FIRE_TAP_MAX, s) * randf_range(0.9, 1.1)
+		allow_strafe = movement_quality > 0.20
+		allow_back = movement_quality > 0.38
+		allow_diagonal = movement_quality > 0.52
+		allow_jump = movement_quality > 0.28
+		allow_crouch = movement_quality > 0.60
+		fire_tap_min = lerpf(0.10, BotController.FIRE_TAP_MIN, accuracy) \
+			* rng.randf_range(0.9, 1.1)
+		fire_tap_max = lerpf(0.12, BotController.FIRE_TAP_MAX, accuracy) \
+			* rng.randf_range(0.9, 1.1)
 		fire_click_hz = lerpf(
-			BotController.FIRE_CLICK_HZ_MIN, BotController.FIRE_CLICK_HZ_MAX, s
-		) * randf_range(0.9, 1.1)
+			BotController.FIRE_CLICK_HZ_MIN, BotController.FIRE_CLICK_HZ_MAX, accuracy
+		) * rng.randf_range(0.9, 1.1)
 		key_min_hold = lerpf(
-			BotController.KEY_MIN_HOLD_MAX, BotController.KEY_MIN_HOLD_MIN, s
-		) * randf_range(0.85, 1.15)
+			BotController.KEY_MIN_HOLD_MAX, BotController.KEY_MIN_HOLD_MIN, movement_quality
+		) * rng.randf_range(0.85, 1.15)
 		key_flip_rate = lerpf(
-			BotController.KEY_FLIP_RATE_MIN, BotController.KEY_FLIP_RATE_MAX, s
-		) * randf_range(0.9, 1.1)
-		aim_jitter = BotController.AIM_NOISE_MAX * (1.0 - s) * 0.5
-		aggression = clampf(0.5 + randf_range(-0.35, 0.35) + (s - 0.5) * 0.2, 0.0, 1.0)
-		flank_bias = randf_range(-1.0, 1.0)
+			BotController.KEY_FLIP_RATE_MIN, BotController.KEY_FLIP_RATE_MAX, movement_quality
+		) * rng.randf_range(0.9, 1.1)
+		flank_bias = rng.randf_range(-1.0, 1.0)
+
+	## Interpolate one row of SKILL_TRAIT_TABLE.  Kept here so every trait has a
+	## single documented source and per-bot variance is applied by the caller.
+	func _traits_at(s: float) -> Dictionary:
+		var table: Array = BotController.SKILL_TRAIT_TABLE
+		var lower: Dictionary = table[0]
+		var upper: Dictionary = table[table.size() - 1]
+		for i in table.size() - 1:
+			var a: Dictionary = table[i]
+			var b: Dictionary = table[i + 1]
+			if s <= float(b["skill"]):
+				lower = a
+				upper = b
+				break
+		var span := maxf(float(upper["skill"]) - float(lower["skill"]), 0.0001)
+		var t := clampf((s - float(lower["skill"])) / span, 0.0, 1.0)
+		var result := {}
+		for key in lower.keys():
+			if key == "skill":
+				continue
+			result[key] = lerpf(float(lower[key]), float(upper[key]), t)
+		return result
 
 
 ## The keyboard emulator.  Owns `input_dir`, `jump_input`, `crouch`, `dash_input`.
@@ -5638,7 +6356,8 @@ class Keyboard extends RefCounted:
 		if _held_strafe == 0 or _tap_strafe_timer > 0.0:
 			return
 		_tap_strafe_sign = -_held_strafe
-		_tap_strafe_timer = maxf(_min_hold(), lerpf(0.09, 0.05, bot.skill))
+		var movement_quality := style.movement_quality if style != null else bot.skill
+		_tap_strafe_timer = maxf(_min_hold(), lerpf(0.09, 0.05, movement_quality))
 
 	func jump_tap(allow_air: bool = false) -> void:
 		var style: BotController.Style = bot._style
@@ -5826,7 +6545,14 @@ class Mouse extends RefCounted:
 	var _prev_desired_pitch: float = 0.0
 	var _has_prev: bool = false
 
-	var _jitter_timer: float = 0.0
+	## Continuous drift: two slow sines plus one micro sine, never a random step.
+	var _drift_time: float = 0.0
+	var _drift_phase_a: float = 0.0
+	var _drift_phase_b: float = 0.0
+	var _drift_phase_c: float = 0.0
+	var _drift_rate_a: float = 0.3
+	var _drift_rate_b: float = 0.9
+	var _drift_rate_c: float = 9.0
 	var _jitter_yaw: float = 0.0
 	var _jitter_pitch: float = 0.0
 	var _idle_phase: float = 0.0
@@ -5837,6 +6563,18 @@ class Mouse extends RefCounted:
 
 	func _init(owner_bot: BotController) -> void:
 		bot = owner_bot
+		_drift_phase_a = randf() * TAU
+		_drift_phase_b = randf() * TAU
+		_drift_phase_c = randf() * TAU
+		_drift_rate_a = randf_range(
+			BotController.AIM_DRIFT_RATE_A_MIN, BotController.AIM_DRIFT_RATE_A_MAX
+		)
+		_drift_rate_b = randf_range(
+			BotController.AIM_DRIFT_RATE_B_MIN, BotController.AIM_DRIFT_RATE_B_MAX
+		)
+		_drift_rate_c = randf_range(
+			BotController.AIM_MICRO_RATE_MIN, BotController.AIM_MICRO_RATE_MAX
+		)
 
 	## Request the crosshair be placed on a world point.  `priority` is a
 	## BotController.LookPriority; a lower-priority request is ignored while a
@@ -5922,17 +6660,32 @@ class Mouse extends RefCounted:
 			scale *= 1.5
 		return base * scale * randf_range(0.7, 1.3)
 
+	## Low-frequency aim wander plus a tiny high-frequency tremor.  This is a
+	## continuous function of time, so there is no visible stepping, and moving
+	## targets widen it because tracking a strafer is harder than a stationary one.
+	func _update_aim_drift() -> void:
+		var style: BotController.Style = bot._style
+		var accuracy := style.accuracy if style != null else 0.7
+		var motion := 1.0
+		var target := bot._current_target
+		if target != null and is_instance_valid(target):
+			var target_speed := bot._estimated_velocity_for(target).length()
+			motion += clampf(target_speed / BotController.AIM_TARGET_SPEED_REF, 0.0, 1.0)
+		var wander := BotController.AIM_DRIFT_BASE * (1.0 - accuracy) * motion
+		var micro := lerpf(BotController.AIM_MICRO_MAX, 0.0008, accuracy) * motion
+		_jitter_yaw = (
+			sin(_drift_time * _drift_rate_a + _drift_phase_a) * 0.65
+			+ sin(_drift_time * _drift_rate_b + _drift_phase_b) * 0.35
+		) * wander + sin(_drift_time * _drift_rate_c + _drift_phase_c) * micro
+		_jitter_pitch = (
+			cos(_drift_time * _drift_rate_a * 0.83 + _drift_phase_b) * 0.65
+			+ sin(_drift_time * _drift_rate_b * 1.11 + _drift_phase_c) * 0.35
+		) * wander + cos(_drift_time * _drift_rate_c * 1.07 + _drift_phase_a) * micro
+
 	func tick(delta: float) -> void:
 		_idle_phase += delta
-		_jitter_timer -= delta
-		if _jitter_timer <= 0.0:
-			_jitter_timer = BotController.NOISE_INTERVAL
-			var style: BotController.Style = bot._style
-			var amount := 0.0
-			if style != null:
-				amount = style.aim_jitter
-			_jitter_yaw = randf_range(-amount, amount)
-			_jitter_pitch = randf_range(-amount, amount)
+		_drift_time += delta
+		_update_aim_drift()
 
 		if _has_request:
 			_request_ttl -= delta
@@ -5956,8 +6709,12 @@ class Mouse extends RefCounted:
 		var wc: WeaponController = bot.player.weapon_controller
 		if _has_request and wc != null and is_instance_valid(wc) and wc.recoil != null:
 			var recoil: Vector3 = wc.recoil.rotation
-			target_yaw -= recoil.y * bot.skill
-			target_pitch -= recoil.x * bot.skill
+			# Shots add positive pitch/yaw, so counter-rotate by subtracting.
+			# Accuracy (not raw skill) decides how much of the kick is corrected.
+			var style: BotController.Style = bot._style
+			var comp := style.accuracy if style != null else bot.skill
+			target_yaw -= recoil.y * BotController.RECOIL_COMP_SIGN * comp
+			target_pitch -= recoil.x * BotController.RECOIL_COMP_SIGN * comp
 
 		target_yaw += _jitter_yaw
 		target_pitch += _jitter_pitch
@@ -6074,10 +6831,10 @@ class Mouse extends RefCounted:
 		var total_yaw := wrapf(target_yaw - start_yaw, -PI, PI)
 		var total_pitch := wrapf(target_pitch - start_pitch, -PI, PI)
 		var style: BotController.Style = bot._style
-		var accuracy := 0.8
+		var accuracy := 0.7
 		var mouse_speed := 0.8
 		if style != null:
-			accuracy = style.flick_accuracy
+			accuracy = style.accuracy
 			mouse_speed = style.mouse_speed
 		var error := 1.0 - clampf(accuracy, 0.0, 1.0)
 		# Landing error: undershoot/overshoot plus a little lateral error, both
@@ -6098,7 +6855,9 @@ class Mouse extends RefCounted:
 			BotController.LOOK_FLICK_MIN_TIME,
 			BotController.LOOK_FLICK_MAX_TIME
 		)
-		duration *= lerpf(1.35, 0.85, bot.skill) / maxf(mouse_speed, 0.4)
+		# Low accuracy flicks are slower as well as less accurate: a beginner
+		# moves the mouse late and short, then corrects; a good player snaps.
+		duration *= lerpf(1.45, 0.82, accuracy) / maxf(mouse_speed, 0.4)
 		if correction:
 			duration *= 0.6
 		# Vertical movement is slower and less accurate than horizontal.
@@ -6116,8 +6875,9 @@ class Mouse extends RefCounted:
 		if correction:
 			_corrections_left = maxi(_corrections_left - 1, 0)
 		else:
-			# Fewer, tighter corrections at high skill: 3 at skill 0, 1 at skill 1.
-			_corrections_left = maxi(1, int(round(lerpf(3.0, 1.0, bot.skill))))
+			# Fewer, tighter corrections at high accuracy: 3 at the bottom, 1 at
+			# the top.  This is the visible "settling" phase after the flick.
+			_corrections_left = maxi(1, int(round(lerpf(3.0, 1.0, accuracy))))
 
 	func _tick_ballistic(delta: float, _target_yaw: float, _target_pitch: float) -> void:
 		_flick_timer += delta
@@ -6143,9 +6903,11 @@ class Mouse extends RefCounted:
 		var style: BotController.Style = bot._style
 		var lag := 0.12
 		var mouse_speed := 0.8
+		var tracking_speed := 0.6
 		if style != null:
 			lag = maxf(style.tracking_lag, 0.02)
 			mouse_speed = style.mouse_speed
+			tracking_speed = style.tracking_speed
 		if _has_prev and delta > 0.000001:
 			var raw_yaw := wrapf(target_yaw - _prev_desired_yaw, -PI, PI) / delta
 			var raw_pitch := wrapf(target_pitch - _prev_desired_pitch, -PI, PI) / delta
@@ -6153,11 +6915,15 @@ class Mouse extends RefCounted:
 			_target_vel_yaw = lerpf(_target_vel_yaw, raw_yaw, alpha)
 			_target_vel_pitch = lerpf(_target_vel_pitch, raw_pitch, alpha)
 		var max_speed := BotController.LOOK_TRACK_MAX_SPEED * maxf(mouse_speed, 0.3)
-		var gain := BotController.LOOK_TRACK_GAIN
+		# The pursuit gain is the tracking trait, not raw skill.  A low-tracking
+		# bot answers a strafe late and only partially catches up before the
+		# target reverses again.
+		var gain := BotController.LOOK_TRACK_GAIN * lerpf(0.55, 1.0, tracking_speed)
 		var want_yaw := _target_vel_yaw + clampf(err_yaw * gain, -max_speed, max_speed)
 		var want_pitch := _target_vel_pitch \
 			+ clampf(err_pitch * gain * 0.8, -max_speed * 0.8, max_speed * 0.8)
-		var accel := BotController.LOOK_TRACK_ACCEL * lerpf(0.5, 1.0, bot.skill)
+		var accel := BotController.LOOK_TRACK_ACCEL \
+			* lerpf(0.35, 1.0, tracking_speed)
 		_track_vel_yaw = move_toward(_track_vel_yaw, want_yaw, accel * delta)
 		_track_vel_pitch = move_toward(_track_vel_pitch, want_pitch, accel * delta)
 		_track_vel_yaw = clampf(_track_vel_yaw, -max_speed, max_speed)
@@ -6314,7 +7080,10 @@ class Buttons extends RefCounted:
 		_switch_index = -1
 
 	func _reaction_delay(minimum: float, maximum: float) -> float:
-		return lerpf(maximum, minimum, clampf(bot.skill, 0.0, 1.0)) \
+		var skill_trait := bot.skill
+		if bot._style != null:
+			skill_trait = bot._style.accuracy
+		return lerpf(maximum, minimum, clampf(skill_trait, 0.0, 1.0)) \
 			* randf_range(0.7, 1.3)
 
 
@@ -6550,10 +7319,11 @@ class Trigger extends RefCounted:
 
 		var aim_open := _aim_gate_open(weapon, fire)
 		if aim_open and not _gate_was_open:
+			var accuracy := bot._style.accuracy if bot._style != null else bot.skill
 			_aim_delay_timer = lerpf(
 				BotController.TRIGGER_DELAY_MAX,
 				BotController.TRIGGER_DELAY_MIN,
-				bot.skill
+				accuracy
 			) * randf_range(0.7, 1.3)
 		if not aim_open:
 			_aim_delay_timer = 0.0
@@ -6635,8 +7405,9 @@ class Trigger extends RefCounted:
 					var ratio := wc.get_charge_ratio_for(weapon)
 					if ratio >= _charge_threshold:
 						_charge_armed = true
+						var accuracy := bot._style.accuracy if bot._style != null else bot.skill
 						_charged_hold = lerpf(
-							BotController.CHARGE_OVERHOLD_MAX, 0.0, bot.skill
+							BotController.CHARGE_OVERHOLD_MAX, 0.0, accuracy
 						) * randf_range(0.0, 1.0)
 					return
 				# At full draw: wait for the gate, then for the small overhold.
@@ -6660,8 +7431,9 @@ class Trigger extends RefCounted:
 				_charged_hold = 0.0
 				# Never above 1.0: get_charge_ratio_for() clamps at 1.0, so a
 				# threshold of 1.001 would leave the bot charging forever.
+				var accuracy := bot._style.accuracy if bot._style != null else bot.skill
 				_charge_threshold = minf(
-					lerpf(BotController.CHARGE_RELEASE_MIN, 1.0, bot.skill)
+					lerpf(BotController.CHARGE_RELEASE_MIN, 1.0, accuracy)
 						+ randf_range(0.0, 0.02),
 					1.0
 				)
@@ -6782,8 +7554,9 @@ class Trigger extends RefCounted:
 		return bot.aim_error_deg <= bot.aim_tolerance_for(weapon, fire)
 
 	func _skill_gap() -> float:
+		var accuracy := bot._style.accuracy if bot._style != null else bot.skill
 		return lerpf(
-			BotController.SEMI_GAP_MAX, BotController.SEMI_GAP_MIN, bot.skill
+			BotController.SEMI_GAP_MAX, BotController.SEMI_GAP_MIN, accuracy
 		) * randf_range(0.7, 1.4)
 
 	## Human click length, in physics frames.  Always at least the 3-frame

@@ -71,6 +71,14 @@ The automatic-weapon fire path no longer allocates per shot:
 
 - `GameManager.sound_made` is emitted from the existing sound sites (footsteps, weapon shots, reloads) only when `multiplayer.is_server()`. Each bot connects once and does a single distance check when an event arrives — there is no per-frame audio scan. Crouched movement is suppressed in `player.gd:_update_footsteps`, so it produces neither a footstep sound nor a hearing event.
 
+## Bot aim, lead and arc validation (Stage 6)
+
+- **Aim drift** is six `sin`/`cos` calls per bot per physics tick (90 Hz) in `Mouse._update_aim_drift`; it replaces one `randf_range` every 0.4 s and adds no allocation, query or node lookup. For 20 bots this is ~11k trig calls/s, below noise; the trig is what removes the old stepped look.
+- **Target velocity** is sampled once per 20 Hz think tick (one subtraction, one multiply, one lerp) and stored per bot. No group query, no extra raycast.
+- **Arc validation** is capped at `ARC_VALIDATION_INTERVAL` (0.12 s) per bot and only runs when the bot is otherwise ready to fire *and* the crosshair is already near the aim gate. At worst that is ~10 world rays / 0.12 s per firing bot; a bot that is travelling, stunned, switching or reloading runs none.
+- **Projectile speed measurement** is a one-off `get_tree().node_added` subscription per bot. Every projectile notifies each bot, but the shared static `_proj_speed_measurements`/`_learned_proj_speeds` dictionaries reject duplicates before any await; only the first unknown scene pays the two-frame sample. The subscription is disconnected in `_exit_tree`.
+- **Weapon scoring** now reads the authored falloff curve (`_best_falloff_multiplier_at`) once per candidate on the existing 0.5 s/event-driven choice loop. Projectile DPS is taken from the cached `_get_proj_info` (impact/splash damage) rather than `hitscan_damage`, so it adds no new scene loads — the projectile scene is still instantiated at most once per path. No per-frame work.
+
 ## Charged-weapon draw (per-frame, all peers) — negligible
 
 Added 2026-09-25 with the `Weapon.charged` feature. Recorded here so it is not mistaken for a new hot path later.
