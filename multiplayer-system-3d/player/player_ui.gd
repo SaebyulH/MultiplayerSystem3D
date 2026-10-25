@@ -9,6 +9,13 @@ class_name PlayerBodyUI
 
 @onready var _owner_player: Player = $"../.."
 
+## Whether _build_ui()/signal wiring has run.  The owner builds in _ready(); a
+## HUD rebound for a spectator builds on first use (see set_spectator_active).
+var _built := false
+## True while this HUD is being shown to a spectating peer.  Set by
+## world/spectator_controller.gd on the spectator's local copy of the Player.
+var _spectator_bound := false
+
 # Public UI (visible above the player model for other players)
 @onready var _ammo_bar_public: Label3D = $"../AmmoBarPublic"
 @onready var _health_bar_public: Label3D = $"../HealthBarPublic"
@@ -160,12 +167,25 @@ func _ready() -> void:
 	# Only the local peer's own (non-bot) player builds a first-person HUD.
 	# Every replicated Player (bots, remote players) still carries a PlayerUI
 	# node, but building its full HUD + per-instance timer + signal wiring is
-	# pure waste — it stays hidden and is never shown for them.
-	var is_owner := is_multiplayer_authority()
-	var should_show := is_owner and not _owner_player.is_bot
-	visible = should_show
-	if not should_show:
+	# pure waste — it stays hidden unless a spectator binds to it.
+	#
+	# Build from ownership alone, NOT from _should_show(): the UI must still be
+	# built when the dev-menu "hide player HUD" toggle is already on, so turning
+	# it back off reveals a complete HUD without a respawn.
+	var should_build := is_multiplayer_authority() and not _owner_player.is_bot
+	visible = should_build
+	if not should_build:
 		return
+	_ensure_built()
+	refresh_visibility()
+
+
+## Build the HUD and wire its signals once, for either the owner or a spectating
+## peer's bound copy.
+func _ensure_built() -> void:
+	if _built:
+		return
+	_built = true
 
 	_hud_font = load(HUD_FONT_PATH) as Font
 
@@ -191,9 +211,18 @@ func _ready() -> void:
 	_rebuild_abilities()
 	_rebuild_status_effects()
 
-	# The UI is built even when the dev-menu "hide player HUD" toggle is already
-	# on, so turning it back off reveals a complete HUD without a respawn.
+
+## Show/hide this player's real HUD for a local spectator.  Built on demand, so
+## a remote player/bot costs nothing until someone actually watches them.
+## Called by world/spectator_controller.gd on this peer's Player copy only.
+func set_spectator_active(on: bool) -> void:
+	if _spectator_bound == on:
+		return
+	_spectator_bound = on
+	if on:
+		_ensure_built()
 	refresh_visibility()
+
 
 func _connect_signals() -> void:
 	if weapon_controller:
@@ -817,6 +846,9 @@ func _process(delta: float) -> void:
 	# coarse countdowns run on _ui_timer.
 	if visible != _should_show():
 		refresh_visibility()
+	# The FPS counter is peer-owned, not viewer-owned: keep it live even while
+	# our own HUD is hidden for spectator mode.  No-op for non-owner HUDs.
+	_update_fps()
 	if not visible:
 		return
 
@@ -826,17 +858,24 @@ func _process(delta: float) -> void:
 	_update_stamina()
 	_update_scope_charge_ui()
 	_update_charge_ui()
-	_update_fps()
 	_update_targeted_previews(delta)
 	_update_aimbot_circle()
 	_update_ability_cooldowns()
 
 
-## Whether this HUD should be on screen: only the local peer's own, non-bot
-## player, and not while the dev-menu hide toggle is active.
+## Whether this HUD should be on screen: the local peer's own, non-bot player
+## (unless they are spectating), or a player this peer is currently watching —
+## and not while the dev-menu hide toggle is active.
 func _should_show() -> bool:
+	if _spectator_bound:
+		return not GameManager.dev_hide_player_hud
+	# While spectating, our own body's HUD must stay down: `despawn()` hides the
+	# Player node but a Control under a Node3D is NOT hidden by it (which is why
+	# despawn() hides PlayerUI explicitly), and this per-frame re-assert would
+	# otherwise bring our own HUD back on top of the watched player's.
 	return is_multiplayer_authority() \
 		and not _owner_player.is_bot \
+		and not _owner_player.is_spectating \
 		and not GameManager.dev_hide_player_hud
 
 
@@ -847,7 +886,10 @@ func refresh_visibility() -> void:
 	var show := _should_show()
 	visible = show
 	if _fps_canvas:
-		_fps_canvas.visible = show
+		# The FPS counter belongs to the peer, not to the viewed player: keep it
+		# up while spectating (the dev "hide player HUD" toggle still hides it).
+		_fps_canvas.visible = (is_multiplayer_authority() and not _owner_player.is_bot) \
+			and not GameManager.dev_hide_player_hud
 	if _preview_layer:
 		_preview_layer.visible = show
 	if is_instance_valid(_owner_player) and _owner_player.damage_number_manager:
@@ -904,7 +946,14 @@ func _update_targeted_previews(delta: float) -> void:
 			icon.visible = false
 		return
 	var am := _owner_player.ability_manager
-	var cam := _owner_player.camera as Camera3D
+	# The target's own first-person camera is right for their HUD, but a
+	# spectator may be viewing from a third-person rig — project the discs with
+	# whatever camera is actually on screen in that case.
+	var cam: Camera3D = null
+	if _spectator_bound:
+		cam = get_viewport().get_camera_3d()
+	else:
+		cam = _owner_player.camera as Camera3D
 	if am == null or cam == null:
 		for icon in _preview_icons:
 			icon.visible = false

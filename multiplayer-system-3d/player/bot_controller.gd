@@ -155,9 +155,10 @@ class_name BotController
 ##   Aim points: grenades/molotovs/poison jars pass through world geometry
 ##   (`explodes_on_world == false`) and now aim at the target's MID-BODY; only
 ##   projectiles that explode on world contact (rockets, heal grenade) aim at
-##   the feet.  Sticky signal mines aim at mid-body.  Point-blank with a
-##   self-damaging explosive now switches to the first safe sidearm instead of
-##   standing still aiming at the ground.
+##   the feet.  Sticky signal mines aim at mid-body.  A self-damaging explosive
+##   is used point-blank while the bot is healthy; when the blast would leave it
+##   at/below the survival flee threshold, it switches to the first safe sidearm
+##   instead of standing still aiming at the ground.
 ##   Verified headlessly: bow charge reaches 1.0 and releases (cooldown starts).
 ##   Medic: the Heal Grenade Launcher is now classified as heal-like because its
 ##   blast heals allies (`team_heal = splash x team multiplier > 0`) even though
@@ -241,8 +242,8 @@ class_name BotController
 ##
 ## - Stage 4 (decision / combat movement / search / damage): COMPLETE.
 ##   `Decision` owns TRAVEL / SEARCH / COMBAT / HEAL / RELOAD_SAFE /
-##   RETREAT_COVER / STUCK_RECOVER.  It considers at 4 Hz, every state has a
-##   minimum duration, and new targets, damage, and traversal recovery use
+##   RETREAT_COVER / STUCK_RECOVER / FLEE.  It considers at 4 Hz, every state
+##   has a minimum duration, and new targets, damage, and traversal recovery use
 ##   interrupts.  `_act()` is now a dispatch through it.
 ##   Target selection scores angle-to-crosshair, distance, visible time, recent
 ##   damage source, low-health bonus and stickiness, with a switch margin and a
@@ -253,12 +254,13 @@ class_name BotController
 ##   keeping uses a wide soft band with approach angle, close range circles, and
 ##   jump/crouch are probabilistic and suppressed for precision/tight aim.
 ##   Cover (`ENABLE_COVER`) searches nearby ray-verified LOS breaks, moves there,
-##   waits, peeks/fires, ducks back, and times out/falls back after 6 s or when no
-##   cover exists.
-##   SEARCH goes to the last-seen point then along remembered velocity, with
-##   glances at side corridors/last threat.  Damage awareness records the source,
-##   estimated direction, forces a strafe change, turns with a skill-scaled
-##   REACT_DAMAGE look, and can enter SEARCH or RETREAT_COVER.
+##   waits, peeks/fires, ducks back, and times out/falls back after a
+##   survival-scaled hold (6-14 s) or when no cover exists.
+##   SEARCH goes to the last-seen point, extends along remembered velocity, then
+##   sweeps a ring of ray-verified standing positions around that point; its
+##   duration and sweep size scale with `aggression`.  Damage awareness records
+##   the source, estimated direction, forces a strafe change, turns with a
+##   skill-scaled REACT_DAMAGE look, and can enter SEARCH, RETREAT_COVER or FLEE.
 ##   Objective travel gets a light per-bot `aggression`/`flank_bias` offset.
 ##   Verified headlessly on `castle` with SPI vs SCI bots: damage caused a cover
 ##   state and a healer state, target-loss produced SEARCH, and combat/search/
@@ -294,8 +296,11 @@ class_name BotController
 ##
 ## - Stage 6 (aim feel / lead / skill traits / weapon preference): COMPLETE.
 ##   `SKILL_TRAIT_TABLE` maps skill 0 / 0.5 / 1 to reaction, tracking_speed,
-##   accuracy, aggression, lead_quality, movement_quality and awareness; `Style`
-##   applies seeded per-bot variance (`random_seed`, 0 = fresh roll per spawn).
+##   accuracy, aggression, lead_quality, movement_quality, awareness and
+##   survival; `Style`
+##   applies per-bot variance from a seed drawn ONCE per bot (`random_seed`, 0 =
+##   draw one now).  It is deliberately not re-rolled by the skill slider or a
+##   respawn, so a bot keeps its personality while the general Skill dial moves.
 ##   Aim noise is continuous (two low sines + micro tremor) and widens with
 ##   target speed; flicks/corrections/tracking read the accuracy and
 ##   tracking_speed traits.  Low accuracy aims centre mass, high accuracy takes
@@ -313,8 +318,17 @@ class_name BotController
 ##   now reads the spawned scene's hitbox/splash damage (a grenade no longer
 ##   looks like 10 damage), and the explosive self-splash penalty uses the real
 ##   splash radius instead of 45% of the ideal range, so secondary explosives are
-##   scored fairly too.  Explosion jump now requires `explodes_on_world`;
-##   grenade/molotov/poison-jar arcs can no longer be used as a "rocket jump".
+##   scored fairly too.  Self-splash is only penalised/avoided when
+##   `_accept_self_damage` says the blast would put the bot at/below the survival
+##   flee threshold; a healthy bot takes the damage and keeps the explosive.
+##   Explosion jump now requires `explodes_on_world`; grenade/molotov/poison-jar
+##   arcs can no longer be used as a "rocket jump".
+##   Dev-menu integration: `set_bot_skill`, `set_bot_trait`, `clear_bot_traits`,
+##   `set_bot_trait_overrides` and `randomize_bot_skill` are the runtime skill
+##   API used by the Bots list (`world/spawn_bot_menu.gd`).  General skill is
+##   forced to 1.0 for every newly spawned bot (`SpawnManager.DEFAULT_BOT_SKILL`);
+##   the Randomize button is the only thing that rolls it.  Manual bots persist
+##   team/skill/overrides through `GameManager.lobby_bots`; auto-fill bots do not.
 ##   Verified headlessly: traits interpolate correctly at skill 0/0.5/1;
 ##   grenade (27 m/s, g=9.8, t=0.22/0.56/1.13 s at 6/15/30 m) and rocket
 ##   (20 m/s, g=0, straight-line t=1.00 s at 20 m) solve as expected; low
@@ -328,6 +342,30 @@ class_name BotController
 ##   63 to 125 HP.  Visual flick/drift feel and a real wall-blocked arc still
 ##   need manual checks.
 ##
+## - Stage 7 (self-preservation / threat assessment / hunt): IMPLEMENTED.
+##   `survival` (0.25 / 0.55 / 0.85 by skill) reads a 2.5 s leaky damage bucket,
+##   the nearby-enemy count, distance to the threat, and whether the current
+##   target is much weaker, producing a 0..1 `_threat_pressure()`.  That drives
+##   two thresholds: RETREAT_COVER (26-50 % HP + pressure) and a new FLEE state
+##   (14-30 % HP + pressure).  FLEE is movement-only: it picks a ray-verified
+##   spot that breaks the threat's LOS or simply gains distance, never peeks or
+##   fires, and is entered instead of fighting when cover search fails.  Its
+##   cooldown hands control to self-heal/cover so it cannot ping-pong.  A visible
+##   enemy inside FLEE_FIGHT_BACK_RANGE turns the decision into COVER/COMBAT
+##   instead: do not run with the trigger released at knife range.
+##   Cover waits/peeks and its total hold scale with survival; a bot at the flee
+##   threshold hunkers instead of peeking.  If the target is visible at any
+##   point in the wait phase, the bot returns fire rather than staring over the
+##   wall — cover only helps while it actually blocks the shot.
+##   SEARCH is now an aggression-scaled hunt: 3.5-15 s, lead extension 6-14 m,
+##   then a 2-8 point ring around the last-known spot (floor + headroom only;
+##   deliberately no LOS requirement, so the far side of the pillar is included)
+##   with a short dwell and a look back at the origin.  Search points are built
+##   once per hunt on state entry, reuse `_steer_query`/`_los_query`, and are
+##   abandoned after a per-point timeout.
+##   All of this is server-local like the rest of the AI; nothing new is
+##   replicated.  The debug overlay shows `surv:` and `hunt:` lines.
+##
 ## OPEN QUESTIONS / HAZARDS FOR LATER STAGES
 ## - `_get_proj_info().heals_allies` is accurate (positive `health_delta` +
 ##   `can_hit_other_teamates`): Syringe Gun and Medpack Launcher only.
@@ -338,6 +376,9 @@ class_name BotController
 ## - The `_get_engagement_range` probes are dead (no range property).  Real
 ##   numbers must come from `hitscan_range` (hitscan) or projectile speed x
 ##   lifetime / engagement preference (projectile).
+## - Projectile DPS is a single-target proxy: it uses `max(impact, splash)` from
+##   the spawned scene and does not value hitting multiple enemies with one
+##   blast.  A future scoring pass should treat splash area/count separately.
 ## - Bots never cast abilities, and `AbilityManager.is_equipped()` is false for
 ##   them; only input-driven movement tech (dash/jump) is currently usable.
 ## ============================================================================
@@ -367,11 +408,11 @@ class_name BotController
 ## personality); any other value reproduces the same per-bot variance.
 @export var random_seed: int = 0
 
-## The editable traits exposed by the dev menu's Advanced dropdown.  Keys are
+## The editable traits exposed by the dev menu's expandable Advanced panel.  Keys are
 ## Style field names so the menu can read/write them without a parallel table.
 const BOT_TRAIT_KEYS: Array[String] = [
 	"reaction_time", "tracking_speed", "accuracy", "aggression",
-	"lead_quality", "movement_quality", "awareness",
+	"lead_quality", "movement_quality", "awareness", "survival",
 ]
 
 ## Draws a live state label above this bot (action, target, fire mode, trigger
@@ -673,25 +714,26 @@ const MELEE_USELESS_PRIMARY_BONUS: float = 45.0
 ##   reaction          seconds before reacting (lower is better)
 ##   tracking_speed    0..1 pursuit gain (higher is better)
 ##   accuracy          0..1 flick/aim-point/recoil/noise quality
-##   aggression        0..1 target/approach flavour
+##   aggression        0..1 target/approach flavour and hunt persistence
 ##   lead_quality      0..1 trust in the target-velocity estimate
 ##   movement_quality  0..1 strafe/jump/explosion-jump competence
 ##   awareness         0..1 recognition/hearing/scan quality
+##   survival          0..1 self-preservation: earlier cover, longer flee
 const SKILL_TRAIT_TABLE := [
 	{
 		"skill": 0.0, "reaction": 0.38, "tracking_speed": 0.25,
 		"accuracy": 0.30, "aggression": 0.30, "lead_quality": 0.0,
-		"movement_quality": 0.25, "awareness": 0.35,
+		"movement_quality": 0.25, "awareness": 0.35, "survival": 0.25,
 	},
 	{
 		"skill": 0.5, "reaction": 0.18, "tracking_speed": 0.62,
 		"accuracy": 0.70, "aggression": 0.50, "lead_quality": 0.65,
-		"movement_quality": 0.62, "awareness": 0.68,
+		"movement_quality": 0.62, "awareness": 0.68, "survival": 0.55,
 	},
 	{
 		"skill": 1.0, "reaction": 0.07, "tracking_speed": 0.98,
 		"accuracy": 0.97, "aggression": 0.65, "lead_quality": 1.0,
-		"movement_quality": 1.0, "awareness": 1.0,
+		"movement_quality": 1.0, "awareness": 1.0, "survival": 0.85,
 	},
 ]
 ## Continuous aim wander, in radians at zero accuracy.  Two low-frequency
@@ -795,17 +837,81 @@ enum LookPriority { SCAN, TRAVEL_LOOKAHEAD, GLANCE, REACT_DAMAGE, COMBAT }
 # build can ship with it off without deleting the code.
 const ENABLE_COVER: bool = true
 const DECISION_INTERVAL: float = 0.25
-const SEARCH_DURATION: float = 5.0
 const TARGET_LOST_GRACE: float = 0.35
 const RECOGNITION_TIME_MIN: float = 0.08
 const RECOGNITION_TIME_MAX: float = 0.55
 const TARGET_SWITCH_MARGIN: float = 0.35
 const TARGET_STICKINESS: float = 0.85
-const COVER_HEALTH_THRESHOLD: float = 0.42
 const COMBAT_STRAFE_SHOT_MIN: int = 3
 const COMBAT_STRAFE_SHOT_MAX: int = 6
 const COMBAT_JUMP_MIN_INTERVAL: float = 1.8
 const COMBAT_CROUCH_MIN_INTERVAL: float = 3.0
+
+# Stage 7 — self-preservation and the hunt.
+#
+# Retreat is driven by a threat assessment, not just raw HP: recent damage,
+# enemy numbers, distance, and whether the bot is actually winning the trade.
+# `survival` sets how early the bot acts on that reading.
+enum RetreatNeed { NONE, COVER, FLEE }
+const RETREAT_NEED_NAMES: Array[String] = ["none", "cover", "flee"]
+## Damage pressure is a leaky fraction of max HP: it decays back to zero over
+## this window, so one old hit cannot keep a healthy bot in cover.
+const SURVIVAL_DAMAGE_WINDOW: float = 2.5
+## Fraction of max HP in the window that saturates the damage-pressure term.
+const SURVIVAL_DAMAGE_REF: float = 0.35
+const SURVIVAL_PRESSURE_DAMAGE_WEIGHT: float = 0.5
+const SURVIVAL_PRESSURE_NUMBERS_WEIGHT: float = 0.2
+const SURVIVAL_PRESSURE_CLOSE_WEIGHT: float = 0.3
+## Winning the trade removes this much pressure (0..1), so a bot finishes a
+## nearly-dead enemy instead of backing off.
+const SURVIVAL_WINNING_RELIEF: float = 0.6
+const SURVIVAL_WINNING_REF: float = 0.45
+const SURVIVAL_CLOSE_NEAR: float = 6.0
+const SURVIVAL_CLOSE_FAR: float = 24.0
+## How long a resolved enemy keeps counting as a threat for survival purposes.
+## Deliberately shorter than the hunt: a 15 s search must not force cover.
+const SURVIVAL_THREAT_MEMORY: float = 5.0
+const COVER_HEALTH_MIN: float = 0.26
+const COVER_HEALTH_MAX: float = 0.50
+const COVER_PRESSURE_BONUS: float = 0.10
+const FLEE_HEALTH_MIN: float = 0.14
+const FLEE_HEALTH_MAX: float = 0.30
+const FLEE_PRESSURE_BONUS: float = 0.06
+## Do not turn your back on an enemy you can see this close: take cover (and
+## return fire if still visible) or fight instead of FLEEing.
+const FLEE_FIGHT_BACK_RANGE: float = 10.0
+const COVER_NEAR_DISTANCES: Array[float] = [3.0, 5.0, 7.0]
+const COVER_FAR_DISTANCES: Array[float] = [9.0, 12.0]
+const COVER_FAR_MIN_SURVIVAL: float = 0.55
+const COVER_TOTAL_TIME_MIN: float = 6.0
+const COVER_TOTAL_TIME_MAX: float = 10.0
+const COVER_ROUNDS_MAX: int = 3
+const FLEE_TIME_MIN: float = 2.0
+const FLEE_TIME_MAX: float = 5.0
+const FLEE_COOLDOWN_MIN: float = 1.0
+const FLEE_COOLDOWN_MAX: float = 2.5
+const FLEE_BASE_DISTANCES: Array[float] = [8.0, 12.0, 16.0]
+const FLEE_DISTANCE_SCALE_MIN: float = 0.7
+const FLEE_DISTANCE_SCALE_MAX: float = 1.25
+const FLEE_ARRIVE_RADIUS: float = 1.5
+const FLEE_REPATH_INTERVAL: float = 1.5
+const HUNT_DURATION_MIN: float = 3.5
+const HUNT_DURATION_MAX: float = 15.0
+const HUNT_SWEEP_RADII: Array[float] = [4.0, 6.0, 8.0]
+const HUNT_ANGLES: int = 8
+const HUNT_DWELL_MIN: float = 1.5
+const HUNT_DWELL_MAX: float = 2.5
+const HUNT_ARRIVE_RADIUS: float = 1.5
+const HUNT_ORIGIN_MOVE: float = 3.0
+const HUNT_LEAD_MIN: float = 6.0
+const HUNT_LEAD_MAX: float = 14.0
+const HUNT_MIN_POINTS: int = 2
+const HUNT_MAX_EXTRA_POINTS: int = 6
+## A sweep point that cannot be reached is abandoned after this long.
+const HUNT_POINT_TIMEOUT: float = 3.5
+## If the exact last-seen point cannot be reached this quickly, seed the sweep
+## from where the bot is and clear what it can reach.
+const HUNT_APPROACH_TIMEOUT: float = 4.0
 
 # Strafing.  The actual hold time now comes from the per-bot Style; this is only
 # the fallback used before a Style has been drawn.
@@ -967,6 +1073,13 @@ var _last_damage_source_name: String = ""
 var _last_damage_time: float = -999.0
 var _last_damage_position: Vector3 = Vector3.INF
 var _last_damage_direction: Vector3 = Vector3.ZERO
+## Rolling damage pressure (fraction of max HP) and the enemy-count snapshot
+## that feed `_threat_pressure()`.  Server-local, like the rest of the AI.
+var _recent_damage: float = 0.0
+var _nearby_enemy_count: int = 0
+var _visible_enemy_count: int = 0
+## Last moment `_last_seen_position` was refreshed from a visible target.
+var _last_seen_time: float = -999.0
 var _heard_position: Vector3 = Vector3.INF
 var _heard_distance: float = INF
 var _heard_timer: float = 0.0
@@ -982,7 +1095,16 @@ var _est_target_name: String = ""
 var _target_lost_timer: float = 0.0
 var _search_timer: float = 0.0
 var _search_active: bool = false
+## Stable centre of the current hunt (survives `_last_seen_position` being
+## cleared when search expires) plus the sweep around it.
 var _search_origin: Vector3 = Vector3.INF
+var _hunt_points: Array[Vector3] = []
+var _hunt_index: int = 0
+var _hunt_dwell: float = 0.0
+var _hunt_origin: Vector3 = Vector3.INF
+var _hunt_seeded: bool = false
+var _hunt_dwelling: bool = false
+var _hunt_point_timer: float = 0.0
 var _glance_timer: float = 0.0
 
 ## Combat movement is event-driven, not a 1.5 s dice roll.
@@ -1002,6 +1124,13 @@ var _cover_total_timer: float = 0.0
 var _cover_cooldown: float = 0.0
 var _cover_peek_side: float = 1.0
 var _cover_rounds: int = 0
+
+## FLEE: break contact when the trade is lost and cover is not available.
+var _flee_position: Vector3 = Vector3.INF
+var _flee_threat_pos: Vector3 = Vector3.INF
+var _flee_timer: float = 0.0
+var _flee_cooldown: float = 0.0
+var _flee_repath_timer: float = 0.0
 
 ## Sole owner of the fire flags.  Assigned in _ready; ticked every physics
 ## frame, independently of the 20 Hz think loop.
@@ -1203,6 +1332,7 @@ func _physics_process(delta: float) -> void:
 	var health_now: float = ac.health if ac != null else 0.0
 	if _last_health >= 0.0 and health_now < _last_health - 1.0:
 		_maneuvers.abort()
+		_record_damage(_last_health - health_now, ac)
 		_react_to_damage(ac)
 	_last_health = health_now
 
@@ -1212,6 +1342,10 @@ func _physics_process(delta: float) -> void:
 		_explosion_jump_cooldown_timer = maxf(_explosion_jump_cooldown_timer - delta, 0.0)
 	if _cover_cooldown > 0.0:
 		_cover_cooldown = maxf(_cover_cooldown - delta, 0.0)
+	if _flee_cooldown > 0.0:
+		_flee_cooldown = maxf(_flee_cooldown - delta, 0.0)
+	# Leaky bucket: an old hit stops mattering after SURVIVAL_DAMAGE_WINDOW.
+	_recent_damage = maxf(0.0, _recent_damage - delta / SURVIVAL_DAMAGE_WINDOW)
 
 	# Safe-top-off clock: reset as long as an enemy is visible or nearby.
 	if _current_target != null or _enemy_nearby:
@@ -1420,19 +1554,18 @@ func _react_to_damage(ac: AttributeComponent) -> void:
 				and attacker != player and _is_enemy_of(attacker):
 			_last_damage_source_name = attacker_name
 			_last_damage_position = attacker.global_position
-			if _current_target == null:
-				_last_seen_position = attacker.global_position
-				_last_seen_velocity = attacker.velocity
-				_search_active = true
-				_search_timer = SEARCH_DURATION
-				_search_origin = attacker.global_position
-				_decision.interrupt(Decision.State.SEARCH)
 			_mouse.request_look_at_point(
 				_get_head_position(attacker),
 				LookPriority.REACT_DAMAGE,
 				1.0,
 				"damage:" + attacker_name
 			)
+			if _current_target == null:
+				_begin_search(attacker.global_position, attacker.velocity)
+				# A committed escape owns the next few seconds; do not drag the
+				# bot into a hunt it is about to run away from.
+				if _assess_retreat() != RetreatNeed.FLEE:
+					_decision.interrupt(Decision.State.SEARCH)
 			_maybe_cover_after_damage()
 			return
 
@@ -1443,21 +1576,26 @@ func _react_to_damage(ac: AttributeComponent) -> void:
 		_last_damage_position = player.global_position + source_dir * 8.0
 		_mouse.request_look_direction(source_dir, LookPriority.REACT_DAMAGE, 1.0)
 		if _current_target == null:
-			_last_seen_position = _last_damage_position
-			_last_seen_velocity = Vector3.ZERO
-			_search_active = true
-			_search_timer = SEARCH_DURATION
-			_search_origin = _last_damage_position
-			_decision.interrupt(Decision.State.SEARCH)
+			_begin_search(_last_damage_position, Vector3.ZERO)
+			if _assess_retreat() != RetreatNeed.FLEE:
+				_decision.interrupt(Decision.State.SEARCH)
 	_maybe_cover_after_damage()
 
 
+## A hit is the fastest read on whether the trade is being lost.  FLEE takes
+## precedence; a bot already fleeing is never downgraded to a fair fight.
 func _maybe_cover_after_damage() -> void:
-	if not ENABLE_COVER:
+	var need := _assess_retreat()
+	if need == RetreatNeed.FLEE and _flee_cooldown <= 0.0:
+		_decision.interrupt(Decision.State.FLEE)
 		return
-	if _health_ratio() < COVER_HEALTH_THRESHOLD and _has_threat():
+	if ENABLE_COVER and _cover_cooldown <= 0.0 \
+			and (need == RetreatNeed.COVER or need == RetreatNeed.FLEE):
 		_decision.interrupt(Decision.State.RETREAT_COVER)
-	elif _current_target != null:
+		return
+	if _decision.state == Decision.State.FLEE:
+		return
+	if _current_target != null:
 		_decision.interrupt(Decision.State.COMBAT)
 
 
@@ -1578,7 +1716,8 @@ func _is_engaging_enemy() -> bool:
 		return true
 	if _decision != null and _decision.state in [
 			Decision.State.COMBAT, Decision.State.HEAL,
-			Decision.State.RETREAT_COVER, Decision.State.RELOAD_SAFE]:
+			Decision.State.RETREAT_COVER, Decision.State.RELOAD_SAFE,
+			Decision.State.FLEE]:
 		return true
 	return false
 
@@ -1664,6 +1803,7 @@ func _think() -> void:
 		if _current_target != null:
 			_last_seen_position = _current_target.global_position
 			_last_seen_velocity = _estimated_velocity_for(_current_target)
+			_last_seen_time = now
 		return
 
 	_retarget_timer = RETARGET_INTERVAL
@@ -1675,6 +1815,7 @@ func _think() -> void:
 	var heal_dist_sq := HEAL_RANGE * HEAL_RANGE
 	var heal_best_ratio := 2.0
 	_enemy_nearby = false
+	_nearby_enemy_count = 0
 	var visible_names: Dictionary = {}
 	var best_target: Player = null
 	var best_score := -INF
@@ -1694,6 +1835,9 @@ func _think() -> void:
 			# A nearby enemy keeps the medic in "combat" healing mode even if
 			# it is currently behind a wall or outside the FOV cone.
 			_enemy_nearby = true
+			# Counted before the heal-weapon continue below: a medic still feels
+			# outnumbered even while holding a gun that cannot shoot.
+			_nearby_enemy_count += 1
 
 		if is_enemy:
 			# A heal weapon can't damage enemies — skip the wasted LOS raycast.
@@ -1740,6 +1884,8 @@ func _think() -> void:
 			if dist_sq < heal_dist_sq and ratio < heal_best_ratio and _has_line_of_sight_to_player(p):
 				heal_best_ratio = ratio
 				_heal_target = p
+
+	_visible_enemy_count = visible_names.size()
 
 	# Drop recognition clocks for anyone no longer visible.
 	for key in _seen_since.keys():
@@ -1802,6 +1948,8 @@ func _think() -> void:
 		_target_lost_timer = 0.0
 		_last_seen_position = _current_target.global_position
 		_last_seen_velocity = _estimated_velocity_for(_current_target)
+		_last_seen_time = now
+		_clear_hunt()
 		if _current_target != prev_target:
 			# A newly acquired/switched target outranks any scripted maneuver and
 			# pays a small re-aim cost on top of the normal reaction time.
@@ -1811,12 +1959,13 @@ func _think() -> void:
 				reaction = _style.reaction_time
 			var switch_cost := 0.0 if prev_target == null else reaction * randf_range(0.6, 1.2)
 			_reaction_timer = maxf(_reaction_timer, reaction * randf_range(0.8, 1.2) + switch_cost)
-			_decision.interrupt(Decision.State.COMBAT)
+			# Re-spotting the player does not cancel a committed escape; the
+			# FLEE routine ends on its own timer/health check.
+			if _decision.state != Decision.State.FLEE:
+				_decision.interrupt(Decision.State.COMBAT)
 	else:
 		if not _search_active and _last_seen_position != Vector3.INF:
-			_search_active = true
-			_search_timer = SEARCH_DURATION
-			_search_origin = _last_seen_position
+			_begin_search(_last_seen_position, _last_seen_velocity)
 			_target_lost_timer = TARGET_LOST_GRACE
 		elif _search_active and _target_lost_timer > 0.0:
 			_target_lost_timer = maxf(_target_lost_timer - PROCESS_INTERVAL, 0.0)
@@ -2496,10 +2645,10 @@ func _weapon_damage_viable_at(weapon: Weapon, dist: float) -> bool:
 	var profile := _get_weapon_profile(weapon)
 	if bool(profile.get("explosive", false)) \
 			and float(profile.get("self_damage", 0.0)) < 0.0 \
+			and not _accept_self_damage(profile) \
 			and dist < float(profile.get("splash_radius", 0.0)) + EXPLOSIVE_SAFE_MARGIN:
-		# Point-blank with an explosive that can hurt us is not "viable", even
-		# though DPS/range look fine.  Without this the primary bonus would pull
-		# the bot back to it immediately after _act_combat swapped to a sidearm.
+		# Point-blank with an explosive that would put us near death is not
+		# "viable", even though DPS/range look fine.  A healthy bot keeps it.
 		return false
 	if bool(profile.get("projectile", false)):
 		# Projectile damage falloff is handled by SimpleProjectile itself and is
@@ -2555,7 +2704,8 @@ func _weapon_situation_score(weapon: Weapon, dist: float, has_target: bool,
 			# treated a 3 m grenade as dangerous out to ~13 m and made every
 			# secondary explosive look worthless at normal combat distance.
 			if bool(profile["explosive"]) \
-					and float(profile["self_damage"]) < 0.0:
+					and float(profile["self_damage"]) < 0.0 \
+					and not _accept_self_damage(profile):
 				var danger := float(profile["splash_radius"]) + EXPLOSIVE_SAFE_MARGIN
 				if dist < danger:
 					score -= 300.0 + (danger - dist) * 20.0
@@ -3130,8 +3280,9 @@ func _try_explosion_jump(wc: WeaponController, travel_dist: float) -> bool:
 		return false
 	if weapon.mag_current <= 0 and not weapon.has_infinite_ammo:
 		return false
-	# Low health + a self-damaging blast is not a good trade.
-	if float(info.get("self_damage", 0.0)) < 0.0 and _health_ratio() < 0.6:
+	# A rocket jump is a normal trade while healthy; skip it only when the blast
+	# would leave the bot at/below the survival threshold.
+	if not _accept_self_damage(info):
 		return false
 
 	# Movement competence, not raw skill: a clumsy bot almost never chains
@@ -3215,11 +3366,16 @@ func _abort_explosion_jump() -> void:
 # Act
 
 func _act() -> void:
-	var wc: WeaponController = player.weapon_controller
-	if not wc._is_ready():
-		return
 	# The explosion-jump sub-sequence owns aim/fire/jump until it finishes.
 	if _explosion_jump_phase != 0:
+		return
+	# FLEE is movement-only and never fires.  A switching or unready weapon must
+	# not freeze the escape, so it bypasses the readiness gate below.
+	if _decision != null and _decision.state == Decision.State.FLEE:
+		_decision.act()
+		return
+	var wc: WeaponController = player.weapon_controller
+	if not wc._is_ready():
 		return
 	_decision.act()
 
@@ -3553,8 +3709,120 @@ func _act_wander() -> void:
 	_traversal.move_to(_wander_target, 0.25, 1.2, 0.35)
 
 
-## SEARCH: go to the last-seen point, then continue along the target's remembered
-## velocity for a few seconds.  Glances are issued by `_tick_glance`.
+# Hunt / SEARCH (Stage 7)
+
+## Hunt length scales with aggression: a cautious bot gives up quickly, a
+## bloodthirsty one keeps clearing angles for up to HUNT_DURATION_MAX.
+func _search_duration() -> float:
+	return lerpf(HUNT_DURATION_MIN, HUNT_DURATION_MAX, _aggression_trait())
+
+
+## Start (or restart) a hunt at [param at].  The hunt owns a stable origin
+## (`_search_origin`) because `_last_seen_position` is cleared on expiry.
+func _begin_search(at: Vector3, velocity: Vector3 = Vector3.ZERO) -> void:
+	if at == Vector3.INF:
+		return
+	_search_active = true
+	_search_timer = _search_duration()
+	_search_origin = at
+	_last_seen_position = at
+	_last_seen_velocity = velocity
+	_last_seen_time = float(Time.get_ticks_msec()) / 1000.0
+	_clear_hunt()
+	_hunt_point_timer = HUNT_APPROACH_TIMEOUT
+
+
+func _clear_hunt() -> void:
+	_hunt_points.clear()
+	_hunt_index = 0
+	_hunt_dwell = 0.0
+	_hunt_origin = Vector3.INF
+	_hunt_seeded = false
+	_hunt_dwelling = false
+	_hunt_point_timer = 0.0
+
+
+## A standable point at [param candidate]'s horizontal position: floor within
+## 3 m, walkable slope, no wall/low ceiling in the capsule.  INF when unusable.
+func _ground_point(space: PhysicsDirectSpaceState3D,
+		candidate: Vector3) -> Vector3:
+	_steer_query.from = candidate + Vector3.UP * 1.5
+	_steer_query.to = candidate - Vector3.UP * 3.0
+	var floor_hit := space.intersect_ray(_steer_query)
+	if floor_hit.is_empty():
+		return Vector3.INF
+	var floor_pos: Vector3 = floor_hit.position
+	if absf(floor_pos.y - player.global_position.y) > 4.0:
+		return Vector3.INF
+	if (floor_hit.normal as Vector3).angle_to(Vector3.UP) \
+			> deg_to_rad(FLOOR_MAX_ANGLE_DEG):
+		return Vector3.INF
+	candidate.y = floor_pos.y
+	# Reject a point inside a wall or under a low ceiling.
+	_steer_query.from = candidate + Vector3.UP * 0.4
+	_steer_query.to = candidate + Vector3.UP * 1.8
+	if not space.intersect_ray(_steer_query).is_empty():
+		return Vector3.INF
+	return candidate
+
+
+## Build the lead point plus a ring of standing positions around the last-known
+## spot.  Deliberately no LOS-to-origin requirement: the far side of the pillar
+## is exactly where the player may be hiding.
+func _seed_hunt_points() -> void:
+	_clear_hunt()
+	_hunt_origin = _search_origin
+	_hunt_seeded = true
+	if _search_origin == Vector3.INF:
+		return
+	var space := player.get_world_3d().direct_space_state
+	var lead_distance := lerpf(HUNT_LEAD_MIN, HUNT_LEAD_MAX, _aggression_trait())
+	var lead := _search_origin
+	var vel := Vector3(_last_seen_velocity.x, 0.0, _last_seen_velocity.z)
+	if vel.length() > 0.5:
+		lead += vel.normalized() * lead_distance
+	else:
+		lead += player.horizontal_forward() * lead_distance * 0.8
+	var lead_ground := _ground_point(space, lead)
+	if lead_ground != Vector3.INF:
+		_hunt_points.append(lead_ground)
+
+	var ring: Array[Vector3] = []
+	for radius in HUNT_SWEEP_RADII:
+		for i in HUNT_ANGLES:
+			var angle := TAU * float(i) / float(HUNT_ANGLES)
+			var candidate := _search_origin \
+				+ Vector3(cos(angle), 0.0, sin(angle)) * radius
+			var ground := _ground_point(space, candidate)
+			if ground == Vector3.INF or ground.distance_to(_search_origin) < 1.5:
+				continue
+			ring.append(ground)
+	var origin := player.global_position
+	ring.sort_custom(func(a: Vector3, b: Vector3) -> bool:
+		return a.distance_squared_to(origin) < b.distance_squared_to(origin)
+	)
+	var limit := HUNT_MIN_POINTS \
+		+ int(_aggression_trait() * float(HUNT_MAX_EXTRA_POINTS))
+	for point in ring:
+		if _hunt_points.size() >= limit:
+			break
+		_hunt_points.append(point)
+	_hunt_point_timer = HUNT_POINT_TIMEOUT
+
+
+## Weapon upkeep shared by the travel-to-last-seen and sweep phases.
+func _act_search_weapons() -> void:
+	var wc: WeaponController = player.weapon_controller
+	if wc == null or not wc._is_ready():
+		return
+	_update_weapon_choice(wc, 15.0, false)
+	if _buttons.is_switch_pending() or wc.is_switching():
+		return
+	_maybe_tactical_reload(wc)
+
+
+## SEARCH: go to the last-seen point, then clear the angles around it instead of
+## walking straight past.  Glances are issued by `_tick_glance`.
 func _act_search() -> void:
 	_trigger.release_all()
 	_has_desired_aim = false
@@ -3563,25 +3831,150 @@ func _act_search() -> void:
 	if _search_timer <= 0.0 or _last_seen_position == Vector3.INF:
 		_search_active = false
 		_last_seen_position = Vector3.INF
+		_last_seen_time = -999.0
+		_clear_hunt()
 		_act_seek_objective_or_wander()
 		return
 
 	var pos := player.global_position
-	var dest := _last_seen_position
-	var flat_to := Vector2(dest.x - pos.x, dest.z - pos.z)
-	if flat_to.length() < 2.0:
-		var vel := Vector3(_last_seen_velocity.x, 0.0, _last_seen_velocity.z)
-		if vel.length() > 0.5:
-			dest += vel.normalized() * 6.0
-		else:
-			dest += player.horizontal_forward() * 5.0
-	_traversal.move_to(dest, 0.9, 1.2, 0.15)
-	var wc: WeaponController = player.weapon_controller
-	if wc != null and wc._is_ready():
-		_update_weapon_choice(wc, 15.0, false)
-		if _buttons.is_switch_pending() or wc.is_switching():
+	var flat_to := Vector2(
+		_last_seen_position.x - pos.x, _last_seen_position.z - pos.z
+	)
+
+	# Phase 1: reach the last-known spot.  Move to the un-extended point so
+	# arrival is guaranteed; the velocity lead becomes the first sweep point.
+	# If the exact spot is unreachable, start clearing what is reachable.
+	if not _hunt_seeded:
+		if flat_to.length() > HUNT_ARRIVE_RADIUS:
+			_hunt_point_timer = maxf(_hunt_point_timer - PROCESS_INTERVAL, 0.0)
+			if _hunt_point_timer > 0.0:
+				_traversal.move_to(_last_seen_position, 0.9, 1.2, 0.15)
+				_act_search_weapons()
+				return
+		_seed_hunt_points()
+
+	# Phase 2: sweep the ring.  Rebuild only if the hunt origin has moved; an
+	# empty ring falls through to the lead point (reseeding every tick would
+	# burn ~48 rays per tick for no gain).
+	if not _hunt_points.is_empty() \
+			and _search_origin.distance_to(_hunt_origin) > HUNT_ORIGIN_MOVE:
+		_seed_hunt_points()
+	if _hunt_points.is_empty():
+		# No standable ring (ledge/open pit): scan from the last-known point
+		# and let the hunt timer expire instead of pacing back and forth.
+		_keyboard.set_move(0, 0)
+		_mouse.request_look_at_point(
+			_search_origin + Vector3.UP * AIM_CENTER_HEIGHT,
+			LookPriority.GLANCE, 0.5, "hunt_scan"
+		)
+		_act_search_weapons()
+		return
+
+	if _hunt_index >= _hunt_points.size():
+		_hunt_index = 0
+		_hunt_dwelling = false
+		_hunt_dwell = 0.0
+		_hunt_point_timer = HUNT_POINT_TIMEOUT
+	if _hunt_dwelling:
+		_keyboard.set_move(0, 0)
+		_hunt_dwell = maxf(_hunt_dwell - PROCESS_INTERVAL, 0.0)
+		_mouse.request_look_at_point(
+			_search_origin + Vector3.UP * AIM_CENTER_HEIGHT,
+			LookPriority.GLANCE, 0.4, "hunt_scan"
+		)
+		if _hunt_dwell <= 0.0:
+			_hunt_dwelling = false
+			_hunt_index += 1
+			_hunt_point_timer = HUNT_POINT_TIMEOUT
+		_act_search_weapons()
+		return
+
+	var point := _hunt_points[_hunt_index]
+	var flat := point - player.global_position
+	flat.y = 0.0
+	if flat.length() <= HUNT_ARRIVE_RADIUS:
+		_hunt_dwelling = true
+		_hunt_dwell = randf_range(HUNT_DWELL_MIN, HUNT_DWELL_MAX)
+		_keyboard.set_move(0, 0)
+	else:
+		_traversal.move_to(point, 1.0, HUNT_ARRIVE_RADIUS, 0.1)
+		_hunt_point_timer = maxf(_hunt_point_timer - PROCESS_INTERVAL, 0.0)
+		if _hunt_point_timer <= 0.0:
+			# Blocked/unreachable: abandon this point rather than stall.
+			_hunt_index += 1
+			_hunt_point_timer = HUNT_POINT_TIMEOUT
+	_act_search_weapons()
+
+
+## FLEE: movement-only break for contact.  The trigger stays released and the
+## bot never calls `_act_combat()`; the decision state's job is distance and
+## line-of-sight breaks, not trading shots.
+func _act_flee() -> void:
+	_trigger.release_all()
+	_has_desired_aim = false
+
+	_flee_timer = maxf(_flee_timer - PROCESS_INTERVAL, 0.0)
+	var threat := _current_threat_position()
+	if threat != Vector3.INF:
+		_flee_threat_pos = threat
+	if _flee_timer <= 0.0 \
+			or _health_ratio() > _flee_health_threshold() \
+			or not _has_survival_threat() \
+			or _assess_retreat() != RetreatNeed.FLEE:
+		_end_flee()
+		return
+
+	if _flee_repath_timer > 0.0:
+		_flee_repath_timer = maxf(_flee_repath_timer - PROCESS_INTERVAL, 0.0)
+	if _flee_position == Vector3.INF and _flee_repath_timer <= 0.0:
+		_flee_position = _find_flee_position(_flee_threat_pos)
+		_flee_repath_timer = FLEE_REPATH_INTERVAL
+		if _flee_position == Vector3.INF:
+			_flee_position = _pick_backoff_position(_flee_threat_pos)
+		if _flee_position == Vector3.INF:
+			# Cornered: every escape direction is blocked, so fight.
+			_end_flee()
 			return
-		_maybe_tactical_reload(wc)
+
+	if _flee_position == Vector3.INF:
+		# Waiting for the repath cooldown; hold still rather than run blind.
+		_keyboard.set_move(0, 0)
+		return
+
+	_traversal.move_to(_flee_position, 1.0, FLEE_ARRIVE_RADIUS, 0.0)
+	var flat := _flee_position - player.global_position
+	flat.y = 0.0
+	if flat.length() <= FLEE_ARRIVE_RADIUS:
+		_flee_position = Vector3.INF
+		_flee_repath_timer = 0.0
+
+
+## Leave FLEE.  A critical bot keeps a cooldown so FLEE/COVER/COMBAT cannot
+## ping-pong on every decision tick; cover is the holding pattern while it runs.
+func _end_flee() -> void:
+	_trigger.release_all()
+	_has_desired_aim = false
+	_keyboard.set_move(0, 0)
+	var still_hurt := _health_ratio() <= _cover_health_threshold() \
+		and _has_survival_threat()
+	if still_hurt:
+		_flee_cooldown = lerpf(
+			FLEE_COOLDOWN_MIN, FLEE_COOLDOWN_MAX, _survival_trait()
+		)
+	else:
+		_flee_cooldown = 0.0
+	_flee_position = Vector3.INF
+	_flee_timer = 0.0
+	_flee_repath_timer = 0.0
+
+	var next := Decision.State.TRAVEL
+	if still_hurt:
+		next = Decision.State.RETREAT_COVER if ENABLE_COVER else Decision.State.COMBAT
+	elif _current_target != null and is_instance_valid(_current_target):
+		next = Decision.State.COMBAT
+	elif _search_active:
+		next = Decision.State.SEARCH
+	_decision.interrupt(next)
 
 
 ## RELOAD_SAFE: keep eyes on the threat, break line of sight if cover is near,
@@ -3630,6 +4023,7 @@ func _act_retreat_cover() -> void:
 	var wc: WeaponController = player.weapon_controller
 	if not wc._is_ready():
 		return
+	var surv := _survival_trait()
 
 	if _current_target != null and is_instance_valid(_current_target):
 		_cover_threat_pos = _current_target.global_position
@@ -3637,6 +4031,12 @@ func _act_retreat_cover() -> void:
 		_cover_position = _find_cover_position(_cover_threat_pos)
 		if _cover_position == Vector3.INF:
 			_cover_cooldown = 6.0
+			if _assess_retreat() == RetreatNeed.FLEE and _flee_cooldown <= 0.0:
+				# No cover and critically hurt: break contact instead of fighting.
+				_trigger.release_all()
+				_has_desired_aim = false
+				_decision.interrupt(Decision.State.FLEE)
+				return
 			_decision.interrupt(
 				Decision.State.COMBAT if _current_target != null else Decision.State.TRAVEL
 			)
@@ -3645,7 +4045,12 @@ func _act_retreat_cover() -> void:
 
 	_cover_total_timer = maxf(_cover_total_timer - PROCESS_INTERVAL, 0.0)
 	if _cover_total_timer <= 0.0:
-		_cover_cooldown = 3.0
+		_cover_cooldown = 2.0
+		if _assess_retreat() == RetreatNeed.FLEE and _flee_cooldown <= 0.0:
+			_trigger.release_all()
+			_has_desired_aim = false
+			_decision.interrupt(Decision.State.FLEE)
+			return
 		_decision.interrupt(
 			Decision.State.COMBAT if _current_target != null else Decision.State.TRAVEL
 		)
@@ -3662,11 +4067,29 @@ func _act_retreat_cover() -> void:
 			flat.y = 0.0
 			if flat.length() <= 0.9:
 				_cover_phase = 1
-				_cover_timer = randf_range(0.6, 1.4)
+				_cover_timer = randf_range(
+					lerpf(0.6, 1.0, surv), lerpf(1.4, 2.2, surv)
+				)
 				_keyboard.set_move(0, 0)
 		1:
-			# Catch breath behind cover; keep the threat watched.
+			# Catch breath behind cover; keep the threat watched.  A bot at the
+			# flee threshold hunkers instead of peeking — unless the target is
+			# ACTUALLY visible, in which case cover is not covering anything and
+			# the bot should return fire instead of staring over the wall.
+			#
+			# Returning early only while the rest timer is still running is
+			# load-bearing: `_cover_timer` is decremented above the match, so the
+			# bot still advances to the peek phase when it expires.  Returning on
+			# "target exists" alone kept this branch from ever reaching the timer
+			# check, so RETREAT_COVER never waited, peeked or ducked.
 			_keyboard.set_move(0, 0)
+			var sees_target := _current_target != null \
+				and is_instance_valid(_current_target) \
+				and _current_target.spawned \
+				and _has_line_of_sight_to_player(_current_target)
+			if sees_target and _cover_timer > 0.0:
+				_act_combat()
+				return
 			if _style != null and randf() < _style.crouch_rate * 0.5:
 				_keyboard.crouch_hold(0.25)
 			if _cover_threat_pos != Vector3.INF:
@@ -3675,8 +4098,13 @@ func _act_retreat_cover() -> void:
 					LookPriority.COMBAT, 0.6, "cover_wait"
 				)
 			if _cover_timer <= 0.0:
+				if _health_ratio() <= _flee_health_threshold():
+					_cover_timer = 0.5
+					return
 				_cover_phase = 2
-				_cover_timer = randf_range(0.35, 0.55)
+				_cover_timer = randf_range(
+					lerpf(0.55, 0.45, surv), lerpf(0.75, 0.65, surv)
+				)
 				_cover_peek_side = 1.0 if _strafe_bias >= 0.0 else -1.0
 		2:
 			# Step out and take the shot(s).
@@ -3691,7 +4119,9 @@ func _act_retreat_cover() -> void:
 			_move_local(Vector2(_cover_peek_side, -1.0))
 			if _cover_timer <= 0.0:
 				_cover_phase = 3
-				_cover_timer = randf_range(0.3, 0.45)
+				_cover_timer = randf_range(
+					lerpf(0.30, 0.25, surv), lerpf(0.45, 0.35, surv)
+				)
 		3:
 			# Duck back to cover.
 			_trigger.release_all()
@@ -3699,15 +4129,17 @@ func _act_retreat_cover() -> void:
 			_traversal.move_to(_cover_position, 1.0, 0.7, 0.0)
 			if _cover_timer <= 0.0:
 				_cover_rounds += 1
-				if _cover_rounds >= 3 and (
-						_health_ratio() > COVER_HEALTH_THRESHOLD + 0.1
+				if _cover_rounds >= COVER_ROUNDS_MAX and (
+						_health_ratio() > _cover_health_threshold() + 0.1
 						or _current_target == null):
 					_decision.interrupt(
 						Decision.State.COMBAT if _current_target != null else Decision.State.SEARCH
 					)
 				else:
 					_cover_phase = 1
-					_cover_timer = randf_range(0.5, 1.2)
+					_cover_timer = randf_range(
+						lerpf(0.5, 0.8, surv), lerpf(1.2, 1.8, surv)
+					)
 
 
 ## Shared fallback used by STUCK_RECOVER and by cover/reload exits.
@@ -3747,13 +4179,128 @@ func _reload_while_travelling() -> void:
 		_buttons.request_reload()
 
 
-func _has_threat() -> bool:
+# Survival / threat assessment (Stage 7)
+
+## Book `amount` of damage into the rolling pressure bucket.  Fraction of max HP,
+## clamped, decayed in `_physics_process`; no allocation and no queries.
+func _record_damage(amount: float, ac: AttributeComponent) -> void:
+	if ac == null or ac.max_health <= 0.0 or amount <= 0.0:
+		return
+	_recent_damage = clampf(_recent_damage + amount / ac.max_health, 0.0, 1.0)
+
+
+func _recent_damage_fraction() -> float:
+	return clampf(_recent_damage, 0.0, 1.0)
+
+
+func _survival_trait() -> float:
+	return _style.survival if _style != null else lerpf(0.25, 0.85, clampf(skill, 0.0, 1.0))
+
+
+func _aggression_trait() -> float:
+	return _style.aggression if _style != null else clampf(skill, 0.0, 1.0)
+
+
+## Where the bot believes the most urgent threat is.  A freshly resolved shooter
+## outranks the bot's current target: being shot from behind is more urgent than
+## whoever the crosshair happens to be on.
+func _current_threat_position() -> Vector3:
 	var now := float(Time.get_ticks_msec()) / 1000.0
-	if _current_target != null:
+	if not _last_damage_source_name.is_empty() \
+			and now - _last_damage_time < 1.0 \
+			and _last_damage_position != Vector3.INF:
+		return _last_damage_position
+	if _current_target != null and is_instance_valid(_current_target) \
+			and _current_target.spawned:
+		return _current_target.global_position
+	if _last_seen_position != Vector3.INF:
+		return _last_seen_position
+	return _last_damage_position
+
+
+## Deliberately not an active-SEARCH test: with a 15 s hunt that would keep a
+## healthy bot in cover for the whole hunt.  Survival only cares about an enemy
+## the bot can actually account for.
+func _has_survival_threat() -> bool:
+	if _current_target != null and is_instance_valid(_current_target) \
+			and _current_target.spawned:
 		return true
-	if _last_damage_position != Vector3.INF and now - _last_damage_time < 6.0:
+	if _enemy_nearby:
 		return true
-	return _search_active and _last_seen_position != Vector3.INF
+	var now := float(Time.get_ticks_msec()) / 1000.0
+	if not _last_damage_source_name.is_empty() \
+			and now - _last_damage_time < SURVIVAL_THREAT_MEMORY \
+			and _last_damage_position != Vector3.INF:
+		return true
+	return _search_active and _last_seen_time > 0.0 \
+		and now - _last_seen_time < SURVIVAL_THREAT_MEMORY
+
+
+## 0..1 reading of how badly the trade is going.  Damage rate dominates; being
+## outnumbered and close adds; a much weaker enemy removes most of it so a bot
+## finishes a kill instead of backing off.
+func _threat_pressure() -> float:
+	var damage_p := clampf(
+		_recent_damage_fraction() / SURVIVAL_DAMAGE_REF, 0.0, 1.0
+	)
+	var numbers_p := clampf(float(maxi(_nearby_enemy_count - 1, 0)) / 2.0, 0.0, 1.0)
+	var close_p := 0.0
+	var threat := _current_threat_position()
+	if threat != Vector3.INF:
+		var dist := player.global_position.distance_to(threat)
+		close_p = 1.0 - clampf(
+			(dist - SURVIVAL_CLOSE_NEAR) / (SURVIVAL_CLOSE_FAR - SURVIVAL_CLOSE_NEAR),
+			0.0, 1.0
+		)
+	var base := SURVIVAL_PRESSURE_DAMAGE_WEIGHT * damage_p \
+		+ SURVIVAL_PRESSURE_NUMBERS_WEIGHT * numbers_p \
+		+ SURVIVAL_PRESSURE_CLOSE_WEIGHT * close_p
+	var winning := 0.0
+	if _current_target != null and is_instance_valid(_current_target) \
+			and _current_target.spawned:
+		var ac := _current_target.attribute_component
+		if ac != null and ac.max_health > 0.0:
+			var enemy_hp: float = ac.health / ac.max_health
+			winning = clampf(
+				(_health_ratio() - enemy_hp + 0.10) / SURVIVAL_WINNING_REF,
+				0.0, 1.0
+			)
+	return clampf(base * (1.0 - SURVIVAL_WINNING_RELIEF * winning), 0.0, 1.0)
+
+
+func _cover_health_threshold() -> float:
+	return clampf(
+		lerpf(COVER_HEALTH_MIN, COVER_HEALTH_MAX, _survival_trait())
+			+ _threat_pressure() * COVER_PRESSURE_BONUS,
+		0.0, 0.85
+	)
+
+
+func _flee_health_threshold() -> float:
+	var cover := _cover_health_threshold()
+	var flee := lerpf(FLEE_HEALTH_MIN, FLEE_HEALTH_MAX, _survival_trait()) \
+		+ _threat_pressure() * FLEE_PRESSURE_BONUS
+	return clampf(flee, 0.0, maxf(0.0, cover - 0.02))
+
+
+## `RetreatNeed.NONE / COVER / FLEE` for the current instant.
+func _assess_retreat() -> int:
+	if not _has_survival_threat():
+		return RetreatNeed.NONE
+	var hp := _health_ratio()
+	if hp <= _flee_health_threshold():
+		# A visible enemy at close range is a fight, not a footrace: running
+		# with the trigger released just feeds them free damage.
+		if _current_target != null and is_instance_valid(_current_target) \
+				and _current_target.spawned \
+				and player.global_position.distance_to(
+					_current_target.global_position
+				) <= FLEE_FIGHT_BACK_RANGE:
+			return RetreatNeed.COVER if ENABLE_COVER else RetreatNeed.NONE
+		return RetreatNeed.FLEE
+	if hp <= _cover_health_threshold():
+		return RetreatNeed.COVER if ENABLE_COVER else RetreatNeed.FLEE
+	return RetreatNeed.NONE
 
 
 ## Called by Decision on state entry for state-specific setup.
@@ -3767,10 +4314,12 @@ func _on_decision_enter(state: int) -> void:
 			_cover_phase = 0
 			_cover_rounds = 0
 		Decision.State.SEARCH:
-			_search_active = true
+			# A live timer belongs to an already-running hunt; entering the state
+			# must not restart it (or rebuild its sweep).
 			if _search_timer <= 0.0:
-				_search_timer = SEARCH_DURATION
-			_search_origin = _last_seen_position
+				_begin_search(_last_seen_position, _last_seen_velocity)
+			elif _search_origin == Vector3.INF:
+				_search_origin = _last_seen_position
 		Decision.State.RELOAD_SAFE:
 			_traversal.cancel_recovery()
 			_trigger.release_all()
@@ -3786,13 +4335,21 @@ func _on_decision_enter(state: int) -> void:
 			_cover_phase = 0
 			_cover_rounds = 0
 			_cover_timer = 0.0
-			_cover_total_timer = 6.0
-			if _current_target != null:
-				_cover_threat_pos = _current_target.global_position
-			elif _last_damage_position != Vector3.INF:
-				_cover_threat_pos = _last_damage_position
-			else:
-				_cover_threat_pos = _last_seen_position
+			_cover_total_timer = lerpf(
+				COVER_TOTAL_TIME_MIN, COVER_TOTAL_TIME_MAX, _survival_trait()
+			)
+			_cover_threat_pos = _current_threat_position()
+		Decision.State.FLEE:
+			_traversal.cancel_recovery()
+			_maneuvers.abort()
+			_abort_explosion_jump()
+			_trigger.release_all()
+			_has_desired_aim = false
+			_keyboard.set_move(0, 0)
+			_flee_position = Vector3.INF
+			_flee_threat_pos = _current_threat_position()
+			_flee_timer = lerpf(FLEE_TIME_MIN, FLEE_TIME_MAX, _survival_trait())
+			_flee_repath_timer = 0.0
 		Decision.State.HEAL:
 			_traversal.cancel_recovery()
 			_trigger.release_all()
@@ -3802,25 +4359,34 @@ func _on_decision_enter(state: int) -> void:
 
 ## Find a nearby spot that breaks line of sight from [param threat].  Conservative:
 ## requires a floor, a reasonably clear path, and a blocked threat->candidate ray.
+## The far pass runs only when the near ring fails and the bot is careful enough
+## to look further; it reuses the exact same rules.
 func _find_cover_position(threat: Vector3) -> Vector3:
 	if not ENABLE_COVER:
 		return Vector3.INF
-	var origin := player.global_position
 	var threat_pos := threat
 	if threat_pos == Vector3.INF:
-		if _last_damage_position != Vector3.INF:
-			threat_pos = _last_damage_position
-		elif _last_seen_position != Vector3.INF:
-			threat_pos = _last_seen_position
-		else:
-			return Vector3.INF
+		threat_pos = _current_threat_position()
+	if threat_pos == Vector3.INF:
+		return Vector3.INF
 	var space := player.get_world_3d().direct_space_state
+	var best := _scan_cover_distances(space, threat_pos, COVER_NEAR_DISTANCES)
+	if best != Vector3.INF:
+		return best
+	if _survival_trait() < COVER_FAR_MIN_SURVIVAL:
+		return Vector3.INF
+	return _scan_cover_distances(space, threat_pos, COVER_FAR_DISTANCES)
+
+
+## One ring of cover candidates around the bot.
+func _scan_cover_distances(space: PhysicsDirectSpaceState3D, threat_pos: Vector3,
+		distances: Array[float]) -> Vector3:
+	var origin := player.global_position
 	var best := Vector3.INF
 	var best_score := -INF
 	for i in 8:
 		var angle := TAU * float(i) / 8.0 + randf_range(-0.15, 0.15)
 		var dir := Vector3(cos(angle), 0.0, sin(angle))
-		var distances: Array[float] = [3.0, 5.0, 7.0]
 		for distance in distances:
 			var candidate := origin + dir * distance
 			# Must have floor under the candidate.
@@ -3854,6 +4420,96 @@ func _find_cover_position(threat: Vector3) -> Vector3:
 				best_score = score
 				best = candidate
 	return best
+
+
+## Where to break contact: prefer a spot that blocks the threat's line of sight,
+## then distance that still moves away and remains walkable.  Unlike cover this
+## does not require the spot to be hidden — open ground in the opposite direction
+## is a valid escape.  Returns INF when nothing qualifies.
+func _find_flee_position(threat: Vector3) -> Vector3:
+	var threat_pos := threat
+	if threat_pos == Vector3.INF:
+		threat_pos = _current_threat_position()
+	if threat_pos == Vector3.INF:
+		return Vector3.INF
+	var origin := player.global_position
+	var space := player.get_world_3d().direct_space_state
+	var distance_scale := lerpf(
+		FLEE_DISTANCE_SCALE_MIN, FLEE_DISTANCE_SCALE_MAX, _survival_trait()
+	)
+	var threat_distance := origin.distance_to(threat_pos)
+	var away := origin - threat_pos
+	away.y = 0.0
+	if away.length_squared() > 0.01:
+		away = away.normalized()
+	var best := Vector3.INF
+	var best_score := -INF
+	for i in 8:
+		var angle := TAU * float(i) / 8.0 + randf_range(-0.2, 0.2)
+		var dir := Vector3(cos(angle), 0.0, sin(angle))
+		for base_distance in FLEE_BASE_DISTANCES:
+			var distance: float = base_distance * distance_scale
+			var candidate := origin + dir * distance
+			_steer_query.from = candidate + Vector3.UP * 1.5
+			_steer_query.to = candidate - Vector3.UP * 3.0
+			var floor_hit := space.intersect_ray(_steer_query)
+			if floor_hit.is_empty():
+				continue
+			var floor_pos: Vector3 = floor_hit.position
+			if floor_pos.y < origin.y - 2.0:
+				continue
+			if (floor_hit.normal as Vector3).angle_to(Vector3.UP) \
+					> deg_to_rad(FLOOR_MAX_ANGLE_DEG):
+				continue
+			candidate.y = floor_pos.y
+			# Never "flee" straight toward the shooter.
+			if candidate.distance_to(threat_pos) < threat_distance - 1.0:
+				continue
+			var to_candidate := Vector2(candidate.x - origin.x, candidate.z - origin.z)
+			if to_candidate.length() < 0.5:
+				continue
+			if _score_direction(origin + Vector3.UP * STEER_RAY_HEIGHT,
+					to_candidate.normalized()) < minf(distance * 0.6, 4.0):
+				continue
+			_los_query.from = threat_pos + Vector3.UP * 1.2
+			_los_query.to = candidate + Vector3.UP * 1.0
+			var sheltered := not space.intersect_ray(_los_query).is_empty()
+			var score := candidate.distance_to(threat_pos) * 0.4 \
+				- to_candidate.length() * 0.2 \
+				+ (8.0 if sheltered else 0.0) \
+				+ dir.dot(away) * 2.0 \
+				+ randf_range(0.0, 0.3)
+			if score > best_score:
+				best_score = score
+				best = candidate
+	return best
+
+
+## Last-resort escape when no sampled point qualifies: a short step directly
+## away from the threat, if the steering probe and floor allow it.
+func _pick_backoff_position(threat: Vector3) -> Vector3:
+	if threat == Vector3.INF:
+		return Vector3.INF
+	var away := player.global_position - threat
+	away.y = 0.0
+	if away.length_squared() < 0.01:
+		away = -player.horizontal_forward()
+	if away.length_squared() < 0.01:
+		return Vector3.INF
+	away = away.normalized()
+	var origin := player.global_position + Vector3.UP * STEER_RAY_HEIGHT
+	# `_score_direction` returns the clear distance ahead (STEER_DISTANCE when
+	# clear, negative on a hit).  Clamp the step to it: the previous fixed 8 m
+	# point could sit inside the wall the bot had just probed, so a cornered bot
+	# spent its whole FLEE pushing that wall.
+	var clear := _score_direction(origin, Vector2(away.x, away.z))
+	if clear < 2.0:
+		return Vector3.INF
+	if not _has_floor_side(away):
+		return Vector3.INF
+	var candidate := player.global_position + away * minf(8.0, clear * 0.8)
+	# And require a standable endpoint (floor below, headroom above).
+	return _ground_point(player.get_world_3d().direct_space_state, candidate)
 
 
 ## Precision weapons should not be jumping/crouching mid-shot.
@@ -3983,9 +4639,28 @@ func _update_debug_label() -> void:
 	lines.append("fire: %d  trig: %s" % [_chosen_fire_index, _debug_trigger_text()])
 	lines.append("aim err: %s deg" % _debug_aim_error(target_name != "-"))
 	if _style != null:
-		lines.append("traits: acc=%.2f trk=%.2f lead=%.2f move=%.2f aware=%.2f" % [
-			_style.accuracy, _style.tracking_speed, _style.lead_quality,
-			_style.movement_quality, _style.awareness,
+		lines.append(
+			"traits: acc=%.2f trk=%.2f lead=%.2f move=%.2f aware=%.2f aggr=%.2f surv=%.2f"
+			% [
+				_style.accuracy, _style.tracking_speed, _style.lead_quality,
+				_style.movement_quality, _style.awareness, _style.aggression,
+				_style.survival,
+			]
+		)
+		var need_index := clampi(
+			_assess_retreat(), 0, RETREAT_NEED_NAMES.size() - 1
+		)
+		lines.append(
+			"surv: need=%s dmg=%.2f near=%d vis=%d coverT=%.2f fleeT=%.2f flee=%.1f"
+			% [
+				RETREAT_NEED_NAMES[need_index], _recent_damage_fraction(),
+				_nearby_enemy_count, _visible_enemy_count,
+				_cover_health_threshold(), _flee_health_threshold(), _flee_timer,
+			]
+		)
+		lines.append("hunt: pts=%d idx=%d t=%.1f lead=%.1f" % [
+			_hunt_points.size(), _hunt_index, _search_timer,
+			lerpf(HUNT_LEAD_MIN, HUNT_LEAD_MAX, _aggression_trait()),
 		])
 	if _current_target != null and is_instance_valid(_current_target):
 		var tv := _estimated_velocity_for(_current_target)
@@ -4304,9 +4979,12 @@ func _score_fire_mode(weapon: Weapon, index: int, dist: float) -> float:
 	var info := _get_proj_info(fire)
 	if bool(info.get("is_explosive", false)):
 		var splash := float(info.get("splash_radius", 0.0))
-		# Only a blast that actually hurts the shooter is penalised.  The Heal
-		# Grenade Launcher's self multiplier is -1 x -45, i.e. a self-heal.
-		if float(info.get("self_damage", -1.0)) < 0.0 and dist < splash + EXPLOSIVE_SAFE_MARGIN:
+		# Only a blast that actually hurts the shooter is penalised, and only when
+		# that self-damage would leave it about to die.  The Heal Grenade
+		# Launcher's self multiplier is -1 x -45, i.e. a self-heal.
+		if float(info.get("self_damage", -1.0)) < 0.0 \
+				and not _accept_self_damage(info) \
+				and dist < splash + EXPLOSIVE_SAFE_MARGIN:
 			score -= 300.0
 
 	# Alt-fire with a distinct purpose, expressed in the data rather than by
@@ -4348,15 +5026,34 @@ func _select_explosive_fire_index(weapon: Weapon) -> int:
 	return -1
 
 
-## True when firing [param fire] would splash the bot itself.  Explosive modes
-## aim at the feet, so this is a self-damage guard, not a "don't shoot" rule:
-## movement backs the bot off while the trigger is held.
+## Explosives are a tool, not a hazard: a healthy bot accepts its own splash as
+## a cost of doing damage.  It refuses only a blast that would leave it at or
+## below the same "about to die" threshold that drives FLEE.  `self_damage` is
+## negative for a damaging blast, positive for a healing one.
+func _accept_self_damage(info: Dictionary) -> bool:
+	var self_damage := float(info.get("self_damage", 0.0))
+	if self_damage >= 0.0:
+		return true
+	if player == null or not is_instance_valid(player):
+		return true
+	var ac := player.attribute_component
+	if ac == null or ac.max_health <= 0.0:
+		return true
+	return ac.health + self_damage > ac.max_health * _flee_health_threshold()
+
+
+## True when firing [param fire] would splash the bot itself *and* that splash is
+## no longer acceptable.  Explosive modes aim at the feet, so this is a
+## self-damage guard, not a "don't shoot" rule: movement backs the bot off while
+## the trigger is held.
 func _too_close_for_explosive(fire: WeaponFire, dist: float) -> bool:
 	var info := _get_proj_info(fire)
 	if not bool(info.get("is_explosive", false)):
 		return false
 	# A healing blast (Heal Grenade Launcher) is safe — and useful — point-blank.
 	if float(info.get("self_damage", -1.0)) >= 0.0:
+		return false
+	if _accept_self_damage(info):
 		return false
 	return dist < float(info.get("splash_radius", 0.0)) + EXPLOSIVE_SAFE_MARGIN
 
@@ -4568,6 +5265,10 @@ func _reset_for_spawn() -> void:
 	_last_damage_time = -999.0
 	_last_damage_position = Vector3.INF
 	_last_damage_direction = Vector3.ZERO
+	_recent_damage = 0.0
+	_nearby_enemy_count = 0
+	_visible_enemy_count = 0
+	_last_seen_time = -999.0
 	_heard_position = Vector3.INF
 	_heard_distance = INF
 	_heard_timer = 0.0
@@ -4577,6 +5278,7 @@ func _reset_for_spawn() -> void:
 	_search_timer = 0.0
 	_search_active = false
 	_search_origin = Vector3.INF
+	_clear_hunt()
 	_glance_timer = 0.0
 	_strafe_force_change = false
 	_strafe_reason = ""
@@ -4591,6 +5293,11 @@ func _reset_for_spawn() -> void:
 	_cover_total_timer = 0.0
 	_cover_cooldown = 0.0
 	_cover_rounds = 0
+	_flee_position = Vector3.INF
+	_flee_threat_pos = Vector3.INF
+	_flee_timer = 0.0
+	_flee_cooldown = 0.0
+	_flee_repath_timer = 0.0
 	# A fresh body, the same personality: the stable seed keeps this bot's
 	# variance while still drawing a fresh style for the current skill.
 	_style.draw(skill, _style_seed)
@@ -4676,7 +5383,10 @@ func _weighted_choice(weights: Array[float], key: String) -> int:
 ## visible enemy, a fresh hit, or a state-specific interrupt can cut it short.
 ## States call the existing act/aim/locomotion APIs and never write inputs.
 class Decision extends RefCounted:
-	enum State { TRAVEL, SEARCH, COMBAT, HEAL, RELOAD_SAFE, RETREAT_COVER, STUCK_RECOVER }
+	enum State {
+		TRAVEL, SEARCH, COMBAT, HEAL, RELOAD_SAFE, RETREAT_COVER, STUCK_RECOVER,
+		FLEE,
+	}
 
 	var bot: BotController
 	var state: State = State.TRAVEL
@@ -4719,21 +5429,36 @@ class Decision extends RefCounted:
 	func _desired_state() -> State:
 		if not bot.player.spawned:
 			return State.TRAVEL
+		# One threat assessment per consideration, shared by every branch below.
+		var need: int = bot._assess_retreat()
 		# Stuck recovery is a locomotion state, not a reason to stop shooting.
-		if bot._traversal.is_recovering() and bot._current_target == null \
-				and bot._heal_target == null:
+		# It must not abandon a committed escape.
+		if need != RetreatNeed.FLEE and bot._traversal.is_recovering() \
+				and bot._current_target == null and bot._heal_target == null:
 			return State.STUCK_RECOVER
-		if state == State.STUCK_RECOVER and _stuck_hold > 0.0:
+		if state == State.STUCK_RECOVER and _stuck_hold > 0.0 \
+				and need != RetreatNeed.FLEE:
 			return State.STUCK_RECOVER
+		# Already behind valid cover while critical: hunker.  The cover's total
+		# timer (or the FLEE fallback when it expires) bounds this, so the bot
+		# shelters before it sprints back into the open.
+		if need == RetreatNeed.FLEE and state == State.RETREAT_COVER \
+				and bot._cover_position != Vector3.INF:
+			return State.RETREAT_COVER
+		# Critical: break contact even if the bot could self-heal.  The flee
+		# cooldown then hands control back to HEAL once some space is made.
+		if need == RetreatNeed.FLEE and bot._flee_cooldown <= 0.0:
+			return State.FLEE
 		var wc: WeaponController = bot.player.weapon_controller
 		if wc != null and wc._is_ready():
 			# Self-heal outranks cover: a medic's own heal is the fastest exit.
 			if bot._health_ratio() < MEDIC_SELF_HEAL_THRESHOLD \
 					and bot._find_self_heal_weapon_index(wc) >= 0:
 				return State.HEAL
+		# While a critical bot's flee cooldown is running, cover is the holding
+		# pattern: hunker rather than stand in the open between escape bursts.
 		if ENABLE_COVER and bot._cover_cooldown <= 0.0 \
-				and bot._health_ratio() < COVER_HEALTH_THRESHOLD \
-				and bot._has_threat():
+				and (need == RetreatNeed.COVER or need == RetreatNeed.FLEE):
 			return State.RETREAT_COVER
 		if wc != null and wc._is_ready():
 			var weapon: Weapon = wc._weapons[wc.current_weapon_index]
@@ -4783,6 +5508,8 @@ class Decision extends RefCounted:
 			State.STUCK_RECOVER:
 				_min_timer = 0.3
 				_stuck_hold = 0.8
+			State.FLEE:
+				_min_timer = 0.9
 		bot._on_decision_enter(int(next))
 
 	func act() -> void:
@@ -4804,6 +5531,8 @@ class Decision extends RefCounted:
 				bot._act_retreat_cover()
 			State.STUCK_RECOVER:
 				bot._act_context()
+			State.FLEE:
+				bot._act_flee()
 			_:
 				bot._act_context()
 
@@ -4828,7 +5557,7 @@ class Decision extends RefCounted:
 
 	func get_state_text() -> String:
 		var names: Array[String] = [
-			"travel", "search", "combat", "heal", "reload", "cover", "stuck"
+			"travel", "search", "combat", "heal", "reload", "cover", "stuck", "flee"
 		]
 		return "%s %.2f %s" % [names[int(state)], _min_timer, _reason]
 
@@ -6175,9 +6904,13 @@ class Style extends RefCounted:
 	var lead_quality: float = 0.5
 	var movement_quality: float = 0.5
 	var awareness: float = 0.6
-	## 0 = cautious/flanking, 1 = direct/aggressive.  Used for target weighting
-	## and a mild objective approach offset, not for a different ruleset.
+	## 0 = cautious/flanking, 1 = direct/aggressive.  Used for target weighting,
+	## a mild objective approach offset, and how long/where the bot hunts a
+	## target that broke line of sight.
 	var aggression: float = 0.5
+	## 0 = fights to the death, 1 = breaks off as soon as the trade turns.
+	## Drives the retreat thresholds, cover patience and flee duration.
+	var survival: float = 0.5
 	var flank_bias: float = 0.0
 
 	func draw(skill_value: float, seed_value: int = 0) -> void:
@@ -6246,6 +6979,11 @@ class Style extends RefCounted:
 			BotController.KEY_FLIP_RATE_MIN, BotController.KEY_FLIP_RATE_MAX, movement_quality
 		) * rng.randf_range(0.9, 1.1)
 		flank_bias = rng.randf_range(-1.0, 1.0)
+		# Draw last so every pre-existing trait keeps the same value for a given
+		# seed; adding a trait must not re-roll old personalities.
+		survival = clampf(
+			float(traits["survival"]) + rng.randf_range(-0.18, 0.18), 0.0, 1.0
+		)
 
 	## Apply one dev-menu trait override and keep every field derived from it in
 	## sync.  The master Skill slider redraws the whole style first, then these
@@ -6299,6 +7037,8 @@ class Style extends RefCounted:
 				allow_crouch = movement_quality > 0.60
 			"awareness":
 				awareness = clampf(value, 0.0, 1.0)
+			"survival":
+				survival = clampf(value, 0.0, 1.0)
 
 	## Interpolate one row of SKILL_TRAIT_TABLE.  Kept here so every trait has a
 	## single documented source and per-bot variance is applied by the caller.

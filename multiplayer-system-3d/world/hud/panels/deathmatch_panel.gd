@@ -38,6 +38,16 @@ func update_display(data: Dictionary) -> void:
 		_end_label.visible = false
 
 func _refresh_entries(players: Array) -> void:
+	# The top roster shows who is in the match; spectators are on the Tab
+	# leaderboard's SPECTATORS section instead.
+	var playing: Array = []
+	for p in players:
+		var node: Player = GameManager.find_player(p)
+		if node != null and node.is_spectating:
+			continue
+		playing.append(p)
+	players = playing
+
 	players.sort_custom(_compare_kills)
 
 	var left: Array

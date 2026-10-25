@@ -78,6 +78,23 @@ The automatic-weapon fire path no longer allocates per shot:
 - **Arc validation** is capped at `ARC_VALIDATION_INTERVAL` (0.12 s) per bot and only runs when the bot is otherwise ready to fire *and* the crosshair is already near the aim gate. At worst that is ~10 world rays / 0.12 s per firing bot; a bot that is travelling, stunned, switching or reloading runs none.
 - **Projectile speed measurement** is a one-off `get_tree().node_added` subscription per bot. Every projectile notifies each bot, but the shared static `_proj_speed_measurements`/`_learned_proj_speeds` dictionaries reject duplicates before any await; only the first unknown scene pays the two-frame sample. The subscription is disconnected in `_exit_tree`.
 - **Weapon scoring** now reads the authored falloff curve (`_best_falloff_multiplier_at`) once per candidate on the existing 0.5 s/event-driven choice loop. Projectile DPS is taken from the cached `_get_proj_info` (impact/splash damage) rather than `hitscan_damage`, so it adds no new scene loads — the projectile scene is still instantiated at most once per path. No per-frame work.
+- **Dev-menu bot skill/trait edits** call `BotController.set_bot_skill` / `set_bot_trait` only from control `value_changed`/`item_selected`; a redraw is one `Style.draw` plus at most eight override writes. There is no polling, no per-frame UI update, and no network traffic (bots simulate only on peer 1).
+
+## Bot survival and hunt (Stage 7, server only)
+
+Added 2026-10-25 with the `survival` trait, `FLEE`, and the aggression-scaled hunt.
+
+- **Threat assessment is O(1) scalar work.** `_record_damage` is one add per 90 Hz tick when health drops; the leaky bucket decays with one `maxf`. `_threat_pressure` / `_cover_health_threshold` / `_flee_health_threshold` are a handful of multiplies, called from the 4 Hz `Decision` consideration and from damage events only. No queries, no allocations.
+- **Explosive self-damage is gated by `_accept_self_damage`**, which is one subtraction and one compare against `_flee_health_threshold()`. It runs in the weapon-choice loop (0.5 s / event-driven) and in `_act_combat`'s fire gate, not per frame. A healthy bot keeps and fires a point-blank explosive; a blast that would leave it at/below the flee threshold falls back to the existing sidearm switch.
+- **Enemy counts ride the existing full scan.** `_nearby_enemy_count` is incremented in the distance-only enemy branch of the 20 Hz rescan (every 0.25 s); `_visible_enemy_count` is `visible_names.size()`. No extra group query.
+- **Cover search is two-pass, not wider per pass.** The near ring still costs 8 directions × 3 distances; the far ring `[9, 12]` runs only when the near ring finds nothing and `survival >= 0.55`. Queries are the existing `_steer_query` / `_los_query`; no new `PhysicsRayQueryParameters3D` objects.
+- **Cover is not a firing lockout.** The wait phase returns fire when the current target is actually visible (the same condition `_think` uses), so a bot whose cover no longer blocks the shot does not stand there watching. That check is O(1) — `_current_target` is already resolved.
+- **FLEE destination search runs once per destination**, not per tick: 8 directions × 3 distances, each one floor ray + one path ray + one LOS ray (~72 rays), plus a one-ray backoff fallback. `_flee_repath_timer` gates re-searches. A visible enemy inside `FLEE_FIGHT_BACK_RANGE` (10 m) converts the assessment to COVER/COMBAT before FLEE runs, so the ray work is skipped in that case.
+- **Hunt seeding runs once per search**, on arrival at the last-seen point (or after `HUNT_APPROACH_TIMEOUT` = 4 s if that point is unreachable): a lead point plus 3 radii × 8 angles × (floor + headroom) ≈ 48 rays, one `sort_custom`, and a cap of 2–8 points. The ring is rebuilt only if the hunt origin moves more than 3 m. An empty ring falls back to standing and scanning — it is **not** reseeded per tick.
+- **Hunt duration scales by aggression** (`3.5–15 s`); the lead extension scales `6–14 m`. Both are pure arithmetic.
+- All of the above is `BotController`-local and server-only. Nothing new is replicated and there is no RPC.
+
+Watch for a frame spike when many bots lose a target in the same tick (concurrent hunt seeds) or drop below the flee threshold together (concurrent flee searches). Both are state-entry-only and capped; see `05-known-issues.md` #108 if it regresses with 12+ bots.
 
 ## Charged-weapon draw (per-frame, all peers) — negligible
 
@@ -247,6 +264,14 @@ new hot path later.
   `AbilityCircle`'s charge bars, which this widget deliberately mirrors.
 - **The width scales with max health by design** — 20 px per 100 max HP — and NOT with distance:
   the bar is projected with `unproject_position`, like the damage numbers.
+
+## Spectator mode (local only, only while watching) — negligible
+
+- `world/spectator_controller.gd::_process` exists on every peer but early-returns unless the local player's `is_spectating` is true. The local `Player` is cached (no per-frame `find_player`). While active, the steady-state cost is one camera-transform copy, one FOV copy, and an idempotent loop over the target's handful of head meshes.
+- `_collect_targets()` is O(players) with a small name sort, and runs only on entry, when the current target becomes invalid, and on a cycle key — **not** every frame.
+- The watched player's `PlayerBodyUI` is built **once** on first bind and persists, so cycling back reuses it. Only one is visible at a time; every target watched in a session keeps its HUD nodes (see `05-known-issues.md` #115).
+- `Player._update_visibility` keeps its existing cost and 10 Hz occlusion cadence — only the `viewer` it evaluates from changes.
+- The leaderboard rebuilds on `Leaderboard.roster_changed`, and still early-returns when `_lb_canvas` is not visible, so a closed scoreboard costs nothing.
 
 ## Per-frame HUD / leaderboard rebuilds
 

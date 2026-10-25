@@ -5,7 +5,9 @@ extends Node3D
 @onready var game_menu: Control = $GameMenu
 
 const DEV_MENU_SCRIPT := preload("res://world/dev_menu.gd")
+const SPECTATOR_CONTROLLER_SCRIPT := preload("res://world/spectator_controller.gd")
 var dev_menu
+var spectator_controller
 
 ## The global kill feed.  Kept as a member so the dev-menu "hide other HUD"
 ## toggle can hide it; it is a local CanvasLayer, not a replicated node.
@@ -61,6 +63,11 @@ func _ready() -> void:
 	dev_menu = DEV_MENU_SCRIPT.new()
 	add_child(dev_menu)
 	dev_menu.setup(loadout_menu)
+
+	# Spectator camera + target cycling.  Local-only, like the dev menu — a
+	# sibling of SpawnParent, so neither it nor its camera is replicated.
+	spectator_controller = SPECTATOR_CONTROLLER_SCRIPT.new()
+	add_child(spectator_controller)
 
 	# GameManager outlives this scene, so a world rebuilt after return_to_lobby
 	# must re-apply its persisted dev display flag to the fresh HUD nodes.

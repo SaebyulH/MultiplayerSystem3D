@@ -30,6 +30,9 @@ func _input(event: InputEvent) -> void:
 	# was thinking, and freezing the bots made them follow the host's view.
 	if not is_multiplayer_authority() or _player.is_bot:
 		return
+	# The spectator camera follows another player; never rotate the hidden body.
+	if _player.is_spectating:
+		return
 	if Input.get_mouse_mode() != Input.MOUSE_MODE_CAPTURED:
 		return
 	if event is InputEventMouseMotion:

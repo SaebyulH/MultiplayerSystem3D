@@ -75,6 +75,7 @@ The engine then loads the main scene `res://world/main.tscn` (a `Control` root `
   - **Host:** `load(map_path).instantiate()` named `"Map"` added to `spawn_parent` (27-29); `load("res://world/spawn_manager.tscn").instantiate()` with `player_scene` set, `add_child` (34-38); `GameManager.spawn_manager = sm`; re-adds `GameManager.lobby_bots` (40-45).
   - **Client** (`is_hosting_game == false`): **none of this runs** — no map, no `SpawnManager`; everything replicates from the host.
 - **After the split:** `world_1._ready()` creates the dev hacks menu (`world/dev_menu.gd`) and adds it to the world root — never to `SpawnParent`, so it is not replicated. `setup(loadout_menu)` wires the bot-edit return path. The menu is debug-build-only (`OS.is_debug_build()`, matching the console addon) and toggled with the **`0` key**; see Stage 12 for its `ui_open` ownership.
+- `world_1._ready()` then creates the local `SpectatorController` (`world/spectator_controller.gd`) — another world-root sibling, never replicated — which owns the spectator camera and target cycling. It is idle until the local player's replicated `is_spectating` flag turns on; see `02-netcode.md` §5.
 
 `world/world1.tscn:95-97` defines the `MultiplayerSpawner` (`spawn_path = "../SpawnParent"`) with 13 `_spawnable_scenes` uids (player + all maps, including lobby `uid://cgnm6fpurb2b2`).
 
@@ -85,7 +86,7 @@ The engine then loads the main scene `res://world/main.tscn` (a `Control` root `
 `world/spawn_manager.gd:12-18` — `_ready()`:
 - connects `peer_connected`/`peer_disconnected`.
 - `_add_player_to_game(1)` (line 15) — **hardcoded peer 1**; the host is also a player.
-- `randomize()`. Bot spawning/editing lives in the dev menu's Bots tab now; `SpawnManager` no longer instantiates or toggles a menu. New bots start at **skill 1.0** (`SpawnManager.DEFAULT_BOT_SKILL`), and the list row itself carries team, a general Skill slider, and an Advanced trait dropdown. A manual bot's team, skill and trait overrides are written back to `GameManager.lobby_bots`, so they survive return-to-lobby; auto-fill bots are session-only.
+- `randomize()`. Bot spawning/editing lives in the dev menu's Bots tab now; `SpawnManager` no longer instantiates or toggles a menu. New bots start at **skill 1.0** (`SpawnManager.DEFAULT_BOT_SKILL`), and the list row itself carries team, a general Skill slider, and a triangular **Advanced** disclosure that expands to show every `BotController.BOT_TRAIT_KEYS` slider at once — including the Stage 7 **Self-preservation** axis, which scales how early a hurt bot takes cover or breaks contact. A manual bot's team, skill and trait overrides are written back to `GameManager.lobby_bots`, so they survive return-to-lobby; auto-fill bots are session-only.
 
 `world/spawn_manager.gd:54-62` — `_add_player_to_game(1)`: `entity_id = str(1)`, instantiate `player_scene`, `name = "1"`, `set_multiplayer_authority(1)`, `spawn_manager = self`, `add_child` to `spawn_parent`, position `(0,100,0)`, `Leaderboard.request_add_player`.
 
@@ -113,9 +114,9 @@ or a confirm both restore the snapshot via `_finish_bot_edit()`, which emits
 `bot_edit_finished` so the dev menu reopens on its Bots tab.
 
 **Team and skill are deliberately not in this editor.** They are edited in the Bots list
-(`world/spawn_bot_menu.gd`): a team `OptionButton`, a general Skill `HSlider`, and an
-Advanced `OptionButton` that selects one `BotController.BOT_TRAIT_KEYS` trait for its
-slider. A per-row RESET clears overrides. The dev menu's Bots tools row also has a
+(`world/spawn_bot_menu.gd`): a team `OptionButton`, a general Skill `HSlider`, and a
+triangular **▶ ADVANCED / ▼ ADVANCED** toggle that reveals a row for every
+`BotController.BOT_TRAIT_KEYS` trait at once (the eighth is **Self-preservation**). A per-row RESET clears overrides. The dev menu's Bots tools row also has a
 **Randomize bot skills** button; it rolls each bot's master skill and stable style seed
 and clears overrides. Skill/trait edits redraw `Style` immediately and are server-local
 (bots only simulate on peer 1).

@@ -70,6 +70,19 @@ func _gather() -> void:
 		
 	if get_parent().is_bot:
 		return
+	if get_parent().is_spectating:
+		# The body is despawned; emit neutral inputs rather than a stale snapshot.
+		input_dir  = Vector2.ZERO
+		jump_input = false
+		crouch     = false
+		dash_input = false
+		charge_trigger_dir = Vector3.ZERO
+		queued_charge_trigger_dir = Vector3.ZERO
+		bashdown_trigger_dir = Vector3.ZERO
+		queued_bashdown_trigger_dir = Vector3.ZERO
+		teleport_trigger_dir = Vector3.ZERO
+		queued_teleport_trigger_dir = Vector3.ZERO
+		return
 	if ui_open:
 		input_dir  = Vector2.ZERO
 		jump_input = false
@@ -111,6 +124,11 @@ func _input(event: InputEvent) -> void:
 	if get_parent().is_bot:
 		return
 	if not is_multiplayer_authority():
+		return
+	# Spectator mode owns the mouse and the action keys (see
+	# world/spectator_controller.gd).  Never touch the hidden body's fire state,
+	# mouse capture, or `third_person` while watching someone.
+	if get_parent().is_spectating:
 		return
 
 	# Stunned, pinned, or mid-channel players cannot take any actions.

@@ -125,6 +125,17 @@ var dev_hidden_from_bots := false
 ## The first-person weapon is deliberately left visible.
 var dev_hide_model := false
 
+## Dev-menu spectator mode.  Server-authoritative and replicated (root
+## MultiplayerSynchronizer, player.tscn) so every peer hides the same player
+## and the leaderboard can list them under SPECTATORS.  While true the player is
+## always despawned — see rpc_reset()/spawn() and _sync_dev_spectating().
+var is_spectating := false
+
+## Local-only: the player this peer is currently watching.  Owned by
+## world/spectator_controller.gd and never networked.  _update_visibility() uses
+## it so reveals/invisibility match the spectated player's perspective.
+var spectator_target: Player = null
+
 # Input edge-detection memory (rolled back so presses replay deterministically).
 var dash_held_prev: bool = false
 var jump_held_prev: bool = false
@@ -546,6 +557,13 @@ func _get_spawn_transform() -> Transform3D:
 @rpc("any_peer", "call_local")
 func rpc_reset(transform: Transform3D) -> void:
 	despawn()
+	# Spectator mode stays despawned across every reset path — map swap, round
+	# reset, loadout confirm, death.  Only an explicit exit clears the flag.
+	if is_spectating:
+		_spawn_pending_transform = Transform3D()
+		respawn_timer = 0.0
+		velocity = Vector3.ZERO
+		return
 	# A noclip exit pulse must not survive a reset: with the timer zeroed
 	# (CheatDeath / the dev "Respawn now" button) the player spawns while the
 	# pulse is still live and would damage enemies at the new spawn.
@@ -601,6 +619,10 @@ func rpc_reset(transform: Transform3D) -> void:
 ## own HUD mirror said "Enlarged".  See known-issues #34.
 @rpc("authority", "call_remote", "reliable")
 func rpc_sync_full_state(pos: Vector3, pp: String, sp: String, mp: String = "", cp: String = "", size_mult: float = 1.0, health_mult: float = 1.0) -> void:
+	# A late-join sync must never revive a spectator (SpawnManager already skips
+	# non-spawned players; this keeps the invariant local to Player).
+	if is_spectating:
+		return
 	# -- Weapons first (before spawn, so correct model is visible) --
 	if not pp.is_empty() and not sp.is_empty():
 		var ctrl: WeaponController = $WeaponController
@@ -855,6 +877,9 @@ func despawn():
 ## Show the player: enable collision, restore camera, position at the given
 ## location (already set before calling this).
 func spawn():
+	# Safety net: only an explicit exit from spectator mode may revive the body.
+	if is_spectating:
+		return
 	show()
 	spawned = true
 	collider.disabled = false
@@ -2165,6 +2190,69 @@ func _sync_dev_noclip(on: bool) -> void:
 	dev_noclip = on
 
 
+func dev_set_spectating(on: bool) -> void:
+	if multiplayer.is_server():
+		_apply_dev_spectating(on)
+	else:
+		# Non-optimistic, like noclip: the server is the only writer of
+		# `is_spectating`, and a local head start would let the camera/leaderboard
+		# disagree with the authoritative body state for a round trip.
+		_dev_spectating_request.rpc_id(1, on)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _dev_spectating_request(on: bool) -> void:
+	if not multiplayer.is_server() or not _dev_request_is_owner():
+		return
+	_apply_dev_spectating(on)
+
+
+## Server entry point.  Entering and leaving are each a single reliable
+## broadcast.  The respawn transform is chosen by the server and travels with
+## the exit broadcast so every peer respawns at the same place.
+func _apply_dev_spectating(on: bool) -> void:
+	# No-op when already in that state: "Reset all dev flags" passes false even
+	# for a player who is not spectating, and that must not force a respawn.
+	if is_spectating == on:
+		return
+	# `.rpc()` (not a direct call): the annotation makes this a remote entry
+	# point, and every peer must run the side effect immediately.
+	var spawn_transform := Transform3D()
+	if not on:
+		spawn_transform = _get_spawn_transform()
+	_sync_dev_spectating.rpc(on, spawn_transform)
+
+
+## Server -> every peer.  The flag is also replicated by the root
+## MultiplayerSynchronizer (for late joiners); this broadcast exists so every
+## peer applies the immediate side effect in order with the respawn.
+##
+## The exit respawn is executed from *inside* this reliable call rather than as
+## a following `rpc_reset.rpc(...)`: `rpc_reset` is an unreliable RPC, so it
+## could overtake this broadcast and be swallowed by the still-stale
+## `is_spectating` guard, leaving a client permanently despawned.
+@rpc("authority", "call_local", "reliable")
+func _sync_dev_spectating(on: bool, spawn_transform: Transform3D = Transform3D()) -> void:
+	is_spectating = on
+	# Emitted on every peer: the leaderboard moves this player between their
+	# team section and SPECTATORS without any score changing.
+	Leaderboard.notify_roster_changed()
+	if not on:
+		rpc_reset(spawn_transform)
+		rpc_cheat_death()
+		return
+	# Cancel any pending respawn and leave the world.  Not being spawned is what
+	# makes bots ignore us, and despawn() disables the collider so nothing hits us.
+	_spawn_pending_transform = Transform3D()
+	respawn_timer = 0.0
+	_noclip_exit_time = 0.0
+	_noclip_exit_hit.clear()
+	if multiplayer.is_server():
+		_release_all_pinned(false)
+		_release_bashdown_pinned()
+	despawn()
+
+
 func dev_set_hidden_from_bots(on: bool) -> void:
 	dev_hidden_from_bots = on
 	if not multiplayer.is_server():
@@ -2202,6 +2290,10 @@ func _dev_respawn_request() -> void:
 
 
 func _do_dev_respawn() -> void:
+	# "Respawn now" also leaves spectator mode, and that path already respawns.
+	if is_spectating:
+		_apply_dev_spectating(false)
+		return
 	# Reliable RPCs from the same node are ordered, so the spawn lands with the
 	# timer already at zero.
 	rpc_reset.rpc(_get_spawn_transform())
@@ -2794,19 +2886,26 @@ func _apply_model_visibility() -> void:
 func _update_visibility(delta: float) -> void:
 	if not _is_own_model():
 		return
-	var sem := status_effect_manager
+	# While spectating, evaluate reveals, ghost tiers and occlusion as the player
+	# we are watching.  Our own body is despawned off-map, so using `self` here
+	# would read a dead team/effect set and raycast from the despawn point.
+	var viewer: Player = self
+	if is_spectating and is_instance_valid(spectator_target):
+		viewer = spectator_target
+	var sem := viewer.status_effect_manager
 	if sem == null:
 		return
 	var i_wallhack := sem.has_effect("wallhacking")
-	var i_see_health := _character != null and _character.passive_see_enemy_health
+	var i_see_health := viewer._character != null and viewer._character.passive_see_enemy_health
 
-	# The local player's own ghost tier (this node is the local peer's model).
+	# The viewer's own ghost tier (our model normally, the spectated player's
+	# model while spectating).
 	var self_tier := GhostTier.NONE
-	if has_noclip():
+	if viewer.has_noclip():
 		self_tier = GhostTier.BLACK
 	elif sem.has_effect("invisible"):
 		self_tier = GhostTier.GLASS
-	set_ghost_tier(self_tier)
+	viewer.set_ghost_tier(self_tier)
 
 	# Occlusion raycasts (and the players-group query) are the only per-frame
 	# cost here, and they cascade O(N²) across clients.  Throttle both to a fixed
@@ -2821,13 +2920,13 @@ func _update_visibility(delta: float) -> void:
 			if node == self:
 				continue
 			var p := node as Player
-			if p == null:
+			if p == null or p == viewer:
 				continue
 			_visibility_players.append(p)
-			_occlusion_cache[p.name] = _is_occluded_by_wall(p)
+			_occlusion_cache[p.name] = viewer._is_occluded_by_wall(p)
 
 	for other in _visibility_players:
-		if not is_instance_valid(other):
+		if not is_instance_valid(other) or other == viewer:
 			continue
 
 		var show_outline := false
@@ -2837,8 +2936,8 @@ func _update_visibility(delta: float) -> void:
 
 		if other.spawned and other.status_effect_manager:
 			var osem := other.status_effect_manager
-			var ally := is_teammate_of(other)
-			var enemy := _is_enemy_of(other)
+			var ally := viewer.is_teammate_of(other)
+			var enemy := viewer._is_enemy_of(other)
 
 			# Ghost effect tier for this target (noclip wins over invisibility).
 			# has_noclip() also covers that player's dev override, which is

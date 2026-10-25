@@ -39,6 +39,7 @@ var _ammo_check: CheckButton
 var _meters_check: CheckButton
 var _noclip_check: CheckButton
 var _ignore_bots_check: CheckButton
+var _spectate_check: CheckButton
 var _player_hud_check: CheckButton
 var _world_hud_check: CheckButton
 var _model_check: CheckButton
@@ -222,6 +223,8 @@ func _build_general_tab() -> Control:
 	gameplay_grid.add_child(_noclip_check)
 	_ignore_bots_check = _make_check("Bots ignore me", _on_ignore_bots_toggled)
 	gameplay_grid.add_child(_ignore_bots_check)
+	_spectate_check = _make_check("Spectator mode (not spawned)", _on_spectate_toggled)
+	gameplay_grid.add_child(_spectate_check)
 
 	vb.add_child(HSeparator.new())
 	vb.add_child(_section_header("DISPLAY (local only)"))
@@ -330,6 +333,7 @@ func _refresh_state() -> void:
 			_ammo_check.button_pressed = p.weapon_controller.is_dev_infinite_ammo()
 		_noclip_check.button_pressed = p.dev_noclip
 		_ignore_bots_check.button_pressed = p.dev_hidden_from_bots
+		_spectate_check.button_pressed = p.is_spectating
 		_model_check.button_pressed = p.dev_hide_model
 	_player_hud_check.button_pressed = GameManager.dev_hide_player_hud
 	_world_hud_check.button_pressed = GameManager.dev_hide_world_hud
@@ -425,6 +429,18 @@ func _on_world_hud_toggled(on: bool) -> void:
 	_apply_world_hud_visibility()
 
 
+func _on_spectate_toggled(on: bool) -> void:
+	if _syncing:
+		return
+	var p := _local_player()
+	if p:
+		p.dev_set_spectating(on)
+	# Close so the camera switch is visible immediately; close() restores mouse
+	# capture (the spectator controller needs the cursor captured).
+	if on:
+		close()
+
+
 func _on_model_toggled(on: bool) -> void:
 	if _syncing:
 		return
@@ -451,6 +467,7 @@ func _on_reset_dev_flags() -> void:
 		p.dev_set_no_meter_drain(false)
 		p.dev_set_noclip(false)
 		p.dev_set_hidden_from_bots(false)
+		p.dev_set_spectating(false)
 		p.dev_set_hide_model(false)
 	GameManager.dev_hide_player_hud = false
 	GameManager.dev_hide_world_hud = false

@@ -114,6 +114,9 @@ func _ready() -> void:
 	Leaderboard.killstreak_changed.connect(_on_killstreak_changed)
 	Leaderboard.scores_changed.connect(_on_scores_changed)
 	Leaderboard.player_removed.connect(_on_scores_changed)
+	# Entering/leaving spectator mode moves a row between sections without a
+	# score change.
+	Leaderboard.roster_changed.connect(_on_scores_changed)
 	_build_leaderboard_ui()
 
 
@@ -185,6 +188,14 @@ func _lb_team_header(team: int) -> Label:
 func _lb_disconnected_header() -> Label:
 	var lbl := Label.new()
 	lbl.text = "DISCONNECTED PLAYERS"
+	lbl.add_theme_font_size_override("font_size", 16)
+	lbl.add_theme_color_override("font_color", LB_HDR_COL)
+	return lbl
+
+
+func _lb_spectator_header() -> Label:
+	var lbl := Label.new()
+	lbl.text = "SPECTATORS"
 	lbl.add_theme_font_size_override("font_size", 16)
 	lbl.add_theme_color_override("font_color", LB_HDR_COL)
 	return lbl
@@ -310,7 +321,14 @@ func _rebuild_leaderboard() -> void:
 
 	var self_team: int = _get_self_team()
 	var teams := {Player.Team.SPI: [], Player.Team.SCI: [], Player.Team.FFA: []}
+	var spectators: Array = []
 	for p in Leaderboard.get_players():
+		var pnode: Player = GameManager.find_player(p)
+		# Spectators keep their stats but are listed in their own section, not
+		# under their team.
+		if pnode != null and pnode.is_spectating:
+			spectators.append(p)
+			continue
 		var t: int = _get_team(p)
 		teams[t].append(p)
 
@@ -321,6 +339,11 @@ func _rebuild_leaderboard() -> void:
 		players.sort_custom(func(a, b): return Leaderboard.get_kills(a) > Leaderboard.get_kills(b))
 		_lb_rows.add_child(_lb_team_header(team))
 		_lb_rows.add_child(_lb_team_grid(players, self_team))
+
+	if not spectators.is_empty():
+		spectators.sort_custom(func(a, b): return str(a) < str(b))
+		_lb_rows.add_child(_lb_spectator_header())
+		_lb_rows.add_child(_lb_team_grid(spectators, self_team))
 
 	var disconnected := Leaderboard.get_disconnected_players()
 	if not disconnected.is_empty():

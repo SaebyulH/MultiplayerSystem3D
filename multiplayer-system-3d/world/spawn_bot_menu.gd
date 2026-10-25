@@ -34,8 +34,8 @@ const TEAM_ORDER: Array[int] = [
 	Player.Team.SPI, Player.Team.SCI, Player.Team.FFA,
 ]
 
-## Keep these keyed by BotController.BOT_TRAIT_KEYS; the dropdown reads the
-## controller directly so a trait added there only needs a label here.
+## Keep these keyed by BotController.BOT_TRAIT_KEYS; the expanded panel reads
+## the controller directly so a trait added there only needs a label here.
 const TRAIT_LABELS := {
 	"reaction_time": "Reaction time",
 	"tracking_speed": "Tracking speed",
@@ -44,8 +44,8 @@ const TRAIT_LABELS := {
 	"lead_quality": "Lead quality",
 	"movement_quality": "Movement quality",
 	"awareness": "Awareness",
+	"survival": "Self-preservation",
 }
-const TRAIT_DEFAULT_INDEX: int = 2  # Accuracy
 
 
 var _classes: Array[Class] = []
@@ -452,63 +452,94 @@ func _make_bot_entry(bot: Player) -> Control:
 	skill_value.custom_minimum_size = Vector2(40, 0)
 	skill_row.add_child(skill_value)
 
-	# ── Advanced trait row: dropdown + slider for the selected aspect ──
-	var trait_row := HBoxContainer.new()
-	trait_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	trait_row.add_theme_constant_override("separation", 8)
-	vb.add_child(trait_row)
+	# ── Advanced traits: disclosure triangle reveals every trait at once ──
+	var advanced_toggle := Button.new()
+	advanced_toggle.text = "▶ ADVANCED"
+	advanced_toggle.toggle_mode = true
+	advanced_toggle.flat = true
+	advanced_toggle.focus_mode = Control.FOCUS_NONE
+	advanced_toggle.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	advanced_toggle.custom_minimum_size = Vector2(0, 24)
+	advanced_toggle.tooltip_text = "Show or hide the advanced skill traits"
+	advanced_toggle.add_theme_font_size_override("font_size", 12)
+	advanced_toggle.add_theme_color_override(
+		"font_color", Color(0.65, 0.68, 0.75)
+	)
+	vb.add_child(advanced_toggle)
 
-	var trait_label := _preview_label("ADV", 12, Color(0.65, 0.68, 0.75))
-	trait_label.custom_minimum_size = Vector2(44, 0)
-	trait_row.add_child(trait_label)
+	var advanced_panel := VBoxContainer.new()
+	advanced_panel.visible = false
+	advanced_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	advanced_panel.add_theme_constant_override("separation", 2)
+	vb.add_child(advanced_panel)
 
-	var trait_picker := OptionButton.new()
-	trait_picker.focus_mode = Control.FOCUS_NONE
-	trait_picker.custom_minimum_size = Vector2(142, 26)
-	trait_picker.tooltip_text = "Choose an advanced skill trait to tune"
-	for key in trait_keys:
-		trait_picker.add_item(str(TRAIT_LABELS.get(key, key)))
-	trait_picker.select(mini(TRAIT_DEFAULT_INDEX, trait_keys.size() - 1))
-	trait_row.add_child(trait_picker)
+	var adv_header := HBoxContainer.new()
+	adv_header.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	adv_header.add_theme_constant_override("separation", 8)
+	advanced_panel.add_child(adv_header)
 
-	var trait_slider := HSlider.new()
-	trait_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	trait_row.add_child(trait_slider)
-
-	var trait_value := _preview_label("", 13, TEXT)
-	trait_value.custom_minimum_size = Vector2(46, 0)
-	trait_row.add_child(trait_value)
+	var adv_title := _preview_label(
+		"TRAIT OVERRIDES", 11, Color(0.55, 0.58, 0.65)
+	)
+	adv_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	adv_header.add_child(adv_title)
 
 	var reset_trait := Button.new()
 	reset_trait.text = "RESET"
 	reset_trait.focus_mode = Control.FOCUS_NONE
-	reset_trait.custom_minimum_size = Vector2(52, 26)
+	reset_trait.custom_minimum_size = Vector2(52, 24)
 	reset_trait.tooltip_text = "Clear all advanced trait overrides and return to the skill curve"
-	trait_row.add_child(reset_trait)
+	adv_header.add_child(reset_trait)
 
-	var selected_key: String = trait_keys[mini(TRAIT_DEFAULT_INDEX, trait_keys.size() - 1)]
-	_sync_trait_slider(bc, selected_key, trait_slider, trait_value)
+	var trait_sliders: Dictionary = {}   # key -> HSlider
+	var trait_values: Dictionary = {}    # key -> Label
+	for key in trait_keys:
+		var trait_row := HBoxContainer.new()
+		trait_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		trait_row.add_theme_constant_override("separation", 8)
+		advanced_panel.add_child(trait_row)
 
+		var trait_label := _preview_label(
+			str(TRAIT_LABELS.get(key, key)), 12, Color(0.65, 0.68, 0.75)
+		)
+		trait_label.custom_minimum_size = Vector2(132, 0)
+		trait_row.add_child(trait_label)
+
+		var trait_slider := HSlider.new()
+		trait_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		trait_row.add_child(trait_slider)
+
+		var trait_value := _preview_label("", 13, TEXT)
+		trait_value.custom_minimum_size = Vector2(46, 0)
+		trait_row.add_child(trait_value)
+
+		_sync_trait_slider(bc, str(key), trait_slider, trait_value)
+		trait_slider.value_changed.connect(
+			_on_bot_trait_changed.bind(str(bot.name), str(key), trait_value)
+		)
+		trait_sliders[str(key)] = trait_slider
+		trait_values[str(key)] = trait_value
+
+	advanced_toggle.toggled.connect(
+		_on_advanced_toggled.bind(advanced_toggle, advanced_panel)
+	)
 	skill_slider.value_changed.connect(
 		_on_bot_skill_changed.bind(
-			str(bot.name), skill_value, trait_picker, trait_slider, trait_value
+			str(bot.name), skill_value, trait_sliders, trait_values
 		)
-	)
-	trait_picker.item_selected.connect(
-		_on_bot_trait_selected.bind(
-			str(bot.name), trait_picker, trait_slider, trait_value
-		)
-	)
-	trait_slider.value_changed.connect(
-		_on_bot_trait_changed.bind(str(bot.name), trait_picker, trait_value)
 	)
 	reset_trait.pressed.connect(
-		_on_bot_traits_reset.bind(
-			str(bot.name), trait_picker, trait_slider, trait_value
-		)
+		_on_bot_traits_reset.bind(str(bot.name), trait_sliders, trait_values)
 	)
 
 	return entry
+
+
+func _on_advanced_toggled(on: bool, toggle: Button, panel: VBoxContainer) -> void:
+	if toggle != null:
+		toggle.text = ("▼ ADVANCED" if on else "▶ ADVANCED")
+	if panel != null:
+		panel.visible = on
 
 
 func _on_bot_team_selected(index: int, bot_name: String) -> void:
@@ -524,8 +555,7 @@ func _on_bot_team_selected(index: int, bot_name: String) -> void:
 
 
 func _on_bot_skill_changed(value: float, bot_name: String, value_label: Label,
-		trait_picker: OptionButton, trait_slider: HSlider,
-		trait_value: Label) -> void:
+		trait_sliders: Dictionary, trait_values: Dictionary) -> void:
 	var bot := GameManager.find_player(bot_name)
 	if bot == null or not bot.is_bot:
 		return
@@ -534,14 +564,11 @@ func _on_bot_skill_changed(value: float, bot_name: String, value_label: Label,
 		return
 	bc.set_bot_skill(value)
 	value_label.text = "%.2f" % value
-	_sync_trait_slider(
-		bc, _selected_trait_key(trait_picker), trait_slider, trait_value
-	)
+	_sync_all_trait_sliders(bc, trait_sliders, trait_values)
 	_persist_bot_runtime(bot_name)
 
 
-func _on_bot_trait_selected(_index: int, bot_name: String,
-		trait_picker: OptionButton, trait_slider: HSlider,
+func _on_bot_trait_changed(value: float, bot_name: String, key: String,
 		trait_value: Label) -> void:
 	var bot := GameManager.find_player(bot_name)
 	if bot == null or not bot.is_bot:
@@ -549,27 +576,13 @@ func _on_bot_trait_selected(_index: int, bot_name: String,
 	var bc := bot.get_node_or_null("BotController") as BotController
 	if bc == null:
 		return
-	_sync_trait_slider(
-		bc, _selected_trait_key(trait_picker), trait_slider, trait_value
-	)
-
-
-func _on_bot_trait_changed(value: float, bot_name: String,
-		trait_picker: OptionButton, trait_value: Label) -> void:
-	var bot := GameManager.find_player(bot_name)
-	if bot == null or not bot.is_bot:
-		return
-	var bc := bot.get_node_or_null("BotController") as BotController
-	if bc == null:
-		return
-	var key := _selected_trait_key(trait_picker)
 	bc.set_bot_trait(key, value)
 	trait_value.text = _trait_value_text(bc, key)
 	_persist_bot_runtime(bot_name)
 
 
-func _on_bot_traits_reset(bot_name: String, trait_picker: OptionButton,
-		trait_slider: HSlider, trait_value: Label) -> void:
+func _on_bot_traits_reset(bot_name: String, trait_sliders: Dictionary,
+		trait_values: Dictionary) -> void:
 	var bot := GameManager.find_player(bot_name)
 	if bot == null or not bot.is_bot:
 		return
@@ -577,22 +590,22 @@ func _on_bot_traits_reset(bot_name: String, trait_picker: OptionButton,
 	if bc == null:
 		return
 	bc.clear_bot_traits()
-	_sync_trait_slider(
-		bc, _selected_trait_key(trait_picker), trait_slider, trait_value
-	)
+	_sync_all_trait_sliders(bc, trait_sliders, trait_values)
 	_persist_bot_runtime(bot_name)
 
 
-func _selected_trait_key(picker: OptionButton) -> String:
-	if picker == null:
-		return ""
-	var index := clampi(picker.selected, 0, BotController.BOT_TRAIT_KEYS.size() - 1)
-	return BotController.BOT_TRAIT_KEYS[index]
+func _sync_all_trait_sliders(bc: BotController, trait_sliders: Dictionary,
+		trait_values: Dictionary) -> void:
+	for key in trait_sliders.keys():
+		_sync_trait_slider(
+			bc, str(key), trait_sliders[key] as HSlider,
+			trait_values.get(key, null) as Label
+		)
 
 
-## Point the advanced slider at the currently selected trait and mirror its
-## live (possibly overridden) value.  `set_value_no_signal` is essential: the
-## refresh must not write a second override back through value_changed.
+## Mirror one trait's live (possibly overridden) value into its row.
+## `set_value_no_signal` is essential: a refresh must not write a second
+## override back through value_changed.
 func _sync_trait_slider(bc: BotController, key: String, slider: HSlider,
 		value_label: Label) -> void:
 	if slider == null or value_label == null:

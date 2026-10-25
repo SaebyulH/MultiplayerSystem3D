@@ -22,9 +22,19 @@ signal kill_feed_entry(killer_name: String, victim_name: String, weapon_name: St
 ## clients: when a sync arrives).  Lets UI rebuild instead of polling.
 signal scores_changed()
 
+## Emitted when a player enters/leaves spectator mode.  The roster (who is in
+## which leaderboard section) changed without any score changing, so an open
+## scoreboard must rebuild.  Local to each peer — emitted by
+## Player._sync_dev_spectating on every peer.
+signal roster_changed()
+
 # -------------------------
 # PLAYER MANAGEMENT
 # -------------------------
+
+func notify_roster_changed() -> void:
+	roster_changed.emit()
+
 
 func _ready() -> void:
 	if multiplayer.is_server():
@@ -196,24 +206,26 @@ func _receive_player_removed(player_name: String):
 	scores_changed.emit()
 
 
-## Clears all scores and the disconnected set.  Called when a new match map loads.
+## Zeroes every score for the current roster.  Called when a new match map loads.
+## A fresh match does not empty the scoreboard: the same players keep their rows
+## (including spectators) with zeroed stats, and disconnected entries are dropped.
 func reset() -> void:
 	if not multiplayer.is_server():
 		return
-	_player_kills.clear()
-	_player_deaths.clear()
-	_killstreak.clear()
-	_damage_dealt.clear()
-	_self_damage.clear()
-	_self_heal.clear()
-	_heal_others.clear()
-	_disconnected.clear()
+	_reset_tables()
 	scores_changed.emit()
 	rpc("_receive_reset")
 
 
 @rpc("any_peer", "reliable")
 func _receive_reset() -> void:
+	_reset_tables()
+	scores_changed.emit()
+
+
+func _reset_tables() -> void:
+	# Snapshot the roster BEFORE clearing the dictionaries it is derived from.
+	var roster := get_players()
 	_player_kills.clear()
 	_player_deaths.clear()
 	_killstreak.clear()
@@ -222,7 +234,14 @@ func _receive_reset() -> void:
 	_self_heal.clear()
 	_heal_others.clear()
 	_disconnected.clear()
-	scores_changed.emit()
+	for p in roster:
+		_player_kills[p] = 0
+		_player_deaths[p] = 0
+		_killstreak[p] = 0
+		_damage_dealt[p] = 0
+		_self_damage[p] = 0
+		_self_heal[p] = 0
+		_heal_others[p] = 0
 
 ## Broadcasts a single kill event to all peers for the kill feed.
 @rpc("any_peer", "call_local", "reliable")
