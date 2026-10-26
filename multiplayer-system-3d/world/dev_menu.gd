@@ -45,6 +45,7 @@ var _world_hud_check: CheckButton
 var _model_check: CheckButton
 # Bots-tab widgets (server only).
 var _freeze_bots_check: CheckButton
+var _show_paths_check: CheckButton
 var _randomize_skills_button: Button
 var _remove_all_button: Button
 var _team_buttons: Dictionary = {}   # Player.Team -> Button
@@ -283,6 +284,9 @@ func _build_bots_tab() -> Control:
 	vb.add_child(tools_row)
 	_freeze_bots_check = _make_check("Freeze all bots", _on_freeze_bots_toggled)
 	tools_row.add_child(_freeze_bots_check)
+	_show_paths_check = _make_check("Show nav paths", _on_show_bot_paths_toggled)
+	_show_paths_check.tooltip_text = "Draw each bot's remaining route: green navmesh, orange partial, blue TravelGraph, red direct"
+	tools_row.add_child(_show_paths_check)
 	_randomize_skills_button = _dev_button(
 		"Randomize bot skills", _on_randomize_bot_skills
 	)
@@ -339,6 +343,8 @@ func _refresh_state() -> void:
 	_world_hud_check.button_pressed = GameManager.dev_hide_world_hud
 	if _freeze_bots_check:
 		_freeze_bots_check.button_pressed = GameManager.dev_freeze_bots
+	if _show_paths_check:
+		_show_paths_check.button_pressed = GameManager.dev_show_bot_paths
 	_god_check.button_pressed = _god_mode
 	_syncing = false
 	_update_team_buttons()
@@ -472,6 +478,7 @@ func _on_reset_dev_flags() -> void:
 	GameManager.dev_hide_player_hud = false
 	GameManager.dev_hide_world_hud = false
 	GameManager.dev_freeze_bots = false
+	GameManager.dev_show_bot_paths = false
 	_apply_world_hud_visibility()
 	_refresh_state()
 
@@ -484,6 +491,12 @@ func _on_freeze_bots_toggled(on: bool) -> void:
 	if _syncing:
 		return
 	GameManager.dev_freeze_bots = on
+
+
+func _on_show_bot_paths_toggled(on: bool) -> void:
+	if _syncing:
+		return
+	GameManager.dev_show_bot_paths = on
 
 
 func _on_randomize_bot_skills() -> void:

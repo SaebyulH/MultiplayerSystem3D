@@ -1037,6 +1037,72 @@ decoration like the route line. The two metal rails and the wooden ties are two 
 merged `ArrayMesh` — one node, two draw calls for a route of any length, against ~500 for the same
 length tiled by hand (see `04-optimization.md`).
 
+## Navigation mesh setup
+
+Select the map root and press **Setup Navigation**. It persists the root in the
+`map_nav_geometry` group, creates or reuses a direct-child `NavigationRegion3D`, and writes a
+`NavigationMesh` with `geometry_source_geometry_mode = Group With Children`, group name
+`map_nav_geometry`, and the agent/cell settings in `maps/navmesh_generator.gd`. The map root is
+the source on purpose: a bake walks every descendant, including geometry under `FuncGodotMap`.
+
+It reads **collision**, not visual meshes: `geometry_parsed_geometry_type` is `Static Colliders`
+and `geometry_collision_mask` is the `WORLD` layer (1). That bakes func_godot's generated
+`StaticBody3D` collision and `CSGShape3D` nodes with `use_collision` enabled, while plain
+`MeshInstance3D` props, spawn markers and CSG shapes without collision contribute no polygons.
+Physical-but-movable bodies (the payload cart, `mover` doors) are baked at their authored
+position.
+
+The agent settings are `agent_radius = 0.4243164` (the player capsule), `agent_height = 2.0`,
+`agent_max_climb = 1.0`, `agent_max_slope = 35`, and `cell_size`/`cell_height = 0.25`. Recast
+links walkable surfaces up to `agent_max_climb` apart; 1.0 m is the tallest ledge that is both
+representable in the mesh and still jumpable by the character (~1.27 m apex). The character has
+no step-up, so the follower approaches a vertical knee-height face and jumps it
+(`Traversal._perceive` / `_ledge_jump_state`, up to `JUMP_STEP_MAX` = 1.1 m); it does not walk up
+it. Crouch-only passages and jump-gap shortcuts wider than the jump are not represented.
+**Settings are bake inputs, not the mesh:** changing one only rewrites the resource when you press
+Setup Navigation, and the old baked vertices keep shipping until you re-bake and save. Bots
+consume the result at runtime (`player/bot_controller.gd` `NavRoutes`), preferring it over the
+runtime `TravelGraph`.
+
+The button does **not** bake by default. Press the region's **Bake NavigationMesh** in the
+inspector (or set `NavmeshGenerator.BAKE_AFTER_SETUP = true`). A bake parses the whole scene on
+the main thread, so the large maps can freeze the editor — that is why it is separate. Pressing
+Setup Navigation again is a no-op and never adds a second region; if a map already has more than
+one direct `NavigationRegion3D`, the button warns and stops. Changing settings does not discard an
+existing baked mesh; rebake to apply them.
+
+To see what the mesh produces at runtime, open the dev menu (`0`) on the host and turn on
+**Show nav paths** in the Bots tab: each bot draws its remaining route in the world — green for a
+navmesh route, orange for a navmesh partial approach, blue for the `TravelGraph` fallback, and red
+for direct steering — plus a compact intent label above its head (`CAPTURE A`, `HOLD B`,
+`PUSH PAYLOAD`, `FIGHT ON A`, etc.). It is server-only, so a client never draws bot paths or
+labels.
+
+### Fidelity
+
+The mesh is a simplified walkable surface, not collision geometry: it is inset from walls by the
+agent radius (0.4243164 m, which rounds up to 0.5 m at 0.25 m cells) and `agent_max_climb = 1.0`
+deliberately links ledges the character must jump, so the drawn region sits above those faces
+rather than following them. The other knobs tighten the outline:
+
+- `edge_max_error = 0.25` — this is in **cell units** (Recast voxels, like `detail_sample_*`),
+  not metres. Godot's default `1.3` is ≈0.33 m at 0.25 m cells; `0.25` is ≈6 cm, so the
+  simplified contour follows the collision outline closely.
+- `detail_sample_distance = 1.0` / `detail_sample_max_error = 0.1`, in **cell units** (defaults
+  `6.0` / `1.0`, i.e. only every 1.5 m at 0.25 m cells), make the detail mesh hug uneven floors
+  at 0.25 m spacing and ~2.5 cm height error.
+- `region_min_size = 1.0` / `region_merge_size = 8.0` (defaults `2.0` / `20.0`) keep small
+  landings instead of discarding or merging them across gaps.
+
+Measured on the lobby (`main_menu_world`): the old coarse bake produced **563 polygons / 649
+vertices**; this preset produces **2793 / 2173** and bakes in ~0.4 s headless. Going to
+`cell_size`/`cell_height = 0.125` produces **6408 / 4544** in ~4 s, but **the navigation-map cell
+size must match** — set `navigation/3d/default_cell_size` and `navigation/3d/default_cell_height`
+to `0.125` in `project.godot` and re-bake **every** map, or Godot logs cell-size mismatch warnings
+and edge rasterization can be wrong. If the region must match geometry literally rather than being
+a traversal graph, lower `agent_max_climb` and accept that those ledges need the `TravelGraph`
+fallback or authored ramps/stairs.
+
 ## Current entities
 
 Point entities only — the brush entities (`trigger`, `mover`, `rotate`, `button`, `physics`) are

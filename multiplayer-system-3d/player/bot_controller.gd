@@ -366,6 +366,37 @@ class_name BotController
 ##   All of this is server-local like the rest of the AI; nothing new is
 ##   replicated.  The debug overlay shows `surv:` and `hunt:` lines.
 ##
+## - Stage 8 (navmesh traversal): IMPLEMENTED.
+##   Locomotion prefers the map's baked `NavigationRegion3D`, queried through
+##   `NavRoutes`/`NavigationServer3D` inside `Traversal`: travel, objective,
+##   search, flee, cover and long-range chase approach.  A full navmesh route
+##   wins; the runtime `TravelGraph` is the fallback for maps without a baked
+##   region and for unreachable routes (its 1.5 ms/frame bake does not run
+##   while the navmesh succeeds); direct raycast steering is last.  A nav path
+##   ending short of the goal is followed only to the closest reachable point,
+##   so hunt/cover points across a gap no longer push a wall.  Stairs connect
+##   because `AGENT_MAX_CLIMB` is 0.5 m and the knee probe still jumps each
+##   riser.  Crouch-only and jump-gap routes are not in the mesh.  Combat
+##   inside `COMBAT_CHASE_EXIT` is still local strafe/peek; beyond
+##   `COMBAT_CHASE_ENTER` (or 2 m vertically) it hands locomotion to Traversal
+##   while continuing to aim/fire.  Navmesh queries are server-only and write
+##   only the existing rollback input fields — never position/velocity or
+##   `_rollback_tick`.
+##
+## - Stage 9 (hearing-driven search): IMPLEMENTED.
+##   An enemy sound now starts a SEARCH at the sound position instead of only a
+##   GLANCE.  `_on_sound_made` resolves the emitter (`GameManager.find_player`),
+##   ignores self/teammates/despawned/dev-hidden sources, and skips a restart if
+##   the bot is already hunting within `HEARING_NEAREST_MARGIN` of that sound.
+##   The approach/search timers are extended by `dist / WALK_SPEED`, so a 35 m
+##   gunshot is actually reachable.  A bot already in COMBAT/HEAL/COVER/RELOAD/
+##   FLEE keeps that priority.  Also fixed in this pass: MAIN_MENU/DEATHMATCH
+##   wander no longer heads to `Vector3.ZERO` (the target is picked on spawn);
+##   long-range chase steers the waypoint in world space so the COMBAT look
+##   cannot bend W off the route; a chase stuck on a navmesh partial route gives
+##   up after `COMBAT_CHASE_STALL_TIME`; and target-loss no longer force-enters
+##   SEARCH over HEAL/COVER/FLEE.
+##
 ## OPEN QUESTIONS / HAZARDS FOR LATER STAGES
 ## - `_get_proj_info().heals_allies` is accurate (positive `health_delta` +
 ##   `can_hit_other_teamates`): Syringe Gun and Medpack Launcher only.
@@ -383,10 +414,13 @@ class_name BotController
 ##   them; only input-driven movement tech (dash/jump) is currently usable.
 ## ============================================================================
 
-## Raycast-based bot AI.  No navmesh required — bots probe the world
-## around them with raycasts and steer toward the clearest path.
-## Also seeks objectives (control points, payload) when no enemy is visible.
-## Works on any map geometry automatically.
+## Server-only bot AI.  Locomotion prefers the map's baked NavigationRegion3D
+## (synchronous NavigationServer3D queries inside `Traversal`).  Maps without a
+## baked region, and routes the navmesh cannot reach, fall back to the runtime
+## `TravelGraph`, then to direct raycast steering.  Facing is requested through
+## `Mouse`; movement only writes the rollback input fields, so clients replay it
+## normally.  Also seeks objectives (control points, payload) when no enemy is
+## visible.
 ##
 ## Target priority:
 ##   1. Heal an injured teammate when holding a heal weapon (or when a teammate
@@ -416,9 +450,11 @@ const BOT_TRAIT_KEYS: Array[String] = [
 ]
 
 ## Draws a live state label above this bot (action, target, fire mode, trigger
-## flags, aim error, weapon/ammo) plus the steering rays it just cast.  Server
-## side only, like the rest of the AI.  While false this creates no nodes and
-## does no per-frame work: every debug entry point is gated on this flag.
+## flags, aim error, weapon/ammo), the steering rays it just cast, and its
+## remaining travel route (green navmesh, orange partial, blue TravelGraph, red
+## direct).  Server side only, like the rest of the AI.  The dev menu's "Show
+## nav paths" turns on just the route lines for every bot without the label or
+## rays.  With both off this creates no nodes and does no per-frame work.
 @export var debug_draw: bool = false:
 	set(value):
 		debug_draw = value
@@ -492,6 +528,7 @@ func _ready() -> void:
 	_shot_query.collide_with_areas = false
 
 	_fov_dot_threshold = cos(deg_to_rad(FOV_DEGREES * 0.5))
+	_recall_fov_dot_threshold = cos(deg_to_rad(TARGET_RECALL_FOV_DEGREES * 0.5))
 
 	_style_seed = random_seed if random_seed != 0 else randi()
 	_style = Style.new()
@@ -627,6 +664,19 @@ const MEDIC_SELF_HEAL_THRESHOLD: float = 0.5
 const SAFE_TOP_OFF_DELAY: float = 3.0
 ## Any living enemy inside this radius counts as "around" even through walls.
 const SAFE_TOP_OFF_RADIUS: float = 30.0
+
+# Objective intent model.  A control point's capture volume is a TrenchBroom
+# trigger brush, so there is no authored radius to read; this is the bot-side
+# "close enough to touch the objective" radius.  The leash is how far a bot may
+# chase a target away from the objective before it returns to the point.
+const OBJECTIVE_HOLD_RADIUS: float = 3.0
+const OBJECTIVE_LEASH_RADIUS: float = 12.0
+## "An objective is nearby" for persistent hearing: within this radius the
+## objective outranks an old sound and the endless heard-memory search ends.
+const OBJECTIVE_NEARBY_RADIUS: float = 20.0
+## Stand this far inside the payload's real push radius so a "hold" actually
+## pushes the cart instead of parking just outside it.
+const OBJECTIVE_PAYLOAD_RADIUS_INSET: float = 0.75
 ## Bots detect enemies within the same horizontal cone a human camera renders.
 ## `player.tscn` sets `Camera3D.fov = 90`, so the bot FOV is 90° too.
 const FOV_DEGREES: float = 90.0
@@ -809,6 +859,9 @@ const FLOOR_MAX_ANGLE_DEG: float = 45.0
 const JUMP_VELOCITY: float = 5.0
 const GRAVITY: float = 9.8
 const WALK_SPEED: float = 3.0
+## Horizontal distance covered while a running jump clears a riser.  Used both
+## for explicit JUMP path edges and for approaching a low vertical ledge.
+const JUMP_TAKEOFF: float = WALK_SPEED * (2.0 * JUMP_VELOCITY / GRAVITY) * 0.55
 const PROBE_KNEE_HEIGHT: float = 0.45
 const PROBE_CHEST_HEIGHT: float = 1.1
 const PROBE_FULL_HEIGHT: float = 1.75
@@ -819,6 +872,27 @@ const TRAVEL_ARRIVE_DEFAULT: float = 1.0
 ## Travel look points are floor positions; add eye height so the bot looks
 ## where it is going, not down at its own feet.
 const TRAVEL_EYE_HEIGHT: float = 1.5
+
+# Navmesh traversal (server-only).  The layer mask matches the NavigationRegion3D
+# default; queries only choose Keyboard verbs, never position/velocity/rollback state.
+const NAV_LAYERS: int = 1
+const NAV_SYNC_FRAMES: int = 2
+const NAV_START_SNAP_MAX: float = 2.0
+## Generous: a freshly spawned bot can be a spawn-drop above the mesh.
+const NAV_START_SNAP_Y: float = 3.0
+const NAV_GOAL_SNAP_MAX: float = 2.0
+const NAV_GOAL_SNAP_Y: float = 2.0
+const NAV_ENDPOINT_TOL: float = 1.0
+const NAV_PARTIAL_MIN_GAIN: float = 2.0
+const NAV_FAILURE_RETRY_MS: int = 1200
+const NAV_STUCK_RETRY_MS: int = 5000
+const NAV_WALK_STEP: float = 0.15
+const NAV_WANDER_ATTEMPTS: int = 8
+const NAV_WANDER_MAX_Y: float = 8.0
+## Goals closer than this stay on direct steering.  Above it a usable route is
+## preferred even when the straight line is clear, so the navmesh (and the debug
+## line) is the primary path source rather than an obstacle-only fallback.
+const DIRECT_ROUTE_MIN: float = 2.5
 
 # Steering — a reduced fan (7 rays instead of 11) keeps wall-following smooth
 # while cutting the steering raycast cost by ~40%.  Still used by combat only;
@@ -837,15 +911,46 @@ enum LookPriority { SCAN, TRAVEL_LOOKAHEAD, GLANCE, REACT_DAMAGE, COMBAT }
 # build can ship with it off without deleting the code.
 const ENABLE_COVER: bool = true
 const DECISION_INTERVAL: float = 0.25
-const TARGET_LOST_GRACE: float = 0.35
+## How long a lost target's identity/recognition is remembered.  Style-scaled
+## inside `_target_memory_window()`.
+const TARGET_MEMORY_MIN: float = 5.0
+const TARGET_MEMORY_MAX: float = 8.0
+## Short no-search grace after LOS loss: the bot holds its last-known angle
+## instead of immediately snapping into a hunt, but the chase starts at once
+## when it expires.
+const TARGET_LOST_GRACE: float = 0.75
 const RECOGNITION_TIME_MIN: float = 0.08
 const RECOGNITION_TIME_MAX: float = 0.55
 const TARGET_SWITCH_MARGIN: float = 0.35
 const TARGET_STICKINESS: float = 0.85
+## Extra score for a visible target inside the recall cone while its memory is
+## still alive, so a reacquired runner beats a freshly noticed bystander.
+const TARGET_RECALL_STICKINESS: float = 1.10
+## A remembered target may be reacquired outside the normal 90° FOV.
+const TARGET_RECALL_FOV_DEGREES: float = 140.0
+## While a target is lost, any visible enemy this close (or the recent attacker)
+## wins immediately; otherwise the bot commits to the chase.
+const TARGET_RETARGET_CLOSE_RANGE: float = 12.0
+const TARGET_EMERGENCY_RANGE: float = 5.0
+const TARGET_SWITCH_COOLDOWN: float = 0.6
+const TARGET_PROXIMITY_REF: float = 18.0
+const TARGET_PROXIMITY_BONUS: float = 1.25
+## Pursuit prediction: lead by at most this many seconds of frozen velocity and
+## clamp the resulting lead distance.
+const CHASE_PREDICT_MAX_TIME: float = 2.0
+const CHASE_LEAD_MAX_DIST: float = 20.0
 const COMBAT_STRAFE_SHOT_MIN: int = 3
 const COMBAT_STRAFE_SHOT_MAX: int = 6
 const COMBAT_JUMP_MIN_INTERVAL: float = 1.8
 const COMBAT_CROUCH_MIN_INTERVAL: float = 3.0
+## Engagement distance deadband and hysteresis.  Inside the band the bot holds
+## range (strafe only) instead of orbiting a continuously normalized radial.
+const COMBAT_RANGE_BAND_SCALE: float = 0.22
+const COMBAT_RANGE_HYSTERESIS: float = 1.2
+## Combat safety probes are cached; four directions every quarter second.
+const COMBAT_PROBE_INTERVAL: float = 0.25
+const COMBAT_STALL_TIME: float = 0.6
+const COMBAT_STALL_DISTANCE: float = 0.2
 
 # Stage 7 — self-preservation and the hunt.
 #
@@ -897,18 +1002,26 @@ const FLEE_ARRIVE_RADIUS: float = 1.5
 const FLEE_REPATH_INTERVAL: float = 1.5
 const HUNT_DURATION_MIN: float = 3.5
 const HUNT_DURATION_MAX: float = 15.0
-const HUNT_SWEEP_RADII: Array[float] = [4.0, 6.0, 8.0]
+## Directional fan radii used when the lost target's escape direction is known;
+## the full ring uses the same radii.
+const HUNT_SWEEP_RADII: Array[float] = [5.0, 10.0, 18.0]
+const HUNT_FAN_ANGLES: Array[float] = [-55.0, -30.0, 0.0, 30.0, 55.0]
 const HUNT_ANGLES: int = 8
-const HUNT_DWELL_MIN: float = 1.5
-const HUNT_DWELL_MAX: float = 2.5
+## Brief checks while moving; only the terminal point gets a longer dwell.
+const HUNT_DWELL_MIN: float = 0.35
+const HUNT_DWELL_MAX: float = 0.9
 const HUNT_ARRIVE_RADIUS: float = 1.5
 const HUNT_ORIGIN_MOVE: float = 3.0
 const HUNT_LEAD_MIN: float = 6.0
 const HUNT_LEAD_MAX: float = 14.0
 const HUNT_MIN_POINTS: int = 2
 const HUNT_MAX_EXTRA_POINTS: int = 6
-## A sweep point that cannot be reached is abandoned after this long.
+## Fallback per-point timeout.  The actual timeout is distance-scaled in
+## `_act_search` (`HUNT_POINT_TIMEOUT_MIN/MAX`).
 const HUNT_POINT_TIMEOUT: float = 3.5
+const HUNT_POINT_TIMEOUT_MIN: float = 2.0
+const HUNT_POINT_TIMEOUT_MAX: float = 8.0
+const HUNT_PARTIAL_ABANDON: float = 0.5
 ## If the exact last-seen point cannot be reached this quickly, seed the sweep
 ## from where the bot is and clear what it can reach.
 const HUNT_APPROACH_TIMEOUT: float = 4.0
@@ -1009,6 +1122,16 @@ const MAX_SENSIBLE_RANGE: float    = 40.0
 ## "exactly N units away" gap from their target.
 const PREFERRED_DIST_JITTER: float           = 3.0
 const PREFERRED_DIST_REROLL_INTERVAL: float  = 2.5
+## Beyond this flat distance combat hands locomotion to Traversal's route
+## follower (navmesh -> graph -> direct) so the bot clears walls and floors.
+## EXIT is lower so the boundary cannot oscillate.
+const COMBAT_CHASE_ENTER: float = 20.0
+const COMBAT_CHASE_EXIT: float = 14.0
+## A target this far above/below also needs a route, even at close flat range.
+const COMBAT_CHASE_VERTICAL: float = 2.0
+## A nav partial route parked at the closest reachable point for this long means
+## the target is effectively unreachable; give the chase up.
+const COMBAT_CHASE_STALL_TIME: float = 1.5
 
 # Reaction time
 ## Worst-case delay (skill 0) before a bot pulls the trigger on a target it
@@ -1021,9 +1144,11 @@ const EXPLOSION_JUMP_COOLDOWN: float  = 4.0
 ## Only worth rocket-jumping if there's actually meaningful ground to cover.
 const EXPLOSION_JUMP_MIN_GAP: float   = 6.0
 
-# Debug overlay.  All of this is inert unless `debug_draw` is true.
-## How often the label text and steering-ray mesh are rebuilt.  The AI thinks at
-## 20 Hz; redrawing at that rate would just churn strings for nothing.
+# Debug overlay.  All of this is inert unless `debug_draw` (or the dev menu's
+# "Show nav paths", which draws routes only) is on.
+## How often the label text, steering-ray mesh and route line are rebuilt.  The
+## AI thinks at 20 Hz; redrawing at that rate would just churn strings for
+## nothing.
 const DEBUG_REFRESH_INTERVAL: float = 0.1
 ## Height of the state label above the bot's origin, in metres.
 const DEBUG_LABEL_HEIGHT: float = 2.4
@@ -1034,6 +1159,15 @@ const DEBUG_RAY_HIT_COLOR := Color(1.0, 0.2, 0.2, 0.9)
 ## Safety cap on the steering-ray vertex queue.  At 20 Hz x 7 rays a 0.1 s
 ## refresh produces ~28 vertices; this only matters if the refresh stalls.
 const DEBUG_MAX_RAY_VERTICES: int = 512
+## Route lines are lifted slightly so the floor does not z-fight them.
+const DEBUG_PATH_LIFT: float = 0.08
+## ImmediateMesh line primitives are one pixel wide at any distance, which is
+## easy to miss across a map.  Routes are flat ribbons instead.
+const DEBUG_PATH_WIDTH: float = 0.18
+const DEBUG_NAV_PATH_COLOR := Color(0.25, 1.0, 0.45, 1.0)
+const DEBUG_NAV_PARTIAL_COLOR := Color(1.0, 0.7, 0.15, 1.0)
+const DEBUG_GRAPH_PATH_COLOR := Color(0.2, 0.7, 1.0, 1.0)
+const DEBUG_DIRECT_PATH_COLOR := Color(1.0, 0.3, 0.3, 0.8)
 
 # Duck-typed property name lists.  These are the candidate names the original
 # ad-hoc `.get("...")` chains probed.  Kept identical so this stage does not
@@ -1057,6 +1191,9 @@ const PROP_TEAM_HEALTH_MULT: Array[String] = ["team_health_delta_multiplier"]
 
 var _strafe_dir: float   = 0.0
 var _strafe_timer: float = 0.0
+## Long-range combat has handed locomotion to Traversal's route follower.
+var _combat_chasing: bool = false
+var _combat_chase_stall: float = 0.0
 
 ## Stage 3: per-bot route/perception/stuck state.  All non-combat movement
 ## (objective, pursue, wander, heal approach) goes through this.
@@ -1084,6 +1221,12 @@ var _heard_position: Vector3 = Vector3.INF
 var _heard_distance: float = INF
 var _heard_timer: float = 0.0
 var _heard_kind: StringName = &""
+## The last accepted enemy sound, retained until a newer sound or respawn.  When
+## no objective is nearby this drives an un-deadlined search back to the sound.
+var _persistent_heard_position: Vector3 = Vector3.INF
+var _persistent_heard_velocity: Vector3 = Vector3.ZERO
+var _persistent_heard_direction: Vector3 = Vector3.ZERO
+var _persistent_heard_name: String = ""
 var _last_seen_velocity: Vector3 = Vector3.ZERO
 ## Target-velocity estimator (Stage 6).  Samples the target position at the
 ## 20 Hz think rate and smooths over ~0.18 s; a sign reversal damps the old
@@ -1092,9 +1235,35 @@ var _est_velocity: Vector3 = Vector3.ZERO
 var _est_last_position: Vector3 = Vector3.ZERO
 var _est_last_time: float = 0.0
 var _est_target_name: String = ""
+## True when the current target was visible on this think tick.  All firing and
+## live-position reads go through this; a remembered target is never tracked
+## through a wall.
+var _target_visible: bool = false
+## Last engaged enemy, kept alive across a line-of-sight break.  This identity is
+## server-local and is never read from the hidden Player while unseen.
+var _memory_target: Player = null
+var _memory_target_name: String = ""
+var _memory_last_position: Vector3 = Vector3.INF
+var _memory_last_velocity: Vector3 = Vector3.ZERO
+var _memory_last_seen_ms: int = 0
+var _memory_expires_ms: int = 0
+var _memory_seen_time: float = 0.0
+var _memory_grace_until_ms: int = 0
+var _memory_chasing: bool = false
+## One predicted chase per loss; prevents the 4 Hz scan from restarting the
+## search every time it finds no visible target.
+var _memory_search_started: bool = false
+var _target_lock_until_ms: int = 0
 var _target_lost_timer: float = 0.0
 var _search_timer: float = 0.0
 var _search_active: bool = false
+var _search_deadline_ms: int = 0
+## True when the active search is the endless heard-memory search.  Cleared when
+## a target is acquired, an objective comes nearby, or a new search starts.
+var _search_persistent: bool = false
+## Predicted escape direction for the directional search fan.  Zero falls back
+## to a full ring around the search origin.
+var _search_direction: Vector3 = Vector3.ZERO
 ## Stable centre of the current hunt (survives `_last_seen_position` being
 ## cleared when search expires) plus the sweep around it.
 var _search_origin: Vector3 = Vector3.INF
@@ -1105,6 +1274,10 @@ var _hunt_origin: Vector3 = Vector3.INF
 var _hunt_seeded: bool = false
 var _hunt_dwelling: bool = false
 var _hunt_point_timer: float = 0.0
+## Index whose distance-scaled timeout is currently armed, and a short timer
+## that abandons a point when the route only reaches a partial approach.
+var _hunt_timed_index: int = -1
+var _hunt_partial_timer: float = 0.0
 var _glance_timer: float = 0.0
 
 ## Combat movement is event-driven, not a 1.5 s dice roll.
@@ -1114,6 +1287,21 @@ var _shots_since_strafe: int = 0
 var _last_mag_for_strafe: int = -1
 var _combat_jump_timer: float = 0.0
 var _combat_crouch_timer: float = 0.0
+
+## Combat locomotion shape.  A committed pattern is chosen at each strafe
+## boundary; HOLD is the stop-to-shoot beat.
+enum CombatRangeState { HOLD, APPROACH, RETREAT }
+enum CombatPattern { WIDE, JIGGLE, HOLD }
+var _combat_range_state: CombatRangeState = CombatRangeState.HOLD
+var _combat_pattern: CombatPattern = CombatPattern.WIDE
+var _combat_settle_timer: float = 0.0
+var _combat_probe_timer: float = 0.0
+var _combat_block_left: bool = false
+var _combat_block_right: bool = false
+var _combat_block_forward: bool = false
+var _combat_block_backward: bool = false
+var _combat_stall_timer: float = 0.0
+var _combat_stall_position: Vector3 = Vector3.ZERO
 
 ## Cover/peek state shared by Decision and _act_retreat_cover.
 var _cover_position: Vector3 = Vector3.INF
@@ -1206,6 +1394,27 @@ var _current_target: Player    = null
 var _heal_target: Player       = null
 var _last_seen_position: Vector3 = Vector3.INF
 
+## "What should I be doing right now?" — the top-level intent model.  It is
+## recomputed after each Decision update; the debug label shows it and the
+## objective fields drive combat/search anchoring.
+enum Intent {
+	NONE, WANDER, FIGHT, MOVE_TO_OBJECTIVE, CAPTURE, DEFEND, HOLD,
+	FIGHT_ON_OBJECTIVE, RETURN_TO_OBJECTIVE, SEARCH, HEAL, COVER, FLEE,
+	RELOAD, UNSTUCK,
+}
+var _intent: Intent = Intent.NONE
+var _intent_text: String = "—"
+## Cached objective info for this tick.  Populated by `_update_intent()`.
+var _objective_position: Vector3 = Vector3.INF
+var _objective_hold_radius: float = OBJECTIVE_HOLD_RADIUS
+var _objective_leash_radius: float = OBJECTIVE_LEASH_RADIUS
+var _objective_name: String = ""
+var _objective_active: bool = false
+var _objective_owned: bool = false
+var _objective_contested: bool = false
+var _objective_kind: String = ""
+var _objective_attacking: bool = false
+
 ## Seconds since an enemy was last visible or within SAFE_TOP_OFF_RADIUS.
 ## Drives the out-of-combat "heal to full" threshold only.
 var _safe_top_off_timer: float = 0.0
@@ -1215,6 +1424,8 @@ var _enemy_nearby: bool = false
 var _retarget_timer: float        = 0.0
 var _weapon_switch_guard: float   = 0.0
 var _fov_dot_threshold: float     = 0.5  # cos(FOV_DEGREES / 2), set in _ready
+## Wider cone for reacquiring a remembered target (see TARGET_RECALL_FOV_DEGREES).
+var _recall_fov_dot_threshold: float = 0.5
 
 ## Stage 2 verb layer.  These are the ONLY writers of movement keys, jump,
 ## crouch, facing and (through Trigger) fire flags.  Decisions in _act_* call
@@ -1254,6 +1465,7 @@ var _debug_label: Label3D = null
 var _debug_ray_instance: MeshInstance3D = null
 var _debug_ray_mesh: ImmediateMesh = null
 var _debug_ray_material: StandardMaterial3D = null
+var _debug_path_material: StandardMaterial3D = null
 var _debug_refresh_timer: float = 0.0
 ## World-space line pairs collected since the last refresh (2 vertices per ray).
 var _debug_ray_lines: PackedVector3Array = PackedVector3Array()
@@ -1291,6 +1503,14 @@ func _physics_process(delta: float) -> void:
 		_was_spawned = true
 		_reset_for_spawn()
 
+	# A bot can be queue_free'd while another bot is targeting it.  A freed
+	# object compares == null but still fails the typed-parameter check, so clear
+	# the caches before any tick phase can touch them.
+	if not is_instance_valid(_current_target):
+		_current_target = null
+	if not is_instance_valid(_heal_target):
+		_heal_target = null
+
 	# Dev-menu "freeze all bots": park them exactly like a stun.  Going through
 	# the emulators keeps them the only writers of input/facing state.
 	if GameManager.dev_freeze_bots:
@@ -1300,8 +1520,7 @@ func _physics_process(delta: float) -> void:
 		_maneuvers.abort()
 		_abort_explosion_jump()
 		_has_desired_aim = false
-		if debug_draw:
-			_debug_tick(delta)
+		_debug_sync(delta)
 		return
 
 	# Stunned, pinned, or mid-channel bots cannot move, aim, or fire.
@@ -1312,8 +1531,7 @@ func _physics_process(delta: float) -> void:
 		_maneuvers.abort()
 		_abort_explosion_jump()
 		_has_desired_aim = false
-		if debug_draw:
-			_debug_tick(delta)
+		_debug_sync(delta)
 		return
 
 	# Physics-rate verb layer.  Mouse movement, aim measurement, fire state and
@@ -1353,8 +1571,7 @@ func _physics_process(delta: float) -> void:
 	else:
 		_safe_top_off_timer = minf(_safe_top_off_timer + delta, SAFE_TOP_OFF_DELAY)
 
-	if debug_draw:
-		_debug_tick(delta)
+	_debug_sync(delta)
 
 	if _weapon_switch_guard > 0.0:
 		_weapon_switch_guard -= delta
@@ -1371,6 +1588,7 @@ func _physics_process(delta: float) -> void:
 
 	_think()
 	_decision.update(PROCESS_INTERVAL)
+	_update_intent()
 	if not _maneuvers.is_running():
 		_act()
 
@@ -1411,11 +1629,16 @@ func _steer_toward(target_pos: Vector3) -> Vector2:
 	_last_steer_dir = best_dir
 
 	if center_score < STEER_DISTANCE * 0.3:
+		# A visible target needs a short deflection, not a three-second wall
+		# crawl; keep the longer hug for travel/unseen steering.
+		var sees_target := _current_target != null and _target_visible
+		var hug_angle := 35.0 if sees_target else 70.0
+		var hug_time := 1.0 if sees_target else 3.0
 		if _wall_hug_timer <= 0.0:
 			_wall_hug_side = 1 if randf() > 0.5 else -1
-			_wall_hug_timer = 3.0
+			_wall_hug_timer = hug_time
 		_wall_hug_timer -= PROCESS_INTERVAL
-		var hug_dir := flat_desired.rotated(deg_to_rad(70.0 * _wall_hug_side))
+		var hug_dir := flat_desired.rotated(deg_to_rad(hug_angle * _wall_hug_side))
 		var hug_score := _score_direction(origin, hug_dir)
 		if hug_score > center_score + 1.0:
 			best_dir = hug_dir
@@ -1458,10 +1681,19 @@ func _apply_movement(sd: Vector2) -> void:
 func _move_local(local: Vector2) -> void:
 	_keyboard.set_move_input_vector(local)
 
+
+## Release latched movement keys.  Every act early-return that can be reached
+## with a previous movement intent must call this; the Keyboard otherwise keeps
+## walking the bot unguided (known issue #118).
+func _release_movement() -> void:
+	_keyboard.set_move(0, 0)
+
 # Strafing
 
 func _tick_strafe() -> void:
 	_strafe_timer -= PROCESS_INTERVAL
+	_combat_settle_timer = maxf(_combat_settle_timer - PROCESS_INTERVAL, 0.0)
+	_combat_probe_timer = maxf(_combat_probe_timer - PROCESS_INTERVAL, 0.0)
 	var forced := _strafe_force_change
 	if _strafe_timer > 0.0 and not forced:
 		return
@@ -1473,30 +1705,88 @@ func _tick_strafe() -> void:
 		_strafe_dir = float([-1, 0, 1][randi() % 3])
 		return
 
-	var spread := clampf(style.strafe_hold_spread, 0.0, 0.9)
-	_strafe_timer = maxf(
-		0.16, style.strafe_hold_median * randf_range(1.0 - spread, 1.0 + spread)
-	)
-	if forced:
-		# A hit or a burst of shots asks for a new direction now; humans do not
-		# wait out the old strafe timer after being shot.
-		_strafe_timer = randf_range(0.25, 0.55)
-	var old_dir := _strafe_dir
-	var in_combat := _current_target != null
-
-	# Standing still is rare and short in a fight.  Out of combat the old
-	# occasional pause is harmless.
-	var pause_chance := style.pause_probability * (0.25 if in_combat else 1.0)
-	if not style.allow_strafe or randf() < pause_chance:
-		if old_dir != 0.0:
-			_keyboard.counter_strafe()
-		_strafe_dir = 0.0
-		_strafe_timer = randf_range(0.12, 0.28) if in_combat else _strafe_timer
+	var in_combat := _current_target != null and _target_visible
+	if not in_combat:
+		# Out of combat: the old relaxed cadence is fine.
+		var spread := clampf(style.strafe_hold_spread, 0.0, 0.9)
+		_strafe_timer = maxf(
+			0.16,
+			style.strafe_hold_median * randf_range(1.0 - spread, 1.0 + spread)
+		)
+		if not style.allow_strafe or randf() < style.pause_probability:
+			if _strafe_dir != 0.0:
+				_keyboard.counter_strafe()
+			_strafe_dir = 0.0
+			return
+		_pick_strafe_direction()
+		_combat_pattern = CombatPattern.WIDE
 		return
 
-	# Weighted left/right with a repeat penalty and a per-bot bias.  The bias
-	# makes one bot prefer right peeks and another prefer left, so same-skill
-	# bots do not look like copies.
+	if forced:
+		# A hit or a burst asks for a new direction now; a human does not wait
+		# out the old strafe timer after being shot.
+		_combat_pattern = CombatPattern.WIDE
+		_combat_settle_timer = 0.0
+		_strafe_timer = randf_range(0.25, 0.55)
+		_pick_strafe_direction()
+		_strafe_reason = "damaged"
+		return
+
+	# Choose a committed combat pattern.  The style weights were authored for
+	# exactly this purpose but were previously unused.
+	var weights := style.peek_style_weights
+	var w_wide := maxf(0.1, weights[0] if weights.size() > 0 else 0.5)
+	var w_jiggle := maxf(0.1, weights[1] if weights.size() > 1 else 0.3)
+	var w_hold := maxf(0.1, weights[2] if weights.size() > 2 else 0.2)
+	var wc: WeaponController = player.weapon_controller
+	var movement_spread := 0.0
+	if wc != null and wc._is_ready():
+		var weapon := wc._weapons[wc.current_weapon_index]
+		if weapon != null and _chosen_fire_index >= 0 \
+				and _chosen_fire_index < weapon.weapon_fires.size():
+			var fire: WeaponFire = weapon.weapon_fires[_chosen_fire_index]
+			if fire != null:
+				movement_spread = fire.movement_spread
+	var target_pos := _target_position_for_ai()
+	var target_dist := player.global_position.distance_to(target_pos) \
+		if target_pos != Vector3.INF else 999.0
+	if movement_spread > 0.0 and target_dist > 6.0:
+		w_hold *= 1.7
+	if target_dist < 6.0:
+		w_hold *= 0.6
+	if _combat_pattern == CombatPattern.HOLD:
+		w_hold *= 0.5
+
+	var pattern_weights: Array[float] = [w_wide, w_jiggle, w_hold]
+	var pick := _weighted_choice(pattern_weights, "combat_pattern")
+	if pick == 2:
+		_combat_pattern = CombatPattern.HOLD
+		if _strafe_dir != 0.0:
+			_keyboard.counter_strafe()
+		_strafe_dir = 0.0
+		_strafe_timer = randf_range(0.35, 0.7)
+		_combat_settle_timer = randf_range(0.08, 0.16)
+		_strafe_reason = "hold"
+		return
+
+	_combat_pattern = CombatPattern.JIGGLE if pick == 1 \
+		else CombatPattern.WIDE
+	_pick_strafe_direction()
+	if pick == 0:
+		_strafe_timer = randf_range(0.6, 1.2)
+	else:
+		_strafe_timer = randf_range(0.15, 0.3)
+		if randf() < style.pause_probability * 0.5:
+			_strafe_dir = 0.0
+			_strafe_timer = randf_range(0.1, 0.25)
+			_strafe_reason = "pause"
+
+
+## Weighted left/right with a repeat penalty and a per-bot bias.  The bias makes
+## one bot prefer right peeks and another prefer left, so same-skill bots do not
+## look like copies.
+func _pick_strafe_direction() -> void:
+	var old_dir := _strafe_dir
 	var weights: Array[float] = [
 		maxf(0.05, 1.0 - _strafe_bias),
 		maxf(0.05, 1.0 + _strafe_bias),
@@ -1504,11 +1794,11 @@ func _tick_strafe() -> void:
 	var pick := _weighted_choice(weights, "strafe")
 	var new_dir := -1.0 if pick == 0 else 1.0
 	if old_dir != 0.0 and not is_equal_approx(old_dir, new_dir):
-		# Change direction the way a human would: a short opposite tap stops the
-		# current lateral velocity before the new key takes over.
+		# A short opposite tap stops the current lateral velocity before the new
+		# key takes over.
 		_keyboard.counter_strafe()
 	_strafe_dir = new_dir
-	_strafe_reason = "event" if forced else "timer"
+	_strafe_reason = "pattern"
 
 ## Rerolls the per-bot preferred-fighting-distance wobble every couple of
 ## seconds so combat movement doesn't lock onto one exact, robotic distance.
@@ -1544,14 +1834,22 @@ func _react_to_damage(ac: AttributeComponent) -> void:
 	# A hit is an event, not a timer tick: change strafe direction now.
 	_strafe_force_change = true
 	_strafe_reason = "damaged"
+	var rejected_source := false
 
 	var attacker_name := str(ac.last_enemy_attacker)
 	if attacker_name.is_empty() or attacker_name == "NONE":
 		attacker_name = str(ac.last_attacker)
 	if not attacker_name.is_empty() and attacker_name != "NONE":
 		var attacker := GameManager.find_player(attacker_name)
+		var hidden_attacker := attacker != null and is_instance_valid(attacker) \
+			and (attacker.dev_hidden_from_bots \
+				or (attacker.status_effect_manager \
+					and attacker.status_effect_manager.has_effect("invisible")))
+		if hidden_attacker:
+			rejected_source = true
 		if attacker != null and is_instance_valid(attacker) and attacker.spawned \
-				and attacker != player and _is_enemy_of(attacker):
+				and attacker != player and _is_enemy_of(attacker) \
+				and not hidden_attacker:
 			_last_damage_source_name = attacker_name
 			_last_damage_position = attacker.global_position
 			_mouse.request_look_at_point(
@@ -1569,13 +1867,23 @@ func _react_to_damage(ac: AttributeComponent) -> void:
 			_maybe_cover_after_damage()
 			return
 
+	# A direction with no enemy attribution may be self-splash or ally fire.
+	# Keep the reflex look, but do not launch a hunt at our own explosion.
+	var friendly_source := attacker_name == str(player.name)
+	if not friendly_source and not attacker_name.is_empty() \
+			and attacker_name != "NONE":
+		var source_player := GameManager.find_player(attacker_name)
+		if source_player != null and is_instance_valid(source_player) \
+				and not _is_enemy_of(source_player):
+			friendly_source = true
+
 	var direction: Vector3 = ac.last_hit_direction
 	if direction.length_squared() > 0.001:
 		# last_hit_direction points attacker -> victim, so flip it to look back.
 		var source_dir := -direction.normalized()
 		_last_damage_position = player.global_position + source_dir * 8.0
 		_mouse.request_look_direction(source_dir, LookPriority.REACT_DAMAGE, 1.0)
-		if _current_target == null:
+		if _current_target == null and not friendly_source and not rejected_source:
 			_begin_search(_last_damage_position, Vector3.ZERO)
 			if _assess_retreat() != RetreatNeed.FLEE:
 				_decision.interrupt(Decision.State.SEARCH)
@@ -1621,7 +1929,9 @@ func _current_aim_tolerance() -> float:
 func aim_tolerance_for(_weapon: Weapon, fire: WeaponFire) -> float:
 	var dist := 1.0
 	if _current_target != null and is_instance_valid(_current_target):
-		dist = player.global_position.distance_to(_current_target.global_position)
+		var tp := _target_position_for_ai()
+		if tp != Vector3.INF:
+			dist = player.global_position.distance_to(tp)
 	elif _heal_target != null and is_instance_valid(_heal_target):
 		dist = player.global_position.distance_to(_heal_target.global_position)
 	dist = maxf(dist, 0.1)
@@ -1674,6 +1984,9 @@ func _score_target(target: Player, dist: float, seen_time: float, now: float) ->
 		angle = rad_to_deg(fwd.angle_to(to.normalized()))
 	var score := 1.3 * (1.0 - clampf(angle / 90.0, 0.0, 1.0))
 	score += 1.1 * (1.0 - clampf(dist / SHOOT_RANGE, 0.0, 1.0))
+	# Nearby enemies are more urgent when the previous target has just vanished.
+	score += TARGET_PROXIMITY_BONUS \
+		* (1.0 - clampf(dist / TARGET_PROXIMITY_REF, 0.0, 1.0))
 	score += 0.8 * clampf(seen_time / 2.0, 0.0, 1.0)
 	if str(target.name) == _last_damage_source_name and now - _last_damage_time < 5.0:
 		score += 1.0
@@ -1686,15 +1999,14 @@ func _score_target(target: Player, dist: float, seen_time: float, now: float) ->
 
 
 ## A sound event from GameManager.  Footsteps, shots and reloads carry their own
-## hearing radius.  Sound is a distance check only (no FOV/LOS), but it never
-## distracts a bot that is already engaging an enemy.
+## hearing radius.  Sound is a distance check only (no FOV/LOS): an enemy noise
+## starts an investigation at that position, while a bot already engaging an
+## enemy keeps fighting.
 func _on_sound_made(position: Vector3, radius: float, source_name: String,
 		kind: StringName) -> void:
 	if not player.is_bot or not multiplayer.is_server() or not player.spawned:
 		return
 	if source_name == str(player.name):
-		return
-	if _is_engaging_enemy():
 		return
 	var dist := player.global_position.distance_to(position)
 	# Awareness scales how far a sound carries for this bot; the emitter's radius
@@ -1702,6 +2014,38 @@ func _on_sound_made(position: Vector3, radius: float, source_name: String,
 	var awareness := _style.awareness if _style != null else 0.6
 	if dist > radius * lerpf(0.65, 1.1, awareness):
 		return
+
+	# Resolve the emitter BEFORE storing the glance.  A friendly footstep must
+	# not turn the bot's head or displace an enemy sound.
+	var source := GameManager.find_player(source_name)
+	if source == null or not is_instance_valid(source) or not source.spawned:
+		return
+	if source.dev_hidden_from_bots or not _is_enemy_of(source):
+		return
+	if source.status_effect_manager \
+			and source.status_effect_manager.has_effect("invisible"):
+		return
+
+	# Record "last heard" even while already fighting.  This is a fact, not a new
+	# order; it is what lets a bot resume the sound later if it loses the fight.
+	_persistent_heard_position = position
+	_persistent_heard_velocity = source.velocity
+	_persistent_heard_name = source_name
+	var heard_dir := Vector3(
+		source.velocity.x, 0.0, source.velocity.z
+	)
+	if heard_dir.length_squared() < 0.01:
+		heard_dir = Vector3(
+			position.x - player.global_position.x,
+			0.0,
+			position.z - player.global_position.z
+		)
+	_persistent_heard_direction = heard_dir.normalized() \
+		if heard_dir.length_squared() > 0.01 else Vector3.ZERO
+
+	if _is_engaging_enemy():
+		return
+
 	# A new sound only replaces an existing curiosity target if it is closer.
 	if _heard_timer > 0.0 and dist > _heard_distance + HEARING_NEAREST_MARGIN:
 		return
@@ -1709,6 +2053,24 @@ func _on_sound_made(position: Vector3, radius: float, source_name: String,
 	_heard_distance = dist
 	_heard_timer = HEARING_LOOK_TIME
 	_heard_kind = kind
+
+	# A heard enemy is a lead, not just a glance.  Follow the emitter's motion,
+	# not the listener's facing, so a runner is chased in the right direction.
+	# Footsteps repeat every ~0.5 s; do not reset the same hunt forever while the
+	# bot is already walking to that spot.
+	if _search_active \
+			and position.distance_to(_search_origin) < HEARING_NEAREST_MARGIN:
+		return
+	# No objective nearby means the sound stays actionable until it is found or
+	# replaced; near an objective, this is an ordinary finite search.
+	var persistent := not _objective_is_near(player.global_position) \
+		and not _objective_is_near(position)
+	_begin_search(
+		position, source.velocity, _persistent_heard_direction, persistent
+	)
+	var travel_time := dist / WALK_SPEED
+	_hunt_point_timer = maxf(HUNT_APPROACH_TIMEOUT, travel_time + 1.0)
+	_decision.interrupt(Decision.State.SEARCH)
 
 
 func _is_engaging_enemy() -> bool:
@@ -1771,16 +2133,282 @@ func _tick_glance(delta: float) -> void:
 		)
 
 
+## How long this bot keeps a lost target's identity/recognition.  Aware and
+## aggressive bots hold a grudge longer; range is 5–8 s.
+func _target_memory_window() -> float:
+	var awareness := _style.awareness if _style != null else lerpf(0.35, 1.0, skill)
+	var aggression := _style.aggression if _style != null else lerpf(0.3, 0.65, skill)
+	return lerpf(
+		TARGET_MEMORY_MIN,
+		TARGET_MEMORY_MAX,
+		clampf(0.6 * awareness + 0.4 * aggression, 0.0, 1.0)
+	)
+
+
+## Identity check shared by the visible target and the remembered target.
+## Deliberately does not require LOS; visibility is tracked separately.
+func _target_identity_valid(target: Player) -> bool:
+	return target != null and is_instance_valid(target) and target.spawned \
+		and not target.dev_hidden_from_bots and _is_enemy_of(target) \
+		and not (target.status_effect_manager \
+			and target.status_effect_manager.has_effect("invisible"))
+
+
+func _memory_target_valid() -> bool:
+	return _target_identity_valid(_memory_target)
+
+
+func _heal_target_valid() -> bool:
+	var t := _heal_target
+	if t == null or not is_instance_valid(t) or not t.spawned \
+			or t.dev_hidden_from_bots:
+		return false
+	var ac: AttributeComponent = t.attribute_component
+	return ac != null and ac.max_health > 0.0 \
+		and ac.health < ac.max_health * _medic_heal_threshold() \
+		and _has_line_of_sight_to_player(t)
+
+
+## A medic may only keep healing when the area is actually safe.  Being shot or
+## having a live enemy nearby aborts the heal and gets the damage weapon out.
+func _heal_is_safe() -> bool:
+	if _heal_target == null or not is_instance_valid(_heal_target):
+		return false
+	if _recent_damage_fraction() > 0.03:
+		return false
+	var threat := _current_threat_position()
+	if threat != Vector3.INF \
+			and player.global_position.distance_to(threat) < 12.0:
+		return false
+	return true
+
+
+func _clear_memory() -> void:
+	if not _memory_target_name.is_empty():
+		_seen_since.erase(_memory_target_name)
+	_memory_target = null
+	_memory_target_name = ""
+	_memory_last_position = Vector3.INF
+	_memory_last_velocity = Vector3.ZERO
+	_memory_last_seen_ms = 0
+	_memory_expires_ms = 0
+	_memory_seen_time = 0.0
+	_memory_grace_until_ms = 0
+	_memory_chasing = false
+	_memory_search_started = false
+	_target_lost_timer = 0.0
+
+
+## Freeze the last genuinely visible values and start the memory/grace clocks.
+## Never call this with a target that has never been visible.  A scan that loses
+## the target passes the values captured before the scan so the live, now-hidden
+## body is not consulted.
+func _mark_target_unseen(target: Player, now_ms: int,
+		position: Vector3 = Vector3.INF,
+		velocity: Vector3 = Vector3.INF) -> void:
+	if target == null or not is_instance_valid(target):
+		return
+	var name_key := str(target.name)
+	var now_s := float(now_ms) / 1000.0
+	var first_seen := float(_seen_since.get(name_key, now_s - 1.0))
+	_memory_target = target
+	_memory_target_name = name_key
+	_memory_last_position = position if position != Vector3.INF \
+		else target.global_position
+	_memory_last_velocity = velocity if velocity != Vector3.INF \
+		else _estimated_velocity_for(target)
+	_memory_last_seen_ms = now_ms
+	_memory_seen_time = clampf(now_s - first_seen, 0.0, 2.0)
+	_memory_expires_ms = now_ms + int(_target_memory_window() * 1000.0)
+	_memory_grace_until_ms = now_ms + int(TARGET_LOST_GRACE * 1000.0)
+	_memory_search_started = false
+	_target_lost_timer = TARGET_LOST_GRACE
+	_last_seen_position = _memory_last_position
+	_last_seen_velocity = _memory_last_velocity
+	_last_seen_time = now_s
+	_target_visible = false
+	# Freeze the estimator until the enemy is visible again; otherwise the old
+	# baseline would interpolate across the hidden gap.
+	_est_target_name = ""
+	_est_velocity = Vector3.ZERO
+
+
+## Wall-clock memory/search bookkeeping.  Runs at the top of every think tick so
+## a hunt expires even while the bot is healing, taking cover, or fleeing.
+func _tick_target_memory(now_ms: int) -> void:
+	if _memory_target != null and not is_instance_valid(_memory_target):
+		_clear_memory()
+	if _memory_expires_ms > 0 and now_ms >= _memory_expires_ms:
+		if _current_target != null and not _target_visible:
+			_current_target = null
+		_clear_memory()
+
+	if _memory_grace_until_ms > 0:
+		if now_ms >= _memory_grace_until_ms:
+			_memory_grace_until_ms = 0
+			_target_lost_timer = 0.0
+			if _current_target != null and not _target_visible:
+				_current_target = null
+				# A sound/damage search already owns a fresher lead; do not
+				# overwrite it with the older predicted point.
+				if not _search_active:
+					_begin_memory_search(now_ms)
+		else:
+			_target_lost_timer = maxf(
+				float(_memory_grace_until_ms - now_ms) / 1000.0, 0.0
+			)
+
+	if _search_persistent:
+		# The heard-memory search has no clock.  It ends when a target is found,
+		# a new search starts, or an objective comes nearby.
+		_search_timer = INF
+		if _objective_is_near(player.global_position):
+			_end_search()
+	elif _search_active and _search_deadline_ms > 0:
+		if now_ms >= _search_deadline_ms:
+			_end_search()
+		else:
+			_search_timer = maxf(
+				float(_search_deadline_ms - now_ms) / 1000.0, 0.0
+			)
+
+	# Resume the last heard enemy when nothing else owns the bot.  The memory is
+	# never timed out; only a newer sound or respawn replaces it.
+	if not _search_active and _current_target == null \
+			and not _memory_target_valid() \
+			and _persistent_heard_position != Vector3.INF \
+			and not _objective_is_near(player.global_position):
+		_begin_search(
+			_persistent_heard_position,
+			_persistent_heard_velocity,
+			_persistent_heard_direction,
+			true
+		)
+
+
+func _end_search() -> void:
+	_search_active = false
+	_search_persistent = false
+	_search_timer = 0.0
+	_search_deadline_ms = 0
+	_search_direction = Vector3.ZERO
+	_memory_chasing = false
+	_last_seen_position = Vector3.INF
+	_last_seen_time = -999.0
+	_clear_hunt()
+
+
+## Predicted position a runner would occupy now: frozen last-seen point plus up
+## to two seconds of frozen horizontal velocity, capped at 20 m.  If there was no
+## usable velocity, assume they kept going away from the bot.
+func _predicted_last_known(now_ms: int) -> Vector3:
+	if _memory_last_position == Vector3.INF:
+		return Vector3.INF
+	var age := clampf(
+		float(now_ms - _memory_last_seen_ms) / 1000.0, 0.0, CHASE_PREDICT_MAX_TIME
+	)
+	var vel := Vector3(_memory_last_velocity.x, 0.0, _memory_last_velocity.z)
+	var point := _memory_last_position
+	if vel.length_squared() > 0.25:
+		point += vel * age
+	else:
+		var away := Vector3(
+			_memory_last_position.x - player.global_position.x,
+			0.0,
+			_memory_last_position.z - player.global_position.z
+		)
+		if away.length_squared() > 0.01:
+			point += away.normalized() * (age * WALK_SPEED * 0.5)
+	var lead := Vector2(point.x - _memory_last_position.x, point.z - _memory_last_position.z)
+	if lead.length() > CHASE_LEAD_MAX_DIST:
+		lead = lead.normalized() * CHASE_LEAD_MAX_DIST
+		point = _memory_last_position + Vector3(lead.x, 0.0, lead.y)
+	var ground := _ground_point(
+		player.get_world_3d().direct_space_state, point, _memory_last_position.y
+	)
+	if ground == Vector3.INF:
+		return _memory_last_position
+	return ground
+
+
+func _memory_search_direction() -> Vector3:
+	var vel := Vector3(_memory_last_velocity.x, 0.0, _memory_last_velocity.z)
+	if vel.length_squared() > 0.25:
+		return vel.normalized()
+	var away := Vector3(
+		_memory_last_position.x - player.global_position.x,
+		0.0,
+		_memory_last_position.z - player.global_position.z
+	)
+	if away.length_squared() > 0.01:
+		return away.normalized()
+	return Vector3.ZERO
+
+
+func _begin_memory_search(now_ms: int) -> void:
+	if _memory_target == null or _memory_last_position == Vector3.INF:
+		return
+	if _memory_search_started:
+		return
+	_memory_search_started = true
+	_memory_grace_until_ms = 0
+	_target_lost_timer = 0.0
+	_current_target = null
+	_target_visible = false
+	_memory_chasing = true
+	var predicted := _predicted_last_known(now_ms)
+	_begin_search(predicted, _memory_last_velocity, _memory_search_direction())
+
+
+func _is_recent_attacker(target: Player) -> bool:
+	if target == null or not is_instance_valid(target):
+		return false
+	return str(target.name) == _last_damage_source_name \
+		and float(Time.get_ticks_msec()) / 1000.0 - _last_damage_time < 5.0
+
+
+## A visible enemy close enough (or threatening enough) to steal focus from a
+## lost target's chase.
+func _is_retarget_override(target: Player, dist: float) -> bool:
+	if target == null or not is_instance_valid(target):
+		return false
+	return dist <= TARGET_RETARGET_CLOSE_RANGE \
+		or dist <= TARGET_EMERGENCY_RANGE \
+		or _is_recent_attacker(target)
+
+
+func _is_in_recall_cone(target: Player) -> bool:
+	var forward := -player.body.global_transform.basis.z
+	forward.y = 0.0
+	var to_target := target.global_position - player.global_position
+	to_target.y = 0.0
+	if to_target.length_squared() < 0.01:
+		return true
+	return forward.normalized().dot(to_target.normalized()) >= _recall_fov_dot_threshold
+
+
 func _think() -> void:
 	var now := float(Time.get_ticks_msec()) / 1000.0
-	_update_target_velocity_estimate(_current_target, now)
+	var now_ms := Time.get_ticks_msec()
+	# Never pass a freed cached target to a typed Player parameter.
+	if not is_instance_valid(_current_target):
+		_current_target = null
+	if not is_instance_valid(_heal_target):
+		_heal_target = null
+	if _memory_target != null and not is_instance_valid(_memory_target):
+		_clear_memory()
+
+	# Wall-clock memory/search bookkeeping runs before any early return so a
+	# hunt expires even while the bot is healing, taking cover, or fleeing.
+	_tick_target_memory(now_ms)
+	if _target_visible and _current_target != null:
+		_update_target_velocity_estimate(_current_target, now)
 	_tick_hearing(PROCESS_INTERVAL)
 	_tick_glance(PROCESS_INTERVAL)
 	var wc: WeaponController = player.weapon_controller
 	if not wc._is_ready():
-		_current_target = null
-		_heal_target = null
-		_refresh_los_excludes()
+		# A switch/reload must not erase target memory.  Release the trigger and
+		# resume from the same identity when the weapon is ready again.
 		_trigger.release_all()
 		_has_desired_aim = false
 		return
@@ -1791,16 +2419,22 @@ func _think() -> void:
 	var holding_heal := _weapon_heals_allies(weapon)
 	var heal_index := _find_heal_weapon_index(wc)  # -1 if none in loadout
 
-	# Target lock: between full re-scans, only re-verify the current target (one
-	# LOS raycast) instead of the O(N) scan.  A human doesn't re-evaluate every
-	# enemy 20x/sec, and this cuts the raycast load dramatically in big fights.
+	# Target lock: between full re-scans, only re-verify the current VISIBLE
+	# target (one LOS raycast) instead of the O(N) scan.  A lost-but-remembered
+	# target already has frozen values and must not force a scan every tick.
 	var need_rescan := _retarget_timer <= 0.0
-	if not need_rescan and not _targets_valid():
+	if not need_rescan and _heal_target != null and not _heal_target_valid():
 		need_rescan = true
+	if not need_rescan and _current_target != null:
+		if not _target_identity_valid(_current_target):
+			need_rescan = true
+		elif _target_visible and not _has_line_of_sight_to_player(_current_target):
+			_mark_target_unseen(_current_target, now_ms)
+			need_rescan = true
 
 	if not need_rescan:
 		_retarget_timer -= PROCESS_INTERVAL
-		if _current_target != null:
+		if _current_target != null and _target_visible:
 			_last_seen_position = _current_target.global_position
 			_last_seen_velocity = _estimated_velocity_for(_current_target)
 			_last_seen_time = now
@@ -1808,8 +2442,17 @@ func _think() -> void:
 
 	_retarget_timer = RETARGET_INTERVAL
 	_full_scan_count += 1
-	var prev_target := _current_target
+	var prev_target := _current_target if is_instance_valid(_current_target) else null
+	var prev_visible := _target_visible and prev_target != null
+	var prev_last_position := _last_seen_position
+	var prev_last_velocity := _last_seen_velocity
+	var memory := _memory_target if _memory_target_valid() else null
+	var memory_active := memory != null and _memory_expires_ms > now_ms
+	var memory_name := _memory_target_name
+	var memory_visible := false
+	var grace_active := memory_active and now_ms < _memory_grace_until_ms
 	_current_target = null
+	_target_visible = false
 	_heal_target = null
 
 	var heal_dist_sq := HEAL_RANGE * HEAL_RANGE
@@ -1817,9 +2460,9 @@ func _think() -> void:
 	_enemy_nearby = false
 	_nearby_enemy_count = 0
 	var visible_names: Dictionary = {}
+	var visible_seen: Dictionary = {}
 	var best_target: Player = null
 	var best_score := -INF
-	var best_visible_time := 0.0
 
 	for node in get_tree().get_nodes_in_group("players"):
 		var p := node as Player
@@ -1840,37 +2483,59 @@ func _think() -> void:
 			_nearby_enemy_count += 1
 
 		if is_enemy:
-			# A heal weapon can't damage enemies — skip the wasted LOS raycast.
-			if holding_heal:
-				continue
+			# A medic must still see enemies while holding the heal gun; the
+			# weapon/heal state decides whether it can fire, not perception.
 			# Invisible players are untargetable.
 			if p.status_effect_manager and p.status_effect_manager.has_effect("invisible"):
 				continue
 			var name_key := str(p.name)
-			var in_fov := _is_in_view_cone(p)
+			var recalled := memory_active and p == memory
+			var in_fov := _is_in_view_cone(p) \
+				or (recalled and _is_in_recall_cone(p))
 			# Already-acquired targets stay trackable outside the cone, but NEW
-			# detections still require the FOV.
+			# detections still require the FOV.  A remembered target gets the
+			# wider recall cone instead.
 			var trackable := in_fov or p == prev_target
 			var visible := trackable and _has_line_of_sight_to_player(p)
 			if not visible:
-				_seen_since.erase(name_key)
+				# Keep recognition credit for the remembered enemy; ordinary
+				# unseen players still lose theirs.
+				if not recalled:
+					_seen_since.erase(name_key)
 				continue
 			if not _seen_since.has(name_key):
-				# Re-acquiring the current target must not drop it for one scan.
-				_seen_since[name_key] = now - (2.0 if p == prev_target else 0.0)
+				# Re-acquiring a remembered target keeps its old recognition
+				# progress; the already-valid current target skips it too.
+				var prior := 0.0
+				if p == prev_target:
+					prior = 2.0
+				if recalled and _memory_seen_time > 0.0:
+					prior = maxf(prior, _memory_seen_time)
+				_seen_since[name_key] = now - prior
 			var seen_time := now - float(_seen_since[name_key])
 			visible_names[name_key] = true
+			visible_seen[name_key] = seen_time
+			if recalled:
+				memory_visible = true
 			var dist := sqrt(dist_sq)
-			var recognition := _recognition_time(p, dist, in_fov)
-			if seen_time < recognition:
-				continue
+			if not recalled:
+				var recognition := _recognition_time(p, dist, in_fov)
+				if seen_time < recognition:
+					continue
 			var score := _score_target(p, dist, seen_time, now)
 			if p == prev_target:
 				score += TARGET_STICKINESS
+			if recalled:
+				score += TARGET_RECALL_STICKINESS
+			# While committed to a chase, only a close/threatening enemy may
+			# steal focus; a distant bystander is not worth abandoning the runner.
+			if _memory_chasing and not recalled \
+					and dist > TARGET_RETARGET_CLOSE_RANGE \
+					and not _is_recent_attacker(p):
+				continue
 			if score > best_score:
 				best_score = score
 				best_target = p
-				best_visible_time = seen_time
 		elif holding_heal or heal_index >= 0:
 			# Friendly heal candidate — only CRITICAL teammates.  Healing anyone
 			# merely below max HP kept the medic on the heal gun forever, which
@@ -1887,10 +2552,48 @@ func _think() -> void:
 
 	_visible_enemy_count = visible_names.size()
 
-	# Drop recognition clocks for anyone no longer visible.
+	# Drop recognition clocks for anyone no longer visible, except the remembered
+	# target: it keeps its identity/recognition until the memory expires.
 	for key in _seen_since.keys():
-		if not visible_names.has(key):
-			_seen_since.erase(key)
+		if visible_names.has(key):
+			continue
+		if memory_active and key == memory_name:
+			continue
+		_seen_since.erase(key)
+
+	# The timer-driven scan can discover that the old target was lost even when
+	# the between-scan LOS check was not the one that noticed it.
+	if prev_target != null and prev_visible \
+			and not visible_names.has(str(prev_target.name)):
+		if _target_identity_valid(prev_target):
+			_mark_target_unseen(
+				prev_target, now_ms, prev_last_position, prev_last_velocity
+			)
+			memory = _memory_target if _memory_target_valid() else null
+			memory_active = memory != null and _memory_expires_ms > now_ms
+			memory_name = _memory_target_name
+			grace_active = memory_active and now_ms < _memory_grace_until_ms
+			memory_visible = false
+		else:
+			_clear_memory()
+			memory = null
+			memory_active = false
+			grace_active = false
+
+	# A heal under fire is not a heal.  Abort it before the hysteresis so the
+	# damage weapon can come back out immediately.  `best_target` is this scan's
+	# visible enemy; `_current_target` is not assigned yet.
+	var enemy_close := best_target != null and is_instance_valid(best_target) \
+		and player.global_position.distance_to(best_target.global_position) < 12.0
+	if _heal_target != null and (not _heal_is_safe() or enemy_close):
+		_heal_target = null
+		_heal_candidate_name = ""
+		_heal_candidate_time = 0.0
+		_heal_absent_time = maxf(_heal_absent_time, MEDIC_HEAL_ABSENT)
+		if holding_heal:
+			var damage_index := _first_damage_weapon_index(wc)
+			if damage_index >= 0 and _switch_weapon(wc, damage_index):
+				holding_heal = false
 
 	# Medic behaviour with hysteresis: a heal candidate must persist before the
 	# heal gun comes out, and must be absent for a while before it goes away.
@@ -1916,61 +2619,117 @@ func _think() -> void:
 			and not self_heal_exception:
 		_switch_weapon(wc, _first_damage_weapon_index(wc))
 	elif not holding_heal and heal_index >= 0 and _heal_target != null \
-			and _heal_candidate_time >= MEDIC_HEAL_PERSIST:
+			and _heal_candidate_time >= MEDIC_HEAL_PERSIST \
+			and _heal_is_safe():
 		var ac := _heal_target.attribute_component
 		if ac != null and ac.health / ac.max_health < _medic_heal_threshold():
 			if _switch_weapon(wc, heal_index):
 				best_target = null  # don't fight while healing
 
-	if _heal_target != null:
+	if _heal_target != null and _heal_is_safe():
 		var healing_weapon: Weapon = wc._weapons[wc.current_weapon_index]
 		if _weapon_heals_allies(healing_weapon):
 			best_target = null
 
 	# Switch cost: keep the current target unless the new one is clearly better.
+	# Only a target that was visible when the scan started can be compared; an
+	# unseen remembered target has no live score.
 	if best_target != null and prev_target != null and best_target != prev_target \
-			and is_instance_valid(prev_target) and prev_target.spawned:
+			and prev_visible and visible_names.has(str(prev_target.name)):
+		var prev_name := str(prev_target.name)
+		var prev_seen := float(visible_seen.get(prev_name, 0.5))
 		var prev_score := _score_target(
 			prev_target,
 			player.global_position.distance_to(prev_target.global_position),
-			maxf(best_visible_time, 0.5),
+			prev_seen,
 			now
 		) + TARGET_STICKINESS
 		if best_score < prev_score + TARGET_SWITCH_MARGIN:
 			best_target = prev_target
 			best_score = prev_score
 
-	_current_target = best_target
-	if _current_target != null:
-		_update_target_velocity_estimate(_current_target, now)
-		_search_timer = 0.0
-		_search_active = false
+	# While the old target is only remembered, a visible enemy steals focus only
+	# when it is close/threatening.  Otherwise commit to the chase.
+	if best_target != null and memory != null and memory_active and not memory_visible:
+		var best_dist := player.global_position.distance_to(best_target.global_position)
+		if (grace_active or _memory_chasing) \
+				and not _is_retarget_override(best_target, best_dist):
+			best_target = null
+
+	# Anti-ping-pong: a target acquired very recently keeps focus unless a
+	# challenger is an emergency or just shot us.  This is evaluated only while
+	# the previous target is still visible; an unseen target does not lock out a
+	# real threat.
+	if best_target != null and best_target != prev_target and prev_visible \
+			and visible_names.has(str(prev_target.name)) \
+			and now_ms < _target_lock_until_ms:
+		var best_dist := player.global_position.distance_to(best_target.global_position)
+		if best_dist > TARGET_EMERGENCY_RANGE and not _is_recent_attacker(best_target):
+			best_target = prev_target
+
+	if best_target != null:
+		_current_target = best_target
+		_target_visible = true
+		var switched := best_target != prev_target
+		if switched:
+			_target_lock_until_ms = now_ms + int(TARGET_SWITCH_COOLDOWN * 1000.0)
+		var name_key := str(best_target.name)
+		_memory_target = best_target
+		_memory_target_name = name_key
+		_memory_last_position = best_target.global_position
+		_memory_last_velocity = _estimated_velocity_for(best_target)
+		_memory_last_seen_ms = now_ms
+		_memory_seen_time = maxf(float(visible_seen.get(name_key, 0.0)), 0.0)
+		_memory_expires_ms = now_ms + int(_target_memory_window() * 1000.0)
+		_memory_grace_until_ms = 0
+		_memory_chasing = false
+		_memory_search_started = false
 		_target_lost_timer = 0.0
-		_last_seen_position = _current_target.global_position
-		_last_seen_velocity = _estimated_velocity_for(_current_target)
-		_last_seen_time = now
+		_search_active = false
+		_search_persistent = false
+		_search_timer = 0.0
+		_search_deadline_ms = 0
+		_search_direction = Vector3.ZERO
 		_clear_hunt()
-		if _current_target != prev_target:
+		_last_seen_position = best_target.global_position
+		_last_seen_velocity = _estimated_velocity_for(best_target)
+		_last_seen_time = now
+		if switched or not prev_visible:
+			# Restart the velocity baseline after a hidden gap; it would otherwise
+			# interpolate across the gap and produce a bogus lead.
+			_est_target_name = ""
+			_update_target_velocity_estimate(best_target, now)
+		if switched:
 			# A newly acquired/switched target outranks any scripted maneuver and
 			# pays a small re-aim cost on top of the normal reaction time.
 			_maneuvers.abort()
+			_combat_range_state = CombatRangeState.HOLD
+			_combat_pattern = CombatPattern.WIDE
+			_combat_settle_timer = 0.0
+			_combat_stall_timer = 0.0
+			_combat_stall_position = player.global_position
 			var reaction := REACTION_TIME_MAX * (1.0 - skill)
 			if _style != null:
 				reaction = _style.reaction_time
 			var switch_cost := 0.0 if prev_target == null else reaction * randf_range(0.6, 1.2)
 			_reaction_timer = maxf(_reaction_timer, reaction * randf_range(0.8, 1.2) + switch_cost)
-			# Re-spotting the player does not cancel a committed escape; the
-			# FLEE routine ends on its own timer/health check.
 			if _decision.state != Decision.State.FLEE:
 				_decision.interrupt(Decision.State.COMBAT)
+		elif not prev_visible and _decision.state != Decision.State.FLEE:
+			# Re-spotted the same enemy after a hidden gap: no full recognition,
+			# but leave a stale SEARCH immediately.
+			_decision.interrupt(Decision.State.COMBAT)
+	elif memory != null and memory_active:
+		if grace_active:
+			# Hold the alert against the last-known angle.  `_act_combat` sees
+			# `_target_visible == false` and will not fire or track the live body.
+			_current_target = memory
+			_target_visible = false
+		elif not _search_active:
+			_begin_memory_search(now_ms)
 	else:
-		if not _search_active and _last_seen_position != Vector3.INF:
-			_begin_search(_last_seen_position, _last_seen_velocity)
-			_target_lost_timer = TARGET_LOST_GRACE
-		elif _search_active and _target_lost_timer > 0.0:
-			_target_lost_timer = maxf(_target_lost_timer - PROCESS_INTERVAL, 0.0)
-			if _target_lost_timer <= 0.0:
-				_decision.interrupt(Decision.State.SEARCH)
+		_current_target = null
+		_target_visible = false
 
 	_refresh_los_excludes()
 
@@ -2045,43 +2804,12 @@ func _has_line_of_sight_to_player(target: Player) -> bool:
 	if space.intersect_ray(_los_query).is_empty():
 		return true
 
-	var chest_pos := target.global_position + Vector3(0, 0.5, 0)
+	# Fallback is a standing body centre, not shin height: the old 0.5 m point
+	# let bots see over low cover that a human could not see through.
+	var body_pos := target.global_position + Vector3.UP * AIM_CENTER_HEIGHT
 	_los_query.from = origin
-	_los_query.to = chest_pos
+	_los_query.to = body_pos
 	return space.intersect_ray(_los_query).is_empty()
-
-
-## True while the current combat/heal targets are still worth tracking.
-##
-## Returns TRUE when there is nothing to validate.  The old `return false` at the
-## end made the 20 Hz `_think` treat "no targets" as "targets just became
-## invalid", forcing a full O(N) scan with LOS rays every think tick (Issue I).
-## A rescan should happen on the RETARGET_INTERVAL timer, not because idling is
-## considered invalid.
-func _targets_valid() -> bool:
-	var combat_ok := true
-	var heal_ok := true
-
-	if _current_target != null:
-		combat_ok = is_instance_valid(_current_target) \
-			and _current_target.spawned \
-			and not _current_target.dev_hidden_from_bots \
-			and _is_enemy_of(_current_target) \
-			and not (_current_target.status_effect_manager \
-				and _current_target.status_effect_manager.has_effect("invisible")) \
-			and _has_line_of_sight_to_player(_current_target)
-
-	if _heal_target != null:
-		heal_ok = is_instance_valid(_heal_target) \
-			and _heal_target.spawned \
-			and not _heal_target.dev_hidden_from_bots
-		if heal_ok:
-			var ac: AttributeComponent = _heal_target.attribute_component
-			heal_ok = ac != null and ac.max_health > 0.0 \
-				and ac.health < ac.max_health * _medic_heal_threshold() \
-				and _has_line_of_sight_to_player(_heal_target)
-
-	return combat_ok and heal_ok
 
 
 ## Rebuild the LOS query's exclude array only when the target pair changes.
@@ -2765,7 +3493,8 @@ func _update_weapon_choice(wc: WeaponController, dist: float, has_target: bool) 
 	# Never override the medic's heal weapon while it is healing, and keep it
 	# out through the absence hysteresis even when nobody is hurt right now.
 	if _weapon_heals_allies(current_weapon):
-		if _heal_target != null and is_instance_valid(_heal_target):
+		if _heal_target != null and is_instance_valid(_heal_target) \
+				and _heal_is_safe():
 			return
 		if _heal_absent_time < MEDIC_HEAL_ABSENT:
 			return
@@ -2840,7 +3569,10 @@ func _is_weapon_safe_to_reload(weapon: Weapon) -> bool:
 		return true
 	if _decision != null and _decision.state == Decision.State.RETREAT_COVER:
 		return true
-	var dist := player.global_position.distance_to(_current_target.global_position)
+	var tp := _target_position_for_ai()
+	if tp == Vector3.INF:
+		return true
+	var dist := player.global_position.distance_to(tp)
 	var profile := _get_weapon_profile(weapon)
 	var effective := float(profile.get("range_effective", DEFAULT_RANGED_ENGAGE_DIST))
 	return dist > maxf(15.0, effective * 0.95) and not _enemy_nearby
@@ -3194,44 +3926,266 @@ func _switch_weapon(wc: WeaponController, index: int) -> bool:
 # Objective seeking
 
 func _get_objective_target() -> Vector3:
-	if not GameManager.game_mode_component:
+	var info := _get_objective_info()
+	if info.is_empty():
 		return Vector3.INF
+	var pos: Vector3 = info.get("pos", Vector3.INF)
+	return pos
+
+
+## Rich objective descriptor used by the intent model:
+## { pos, radius, leash, name, kind, owned, contested, attacking, active }.
+## `_get_objective_target()` remains a position-only convenience wrapper.
+func _get_objective_info() -> Dictionary:
 	var gmc := GameManager.game_mode_component
+	if gmc == null or not is_instance_valid(gmc):
+		return {}
 
 	match gmc.game_mode:
 		GameModeComponent.GameMode.KOTH, GameModeComponent.GameMode.CONTROL:
 			if gmc.koth_mode and not gmc.koth_mode._control_points.is_empty():
-				return gmc.koth_mode._control_points[0].global_position
+				return _control_point_info(gmc.koth_mode._control_points[0])
 
 		GameModeComponent.GameMode.DOMINATION:
 			if gmc.domination_mode:
-				var best: Vector3 = Vector3.INF
-				var best_dist := INF
+				var best: ControlPoint = null
+				var best_score := -INF
 				for cp in gmc.domination_mode._control_points:
-					var d := player.global_position.distance_squared_to(cp.global_position)
-					var prio := 0.0
-					if cp.owning_team != player.team or cp.is_contested:
-						prio = 0.5
-					var w := d * (1.0 - prio)
-					if w < best_dist:
-						best_dist = w
-						best = cp.global_position
-				return best
+					var score := _objective_point_urgency(cp)
+					if score > best_score:
+						best_score = score
+						best = cp
+				if best != null:
+					return _control_point_info(best)
 
 		GameModeComponent.GameMode.ESCORT:
 			var payload := _get_payload_node(gmc)
 			if payload:
-				return payload.global_position
+				return _payload_info(payload)
 
 		GameModeComponent.GameMode.HYBRID:
-			if gmc.hybrid_mode and gmc.hybrid_mode.point_is_captured:
+			if gmc.hybrid_mode:
+				if not gmc.hybrid_mode.point_is_captured \
+						and not gmc.hybrid_mode._control_points.is_empty():
+					return _control_point_info(
+						gmc.hybrid_mode._control_points[0]
+					)
 				var payload := _get_payload_node(gmc)
 				if payload:
-					return payload.global_position
-			elif gmc.hybrid_mode and not gmc.hybrid_mode._control_points.is_empty():
-				return gmc.hybrid_mode._control_points[0].global_position
+					return _payload_info(payload)
 
-	return Vector3.INF
+	return {}
+
+
+func _control_point_info(cp: ControlPoint) -> Dictionary:
+	if cp == null or not is_instance_valid(cp):
+		return {}
+	var point_name := cp.targetname
+	if point_name.is_empty():
+		point_name = "POINT"
+	var owned := player.team != Player.Team.FFA \
+		and cp.owning_team == player.team
+	var contested := cp.is_contested \
+		or (cp.capture_progress > 0.0 and cp.capture_team != cp.owning_team)
+	return {
+		"pos": cp.global_position,
+		"radius": OBJECTIVE_HOLD_RADIUS,
+		"leash": OBJECTIVE_LEASH_RADIUS,
+		"name": point_name,
+		"kind": "point",
+		"owned": owned,
+		"contested": contested,
+		"attacking": false,
+		"active": not cp.is_locked,
+	}
+
+
+func _payload_info(payload: PayloadNode) -> Dictionary:
+	if payload == null or not is_instance_valid(payload):
+		return {}
+	var attacking := player.team == payload.attacking_team
+	var radius := maxf(payload.push_radius - OBJECTIVE_PAYLOAD_RADIUS_INSET, 2.0)
+	return {
+		"pos": payload.global_position,
+		"radius": radius,
+		"leash": OBJECTIVE_LEASH_RADIUS,
+		"name": "PAYLOAD",
+		"kind": "payload",
+		"owned": attacking,
+		"contested": payload.is_contested,
+		"attacking": attacking,
+		"active": not payload.is_locked and not payload.is_delivered,
+	}
+
+
+func _objective_point_urgency(cp: ControlPoint) -> float:
+	if cp == null or not is_instance_valid(cp):
+		return -INF
+	var score := 0.0
+	if cp.owning_team != player.team:
+		score += 8.0
+	if cp.is_contested:
+		score += 6.0
+	if cp.capture_progress > 0.0 and cp.capture_team != cp.owning_team:
+		score += 4.0
+	score -= player.global_position.distance_to(cp.global_position) / 30.0
+	return score
+
+
+func _objective_action_text(info: Dictionary) -> String:
+	if String(info.get("kind", "")) == "payload":
+		return "PUSH" if bool(info.get("attacking", false)) else "DEFEND"
+	if not bool(info.get("owned", false)):
+		return "CAPTURE"
+	return "DEFEND" if bool(info.get("contested", false)) else "HOLD"
+
+
+## Top-level "what should I be doing?" model, recomputed after each Decision
+## update.  Priority: survival, then the objective (fight from it, don't chase
+## beyond its leash), then a visible enemy, then search near it, then wander.
+## The cached objective fields drive `_act_combat`, `_act_search` and
+## `_act_seek_objective_or_wander`; `_intent_text` is the debug label.
+func _update_intent() -> void:
+	var survival_text := ""
+	var survival_intent := Intent.NONE
+	if _decision != null:
+		match _decision.state:
+			Decision.State.FLEE:
+				survival_text = "FLEE"
+				survival_intent = Intent.FLEE
+			Decision.State.HEAL:
+				survival_text = "HEAL"
+				survival_intent = Intent.HEAL
+			Decision.State.RETREAT_COVER:
+				survival_text = "COVER"
+				survival_intent = Intent.COVER
+			Decision.State.RELOAD_SAFE:
+				survival_text = "RELOAD"
+				survival_intent = Intent.RELOAD
+			Decision.State.STUCK_RECOVER:
+				survival_text = "UNSTUCK"
+				survival_intent = Intent.UNSTUCK
+
+	var info := _get_objective_info()
+	if info.is_empty():
+		_objective_active = false
+		_objective_position = Vector3.INF
+		_objective_name = ""
+		_objective_hold_radius = OBJECTIVE_HOLD_RADIUS
+		_objective_leash_radius = OBJECTIVE_LEASH_RADIUS
+		_objective_owned = false
+		_objective_contested = false
+		_objective_kind = ""
+		_objective_attacking = false
+	else:
+		_objective_position = info.get("pos", Vector3.INF)
+		_objective_hold_radius = float(
+			info.get("radius", OBJECTIVE_HOLD_RADIUS)
+		)
+		_objective_leash_radius = float(
+			info.get("leash", OBJECTIVE_LEASH_RADIUS)
+		)
+		_objective_name = str(info.get("name", "OBJECTIVE"))
+		_objective_active = bool(info.get("active", false))
+		_objective_owned = bool(info.get("owned", false))
+		_objective_contested = bool(info.get("contested", false))
+		_objective_kind = str(info.get("kind", ""))
+		_objective_attacking = bool(info.get("attacking", false))
+
+	# Survival outranks the objective; the cached objective is where the bot
+	# returns after FLEE/HEAL/COVER/RELOAD/UNSTUCK ends.
+	if not survival_text.is_empty():
+		_intent = survival_intent
+		_intent_text = survival_text
+		return
+
+	if not _objective_active or _objective_position == Vector3.INF:
+		if _current_target != null and _target_visible:
+			_intent = Intent.FIGHT
+			_intent_text = "FIGHT"
+		elif _current_target != null:
+			_intent = Intent.SEARCH
+			_intent_text = "PURSUE"
+		elif _search_active:
+			_intent = Intent.SEARCH
+			_intent_text = "HUNT" if _search_persistent else "SEARCH"
+		else:
+			_intent = Intent.WANDER
+			_intent_text = "WANDER"
+		return
+
+	var dist := player.global_position.distance_to(_objective_position)
+	var inside := dist <= _objective_hold_radius
+	var action := _objective_action_text(info)
+
+	if _current_target != null:
+		if _target_visible:
+			if inside:
+				_intent = Intent.FIGHT_ON_OBJECTIVE
+				_intent_text = "FIGHT ON %s" % _objective_name
+			else:
+				_intent = Intent.RETURN_TO_OBJECTIVE
+				_intent_text = "RETURN TO %s" % _objective_name
+		else:
+			_intent = Intent.SEARCH
+			_intent_text = "PURSUE"
+		return
+
+	if _search_active and _search_persistent:
+		# No objective is nearby; the last heard enemy owns the bot.
+		_intent = Intent.SEARCH
+		_intent_text = "HUNT"
+		return
+
+	if _search_active:
+		if _search_origin != Vector3.INF \
+				and _search_origin.distance_to(_objective_position) \
+					<= _objective_leash_radius:
+			_intent = Intent.SEARCH
+			_intent_text = "SEARCH %s" % _objective_name
+		else:
+			_intent = Intent.RETURN_TO_OBJECTIVE
+			_intent_text = "RETURN TO %s" % _objective_name
+		return
+
+	if inside:
+		if _objective_kind == "payload":
+			_intent = Intent.CAPTURE if _objective_attacking else Intent.DEFEND
+		elif not _objective_owned:
+			_intent = Intent.CAPTURE
+		elif _objective_contested:
+			_intent = Intent.DEFEND
+		else:
+			_intent = Intent.HOLD
+		_intent_text = "%s %s" % [action, _objective_name]
+	else:
+		_intent = Intent.MOVE_TO_OBJECTIVE
+		_intent_text = "GO %s %s" % [action, _objective_name]
+
+
+## "An objective is nearby" for the persistent-hearing rule.  Within this
+## radius the objective outranks an old sound and the endless heard search ends.
+func _objective_is_near(point: Vector3) -> bool:
+	return _objective_active and _objective_position != Vector3.INF \
+		and point.distance_to(_objective_position) <= OBJECTIVE_NEARBY_RADIUS
+
+
+## True when the bot is outside the objective's hold radius and should be
+## returning to it, even if it can still see/shoot its target.
+func _objective_should_pull() -> bool:
+	return _objective_active and _objective_position != Vector3.INF \
+		and player.global_position.distance_to(_objective_position) \
+			> _objective_hold_radius
+
+
+## True when the current target is close enough to the objective that chasing it
+## does not abandon the point.
+func _target_within_objective_leash() -> bool:
+	if not _objective_active or _current_target == null \
+			or not is_instance_valid(_current_target):
+		return true
+	return _current_target.global_position.distance_to(_objective_position) \
+		<= _objective_leash_radius
 
 func _get_payload_node(gmc: GameModeComponent) -> PayloadNode:
 	if gmc.escort_mode and gmc.escort_mode._payload:
@@ -3376,18 +4330,20 @@ func _act() -> void:
 		return
 	var wc: WeaponController = player.weapon_controller
 	if not wc._is_ready():
+		# Do not keep the previous act's keys held through a switch/pullout.
+		_keyboard.set_move(0, 0)
 		return
 	_decision.act()
 
 func _act_seek_objective_or_wander() -> void:
-	var obj := _get_objective_target()
-	if obj == Vector3.INF:
+	if not _objective_active or _objective_position == Vector3.INF:
 		_act_wander()
 		return
 
-	var dist := player.global_position.distance_to(obj)
-	if dist < 1.5:
-		_act_wander()
+	var dist := player.global_position.distance_to(_objective_position)
+	if dist <= _objective_hold_radius * 0.85:
+		# Reaching the point must not turn into a wander away from it.
+		_act_hold_objective()
 		return
 
 	var wc: WeaponController = player.weapon_controller
@@ -3396,38 +4352,78 @@ func _act_seek_objective_or_wander() -> void:
 	_update_weapon_choice(wc, 15.0, false)
 	if _buttons.is_switch_pending() or wc.is_switching():
 		_trigger.release_all()
+		_keyboard.set_move(0, 0)
 		return
 
 	_trigger.release_all()
 	_has_desired_aim = false
-	var goal := obj
-	if _style != null:
+	var goal := _objective_position
+	if _style != null and dist > _objective_hold_radius * 2.0:
 		# Cautious bots approach from a slight flank; aggressive bots beeline.
-		var to_obj := obj - player.global_position
+		var to_obj := _objective_position - player.global_position
 		var perp := Vector3(-to_obj.z, 0.0, to_obj.x)
 		if perp.length_squared() > 0.01:
 			goal += perp.normalized() * _style.flank_bias \
 				* (1.0 - _style.aggression) * 6.0
-	_traversal.move_to(goal, 0.6, 1.5, 0.15)
+	_traversal.move_to(
+		goal, 0.6, maxf(_objective_hold_radius * 0.7, 1.5), 0.15
+	)
 
 	_maybe_tactical_reload(wc)
+
+
+## At the objective with nothing to shoot: hold the point, push the cart, and
+## scan.  This deliberately does not wander — a bot that reaches a control point
+## and immediately wanders off is not contesting it.
+func _act_hold_objective() -> void:
+	_trigger.release_all()
+	_has_desired_aim = false
+	if _traversal != null:
+		_traversal.cancel_goal()
+	_release_movement()
+	var wc: WeaponController = player.weapon_controller
+	if wc != null and wc._is_ready():
+		_maybe_tactical_reload(wc)
+	_mouse.request_look_at_point(
+		_objective_position + Vector3.UP * AIM_CENTER_HEIGHT,
+		LookPriority.GLANCE, 0.25, "hold_objective"
+	)
 
 func _act_combat() -> void:
 	if _current_target == null or not is_instance_valid(_current_target) \
 			or not _current_target.spawned:
 		_trigger.release_all()
+		_release_movement()
+		return
+	if not _target_visible:
+		# Grace window after losing sight: hold the last-known angle, do not
+		# fire through the wall, and do not orbit a body we cannot see.
+		_trigger.release_all()
+		_has_desired_aim = false
+		_release_movement()
+		var point := _predicted_last_known(Time.get_ticks_msec())
+		if point == Vector3.INF:
+			point = _last_seen_position
+		if point != Vector3.INF:
+			_mouse.request_look_at_point(
+				point + Vector3.UP * TRAVEL_EYE_HEIGHT,
+				LookPriority.COMBAT, 0.6, "memory:" + _memory_target_name
+			)
 		return
 	var wc: WeaponController = player.weapon_controller
 	if not wc._is_ready():
 		_trigger.release_all()
+		_release_movement()
 		return
 	if wc.is_switching() or _buttons.is_switch_pending():
 		_trigger.release_all()
+		_release_movement()
 		return
 
 	var weapon := wc._weapons[wc.current_weapon_index]
 	if weapon.weapon_fires.is_empty():
 		_trigger.release_all()
+		_release_movement()
 		return
 
 	var to_target := _current_target.global_position - player.global_position
@@ -3437,6 +4433,7 @@ func _act_combat() -> void:
 	_update_weapon_choice(wc, dist, true)
 	if _buttons.is_switch_pending() or wc.is_switching():
 		_trigger.release_all()
+		_release_movement()
 		return
 	weapon = wc._weapons[wc.current_weapon_index]
 	_update_fire_mode(weapon, dist)
@@ -3444,11 +4441,13 @@ func _act_combat() -> void:
 	if fire_index < 0:
 		_trigger.release_all()
 		_has_desired_aim = false
+		_release_movement()
 		_bot_find_ammo_or_reload(wc)
 		return
 	var fire: WeaponFire = weapon.weapon_fires[fire_index]
 	if fire == null or fire.action_type != WeaponFire.ActionType.SHOOT:
 		_trigger.release_all()
+		_release_movement()
 		return
 
 	# Aim point depends on skill and weapon role: body for low-accuracy bots and
@@ -3526,68 +4525,124 @@ func _act_combat() -> void:
 		aims, LookPriority.COMBAT, 1.0, str(_current_target.get_instance_id())
 	)
 
-	# Weapon-aware engagement distance with a wide soft band, a slight approach
-	# angle, and close-range circling.  Movement is expressed in the keyboard's
-	# LOCAL frame (strafe, backward); only the obstacle-steer ray goes through the
-	# facing helper.  The world-space steer is safety, not the primary motion.
+	# Weapon-aware engagement distance with a deadband.  Inside the band the bot
+	# holds range (strafe only); outside it approaches/retreats at a scaled
+	# speed.  The old always-on normalized radial term caused permanent orbiting.
 	var desired_dist := maxf(
 		_get_engagement_range(weapon) + _preferred_dist_offset,
 		MELEE_ENGAGE_RANGE * 0.5
 	)
-	var band := maxf(3.0, desired_dist * 0.35)
-	var radial := clampf((dist - desired_dist) / band, -1.0, 1.0)
-	var steer_world := _steer_toward(_current_target.global_position)
-	var steer_local := _keyboard.world_to_input_local(steer_world)
-	if dist < MELEE_CONSIDER_RANGE or dist < 4.0:
-		# Close range: circle rather than line up.
-		radial *= 0.3
-		if _strafe_dir == 0.0:
-			_strafe_dir = 1.0 if _strafe_bias >= 0.0 else -1.0
-	var approach_lateral := _strafe_bias * 0.45
-	var local := steer_local * 0.5 \
-		+ Vector2(_strafe_dir * 0.85 + approach_lateral * (1.0 - absf(radial)), -radial) * 0.7
-	if local.length() > 0.001:
-		local = local.normalized()
+	var band := maxf(2.5, desired_dist * COMBAT_RANGE_BAND_SCALE)
+	var hold_hi := desired_dist + band
+	var hold_lo := maxf(1.0, desired_dist - band)
+	if dist > hold_hi + COMBAT_RANGE_HYSTERESIS:
+		_combat_range_state = CombatRangeState.APPROACH
+	elif dist < hold_lo - COMBAT_RANGE_HYSTERESIS:
+		_combat_range_state = CombatRangeState.RETREAT
 	else:
-		local = Vector2(_strafe_dir, 0.0)
-	local = _combat_strafe_safe(local)
-	_move_local(local)
+		_combat_range_state = CombatRangeState.HOLD
 
-	# Event-driven strafe trigger: shots fired, not a fixed 1.5 s dice roll.
-	var mag := weapon.mag_current
-	if _last_mag_for_strafe >= 0 and mag < _last_mag_for_strafe:
-		_shots_since_strafe += _last_mag_for_strafe - mag
-	_last_mag_for_strafe = mag
-	if _shots_since_strafe >= COMBAT_STRAFE_SHOT_MIN + 2:
-		_strafe_force_change = true
-		_strafe_reason = "shots"
-		_shots_since_strafe = 0
+	var objective_pull := _objective_should_pull()
+	var chase_enter := maxf(COMBAT_CHASE_ENTER, desired_dist + band * 1.5)
+	var chase_exit := maxf(COMBAT_CHASE_EXIT, desired_dist + band * 0.5)
+	if _combat_chasing:
+		if dist <= chase_exit and absf(to_target.y) <= COMBAT_CHASE_VERTICAL:
+			_combat_chasing = false
+			_combat_chase_stall = 0.0
+			_traversal.cancel_goal()
+	elif dist >= chase_enter or absf(to_target.y) > COMBAT_CHASE_VERTICAL:
+		_combat_chasing = true
+		_combat_chase_stall = 0.0
 
-	# Occasional human movement, suppressed while the shot is tight/precise.
-	_combat_jump_timer = maxf(_combat_jump_timer - PROCESS_INTERVAL, 0.0)
-	_combat_crouch_timer = maxf(_combat_crouch_timer - PROCESS_INTERVAL, 0.0)
-	var tight_aim := aim_error_deg >= 0.0 and aim_error_deg < 2.0
-	if not tight_aim and not _is_precision_weapon(weapon) and dist > 3.0:
-		if _combat_jump_timer <= 0.0 and _style != null \
-				and randf() < _style.jump_rate * 0.12:
-			_keyboard.jump_tap(false)
-			_combat_jump_timer = COMBAT_JUMP_MIN_INTERVAL * randf_range(0.8, 1.5)
-		if _combat_crouch_timer <= 0.0 and _style != null \
-				and randf() < _style.crouch_rate * 0.12:
-			_keyboard.crouch_hold(randf_range(0.2, 0.45))
-			_combat_crouch_timer = COMBAT_CROUCH_MIN_INTERVAL * randf_range(0.8, 1.5)
+	# A partial nav route can park the bot at the closest reachable point.  Give
+	# up the chase after a short stall and let the local combat block resume.
+	if _combat_chasing:
+		if _traversal.is_partial_approach():
+			_combat_chase_stall += PROCESS_INTERVAL
+			if _combat_chase_stall >= COMBAT_CHASE_STALL_TIME:
+				_combat_chasing = false
+				_combat_chase_stall = 0.0
+				_traversal.cancel_goal()
+		else:
+			_combat_chase_stall = 0.0
+
+	# Objective priority: a runner outside the objective leash does not pull the
+	# bot off the point, and a point it is not touching pulls it back even while
+	# it can see/shoot the target.  The COMBAT aim request above stays live.
+	if _objective_active and not _target_within_objective_leash() \
+			and _combat_chasing:
+		_combat_chasing = false
+		_combat_chase_stall = 0.0
+		_traversal.cancel_goal()
+	if objective_pull:
+		_combat_chasing = false
+		_combat_chase_stall = 0.0
+		_traversal.move_to(
+			_objective_position, 0.85,
+			maxf(_objective_hold_radius * 0.7, 1.5), 0.05, true
+		)
+
+	if objective_pull:
+		pass
+	elif _combat_chasing:
+		# The COMBAT look request above outranks Traversal's travel look.
+		_traversal.move_to(_current_target.global_position, 0.9,
+			maxf(desired_dist, 2.0), 0.05, true)
+	else:
+		var radial := 0.0  # positive = approach, negative = back off
+		if _combat_range_state == CombatRangeState.APPROACH:
+			radial = clampf((dist - hold_hi) / band, 0.0, 1.0)
+		elif _combat_range_state == CombatRangeState.RETREAT:
+			radial = -clampf((hold_lo - dist) / band, 0.0, 1.0)
+		# A target outside the objective leash is not worth walking off the
+		# point for; hold the angle and shoot what you can reach.
+		if _objective_active and not _target_within_objective_leash():
+			radial = 0.0
+
+		if _combat_pattern == CombatPattern.HOLD:
+			# Stop-to-shoot beat: no locomotion while this pattern owns the move.
+			_keyboard.set_move(0, 0)
+		else:
+			var local := Vector2(_strafe_dir * 0.9, -radial * 0.85)
+			# Obstacle steer is safety, not the primary motion; only mix it in
+			# while actually closing or backing off.
+			if absf(radial) > 0.01:
+				var steer_world := _steer_toward(_current_target.global_position)
+				var steer_local := _keyboard.world_to_input_local(steer_world)
+				local += steer_local * 0.25
+			if local.length() < 0.001:
+				local = Vector2(_strafe_dir, 0.0)
+			else:
+				local = local.normalized()
+			local = _combat_strafe_safe(local)
+			_move_local(local)
+			_tick_combat_stall()
+
+		# Event-driven strafe trigger: shots fired, not a fixed dice roll.
+		var mag := weapon.mag_current
+		if _last_mag_for_strafe >= 0 and mag < _last_mag_for_strafe:
+			_shots_since_strafe += _last_mag_for_strafe - mag
+		_last_mag_for_strafe = mag
+		if _shots_since_strafe >= COMBAT_STRAFE_SHOT_MAX:
+			_strafe_force_change = true
+			_strafe_reason = "shots"
+			_shots_since_strafe = 0
 
 	# Firing: the Trigger owns the flags and applies the aim gate.  `wants_base`
 	# was computed before the arc test so validation only ran when the bot was
 	# otherwise ready; a blocked arc vetoes the shot but does not make the bot
 	# stand still holding the trigger.
 	var wants := wants_base and not shot_blocked
+	if _combat_pattern == CombatPattern.HOLD and _combat_settle_timer > 0.0:
+		# Let the body actually stop before the first shot of the beat.
+		wants = false
 	if not wants and _reaction_timer <= 0.0 and _too_close_for_explosive(fire, dist):
 		# Point-blank with a self-damaging explosive: draw a sidearm instead of
 		# standing there aiming at the ground while backing away.
 		var safe_index := _first_safe_weapon_index(wc, dist)
 		if safe_index >= 0 and _switch_weapon(wc, safe_index):
 			_trigger.release_all()
+			_release_movement()
 			return
 	_trigger.request_fire(fire_index, wants)
 
@@ -3595,15 +4650,18 @@ func _act_heal() -> void:
 	if _heal_target == null or not is_instance_valid(_heal_target) \
 			or not _heal_target.spawned:
 		_trigger.release_all()
+		_release_movement()
 		return
 	var wc: WeaponController = player.weapon_controller
 	if not wc._is_ready():
 		_trigger.release_all()
+		_release_movement()
 		return
 
 	var weapon := wc._weapons[wc.current_weapon_index]
 	if weapon.weapon_fires.is_empty():
 		_trigger.release_all()
+		_release_movement()
 		return
 
 	var to_target := _heal_target.global_position - player.global_position
@@ -3615,11 +4673,13 @@ func _act_heal() -> void:
 	if fire_index < 0:
 		_trigger.release_all()
 		_has_desired_aim = false
+		_release_movement()
 		_bot_find_ammo_or_reload(wc)
 		return
 	var fire: WeaponFire = weapon.weapon_fires[fire_index]
 	if fire == null or fire.action_type != WeaponFire.ActionType.SHOOT:
 		_trigger.release_all()
+		_release_movement()
 		return
 
 	var aim_pos := _predict_aim_point(_heal_target, fire, dist)
@@ -3693,8 +4753,18 @@ func _act_wander() -> void:
 		_update_weapon_choice(wc, 15.0, false)
 		if _buttons.is_switch_pending() or wc.is_switching():
 			_trigger.release_all()
+			_keyboard.set_move(0, 0)
 			return
 		_maybe_tactical_reload(wc)
+
+	# `_wander_target` defaults to Vector3.ZERO.  Without this guard a bot with no
+	# objective (MAIN_MENU / DEATHMATCH) walks toward the world origin instead of
+	# wandering locally.
+	if _wander_target == Vector3.ZERO \
+			or _wander_target.distance_to(player.global_position) > WANDER_RANGE * 2.0:
+		_keyboard.set_move(0, 0)
+		_pick_wander_target()
+		return
 
 	var to_wander := _wander_target - player.global_position
 	var flat := Vector2(to_wander.x, to_wander.z)
@@ -3718,16 +4788,41 @@ func _search_duration() -> float:
 
 
 ## Start (or restart) a hunt at [param at].  The hunt owns a stable origin
-## (`_search_origin`) because `_last_seen_position` is cleared on expiry.
-func _begin_search(at: Vector3, velocity: Vector3 = Vector3.ZERO) -> void:
+## (`_search_origin`) because `_last_seen_position` is cleared on expiry.  The
+## deadline is wall-clock so it keeps running through other Decision states.
+func _begin_search(at: Vector3, velocity: Vector3 = Vector3.ZERO,
+		direction: Vector3 = Vector3.ZERO, persistent: bool = false) -> void:
 	if at == Vector3.INF:
 		return
+	var now_ms := Time.get_ticks_msec()
+	var lost_distance := player.global_position.distance_to(at)
 	_search_active = true
-	_search_timer = _search_duration()
+	_search_persistent = persistent
 	_search_origin = at
 	_last_seen_position = at
 	_last_seen_velocity = velocity
-	_last_seen_time = float(Time.get_ticks_msec()) / 1000.0
+	_last_seen_time = float(now_ms) / 1000.0
+	if persistent:
+		# Heard-memory search: no deadline.  It ends only on a target, a new
+		# search, or an objective coming nearby.
+		_search_timer = INF
+		_search_deadline_ms = 0
+	else:
+		_search_timer = _search_duration()
+		_search_deadline_ms = now_ms + int(
+			(_search_duration() + minf(8.0, lost_distance / WALK_SPEED)) * 1000.0
+		)
+	var dir := Vector3(direction.x, 0.0, direction.z)
+	if dir.length_squared() < 0.01:
+		dir = Vector3(velocity.x, 0.0, velocity.z)
+	if dir.length_squared() < 0.01:
+		dir = Vector3(
+			at.x - player.global_position.x,
+			0.0,
+			at.z - player.global_position.z
+		)
+	_search_direction = dir.normalized() if dir.length_squared() > 0.01 \
+		else Vector3.ZERO
 	_clear_hunt()
 	_hunt_point_timer = HUNT_APPROACH_TIMEOUT
 
@@ -3740,19 +4835,25 @@ func _clear_hunt() -> void:
 	_hunt_seeded = false
 	_hunt_dwelling = false
 	_hunt_point_timer = 0.0
+	_hunt_timed_index = -1
+	_hunt_partial_timer = 0.0
 
 
 ## A standable point at [param candidate]'s horizontal position: floor within
 ## 3 m, walkable slope, no wall/low ceiling in the capsule.  INF when unusable.
 func _ground_point(space: PhysicsDirectSpaceState3D,
-		candidate: Vector3) -> Vector3:
+		candidate: Vector3, reference_y: float = NAN) -> Vector3:
 	_steer_query.from = candidate + Vector3.UP * 1.5
 	_steer_query.to = candidate - Vector3.UP * 3.0
 	var floor_hit := space.intersect_ray(_steer_query)
 	if floor_hit.is_empty():
 		return Vector3.INF
 	var floor_pos: Vector3 = floor_hit.position
-	if absf(floor_pos.y - player.global_position.y) > 4.0:
+	# Hunt points are built around the target's last-known Y, which may be on a
+	# floor the bot cannot share; compare the floor to that origin rather than to
+	# the bot, or every ring candidate is rejected.
+	var ref_y := player.global_position.y if is_nan(reference_y) else reference_y
+	if absf(floor_pos.y - ref_y) > 4.0:
 		return Vector3.INF
 	if (floor_hit.normal as Vector3).angle_to(Vector3.UP) \
 			> deg_to_rad(FLOOR_MAX_ANGLE_DEG):
@@ -3766,9 +4867,11 @@ func _ground_point(space: PhysicsDirectSpaceState3D,
 	return candidate
 
 
-## Build the lead point plus a ring of standing positions around the last-known
-## spot.  Deliberately no LOS-to-origin requirement: the far side of the pillar
-## is exactly where the player may be hiding.
+## Build the search fan around the last-known spot.  A known escape direction
+## gets a directional fan (±55°) so a runner is followed rather than searched
+## in a symmetrical ring; without a direction it falls back to the full ring.
+## Deliberately no LOS-to-origin requirement: the far side of the pillar is
+## exactly where the player may be hiding.
 func _seed_hunt_points() -> void:
 	_clear_hunt()
 	_hunt_origin = _search_origin
@@ -3776,38 +4879,45 @@ func _seed_hunt_points() -> void:
 	if _search_origin == Vector3.INF:
 		return
 	var space := player.get_world_3d().direct_space_state
-	var lead_distance := lerpf(HUNT_LEAD_MIN, HUNT_LEAD_MAX, _aggression_trait())
-	var lead := _search_origin
-	var vel := Vector3(_last_seen_velocity.x, 0.0, _last_seen_velocity.z)
-	if vel.length() > 0.5:
-		lead += vel.normalized() * lead_distance
+	var fan: Array[Vector3] = []
+	var direction := Vector3(
+		_search_direction.x, 0.0, _search_direction.z
+	)
+	if direction.length_squared() > 0.01:
+		direction = direction.normalized()
+		for radius in HUNT_SWEEP_RADII:
+			for angle_deg in HUNT_FAN_ANGLES:
+				var angle := deg_to_rad(angle_deg)
+				var candidate := _search_origin \
+					+ direction.rotated(Vector3.UP, angle) * radius
+				var ground := _ground_point(space, candidate, _search_origin.y)
+				if ground == Vector3.INF \
+						or ground.distance_to(_search_origin) < 1.5:
+					continue
+				fan.append(ground)
 	else:
-		lead += player.horizontal_forward() * lead_distance * 0.8
-	var lead_ground := _ground_point(space, lead)
-	if lead_ground != Vector3.INF:
-		_hunt_points.append(lead_ground)
-
-	var ring: Array[Vector3] = []
-	for radius in HUNT_SWEEP_RADII:
-		for i in HUNT_ANGLES:
-			var angle := TAU * float(i) / float(HUNT_ANGLES)
-			var candidate := _search_origin \
-				+ Vector3(cos(angle), 0.0, sin(angle)) * radius
-			var ground := _ground_point(space, candidate)
-			if ground == Vector3.INF or ground.distance_to(_search_origin) < 1.5:
-				continue
-			ring.append(ground)
+		for radius in HUNT_SWEEP_RADII:
+			for i in HUNT_ANGLES:
+				var angle := TAU * float(i) / float(HUNT_ANGLES)
+				var candidate := _search_origin \
+					+ Vector3(cos(angle), 0.0, sin(angle)) * radius
+				var ground := _ground_point(space, candidate, _search_origin.y)
+				if ground == Vector3.INF \
+						or ground.distance_to(_search_origin) < 1.5:
+					continue
+				fan.append(ground)
 	var origin := player.global_position
-	ring.sort_custom(func(a: Vector3, b: Vector3) -> bool:
+	fan.sort_custom(func(a: Vector3, b: Vector3) -> bool:
 		return a.distance_squared_to(origin) < b.distance_squared_to(origin)
 	)
 	var limit := HUNT_MIN_POINTS \
 		+ int(_aggression_trait() * float(HUNT_MAX_EXTRA_POINTS))
-	for point in ring:
+	for point in fan:
 		if _hunt_points.size() >= limit:
 			break
 		_hunt_points.append(point)
-	_hunt_point_timer = HUNT_POINT_TIMEOUT
+	_hunt_timed_index = -1
+	_hunt_partial_timer = 0.0
 
 
 ## Weapon upkeep shared by the travel-to-last-seen and sweep phases.
@@ -3821,47 +4931,57 @@ func _act_search_weapons() -> void:
 	_maybe_tactical_reload(wc)
 
 
-## SEARCH: go to the last-seen point, then clear the angles around it instead of
-## walking straight past.  Glances are issued by `_tick_glance`.
+## SEARCH: go to the predicted last-known point, then clear a directional fan
+## around it instead of walking straight past.  The wall-clock deadline is owned
+## by `_tick_target_memory`; this function only performs the movement.
 func _act_search() -> void:
 	_trigger.release_all()
 	_has_desired_aim = false
-	if _search_timer > 0.0:
-		_search_timer = maxf(_search_timer - PROCESS_INTERVAL, 0.0)
-	if _search_timer <= 0.0 or _last_seen_position == Vector3.INF:
-		_search_active = false
-		_last_seen_position = Vector3.INF
-		_last_seen_time = -999.0
+	if not _search_active or _last_seen_position == Vector3.INF:
 		_clear_hunt()
 		_act_seek_objective_or_wander()
 		return
+
+	# A distant hunt must not pull the bot off the objective.  Search around the
+	# point instead; if the bot is already far and the lead is far, return.
+	if _objective_active and _objective_position != Vector3.INF \
+			and not _search_persistent:
+		var obj_dist := player.global_position.distance_to(_objective_position)
+		var origin_dist := _search_origin.distance_to(_objective_position)
+		if obj_dist > _objective_leash_radius \
+				and origin_dist > _objective_leash_radius:
+			_traversal.move_to(
+				_objective_position, 0.8,
+				maxf(_objective_hold_radius * 0.7, 1.5), 0.1
+			)
+			_act_search_weapons()
+			return
 
 	var pos := player.global_position
 	var flat_to := Vector2(
 		_last_seen_position.x - pos.x, _last_seen_position.z - pos.z
 	)
 
-	# Phase 1: reach the last-known spot.  Move to the un-extended point so
-	# arrival is guaranteed; the velocity lead becomes the first sweep point.
-	# If the exact spot is unreachable, start clearing what is reachable.
+	# Phase 1: reach the predicted point.  If it is unreachable, seed the fan
+	# from the closest reachable area instead of stalling.
 	if not _hunt_seeded:
 		if flat_to.length() > HUNT_ARRIVE_RADIUS:
 			_hunt_point_timer = maxf(_hunt_point_timer - PROCESS_INTERVAL, 0.0)
 			if _hunt_point_timer > 0.0:
-				_traversal.move_to(_last_seen_position, 0.9, 1.2, 0.15)
+				_traversal.move_to(
+					_last_seen_position, 0.9, 1.2, 0.15, _memory_chasing
+				)
 				_act_search_weapons()
 				return
 		_seed_hunt_points()
 
-	# Phase 2: sweep the ring.  Rebuild only if the hunt origin has moved; an
-	# empty ring falls through to the lead point (reseeding every tick would
-	# burn ~48 rays per tick for no gain).
+	# Phase 2: sweep the fan/ring.  Rebuild only if the origin has moved.
 	if not _hunt_points.is_empty() \
 			and _search_origin.distance_to(_hunt_origin) > HUNT_ORIGIN_MOVE:
 		_seed_hunt_points()
 	if _hunt_points.is_empty():
-		# No standable ring (ledge/open pit): scan from the last-known point
-		# and let the hunt timer expire instead of pacing back and forth.
+		# No standable points (ledge/open pit): scan from the last-known point
+		# and let the wall-clock deadline end the hunt.
 		_keyboard.set_move(0, 0)
 		_mouse.request_look_at_point(
 			_search_origin + Vector3.UP * AIM_CENTER_HEIGHT,
@@ -3874,7 +4994,8 @@ func _act_search() -> void:
 		_hunt_index = 0
 		_hunt_dwelling = false
 		_hunt_dwell = 0.0
-		_hunt_point_timer = HUNT_POINT_TIMEOUT
+		_hunt_timed_index = -1
+		_hunt_partial_timer = 0.0
 	if _hunt_dwelling:
 		_keyboard.set_move(0, 0)
 		_hunt_dwell = maxf(_hunt_dwell - PROCESS_INTERVAL, 0.0)
@@ -3885,7 +5006,8 @@ func _act_search() -> void:
 		if _hunt_dwell <= 0.0:
 			_hunt_dwelling = false
 			_hunt_index += 1
-			_hunt_point_timer = HUNT_POINT_TIMEOUT
+			_hunt_timed_index = -1
+			_hunt_partial_timer = 0.0
 		_act_search_weapons()
 		return
 
@@ -3895,14 +5017,33 @@ func _act_search() -> void:
 	if flat.length() <= HUNT_ARRIVE_RADIUS:
 		_hunt_dwelling = true
 		_hunt_dwell = randf_range(HUNT_DWELL_MIN, HUNT_DWELL_MAX)
+		# Give the final hide/scan point a longer look.
+		if _hunt_index == _hunt_points.size() - 1:
+			_hunt_dwell *= 1.5
 		_keyboard.set_move(0, 0)
 	else:
-		_traversal.move_to(point, 1.0, HUNT_ARRIVE_RADIUS, 0.1)
+		if _hunt_timed_index != _hunt_index:
+			_hunt_timed_index = _hunt_index
+			_hunt_point_timer = clampf(
+				flat.length() / WALK_SPEED + 1.0,
+				HUNT_POINT_TIMEOUT_MIN,
+				HUNT_POINT_TIMEOUT_MAX
+			)
+			_hunt_partial_timer = 0.0
+		_traversal.move_to(
+			point, 1.0, HUNT_ARRIVE_RADIUS, 0.1, _memory_chasing
+		)
 		_hunt_point_timer = maxf(_hunt_point_timer - PROCESS_INTERVAL, 0.0)
-		if _hunt_point_timer <= 0.0:
+		if _traversal.is_partial_approach():
+			_hunt_partial_timer += PROCESS_INTERVAL
+		else:
+			_hunt_partial_timer = 0.0
+		if _hunt_point_timer <= 0.0 \
+				or _hunt_partial_timer >= HUNT_PARTIAL_ABANDON:
 			# Blocked/unreachable: abandon this point rather than stall.
 			_hunt_index += 1
-			_hunt_point_timer = HUNT_POINT_TIMEOUT
+			_hunt_timed_index = -1
+			_hunt_partial_timer = 0.0
 	_act_search_weapons()
 
 
@@ -3984,6 +5125,7 @@ func _act_reload_safe() -> void:
 	_has_desired_aim = false
 	var wc: WeaponController = player.weapon_controller
 	if not wc._is_ready():
+		_release_movement()
 		return
 	var weapon: Weapon = wc._weapons[wc.current_weapon_index]
 	if weapon != null and not weapon.has_infinite_ammo \
@@ -3994,7 +5136,9 @@ func _act_reload_safe() -> void:
 		_act_seek_objective_or_wander()
 		return
 
-	var threat := _current_target.global_position
+	var threat := _target_position_for_ai()
+	if threat == Vector3.INF:
+		threat = _last_seen_position
 	if ENABLE_COVER:
 		if _cover_position == Vector3.INF:
 			_cover_position = _find_cover_position(threat)
@@ -4004,10 +5148,12 @@ func _act_reload_safe() -> void:
 			_move_local(Vector2(_strafe_dir, 1.0))
 	else:
 		_move_local(Vector2(_strafe_dir, 1.0))
-	_mouse.request_look_at_point(
-		_get_head_position(_current_target), LookPriority.COMBAT, 0.8,
-		str(_current_target.get_instance_id())
-	)
+	var reload_look := _target_look_point_for_ai()
+	if reload_look != Vector3.INF:
+		_mouse.request_look_at_point(
+			reload_look, LookPriority.COMBAT, 0.8,
+			str(_current_target.get_instance_id())
+		)
 
 
 ## RETREAT_COVER: move behind cover, wait, peek/fire, duck back.  It deliberately
@@ -4022,11 +5168,14 @@ func _act_retreat_cover() -> void:
 
 	var wc: WeaponController = player.weapon_controller
 	if not wc._is_ready():
+		_release_movement()
 		return
 	var surv := _survival_trait()
 
 	if _current_target != null and is_instance_valid(_current_target):
-		_cover_threat_pos = _current_target.global_position
+		var threat_pos := _target_position_for_ai()
+		if threat_pos != Vector3.INF:
+			_cover_threat_pos = threat_pos
 	if _cover_position == Vector3.INF:
 		_cover_position = _find_cover_position(_cover_threat_pos)
 		if _cover_position == Vector3.INF:
@@ -4090,6 +5239,11 @@ func _act_retreat_cover() -> void:
 			if sees_target and _cover_timer > 0.0:
 				_act_combat()
 				return
+			if not sees_target:
+				# Do not carry a fire intent/aim from the last combat tick into
+				# the catch-breath phase: the target is gone.
+				_trigger.release_all()
+				_has_desired_aim = false
 			if _style != null and randf() < _style.crouch_rate * 0.5:
 				_keyboard.crouch_hold(0.25)
 			if _cover_threat_pos != Vector3.INF:
@@ -4107,16 +5261,22 @@ func _act_retreat_cover() -> void:
 				)
 				_cover_peek_side = 1.0 if _strafe_bias >= 0.0 else -1.0
 		2:
-			# Step out and take the shot(s).
-			if _current_target != null and is_instance_valid(_current_target):
+			# Step out only while the enemy is actually visible; a blind peek is
+			# how a bot walks out of cover for nothing.
+			var has_target := _current_target != null \
+				and is_instance_valid(_current_target) and _target_visible
+			if has_target:
 				_act_combat()
-			_has_desired_aim = _current_target != null
-			if _current_target != null:
-				_mouse.request_look_at_point(
-					_get_head_position(_current_target), LookPriority.COMBAT, 0.9,
-					str(_current_target.get_instance_id())
-				)
-			_move_local(Vector2(_cover_peek_side, -1.0))
+				var peek_look := _target_look_point_for_ai()
+				if peek_look != Vector3.INF:
+					_mouse.request_look_at_point(
+						peek_look, LookPriority.COMBAT, 0.9,
+						str(_current_target.get_instance_id())
+					)
+				_move_local(Vector2(_cover_peek_side, -1.0))
+			else:
+				_keyboard.set_move(0, 0)
+			_has_desired_aim = has_target
 			if _cover_timer <= 0.0:
 				_cover_phase = 3
 				_cover_timer = randf_range(
@@ -4146,6 +5306,7 @@ func _act_retreat_cover() -> void:
 func _act_context() -> void:
 	var wc: WeaponController = player.weapon_controller
 	if not wc._is_ready():
+		_release_movement()
 		return
 	var weapon: Weapon = wc._weapons[wc.current_weapon_index]
 	if _health_ratio() < MEDIC_SELF_HEAL_THRESHOLD:
@@ -4158,7 +5319,7 @@ func _act_context() -> void:
 				_trigger.release_all()
 				return
 	if _heal_target != null and is_instance_valid(_heal_target) \
-			and _weapon_heals_allies(weapon):
+			and _weapon_heals_allies(weapon) and _heal_is_safe():
 		_act_heal()
 	elif _current_target != null and is_instance_valid(_current_target) \
 			and _current_target.spawned:
@@ -4201,6 +5362,31 @@ func _aggression_trait() -> float:
 	return _style.aggression if _style != null else clampf(skill, 0.0, 1.0)
 
 
+## Position the AI may use for the current target.  While the target is unseen,
+## this is the frozen last-known point, never the live hidden body.
+func _target_position_for_ai() -> Vector3:
+	if _current_target == null or not is_instance_valid(_current_target):
+		return Vector3.INF
+	if _target_visible:
+		return _current_target.global_position
+	if _memory_last_position != Vector3.INF:
+		return _memory_last_position
+	return _current_target.global_position
+
+
+## Look point for the current target: the real head only while visible; a
+## remembered target is looked at where it was last seen.
+func _target_look_point_for_ai() -> Vector3:
+	if _current_target == null or not is_instance_valid(_current_target):
+		return Vector3.INF
+	if _target_visible:
+		return _get_head_position(_current_target)
+	var known := _target_position_for_ai()
+	if known == Vector3.INF:
+		return Vector3.INF
+	return known + Vector3.UP * TRAVEL_EYE_HEIGHT
+
+
 ## Where the bot believes the most urgent threat is.  A freshly resolved shooter
 ## outranks the bot's current target: being shot from behind is more urgent than
 ## whoever the crosshair happens to be on.
@@ -4212,7 +5398,9 @@ func _current_threat_position() -> Vector3:
 		return _last_damage_position
 	if _current_target != null and is_instance_valid(_current_target) \
 			and _current_target.spawned:
-		return _current_target.global_position
+		var known := _target_position_for_ai()
+		if known != Vector3.INF:
+			return known
 	if _last_seen_position != Vector3.INF:
 		return _last_seen_position
 	return _last_damage_position
@@ -4291,15 +5479,23 @@ func _assess_retreat() -> int:
 	if hp <= _flee_health_threshold():
 		# A visible enemy at close range is a fight, not a footrace: running
 		# with the trigger released just feeds them free damage.
-		if _current_target != null and is_instance_valid(_current_target) \
-				and _current_target.spawned \
-				and player.global_position.distance_to(
-					_current_target.global_position
-				) <= FLEE_FIGHT_BACK_RANGE:
+		var fight_pos := _target_position_for_ai()
+		if _target_visible and fight_pos != Vector3.INF \
+				and player.global_position.distance_to(fight_pos) \
+					<= FLEE_FIGHT_BACK_RANGE:
 			return RetreatNeed.COVER if ENABLE_COVER else RetreatNeed.NONE
 		return RetreatNeed.FLEE
 	if hp <= _cover_health_threshold():
 		return RetreatNeed.COVER if ENABLE_COVER else RetreatNeed.FLEE
+	# Tactical cover while still healthy: a big recent hit is enough to make a
+	# human break the angle, unless the shooter is already in their face.
+	if ENABLE_COVER and hp < 0.9 and _recent_damage_fraction() >= 0.20 \
+			and _survival_trait() >= 0.5 and _cover_cooldown <= 0.0:
+		var threat := _current_threat_position()
+		var threat_dist := player.global_position.distance_to(threat) \
+			if threat != Vector3.INF else 999.0
+		if not (_target_visible and threat_dist <= 8.0):
+			return RetreatNeed.COVER
 	return RetreatNeed.NONE
 
 
@@ -4310,6 +5506,12 @@ func _on_decision_enter(state: int) -> void:
 			_traversal.cancel_recovery()
 			_strafe_force_change = true
 			_shots_since_strafe = 0
+			_combat_range_state = CombatRangeState.HOLD
+			_combat_pattern = CombatPattern.WIDE
+			_combat_settle_timer = 0.0
+			_combat_probe_timer = 0.0
+			_combat_stall_timer = 0.0
+			_combat_stall_position = player.global_position
 			_cover_position = Vector3.INF
 			_cover_phase = 0
 			_cover_rounds = 0
@@ -4526,24 +5728,70 @@ func _is_precision_weapon(weapon: Weapon) -> bool:
 
 
 ## Keep a combat strafe from walking into a wall or off a ledge.
-func _combat_strafe_safe(local: Vector2) -> Vector2:
-	if absf(local.x) < 0.1:
-		return local
+## Four-direction combat safety, refreshed on a timer rather than every tick.
+## The old version only checked lateral motion; the radial component could walk
+## a bot straight off a ledge or into a wall.
+func _refresh_combat_safety() -> void:
+	if _combat_probe_timer > 0.0:
+		return
+	_combat_probe_timer = COMBAT_PROBE_INTERVAL
 	var forward := player.horizontal_forward()
+	forward.y = 0.0
+	if forward.length_squared() < 0.0001:
+		return
+	forward = forward.normalized()
 	var right := Vector3.UP.cross(forward).normalized()
-	var side_sign := signf(local.x)
-	var side := right * side_sign
 	var origin := player.global_position + Vector3.UP * STEER_RAY_HEIGHT
-	var flat := Vector2(side.x, side.z)
-	var score := _score_direction(origin, flat)
-	if score >= 1.5 and _has_floor_side(side):
-		return local
-	var other_score := _score_direction(origin, -flat)
-	if other_score > score and _has_floor_side(-side):
-		local.x = -local.x
-		return local
-	local.x = 0.0
+	_combat_block_forward = _dir_blocked(origin, forward)
+	_combat_block_backward = _dir_blocked(origin, -forward)
+	_combat_block_right = _dir_blocked(origin, right)
+	_combat_block_left = _dir_blocked(origin, -right)
+
+
+func _dir_blocked(origin: Vector3, dir: Vector3) -> bool:
+	var flat := Vector2(dir.x, dir.z)
+	return _score_direction(origin, flat) < 1.5 or not _has_floor_side(dir)
+
+
+func _combat_strafe_safe(local: Vector2) -> Vector2:
+	_refresh_combat_safety()
+	if local.x > 0.0 and _combat_block_right:
+		local.x = -local.x if not _combat_block_left else 0.0
+	elif local.x < 0.0 and _combat_block_left:
+		local.x = -local.x if not _combat_block_right else 0.0
+	if local.y < 0.0 and _combat_block_forward:
+		local.y = 0.0
+	elif local.y > 0.0 and _combat_block_backward:
+		local.y = 0.0
 	return local
+
+
+## Local combat stall handling: Traversal's recovery is deliberately skipped
+## while a target is visible, so a held movement key against geometry needs its
+## own escape.
+func _tick_combat_stall() -> void:
+	var pos := player.global_position
+	if not _keyboard.is_moving():
+		_combat_stall_timer = 0.0
+		_combat_stall_position = pos
+		return
+	_combat_stall_timer += PROCESS_INTERVAL
+	if _combat_stall_timer < COMBAT_STALL_TIME:
+		return
+	_combat_stall_timer = 0.0
+	var moved := pos.distance_to(_combat_stall_position)
+	_combat_stall_position = pos
+	if moved >= COMBAT_STALL_DISTANCE:
+		return
+	_combat_probe_timer = 0.0
+	_combat_pattern = CombatPattern.WIDE
+	_strafe_timer = 0.0
+	_strafe_force_change = true
+	_strafe_reason = "stall"
+	if absf(_strafe_dir) > 0.1:
+		_strafe_dir = -_strafe_dir
+	else:
+		_strafe_dir = 1.0 if _strafe_bias >= 0.0 else -1.0
 
 
 func _has_floor_side(side: Vector3) -> bool:
@@ -4565,11 +5813,28 @@ func _has_floor_side(side: Vector3) -> bool:
 # parented to the Player so `despawn()` hides them with the bot, and are marked
 # top_level so a size-change effect cannot scale the text or the lines.
 
+## Show or hide the overlay nodes as the flags change.  `debug_draw`'s setter
+## can hide them itself, but the dev-menu route toggle is global and flips
+## without touching this bot.
+func _debug_sync(delta: float) -> void:
+	if _debug_visuals_enabled():
+		_debug_tick(delta)
+	elif _debug_label != null or _debug_ray_instance != null:
+		_hide_debug_nodes()
+
+
+## Per-bot inspector flag, or the dev menu's "Show nav paths" for routes only.
+func _debug_visuals_enabled() -> bool:
+	return debug_draw or GameManager.dev_show_bot_paths
+
+
 func _debug_tick(delta: float) -> void:
-	if not debug_draw:
+	if not _debug_visuals_enabled():
 		return
 	_ensure_debug_nodes()
 	if _debug_label != null:
+		# Path-only mode uses this label for the intent line; the full overlay
+		# uses it for the whole debug block.
 		_debug_label.visible = true
 	if _debug_ray_instance != null:
 		_debug_ray_instance.visible = true
@@ -4579,7 +5844,7 @@ func _debug_tick(delta: float) -> void:
 		return
 	_debug_refresh_timer = 0.0
 	_update_debug_label()
-	_render_debug_rays()
+	_render_debug_lines()
 
 
 func _ensure_debug_nodes() -> void:
@@ -4591,8 +5856,10 @@ func _ensure_debug_nodes() -> void:
 		_debug_ray_instance = null
 		_debug_ray_mesh = null
 		_debug_ray_material = null
+		_debug_path_material = null
 
-	if _debug_label == null:
+	# Path-only mode creates the line mesh and the compact intent label.
+	if _debug_visuals_enabled() and _debug_label == null:
 		var label := Label3D.new()
 		label.name = "BotDebugLabel"
 		label.top_level = true
@@ -4607,19 +5874,29 @@ func _ensure_debug_nodes() -> void:
 
 	if _debug_ray_instance == null:
 		var line_mesh := ImmediateMesh.new()
-		var line_material := StandardMaterial3D.new()
-		line_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		line_material.vertex_color_use_as_albedo = true
-		line_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		var ray_material := StandardMaterial3D.new()
+		ray_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		ray_material.vertex_color_use_as_albedo = true
+		ray_material.vertex_color_is_srgb = true
+		ray_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		var path_material := StandardMaterial3D.new()
+		path_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		path_material.vertex_color_use_as_albedo = true
+		path_material.vertex_color_is_srgb = true
+		path_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		# A debug route is useless if geometry hides it, and ribbons are viewed
+		# from both sides (overhead and first person).
+		path_material.no_depth_test = true
+		path_material.cull_mode = BaseMaterial3D.CULL_DISABLED
 		var ray_instance := MeshInstance3D.new()
 		ray_instance.name = "BotDebugRays"
 		ray_instance.top_level = true
 		ray_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		ray_instance.mesh = line_mesh
-		ray_instance.material_override = line_material
 		player.add_child(ray_instance)
 		_debug_ray_mesh = line_mesh
-		_debug_ray_material = line_material
+		_debug_ray_material = ray_material
+		_debug_path_material = path_material
 		_debug_ray_instance = ray_instance
 
 
@@ -4627,6 +5904,21 @@ func _update_debug_label() -> void:
 	if _debug_label == null or not is_instance_valid(player):
 		return
 	_debug_label.global_position = player.global_position + Vector3.UP * DEBUG_LABEL_HEIGHT
+
+	if not debug_draw:
+		# Path-only mode: one compact "what should I be doing?" line above the
+		# head, so the objective intent is visible with the route overlay.
+		var intent_text := _intent_text
+		if _search_persistent and _persistent_heard_position != Vector3.INF:
+			intent_text += "  %dm" % roundi(
+				player.global_position.distance_to(_persistent_heard_position)
+			)
+		elif _objective_active and _objective_position != Vector3.INF:
+			intent_text += "  %dm" % roundi(
+				player.global_position.distance_to(_objective_position)
+			)
+		_debug_label.text = intent_text
+		return
 
 	var hp: float = 0.0
 	if player.attribute_component != null:
@@ -4636,6 +5928,22 @@ func _update_debug_label() -> void:
 	var lines := PackedStringArray()
 	lines.append("%s  hp=%.0f" % [_debug_state_text(), hp])
 	lines.append("target: %s" % target_name)
+	lines.append("intent: %s" % _intent_text)
+	var memory_label := _memory_target_name if not _memory_target_name.is_empty() else "-"
+	var memory_left := maxf(
+		float(_memory_expires_ms - Time.get_ticks_msec()) / 1000.0, 0.0
+	)
+	var lock_left := maxf(
+		float(_target_lock_until_ms - Time.get_ticks_msec()) / 1000.0, 0.0
+	)
+	lines.append("vis=%s mem=%s mem_t=%.1f grace=%.2f lock=%.1f" % [
+		_target_visible, memory_label, memory_left, _target_lost_timer, lock_left,
+	])
+	lines.append("search=%s t=%.1f chase=%s dir=%s" % [
+		_search_active, _search_timer, _memory_chasing, _search_direction,
+	])
+	if _memory_target != null and is_instance_valid(_memory_target):
+		lines.append("pred: %s" % _predicted_last_known(Time.get_ticks_msec()))
 	lines.append("fire: %d  trig: %s" % [_chosen_fire_index, _debug_trigger_text()])
 	lines.append("aim err: %s deg" % _debug_aim_error(target_name != "-"))
 	if _style != null:
@@ -4740,22 +6048,90 @@ func _debug_weapon_text() -> String:
 	return "%s %s" % [weapon.display_name, ammo]
 
 
-func _render_debug_rays() -> void:
+func _render_debug_lines() -> void:
 	if _debug_ray_mesh == null:
 		return
 	_debug_ray_mesh.clear_surfaces()
-	if _debug_ray_lines.size() >= 2:
-		_debug_ray_mesh.surface_begin(Mesh.PRIMITIVE_LINES, _debug_ray_material)
-		var i := 0
-		while i + 1 < _debug_ray_lines.size():
-			_debug_ray_mesh.surface_set_color(_debug_ray_colors[i])
-			_debug_ray_mesh.surface_add_vertex(_debug_ray_lines[i])
-			_debug_ray_mesh.surface_set_color(_debug_ray_colors[i + 1])
-			_debug_ray_mesh.surface_add_vertex(_debug_ray_lines[i + 1])
-			i += 2
-		_debug_ray_mesh.surface_end()
+	_render_debug_ray_surface()
+	_render_debug_path_surface()
+
+
+func _render_debug_ray_surface() -> void:
+	if _debug_ray_lines.size() < 2:
+		return
+	_debug_ray_mesh.surface_begin(Mesh.PRIMITIVE_LINES, _debug_ray_material)
+	var i := 0
+	while i + 1 < _debug_ray_lines.size():
+		_debug_ray_mesh.surface_set_color(_debug_ray_colors[i])
+		_debug_ray_mesh.surface_add_vertex(_debug_ray_lines[i])
+		_debug_ray_mesh.surface_set_color(_debug_ray_colors[i + 1])
+		_debug_ray_mesh.surface_add_vertex(_debug_ray_lines[i + 1])
+		i += 2
+	_debug_ray_mesh.surface_end()
 	_debug_ray_lines.clear()
 	_debug_ray_colors.clear()
+
+
+## The route the bot is actually following, drawn from its body through every
+## waypoint it has not reached yet.  With no route, a direct-steering bot still
+## gets a straight goal line so "no path" is visible as red, not as nothing.
+func _render_debug_path_surface() -> void:
+	if _traversal == null or not is_instance_valid(player):
+		return
+	var points: Array[Vector3] = _traversal.get_debug_path()
+	if points.size() >= 2:
+		_draw_debug_strip(points, _debug_path_color(_traversal.get_debug_path_source()))
+		return
+	var goal := _traversal.get_debug_goal()
+	if goal == Vector3.INF:
+		return
+	var direct: Array[Vector3] = []
+	direct.append(player.global_position + Vector3.UP * DEBUG_PATH_LIFT)
+	direct.append(goal + Vector3.UP * DEBUG_PATH_LIFT)
+	_draw_debug_strip(direct, DEBUG_DIRECT_PATH_COLOR)
+
+
+func _draw_debug_strip(points: Array[Vector3], color: Color) -> void:
+	if points.size() < 2:
+		return
+	var half := DEBUG_PATH_WIDTH * 0.5
+	_debug_ray_mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLES, _debug_path_material)
+	for i in range(points.size() - 1):
+		var a := points[i]
+		var b := points[i + 1]
+		var seg := Vector3(b.x - a.x, 0.0, b.z - a.z)
+		var side := Vector3(half, 0.0, 0.0)
+		if seg.length_squared() > 0.0001:
+			seg = seg.normalized()
+			side = Vector3(-seg.z, 0.0, seg.x) * half
+		var left_a := a - side
+		var right_a := a + side
+		var left_b := b - side
+		var right_b := b + side
+		_add_debug_vertex(left_a, color)
+		_add_debug_vertex(right_a, color)
+		_add_debug_vertex(left_b, color)
+		_add_debug_vertex(right_a, color)
+		_add_debug_vertex(right_b, color)
+		_add_debug_vertex(left_b, color)
+	_debug_ray_mesh.surface_end()
+
+
+func _add_debug_vertex(point: Vector3, color: Color) -> void:
+	_debug_ray_mesh.surface_set_color(color)
+	_debug_ray_mesh.surface_add_vertex(point)
+
+
+func _debug_path_color(source: int) -> Color:
+	match source:
+		Traversal.PathSource.NAV:
+			return DEBUG_NAV_PATH_COLOR
+		Traversal.PathSource.NAV_PARTIAL:
+			return DEBUG_NAV_PARTIAL_COLOR
+		Traversal.PathSource.GRAPH:
+			return DEBUG_GRAPH_PATH_COLOR
+		_:
+			return DEBUG_DIRECT_PATH_COLOR
 
 
 func _hide_debug_nodes() -> void:
@@ -5167,7 +6543,9 @@ func _has_live_own_projectile() -> bool:
 func _own_projectile_near_target(blast_radius: float) -> bool:
 	if _current_target == null or not is_instance_valid(_current_target):
 		return false
-	var target_pos := _current_target.global_position
+	var target_pos := _target_position_for_ai()
+	if target_pos == Vector3.INF:
+		return false
 	for proj in _own_projectiles(_signal_projectile_path):
 		if proj.global_position.distance_to(target_pos) <= blast_radius + SIGNAL_BLAST_MARGIN:
 			return true
@@ -5207,7 +6585,9 @@ func _bot_find_ammo_or_reload(wc: WeaponController) -> void:
 	var cur: Weapon = wc._weapons[wc.current_weapon_index]
 	var dist := INF
 	if _current_target != null and is_instance_valid(_current_target):
-		dist = player.global_position.distance_to(_current_target.global_position)
+		var target_pos := _target_position_for_ai()
+		if target_pos != Vector3.INF:
+			dist = player.global_position.distance_to(target_pos)
 	var cur_profile := _get_weapon_profile(cur)
 	var can_reload_current := not cur.has_infinite_ammo and cur.mag_current < cur.mag_size
 
@@ -5274,10 +6654,29 @@ func _reset_for_spawn() -> void:
 	_heard_timer = 0.0
 	_heard_kind = &""
 	_last_seen_velocity = Vector3.ZERO
+	_target_visible = false
+	_memory_target = null
+	_memory_target_name = ""
+	_memory_last_position = Vector3.INF
+	_memory_last_velocity = Vector3.ZERO
+	_memory_last_seen_ms = 0
+	_memory_expires_ms = 0
+	_memory_seen_time = 0.0
+	_memory_grace_until_ms = 0
+	_memory_chasing = false
+	_memory_search_started = false
+	_target_lock_until_ms = 0
 	_target_lost_timer = 0.0
 	_search_timer = 0.0
 	_search_active = false
+	_search_persistent = false
+	_persistent_heard_position = Vector3.INF
+	_persistent_heard_velocity = Vector3.ZERO
+	_persistent_heard_direction = Vector3.ZERO
+	_persistent_heard_name = ""
 	_search_origin = Vector3.INF
+	_search_deadline_ms = 0
+	_search_direction = Vector3.ZERO
 	_clear_hunt()
 	_glance_timer = 0.0
 	_strafe_force_change = false
@@ -5286,6 +6685,18 @@ func _reset_for_spawn() -> void:
 	_last_mag_for_strafe = -1
 	_combat_jump_timer = 0.0
 	_combat_crouch_timer = 0.0
+	_combat_range_state = CombatRangeState.HOLD
+	_combat_pattern = CombatPattern.WIDE
+	_combat_settle_timer = 0.0
+	_combat_probe_timer = 0.0
+	_combat_block_left = false
+	_combat_block_right = false
+	_combat_block_forward = false
+	_combat_block_backward = false
+	_combat_stall_timer = 0.0
+	_combat_stall_position = Vector3.ZERO
+	_combat_chasing = false
+	_combat_chase_stall = 0.0
 	_cover_position = Vector3.INF
 	_cover_threat_pos = Vector3.INF
 	_cover_phase = 0
@@ -5309,6 +6720,17 @@ func _reset_for_spawn() -> void:
 	_current_target = null
 	_heal_target = null
 	_last_seen_position = Vector3.INF
+	_intent = Intent.NONE
+	_intent_text = "—"
+	_objective_position = Vector3.INF
+	_objective_hold_radius = OBJECTIVE_HOLD_RADIUS
+	_objective_leash_radius = OBJECTIVE_LEASH_RADIUS
+	_objective_name = ""
+	_objective_active = false
+	_objective_owned = false
+	_objective_contested = false
+	_objective_kind = ""
+	_objective_attacking = false
 	_retarget_timer = 0.0
 	_weapon_switch_guard = 0.0
 	_chosen_fire_index = -1
@@ -5337,6 +6759,9 @@ func _reset_for_spawn() -> void:
 	_has_desired_aim = false
 	aim_error_deg = -1.0
 	_refresh_los_excludes()
+	# Seed a local wander point now; MAIN_MENU/DEATHMATCH have no objective, and
+	# leaving the target at Vector3.ZERO sent every bot toward the world origin.
+	_pick_wander_target()
 
 
 ## Weighted choice with a repeat penalty and optional bias, for the entropy the
@@ -5463,7 +6888,8 @@ class Decision extends RefCounted:
 		if wc != null and wc._is_ready():
 			var weapon: Weapon = wc._weapons[wc.current_weapon_index]
 			if bot._heal_target != null and is_instance_valid(bot._heal_target) \
-					and bot._weapon_heals_allies(weapon):
+					and bot._weapon_heals_allies(weapon) \
+					and bot._heal_is_safe():
 				return State.HEAL
 			if bot._current_target != null and is_instance_valid(bot._current_target) \
 					and _should_reload_safe(wc, weapon):
@@ -5484,9 +6910,10 @@ class Decision extends RefCounted:
 			cost = wc._get_fire_ammo_cost(weapon, bot._chosen_fire_index)
 		if weapon.mag_current >= cost:
 			return false
-		var dist := bot.player.global_position.distance_to(
-			bot._current_target.global_position
-		)
+		var target_pos := bot._target_position_for_ai()
+		if target_pos == Vector3.INF:
+			return false
+		var dist := bot.player.global_position.distance_to(target_pos)
 		return dist > MELEE_CONSIDER_RANGE * 2.0
 
 	func _enter(next: State) -> void:
@@ -5550,7 +6977,8 @@ class Decision extends RefCounted:
 					bot._trigger.release_all()
 					return
 		var weapon: Weapon = wc._weapons[wc.current_weapon_index]
-		if bot._heal_target != null and bot._weapon_heals_allies(weapon):
+		if bot._heal_target != null and bot._weapon_heals_allies(weapon) \
+				and bot._heal_is_safe():
 			bot._act_heal()
 		else:
 			bot._act_context()
@@ -6225,12 +7653,154 @@ class TravelGraph extends RefCounted:
 		return Vector3.INF
 
 
+## Per-map navmesh helpers, keyed by the runtime Map instance like TravelGraph.
+## Server-only: queries only choose which Keyboard verbs Traversal uses; they
+## never write position, velocity, or rollback state.
+class NavRoutes extends RefCounted:
+	enum State { PENDING, READY, NONE }
+
+	static var _shared: NavRoutes = null
+
+	var _map_id: int = 0
+	var _map_rid: RID
+	var _state: State = State.NONE
+	var _ready_frame: int = 0
+
+	static func shared_for(player: Player) -> NavRoutes:
+		var map := TravelGraph._find_map()
+		if map == null or player == null or not is_instance_valid(player):
+			return _shared
+		var map_id := int(map.get_instance_id())
+		var nav_rid := player.get_world_3d().navigation_map
+		if _shared == null or _shared._map_id != map_id or _shared._map_rid != nav_rid:
+			_shared = NavRoutes.new()
+			_shared._begin(map, nav_rid)
+		return _shared
+
+	func _begin(map: Node3D, nav_rid: RID) -> void:
+		_map_id = int(map.get_instance_id())
+		_map_rid = nav_rid
+		_state = State.NONE
+		for child in map.get_children():
+			var region := child as NavigationRegion3D
+			if region == null or not region.enabled:
+				continue
+			var mesh := region.navigation_mesh
+			if mesh != null and mesh.get_polygon_count() > 0:
+				# The region is in the tree, but NavigationServer3D syncs on a
+				# worker.  Two frames covers the common case; a slower sync just
+				# retries on the next repath (the two-strike rule prevents a
+				# transient miss from starting the graph bake).
+				_state = State.PENDING
+				_ready_frame = Engine.get_physics_frames() + NAV_SYNC_FRAMES
+				break
+
+	func has_mesh() -> bool:
+		return _state != State.NONE
+
+	func is_usable() -> bool:
+		if _state == State.READY:
+			return true
+		if _state != State.PENDING:
+			return false
+		if Engine.get_physics_frames() < _ready_frame:
+			return false
+		_state = State.READY
+		return true
+
+	func get_status_text() -> String:
+		match _state:
+			State.PENDING:
+				return "pending"
+			State.READY:
+				return "ready"
+			_:
+				return "none"
+
+	## Returns {} on a hard failure.  Otherwise "ok" is true for a full route;
+	## a non-ok result with "partial" true is the closest reachable approach and
+	## "gain" says whether following it actually closes distance.
+	func query(from: Vector3, to: Vector3) -> Dictionary:
+		if not is_usable():
+			return {}
+		var from_snap := NavigationServer3D.map_get_closest_point(_map_rid, from)
+		var to_snap := NavigationServer3D.map_get_closest_point(_map_rid, to)
+		var from_flat := Vector2(from.x - from_snap.x, from.z - from_snap.z).length()
+		if from_flat > NAV_START_SNAP_MAX \
+				or absf(from.y - from_snap.y) > NAV_START_SNAP_Y:
+			return {}
+		var to_flat := Vector2(to.x - to_snap.x, to.z - to_snap.z).length()
+		if to_flat > NAV_GOAL_SNAP_MAX or absf(to.y - to_snap.y) > NAV_GOAL_SNAP_Y:
+			return {}
+		var points := NavigationServer3D.map_get_path(
+			_map_rid, from_snap, to_snap, true, NAV_LAYERS
+		)
+		if points.is_empty():
+			return {}
+		var end := points[points.size() - 1]
+		var end_flat := Vector2(end.x - to_snap.x, end.z - to_snap.z).length()
+		var reached := end_flat <= NAV_ENDPOINT_TOL \
+			and absf(end.y - to_snap.y) <= NAV_ENDPOINT_TOL
+		var gain := Vector2(to.x - from.x, to.z - from.z).length() \
+			- Vector2(to.x - end.x, to.z - end.z).length()
+		return {
+			"ok": reached,
+			"partial": not reached,
+			"gain": gain,
+			"points": points,
+			"types": _infer_types(points),
+		}
+
+	func _infer_types(points: PackedVector3Array) -> Array[int]:
+		var types: Array[int] = [TravelGraph.EdgeType.WALK]
+		for i in range(1, points.size()):
+			var dy := points[i].y - points[i - 1].y
+			var dx := points[i].x - points[i - 1].x
+			var dz := points[i].z - points[i - 1].z
+			var flat := sqrt(dx * dx + dz * dz)
+			var edge := TravelGraph.EdgeType.WALK
+			if dy < -NAV_WALK_STEP:
+				edge = TravelGraph.EdgeType.DROP
+			elif dy > NAV_WALK_STEP and dy > flat:
+				# Steeper than 45 degrees: a step/ledge, not a walkable ramp.
+				if dy <= WALK_STEP_MAX:
+					edge = TravelGraph.EdgeType.STAIRS
+				elif dy <= JUMP_STEP_MAX:
+					edge = TravelGraph.EdgeType.JUMP
+				else:
+					# A corner spanning several steps: let the knee probe climb.
+					edge = TravelGraph.EdgeType.STAIRS
+			types.append(edge)
+		return types
+
+	func pick_wander_point(from: Vector3, min_dist: float, max_dist: float) -> Vector3:
+		if not is_usable():
+			return Vector3.INF
+		for _attempt in NAV_WANDER_ATTEMPTS:
+			var candidate := NavigationServer3D.map_get_random_point(
+				_map_rid, NAV_LAYERS, true)
+			var flat := Vector2(candidate.x - from.x, candidate.z - from.z).length()
+			if flat < min_dist or flat > max_dist:
+				continue
+			if absf(candidate.y - from.y) > NAV_WANDER_MAX_Y:
+				continue
+			var result := query(from, candidate)
+			if not bool(result.get("ok", false)):
+				continue
+			var points: PackedVector3Array = result.get("points", PackedVector3Array())
+			if points.size() < 2:
+				continue
+			return points[points.size() - 1]
+		return Vector3.INF
+
+
 ## Per-bot traversal state machine.  It turns a goal into W + a mouse look
 ## request, with short A/D taps and digital jump/crouch/back-up actions.  It
 ## never writes input directly; all verbs go through Keyboard/Mouse.
 class Traversal extends RefCounted:
 	enum Action { CONTINUE, TAP_LEFT, TAP_RIGHT, JUMP, CROUCH, STOP, BACK_UP, REROUTE }
 	enum Recovery { NONE, JUMP, STRAFE, BACKUP, REROUTE, TURN }
+	enum PathSource { DIRECT, GRAPH, NAV, NAV_PARTIAL }
 
 	var bot: BotController
 	var _graph: TravelGraph = null
@@ -6248,6 +7818,14 @@ class Traversal extends RefCounted:
 	var _repath_timer: float = 0.0
 	var _query_goal: Vector3 = Vector3.INF
 	var _force_repath: bool = false
+
+	var _nav: NavRoutes = null
+	var _graph_needed: bool = false
+	var _nav_retry_after_ms: int = 0
+	var _nav_fail_count: int = 0
+	var _recent_graph_ids: Array[int] = []
+	var _path_source: int = PathSource.DIRECT
+	var _chase: bool = false
 
 	var _progress_pos: Vector3 = Vector3.ZERO
 	var _progress_timer: float = 0.0
@@ -6309,6 +7887,13 @@ class Traversal extends RefCounted:
 		_recent_stuck.clear()
 		_state_text = "idle"
 		_graph = null
+		_nav = null
+		_graph_needed = false
+		_nav_retry_after_ms = 0
+		_nav_fail_count = 0
+		_recent_graph_ids.clear()
+		_path_source = PathSource.DIRECT
+		_chase = false
 		_route_bias = randf_range(-1.0, 1.0)
 		_tempo_timer = 0.0
 		_tempo_moving = true
@@ -6325,6 +7910,47 @@ class Traversal extends RefCounted:
 		_recovery_stage = 0
 		_progress_timer = 0.0
 
+	## Drop the current route without touching recovery.  Used when combat hands
+	## locomotion back to its local strafe/movement block.
+	func cancel_goal() -> void:
+		_has_goal = false
+		_goal = Vector3.INF
+		_query_goal = Vector3.INF
+		_clear_path()
+		_chase = false
+
+	## True when the current nav route could only reach the closest point and the
+	## follower has stopped there.  Callers use this to give up a chase.
+	func is_partial_approach() -> bool:
+		return _path_source == PathSource.NAV_PARTIAL \
+			and _path_index >= _path_points.size()
+
+	## Remaining route for the debug overlay, in world space and lifted clear of
+	## the floor.  Starts at the bot's body so the line visibly joins it.  A
+	## partial approach that already exhausted its waypoints still draws its last
+	## segment, because that is where the bot is parked.
+	func get_debug_path() -> Array[Vector3]:
+		var points: Array[Vector3] = []
+		if _path_points.is_empty():
+			return points
+		var start := _path_index
+		if start >= _path_points.size():
+			if _path_source != PathSource.NAV_PARTIAL:
+				return points
+			start = _path_points.size() - 1
+		var lift := Vector3.UP * DEBUG_PATH_LIFT
+		points.append(bot.player.global_position + lift)
+		for i in range(start, _path_points.size()):
+			points.append(_path_points[i] + lift)
+		return points
+
+	func get_debug_path_source() -> int:
+		return _path_source
+
+	## The active goal, or Vector3.INF when there is none.
+	func get_debug_goal() -> Vector3:
+		return _goal if _has_goal else Vector3.INF
+
 	func tick(delta: float) -> void:
 		_ray_clock += delta
 		if _ray_clock >= 1.0:
@@ -6334,13 +7960,20 @@ class Traversal extends RefCounted:
 		_repath_timer = maxf(_repath_timer - delta, 0.0)
 
 		var graph := TravelGraph.shared_for(bot.player)
-		if graph != null and graph != _graph:
+		if _nav == null or graph != _graph:
 			_graph = graph
-			_path_points.clear()
-			_path_types.clear()
-			_path_ids.clear()
-			_path_index = 0
-		if _graph != null:
+			_nav = NavRoutes.shared_for(bot.player)
+			_clear_path()
+			_query_goal = Vector3.INF
+			_nav_retry_after_ms = 0
+			_nav_fail_count = 0
+			_graph_needed = false
+
+		# A map with no baked region falls back to the graph immediately.  A map
+		# with one must not start the bake during the two-frame nav sync window.
+		if _nav == null or not _nav.has_mesh():
+			_graph_needed = true
+		if _graph != null and _graph_needed:
 			_graph.tick_bake()
 
 		if _caution > 0.4:
@@ -6367,7 +8000,7 @@ class Traversal extends RefCounted:
 		# tempo pause.  Only a held movement key that produces no displacement
 		# escalates recovery.
 		var wc: WeaponController = bot.player.weapon_controller
-		var intentional := bot._current_target != null \
+		var intentional := (bot._current_target != null and not _chase) \
 			or bot._reaction_timer > 0.0 \
 			or (wc != null and (wc._is_reloading or wc.is_switching())) \
 			or not bot._keyboard.is_moving()
@@ -6388,7 +8021,8 @@ class Traversal extends RefCounted:
 
 	func move_to(goal: Vector3, urgency: float = 0.5,
 			arrival_radius: float = TRAVEL_ARRIVE_DEFAULT,
-			caution: float = 0.0) -> void:
+			caution: float = 0.0, chase: bool = false) -> void:
+		_chase = chase
 		if goal == Vector3.INF or not bot.player.spawned:
 			_has_goal = false
 			bot._keyboard.set_move(0, 0)
@@ -6411,9 +8045,20 @@ class Traversal extends RefCounted:
 			_state_text = "arrived"
 			return
 
-		if _graph != null and _graph.is_ready() and not _direct_clear(goal):
+		# The graph may be deliberately unbaked on a navmesh map, so either
+		# route source being usable is enough to enter path following.  A route
+		# is preferred even when the straight line is clear: the navmesh is the
+		# primary source (and what the route debug overlay draws), not merely an
+		# obstacle workaround.  Short hops stay direct so combat micro-moves do
+		# not pay for a query.
+		var nav_ready := _nav != null and _nav.is_usable()
+		var graph_ready := _graph != null and _graph.is_ready()
+		if (nav_ready or graph_ready) and flat.length() > DIRECT_ROUTE_MIN:
 			_follow_path(goal)
 			return
+		# Direct movement uses no route; drop a stale path source so an old
+		# partial approach cannot be mistaken for the current state.
+		_clear_path()
 		_follow_direct(goal)
 
 	func _follow_direct(goal: Vector3) -> void:
@@ -6430,22 +8075,36 @@ class Traversal extends RefCounted:
 			look = goal
 		_request_look(look)
 		_state_text = "direct"
-		var action := _perceive(dir, lookahead, TravelGraph.EdgeType.WALK)
+		var action := _perceive(dir, lookahead)
 		if _apply_action(action):
 			return
-		if _tempo_ok():
-			bot._keyboard.set_move(1, 0)
-		else:
+		if not _tempo_ok():
 			bot._keyboard.set_move(0, 0)
+		elif _chase:
+			# Combat owns the look; drive the goal in world space so W does not
+			# follow the crosshair away from the objective.
+			bot._keyboard.set_move_world(Vector2(dir.x, dir.z))
+		else:
+			bot._keyboard.set_move(1, 0)
 
 	func _follow_path(goal: Vector3) -> void:
 		var pos := bot.player.global_position
-		var need_query := _path_points.is_empty() or _force_repath \
+		# `_repath_timer` alone gates the empty-path case: `_query_path` sets it
+		# every time, so a route discarded for direct steering is not re-queried
+		# at 20 Hz.
+		var need_query := _force_repath \
 			or _repath_timer <= 0.0 \
 			or _query_goal.distance_squared_to(goal) > 9.0
 		if need_query:
-			_query_graph(goal)
+			_query_path(goal)
 		if _path_points.is_empty():
+			_follow_direct(goal)
+			return
+		# A partial nav route must not override a clear straight line: it exists
+		# for goals the mesh cannot reach, and following it would park the bot at
+		# the gap while direct steering could walk the rest of the way.
+		if _path_source == PathSource.NAV_PARTIAL and _direct_clear(goal):
+			_clear_path()
 			_follow_direct(goal)
 			return
 
@@ -6467,6 +8126,11 @@ class Traversal extends RefCounted:
 			break
 
 		if _path_index >= _path_points.size():
+			if _path_source == PathSource.NAV_PARTIAL:
+				# Closest reachable point: stop rather than steer into a gap.
+				bot._keyboard.set_move(0, 0)
+				_state_text = "approach"
+				return
 			_follow_direct(goal)
 			return
 
@@ -6481,20 +8145,25 @@ class Traversal extends RefCounted:
 		if _path_index < _path_types.size():
 			edge = _path_types[_path_index]
 
+		# Graph DROP edges keep their old trusted behavior.  A nav path keeps the
+		# forward ledge probe: a coarse nav corner must not authorize a walk-off
+		# several metres past the descent.
+		var allow_drop := edge == TravelGraph.EdgeType.DROP \
+			and _path_source == PathSource.GRAPH
+
 		var look := waypoint
 		if flat_dist < 2.0 and _path_index + 1 < _path_points.size():
 			look = _path_points[_path_index + 1]
 		_request_look(look)
 
 		if edge == TravelGraph.EdgeType.JUMP:
-			var takeoff := WALK_SPEED * (2.0 * JUMP_VELOCITY / GRAVITY) * 0.55
-			if flat_dist <= takeoff and flat_dist > 0.35:
+			if flat_dist <= JUMP_TAKEOFF and flat_dist > 0.35:
 				bot._keyboard.jump_tap(false)
 		elif edge == TravelGraph.EdgeType.CROUCH:
 			bot._keyboard.crouch_hold(0.18)
 
 		var lookahead := _lookahead_distance()
-		var action := _perceive(dir, lookahead, edge)
+		var action := _perceive(dir, lookahead, allow_drop)
 		if _apply_action(action):
 			return
 
@@ -6511,36 +8180,69 @@ class Traversal extends RefCounted:
 			and flat_dist < CORNER_SLOW_RADIUS
 		if cautious_stop or not _tempo_ok():
 			bot._keyboard.set_move(0, 0)
+		elif _chase:
+			# Combat owns the look, so W points at the aim target rather than
+			# along the route.  Drive the waypoint in world space instead.
+			bot._keyboard.set_move_world(Vector2(dir.x, dir.z))
 		else:
 			bot._keyboard.set_move(1, 0)
 		_state_text = "path"
 
-	func _query_graph(goal: Vector3) -> void:
-		if _graph == null:
-			return
-		var avoids: Array[Vector3] = []
-		var now := float(Time.get_ticks_msec()) / 1000.0
-		for i in range(_recent_stuck.size() - 1, -1, -1):
-			var entry: Dictionary = _recent_stuck[i]
-			if float(entry.get("until", 0.0)) < now:
-				_recent_stuck.remove_at(i)
-			else:
-				avoids.append(entry.get("pos", Vector3.ZERO) as Vector3)
-		var result := _graph.query(
-			bot.player.global_position, goal, _path_ids, avoids, _route_bias
-		)
+	func _query_path(goal: Vector3) -> void:
 		_force_repath = false
 		_repath_timer = REPATH_INTERVAL
 		_query_goal = goal
-		if result.is_empty():
-			_path_points.clear()
-			_path_types.clear()
-			_path_ids.clear()
-			_path_index = 0
+		var pos := bot.player.global_position
+		var now_ms := Time.get_ticks_msec()
+		var avoids := _active_stuck_points(now_ms)
+		var nav_partial: Dictionary = {}
+
+		# Navmesh first: a full route wins.  A closest-reachable approach is
+		# held until the graph (or a later full route) can do better.
+		if _nav != null and _nav.is_usable() and now_ms >= _nav_retry_after_ms:
+			var nav_result := _nav.query(pos, goal)
+			if bool(nav_result.get("ok", false)):
+				_nav_fail_count = 0
+				_nav_retry_after_ms = 0
+				# The navmesh is carrying this bot; stop spending frame time on
+				# the graph bake.  It resumes if a later route needs it.
+				_graph_needed = false
+				_set_path(nav_result.get("points", []),
+					nav_result.get("types", []), [], PathSource.NAV)
+				return
+			if bool(nav_result.get("partial", false)) \
+					and float(nav_result.get("gain", 0.0)) >= NAV_PARTIAL_MIN_GAIN:
+				nav_partial = nav_result
+				# The mesh cannot reach the goal; let the graph try a route.
+				_graph_needed = true
+			else:
+				_nav_fail_count += 1
+				if _nav_fail_count >= 2:
+					_nav_retry_after_ms = now_ms + NAV_FAILURE_RETRY_MS
+					# Two consecutive hard failures: not a map-load sync miss.
+					_graph_needed = true
+
+		if _graph != null and _graph.is_ready():
+			var result := _graph.query(
+				pos, goal, _recent_graph_ids, avoids, _route_bias
+			)
+			if not result.is_empty():
+				_recent_graph_ids.clear()
+				for value in result.get("ids", []):
+					_recent_graph_ids.append(int(value))
+				_set_path(result.get("points", []), result.get("types", []),
+					result.get("ids", []), PathSource.GRAPH)
+				return
+
+		if not nav_partial.is_empty():
+			_set_path(nav_partial.get("points", []),
+				nav_partial.get("types", []), [], PathSource.NAV_PARTIAL)
 			return
-		var points_variant: Variant = result.get("points", [])
-		var types_variant: Variant = result.get("types", [])
-		var ids_variant: Variant = result.get("ids", [])
+
+		_clear_path()
+
+	func _set_path(points_variant: Variant, types_variant: Variant,
+			ids_variant: Variant, source: int) -> void:
 		_path_points.clear()
 		_path_types.clear()
 		_path_ids.clear()
@@ -6552,6 +8254,25 @@ class Traversal extends RefCounted:
 		for value in ids_variant:
 			_path_ids.append(int(value))
 		_path_index = 0
+		_path_source = source
+
+	func _clear_path() -> void:
+		_path_points.clear()
+		_path_types.clear()
+		_path_ids.clear()
+		_path_index = 0
+		_path_source = PathSource.DIRECT
+
+	func _active_stuck_points(now_ms: int) -> Array[Vector3]:
+		var avoids: Array[Vector3] = []
+		var now := float(now_ms) / 1000.0
+		for i in range(_recent_stuck.size() - 1, -1, -1):
+			var entry: Dictionary = _recent_stuck[i]
+			if float(entry.get("until", 0.0)) < now:
+				_recent_stuck.remove_at(i)
+			else:
+				avoids.append(entry.get("pos", Vector3.ZERO) as Vector3)
+		return avoids
 
 	func _request_look(point: Vector3) -> void:
 		# Floor points become a look at body/eye height; a player looks ahead,
@@ -6606,7 +8327,8 @@ class Traversal extends RefCounted:
 		return _ray_clear(from + Vector3.UP * PROBE_CHEST_HEIGHT,
 			to + Vector3.UP * PROBE_CHEST_HEIGHT)
 
-	func _perceive(dir: Vector3, lookahead: float, edge: int) -> int:
+	func _perceive(dir: Vector3, lookahead: float,
+			allow_drop: bool = false) -> int:
 		var pos := bot.player.global_position
 		var flat := Vector3(dir.x, 0.0, dir.z)
 		if flat.length_squared() < 0.0001:
@@ -6614,6 +8336,7 @@ class Traversal extends RefCounted:
 		flat = flat.normalized()
 		var dist := maxf(1.0, lookahead)
 
+		var on_floor := bot.player.is_on_floor()
 		var knee_hit := _ray_hit(pos + Vector3.UP * PROBE_KNEE_HEIGHT,
 			pos + Vector3.UP * PROBE_KNEE_HEIGHT + flat * dist)
 		var chest_hit := _ray_hit(pos + Vector3.UP * PROBE_CHEST_HEIGHT,
@@ -6648,6 +8371,22 @@ class Traversal extends RefCounted:
 						return Action.JUMP
 					if _headroom_clear(pos, true):
 						return Action.CROUCH
+			# A vertical knee-height face is usually a wall, but the chest and
+			# full rays above are clear, so its top is below chest height and it
+			# may be a jumpable ledge.  Keep walking toward it and jump once it
+			# is inside takeoff range; the character has no step-up, so every
+			# riser is a jump.  The landing probe only runs that close.
+			var face: Vector3 = knee_hit.position
+			var face_flat := Vector2(face.x - pos.x, face.z - pos.z).length()
+			if not on_floor:
+				# Never reroute a face that a jump in progress is clearing.
+				return Action.CONTINUE
+			if face_flat > JUMP_TAKEOFF:
+				# A low face is approached, not rerouted from lookahead range;
+				# it is classified as jumpable or wall once it is that close.
+				return Action.CONTINUE
+			if _ledge_jump_state(pos, flat, face) == 1:
+				return Action.JUMP
 			# A knee-height vertical face is still a wall.
 			var left := _side_clear(pos, flat, -1.0)
 			var right := _side_clear(pos, flat, 1.0)
@@ -6661,7 +8400,7 @@ class Traversal extends RefCounted:
 
 		# Safe drop check.  A route that intentionally drops is allowed to step
 		# off; everything else stops before the ledge.
-		if edge != TravelGraph.EdgeType.DROP:
+		if not allow_drop:
 			var ledge_from := pos + flat * LEDGE_PROBE_AHEAD + Vector3.UP * 0.2
 			var ledge_to := ledge_from + Vector3.DOWN * (LEDGE_DROP_DANGER + 0.5)
 			var ledge_hit := _ray_hit(ledge_from, ledge_to)
@@ -6681,6 +8420,36 @@ class Traversal extends RefCounted:
 				return Action.TAP_RIGHT
 			return Action.REROUTE
 		return Action.CONTINUE
+
+	## Classify a vertical knee-height face: 1 = jump now, 0 = a jumpable landing
+	## exists but is farther than takeoff, -1 = wall or pit.  The caller only
+	## invokes this inside takeoff range, so 0 is mostly a defensive result.  The
+	## chest/full rays above were already clear, so the top is below chest height;
+	## the landing probe is what rejects a low wall with a drop behind it.
+	func _ledge_jump_state(pos: Vector3, flat: Vector3, face: Vector3) -> int:
+		var face_flat := Vector2(face.x - pos.x, face.z - pos.z).length()
+		var from_y := pos.y + PROBE_CHEST_HEIGHT + 0.4
+		var to_y := pos.y - 0.5
+		for ahead in [0.55, 0.95]:
+			var ahead_f: float = ahead
+			var column: Vector3 = pos + flat * (face_flat + ahead_f)
+			var hit := _ray_hit(
+				Vector3(column.x, from_y, column.z),
+				Vector3(column.x, to_y, column.z)
+			)
+			if hit.is_empty():
+				continue
+			var normal: Vector3 = hit.normal
+			if normal.angle_to(Vector3.UP) > deg_to_rad(FLOOR_MAX_ANGLE_DEG):
+				continue
+			var landing: Vector3 = hit.position
+			var rise := landing.y - pos.y
+			if rise < 0.15 or rise > JUMP_STEP_MAX:
+				continue
+			if not _headroom_clear(landing, false):
+				continue
+			return 1 if face_flat <= JUMP_TAKEOFF else 0
+		return -1
 
 	func _apply_action(action: int) -> bool:
 		match action:
@@ -6790,6 +8559,9 @@ class Traversal extends RefCounted:
 			3:
 				_begin_recovery(Recovery.BACKUP, randf_range(0.35, 0.6))
 			4:
+				_nav_retry_after_ms = Time.get_ticks_msec() + NAV_STUCK_RETRY_MS
+				_nav_fail_count = 0
+				_graph_needed = true
 				_force_repath = true
 				_begin_recovery(Recovery.REROUTE, randf_range(0.3, 0.5))
 			_:
@@ -6854,6 +8626,14 @@ class Traversal extends RefCounted:
 			_state_text = "recovered%d" % _recovery_stage
 
 	func pick_wander_point(min_dist: float, max_dist: float) -> Vector3:
+		if _nav == null:
+			_nav = NavRoutes.shared_for(bot.player)
+		if _nav != null and _nav.has_mesh():
+			if not _nav.is_usable():
+				return Vector3.INF
+			return _nav.pick_wander_point(
+				bot.player.global_position, min_dist, max_dist)
+		_graph_needed = true
 		if _graph == null:
 			_graph = TravelGraph.shared_for(bot.player)
 		if _graph == null or not _graph.is_ready():
@@ -6867,8 +8647,13 @@ class Traversal extends RefCounted:
 		var graph_text := "-"
 		if _graph != null:
 			graph_text = _graph.get_status_text()
-		return "%s path=%d rays/s=%d %s" % [
-			_state_text, _path_points.size(), _rays_per_second, graph_text
+		var nav_text := "-"
+		if _nav != null:
+			nav_text = _nav.get_status_text()
+		var source_text: String = ["direct", "graph", "nav", "navpart"][_path_source]
+		return "%s src=%s path=%d rays/s=%d nav=%s %s" % [
+			_state_text, source_text, _path_points.size(), _rays_per_second,
+			nav_text, graph_text
 		]
 
 

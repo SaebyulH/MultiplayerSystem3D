@@ -5,8 +5,9 @@ extends Node
 const RAGDOLL_KNOCKBACK_MULTIPLIER := 20.0
 
 ## Server-side "a sound happened here" notification.  Emitters supply a hearing
-## radius; BotController connects while alive, checks distance, and only turns
-## to it when it is not already engaging an enemy.  Never networked.
+## radius; BotController connects while alive, checks distance and resolves the
+## source, then starts a SEARCH toward an enemy noise (and glances at it) unless
+## it is already engaging an enemy.  Never networked.
 signal sound_made(position: Vector3, radius: float, source_name: String, kind: StringName)
 
 var spawn_parent: Node3D
@@ -47,6 +48,13 @@ var dev_hide_world_hud := false
 
 ## Stop every bot's AI.  Server-local: bots only simulate on peer 1.
 var dev_freeze_bots := false
+
+## Draw each bot's remaining travel route as a world-space line: green for the
+## navmesh, orange for a navmesh route that could only reach a partial approach,
+## blue for the TravelGraph fallback, red for direct steering.  Server-local and
+## display-only, like the rest of the debug overlay: bots only simulate on peer 1,
+## so a client has no route to draw and never reads this flag.
+var dev_show_bot_paths := false
 
 func find_player(id: String) -> Player:
 	# `spawn_parent` is a plain reference that can be null before the world is

@@ -69,7 +69,10 @@ The automatic-weapon fire path no longer allocates per shot:
 
 ## Bot hearing (event-driven, server only)
 
-- `GameManager.sound_made` is emitted from the existing sound sites (footsteps, weapon shots, reloads) only when `multiplayer.is_server()`. Each bot connects once and does a single distance check when an event arrives — there is no per-frame audio scan. Crouched movement is suppressed in `player.gd:_update_footsteps`, so it produces neither a footstep sound nor a hearing event.
+- `GameManager.sound_made` is emitted from the existing sound sites (footsteps, weapon shots, reloads) only when `multiplayer.is_server()`. Each bot connects once and does a distance check when an event arrives — there is no per-frame audio scan. Crouched movement is suppressed in `player.gd:_update_footsteps`, so it produces neither a footstep sound nor a hearing event.
+- **An accepted enemy sound now starts a SEARCH at the sound position**, not just a glance. `_on_sound_made` resolves the emitter with one `GameManager.find_player` lookup, rejects self/teammates/despawned/dev-hidden sources, and ignores a repeat within `HEARING_NEAREST_MARGIN` of the current hunt origin. That is one O(players) name lookup per accepted sound per bot, at footstep/shot cadence, not per frame. Emitter radii: footsteps 12 m, gunshots 35 m, reloads 12 m.
+- **The last heard enemy position is remembered forever while no objective is nearby.** Every accepted enemy sound updates `_persistent_heard_position`/velocity/name, even while already fighting. When neither the bot nor the sound is within `OBJECTIVE_NEARBY_RADIUS` (20 m) of an active objective, the sound starts an **un-deadlined** search (`_search_persistent`); it loops the fan until a target is found, a new sound replaces it, or an objective comes nearby. The memory survives target acquisition and objective detours and is only reset by respawn or a newer sound. Near an objective the endless search ends and objective intent takes over. This is O(1) memory and state-entry work; the search itself uses the existing throttled fan.
+- The approach and hunt timers are extended by `distance / WALK_SPEED`, so a 35 m gunshot remains reachable; a bot already in COMBAT/HEAL/COVER/RELOAD/FLEE keeps that priority. The hunt ring's floor check is relative to the sound's origin Y (not the bot's), so a sound on another floor is not rejected wholesale.
 
 ## Bot aim, lead and arc validation (Stage 6)
 
@@ -95,6 +98,39 @@ Added 2026-10-25 with the `survival` trait, `FLEE`, and the aggression-scaled hu
 - All of the above is `BotController`-local and server-only. Nothing new is replicated and there is no RPC.
 
 Watch for a frame spike when many bots lose a target in the same tick (concurrent hunt seeds) or drop below the flee threshold together (concurrent flee searches). Both are state-entry-only and capped; see `05-known-issues.md` #108 if it regresses with 12+ bots.
+
+## Bot target memory and combat movement (server only)
+
+Added 2026-10-27. A lost target is no longer erased on the first failed LOS tick.
+
+- **Memory is O(1) per bot.** The last visible enemy's identity, position and smoothed velocity are frozen on the visible→unseen edge; the normal tick keeps one LOS ray for a visible target and does no new scanning while the target is remembered. The 4 Hz full scan remains the only group scan; `_targets_valid` was folded into the identity/visibility split so an unseen target cannot force an O(N) scan at 20 Hz.
+- **Grace and memory are wall-clock**, not state-tick counters: `TARGET_LOST_GRACE` = 0.75 s before the chase starts, identity/recognition memory 5–8 s style-scaled. A reacquisition inside the 140° recall cone skips recognition. A 4 Hz scan cannot restart the same chase (`_memory_search_started`).
+- **Predicted pursuit** leads the frozen last-known position by at most 2 s of velocity, capped at 20 m, and ground-clamps the point once. A directional fan of 3 radii × 5 angles (≈30 floor/headroom rays) replaces the old lead+ring seed; it is state-entry-only and still not route-validated (#111). The sweep's per-point timeout is distance-scaled (2–8 s) and a partial nav approach is abandoned after 0.5 s instead of burning the full timeout.
+- **Combat patterns are chosen at the strafe boundary, not per tick.** WIDE/JIGGLE/HOLD come from the previously unused `Style.peek_style_weights`; HOLD stops movement, settles for 0.08–0.16 s, then fires. The range deadband is 2.5 m / 22% with 1.2 m hysteresis, so a bot in range strafes instead of orbiting. Random combat jumps/crouches were removed.
+- **Combat safety is cached**: four direction probes every 0.25 s (steer + floor) replace the old lateral-only check; a 0.6 s local stall check changes direction instead of leaning on geometry. Tactical cover reuses the existing cover/peek state, gated by a large recent hit and a cooldown; no per-tick cover search.
+- **Held movement keys** are released on the combat/heal/reload/cover early returns via `_release_movement()`, closing the main #118 movement leak.
+
+## Bot objective intent (server only)
+
+Added 2026-10-27. Bots now have an explicit "what should I be doing right now?" model instead of treating the objective as the idle fallback.
+
+- **Priority order:** survival (`FLEE`/`HEAL`/`COVER`/`RELOAD`/`UNSTUCK`) → hold/capture/defend the live objective → engage a visible enemy → search near the objective → wander only when the mode has no objective. `_update_intent()` runs at 20 Hz after Decision, reads `GameModeComponent` state (but adds no raycasts), and caches the objective position/radius/leash for the act layer.
+- **Objective anchoring:** outside the hold radius, `_act_combat` routes to the objective with `Traversal` **while still aiming/firing** at the visible target (world-space movement, because COMBAT owns the look). It cancels a chase whose target leaves the objective leash (12 m) and holds the angle instead. `_act_search` returns to the objective when both the bot and the search lead are outside the leash. Reaching the point calls `_act_hold_objective()` instead of `_act_wander()`, so a bot no longer captures/defends for a moment and then wanders off.
+- **Holds are bot-side radii:** a control point's capture volume is a brush with no exposed radius, so the hold radius is `OBJECTIVE_HOLD_RADIUS` (3 m); a payload uses `push_radius - 0.75` so a hold is inside the real push zone. The leash is 12 m. Tune the constants per project if a map's trigger brush is much smaller.
+- **Debug cost:** the intent is O(objective points) at 20 Hz and the label refreshes at the existing 10 Hz overlay cadence. `GameManager.dev_show_bot_paths` now creates the bot label for the intent text; `debug_draw` adds the same line to the full overlay. No per-frame raycasts.
+
+## Bot pathfinding (navmesh, server only)
+
+Added 2026-10-26. `Traversal` prefers the map's baked `NavigationRegion3D`; the old `TravelGraph` bake is now a fallback.
+
+- **Queries are throttled, not per tick.** `_query_path` runs from `move_to` at the 20 Hz decision rate, and `_follow_path` re-queries only when the path is empty, `_force_repath` is set, the 0.55 s `REPATH_INTERVAL` expires, or the goal moves >3 m. For 20 bots that is roughly 36 `NavigationServer3D.map_get_path` calls/s, each preceded by two `map_get_closest_point` calls. Wander validation adds up to 8 random-point + path queries per target pick, on arrival only.
+- **A route is preferred over direct steering above `DIRECT_ROUTE_MIN` (2.5 m), even with clear line of sight**, so the navmesh is the primary source rather than an obstacle-only fallback (that is also what makes the route debug lines common). The exception is a **partial** nav route: when the direct line is clear, `_follow_path` discards the partial and steers directly, so a fragmented mesh cannot park a bot at a gap it could simply walk across. Short hops stay direct and cost no query.
+- **Low-ledge probing adds nothing on open floor.** `_perceive` already casts the knee/chest/full rays. A **vertical** knee face with chest/full clear is approached by walking; within `JUMP_TAKEOFF` (1.68 m), `_ledge_jump_state` casts two short downward landing rays and, on a candidate, one capsule `intersect_shape` for headroom. Farther out there is no extra probe. A successful check returns `JUMP` with W still held, not a reroute.
+- **The `TravelGraph` bake is suppressed on navmesh maps.** `TravelGraph.shared_for` still creates the cheap cache object, but `tick_bake()` runs only when the map has no baked region, a nav query hard-failed, or stage-4 stuck forced the fallback. On `death_castle` this removes the 1.5 ms/frame, multi-second bake entirely.
+- **Nav queries never touch the rollback tick or the network.** All of it is inside the server-only `BotController`; results reach clients as the existing rollback input broadcast.
+- **Map-load timing:** `NavRoutes` treats a freshly added map's region as `PENDING` for two physics frames, then queries. The map itself can take longer to sync (the headless probe measured ~0.5 s for `death_castle`); a single hard failure only retries on the next 0.55 s repath and does **not** start the graph bake. Two consecutive failures set a 1.2 s nav retry cooldown and start the graph fallback. The normal 1 s respawn after a map swap covers the window.
+- **Route drawing is opt-in and cheap.** With a bot's `debug_draw` on, or the dev menu's **Show nav paths** for every bot, `Traversal.get_debug_path()` copies only the remaining waypoints into one small `Array[Vector3]` and the bot rebuilds one `ImmediateMesh` ribbon (0.18 m wide, unshaded, no depth test) at the existing 10 Hz overlay refresh. No physics or nav queries are added; with both flags off the path code never runs. Server-local, so no client cost.
+- **Fidelity settings trade bake time and polygon count for outline accuracy.** On the lobby, the coarse defaults bake 563 polygons / 649 vertices; the `edge_max_error` / `detail_sample_*` preset in `navmesh_generator.gd` bakes 2793 / 2173 in ~0.4 s. A 0.125 m cell bake gives 6408 / 4544 in ~4 s and requires the navigation-map cell size to match project-wide. Query cost stays on the existing 20 Hz throttle; these are one-off bake/memory costs, not per-frame work.
 
 ## Charged-weapon draw (per-frame, all peers) — negligible
 

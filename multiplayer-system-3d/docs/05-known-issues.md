@@ -1238,12 +1238,12 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 - **Why:** a stationary heal at 10 % under fire is usually death; creating space first is the human choice. This reverses the older "self-heal outranks cover" ordering only for the critical band — HEAL still outranks COVER at 34-50 %.
 - **Alternative:** gate FLEE on "no self-heal weapon" or require low recent pressure before a standstill heal, if medics read as too passive. Whichever is chosen, keep the ordering in one place (`_desired_state`).
 
-### 111. Hunt sweep points are ray-validated, not graph-validated
+### 111. Hunt sweep points are ray-validated, not route-validated (mitigated)
 
-- **Files:** `player/bot_controller.gd` (`_ground_point`, `_seed_hunt_points`, `_act_search`)
-- **Symptom:** a sweep point can be standable in isolation but unreachable from the bot (across a gap, behind a wall, on another floor). The bot spends up to `HUNT_POINT_TIMEOUT` (3.5 s) before advancing. Separately, if the exact last-seen point is unreachable, the sweep is seeded from where the bot got to after `HUNT_APPROACH_TIMEOUT` (4 s) rather than never starting.
-- **Why:** `_ground_point` checks only a floor ray and a headroom ray; it deliberately does not require LOS back to the hunt origin (that would exclude the far side of the pillar). `Traversal.move_to` can path, but a blocked point still consumes the dwell timeout.
-- **Suggested fix:** when `TravelGraph` is ready, reject points with no A* route before appending them, or lower the timeout. Keep the no-LOS rule — it is what makes the sweep clear cover.
+- **Files:** `player/bot_controller.gd` (`_ground_point`, `_seed_hunt_points`, `_act_search`, `NavRoutes.query`)
+- **Symptom:** a sweep point can be standable in isolation but unreachable from the bot (across a gap, behind a wall, on another floor). A navmesh partial path is followed only to the closest reachable point (`PathSource.NAV_PARTIAL`), and since 2026-10-27 a partial approach is abandoned after `HUNT_PARTIAL_ABANDON` (0.5 s) and each point's timeout is distance-scaled (`2–8 s`) instead of a fixed 3.5 s. On an unbaked map the `TravelGraph` fallback still applies.
+- **Why:** `_ground_point` checks only a floor ray and a headroom ray; it deliberately does not require LOS back to the hunt origin (that would exclude the far side of the pillar). The directional fan (3 radii × 5 angles) is seeded before any route query, so an unreachable candidate still consumes one timeout (now bounded).
+- **Suggested fix:** when the navmesh or graph is ready, query the route to each candidate before appending it and drop points with no full route; keep the no-LOS rule — it is what makes the sweep clear cover.
 
 ### 112. `_accept_self_damage` estimates splash from the full authored value
 
@@ -1275,6 +1275,50 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 - **Symptom:** on the host a bot has its character and weapons; on a connected client the same bot renders as the default mannequin with no weapon models, and spectating it shows an empty weapon list. The camera, health, team and movement are correct.
 - **Why:** bot loadouts are applied only on peer 1 (`controller.apply_loadout` + `set_character`), and the `_loadout_*_path` fields that `rpc_sync_full_state` sends are only ever set for human loadouts (`world/loadout_menu.gd:1089`) and randomized human respawns (`player/player.gd:944`). A late-joining peer's `_sync_existing_players_to_peer` therefore sends empty paths for bots, and a bot spawned while a peer is connected is never synced at all.
 - **Suggested fix:** store the applied paths on the bot in `_apply_bot_weapons`/`_apply_bot_loadout_with` and broadcast a loadout sync (or reuse `rpc_sync_full_state` after the apply) on every peer. Do not solve it by putting `PackedScene`/weapon objects in a synchronizer.
+
+### 117. A baked navmesh is a build artifact, and some geometry cannot be represented
+
+- **Files:** `maps/navmesh_generator.gd` (`AGENT_MAX_CLIMB`), `maps/death_castle.tscn` (`NavigationMesh`), `player/bot_controller.gd` (`NavRoutes`)
+- **Symptom:** after changing an agent/cell setting in `navmesh_generator.gd`, pressing **Setup Navigation** and saving does **not** change the shipped mesh until the region is re-baked; bots keep using the old vertices. Separately, on a map with a payload cart or `mover` door, the `AnimatableBody3D` collider is baked at its **authored** position (static-collider mode accepts `StaticBody3D` subclasses), unlike the old `TravelGraph`, which excluded dynamic bodies by RID. Crouch-only passages and jump-gap shortcuts are absent because the mesh uses standing height and has no links. A ledge taller than `AGENT_MAX_CLIMB` (1.0 m) is not connected either, even though it may still be jumpable below `JUMP_STEP_MAX`; Recast can only link what the bake is told to connect.
+- **Why:** `NavmeshGenerator.setup()` only writes `NavigationMesh` bake inputs; the resource is baked by `NavigationRegion3D.bake_navigation_mesh()`. Dynamic props are not marked differently from static map collision for the parser, and a single agent-height mesh cannot express crouch or jump routes.
+- **Suggested fix:** always re-bake and save after changing a setting; the shipped maps must be re-baked after the 1.0 m change. If a moving collider matters, exclude it from the nav source group or add a `NavigationObstacle3D`. `_ledge_jump_state` handles vertical faces up to `JUMP_STEP_MAX` (1.1 m) once the mesh routes to them; a jumpable **gap** should be left to the `TravelGraph` fallback (nav partial → graph bake), because the follower has no generic "execute a `NavigationLink3D` jump" path. Author a ramp/stairs for anything wider than the character's jump.
+
+### 118. Remaining bot path/state handoff gaps
+
+- **Files:** `player/bot_controller.gd` (`_follow_path`, `_act_search`, `_act_flee`, `_act_retreat_cover`, `_act_combat`, `_trigger_stuck`, `_react_to_damage`)
+- **Symptom:** a `PathSource.NAV_PARTIAL` route stops at the closest reachable point. COMBAT now gives up after `COMBAT_CHASE_STALL_TIME` (1.5 s), but FLEE, RETREAT_COVER and HEAL keep calling the same partial route until their state timer expires, so the bot can stand at that point for 2-10 s. Several early returns (combat switch/reload, reload-safe, cover, heal-state) still leave the previous movement keys held, so the bot can keep walking unguided; travel/wander and the unready `_act()` now zero them. Nav path queries still ignore `_recent_stuck` (only stage 4 demotes nav for 5 s), and hunt sweep points use a fixed 3.5 s timeout that can skip distant ones (the approach to a heard sound is now distance-scaled).
+- **Why:** `Traversal` has no "partial approach ended" signal for callers, `Keyboard` latches keys until changed, and `NavigationServer3D.map_get_path` has no per-query avoidance penalty.
+- **Suggested fix:** expose a partial-approach/failure flag and repick flee/cover/heal destinations on it; perturb the nav goal or briefly demote nav on a stuck event.
+- **Fixed 2026-10-27:** the hunt deadline is wall-clock (`_search_deadline_ms`, ticked at the top of `_think`, so it expires through HEAL/COVER/FLEE); hunt points are distance-timed and partial approaches abandoned after 0.5 s; the main combat/heal/reload/cover early returns release movement keys via `_release_movement()`; the lost target is remembered/predicted rather than erased.
+- **Still open:** FLEE/RETREAT_COVER/HEAL can still sit on a partial route until their state timers expire (COMBAT has its own stall check), unattributed fall damage that carries a direction can still start a SEARCH, and `ManeuverRunner`, `_act_pursue_last_seen` and `_reload_while_travelling` remain dead code. The combat peek/cover behavior reuses the existing `_act_retreat_cover` state rather than the dormant runner.
+
+### 119. A freed bot target crashed `BotController._think`
+
+- **Files:** `player/bot_controller.gd` (`_think`, `_physics_process`)
+- **Symptom:** removing a bot could throw `Invalid type in function '_update_target_velocity_estimate' ... The Object-derived class of argument 1 (previously freed) is not a subclass of the expected argument class` from every bot that still had the removed bot as `_current_target`.
+- **Why:** `_think` called `_update_target_velocity_estimate(_current_target, now)` unconditionally. A freed object compares `== null`, but it still fails the typed `Player` parameter check before the function's own `is_instance_valid` guard can run. The scan's stickiness comparison could also keep a freed `prev_target`.
+- **Fix (2026-10-26):** clear invalid `_current_target`/`_heal_target` at the top of `_physics_process` and `_think`, guard the velocity call and the `_estimated_velocity_for` access, and sanitize `prev_target` before the scan's stickiness comparison. Verified headlessly: free one bot while another targets it, call `_think()` directly — no error, target becomes null.
+
+### 120. Target memory is deliberately single-target and predictive
+
+- **Files:** `player/bot_controller.gd` (`_think`, `_mark_target_unseen`, `_predicted_last_known`, `_begin_memory_search`, `_target_position_for_ai`)
+- **Symptom / limits:** only the current target has identity/recognition memory. Acquiring another visible enemy overwrites it, so a bot cannot resume a chase after switching. A predicted pursuit point is a 2 s frozen-velocity lead (capped at 20 m); if the runner turns sharply, the directional fan (±55°) is the fallback, not true tracking. Reacquisition outside the 140° recall cone falls back to the normal 90° FOV and recognition, and an invisible/dev-hidden target is forgotten immediately.
+- **Why:** this is the intended scope of the 2026-10-27 pass — enough memory to stop the one-tick target drop and make a runner pursuit plausible, without wallhack tracking or per-enemy memory. While unseen, all reads use the frozen `_memory_last_position`; `_target_position_for_ai()`/`_target_look_point_for_ai()` are the audited entry points. The hidden live body is never read.
+- **Suggested future work:** a small per-enemy last-seen table if multi-target re-engagement matters; a route-validated fan (#111); and consider the dormant `ManeuverRunner` if combat peeks need scripted timelines beyond the existing cover state.
+
+### 121. The bot objective hold radius is a bot-side approximation
+
+- **Files:** `player/bot_controller.gd` (`OBJECTIVE_HOLD_RADIUS`, `_control_point_info`, `_payload_info`, `_act_hold_objective`, `_act_combat`)
+- **Symptom:** a control point's capture volume is a TrenchBroom `trigger` brush with no exposed radius, so `OBJECTIVE_HOLD_RADIUS` (3 m) is the bot's guess at "touching the point". If a mapper draws a much smaller capture brush, a bot can hold/capture from just outside it; if the brush is much larger, bots cluster at the centre. A payload is accurate: its hold radius is `push_radius - 0.75`, so a hold is inside the real push zone.
+- **Why:** the point scene deliberately has no `Area3D` or radius export; the trigger brush is authored in the map and linked at build time. The bot cannot cheaply read the brush's shape through `BrushEntityUtil`.
+- **Suggested fix:** add a `capture_radius` export to `ControlPoint` (mirroring `PayloadNode.push_radius`) and use it as the hold radius; or compute the linked trigger's AABB once. Until then, tune `OBJECTIVE_HOLD_RADIUS` for the project's maps. The 12 m `OBJECTIVE_LEASH_RADIUS` is also a deliberate bot-side choice: a visible enemy farther than that does not pull a bot off the point.
+
+### 122. Persistent heard memory is intentionally un-timed
+
+- **Files:** `player/bot_controller.gd` (`_on_sound_made`, `_persistent_heard_*`, `_search_persistent`, `_tick_target_memory`, `_objective_is_near`)
+- **Symptom / limit:** after hearing an enemy, a bot with no objective nearby keeps `_persistent_heard_position` forever and an un-deadlined `HUNT` search loops the fan until it finds a target, a new sound replaces the lead, or an active objective comes within `OBJECTIVE_NEARBY_RADIUS` (20 m) of the bot. In objective modes, while farther than that from the point, an old sound can therefore outrank traveling to the objective. The memory is not cleared by time, only by respawn or a newer accepted sound.
+- **Why:** this is the requested "remember where they last heard the enemy forever as long as there is no objective nearby". The alternative — timing it out — is what made bots forget sounds in the lobby. The 20 m nearby radius is the handoff point back to objective priority.
+- **Suggested tuning:** raise/lower `OBJECTIVE_NEARBY_RADIUS` if bots leave objectives too readily (raise) or ignore audible fights near points (lower). The memory is per-life; do not persist it across respawn unless that becomes desirable.
 
 ## Not bugs, but worth knowing
 

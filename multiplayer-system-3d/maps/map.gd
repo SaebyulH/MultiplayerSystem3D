@@ -39,6 +39,15 @@ var sci_spawn_locations: Array[Marker3D] = []
 ## and [PayloadTrackBuilder.bake].
 @export_tool_button("Bake Payload Route & Track") var bake_payload_route: Callable = bake_payload_route_and_track
 
+## Standardises this map for navigation-mesh baking: adds the map root to
+## [constant NavmeshGenerator.NAV_GROUP], creates or reuses a direct-child
+## [NavigationRegion3D], and applies the agent/cell settings from [NavmeshGenerator].
+##
+## Safe to press repeatedly — it never adds a second region.  It does not bake by default; use
+## the region's "Bake NavigationMesh" inspector button, or set
+## [constant NavmeshGenerator.BAKE_AFTER_SETUP].
+@export_tool_button("Setup Navigation") var setup_navigation: Callable = _setup_navigation
+
 ## The painted-toon world preset every surface is re-shaded through, and whether this map
 ## is currently wearing it.  [b]These two are the only thing the swap persists.[/b]  Every
 ## per-surface [ShaderMaterial] is derived from the preset when the map loads, because
@@ -195,6 +204,15 @@ func _find_func_godot_map() -> FuncGodotMap:
 		if node is FuncGodotMap:
 			return node as FuncGodotMap
 	return null
+
+
+# ─────────────────────────────────────────────
+#  NAVIGATION
+# ─────────────────────────────────────────────
+
+## Backing the "Setup Navigation" button — see [member setup_navigation].
+func _setup_navigation() -> void:
+	NavmeshGenerator.setup(self)
 
 
 # ─────────────────────────────────────────────
