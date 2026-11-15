@@ -463,6 +463,15 @@ func boot_listen_server(port: int = SERVER_PORT, map_path: String = LOBBY_MAP_PA
 	LanDiscovery.start_announcing(chosen)
 	if OS.is_debug_build():
 		print("[server] listen ready on UDP %d map=%s" % [chosen, map_path])
+	# `host_local_match()` showed the loading screen before tearing down the
+	# shell.  The startup `--listen-server` route is hidden by `main.gd`, but the
+	# in-lobby Host button has no other caller to hide it, so it stayed up.
+	LoadingScreen.report(1.0, "")
+	await get_tree().process_frame
+	await get_tree().process_frame
+	LoadingScreen.hide_screen()
+	if OS.is_debug_build():
+		print("[server] loading screen hidden")
 
 
 ## Start a listen server from the local 3D shell, replacing the offline peer.

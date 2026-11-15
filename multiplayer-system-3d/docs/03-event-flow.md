@@ -202,6 +202,12 @@ A busy port is not fatal: the listen server tries the next port in the 16-port
 range and advertises the one it got. Only `--server` exits on a bind failure.
 No loading screen appears before Start.
 
+**`boot_listen_server()` hides the loading screen after the world load.**
+`host_local_match()` shows it before tearing down the shell, and the startup
+`--listen-server` route is separately hidden by `main.gd`; without the hide in
+`boot_listen_server` the in-lobby Host button leaves the screen up forever
+(logs still show `listen ready`, so headless tests do not notice).
+
 Invariants:
 
 - **Free the world before the peer is replaced/null.** The old shell's netfox
