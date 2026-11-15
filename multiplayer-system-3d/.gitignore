@@ -5,6 +5,9 @@
 # Reference project dropped in for the netcode study (has its own .git)
 astrofar/
 
+# Export output
+build/
+
 # OS metadata
 .DS_Store
 

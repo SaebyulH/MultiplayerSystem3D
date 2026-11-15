@@ -39,6 +39,14 @@ There is no build step, test suite, or lint command. The project is opened and r
 
 A one-off scene can be run directly by passing its path as the final argument — `godot_console.exe --path . res://some/scene.tscn` — which is how a standalone verification harness is driven (the process exit code is that script's `get_tree().quit(code)`).
 
+Cross-process netcode smoke (manifest, shell, host into a map, join + fire, LAN discovery, resume):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tests/net/run_net_smoke.ps1
+```
+
+Linux dedicated export + systemd: `server/build_linux.sh` and `server/README.md`.
+
 On boot the game loads the lobby map on an **offline peer** (`OfflineMultiplayerPeer`, unique id 1). It binds no port and starts no server. The `HostServer` zone converts the process into a listen server on port `8080` (`NetworkManager.host_local_match()` → `boot_listen_server()`); `JoinParty` dials another host with `join_party(..., use_match_session=true)`. The old 2D menu (`ui/main_menu.tscn`) still exists on disk but is **bypassed** — `world/main.tscn` no longer instances it.
 
 The old auto-host P2P behaviour is behind `--legacy-p2p`. The no-service host flow calls `_remove_game_scene()` (queue_free only — detaching first breaks netfox's deferred `process_settings`, #132) and keeps the offline peer alive until `create_server()` replaces it.

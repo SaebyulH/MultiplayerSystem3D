@@ -1,14 +1,18 @@
 # Dedicated-server migration
 
-> **Status: P4 core verified.** The default boot is now the local 3D shell with
-> no external service: HostServer starts an in-process listen server and
-> JoinParty joins by IP/code using the match-session handshake. `--legacy-p2p`
-> keeps the old auto-host path. Match sessions have stable player IDs, a
-> handshake, node-readiness gating, locally loaded maps with hash verification,
-> per-player prediction, reconnect/resume, heartbeat/reaper, and grace expiry.
-> The C `lobbyd` is optional (`--lobby=...`) and drives the match browser. The
-> chunked join state, the map-ready barrier, and `lobbyd`'s control channel are
-> still pending (#126/#127/#128/#129/#130/#131).
+> **Status: P5 complete; P6 verification/deploy assets in place.** The default
+> boot is the local 3D shell with no external service: HostServer opens the host
+> menu and boots an in-process listen server into the chosen map; JoinParty has
+> LAN discovery and Direct IP tabs, both using the match-session handshake.
+> `--legacy-p2p` keeps the old auto-host path. Match sessions have stable player
+> IDs, local map loading with SHA-256, prediction, reconnect/resume, single-use
+> resume tokens, heartbeat/reaper, host migration, RPC authority/owner checks,
+> rate limits, and allowlists. The C `lobbyd` is optional (`--lobby=...`).
+>
+> Remaining operational work: the chunked join state / spawn ACK (#127), the
+> map-ready barrier (#126), lobbyd's control channel and child re-adoption
+> (#129), LAN announce signing (#133 — accepted risk; the join is still
+> handshake-validated), and the 10-match/64-player benchmark + soak (below).
 
 The netcode is being moved from "every player hosts their own server, peer 1 is
 host + party leader" to **dedicated match servers behind a central lobby**. The
@@ -319,6 +323,25 @@ empty-host room becomes host in `hello`.
 
 Still open: LAN announce signing (#133), server-side body-rotation clamping,
 and lobbyd's control channel (#129).
+
+## P6 verification and deployment assets
+
+```sh
+# Cross-process smoke: manifest, shell boot, host into castle, join + fire,
+# LAN discovery, forced-drop resume.  Launches the Windows Godot binary.
+powershell -ExecutionPolicy Bypass -File tests/net/run_net_smoke.ps1
+
+# Linux dedicated export (needs the Godot 4.7 Linux export templates)
+GODOT=/path/to/godot bash server/build_linux.sh
+
+# Deployment: build/install/systemd/env
+cat server/README.md
+```
+
+The smoke test passes on the Windows dev machine.  **Not yet run:** the
+10-match / 64-player CPU/RSS benchmark, the UDP loss/latency matrix, and the
+60-minute soak — they need the target VPS and a separate load generator.  The
+benchmark pass/fail targets are in the migration plan and the P0 notes.
 
 ## Migration phases
 

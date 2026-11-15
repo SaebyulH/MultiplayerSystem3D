@@ -1,0 +1,28 @@
+[Unit]
+Description=MultiplayerSystem3D dedicated match server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ms3d
+Group=ms3d
+WorkingDirectory=/opt/ms3d/server
+EnvironmentFile=/etc/ms3d/server.env
+# MATCH_SECRET is read from the environment, never argv.
+ExecStart=/opt/ms3d/server/multiplayer-system-3d-server --headless -- --server --port=${PORT} --match-id=${MATCH_ID} --no-discovery
+Restart=on-failure
+RestartSec=2
+LimitNOFILE=65536
+# One headless Godot match process; keep the envelope below the host limit.
+MemoryHigh=900M
+MemoryMax=1G
+TasksMax=256
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/ms3d
+
+[Install]
+WantedBy=multi-user.target

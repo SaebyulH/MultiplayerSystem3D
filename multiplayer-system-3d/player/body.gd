@@ -23,6 +23,20 @@ func _ready() -> void:
 		#$RighLeg.hide()
 		#$Recoil/Head/RightEye.hide()
 		#$Recoil/Head/LeftEye.hide()
+## Server-side sanitisation of a client-replicated aim pose.  The owner clamps
+## its own pitch in `_apply_mouse_look`, but a modified client can send any
+## rotation through the Body synchronizer; clamp it before the server raycast
+## uses the camera basis.
+func _process(_delta: float) -> void:
+	if _player.is_bot:
+		return
+	if not multiplayer.is_server() or is_multiplayer_authority():
+		return
+	rotation.y = wrapf(rotation.y, -PI, PI)
+	if head != null:
+		head.rotation.x = clampf(head.rotation.x, -PI / 2.0, PI / 2.0)
+
+
 func _input(event: InputEvent) -> void:
 	# Bots are server-authoritative, so on the host `is_multiplayer_authority()`
 	# is TRUE for a bot's Body.  Without this guard, host mouse motion rotated
