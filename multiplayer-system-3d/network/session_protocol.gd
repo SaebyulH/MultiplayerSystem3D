@@ -53,6 +53,9 @@ const DEV_CONTROL_PORT: int = 9070
 ## is still open (frozen tab / hung process), modelled on the astrofar reaper.
 const HEARTBEAT_INTERVAL: float = 0.5
 const PEER_TIMEOUT: float = 10.0
+## A client builds its world before sending `hello`, which can take several
+## seconds on a cold/slow machine.  Do not reap it before that.
+const PREAUTH_TIMEOUT_SECONDS: float = 20.0
 const SUPERVISOR_HEARTBEAT_INTERVAL: float = 1.0
 const SUPERVISOR_HEARTBEAT_TIMEOUT: float = 10.0
 

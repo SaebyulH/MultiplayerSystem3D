@@ -15,6 +15,23 @@ The project deliberately splits simulation responsibility. Getting this wrong (e
 
 ---
 
+### Validation and RPC authority (P5)
+
+- **Server-only mutations are `@rpc("authority", ...)`.** Do not use
+  `any_peer` + an `if multiplayer.is_server()` body check: a client can invoke
+  the RPC on the server, and the body then runs there.
+- **Owner-initiated messages use `Player.is_rpc_sender_allowed(sender)`**, which
+  accepts the local/server call (0), the authority peer (1), or the player's
+  owning peer.  `owner_peer_id` is replicated by the root
+  `MultiplayerSynchronizer`; a client must bind its own player unconditionally
+  (the replicated value can already match before input authority is fixed).
+- **Server-originated visuals use `authority`**; a node whose authority is the
+  owning peer (damage numbers) instead checks that the sender is the server.
+- **Rate limits and allowlists:** fire intents 240/s, casts 60/s, loadout paths
+  under `res://weapon|player/characters|player/player_classes`, start maps must
+  be a `MapData.map_scene_path`.  Resume tokens are single-use (nonce), pre-auth
+  connections are reaped after 20 s, dev cheats are debug-only.
+
 ## 1. The split
 
 | Concern | Mechanism | Where |

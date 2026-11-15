@@ -105,39 +105,47 @@ static func issue_resume(match_id: String, player_id: int) -> String:
 	return payload_b64 + "." + _b64url_encode(signature)
 
 
-## Player id encoded in a valid resume token, or 0.  With a secret configured the
-## signature must verify; without one, the payload is trusted (dev only).
-static func resume_player_id(token: String, expected_match_id: String) -> int:
+## Validated resume payload: {player_id, nonce} or {}.
+## With a secret configured the signature must verify; without one, the payload
+## is trusted (dev only).
+static func resume_data(token: String, expected_match_id: String) -> Dictionary:
 	var parts := token.split(".")
 	if parts.size() != 2:
-		return 0
+		return {}
 	var payload_b64 := parts[0]
 	var secret := configured_secret()
 	if secret != "":
 		var signature := _b64url_decode(parts[1])
 		var expected := _hmac(secret, payload_b64)
 		if expected.is_empty() or expected.size() != signature.size():
-			return 0
+			return {}
 		var diff := 0
 		for i in expected.size():
 			diff |= expected[i] ^ signature[i]
 		if diff != 0:
-			return 0
+			return {}
 	var payload_bytes := _b64url_decode(payload_b64)
 	if payload_bytes.is_empty():
-		return 0
+		return {}
 	var parsed: Variant = JSON.parse_string(payload_bytes.get_string_from_utf8())
 	if not parsed is Dictionary:
-		return 0
+		return {}
 	var payload := parsed as Dictionary
 	if int(payload.get("v", 0)) != 2 or str(payload.get("t", "")) != "resume":
-		return 0
+		return {}
 	if int(payload.get("e", 0)) < int(Time.get_unix_time_from_system()):
-		return 0
+		return {}
 	if expected_match_id != "":
 		if not expected_match_id.is_valid_int() or int(payload.get("m", -1)) != int(expected_match_id):
-			return 0
-	return int(payload.get("p", 0))
+			return {}
+	return {
+		"player_id": int(payload.get("p", 0)),
+		"nonce": str(payload.get("n", "")),
+	}
+
+
+static func resume_player_id(token: String, expected_match_id: String) -> int:
+	return int(resume_data(token, expected_match_id).get("player_id", 0))
 
 
 static func _b64url_encode(data: PackedByteArray) -> String:

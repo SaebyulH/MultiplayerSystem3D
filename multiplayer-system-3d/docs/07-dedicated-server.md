@@ -286,6 +286,36 @@ Verified: forced drop resumes the same player id with state/input/movement
 restored; a silent client is reaped and resumes; a non-reconnecting client's
 slot expires and the Player is freed.
 
+## P5 hardening rules
+
+- **Server-only mutations use `@rpc("authority", ...)`.** `Player.rpc_reset`,
+  `_spawn_ragdoll`, `rpc_cheat_death`, pins, fall sounds, ragdoll impulses,
+  projectile `hide_model`, and every `Leaderboard` mutation/snapshot.  The old
+  `any_peer` + `if is_server()` pattern let a client invoke the method on the
+  server; the annotation is the gate.
+- **Owner-initiated `any_peer` RPCs gate on `Player.is_rpc_sender_allowed()`**
+  (local/server, authority peer, or owning peer): `fire_intent`,
+  `calligraphy_release`, ability casts, weapon switch, ADS, charge, shield,
+  signal, recoil, empty click, self-knockback.  `owner_peer_id` is replicated in
+  the Player's root `MultiplayerSynchronizer` so remote peers can evaluate it.
+- **Server-authoritative visual/sound RPCs are `authority`** (hitscan tracer,
+  muzzle flash, shot/hit sounds, damage numbers are sender-gated because their
+  node authority is the owning peer).
+- **Rate limits:** fire intents 240/s, ability casts 60/s per player; the
+  heartbeat/pre-auth reapers bound idle connections (20 s pre-auth, 10 s
+  heartbeat, 90 s reserved).
+- **Single-use resume tokens:** each welcome issues a nonce and the server
+  remembers it; only the latest token resumes a slot.
+- **Allowlists:** server-start maps must be a `MapData.map_scene_path`; loadout
+  paths must be under `res://weapon/`, `res://player/characters/`, or
+  `res://player/player_classes/`.
+- **Dev cheats are debug-build only.** `_dev_request_is_owner()` returns false
+  in release, so god mode/noclip/ammo/stamina/team requests are rejected.
+
+Still open: LAN announce signing (#133), host migration after the host slot
+expires (#131), body rotation/input clamp on the server, and lobbyd's control
+channel (#129).
+
 ## Migration phases
 
 | Phase | Scope | Exit gate |

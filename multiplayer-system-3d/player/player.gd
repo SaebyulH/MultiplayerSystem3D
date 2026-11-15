@@ -493,6 +493,15 @@ func is_owned_by_peer(peer_id: int) -> bool:
 	return owning_peer_id() == peer_id
 
 
+## RPC sender gate for owner-initiated messages.  Allows the local/server call
+## (0), the authority peer (1), and this player's owning peer.  Anything else is
+## a spoof attempt.
+func is_rpc_sender_allowed(sender: int) -> bool:
+	if sender == 0 or sender == 1:
+		return true
+	return owning_peer_id() == sender
+
+
 func _enter_tree() -> void:
 	_apply_input_authority()
 
@@ -632,7 +641,7 @@ func _get_spawn_transform() -> Transform3D:
 			return node.get_random_spawn_transform(team)
 	return Transform3D()
 
-@rpc("any_peer", "call_local", "reliable")
+@rpc("authority", "call_local", "reliable")
 func rpc_reset(transform: Transform3D) -> void:
 	despawn()
 	# Spectator mode stays despawned across every reset path — map swap, round
@@ -752,7 +761,7 @@ func rpc_sync_full_state(pos: Vector3, pp: String, sp: String, mp: String = "", 
 ## character skin when one is active, otherwise the built-in mannequin), freezes
 ## its animation, and lets the physical bones flop it to the ground for
 ## RAGDOLL_LIFETIME seconds.
-@rpc("any_peer", "call_local", "reliable")
+@rpc("authority", "call_local", "reliable")
 func _spawn_ragdoll(ragdoll_transform: Transform3D, death_impulse: Vector3) -> void:
 	if mannequin == null:
 		return
@@ -886,7 +895,7 @@ func cheat_death() -> void:
 	rpc_cheat_death.rpc()
 
 
-@rpc("any_peer", "call_local", "reliable")
+@rpc("authority", "call_local", "reliable")
 func rpc_cheat_death() -> void:
 	respawn_timer = 0.0
 
@@ -1155,7 +1164,7 @@ func _apply_fall_damage(fall_speed: float) -> void:
 
 
 ## Plays the fall-impact sound on every peer.
-@rpc("any_peer", "call_local", "reliable")
+@rpc("authority", "call_local", "reliable")
 func _play_fall_damage_sound(pos: Vector3) -> void:
 	AudioPool.play(get_parent(), FALL_DAMAGE_SOUND, Transform3D(Basis(), pos))
 
@@ -1586,7 +1595,7 @@ func _apply_wall_slam(victim: Player) -> void:
 
 
 ## RPC: mark this player as pinned to [param charger_name] at [param offset].
-@rpc("any_peer", "call_local", "reliable")
+@rpc("authority", "call_local", "reliable")
 func _rpc_pin(charger_name: String, offset: Vector3) -> void:
 	pinned_charger_name = charger_name
 	pinned_offset = offset
@@ -1594,7 +1603,7 @@ func _rpc_pin(charger_name: String, offset: Vector3) -> void:
 
 
 ## RPC: clear this player's pinned state.
-@rpc("any_peer", "call_local", "reliable")
+@rpc("authority", "call_local", "reliable")
 func _rpc_unpin() -> void:
 	pinned_charger_name = ""
 	pinned_offset = Vector3.ZERO
@@ -2089,6 +2098,10 @@ func change_health(health: float, changer: String, is_headshot: bool = false, fa
 ## True when the RPC came from this player's owning peer (or ran locally on the
 ## server, where get_remote_sender_id() is 0).
 func _dev_request_is_owner() -> bool:
+	# Dev cheats are debug-build only.  The menu is hidden in release, but a
+	# modified client can still send these RPCs, so reject them at the server.
+	if not OS.is_debug_build():
+		return false
 	return is_owned_by_peer(multiplayer.get_remote_sender_id())
 
 

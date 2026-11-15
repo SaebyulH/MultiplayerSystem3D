@@ -118,6 +118,10 @@ var _firing_fire_index: int = -1
 
 var _pre_fire_timer: float  = 0.0
 var _fire_cooldown: float   = 0.0
+## Cheap per-player fire-intent rate limit: an attacker can spam the RPC even
+## though the cooldown rejects the shots.  Allow 240/s (well above any weapon).
+var _intent_window_ms: int = 0
+var _intent_count: int = 0
 var _current_spread: float  = 0.0
 var _fired_this_press: Dictionary[int, bool] = {}
 
@@ -1663,8 +1667,17 @@ func previous_weapon() -> void:
 	else:
 		_previous_weapon_server.rpc_id(1)
 
+## Owner/server RPC gate.  See Player.is_rpc_sender_allowed().
+func _rpc_sender_allowed() -> bool:
+	if _parent_player == null:
+		return false
+	return _parent_player.is_rpc_sender_allowed(multiplayer.get_remote_sender_id())
+
+
 @rpc("any_peer", "call_local")
 func _next_weapon_server() -> void:
+	if not _rpc_sender_allowed():
+		return
 	if is_multiplayer_authority():
 		if _holstered or _weapon_switch_cooldown > 0.0:
 			return
@@ -1673,6 +1686,8 @@ func _next_weapon_server() -> void:
 
 @rpc("any_peer", "call_local")
 func _previous_weapon_server() -> void:
+	if not _rpc_sender_allowed():
+		return
 	if is_multiplayer_authority():
 		if _holstered or _weapon_switch_cooldown > 0.0:
 			return
@@ -2071,6 +2086,8 @@ func _release_charge(weapon: Weapon, fire_index: int) -> void:
 
 @rpc("any_peer", "call_local")
 func toggle_ads_synced():
+	if not _rpc_sender_allowed():
+		return
 	_parent_player.ads = not _parent_player.ads
 	# Scope transition + viewmodel anim only matter for the local player's own
 	# first-person model.  The `ads` flag itself is still synced to all peers so
@@ -2088,6 +2105,8 @@ func toggle_ads_synced():
 ## rollback tick reads on every peer.
 @rpc("any_peer", "call_local", "reliable")
 func _begin_charge_synced(fire_index: int) -> void:
+	if not _rpc_sender_allowed():
+		return
 	_charge_active = true
 	_charge_time = 0.0
 	_charging_fire_index = fire_index
@@ -2105,6 +2124,8 @@ func _begin_charge_synced(fire_index: int) -> void:
 ## arrival order and of the transfer mode.  Do not add a third writer.
 @rpc("any_peer", "call_local", "reliable")
 func _cancel_charge_synced() -> void:
+	if not _rpc_sender_allowed():
+		return
 	_clear_charge_local()
 
 
@@ -2120,6 +2141,8 @@ func _clear_charge_local() -> void:
 
 @rpc("any_peer", "call_local")
 func deploy_shield_synced(fire_index: int) -> void:
+	if not _rpc_sender_allowed():
+		return
 	# Prevent stacking multiple shields.
 	if _parent_player.is_shield_active():
 		return
@@ -2129,11 +2152,15 @@ func deploy_shield_synced(fire_index: int) -> void:
 
 @rpc("any_peer", "call_local")
 func retract_shield_synced() -> void:
+	if not _rpc_sender_allowed():
+		return
 	_parent_player.retract_shield()
 
 
 @rpc("any_peer", "call_local")
 func _send_signal() -> void:
+	if not _rpc_sender_allowed():
+		return
 	var camera: Camera3D = _raycast.get_parent() as Camera3D
 	var target_pos: Vector3
 	if _raycast and _raycast.is_colliding():
@@ -2233,6 +2260,8 @@ const MIN_SCORE_DAMAGE_MULT := 0.25
 @rpc("any_peer", "reliable")
 func calligraphy_release(glyph_index: int, score: float) -> void:
 	if not multiplayer.is_server():
+		return
+	if not _rpc_sender_allowed():
 		return
 	if not _parent_player.spawned:
 		return
@@ -2428,6 +2457,8 @@ func _ability_projectile_volley(fire: WeaponFire, index: int) -> void:
 #region RPCs
 @rpc("any_peer", "call_local")
 func _play_empty(weapon_fire_index: int) -> void:
+	if not _rpc_sender_allowed():
+		return
 	if not _is_ready():
 		return
 	if weapon_fire_index < 0 or weapon_fire_index >= _weapons[current_weapon_index].weapon_fires.size():
@@ -2437,6 +2468,16 @@ func _play_empty(weapon_fire_index: int) -> void:
 
 @rpc("any_peer")
 func fire_intent(weapon_index: int, weapon_fire_index: int) -> void:
+	# Only the owning peer (or the server itself) may fire this player's weapon.
+	if not _rpc_sender_allowed():
+		return
+	var _now := Time.get_ticks_msec()
+	if _now - _intent_window_ms > 1000:
+		_intent_window_ms = _now
+		_intent_count = 0
+	_intent_count += 1
+	if _intent_count > 240:
+		return
 	# A regular shot is never score-scaled.  Reset here rather than after the shot
 	# so the value can never survive from an ability fire into a normal one.
 	_ability_damage_mult = 1.0
@@ -2535,13 +2576,15 @@ func fire_intent(weapon_index: int, weapon_fire_index: int) -> void:
 			_auto_switch_to_next_loaded()
 
 
-@rpc("any_peer", "call_local")
+@rpc("authority", "call_local", "reliable")
 func _sync_mag(authoritative_mag: int) -> void:
 	if not _is_ready():
 		return
 	var weapon: Weapon = _weapons[current_weapon_index]
 	weapon.mag_current = clamp(authoritative_mag, 0, weapon.mag_size)
 	mag_changed.emit(weapon.mag_current, weapon.mag_size)
+	if "--test-fire" in OS.get_cmdline_user_args():
+		print("[TEST] authoritative mag=%d" % weapon.mag_current)
 
 func _execute_fire(weapon: Weapon, weapon_fire_index: int) -> void:
 	if not _is_ready():
@@ -2795,8 +2838,10 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 				_on_hitscan_hit.rpc(far_pos, fake_normal, muzzle_pos, flash_color, false, Vector3.ZERO, false)
 
 	elif weapon_fire.bullet_type == WeaponFire.BulletType.PROJECTILE:
-		_spawn_projectile_on_server.rpc_id(
-			1, weapon_fire_index, world_dir, Basis(),
+		# Direct call: the server runs this branch inside fire_intent.  On a
+		# client the function's server guard makes it a no-op.
+		_spawn_projectile_on_server(
+			weapon_fire_index, world_dir, Basis(),
 			_parent_player.name, _parent_player.team
 		)
 
@@ -2849,6 +2894,8 @@ func _apply_shape_damage(weapon: Weapon, weapon_fire_index: int, shape_hits: Dic
 
 @rpc("any_peer", "call_local", "unreliable")
 func _knockback_player_on_server(vector: Vector3):
+	if not _rpc_sender_allowed():
+		return
 	get_parent().apply_knockback(vector)
 
 
@@ -2860,15 +2907,17 @@ func _apply_hit_knockback(target_name: String, shot_dir: Vector3, force: float) 
 	target.apply_knockback(shot_dir * force)
 
 
-@rpc("any_peer", "call_local", "reliable")
+@rpc("authority", "call_local", "reliable")
 func _apply_hit_knockback_on_server(target_name: String, shot_dir: Vector3, force: float) -> void:
-	if not is_multiplayer_authority():
+	if not multiplayer.is_server():
 		return
 	_apply_hit_knockback(target_name, shot_dir, force)
 
 
-@rpc("any_peer", "call_local", "reliable")
+@rpc("authority", "call_local", "reliable")
 func _spawn_projectile_on_server(weapon_fire_index, shot_dir, basis, parent_player_name, team):
+	if not multiplayer.is_server():
+		return
 	if not _is_ready():
 		return
 	var weapon: Weapon    = _weapons[current_weapon_index]
@@ -3030,9 +3079,9 @@ func _apply_damage_direct(collider_name: String, delta: float, parent_player_nam
 			if lifesteal > 0.0:
 				shooter.change_health(lifesteal, parent_player_name)
 
-@rpc("any_peer", "call_local", "reliable")
+@rpc("authority", "call_local", "reliable")
 func _change_health_on_server(collider_name: String, delta, parent_player_name, is_headshot: bool = false, falloff_mult: float = 1.0, is_backshot: bool = false):
-	if not is_multiplayer_authority():
+	if not multiplayer.is_server():
 		return
 	_apply_damage_direct(collider_name, delta, parent_player_name, is_headshot, falloff_mult, is_backshot)
 
@@ -3068,7 +3117,7 @@ func _is_backshot(victim: Player) -> bool:
 	return forward.normalized().dot(to_shooter.normalized()) < 0.0
 
 
-@rpc("any_peer", "call_local")
+@rpc("authority", "call_local", "reliable")
 func _flash_muzzle_flash(start_position: Vector3, flash_color: Color, direction: Vector3) -> void:
 	if not _is_ready():
 		return
@@ -3080,7 +3129,7 @@ func _flash_muzzle_flash(start_position: Vector3, flash_color: Color, direction:
 	muzzle_flash.global_position = start_position
 	muzzle_flash.fire(flash_color)
 
-@rpc("any_peer", "call_local")
+@rpc("authority", "call_local", "reliable")
 func _on_hitscan_hit(hit_position: Vector3, hit_normal: Vector3, start_position: Vector3, flash_color: Color, melee: bool = false, orientation_dir: Vector3 = Vector3.ZERO, surface_hit: bool = true) -> void:
 	var spawn_parent := _projectile_parent()
 	if spawn_parent == null:
@@ -3137,6 +3186,8 @@ func _melee_decal_basis(normal: Vector3, orientation_dir: Vector3) -> Basis:
 
 @rpc("any_peer", "call_local")
 func _apply_recoil_rpc(data: Dictionary, rolled: Vector3) -> void:
+	if not _rpc_sender_allowed():
+		return
 	if _weapons.is_empty():
 		return
 	recoil.recoil       = data.recoil
@@ -3147,7 +3198,7 @@ func _apply_recoil_rpc(data: Dictionary, rolled: Vector3) -> void:
 	recoil.target_rotation += rolled
 
 
-@rpc("any_peer", "call_local")
+@rpc("authority", "call_local", "reliable")
 func _play_shoot_sound(weapon_fire_index: int) -> void:
 	if not _is_ready():
 		return
@@ -3166,21 +3217,21 @@ func _play_shoot_sound(weapon_fire_index: int) -> void:
 		_play_shoot_anims(fire)
 
 ## Played when you hit someone, called by attribute component
-@rpc("any_peer", "call_local")
+@rpc("authority", "call_local", "reliable")
 func play_hit_sound() -> void:
 	if not _is_ready():
 		return
 	_play_sound(_hit_sound)
 
 ##Played when you heal someone, called by attribute component
-@rpc("any_peer", "call_local")
+@rpc("authority", "call_local", "reliable")
 func play_hit_heal_sound() -> void:
 	if not _is_ready():
 		return
 	_play_sound(_hit_heal_sound)
 
 ## Played when you land a headshot, called by attribute component
-@rpc("any_peer", "call_local")
+@rpc("authority", "call_local", "reliable")
 func play_crit_sound() -> void:
 	if not _is_ready():
 		return
@@ -3188,7 +3239,7 @@ func play_crit_sound() -> void:
 
 
 ## Played when you land a backshot, called by the weapon / hurt component.
-@rpc("any_peer", "call_local")
+@rpc("authority", "call_local", "reliable")
 func play_backshot_sound() -> void:
 	if not _is_ready():
 		return

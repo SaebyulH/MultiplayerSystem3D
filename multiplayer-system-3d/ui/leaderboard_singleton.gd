@@ -46,7 +46,7 @@ func _ready() -> void:
 	_sync_timer.timeout.connect(_sync_scores)
 	add_child(_sync_timer)
 
-@rpc("any_peer", "call_local")
+@rpc("authority", "call_local")
 func _add_player(player_name: String):
 	if not multiplayer.is_server():
 		return
@@ -64,7 +64,7 @@ func _add_player(player_name: String):
 		print("Player %s added" % player_name)
 	_mark_dirty()
 
-@rpc("any_peer", "call_local")
+@rpc("authority", "call_local")
 func _remove_player(player_name: String):
 	if not multiplayer.is_server():
 		return
@@ -82,7 +82,7 @@ func _remove_player(player_name: String):
 # COMBAT EVENTS
 # -------------------------
 
-@rpc("any_peer", "call_local")
+@rpc("authority", "call_local")
 func _add_kill(killer_name: String, victim_name: String = "", weapon_name: String = "", weapon_resource_path: String = "", is_headshot: bool = false, is_backshot: bool = false):
 	if not multiplayer.is_server():
 		return
@@ -99,7 +99,7 @@ func _add_kill(killer_name: String, victim_name: String = "", weapon_name: Strin
 		print("Kill:", killer_name)
 
 
-@rpc("any_peer", "call_local")
+@rpc("authority", "call_local")
 func _add_death(dead_player_name: String):
 	if not multiplayer.is_server():
 		return
@@ -112,7 +112,7 @@ func _add_death(dead_player_name: String):
 	_mark_dirty()
 
 
-@rpc("any_peer", "call_local")
+@rpc("authority", "call_local")
 func _add_damage(player_name: String, amount: float):
 	if not multiplayer.is_server():
 		return
@@ -125,7 +125,7 @@ func _add_damage(player_name: String, amount: float):
 # SELF DAMAGE
 # -------------------------
 
-@rpc("any_peer", "call_local")
+@rpc("authority", "call_local")
 func _add_self_damage(player_name: String, amount: float):
 	if not multiplayer.is_server():
 		return
@@ -134,7 +134,7 @@ func _add_self_damage(player_name: String, amount: float):
 	_mark_dirty()
 
 
-@rpc("any_peer", "call_local")
+@rpc("authority", "call_local")
 func _add_self_heal(player_name: String, amount: float):
 	if not multiplayer.is_server():
 		return
@@ -143,7 +143,7 @@ func _add_self_heal(player_name: String, amount: float):
 	_mark_dirty()
 
 
-@rpc("any_peer", "call_local")
+@rpc("authority", "call_local")
 func _add_heal_other(healer_name: String, amount: float):
 	if not multiplayer.is_server():
 		return
@@ -174,7 +174,7 @@ func _sync_scores():
 	)
 
 
-@rpc("any_peer", "reliable")
+@rpc("authority", "reliable")
 func _receive_scores(kills: Dictionary,
 	deaths: Dictionary,
 	killstreak: Dictionary,
@@ -199,7 +199,7 @@ func _receive_scores(kills: Dictionary,
 	scores_changed.emit()
 
 
-@rpc("any_peer", "reliable")
+@rpc("authority", "reliable")
 func _receive_player_removed(player_name: String):
 	_disconnected[player_name] = true
 	player_removed.emit(player_name)
@@ -217,7 +217,7 @@ func reset() -> void:
 	rpc("_receive_reset")
 
 
-@rpc("any_peer", "reliable")
+@rpc("authority", "reliable")
 func _receive_reset() -> void:
 	_reset_tables()
 	scores_changed.emit()
@@ -244,7 +244,7 @@ func _reset_tables() -> void:
 		_heal_others[p] = 0
 
 ## Broadcasts a single kill event to all peers for the kill feed.
-@rpc("any_peer", "call_local", "reliable")
+@rpc("authority", "call_local", "reliable")
 func _broadcast_kill_feed(killer_name: String, victim_name: String, weapon_name: String, weapon_resource_path: String, is_headshot: bool = false, is_backshot: bool = false) -> void:
 	kill_feed_entry.emit(killer_name, victim_name, weapon_name, weapon_resource_path, is_headshot, is_backshot)
 
@@ -252,29 +252,40 @@ func _broadcast_kill_feed(killer_name: String, victim_name: String, weapon_name:
 # REQUEST API
 # -------------------------
 
+## Score mutations are server-only.  These wrappers run locally on the server;
+## a client that calls one is ignored.  The old `.rpc_id(1)` path is gone because
+## it let any peer invoke the mutation on the server.
 func request_add_player(player_name: String):
-	_add_player.rpc_id(1, player_name)
+	if multiplayer.is_server():
+		_add_player(player_name)
 
 func request_remove_player(player_name: String):
-	_remove_player.rpc_id(1, player_name)
+	if multiplayer.is_server():
+		_remove_player(player_name)
 
 func request_add_kill(killer_name: String, victim_name: String = "", weapon_name: String = "", weapon_resource_path: String = "", is_headshot: bool = false, is_backshot: bool = false):
-	_add_kill.rpc_id(1, killer_name, victim_name, weapon_name, weapon_resource_path, is_headshot, is_backshot)
+	if multiplayer.is_server():
+		_add_kill(killer_name, victim_name, weapon_name, weapon_resource_path, is_headshot, is_backshot)
 
 func request_add_death(dead_name: String):
-	_add_death.rpc_id(1, dead_name)
+	if multiplayer.is_server():
+		_add_death(dead_name)
 
 func request_add_damage(player_name: String, amount: float):
-	_add_damage.rpc_id(1, player_name, amount)
+	if multiplayer.is_server():
+		_add_damage(player_name, amount)
 
 func request_add_self_damage(player_name: String, amount: float):
-	_add_self_damage.rpc_id(1, player_name, amount)
+	if multiplayer.is_server():
+		_add_self_damage(player_name, amount)
 
 func request_add_self_heal(player_name: String, amount: float):
-	_add_self_heal.rpc_id(1, player_name, amount)
+	if multiplayer.is_server():
+		_add_self_heal(player_name, amount)
 
 func request_add_heal_other(healer_name: String, amount: float):
-	_add_heal_other.rpc_id(1, healer_name, amount)
+	if multiplayer.is_server():
+		_add_heal_other(healer_name, amount)
 
 # -------------------------
 # READ API

@@ -163,7 +163,7 @@ func _on_hit_hurtbox(hurtbox: HurtboxComponent) -> void:
 	elif world_hit_mode == WorldHitMode.STICK:
 		_attach_to(hurtbox)
 
-@rpc("any_peer","call_local", "reliable")
+@rpc("authority", "call_local", "reliable")
 func hide_model():
 	for child in get_children():
 		if child is MeshInstance3D:

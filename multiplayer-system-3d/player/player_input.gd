@@ -63,10 +63,14 @@ const FIRE_ACTIONS: Array[String] = ["primary_fire", "secondary_fire", "tertiary
 ## Headless test hook: `--test-move` walks the player forward so cross-process
 ## harnesses can prove the server accepted input.  Never a gameplay path.
 var _test_move := false
+## Headless test hook: hold primary fire so cross-process harnesses can exercise
+## the server-authoritative fire path.
+var _test_fire := false
 
 
 func _ready() -> void:
 	_test_move = "--test-move" in OS.get_cmdline_user_args()
+	_test_fire = "--test-fire" in OS.get_cmdline_user_args()
 	NetworkTime.before_tick_loop.connect(_gather)
 
 func _gather() -> void:
@@ -127,6 +131,8 @@ func _gather() -> void:
 	queued_bashdown_trigger_dir = Vector3.ZERO
 	teleport_trigger_dir = queued_teleport_trigger_dir
 	queued_teleport_trigger_dir = Vector3.ZERO
+	if _test_fire:
+		primary_fire_held = true
 
 func _input(event: InputEvent) -> void:
 	if get_parent().is_bot:

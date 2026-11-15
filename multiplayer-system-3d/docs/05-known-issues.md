@@ -1372,19 +1372,17 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 - **Why:** P3 implements the HTTP allocation half of the plan; the loopback control protocol (`hello`/`heartbeat`/`state`/`event`, child journal) is not written yet.
 - **Suggested fix:** add the control socket from `docs/07-dedicated-server.md`: child reports phase and connected players, supervisor journals `{pid, match_id, ports, secret}` for re-adoption after restart, and empty/staging matches are terminated after a grace period. P4/P6.
 
-### 130. Resume tokens are stateless and not single-use
+### 130. Resume tokens are single-use, but the nonce is not bound to a session epoch
 
-- **Files:** `network/join_grant.gd` (`issue_resume`, `resume_player_id`), `network/match_session.gd` (`_resume_player`)
-- **Symptom:** a resume token stays valid until its 15-minute expiry and can be presented more than once; a captured token can resume a reserved slot while the real player is disconnected. Tokens are rotated on each welcome, but the old token is not revoked because the server keeps no per-player token state.
-- **Why:** P4 needs reconnect to work before it needs replay protection; the HMAC + match/player binding + short grace already stops the obvious abuse.
-- **Suggested fix:** store a per-player token nonce/epoch in the roster entry and accept only the latest; clear it on resume and on expiry. P5.
+- **Files:** `network/join_grant.gd` (`issue_resume`, `resume_data`), `network/match_session.gd` (`hello`, `_send_welcome`)
+- **Status:** fixed in P5. Each welcome issues a token with a nonce; the roster entry remembers the latest nonce; `hello` rejects any older token (`SESSION_EXPIRED, Resume token was already used`), and the accepted resume rotates the nonce. A captured current token can still be used once before the real client reconnects, but it cannot be replayed afterwards.
+- **Remaining:** the nonce is per-player, not per-connection-epoch; a full session-token/epoch scheme (with a server-side revocation list) would close the single-use window entirely.
 
-### 131. Pre-auth peers are not reaped and there is no host migration
+### 131. Host migration is still missing after the host slot expires
 
-- **Files:** `network/match_session.gd` (`_last_heard`, `_server_tick`), `network/network_manager.gd` (`_await_welcome`)
-- **Symptom:** the heartbeat reaper only sees peers that have completed `hello`; a connection opened but never handshaken relies on ENet's own timeout. Separately, if the room host's reserved slot expires, no other player is promoted: `host_player_id` stays dead, so Start Match and host-only actions fail until the host reconnects.
-- **Why:** P4's scope is resume for the player; host identity is still the first allocated player id.
-- **Suggested fix:** add a 5 s pre-auth deadline for connected-but-unhellod peers, and promote the lowest surviving connected player to host when the host slot expires (broadcast a host change). P5/P6.
+- **Files:** `network/match_session.gd` (`_expire_reserved`, `host_player_id`)
+- **Status:** pre-auth reaping is fixed in P5. A peer that connects but never sends `hello` is disconnected after `Protocol.PREAUTH_TIMEOUT_SECONDS` (20 s, chosen because the client builds its world before the handshake).
+- **Remaining:** if the room host's reserved slot expires, no other player is promoted. `host_player_id` stays dead, so Start Match and host-only actions fail until the host reconnects. Promote the lowest surviving connected player and broadcast the host change. P6.
 
 ### 132. Detaching the world before queue_free breaks netfox's deferred settings
 

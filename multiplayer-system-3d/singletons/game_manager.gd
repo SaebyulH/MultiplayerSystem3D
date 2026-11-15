@@ -108,7 +108,7 @@ func _find_ragdoll_bone(corpse: Node3D, bone_name: StringName) -> PhysicalBone3D
 
 
 ## Broadcast: apply an impulse to one bone of a ragdoll corpse (a bullet hit it).
-@rpc("any_peer", "call_local", "reliable")
+@rpc("authority", "call_local", "reliable")
 func rpc_ragdoll_bone_impulse(corpse_name: String, bone_name: StringName, impulse: Vector3, at: Vector3) -> void:
 	var corpse := _find_ragdoll(corpse_name)
 	if corpse == null:
@@ -119,7 +119,7 @@ func rpc_ragdoll_bone_impulse(corpse_name: String, bone_name: StringName, impuls
 
 
 ## Broadcast: push every bone of a ragdoll corpse outward from an explosion.
-@rpc("any_peer", "call_local", "reliable")
+@rpc("authority", "call_local", "reliable")
 func rpc_ragdoll_blast(corpse_name: String, origin: Vector3, force: float) -> void:
 	var corpse := _find_ragdoll(corpse_name)
 	if corpse == null:

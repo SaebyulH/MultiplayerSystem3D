@@ -1114,6 +1114,18 @@ func _request_loadout(tpid: String, pp: String, sp: String, mp: String, team: Pl
 	# comparing.  Legacy P2P falls back to the peer id, matching the old check.
 	if sid != 0 and MatchSession.player_id_string_for_peer(sid) != tpid and not tpid.begins_with("bot_"):
 		return
+	# Path allowlists: never let a client ask the server to load an arbitrary
+	# resource path as a weapon/character/class.
+	for path in [pp, sp, mp]:
+		if not str(path).begins_with("res://weapon/"):
+			push_warning("_request_loadout: rejected weapon path %s" % path)
+			return
+	if not cp.is_empty() and not cp.begins_with("res://player/characters/"):
+		push_warning("_request_loadout: rejected character path %s" % cp)
+		return
+	if not class_path.is_empty() and not class_path.begins_with("res://player/player_classes/"):
+		push_warning("_request_loadout: rejected class path %s" % class_path)
+		return
 	var primary: Weapon = load(pp) as Weapon
 	var secondary: Weapon = load(sp) as Weapon
 	var melee: Weapon = load(mp) as Weapon

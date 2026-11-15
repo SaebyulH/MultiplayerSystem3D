@@ -70,6 +70,10 @@ var _cooldowns: Array[float] = []
 ## class doc.  Named `bank` rather than `charges` to keep it unambiguous against
 ## Player.is_charging()/charge_time (the shoulder charge) and
 ## WeaponController._charge_time (the bow draw).
+## Per-player cast RPC rate limit (cooldowns still gate the effect).
+var _cast_window_ms: int = 0
+var _cast_count: int = 0
+
 var _charge_bank: Array[float] = []
 ## The `Time.get_ticks_msec()` at which [member _charge_bank] was last true.
 var _charge_stamp_ms: Array[float] = []
@@ -671,6 +675,16 @@ func _run_ability(index: int, mode: int, want_on: bool = false) -> void:
 @rpc("any_peer", "reliable")
 func _cast_ability(index: int, mode: int, target_names: Array = [], want_on: bool = false) -> void:
 	if not multiplayer.is_server():
+		return
+	if _parent_player == null or not _parent_player.is_rpc_sender_allowed(
+			multiplayer.get_remote_sender_id()):
+		return
+	var _now := Time.get_ticks_msec()
+	if _now - _cast_window_ms > 1000:
+		_cast_window_ms = _now
+		_cast_count = 0
+	_cast_count += 1
+	if _cast_count > 60:
 		return
 	if index < 0 or index >= abilities.size():
 		return

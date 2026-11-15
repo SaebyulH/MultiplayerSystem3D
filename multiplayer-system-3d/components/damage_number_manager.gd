@@ -75,4 +75,9 @@ func on_damage_dealt(target_name: String, amount: float, is_headshot: bool = fal
 
 @rpc("any_peer", "call_local", "reliable")
 func _receive_damage_number(target_name: String, amount: float, is_headshot: bool = false, falloff_mult: float = 1.0, is_backshot: bool = false) -> void:
+	# Server-only broadcast.  The DamageNumberManager's authority is the owning
+	# peer, so it cannot use an `authority` RPC; gate the sender instead.
+	var sender := multiplayer.get_remote_sender_id()
+	if sender != 0 and sender != 1:
+		return
 	on_damage_dealt(target_name, amount, is_headshot, falloff_mult, is_backshot)

@@ -78,6 +78,9 @@ var _test_start_sent: bool = false
 ## expire after RESUME_GRACE_SECONDS.
 var _last_heard: Dictionary = {}       # peer_id -> ms
 var _reserved_since: Dictionary = {}   # player_id -> ms
+## Connected peers that have not sent a valid `hello` yet.  Reaped after 5 s so
+## a connection that never handshakes cannot sit open indefinitely.
+var _preauth: Dictionary = {}          # peer_id -> ms
 var _heartbeat_timer: Timer
 var _heartbeat_seq: int = 0
 var _server_tick_accum: float = 0.0
@@ -98,6 +101,8 @@ func _ready() -> void:
 		mp.peer_disconnected.connect(_on_peer_disconnected)
 	if not mp.connected_to_server.is_connected(_on_connected_to_server):
 		mp.connected_to_server.connect(_on_connected_to_server)
+	if not mp.peer_connected.is_connected(_on_session_peer_connected):
+		mp.peer_connected.connect(_on_session_peer_connected)
 	_heartbeat_timer = Timer.new()
 	_heartbeat_timer.wait_time = Protocol.HEARTBEAT_INTERVAL
 	_heartbeat_timer.one_shot = false
@@ -158,8 +163,10 @@ func _client_tick(delta: float) -> void:
 	# client; otherwise no input is gathered and the player cannot move.
 	local_player.player_id = local_player_id
 	var local_peer := multiplayer.get_unique_id()
-	if local_player.owner_peer_id != local_peer:
-		local_player.bind_owner_peer(local_peer)
+	# Always rebind.  With `owner_peer_id` replicated, the value can already
+	# match this peer while the input authority is still the pre-sync fallback
+	# (node name / server), so comparing first skipped the authority update.
+	local_player.bind_owner_peer(local_peer)
 	if OS.is_debug_build():
 		print("[MATCH] rebound player %d: owner=%d input_auth=%s spawned=%s" % [
 			local_player_id, local_player.owner_peer_id,
@@ -202,6 +209,18 @@ func _server_tick(delta: float) -> void:
 		if peer is ENetMultiplayerPeer:
 			(peer as ENetMultiplayerPeer).disconnect_peer(peer_id)
 		_last_heard.erase(peer_key)
+
+	# Pre-auth connections that never complete `hello`.
+	for peer_key in _preauth.keys():
+		var peer_id := int(peer_key)
+		if now - int(_preauth[peer_key]) <= int(Protocol.PREAUTH_TIMEOUT_SECONDS * 1000.0):
+			continue
+		if OS.is_debug_build():
+			print("[MATCH] reaping pre-auth peer %d" % peer_id)
+		var peer := multiplayer.multiplayer_peer
+		if peer is ENetMultiplayerPeer:
+			(peer as ENetMultiplayerPeer).disconnect_peer(peer_id)
+		_preauth.erase(peer_key)
 
 	for player_key in _reserved_since.keys():
 		var player_id := int(player_key)
@@ -306,6 +325,7 @@ func reset() -> void:
 	_ready_peers.clear()
 	_last_heard.clear()
 	_reserved_since.clear()
+	_preauth.clear()
 	_server_ready = false
 	_spawn_manager = null
 	_node_ready_sent = false
@@ -398,6 +418,7 @@ func hello(version: int, build_id: String, display_name: String,
 	var peer_id := multiplayer.get_remote_sender_id()
 	if peer_id == 0:
 		return
+	_preauth.erase(peer_id)
 	if version != Protocol.VERSION:
 		_send_error(peer_id, Protocol.ErrorCode.UNSUPPORTED_VERSION, "Protocol %d != %d" % [version, Protocol.VERSION])
 		return
@@ -409,13 +430,19 @@ func hello(version: int, build_id: String, display_name: String,
 	# Resume takes priority: it reuses an existing slot and preserves score,
 	# team, and loadout.
 	if resume_token_in != "":
-		var resumed_id := Grant.resume_player_id(resume_token_in, match_id)
+		var resume_payload := Grant.resume_data(resume_token_in, match_id)
+		var resumed_id := int(resume_payload.get("player_id", 0))
 		if resumed_id == 0:
 			_send_error(peer_id, Protocol.ErrorCode.SESSION_EXPIRED, "Invalid or expired resume token")
 			return
 		var resumed_entry: Dictionary = _players.get(resumed_id, {})
 		if resumed_entry.is_empty() or int(resumed_entry.get("state", SlotState.CONNECTED)) != SlotState.RESERVED:
 			_send_error(peer_id, Protocol.ErrorCode.SESSION_EXPIRED, "No reserved slot for this session")
+			return
+		# Single-use: only the token issued by the latest welcome is accepted.
+		var expected_nonce := str(resumed_entry.get("resume_nonce", ""))
+		if expected_nonce != "" and str(resume_payload.get("nonce", "")) != expected_nonce:
+			_send_error(peer_id, Protocol.ErrorCode.SESSION_EXPIRED, "Resume token was already used")
 			return
 		_resume_player(resumed_id, peer_id)
 		return
@@ -529,6 +556,11 @@ func client_node_ready(player_id: int) -> void:
 
 func _send_welcome(peer_id: int, player_id: int, resumed: bool = false) -> void:
 	var token := Grant.issue_resume(match_id, player_id)
+	# Remember the nonce this welcome issued; an older resume token is then
+	# rejected on the next reconnect (single-use rotation).
+	var entry: Dictionary = _players.get(player_id, {})
+	if not entry.is_empty():
+		entry["resume_nonce"] = str(Grant.resume_data(token, match_id).get("nonce", ""))
 	if OS.is_debug_build():
 		print("[MATCH] sending welcome to peer %d (player %d, map %s, resumed=%s)" % [
 			peer_id, player_id, map_path, resumed])
@@ -591,6 +623,11 @@ func _send_heartbeat() -> void:
 		return
 	_heartbeat_seq += 1
 	heartbeat.rpc_id(Protocol.SERVER_PEER_ID, _heartbeat_seq)
+
+
+func _on_session_peer_connected(peer_id: int) -> void:
+	if multiplayer.is_server() and role == Role.SERVER:
+		_preauth[peer_id] = Time.get_ticks_msec()
 
 
 func _on_connected_to_server() -> void:
@@ -679,6 +716,16 @@ func request_start_match(new_map_path: String) -> void:
 	if not new_map_path.begins_with("res://maps/") or not FileAccess.file_exists(new_map_path):
 		if OS.is_debug_build():
 			print("[MATCH] start rejected: bad map path '%s'" % new_map_path)
+		return
+	var allowed := false
+	for map_entry in ConnectionUtils.scan_map_data():
+		var map_data := map_entry as MapData
+		if map_data != null and map_data.map_scene_path == new_map_path:
+			allowed = true
+			break
+	if not allowed:
+		if OS.is_debug_build():
+			print("[MATCH] start rejected: %s is not a playable MapData" % new_map_path)
 		return
 	if OS.is_debug_build():
 		print("[MATCH] start approved: %s" % new_map_path)
