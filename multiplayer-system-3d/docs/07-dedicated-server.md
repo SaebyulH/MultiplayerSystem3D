@@ -338,10 +338,15 @@ GODOT=/path/to/godot bash server/build_linux.sh
 cat server/README.md
 ```
 
-The smoke test passes on the Windows dev machine.  **Not yet run:** the
-10-match / 64-player CPU/RSS benchmark, the UDP loss/latency matrix, and the
-60-minute soak — they need the target VPS and a separate load generator.  The
-benchmark pass/fail targets are in the migration plan and the P0 notes.
+The net smoke passes on the Windows dev machine.  Full coverage, the tool-harness
+status table, and the test-hook reference live in
+[`tests/net/README.md`](../tests/net/README.md).  The existing
+`verify_payload_path` and `verify_toon_world_swap` harnesses fail (map-authoring
+and material tooling, tracked as #135/#136); they do not exercise netcode.
+**Not yet run:** the 10-match / 64-player CPU/RSS benchmark, the UDP
+loss/latency matrix, and the 60-minute soak — they need the target VPS and a
+separate load generator.  The benchmark pass/fail targets are in the migration
+plan and the P0 notes.
 
 ## Migration phases
 

@@ -143,16 +143,12 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 ## 🟠 High
 
 ### 6. `_sync_mag` is unreliable → ammo divergence
-- **Files:** `player/weapon_controller.gd:2015` (vs reliable `_sync_all_mags` `534`, `_confirm_reload_done` `1595`)
-- **Symptom:** `_sync_mag` is `@rpc("any_peer","call_local")` — no `"reliable"`. An authoritative mag value can be dropped, and the optimistic client mag diverges until the next reliable correction.
-- **Why:** ammo counts can desync between client and server.
-- **Suggested fix:** make `_sync_mag` `"reliable"`, or fold mag into a reliable snapshot.
+- **Files:** `player/weapon_controller.gd` (`_sync_mag`; reliable siblings `_sync_all_mags`, `_confirm_reload_done`)
+- **Status:** fixed in P5. `_sync_mag` is now `@rpc("authority", "call_local", "reliable")`; clients cannot call it and a dropped packet no longer diverges the displayed magazine. Verified with the `--test-fire` client: authoritative mag counts arrive and decrement.
 
 ### 7. `fire_intent` has no sender validation
-- **Files:** `player/weapon_controller.gd:1948` (`fire_intent` `@rpc("any_peer")`) vs `request_reload` `1459-1469`
-- **Symptom:** `fire_intent` does not check `get_remote_sender_id()`, unlike `request_reload`. Any peer can invoke `fire_intent` on any player's weapon controller.
-- **Why:** asymmetric trust; the server still validates ammo but a malicious/buggy peer can trigger fire logic out of turn.
-- **Suggested fix:** validate `get_remote_sender_id()` == owning player (mirror `request_reload`).
+- **Files:** `player/weapon_controller.gd` (`fire_intent`)
+- **Status:** fixed in P5. `fire_intent` calls `_rpc_sender_allowed()` (via `Player.is_rpc_sender_allowed`) before any ammo/fire work; only the owning peer or the server can fire a player's weapon. Verified by the cross-process fire test (`input_auth=true`, authoritative mag sync).
 
 ### 8. Camera-relative movement with unsynced camera basis
 - **Files:** `player/player.gd:1493` (`_apply_movement_from_input`), `1864-1867` (`_movement_basis`), `player/body.gd:26-57` (commented-out `sync_rotation` at `59-68`)
@@ -1405,6 +1401,27 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 - **Symptom:** when 8080 is busy, the log contains `Couldn't create an ENet host` / `Could not bind UDP port 8080 (error 20)` before the server starts on 8081. The process continues normally and the fallback works.
 - **Why:** Godot's ENet wrapper prints the engine-level failure before returning the error code; there is no silent-mode bind.
 - **Suggested fix:** pre-check the port with a temporary `PacketPeerUDP` bind before calling `create_server`, or accept the line as expected output. Cosmetic.
+
+### 135. Payload-path harness fails on an already-linked real map
+
+- **Files:** `tools/verify_payload_path.gd:246-258`, fixture `trenchbroom/maps/test.map`
+- **Symptom:** `verify_payload_path.tscn` exits 2: `FAIL: the linker rewrote res://trenchbroom/maps/test.map, which is already linked` and `FAIL: the linker found 1 gaps in an already-linked map`. The test opens the real map read-only and expects `PayloadPathLinker.link_map_text()` to return it byte-identical with zero `named`/`linked` results; the current fixture has one unlinked waypoint, so the linker rewrites it.
+- **Why:** map-authoring tooling, unrelated to the netcode rework. Not bisected; it may be a fixture that drifted from the linker's expected linked state.
+- **Suggested fix:** run `Auto Setup Payload Path` on `test.map` and commit the linked file, or update the harness to assert the exact expected gap count. Do not change the linker to force zero gaps without a failing real map.
+
+### 136. Toon world harness fails the re-swap assertion
+
+- **Files:** `tools/verify_toon_world_swap.gd:251-252`
+- **Symptom:** `verify_toon_world_swap.tscn` exits 4: `FAIL  re-swapping after a restore converts the same surfaces  4`. The test expects the second `ToonMaterialConverter.swap_under()` to convert 5 surfaces; it converts 4.
+- **Why:** material/converter tooling, unrelated to the netcode rework. The first swap, restore, CSG restore, and second restore all pass.
+- **Suggested fix:** inspect `ToonMaterialConverter.restore()`/`swap_under()` for one surface whose original material is not restored before the second swap, or correct the fixture's expected count. Add a regression assertion for whichever surface is missed.
+
+### 137. Post-resume firing is not covered by the smoke test
+
+- **Files:** `tests/net/run_net_smoke.ps1`, `player/weapon_controller.gd` (`_sync_mag` test print), `network/network_manager.gd` (`_begin_reconnect`)
+- **Symptom:** in a manual P5 run with `--test-fire`, authoritative mag syncs stopped after `resumed as player 2` even though movement and input authority were restored. It may be benign (the weapon was empty/reloading, or the held-fire test hook was cleared by the respawn) rather than a netcode bug.
+- **Why:** the smoke test asserts resume + movement, not a post-resume shot.
+- **Suggested fix:** add a harness step that waits for `spawned=true` after resume, then asserts a new `fire_intent` is accepted (mag decrements) with the held-fire hook, or drive a one-shot fire explicitly.
 
 ## Not bugs, but worth knowing
 
