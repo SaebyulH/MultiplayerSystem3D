@@ -634,6 +634,34 @@ func _on_hybrid_point_captured() -> void:
 #  TEAM HELPERS
 # ─────────────────────────────────────────────
 
+## True while this Player is inside the actual PushZone Area3D.  Bots use this
+## instead of a distance, because the box is asymmetric and the cart body can
+## keep a bot from reaching the exact centre.
+func has_pusher(p: Player) -> bool:
+	return p != null and is_instance_valid(p) and p in _pushers
+
+
+## Horizontal half-extent of the actual push trigger.  `push_radius` is an
+## authored gameplay radius, not the BoxShape3D the Area3D uses; bots need the
+## box, or they "hold" just outside it and never push the cart.
+func get_push_zone_horizontal_radius() -> float:
+	if push_zone == null:
+		return push_radius
+	for child in push_zone.get_children():
+		var collision := child as CollisionShape3D
+		if collision == null:
+			continue
+		var box := collision.shape as BoxShape3D
+		if box == null:
+			continue
+		var xform := push_zone.global_transform * collision.transform
+		var scale := xform.basis.get_scale()
+		var half_x := absf(box.size.x * scale.x) * 0.5
+		var half_z := absf(box.size.z * scale.z) * 0.5
+		return minf(half_x, half_z)
+	return push_radius
+
+
 func _get_defending_team() -> Player.Team:
 	match attacking_team:
 		Player.Team.SPI: return Player.Team.SCI

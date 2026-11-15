@@ -674,12 +674,13 @@ const OBJECTIVE_LEASH_RADIUS: float = 12.0
 ## "An objective is nearby" for persistent hearing: within this radius the
 ## objective outranks an old sound and the endless heard-memory search ends.
 const OBJECTIVE_NEARBY_RADIUS: float = 20.0
-## Stand this far inside the payload's real push radius so a "hold" actually
-## pushes the cart instead of parking just outside it.
-const OBJECTIVE_PAYLOAD_RADIUS_INSET: float = 0.75
-## Bots detect enemies within the same horizontal cone a human camera renders.
-## `player.tscn` sets `Camera3D.fov = 90`, so the bot FOV is 90° too.
-const FOV_DEGREES: float = 90.0
+## Horizontal detection cone, in degrees.  This must match what the player sees
+## on screen, not `Camera3D.fov` directly: `player.tscn` sets `fov = 90` with
+## Godot's default KEEP_HEIGHT aspect, so 90 is the VERTICAL FOV and the
+## horizontal FOV is ~121° at 16:9.  The old 90° horizontal cone left a ~15°
+## blind band on each side of the screen, which is why bots ignored people the
+## spectator could plainly see.  120° matches a 16:9 camera.
+const FOV_DEGREES: float = 120.0
 ## Human mouse model (Stage 2).  The old exponential aim smoothing is gone;
 ## these describe a ballistic flick plus a pursuit tracker, both scaled by the
 ## per-bot Style drawn at spawn.
@@ -841,7 +842,11 @@ const TRAVEL_MAX_FLOORS_PER_COLUMN: int = 8
 const BAKE_BUDGET_USEC: int = 1500
 const WALK_STEP_MAX: float = 0.4
 const JUMP_STEP_MAX: float = 1.1
-const DROP_MAX: float = 6.0
+## Largest drop the runtime TravelGraph will connect.  Fall damage starts at
+## 15 m (`player.gd` `fall_damage_min_distance`), so 12 m is still safe; castle
+## maps use high battlements (ESC castle's SCI spawn sits ~9 m above the cart,
+## and the navmesh cannot represent a drop at all).
+const DROP_MAX: float = 12.0
 const NODE_LOOKUP_RADIUS: float = 1.5
 const DIRECT_LINE_MAX_RISE: float = 1.0
 const LOOKAHEAD_MIN: float = 3.0
@@ -2043,6 +2048,13 @@ func _on_sound_made(position: Vector3, radius: float, source_name: String,
 	_persistent_heard_direction = heard_dir.normalized() \
 		if heard_dir.length_squared() > 0.01 else Vector3.ZERO
 
+	# At an active objective, hold it.  A sound through a wall must not start a
+	# search that walks the bot off the point and leaves it staring at masonry.
+	if _objective_active and _objective_position != Vector3.INF \
+			and player.global_position.distance_to(_objective_position) \
+				<= _objective_hold_radius:
+		return
+
 	if _is_engaging_enemy():
 		return
 
@@ -2271,6 +2283,12 @@ func _tick_target_memory(now_ms: int) -> void:
 			_search_timer = maxf(
 				float(_search_deadline_ms - now_ms) / 1000.0, 0.0
 			)
+
+	# Standing on an active objective with no visible target ends any search:
+	# hold/capture/push instead of staring through the nearest wall.
+	if _objective_active and _search_active and _current_target == null \
+			and _is_at_objective():
+		_end_search()
 
 	# Resume the last heard enemy when nothing else owns the bot.  The memory is
 	# never timed out; only a newer sound or respawn replaces it.
@@ -4004,7 +4022,12 @@ func _payload_info(payload: PayloadNode) -> Dictionary:
 	if payload == null or not is_instance_valid(payload):
 		return {}
 	var attacking := player.team == payload.attacking_team
-	var radius := maxf(payload.push_radius - OBJECTIVE_PAYLOAD_RADIUS_INSET, 2.0)
+	# The real push trigger is a BoxShape3D, not `push_radius`.  Hold well
+	# inside its short horizontal half-extent so the centre (and therefore the
+	# capsule) is inside the Area3D; otherwise bots stand just outside and the
+	# cart never moves.
+	var zone_radius := payload.get_push_zone_horizontal_radius()
+	var radius := maxf(0.75, zone_radius * 0.95)
 	return {
 		"pos": payload.global_position,
 		"radius": radius,
@@ -4114,8 +4137,7 @@ func _update_intent() -> void:
 			_intent_text = "WANDER"
 		return
 
-	var dist := player.global_position.distance_to(_objective_position)
-	var inside := dist <= _objective_hold_radius
+	var inside := _is_at_objective()
 	var action := _objective_action_text(info)
 
 	if _current_target != null:
@@ -4132,9 +4154,16 @@ func _update_intent() -> void:
 		return
 
 	if _search_active and _search_persistent:
-		# No objective is nearby; the last heard enemy owns the bot.
-		_intent = Intent.SEARCH
-		_intent_text = "HUNT"
+		# No objective is nearby; the last heard enemy owns the bot.  If an
+		# objective is active but the bot is still far from it, the objective
+		# pull in `_act_search` is the thing actually moving it, so report that.
+		if player.global_position.distance_to(_objective_position) \
+				> _objective_leash_radius:
+			_intent = Intent.RETURN_TO_OBJECTIVE
+			_intent_text = "RETURN TO %s" % _objective_name
+		else:
+			_intent = Intent.SEARCH
+			_intent_text = "HUNT"
 		return
 
 	if _search_active:
@@ -4170,12 +4199,61 @@ func _objective_is_near(point: Vector3) -> bool:
 		and point.distance_to(_objective_position) <= OBJECTIVE_NEARBY_RADIUS
 
 
+## True while inside the payload's real PushZone.  The cart body can stop a bot
+## short of the distance-based hold radius, so contact is the reliable test.
+func _is_on_payload_push() -> bool:
+	if not _objective_active or _objective_kind != "payload":
+		return false
+	var gmc := GameManager.game_mode_component
+	if gmc == null or not is_instance_valid(gmc):
+		return false
+	var payload := _get_payload_node(gmc)
+	return payload != null and payload.has_pusher(player)
+
+
+## True when the bot has reached the objective: inside the hold radius for a
+## point, or actually overlapping the push zone for a cart.
+func _is_at_objective() -> bool:
+	if not _objective_active or _objective_position == Vector3.INF:
+		return false
+	if _is_on_payload_push():
+		return true
+	return player.global_position.distance_to(_objective_position) \
+		<= _objective_hold_radius
+
+
+## Route arrival radius for the objective.  Do not use Traversal's old 1.5 m
+## floor here: a payload's push box can be only ~1.3 m in its short direction,
+## and a 1.5 m arrival parks the bot just outside it (the cart never moves).
+func _objective_arrival_radius() -> float:
+	return maxf(0.5, _objective_hold_radius * 0.7)
+
+
+## If the objective is below the bot within safe fall distance and the route
+## only reaches a partial/direct approach, walk off the ledge instead.  The
+## navmesh cannot represent a drop and the graph only connects short adjacent
+## drops; castle maps put defenders on battlements above the payload.
+func _maybe_objective_drop(world_move: bool) -> void:
+	if _traversal == null or not _objective_active \
+			or _objective_position == Vector3.INF:
+		return
+	var drop := player.global_position.y - _objective_position.y
+	if drop <= 1.0 or drop > DROP_MAX:
+		return
+	var source := _traversal.path_source()
+	if source != Traversal.PathSource.NAV_PARTIAL \
+			and source != Traversal.PathSource.DIRECT:
+		return
+	_traversal.drop_to(
+		_objective_position, 0.7, _objective_arrival_radius(), 0.05, world_move
+	)
+
+
 ## True when the bot is outside the objective's hold radius and should be
 ## returning to it, even if it can still see/shoot its target.
 func _objective_should_pull() -> bool:
 	return _objective_active and _objective_position != Vector3.INF \
-		and player.global_position.distance_to(_objective_position) \
-			> _objective_hold_radius
+		and not _is_at_objective()
 
 
 ## True when the current target is close enough to the objective that chasing it
@@ -4341,7 +4419,7 @@ func _act_seek_objective_or_wander() -> void:
 		return
 
 	var dist := player.global_position.distance_to(_objective_position)
-	if dist <= _objective_hold_radius * 0.85:
+	if _is_at_objective():
 		# Reaching the point must not turn into a wander away from it.
 		_act_hold_objective()
 		return
@@ -4365,9 +4443,8 @@ func _act_seek_objective_or_wander() -> void:
 		if perp.length_squared() > 0.01:
 			goal += perp.normalized() * _style.flank_bias \
 				* (1.0 - _style.aggression) * 6.0
-	_traversal.move_to(
-		goal, 0.6, maxf(_objective_hold_radius * 0.7, 1.5), 0.15
-	)
+	_traversal.move_to(goal, 0.6, _objective_arrival_radius(), 0.15)
+	_maybe_objective_drop(false)
 
 	_maybe_tactical_reload(wc)
 
@@ -4579,8 +4656,9 @@ func _act_combat() -> void:
 		_combat_chase_stall = 0.0
 		_traversal.move_to(
 			_objective_position, 0.85,
-			maxf(_objective_hold_radius * 0.7, 1.5), 0.05, true
+			_objective_arrival_radius(), 0.05, true
 		)
+		_maybe_objective_drop(true)
 
 	if objective_pull:
 		pass
@@ -4942,20 +5020,18 @@ func _act_search() -> void:
 		_act_seek_objective_or_wander()
 		return
 
-	# A distant hunt must not pull the bot off the objective.  Search around the
-	# point instead; if the bot is already far and the lead is far, return.
+	# An active objective outranks every hunt, including the persistent heard
+	# search.  If the bot is outside the leash, walk back to the point before
+	# sweeping; once it is close, the search is allowed around the objective.
 	if _objective_active and _objective_position != Vector3.INF \
-			and not _search_persistent:
-		var obj_dist := player.global_position.distance_to(_objective_position)
-		var origin_dist := _search_origin.distance_to(_objective_position)
-		if obj_dist > _objective_leash_radius \
-				and origin_dist > _objective_leash_radius:
-			_traversal.move_to(
-				_objective_position, 0.8,
-				maxf(_objective_hold_radius * 0.7, 1.5), 0.1
-			)
-			_act_search_weapons()
-			return
+			and not _is_at_objective():
+		_traversal.move_to(
+			_objective_position, 0.8,
+			_objective_arrival_radius(), 0.1
+		)
+		_maybe_objective_drop(false)
+		_act_search_weapons()
+		return
 
 	var pos := player.global_position
 	var flat_to := Vector2(
@@ -5909,7 +5985,18 @@ func _update_debug_label() -> void:
 		# Path-only mode: one compact "what should I be doing?" line above the
 		# head, so the objective intent is visible with the route overlay.
 		var intent_text := _intent_text
-		if _search_persistent and _persistent_heard_position != Vector3.INF:
+		var heading_to_objective := _objective_active \
+			and _objective_position != Vector3.INF \
+			and _intent in [
+				Intent.MOVE_TO_OBJECTIVE, Intent.CAPTURE, Intent.DEFEND,
+				Intent.HOLD, Intent.FIGHT_ON_OBJECTIVE,
+				Intent.RETURN_TO_OBJECTIVE,
+			]
+		if heading_to_objective:
+			intent_text += "  %dm" % roundi(
+				player.global_position.distance_to(_objective_position)
+			)
+		elif _search_persistent and _persistent_heard_position != Vector3.INF:
 			intent_text += "  %dm" % roundi(
 				player.global_position.distance_to(_persistent_heard_position)
 			)
@@ -7826,6 +7913,9 @@ class Traversal extends RefCounted:
 	var _recent_graph_ids: Array[int] = []
 	var _path_source: int = PathSource.DIRECT
 	var _chase: bool = false
+	## Set only by `drop_to()`: allows direct walking off a ledge toward an
+	## objective that is below the bot.  Never set by normal `move_to()`.
+	var _direct_drop: bool = false
 
 	var _progress_pos: Vector3 = Vector3.ZERO
 	var _progress_timer: float = 0.0
@@ -7894,6 +7984,7 @@ class Traversal extends RefCounted:
 		_recent_graph_ids.clear()
 		_path_source = PathSource.DIRECT
 		_chase = false
+		_direct_drop = false
 		_route_bias = randf_range(-1.0, 1.0)
 		_tempo_timer = 0.0
 		_tempo_moving = true
@@ -7918,6 +8009,7 @@ class Traversal extends RefCounted:
 		_query_goal = Vector3.INF
 		_clear_path()
 		_chase = false
+		_direct_drop = false
 
 	## True when the current nav route could only reach the closest point and the
 	## follower has stopped there.  Callers use this to give up a chase.
@@ -8023,6 +8115,7 @@ class Traversal extends RefCounted:
 			arrival_radius: float = TRAVEL_ARRIVE_DEFAULT,
 			caution: float = 0.0, chase: bool = false) -> void:
 		_chase = chase
+		_direct_drop = false
 		if goal == Vector3.INF or not bot.player.spawned:
 			_has_goal = false
 			bot._keyboard.set_move(0, 0)
@@ -8061,6 +8154,34 @@ class Traversal extends RefCounted:
 		_clear_path()
 		_follow_direct(goal)
 
+	## Direct approach that is allowed to step off a ledge.  Only for an active
+	## objective below the bot within safe fall distance; normal `move_to()` is
+	## preferred because it respects walls, doors and grounded routes.
+	func drop_to(goal: Vector3, urgency: float = 0.6,
+			arrival_radius: float = TRAVEL_ARRIVE_DEFAULT,
+			caution: float = 0.1, world_move: bool = false) -> void:
+		_chase = world_move
+		if goal == Vector3.INF or not bot.player.spawned:
+			_has_goal = false
+			_goal = Vector3.INF
+			_direct_drop = false
+			bot._keyboard.set_move(0, 0)
+			_state_text = "idle"
+			return
+		_has_goal = true
+		_goal = goal
+		_urgency = clampf(urgency, 0.0, 1.0)
+		_arrival = maxf(0.2, arrival_radius)
+		_caution = clampf(caution, 0.0, 1.0)
+		if _recovery != Recovery.NONE:
+			return
+		_clear_path()
+		_direct_drop = true
+		_follow_direct(goal)
+
+	func path_source() -> int:
+		return _path_source
+
 	func _follow_direct(goal: Vector3) -> void:
 		var pos := bot.player.global_position
 		var to_goal := Vector3(goal.x - pos.x, 0.0, goal.z - pos.z)
@@ -8074,8 +8195,8 @@ class Traversal extends RefCounted:
 		if flat_dist <= lookahead:
 			look = goal
 		_request_look(look)
-		_state_text = "direct"
-		var action := _perceive(dir, lookahead)
+		_state_text = "drop" if _direct_drop else "direct"
+		var action := _perceive(dir, lookahead, _direct_drop)
 		if _apply_action(action):
 			return
 		if not _tempo_ok():
