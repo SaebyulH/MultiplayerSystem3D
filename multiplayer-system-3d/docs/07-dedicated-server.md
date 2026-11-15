@@ -312,9 +312,13 @@ slot expires and the Player is freed.
 - **Dev cheats are debug-build only.** `_dev_request_is_owner()` returns false
   in release, so god mode/noclip/ammo/stamina/team requests are rejected.
 
-Still open: LAN announce signing (#133), host migration after the host slot
-expires (#131), body rotation/input clamp on the server, and lobbyd's control
-channel (#129).
+**Host migration:** when the host's reserved slot expires, the server promotes the
+lowest surviving **connected** player and broadcasts `host_player_id`; a host
+that reconnects inside the grace keeps the role.  A player who joins an
+empty-host room becomes host in `hello`.
+
+Still open: LAN announce signing (#133), server-side body-rotation clamping,
+and lobbyd's control channel (#129).
 
 ## Migration phases
 

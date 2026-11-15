@@ -1378,11 +1378,11 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 - **Status:** fixed in P5. Each welcome issues a token with a nonce; the roster entry remembers the latest nonce; `hello` rejects any older token (`SESSION_EXPIRED, Resume token was already used`), and the accepted resume rotates the nonce. A captured current token can still be used once before the real client reconnects, but it cannot be replayed afterwards.
 - **Remaining:** the nonce is per-player, not per-connection-epoch; a full session-token/epoch scheme (with a server-side revocation list) would close the single-use window entirely.
 
-### 131. Host migration is still missing after the host slot expires
+### 131. Host migration promotes the next player, but there is no explicit host UI
 
-- **Files:** `network/match_session.gd` (`_expire_reserved`, `host_player_id`)
-- **Status:** pre-auth reaping is fixed in P5. A peer that connects but never sends `hello` is disconnected after `Protocol.PREAUTH_TIMEOUT_SECONDS` (20 s, chosen because the client builds its world before the handshake).
-- **Remaining:** if the room host's reserved slot expires, no other player is promoted. `host_player_id` stays dead, so Start Match and host-only actions fail until the host reconnects. Promote the lowest surviving connected player and broadcast the host change. P6.
+- **Files:** `network/match_session.gd` (`_expire_reserved`, `broadcast_host`), `world/host_server_area.gd` (`_is_leader`)
+- **Status:** fixed in P5. Pre-auth connections are reaped after `Protocol.PREAUTH_TIMEOUT_SECONDS` (20 s, because the client builds its world before the handshake). When the host's reserved slot expires, `_expire_reserved` promotes the lowest surviving **connected** player and broadcasts `host_player_id`; the new host's HostServer zone and Start Match now pass the server's `is_player_host` check.
+- **Remaining:** no dedicated "host changed" notification in the HUD, and a host who stays reserved keeps the role until the grace expires (by design).
 
 ### 132. Detaching the world before queue_free breaks netfox's deferred settings
 

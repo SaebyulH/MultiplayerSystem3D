@@ -233,10 +233,35 @@ func _server_tick(delta: float) -> void:
 
 func _expire_reserved(player_id: int) -> void:
 	_reserved_since.erase(player_id)
+	var was_host := player_id == host_player_id
 	_players.erase(player_id)
 	if _spawn_manager != null and _spawn_manager.has_method("remove_reserved_player"):
 		_spawn_manager.remove_reserved_player(player_id)
 	player_left.emit(player_id)
+
+	# Host migration: the host's grace expired, so promote the lowest surviving
+	# connected player.  A host that reconnects inside the grace keeps the role.
+	if was_host:
+		var next_host := 0
+		var ids := _players.keys()
+		ids.sort()
+		for pid in ids:
+			var entry: Dictionary = _players[pid]
+			if int(entry.get("state", SlotState.CONNECTED)) == SlotState.CONNECTED:
+				next_host = int(pid)
+				break
+		host_player_id = next_host
+		broadcast_host.rpc(host_player_id)
+		if OS.is_debug_build():
+			print("[MATCH] host migrated to player %d" % next_host)
+
+
+## Server → all peers: the room host changed (the previous host's slot expired).
+@rpc("authority", "call_local", "reliable")
+func broadcast_host(new_host_id: int) -> void:
+	host_player_id = new_host_id
+	if OS.is_debug_build():
+		print("[MATCH] host is now player %d" % new_host_id)
 
 
 func _arg_value(prefix: String) -> String:
