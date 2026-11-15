@@ -465,7 +465,19 @@ var _randomize_on_death: bool = false
 ## `owner_peer_id` is the current ENet peer and is rebindable.  Both stay 0/1
 ## on legacy P2P paths, which fall back to the old name-derived authority.
 var player_id: int = 0
-var owner_peer_id: int = 0
+## Re-apply input authority on every change.  On a client the value arrives
+## with the replicated spawn data, AFTER `_enter_tree` has already assigned
+## authority from the node name (the stable player id) — without this hook the
+## replicated Player's `Body`/`PlayerInput` keep a peer id no packet is sent
+## from, so every remote body sync is rejected and the rollback input list is
+## built from the wrong owner.  The default initializer does not call the
+## setter, so the pre-spawn 0 is unaffected.  See `docs/02-netcode.md`.
+var owner_peer_id: int = 0:
+	set(value):
+		if owner_peer_id == value:
+			return
+		owner_peer_id = value
+		_apply_input_authority()
 
 
 ## The ENet peer that currently owns this player's input.  Bots belong to the
@@ -507,8 +519,9 @@ func _enter_tree() -> void:
 
 
 ## Root state authority is always the server; input authority belongs to the
-## player's owning peer.  Clients re-run this once they learn their stable player
-## id (the owner peer is not part of the spawn payload).
+## player's owning peer.  Runs at `_enter_tree` (legacy P2P, where the node name
+## already is the peer id), whenever `owner_peer_id` changes (the replicated
+## spawn data / resume rebind), and unconditionally from `bind_owner_peer`.
 func _apply_input_authority() -> void:
 	if is_bot:
 		player_input.set_multiplayer_authority(1)
@@ -522,6 +535,19 @@ func _apply_input_authority() -> void:
 		player_input.set_multiplayer_authority(id)
 		body.set_multiplayer_authority(id)
 		$DamageNumberManager.set_multiplayer_authority(id)
+
+	# netfox caches each property's owner per peer and only rebuilds it in
+	# `process_settings()` — the documented response to an authority change
+	# (`addons/netfox/rollback/rollback-synchronizer.gd:99-126`).  Without this,
+	# a client whose authority was fixed after the first tick reads an empty
+	# owned-input list forever and transmits nothing, so the server never
+	# simulates it.  Guarded on node readiness: `_enter_tree` runs before the
+	# RollbackSynchronizer child (its transmitter does not exist yet), and
+	# `_ready` already calls `process_settings()`.  Only the owning client needs
+	# the rebuild — the server owns no player input, and nor does any observer.
+	if rollback_sync != null and is_node_ready() and not is_bot \
+			and player_input.is_multiplayer_authority():
+		rollback_sync.process_settings()
 
 
 ## Server → all peers: the owning peer dropped and the slot is reserved.  The
@@ -538,8 +564,12 @@ func set_reserved(reserved: bool) -> void:
 ## Bind this player to a (possibly new) owning peer.  Used on the client when it
 ## finds its own replicated Player, and by the reconnect path.
 func bind_owner_peer(peer_id: int) -> void:
-	owner_peer_id = peer_id
-	_apply_input_authority()
+	if owner_peer_id == peer_id:
+		# The replicated value can already match while the authority is still the
+		# pre-sync fallback (node name / server); re-apply unconditionally.
+		_apply_input_authority()
+	else:
+		owner_peer_id = peer_id  # the setter re-applies the authority
 	# `_ready` could not tell whose player this was before the binding, so it
 	# disabled prediction.  Re-evaluate now that ownership is known.
 	if not multiplayer.is_server() and rollback_sync != null:

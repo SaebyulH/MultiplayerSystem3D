@@ -87,6 +87,7 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 | 114 | 🟢 Low | Fragility | First-person spectating hides the target's head meshes every frame on the spectator's copy; a character model with no `head_meshes` configured will clip |
 | 115 | 🟢 Low | Memory | Spectator HUDs are built on demand and persist per watched target for the session |
 | 116 | 🟢 Low | Correctness | A bot's character/weapon loadout is applied server-side with no broadcast, so a client's copy (and its spectator HUD) shows a bare mannequin |
+| 138 | 🟠 High | Netcode | ✅ FIXED — Remote Player authority was the stable player id, not the ENet peer: body/aim sync rejected on every client; input ownership could stay empty |
 
 
 ---
@@ -1422,6 +1423,15 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 - **Symptom:** in a manual P5 run with `--test-fire`, authoritative mag syncs stopped after `resumed as player 2` even though movement and input authority were restored. It may be benign (the weapon was empty/reloading, or the held-fire test hook was cleared by the respawn) rather than a netcode bug.
 - **Why:** the smoke test asserts resume + movement, not a post-resume shot.
 - **Suggested fix:** add a harness step that waits for `spawned=true` after resume, then asserts a new `fire_intent` is accepted (mag decrements) with the held-fire hook, or drive a one-shot fire explicitly.
+
+### 138. Remote Player authority was the stable player id, not the ENet peer — `[FIXED 2026-11-16]`
+
+- **Files:** `player/player.gd` (`owner_peer_id` setter, `_apply_input_authority`, `bind_owner_peer`), `world/spawn_manager.gd:166-186`, `network/match_session.gd:161-175`, `player/player.tscn:56-65` / `:531-536`.
+- **Symptom:** every client flooded `ERROR: Ignoring sync data from non-authority or for missing node.` at ~60/s per remote player (dedicated server + 2 clients: 1773 and 2430 in ~30 s), and the other player's body never turned/aimed. In the worse case the client also transmitted no input: the server never simulated it, so its copy stayed at spawn and server-spawned projectiles/tracers (`%Head.global_transform`, `weapon_controller.gd:2952`) came out of the spawn point while the owner saw normal local prediction. Listen-server runs and the smoke harness showed zero errors, because player 1's node name equals peer 1 and no third-party observer existed.
+- **Why:** a match session names the node with the stable `player_id` (`2`, `3`, …) while the owner is a random ENet peer. On a client, `_enter_tree` derived the owner from the node name before the replicated `owner_peer_id` spawn property arrived, and nothing re-applied it afterwards — so `Body` (the only client-owned synchronizer: `Body:rotation`, `Recoil/Head:rotation`, `WeaponTilt:rotation`) had an authority no packet is sent from, and Godot dropped the whole stream. Separately, `bind_owner_peer()` changed `PlayerInput` authority without netfox's `process_settings()`, so the per-peer owned-input cache could stay empty for the session.
+- **Fix:** `owner_peer_id` is a property whose setter re-runs `_apply_input_authority()` (catching the replicated spawn value and the resume rebind); `bind_owner_peer()` still re-applies unconditionally because the value can match while authority is stale; `_apply_input_authority()` calls `rollback_sync.process_settings()` when the node is ready and this peer owns the input, rebuilding netfox's ownership cache deterministically.
+- **Verification:** dedicated server + two concurrent `--connect --auto-loadout --test-move` clients: zero `Ignoring sync data` in both client logs and on the server; both `[NTSYNC]` lines keep `inp` tracking `tick` and `state` fresh with `pred=false`. Listen host + one client unchanged.
+- **Residual (TODO):** `process_settings()` clears that Player's state history on the owning client, so a bind that lands mid-session can log a few `netfox::DiffHistoryEncoder Reference tick … missing` warnings until the next full state (`full_state_interval = 45`). Harmless today; if it becomes visible, refresh ownership without tearing down the state history. The smoke harness still has no third-observer assertion — see `tests/net/run_net_smoke.ps1` and #137.
 
 ## Not bugs, but worth knowing
 

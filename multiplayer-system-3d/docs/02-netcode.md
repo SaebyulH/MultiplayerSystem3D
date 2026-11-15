@@ -27,6 +27,25 @@ The project deliberately splits simulation responsibility. Getting this wrong (e
   (the replicated value can already match before input authority is fixed).
 - **Server-originated visuals use `authority`**; a node whose authority is the
   owning peer (damage numbers) instead checks that the sender is the server.
+- **Authority is the real ENet peer, re-applied whenever `owner_peer_id`
+  changes.** `Player.owner_peer_id` has a setter that calls
+  `_apply_input_authority()`; the replicated spawn property therefore fixes
+  `PlayerInput` / `Body` / `DamageNumberManager` on a client **after**
+  `_enter_tree` has assigned them from the node name (which in a match session
+  is the stable player id `2`, `3`, …, not a peer id). Nodes under `Body`
+  (`PlayerUI`, `WeaponTilt`, `Recoil/Head`, the mannequin) inherit it
+  recursively. `Body` is the only synchronizer whose authority is the owning
+  peer (`Body:rotation`, `Recoil/Head:rotation`, `WeaponTilt:rotation`); a
+  stale authority makes every client reject that stream with
+  `Ignoring sync data from non-authority or for missing node`.
+- **`bind_owner_peer()` also rebuilds the rollback ownership cache.** netfox
+  caches each property's owner per peer in `_PropertyConfig` and only refreshes
+  it in `process_settings()` — its documented response to an authority change
+  (`addons/netfox/rollback/rollback-synchronizer.gd:99-126`). `_apply_input_authority()`
+  calls it once the node is ready and only on the peer that owns the input, so
+  the client records and transmits its inputs even if the bind lands after the
+  first tick. Without that, `_get_owned_input_props()` stays empty and the
+  server never simulates the player.
 - **Rate limits and allowlists:** fire intents 240/s, casts 60/s, loadout paths
   under `res://weapon|player/characters|player/player_classes`, start maps must
   be a `MapData.map_scene_path`.  Resume tokens are single-use (nonce), pre-auth

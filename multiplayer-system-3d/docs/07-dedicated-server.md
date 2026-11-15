@@ -365,6 +365,12 @@ plan and the P0 notes.
 - **Player identity is separate from peer identity.** `player_id` is stable across
   reconnect and is the node name and score key; `owner_peer_id` is the current
   ENet peer and is rebindable. Never derive identity from `str(name).to_int()`.
+- **Owner authority is re-applied, not inferred.** `Player.owner_peer_id`'s
+  setter and `bind_owner_peer()` re-run `_apply_input_authority()` so a client's
+  copy of a Player (including the replicated spawn property and a resume rebind)
+  always names the real ENet peer as authority; the owning client then calls
+  `rollback_sync.process_settings()`, because netfox only rebuilds its per-peer
+  property ownership there. See `02-netcode.md`.
 - **Maps are local assets.** Only the path and hash go on the wire.
 - **The server is the only tick reference.** Clients start `NetworkTime` after
   the map load settles; the server never re-seeds mid-match.

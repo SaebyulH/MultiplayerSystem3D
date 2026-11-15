@@ -21,6 +21,12 @@ host on the first free port in the `8092` range.  Logs are written to
 5. LAN discovery finds the host and reports `castle`.
 6. Forced transport drop → reconnect with a single-use resume token
    (`--test-drop-after`, `--test-resume-grace=5`).
+7. Dedicated server + **two** clients concurrently: both own their input, no
+   `Ignoring sync data` in steady state, and each client's last `[NTSYNC]` line
+   has `inp` tracking `tick` with `pred=false` (the server is simulating it).
+   The listen phases cannot see this path — the host is peer 1 (name == peer id)
+   and a single client has no remote body to sync. Regression guard for
+   `05-known-issues.md` #138.
 
 ## Status
 

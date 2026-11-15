@@ -106,8 +106,76 @@ try {
     Assert ($resumeText -match "resumed as player \d+") "client resumed after a drop"
     Assert (-not ($resumeText -match "SESSION_EXPIRED")) "resume token was accepted"
 
+    # 7. Dedicated server, two clients concurrently.
+    #
+    # The listen phases above cannot see the authority/ownership paths: the host
+    # is peer 1 (its node name matches its peer id) and a single client has no
+    # remote body to sync.  This phase is the regression guard for
+    # docs/05-known-issues.md #138: no rejected syncs in steady state, and a
+    # live input/state domain (the server must be simulating each client).
+    $dediPort = $BasePort + 1
+    $dediLog = Join-Path $Out "dedicated.log"
+    $dediArgs = @("--path", $Project, "--headless", "--", "--server", "--port=$dediPort")
+    $dediProc = Start-Process -FilePath $Godot -ArgumentList $dediArgs -PassThru -NoNewWindow `
+        -RedirectStandardOutput $dediLog -RedirectStandardError "$dediLog.err"
+
+    $dediDeadline = (Get-Date).AddSeconds(60)
+    $dediReady = $false
+    while ((Get-Date) -lt $dediDeadline) {
+        if ((Test-Path $dediLog) -and (Select-String -Path $dediLog -Pattern "ready on UDP $dediPort" -Quiet)) {
+            $dediReady = $true
+            break
+        }
+        Start-Sleep -Milliseconds 250
+    }
+    if (-not $dediReady) {
+        Stop-Process -Id $dediProc.Id -Force -ErrorAction SilentlyContinue
+        Fail "dedicated server never listened"
+    }
+
+    $dediClients = @()
+    foreach ($name in @("dedi-client-a", "dedi-client-b")) {
+        $log = Join-Path $Out "$name.log"
+        $dediClients += [pscustomobject]@{
+            Log = $log
+            Proc = Start-Process -FilePath $Godot -PassThru -NoNewWindow `
+                -ArgumentList @("--path", $Project, "--headless", "--quit-after", "1600",
+                    "--", "--connect=127.0.0.1:$dediPort", "--auto-loadout", "--test-move") `
+                -RedirectStandardOutput $log -RedirectStandardError "$log.err"
+        }
+    }
+    foreach ($c in $dediClients) {
+        if (-not $c.Proc.WaitForExit(180000)) {
+            Stop-Process -Id $c.Proc.Id -Force -ErrorAction SilentlyContinue
+            Fail "timeout: $($c.Log)"
+        }
+    }
+    Stop-Process -Id $dediProc.Id -Force -ErrorAction SilentlyContinue
+
+    foreach ($c in $dediClients) {
+        $text = Get-Content $c.Log -Raw
+        Assert ($text -match "\[MATCH\] rebound player \d+: owner=\d+ input_auth=true") "dedicated client owns its input ($($c.Log))"
+        # Steady state only: the join window can legitimately log a few
+        # "missing node" rejections (#127), while the authority bug floods at
+        # ~60/s for the whole session.
+        $tail = (Get-Content $c.Log -Tail 200) -join "`n"
+        Assert (-not ($tail -match "Ignoring sync data")) "no rejected syncs in steady state ($($c.Log))"
+        $sync = [regex]::Matches($text, "(?m)^\[NTSYNC\].*?tick=(\d+).*?inp=(-?\d+).*?pred=(true|false)")
+        Assert ($sync.Count -gt 0) "client printed a [NTSYNC] line ($($c.Log))"
+        $last = $sync[$sync.Count - 1]
+        $tick = [int]$last.Groups[1].Value
+        $inp = [int]$last.Groups[2].Value
+        $pred = $last.Groups[3].Value
+        Assert ($inp -ge 0 -and ($tick - $inp) -le 20 -and $pred -eq "false") "server simulates the client ($($c.Log))"
+        Assert (-not ($text -match "Version mismatch!")) "input encoder versions agree ($($c.Log))"
+    }
+
     Write-Host "net smoke: OK" -ForegroundColor Green
 }
 finally {
     Stop-Process -Id $hostProc.Id -Force -ErrorAction SilentlyContinue
+    if ($null -ne $dediProc) { Stop-Process -Id $dediProc.Id -Force -ErrorAction SilentlyContinue }
+    if ($null -ne $dediClients) {
+        foreach ($c in $dediClients) { Stop-Process -Id $c.Proc.Id -Force -ErrorAction SilentlyContinue }
+    }
 }
