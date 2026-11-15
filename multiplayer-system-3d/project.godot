@@ -22,6 +22,9 @@ run/disable_low_processor_usage_mode=true
 
 [autoload]
 
+MatchSession="*res://network/match_session.gd"
+LobbyClient="*res://network/lobby_client.gd"
+LanDiscovery="*res://network/lan_discovery.gd"
 NetworkManager="*uid://c0kxtgivn4uom"
 Console="*uid://ouiu5xh1cs8n"
 Leaderboard="*uid://cawn7r8wbbqbx"

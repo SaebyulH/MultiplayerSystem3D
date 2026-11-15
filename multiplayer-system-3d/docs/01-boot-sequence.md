@@ -8,8 +8,9 @@ A precise, ordered walkthrough of everything that happens from pressing Play to 
 
 ## Stage 0 — Engine boot + autoload `_ready` order
 
-`project.godot:22-32` instantiates 9 autoloads **in order**; `_ready` runs in the same order, which matters:
+`project.godot` instantiates the autoloads **in order**; `_ready` runs in the same order, which matters:
 
+0. `MatchSession` (`network/match_session.gd`) — stable player id, server roster, `hello`/`welcome` handshake, node-readiness gate, phase broadcast. First so `NetworkManager` can initialize a client/server match session during boot.
 1. `NetworkManager` (`network/network_manager.gd`) — connects the three session-lifetime `SceneMultiplayer` signals **once** (`connected_to_server`, `server_disconnected`, `connection_failed`), guarded by `is_connected()` so they survive peer teardown.
 2. `Console`
 3. `Leaderboard` — server-authoritative score autoload.
@@ -28,11 +29,33 @@ The engine then loads the main scene `res://world/main.tscn` (a `Control` root `
 
 `world/main.gd:22-23` — `_ready()` → `_boot()`.
 
-`world/main.gd:26-41` — `_boot()`:
+`world/main.gd` — `_boot()` reads `OS.get_cmdline_user_args()` and routes:
+
+| Flags (after `--`) | Path |
+|---|---|
+| `--server [--port=N]` | `NetworkManager.boot_dedicated_server()` — headless match server; peer 1 is **not** a player; returns without hiding the loading screen (there is no local UI). |
+| `--listen-server [--port=N]` | `NetworkManager.boot_listen_server()` — host + play in one process; fails loudly if the port is taken. |
+| `--offline` | `NetworkManager.boot_offline_lobby()` — local 3D lobby shell on `OfflineMultiplayerPeer`. |
+| `--connect=host[:port]` | `NetworkManager.join_party()` — direct-IP dev client; the join flow owns the loading screen. |
+| `--lobby=http://host:port` | Configures `LobbyClient` and boots the offline 3D shell; the HostServer zone creates a match through lobbyd, JoinParty opens the browser. |
+| `--lobby-create` | Creates a match through lobbyd, then connects to the returned endpoint with its grant. |
+| `--lobby-join=CODE` | Joins a lobbyd match by code, then connects with its grant. |
+| `--match-id=N` | Set by lobbyd on a dedicated server; bound into the join-grant check. |
+| `--test-host-local [--test-host-map=res://maps/X.tscn]` | Boots the local shell, then starts an in-process listen server (test hook for the Host Match flow). |
+| `--test-lan` | Boots the shell, scans the LAN discovery range, prints servers, exits. |
+| `--no-discovery` | Disables the LAN announce/probe sockets. |
+| **no flags (default)** | `NetworkManager.boot_offline_lobby()` — local 3D shell with no external service. HostServer opens the host menu (map/teams/bots) then starts a listen server in-process; JoinParty has LAN + Direct IP tabs and joins with the match-session handshake. |
+| `--legacy-p2p` | `NetworkManager.boot_to_lobby()` — old auto-host P2P behaviour. |
+
+`--auto-loadout` is a test hook for headless runs: it confirms the initial random loadout so a client actually spawns without mouse input. It is ignored on a dedicated server.
+
+Common steps:
 1. `$LoadingScreen` shown.
-2. `await _preload_resources(...)` (`world/main.gd:44-85`) — **parallel** threaded-loads all 6 heavy paths up front (`main_menu_world.tscn`, `spawn_manager.tscn`, `spawn_bot_menu.tscn`, the 3 `.tres` class resources) so later `load()` calls are cache hits. Requesting them together makes boot time roughly the *max* load instead of the sum.
-3. **`await NetworkManager.boot_to_lobby()`** (line 33). Note: this is a **direct `await`**, *not* `call_deferred` — older `CLAUDE.md` text describing a deferred call is stale.
-4. Sets progress 1.0, waits two `process_frame`s (lines 39-40, to let D3D12 shaders compile behind the screen), hides the loading screen.
+2. `await _preload_resources(...)` — **parallel** threaded-loads all 6 heavy paths up front (`main_menu_world.tscn`, `spawn_manager.tscn`, `spawn_bot_menu.tscn`, the 3 `.tres` class resources) so later `load()` calls are cache hits. Requesting them together makes boot time roughly the *max* load instead of the sum.
+3. The route above runs. `boot_to_lobby` is a **direct `await`**, *not* `call_deferred` — older `CLAUDE.md` text describing a deferred call is stale.
+4. Sets progress 1.0, waits two `process_frame`s (to let D3D12 shaders compile behind the screen), hides the loading screen.
+
+A dedicated server still preloads the player scene and staging map because it runs the real simulation; `world_1.gd` is what skips the local-player UI (`GameMenu` hidden, no kill feed, no dev menu, no spectator controller) and tells `SpawnManager` not to add a peer-1 player.
 
 `LoadingScreen.report()` no-ops unless `LoadingScreen.current` is set (which happens in `ui/loading_screen.gd:36-39`).
 

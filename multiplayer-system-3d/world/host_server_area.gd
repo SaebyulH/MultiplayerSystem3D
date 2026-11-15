@@ -11,6 +11,7 @@ const HOST_MENU_SCENE := preload("res://world/host_menu.tscn")
 
 var _players_inside: Array[Player] = []
 var _menu: Node = null
+var _creating := false
 
 
 func _ready() -> void:
@@ -60,7 +61,7 @@ func _on_body_exited(body: Node3D) -> void:
 
 
 func _local_player_inside() -> bool:
-	var my_id := str(multiplayer.get_unique_id())
+	var my_id := MatchSession.local_id_string()
 	for p in _players_inside:
 		# `body_exited` is not guaranteed for a Player that is freed outright.
 		if is_instance_valid(p) and p.name == my_id:
@@ -69,7 +70,21 @@ func _local_player_inside() -> bool:
 
 
 func _is_leader() -> bool:
-	return multiplayer.get_unique_id() == 1
+	return MatchSession.local_is_host()
+
+
+## Local 3D shell: pressing E hosts a match with no external service.  With the
+## C lobby enabled it allocates a lobbyd server instead; otherwise it starts an
+## in-process listen server.
+func _lobby_shell() -> bool:
+	return NetworkManager.role == NetworkManager.Role.OFFLINE
+
+
+## Staging match: pressing E opens the map picker and starts the match.  The
+## listen-server host loads directly; a dedicated-server host sends the RPC.
+func _lobby_staging() -> bool:
+	return NetworkManager.role == NetworkManager.Role.CLIENT \
+		or NetworkManager.role == NetworkManager.Role.LISTEN_SERVER
 
 
 func _refresh_prompt() -> void:
@@ -77,7 +92,15 @@ func _refresh_prompt() -> void:
 		prompt_label.visible = false
 		return
 	prompt_label.visible = true
-	prompt_label.text = "Host Server (E)" if _is_leader() else "MUST BE PARTY LEADER"
+	if _lobby_shell():
+		if LobbyClient.is_enabled():
+			prompt_label.text = "Create Match (E)" if _is_leader() else "MUST BE PARTY LEADER TO CREATE"
+		else:
+			prompt_label.text = "Host Match (E)" if _is_leader() else "MUST BE PARTY LEADER TO HOST"
+	elif _lobby_staging():
+		prompt_label.text = "Start Match (E)" if _is_leader() else "MUST BE PARTY LEADER TO START"
+	else:
+		prompt_label.text = "Host Server (E)" if _is_leader() else "MUST BE PARTY LEADER"
 
 
 # ─────────────────────────────────────────────
@@ -96,5 +119,24 @@ func _unhandled_input(event: InputEvent) -> void:
 		# popup opens on top of it and its close clears ui_open underneath.
 		if PlayerInput.ui_open:
 			return
+		if _lobby_shell() and LobbyClient.is_enabled():
+			_create_match_via_lobby()
+			return
+		# Local shell without lobbyd: open the host menu first so the host picks
+		# the map/teams/bots; `_on_start_pressed` boots the listen server.
 		if _ensure_menu():
 			_menu.open()
+
+
+func _create_match_via_lobby() -> void:
+	if _creating:
+		return
+	_creating = true
+	prompt_label.text = "Creating match…"
+	var result: Dictionary = await LobbyClient.create_match()
+	if not result.has("endpoint") or not result.has("grant"):
+		push_error("Lobby create failed: %s" % result.get("error", "unknown"))
+		_creating = false
+		_refresh_prompt()
+		return
+	await NetworkManager.join_match(str(result["endpoint"]), str(result["grant"]))

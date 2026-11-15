@@ -448,6 +448,7 @@ metadata/_custom_type_script = "uid://dour8fehaaugp"
 script = ExtResource("3_2uvqg")
 root = NodePath("..")
 enable_prediction = true
+enable_input_broadcast = false
 state_properties = Array[String]([":global_transform", ":velocity", ":stamina", ":dash_held_prev", ":jump_held_prev", ":crouch_held_prev", ":air_jumps_used", ":air_dashes_used", ":dash_time", ":active_dash_dir", ":dash_grounded", ":dash_jump_locked", ":crouch_tap_timer", ":is_crouching", ":charge_time", ":charge_dir", ":pinned_at_wall", ":bashdown_time", ":bashdown_dir", ":bashdown_slamming"])
 input_properties = Array[String](["PlayerInput:input_dir", "PlayerInput:jump_input", "PlayerInput:crouch", "PlayerInput:dash_input", "PlayerInput:charge_trigger_dir", "PlayerInput:bashdown_trigger_dir", "PlayerInput:teleport_trigger_dir"])
 metadata/_custom_type_script = "uid://d350u8evihs1u"

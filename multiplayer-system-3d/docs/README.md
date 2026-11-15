@@ -14,6 +14,7 @@ Class-based team FPS (TF2-style hero shooter) on **Godot 4.7** (Forward Plus, Jo
 | 4 | [`04-optimization.md`](04-optimization.md) | Performance model, hot paths, patterns to avoid | anything touching `_process`/`_physics_process`/`_rollback_tick` or spawning effects |
 | 5 | [`05-known-issues.md`](05-known-issues.md) | High-signal TODO backlog (perf bugs, correctness fragilities), severity-ranked | triage before starting any perf/bug work; add entries here when you introduce risk |
 | 6 | [`06-trenchbroom-entities.md`](06-trenchbroom-entities.md) | The `trenchbroom/` func_godot pipeline: the entity folder system, FGD export, models, rotation | anything about map authoring, `trenchbroom/entities/*`, or a prop entity placed in TrenchBroom |
+| 7 | [`07-dedicated-server.md`](07-dedicated-server.md) | Target dedicated-server architecture, map manifest, protocol rules, migration phases | anything about the P2P → dedicated-server rework, `network/session_protocol.gd`, or `maps/manifest.json` |
 
 ## Contribution rule (binding)
 
@@ -25,13 +26,16 @@ Class-based team FPS (TF2-style hero shooter) on **Godot 4.7** (Forward Plus, Jo
 - If you add or touch a per-frame / per-shot hot path → update `04-optimization.md`.
 - If you introduce (or find) a bug, fragility, or perf risk → **add a TODO to `05-known-issues.md`** with file:line, symptom, and a suggested fix. Even if you don't fix it, record it.
 - If you change the map-authoring pipeline (`trenchbroom/`, entity definitions, the FGD, `FuncGodotMap`) → update `06-trenchbroom-entities.md`.
+- If you change the session/handshake layer, the map manifest, or the dedicated-server topology → update `07-dedicated-server.md`.
 
 Treat a missing doc update as an incomplete change.
 
 ## Architecture at a glance
 
-- **Autoload order is load-bearing** (`project.godot:22-32`): `NetworkManager → Console → Leaderboard → NetworkTime → NetworkTimeSynchronizer → NetworkRollback → NetworkEvents → NetworkPerformance → GameManager`. `NetworkEvents` (7th) wires `on_server_start/stop → NetworkTime.start/stop` in its `_ready`, which is safe only because `NetworkTime` loads before it.
-- **Peer 1 is always the server and the party leader.** The host is also a player. Bots are fully server-authoritative. The entire "party leader" model is *implied* by `get_unique_id() == 1` — there is no explicit leader state.
+- **Autoload order is load-bearing** (`project.godot`): `MatchSession → NetworkManager → Console → Leaderboard → NetworkTime → NetworkTimeSynchronizer → NetworkRollback → NetworkEvents → NetworkPerformance → GameManager`. `NetworkEvents` wires `on_server_start/stop → NetworkTime.start/stop` in its `_ready`, which is safe only because `NetworkTime` loads before it. `MatchSession` first so `NetworkManager` can initialize a client/server session at boot.
+- **The default boot is the local 3D shell**, with no peer and no external service. HostServer opens the host menu (map/teams/bots) and Start boots an in-process listen server directly into the chosen map on the first free port in `8080-8095`. JoinParty has **LAN** (UDP discovery on `7355-7370`) and **Direct IP** tabs; both join with the match-session handshake. `--legacy-p2p` keeps the old auto-host path. `--server` + `--connect` start a match session with a dedicated server where peer 1 is not a player. See `07-dedicated-server.md`.
+- **The C lobby is `server/lobbyd`.** It allocates UDP ports, spawns one headless Godot per match, issues HMAC join grants, and serves the 3D shell's match browser over loopback HTTP. `--lobby=http://host:port` enables it; it is control-plane only and never relays gameplay.
+- **Peer 1 is always the server and (in the legacy P2P path) the party leader.** In a match session it is only the server. Bots are fully server-authoritative.
 - **The lobby is just another map** (`maps/main_menu_world.tscn`, `game_mode = MAIN_MENU`). `world/world1.tscn`'s `MultiplayerSpawner` (`spawn_path = "../SpawnParent"`) replicates whatever node named `"Map"` is in `SpawnParent`, plus every `Player`. No map-selection special case — a joiner gets whatever map the host currently has.
 - **Movement is rollback-simulated; everything else is server-authoritative RPC.** Inputs (`input_dir`, `jump_input`, `crouch`, `dash_input`, ability trigger dirs) are rollback-synced; firing/reload/damage/effects/score are RPC. See `02-netcode.md`.
 - **Fire-held flags must never be rollback-synced** — netfox stomps them on re-simulation ticks. See `02-netcode.md`.

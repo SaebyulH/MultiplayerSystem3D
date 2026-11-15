@@ -4,8 +4,13 @@ The project deliberately splits simulation responsibility. Getting this wrong (e
 
 ## Topology
 
-- Peer 1 is always the server (and the host player). Humans connect with ENet ids > 1. `network/network_manager.gd:27-55`.
-- Autoloads: `NetworkManager`, `Leaderboard`, `NetworkTime`, `NetworkTimeSynchronizer`, `NetworkRollback`, `NetworkEvents`, `NetworkPerformance`, `GameManager` (`project.godot:22-32`).
+- Two topologies coexist during the dedicated-server migration (`docs/07-dedicated-server.md`):
+  - **Default local shell + listen server:** the game boots on an `OfflineMultiplayerPeer`; HostServer converts the process into a listen server (peer 1 is the host player) and JoinParty uses the match-session handshake. No external service.
+  - **Match session (`--server` + `--connect`, or a lobbyd match):** a dedicated Godot server where peer 1 is **not** a player. Players have a stable integer `player_id` (node name / score key) separate from the rebindable `owner_peer_id` (ENet peer). Only the local player's movement is predicted on a client; remote players follow server state and are interpolated. Maps load from local files (path + SHA-256 on the wire), and players are added only after the client's world exists. `network/match_session.gd`.
+  - **Legacy P2P (`--legacy-p2p`):** the old auto-host behaviour, kept for development.
+- In both topologies the rollback-vs-RPC split below is unchanged. Match sessions additionally set `enable_input_broadcast = false` on the Player synchronizer (inputs go to the server only) and tune `full_state_interval` / `diff_ack_interval` in `Player._ready`.
+- **A match-session reconnect does not rebuild the world.** `NetworkTime` is stopped and restarted, then the existing `RollbackSynchronizer`s are reset with `_reset_rollback_history()` **after** `start()` — their cursors still belong to the pre-drop tick domain otherwise. `Player.rpc_reset` is reliable (it was unreliable) because a dropped resume respawn left the client despawned. See `03-event-flow.md`, "Reconnect / resume".
+- Autoloads: `MatchSession`, `NetworkManager`, `Console`, `Leaderboard`, `NetworkTime`, `NetworkTimeSynchronizer`, `NetworkRollback`, `NetworkEvents`, `NetworkPerformance`, `GameManager` (`project.godot`).
 - `[netfox] time/tickrate = 90`, `time/sync_to_physics = true`, and `[physics] common/physics_ticks_per_second = 90` (`project.godot:215-232`); Jolt physics; collision layers WORLD=1, PLAYER_COLLISION=2, HURTBOX=3, HITBOX=4, RAGDOLLS=8. **The tick rate and the physics rate are deliberately equal**, and the tick loop runs inside the physics frame — see §8, "Platform carry is the engine's, and it needs the tick and the physics step to coincide".
 
 ---

@@ -107,7 +107,7 @@ func _up(pitch: float) -> float:
 
 
 func _ready() -> void:
-	player_id = str(multiplayer.get_unique_id())
+	player_id = MatchSession.local_id_string()
 	if has_node("ID"):
 		$ID.text = "ID: " + player_id
 

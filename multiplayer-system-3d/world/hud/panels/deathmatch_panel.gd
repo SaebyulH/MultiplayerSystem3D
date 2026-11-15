@@ -72,7 +72,7 @@ func _populate(container: HBoxContainer, entries: Array, players: Array) -> void
 		var entry := entries.pop_back() as Control
 		entry.queue_free()
 
-	var my_id := str(multiplayer.get_unique_id())
+	var my_id := MatchSession.local_id_string()
 	for i in players.size():
 		var entry := entries[i] as Control
 		var kill_label := entry.get_node("HBox/KillLabel") as Label

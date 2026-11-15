@@ -300,10 +300,10 @@ func _player_team(player_name: String) -> int:
 
 ## Classifies a player's relation to the local player.
 func _relationship(player_name: String) -> int:
-	if player_name == str(multiplayer.get_unique_id()):
+	if player_name == MatchSession.local_id_string():
 		return Relationship.YOU
 	var player_team := _player_team(player_name)
-	var my_team := _player_team(str(multiplayer.get_unique_id()))
+	var my_team := _player_team(MatchSession.local_id_string())
 	if player_team != Player.Team.FFA and player_team == my_team:
 		return Relationship.TEAMMATE
 	return Relationship.ENEMY

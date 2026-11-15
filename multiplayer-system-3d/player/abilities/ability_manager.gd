@@ -563,9 +563,7 @@ func _is_action_blocked() -> bool:
 func _is_owning_client() -> bool:
 	if _parent_player == null or _parent_player.is_bot:
 		return false
-	var my_id: int = multiplayer.get_unique_id()
-	var owner_id: int = _parent_player.name.to_int()
-	return my_id == owner_id
+	return _parent_player.is_owned_by_local_peer()
 
 func _on_ability_key(index: int) -> void:
 	if index < 0 or index >= abilities.size():

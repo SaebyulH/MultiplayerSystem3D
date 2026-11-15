@@ -4,28 +4,134 @@ class_name SpawnManager
 @onready var spawn_parent: Node3D = get_parent().get_node("%SpawnParent")
 var player_scene: PackedScene
 var bot_scene: PackedScene  # assign in editor
+## A dedicated match server has no peer-1 player; world_1 clears this before
+## adding the manager.  Legacy/listen hosts keep it true.
+var spawn_local_player: bool = true
 var _bot_counter: int = 0
 
 func _ready() -> void:
 	get_tree().get_multiplayer().peer_connected.connect(_peer_connected)
 	get_tree().get_multiplayer().peer_disconnected.connect(_peer_disconnected)
-	_add_player_to_game(1)
+	if MatchSession.role == MatchSession.Role.SERVER:
+		if not MatchSession.player_left.is_connected(_on_player_left):
+			MatchSession.player_left.connect(_on_player_left)
+	if spawn_local_player:
+		# On a listen server the host is a real participant; register it before
+		# the Player node so identity lookups agree from the first frame.
+		if MatchSession.role == MatchSession.Role.SERVER:
+			MatchSession.register_host_player(1)
+		_add_player_to_game(1, 1)
 	randomize()
 
 func _peer_connected(network_id):
+	# Match-session servers add players from `MatchSession.hello`, after the
+	# client's world exists (#124).  Legacy P2P still adds on connect.
+	if MatchSession.role == MatchSession.Role.SERVER:
+		return
 	if OS.is_debug_build(): print("Peer connected: Network ID: %s" % network_id)
-	_add_player_to_game(network_id)
-	# Existing players were added before this peer connected, so their
-	# rpc_reset already fired.  When Godot replicates those nodes to the
-	# new peer, _ready() calls despawn() and nothing re-shows them.
-	# Sync their visibility a frame later, once tree sync is settled.
-	_sync_existing_players_to_peer(network_id)
+	_add_player_to_game(network_id, network_id)
 
-## Make already-spawned players visible to a late-joining peer.
-func _sync_existing_players_to_peer(peer_id: int) -> void:
+
+## Match-session server entry point: called from `MatchSession._accept_peer`.
+func add_remote_player(player_id: int, owner_peer_id: int) -> void:
+	if MatchSession.role != MatchSession.Role.SERVER:
+		return
+	if has_remote_player(player_id):
+		return
+	_add_player_to_game(player_id, owner_peer_id)
+
+
+## Per-peer replication gate for a joining client.  Existing players' sync data
+## must not arrive before their spawn packets, or Godot logs "Ignoring sync data
+## from non-authority or for missing node".
+func hide_players_from_peer(peer_id: int) -> void:
+	for sync in _all_player_syncs():
+		sync.set_visibility_for(peer_id, false)
+
+
+func show_players_to_peer(peer_id: int) -> void:
+	for sync in _all_player_syncs():
+		sync.set_visibility_for(peer_id, true)
+
+
+func _all_player_syncs() -> Array[MultiplayerSynchronizer]:
+	var out: Array[MultiplayerSynchronizer] = []
+	for child in spawn_parent.get_children():
+		if child is Player:
+			for node in child.find_children("*", "MultiplayerSynchronizer", true, false):
+				var sync := node as MultiplayerSynchronizer
+				if sync != null:
+					out.append(sync)
+	return out
+
+
+## Wait a few frames after a spawn before the new Player's state sync is
+## enabled, so the spawner's reliable spawn packet reaches peers first.
+##
+## NOTE: `public_visibility = false` on a newly spawned Player's synchronizers is
+## NOT safe here — Godot does not spawn a node to a peer whose synchronizer is
+## not visible to it, so the client never receives its own Player.  Visibility
+## gating is only applied to peers on synchronizers that are still public; see
+## 05-known-issues.md #127.
+func _reveal_player_after_spawn(player: Player) -> void:
+	for _i in range(3):
+		await get_tree().process_frame
+	if not is_instance_valid(player):
+		return
+	for node in player.find_children("*", "MultiplayerSynchronizer", true, false):
+		var sync := node as MultiplayerSynchronizer
+		if sync != null:
+			sync.public_visibility = true
+
+
+func has_remote_player(player_id: int) -> bool:
+	return spawn_parent != null and spawn_parent.find_child(str(player_id), false, false) != null
+
+
+## A peer dropped.  Keep the Player node (score/team/loadout live on it) but
+## despawn it so it stops simulating and cannot be shot during the grace period.
+func reserve_player(player_id: int) -> void:
+	var player := _find_player(player_id)
+	if player == null:
+		return
+	player.set_reserved.rpc(true)
+
+
+## A reserved player reconnected on a new peer.  Rebind input authority and
+## respawn at a team spawn; score/team/loadout are untouched.
+func resume_player(player_id: int, peer_id: int) -> void:
+	var player := _find_player(player_id)
+	if player == null:
+		push_error("resume_player: no Player node for id %d" % player_id)
+		return
+	if OS.is_debug_build():
+		print("[MATCH] server resume player %d on peer %d (spawned was %s)" % [
+			player_id, peer_id, player.spawned])
+	player.bind_owner_peer(peer_id)
+	player.rpc_reset.rpc(player._get_spawn_transform())
+
+
+func remove_reserved_player(player_id: int) -> void:
+	var player := _find_player(player_id)
+	if player != null:
+		# `player_left`/Leaderboard cleanup is done by the caller for an expired
+		# slot; this only frees the node.
+		player.queue_free()
+
+
+func _find_player(player_id: int) -> Player:
+	if spawn_parent == null:
+		return null
+	var node := spawn_parent.find_child(str(player_id), false, false)
+	return node as Player
+
+
+## Make already-spawned players visible to a late-joining peer.  `exclude_player_id`
+## is the joining player's stable id (not its peer id).
+func sync_existing_players_to_peer(peer_id: int, exclude_player_id: int) -> void:
 	await get_tree().process_frame
 	for child in spawn_parent.get_children():
-		if child is Player and child.spawned and child.name != str(peer_id):
+		if child is Player and child.spawned and child.player_id != exclude_player_id:
 			# Read live off the player rather than derived from the effect, so
 			# they are correct whether or not a size effect is active (both are
 			# 1.0 when none is).
@@ -38,21 +144,45 @@ func _sync_existing_players_to_peer(peer_id: int) -> void:
 				child.status_effect_manager._sync_to_clients(peer_id)
 
 func _peer_disconnected(network_id):
+	# A match-session server routes disconnects through `MatchSession.player_left`
+	# so the stable player id (not the dying peer id) is what gets removed.
+	if MatchSession.role == MatchSession.Role.SERVER:
+		return
 	if OS.is_debug_build(): print("Peer disconnected: Network ID: %s" % network_id)
 	var player_to_remove = spawn_parent.find_child(str(network_id), false, false)
 	if player_to_remove:
 		player_to_remove.queue_free()
 	Leaderboard.request_remove_player(str(network_id))
 
-func _add_player_to_game(network_id: int):
-	var entity_id := str(network_id)  # players keep net ID as their entity_id
+
+func _on_player_left(player_id: int) -> void:
+	if OS.is_debug_build(): print("Player %d left" % player_id)
+	var player_to_remove = spawn_parent.find_child(str(player_id), false, false)
+	if player_to_remove:
+		player_to_remove.queue_free()
+	Leaderboard.request_remove_player(str(player_id))
+
+
+func _add_player_to_game(player_id: int, owner_peer_id: int):
+	var entity_id := str(player_id)
 	var player_to_add = player_scene.instantiate()
 	player_to_add.name = entity_id
-	player_to_add.set_multiplayer_authority(network_id)
+	player_to_add.player_id = player_id
+	player_to_add.owner_peer_id = owner_peer_id
+	# Root authority is always the server (state authority); Player._enter_tree
+	# assigns input authority to `owner_peer_id`.
+	player_to_add.set_multiplayer_authority(1)
 	player_to_add.spawn_manager = self
 	spawn_parent.add_child(player_to_add)
 	player_to_add.global_position = Vector3(0, 100, 0)
 	Leaderboard.request_add_player(entity_id)
+	if MatchSession.role == MatchSession.Role.SERVER:
+		var spawner := get_parent().get_node_or_null("MultiplayerSpawner") as MultiplayerSpawner
+		if OS.is_debug_build():
+			print("[MATCH] added player %d owner %d; spawnable=%s" % [
+				player_id, owner_peer_id,
+				str(spawner._spawnable_scenes) if spawner != null else "<no spawner>"])
+		_reveal_player_after_spawn(player_to_add)
 
 
 ## Dev-menu "remove all bots".  Snapshots the names first (remove_bot frees
@@ -150,6 +280,8 @@ func _spawn_bot(team: Player.Team) -> String:
 	var bot = player_scene.instantiate()
 	bot.name = entity_id
 	bot.is_bot = true
+	bot.player_id = 0
+	bot.owner_peer_id = 1
 	bot.team = team  # set BEFORE add_child so _ready() sees correct team
 	bot.set_multiplayer_authority(1)
 	bot.spawn_manager = self

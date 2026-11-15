@@ -508,7 +508,16 @@ func _make_player_card(p: Player, team: Player.Team) -> PlayerCard:
 # ─────────────────────────────────────────────────────────────
 
 func _on_start_pressed() -> void:
-	if _selected_map == null or _selected_map.map_scene_path.is_empty() or not multiplayer.is_server():
+	# A dedicated-server host is a client; its start request is validated by the
+	# server.  A listen/legacy host (and the offline shell) is the server.
+	var can_start := multiplayer.is_server() or NetworkManager.role == NetworkManager.Role.CLIENT
+	if _selected_map == null or _selected_map.map_scene_path.is_empty() or not can_start:
+		return
+
+	# Local shell: capture the choices, then boot a listen server directly into
+	# the chosen map.  Apply nothing to the shell — that world is about to die.
+	if NetworkManager.role == NetworkManager.Role.OFFLINE:
+		_start_local_host()
 		return
 
 	# 1. Apply teams (replicated via the .:team MultiplayerSynchronizer).
@@ -522,7 +531,35 @@ func _on_start_pressed() -> void:
 		_autofill_bots()
 
 	close()
-	NetworkManager.load_match_map(_selected_map.map_scene_path)
+	# In a match session the host is a client; the dedicated server owns the map
+	# swap, so ask it.  A listen/legacy host is the server and loads directly.
+	if MatchSession.role == MatchSession.Role.CLIENT:
+		MatchSession.request_start_match.rpc_id(
+			MatchSession.SERVER_PEER_ID, _selected_map.map_scene_path)
+	else:
+		NetworkManager.load_match_map(_selected_map.map_scene_path)
+
+
+## Shell → listen server.  Manual-bot team edits are written back to
+## `GameManager.lobby_bots` so they survive the world rebuild; the host team and
+## autofill targets are applied by `world_1` after the server spawns player 1.
+func _start_local_host() -> void:
+	for id in _assignment:
+		if not str(id).begins_with("bot_"):
+			continue
+		for entry in GameManager.lobby_bots:
+			if str(entry.get("name", "")) == str(id):
+				entry["team"] = int(_assignment[id])
+				break
+	GameManager.pending_host_setup = {
+		"host_team": int(_assignment.get("1", Player.Team.FFA)),
+		"autofill": _auto_fill.button_pressed,
+		"ffa": _is_ffa(_selected_map.game_mode),
+		"ffa_target": FFA_TARGET,
+		"team_size": TEAM_SIZE,
+	}
+	close()
+	NetworkManager.host_local_match(NetworkManager.SERVER_PORT, _selected_map.map_scene_path)
 
 
 func _autofill_bots() -> void:

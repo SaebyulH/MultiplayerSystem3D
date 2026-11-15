@@ -1281,7 +1281,7 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 - **Files:** `maps/navmesh_generator.gd` (`AGENT_MAX_CLIMB`), `maps/death_castle.tscn` (`NavigationMesh`), `player/bot_controller.gd` (`NavRoutes`)
 - **Symptom:** after changing an agent/cell setting in `navmesh_generator.gd`, pressing **Setup Navigation** and saving does **not** change the shipped mesh until the region is re-baked; bots keep using the old vertices. Separately, on a map with a payload cart or `mover` door, the `AnimatableBody3D` collider is baked at its **authored** position (static-collider mode accepts `StaticBody3D` subclasses), unlike the old `TravelGraph`, which excluded dynamic bodies by RID. Crouch-only passages and jump-gap shortcuts are absent because the mesh uses standing height and has no links. A ledge taller than `AGENT_MAX_CLIMB` (1.0 m) is not connected either, even though it may still be jumpable below `JUMP_STEP_MAX`; Recast can only link what the bake is told to connect.
 - **Why:** `NavmeshGenerator.setup()` only writes `NavigationMesh` bake inputs; the resource is baked by `NavigationRegion3D.bake_navigation_mesh()`. Dynamic props are not marked differently from static map collision for the parser, and a single agent-height mesh cannot express crouch or jump routes.
-- **Suggested fix:** always re-bake and save after changing a setting; the shipped maps must be re-baked after the 1.0 m change. If a moving collider matters, exclude it from the nav source group or add a `NavigationObstacle3D`. `_ledge_jump_state` handles vertical faces up to `JUMP_STEP_MAX` (1.1 m) once the mesh routes to them; a jumpable **gap** should be left to the `TravelGraph` fallback (nav partial → graph bake), because the follower has no generic "execute a `NavigationLink3D` jump" path. Author a ramp/stairs for anything wider than the character's jump.
+- **Suggested fix:** always re-bake and save after changing a setting; the shipped maps must be re-baked after the 1.0 m change. If a moving collider matters, exclude it from the nav source group or add a `NavigationObstacle3D`. `_ledge_jump_state` handles vertical faces up to `JUMP_STEP_MAX` (1.1 m) once the mesh routes to them; a **drop** is represented only by the `TravelGraph`, whose `DROP_MAX` is 12 m (fall damage starts at 15 m) — ESC castle's SCI spawn is ~9 m above the cart and relies on that fallback. A jumpable **gap** should also be left to the graph (nav partial → graph bake), because the follower has no generic "execute a `NavigationLink3D` jump" path. Author a ramp/stairs for anything wider than the character's jump.
 
 ### 118. Remaining bot path/state handoff gaps
 
@@ -1302,23 +1302,111 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 ### 120. Target memory is deliberately single-target and predictive
 
 - **Files:** `player/bot_controller.gd` (`_think`, `_mark_target_unseen`, `_predicted_last_known`, `_begin_memory_search`, `_target_position_for_ai`)
-- **Symptom / limits:** only the current target has identity/recognition memory. Acquiring another visible enemy overwrites it, so a bot cannot resume a chase after switching. A predicted pursuit point is a 2 s frozen-velocity lead (capped at 20 m); if the runner turns sharply, the directional fan (±55°) is the fallback, not true tracking. Reacquisition outside the 140° recall cone falls back to the normal 90° FOV and recognition, and an invisible/dev-hidden target is forgotten immediately.
+- **Symptom / limits:** only the current target has identity/recognition memory. Acquiring another visible enemy overwrites it, so a bot cannot resume a chase after switching. A predicted pursuit point is a 2 s frozen-velocity lead (capped at 20 m); if the runner turns sharply, the directional fan (±55°) is the fallback, not true tracking. Reacquisition outside the 140° recall cone falls back to the normal 120° horizontal FOV and recognition, and an invisible/dev-hidden target is forgotten immediately. The detection cone is horizontal; `Camera3D.fov = 90` is vertical (KEEP_HEIGHT), so the rendered horizontal FOV is ~121° at 16:9. A 90° detection cone left a blind band at the screen edges; 120° matches it.
 - **Why:** this is the intended scope of the 2026-10-27 pass — enough memory to stop the one-tick target drop and make a runner pursuit plausible, without wallhack tracking or per-enemy memory. While unseen, all reads use the frozen `_memory_last_position`; `_target_position_for_ai()`/`_target_look_point_for_ai()` are the audited entry points. The hidden live body is never read.
 - **Suggested future work:** a small per-enemy last-seen table if multi-target re-engagement matters; a route-validated fan (#111); and consider the dormant `ManeuverRunner` if combat peeks need scripted timelines beyond the existing cover state.
 
 ### 121. The bot objective hold radius is a bot-side approximation
 
 - **Files:** `player/bot_controller.gd` (`OBJECTIVE_HOLD_RADIUS`, `_control_point_info`, `_payload_info`, `_act_hold_objective`, `_act_combat`)
-- **Symptom:** a control point's capture volume is a TrenchBroom `trigger` brush with no exposed radius, so `OBJECTIVE_HOLD_RADIUS` (3 m) is the bot's guess at "touching the point". If a mapper draws a much smaller capture brush, a bot can hold/capture from just outside it; if the brush is much larger, bots cluster at the centre. A payload is accurate: its hold radius is `push_radius - 0.75`, so a hold is inside the real push zone.
+- **Symptom:** a control point's capture volume is a TrenchBroom `trigger` brush with no exposed radius, so `OBJECTIVE_HOLD_RADIUS` (3 m) is the bot's guess at "touching the point". If a mapper draws a much smaller capture brush, a bot can hold/capture from just outside it; if the brush is much larger, bots cluster at the centre. A payload is computed from its actual `PushZone` box (`PayloadNode.get_push_zone_horizontal_radius()`, 0.95× the short horizontal half-extent); `push_radius` is an authored gameplay radius, not the trigger shape, and using it parked bots just outside the box so the cart never moved. The route arrival radius also used to have a hard 1.5 m floor, which is larger than the payload box; `_objective_arrival_radius()` now uses 0.7× the hold radius (minimum 0.5 m). Actual overlap with the push Area3D (`PayloadNode.has_pusher`) also counts as "at objective", so a bot blocked by the cart body holds and pushes instead of trying to reach an impossible centre.
 - **Why:** the point scene deliberately has no `Area3D` or radius export; the trigger brush is authored in the map and linked at build time. The bot cannot cheaply read the brush's shape through `BrushEntityUtil`.
 - **Suggested fix:** add a `capture_radius` export to `ControlPoint` (mirroring `PayloadNode.push_radius`) and use it as the hold radius; or compute the linked trigger's AABB once. Until then, tune `OBJECTIVE_HOLD_RADIUS` for the project's maps. The 12 m `OBJECTIVE_LEASH_RADIUS` is also a deliberate bot-side choice: a visible enemy farther than that does not pull a bot off the point.
 
 ### 122. Persistent heard memory is intentionally un-timed
 
 - **Files:** `player/bot_controller.gd` (`_on_sound_made`, `_persistent_heard_*`, `_search_persistent`, `_tick_target_memory`, `_objective_is_near`)
-- **Symptom / limit:** after hearing an enemy, a bot with no objective nearby keeps `_persistent_heard_position` forever and an un-deadlined `HUNT` search loops the fan until it finds a target, a new sound replaces the lead, or an active objective comes within `OBJECTIVE_NEARBY_RADIUS` (20 m) of the bot. In objective modes, while farther than that from the point, an old sound can therefore outrank traveling to the objective. The memory is not cleared by time, only by respawn or a newer accepted sound.
-- **Why:** this is the requested "remember where they last heard the enemy forever as long as there is no objective nearby". The alternative — timing it out — is what made bots forget sounds in the lobby. The 20 m nearby radius is the handoff point back to objective priority.
+- **Symptom / limit:** after hearing an enemy, a bot with no objective nearby keeps `_persistent_heard_position` forever and an un-deadlined `HUNT` search loops the fan until it finds a target, a new sound replaces the lead, or an active objective comes within `OBJECTIVE_NEARBY_RADIUS` (20 m) of the bot. **An active objective outranks the persistent search:** `_act_search` pulls the bot back whenever it is outside the objective hold radius, and reaching the point with no visible target ends the search; a sound heard while already on the point does not start one. The heard memory remains for later. The memory is not cleared by time, only by respawn or a newer accepted sound.
+- **Why:** this is the requested "remember where they last heard the enemy forever as long as there is no objective nearby". The alternative — timing it out — is what made bots forget sounds in the lobby. The objective hold pull is what stops a heard lead from parking attackers away from a cart or leaving them facing the wall the sound came through.
 - **Suggested tuning:** raise/lower `OBJECTIVE_NEARBY_RADIUS` if bots leave objectives too readily (raise) or ignore audible fights near points (lower). The memory is per-life; do not persist it across respawn unless that becomes desirable.
+
+### 123. The map manifest hashes source bytes, so the export must not convert text scenes to binary
+
+- **Files:** `network/match_manifest.gd`, `tools/map_manifest.gd`, future `export_presets.cfg`
+- **Symptom:** `MatchManifest` hashes the bytes of each map file with `FileAccess.get_sha256()`. Godot's export option `convert_text_resources_to_binary` rewrites `.tscn` resources into binary at export time, so a manifest generated from the source tree will not match the exported client or dedicated server. Every join then fails the handshake with `MAP_MISMATCH`, and the error looks like a corrupted map rather than an export setting.
+- **Why:** the map manifest exists so maps never cross ENet. That only works if the client and server hash identical files, and the export is the first point where those bytes can change.
+- **Suggested fix:** keep `convert_text_resources_to_binary` disabled in both the client and the Linux Dedicated Server preset; generate the manifest in the same build step as the export; run `godot_console.exe --path . --headless res://tools/map_manifest.tscn -- --check` in CI before shipping. If binary conversion is ever required, hash the exported file from the PCK instead of the source `.tscn`.
+
+### 124. Server-side join sync can send RPCs before the client's world exists
+
+- **Files:** `world/spawn_manager.gd:29-38` (`_sync_existing_players_to_peer`), `network/network_manager.gd:351-364` (`enter_existing_game_scene`), `network/network_manager.gd:844` (`_on_connected_to_server`)
+- **Symptom:** a joining client logs `Node not found: "Main/World1/SpawnParent/<id>/StatusEffectManager"`, `Failed to get path from RPC`, and `Invalid packet received. Requested node was not found`. The server's `peer_connected` handler adds the Player and then syncs existing players after one process frame, but the client may still be building `world1.tscn` (character previews, loadout menu, navigation region). The RPC arrives before the node the server addresses exists on the client.
+- **Why:** the one-frame defer assumes both peers build the world in the same frame. A dedicated server that accepts a connection while idle makes the client's build time more variable, so the race is wider than in the old simultaneous P2P join.
+- **Suggested fix:** make the client signal `world_ready` after `enter_existing_game_scene` has completed, and have the server add the roster Player and send late-join sync only after that signal. This is the P2 handshake in `docs/07-dedicated-server.md`. Until then the error is noisy but non-fatal: the next sync re-sends the state.
+- **P2 status:** fixed for the joining player's own node. The client sends `client_node_ready` after its Player exists, the server hides existing players' `MultiplayerSynchronizer`s from that peer until then, and `StatusEffectManager` only broadcasts to ready peers. Existing-player state still travels through the old `rpc_sync_full_state` path after readiness; the chunked join state is the planned replacement. Late joins now also hide each newly spawned Player's synchronizers for two frames so established peers receive the spawn before state sync.
+
+### 125. The client's first loadout/model spawn can stall after its tick loop starts
+
+- **Files:** `network/network_manager.gd:844-880` (`_on_connected_to_server`), `world/loadout_menu.gd:97-157` / `_ready`, `player/player.gd` (`spawn`, `_spawn_character_model`)
+- **Symptom:** on a dedicated server the client starts `NetworkTime`, then builds the loadout preview and the first character model. A measured headless join spent ~0.8 s in that frame and netfox logged one `Trying to run rollback for ticks … past the history limit of 63` warning before recovering.
+- **Why:** the join settle check covers only the world scene build. The loadout preview and the first spawned character model are built afterwards, on the tick loop's time. In the old P2P flow the host and joiner stalled together; a dedicated server keeps ticking, so the client falls behind.
+- **Suggested fix:** preload/preview character models before `NetworkTime.start()`, or start the client tick loop only after the first loadout is applied and the first player has spawned. The P2 `world_ready`/`player_ready` handshake is the right place for this; do not simply widen the history window.
+
+### 126. A match-session map swap has no client-ready barrier
+
+- **Files:** `network/network_manager.gd` (`load_match_map`), `world/world_1.gd` (`_on_session_phase_changed`, `_install_session_map`), `network/match_session.gd` (`set_phase`)
+- **Symptom:** on a match-session map swap the server replaces the map locally, broadcasts `phase_changed(ACTIVE, path, hash)`, and immediately calls `rpc_reset` for every player. Each client loads the same map from disk asynchronously. A client can be respawned before its map node exists, so its first ticks run against the staging map's collision and it can fall through or be corrected when the new map arrives.
+- **Why:** the P2 map model is "local load + hash"; the server announces the path but does not wait for clients, and `rpc_reset` is an unreliable `call_local` RPC that is not ordered against the reliable `phase_changed`.
+- **Suggested fix:** add the map-start handshake: broadcast `phase_changed(LOADING, path, hash)`, have every client reply `map_ready` after loading and verifying, and only then swap/respawn and broadcast `ACTIVE`, with the 15 s deadline in `MatchProtocol.MAP_MATCH_DEADLINE_SECONDS`. Do not solve it by adding sleeps to the server.
+- **P3 status:** the host-start path is verified (client → `MatchSession.request_start_match` → server `load_match_map` → local map load on every peer), and a name-collision bug was fixed: the client must `remove_child()` the old `Map` before `queue_free()`, or the new map is auto-renamed (`Map2`) and every `Map/...` path breaks. The barrier is still recommended for a large map or a slow client, because the server respawns immediately after broadcasting.
+
+### 127. A Player whose synchronizer is invisible is never spawned on that peer
+
+- **Files:** `world/spawn_manager.gd` (`_reveal_player_after_spawn`, `hide_players_from_peer`), `network/match_session.gd` (`client_node_ready`)
+- **Symptom:** setting `public_visibility = false` on a newly spawned Player's `MultiplayerSynchronizer`s, to stop state sync arriving before the spawn, also stops the node from being spawned on the joining client. The client sits with `SpawnParent = ["Map"]` forever and the loadout confirm times out waiting for its Player.
+- **Why:** Godot's scene replication gates a spawn for a peer on the node's synchronizer visibility. Visibility cannot be used as a "spawn first, state second" barrier. Setting public visibility back to true after three frames does not retroactively deliver the missed spawn.
+- **Current mitigation:** the new Player's synchronizers stay public. The client sends `client_node_ready` once its own node exists; live state for *existing* players is still public and can arrive before their nodes, producing `Ignoring sync data from non-authority or for missing node`. That warning is non-fatal, but it is the remaining late-join race.
+- **Suggested fix:** make the server wait for a spawn acknowledgement before treating the peer as in-game (the chunked join-state step), or use a custom spawn function with a client-acknowledged token. Do **not** re-enable `public_visibility = false` on player synchronizers without re-testing a join; it silently prevents spawning.
+
+### 128. lobbyd passes the HMAC secret on the child's argv
+
+- **Files:** `server/lobbyd/lobbyd.c` (`spawn_match`), `network/join_grant.gd`
+- **Symptom:** the match server is spawned with `--match-secret=<secret>`, which is visible to anything that can list processes on the host. WSL interop did not pass `MATCH_SECRET` through the Windows child's environment, so argv is the dev workaround. A server started without any secret accepts every join grant, which is intentional for direct `--connect` dev but unsafe for a lobby-spawned server.
+- **Why:** the secret is what stops a client from minting its own grant; a leaked secret defeats it.
+- **Suggested fix:** pass the secret through a root-only `0600` file or the loopback control handshake, never argv; make `--server --match-id=` refuse to start when no secret is configured; add a `--allow-insecure` dev flag for the direct-connect path. P5.
+
+### 129. lobbyd has no control channel or child re-adoption
+
+- **Files:** `server/lobbyd/lobbyd.c` (poll loop, `spawn_match`, `reap_children`)
+- **Symptom:** browser rows come from process liveness only: the phase is always `staging`, the player count is a count of issued join grants (not actual connections), and there is no heartbeat or idle teardown. Restarting lobbyd loses its match table; the live child servers keep running but are no longer supervised, and their ports are not reclaimed until those processes exit. An empty match server stays alive indefinitely.
+- **Why:** P3 implements the HTTP allocation half of the plan; the loopback control protocol (`hello`/`heartbeat`/`state`/`event`, child journal) is not written yet.
+- **Suggested fix:** add the control socket from `docs/07-dedicated-server.md`: child reports phase and connected players, supervisor journals `{pid, match_id, ports, secret}` for re-adoption after restart, and empty/staging matches are terminated after a grace period. P4/P6.
+
+### 130. Resume tokens are stateless and not single-use
+
+- **Files:** `network/join_grant.gd` (`issue_resume`, `resume_player_id`), `network/match_session.gd` (`_resume_player`)
+- **Symptom:** a resume token stays valid until its 15-minute expiry and can be presented more than once; a captured token can resume a reserved slot while the real player is disconnected. Tokens are rotated on each welcome, but the old token is not revoked because the server keeps no per-player token state.
+- **Why:** P4 needs reconnect to work before it needs replay protection; the HMAC + match/player binding + short grace already stops the obvious abuse.
+- **Suggested fix:** store a per-player token nonce/epoch in the roster entry and accept only the latest; clear it on resume and on expiry. P5.
+
+### 131. Pre-auth peers are not reaped and there is no host migration
+
+- **Files:** `network/match_session.gd` (`_last_heard`, `_server_tick`), `network/network_manager.gd` (`_await_welcome`)
+- **Symptom:** the heartbeat reaper only sees peers that have completed `hello`; a connection opened but never handshaken relies on ENet's own timeout. Separately, if the room host's reserved slot expires, no other player is promoted: `host_player_id` stays dead, so Start Match and host-only actions fail until the host reconnects.
+- **Why:** P4's scope is resume for the player; host identity is still the first allocated player id.
+- **Suggested fix:** add a 5 s pre-auth deadline for connected-but-unhellod peers, and promote the lowest surviving connected player to host when the host slot expires (broadcast a host change). P5/P6.
+
+### 132. Detaching the world before queue_free breaks netfox's deferred settings
+
+- **Files:** `network/network_manager.gd` (`_remove_game_scene`, `host_local_match`)
+- **Symptom:** the shell → listen-server transition logged `SCRIPT ERROR: Cannot call method 'get_unique_id' on a null value` from `RollbackSynchronizer.process_authority` and `TickInterpolator.process_settings`. Twice per transition.
+- **Why:** `_remove_game_scene()` used `remove_child(game_scene)` then `queue_free()`. Removing the node makes `Node.multiplayer` resolve to null immediately, but netfox's `process_settings` had been deferred from a property change and ran after the removal. `get_unique_id()` was called on the null MultiplayerAPI.
+- **Fix:** `queue_free()` only; keep the world in the tree until the end of the frame so deferred netfox work sees a valid tree. Do **not** reintroduce `remove_child()` for the world scene.
+- **Related:** `host_local_match()` also keeps the offline peer alive until `create_server()` replaces it, for the same reason (nulling the peer early exposed the same null path).
+
+### 133. LAN discovery announces are unauthenticated and unbounded
+
+- **Files:** `network/lan_discovery.gd` (`_announce_json`, `discover`), `world/join_party_area.gd` (LAN tab)
+- **Symptom:** any process on the LAN can answer a probe with arbitrary map/player/state metadata, and replies are not rate-limited. A spoofed entry appears in the browser exactly like a real host. Joining it still goes through `hello` → `welcome`, so a fake entry only produces a failed or timed-out join; it cannot bypass the handshake or a configured grant secret.
+- **Why:** P3/P4 need zero-service discovery first; the announce carries no secret.
+- **Suggested fix:** sign announces with the same HMAC secret (hosts already have one), rate-limit replies per source, and have the client reject an announce whose game port does not accept a handshake. P5.
+
+### 134. Auto-picking a listen port logs a handled ENet bind error
+
+- **Files:** `network/network_manager.gd` (`boot_listen_server`)
+- **Symptom:** when 8080 is busy, the log contains `Couldn't create an ENet host` / `Could not bind UDP port 8080 (error 20)` before the server starts on 8081. The process continues normally and the fallback works.
+- **Why:** Godot's ENet wrapper prints the engine-level failure before returning the error code; there is no silent-mode bind.
+- **Suggested fix:** pre-check the port with a temporary `PacketPeerUDP` bind before calling `create_server`, or accept the line as expected output. Cosmetic.
 
 ## Not bugs, but worth knowing
 

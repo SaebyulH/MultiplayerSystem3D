@@ -96,7 +96,7 @@ func play_placement(standings: Array) -> void:
 # ─────────────────────────────────────────────
 
 func _local_rank(standings: Array) -> int:
-	var my_id := str(multiplayer.get_unique_id())
+	var my_id := MatchSession.local_id_string()
 	var pos: int = standings.find(my_id)
 	if pos != -1:
 		return pos + 1

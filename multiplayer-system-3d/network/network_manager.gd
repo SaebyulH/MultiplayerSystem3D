@@ -12,9 +12,36 @@ extends Node
 ##   moment here, and it is the cause of the `past the history limit` rollback
 ##   spam.  See [method _take_over_client_time].
 
+const Protocol := preload("res://network/session_protocol.gd")
+
 const SERVER_PORT: int = 8080
 const GAME_SCENE = "res://world/world1.tscn"
 const LOBBY_MAP_PATH = "res://maps/main_menu_world.tscn"
+
+# ─────────────────────────────────────────────
+#  Process role
+# ─────────────────────────────────────────────
+
+## What this process is.  The P2P topology is still the default so the game
+## keeps running during the dedicated-server migration; `--server`,
+## `--offline`, `--listen-server` and `--connect=` select the new modes.
+## See `docs/07-dedicated-server.md`.
+enum Role {
+	LEGACY_P2P,      ## Current auto-host: peer 1 is server AND local player.
+	OFFLINE,         ## Local shell: OfflineMultiplayerPeer, no network.
+	CLIENT,          ## Connected to a dedicated/listen server.
+	DEDICATED_SERVER,## Headless match server; peer 1 is NOT a player.
+	LISTEN_SERVER,   ## Host + play in one process (dev/LAN).
+}
+
+var role: Role = Role.LEGACY_P2P
+
+
+## True only for a headless match server.  Use this to skip local-player UI,
+## cameras, dev menus and visual-only setup.  Do NOT use it for simulation
+## authority — keep `multiplayer.is_server()` for that.
+func is_dedicated_server() -> bool:
+	return role == Role.DEDICATED_SERVER
 
 # ─────────────────────────────────────────────
 #  Tick rate
@@ -83,6 +110,18 @@ var _client_time_ready := false
 var _host_tick_rate := -1
 var _check_accum := 0.0
 var _debug_accum := 0.0
+## True when this join targets a match server that speaks the MatchSession
+## handshake.  Direct `--connect` joins set it; the legacy in-world JoinParty
+## path keeps using the old replication flow until P3 converts it.
+var _use_match_session := false
+## Resume state.  The endpoint and the server-issued token let a dropped client
+## rejoin the same slot instead of being sent back to the lobby.
+var _match_host := ""
+var _match_port := SERVER_PORT
+var _reconnecting := false
+## Test hook: drop without trying to resume, so the server-side grace expiry can
+## be exercised.
+var _test_no_reconnect := false
 
 
 func _ready() -> void:
@@ -97,6 +136,10 @@ func _ready() -> void:
 		mp.server_disconnected.connect(_server_disconnected)
 	if not mp.peer_connected.is_connected(_on_peer_connected):
 		mp.peer_connected.connect(_on_peer_connected)
+	if not MatchSession.session_error.is_connected(_on_match_session_error):
+		MatchSession.session_error.connect(_on_match_session_error)
+
+	_test_no_reconnect = "--test-no-reconnect" in OS.get_cmdline_user_args()
 
 	# Deferred: autoloads are added (and _ready'd) in order, so the Console
 	# autoload does not exist yet while this one is running.
@@ -267,27 +310,47 @@ func _drain_seconds() -> float:
 # ─────────────────────────────────────────────
 
 ## [param tick_rate] of -1 keeps the current session rate.
-func create_server(tick_rate: int = -1) -> Error:
+##
+## `allow_offline_fallback` exists for the legacy auto-host path, where a second
+## local instance must still get a usable lobby.  A dedicated match server must
+## never silently become an offline peer: pass `false` and fail loudly.
+func create_server(tick_rate: int = -1, port: int = SERVER_PORT, max_clients: int = 32, allow_offline_fallback: bool = true) -> Error:
 	is_hosting_game = true
 	# Always applied, even when the rate is unchanged: this is also what derives
 	# the tick-count settings, and the offline fallback peer below needs those
 	# just as much as a real server does.
 	apply_tick_rate(tick_rate if tick_rate > 0 else server_tick_rate)
 	var enet_network_peer := ENetMultiplayerPeer.new()
-	var err := enet_network_peer.create_server(SERVER_PORT)
+	var err := enet_network_peer.create_server(port, max_clients)
 	if err != OK:
+		if not allow_offline_fallback:
+			push_error("Could not bind UDP port %d (error %d)." % [port, err])
+			return err
 		# Port already in use (e.g. a second local instance).  Fall back to an
 		# offline peer so the player still gets a working local lobby they can
 		# later "Join Local" out of.
-		push_warning("Port %d in use — falling back to offline peer." % SERVER_PORT)
+		push_warning("Port %d in use — falling back to offline peer." % port)
 		get_tree().get_multiplayer().multiplayer_peer = OfflineMultiplayerPeer.new()
 		# NetworkEvents won't auto-start NetworkTime for an offline peer, so the
 		# rollback tick loop would never run (no movement).  Start it manually.
 		NetworkTime.start()
 		return err
 	get_tree().get_multiplayer().multiplayer_peer = enet_network_peer
-	if OS.is_debug_build(): print("Server created!")
+	if OS.is_debug_build(): print("Server created on UDP %d!" % port)
 	return OK
+
+
+## Local-only peer for the 3D lobby shell and single-player/dev.  NetworkEvents
+## ignores `OfflineMultiplayerPeer`, so the rollback loop must be started here.
+func create_offline_peer() -> void:
+	role = Role.OFFLINE
+	is_hosting_game = true
+	apply_tick_rate(server_tick_rate)
+	get_tree().get_multiplayer().multiplayer_peer = OfflineMultiplayerPeer.new()
+	if OS.is_debug_build():
+		print("[LOCAL] offline peer id=%d server=%s" % [
+			multiplayer.get_unique_id(), multiplayer.is_server()])
+	NetworkTime.start()
 
 
 func create_client(host_ip: String = "localhost", host_port: int = SERVER_PORT) -> Error:
@@ -337,9 +400,13 @@ func load_game_scene(map_path: String):
 # ─────────────────────────────────────────────
 
 ## Boot-time entry: become the host (peer 1 / party leader) and load the lobby.
+## This is the legacy P2P path; it is what the default boot still uses until the
+## dedicated-server lobby replaces it.
 func boot_to_lobby() -> void:
 	if game_scene != null:
 		return  # already booted (guards against double-scheduled boots)
+	role = Role.LEGACY_P2P
+	MatchSession.reset()
 	create_server()  # offline fallback handled inside
 	Leaderboard.reset()
 	LoadingScreen.report(0.75, "Starting server...")
@@ -347,9 +414,119 @@ func boot_to_lobby() -> void:
 	await load_game_scene(LOBBY_MAP_PATH)
 
 
+## Local shell: the 3D lobby with no network peer.  The player picks a class,
+## then creates or joins a match from the lobby zones.
+func boot_offline_lobby() -> void:
+	if game_scene != null:
+		return
+	role = Role.OFFLINE
+	MatchSession.reset()
+	create_offline_peer()
+	Leaderboard.reset()
+	LoadingScreen.report(0.75, "Starting local lobby...")
+	await get_tree().process_frame
+	await load_game_scene(LOBBY_MAP_PATH)
+
+
+## Dev/LAN host + play in one process.  Picks the first free UDP port in
+## [8080, 8080 + LAN_DISCOVERY_PORT_RANGE) so a second host on one machine works;
+## the chosen port is advertised through LAN discovery.  Never exits the process:
+## a local host failure returns to the shell, unlike `--server`.
+func boot_listen_server(port: int = SERVER_PORT, map_path: String = LOBBY_MAP_PATH) -> void:
+	if game_scene != null:
+		return
+	role = Role.LISTEN_SERVER
+	MatchSession.begin_server(map_path, "", "")
+	# Hosting straight into a match map means the match is already active; the
+	# lobby map stays in staging (used by the listen/--server dev paths).
+	MatchSession.phase = Protocol.Phase.STAGING if map_path == LOBBY_MAP_PATH \
+		else Protocol.Phase.ACTIVE
+	var chosen := -1
+	for candidate in range(port, port + Protocol.LAN_DISCOVERY_PORT_RANGE):
+		if create_server(-1, candidate, 32, false) == OK:
+			chosen = candidate
+			break
+	if chosen < 0:
+		push_error("No free UDP port in [%d, %d)." % [
+			port, port + Protocol.LAN_DISCOVERY_PORT_RANGE])
+		MatchSession.reset()
+		GameManager.pending_host_setup = {}
+		role = Role.OFFLINE
+		LoadingScreen.hide_screen()
+		call_deferred("boot_offline_lobby")
+		return
+	MatchSession.server_port = chosen
+	Leaderboard.reset()
+	LoadingScreen.report(0.75, "Starting listen server on %d..." % chosen)
+	await get_tree().process_frame
+	await load_game_scene(map_path)
+	LanDiscovery.start_announcing(chosen)
+	if OS.is_debug_build():
+		print("[server] listen ready on UDP %d map=%s" % [chosen, map_path])
+
+
+## Start a listen server from the local 3D shell, replacing the offline peer.
+## No lobbyd and no external process: this is the default local "host a match"
+## path.  The deferred boot gives NetworkEvents a frame to observe the offline
+## peer stopping before the ENet server starts.
+func host_local_match(port: int = SERVER_PORT, map_path: String = LOBBY_MAP_PATH) -> void:
+	if role == Role.LISTEN_SERVER:
+		return
+	LoadingScreen.show_screen(0.35, "Starting local server…")
+	MatchSession.reset()
+	_client_time_ready = false
+	_host_tick_rate = -1
+	# Stop the tick loop but KEEP the offline peer alive until create_server
+	# replaces it.  Nulling the peer first made netfox's deferred synchronizer
+	# re-processing call get_unique_id() on null.  The old peer is only an
+	# OfflineMultiplayerPeer here; create_server installs the ENet server.
+	NetworkTime.stop()
+	_remove_game_scene()
+	await get_tree().process_frame
+	call_deferred("boot_listen_server", port, map_path)
+
+
+## Headless dedicated match server.  Peer 1 is NOT a player: `SpawnManager`
+## does not add a local player and the UI/visual setup is skipped in world_1.
+## NetworkEvents starts NetworkTime when it observes the server on the next
+## frame, so no manual start is needed here.
+func boot_dedicated_server(port: int = SERVER_PORT, match_id: String = "") -> void:
+	if game_scene != null:
+		return
+	role = Role.DEDICATED_SERVER
+	MatchSession.begin_server(LOBBY_MAP_PATH, "", match_id)
+	var err := create_server(-1, port, 80, false)
+	if err != OK:
+		push_error("Dedicated server could not bind UDP %d; exiting." % port)
+		get_tree().quit(1)
+		return
+	MatchSession.server_port = port
+	Leaderboard.reset()
+	await get_tree().process_frame
+	await load_game_scene(LOBBY_MAP_PATH)
+	LanDiscovery.start_announcing(port)
+	if OS.is_debug_build():
+		print("[server] ready on UDP %d match=%s grant_secret=%s" % [
+			port, match_id if match_id != "" else "<none>",
+			"yes" if MatchSession.grant_secret_configured() else "NO"])
+
+
 ## A player already in their own lobby connects to a host's lobby/match.
-func join_party(host_ip: String, host_port: int = SERVER_PORT) -> void:
+##
+## `use_match_session` selects the dedicated-server handshake.  The P3 lobby
+## turns it on for every join; until then only the direct `--connect` dev route
+## uses it, so the legacy in-world JoinParty path is unchanged.
+func join_party(host_ip: String, host_port: int = SERVER_PORT, use_match_session: bool = false, grant: String = "") -> void:
 	LoadingScreen.show_screen(0.1, "Connecting...")
+	role = Role.CLIENT
+	_use_match_session = use_match_session
+	_match_host = host_ip
+	_match_port = host_port
+	_reconnecting = false
+	if use_match_session:
+		MatchSession.begin_client(LOBBY_MAP_PATH, grant)
+	else:
+		MatchSession.reset()
 	_take_over_client_time()
 	_remove_game_scene()
 	var err := create_client(host_ip, host_port)
@@ -357,19 +534,46 @@ func join_party(host_ip: String, host_port: int = SERVER_PORT) -> void:
 		return_to_lobby()
 
 
+## Connect to an endpoint returned by `lobbyd`, presenting its join grant.
+func join_match(endpoint: String, grant: String) -> void:
+	var host := endpoint
+	var port := SERVER_PORT
+	if endpoint.contains(":"):
+		host = endpoint.get_slice(":", 0)
+		port = int(endpoint.get_slice(":", 1))
+	if host == "" or port <= 0:
+		push_error("join_match: bad endpoint '%s'" % endpoint)
+		return
+	await join_party(host, port, true, grant)
+
+
 ## Leave the current match/party and return to a fresh solo lobby.
 func return_to_lobby() -> void:
 	if OS.is_debug_build(): print("Returning to lobby...")
+	_reconnecting = false
+	_match_host = ""
+	_match_port = SERVER_PORT
+	MatchSession.stop_heartbeat()
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	LoadingScreen.hide_screen()  # in case a join failed mid-connect and left it up
-	_terminate_connection()  # close peer FIRST so port 8080 frees for re-host
+	_terminate_connection()  # close peer FIRST so the port frees for re-host
 	_remove_game_scene()
 	# Re-host on a deferred call.  A synchronous teardown+rehost is invisible to
 	# NetworkEvents' per-frame is_server() polling, so it would never re-emit
 	# on_server_start -> NetworkTime.start(), leaving the rollback tick loop dead
 	# (movement stops while look/shoot still work).  Deferring lets NetworkEvents
 	# observe the server-stop transition first, then the re-host re-triggers it.
-	call_deferred("boot_to_lobby")
+	# A client leaving a dedicated match returns to the local 3D shell, not to a
+	# self-hosted P2P lobby.
+	match role:
+		Role.DEDICATED_SERVER:
+			get_tree().quit()
+		Role.CLIENT, Role.OFFLINE:
+			role = Role.OFFLINE
+			call_deferred("boot_offline_lobby")
+		_:
+			role = Role.LEGACY_P2P
+			call_deferred("boot_to_lobby")
 
 
 ## Server-authoritative map swap (lobby -> match).  The MultiplayerSpawner
@@ -393,6 +597,14 @@ func load_match_map(map_path: String) -> void:
 	var new_map: Node = load(map_path).instantiate()
 	new_map.name = "Map"
 	sp.add_child(new_map)
+
+	# Match sessions: every peer loads the map from its own build.  The server
+	# announces path + hash; clients verify and build it locally (no map bytes
+	# on the wire).  Legacy P2P keeps the spawner replication it has always used.
+	if MatchSession.role == MatchSession.Role.SERVER:
+		var hash := FileAccess.get_sha256(map_path)
+		MatchSession.map_hash = hash
+		MatchSession.set_phase(Protocol.Phase.ACTIVE, map_path, hash)
 
 	# Respawn existing players on the new map (after it exists so
 	# _get_spawn_transform() finds it).
@@ -453,6 +665,20 @@ func _await_settled() -> void:
 	if calm < SETTLE_FRAMES and OS.is_debug_build():
 		push_warning("[NTSYNC] frames never settled below %.0f ms; starting the tick loop anyway." % [
 			SETTLE_FRAME_SECONDS * 1000.0])
+
+
+## Wait for the server's `welcome`.  Polled rather than signal-based so a lost
+## session or a superseded join cannot leave this coroutine waiting forever.
+func _await_welcome(timeout_seconds: float) -> bool:
+	var before := MatchSession.welcome_count
+	var deadline := Time.get_ticks_msec() + int(timeout_seconds * 1000.0)
+	while Time.get_ticks_msec() < deadline:
+		if MatchSession.welcome_count > before:
+			return true
+		if not _has_live_peer():
+			return false
+		await get_tree().process_frame
+	return MatchSession.welcome_count > before
 
 
 ## Ask the host for its tick rate and apply it, so this client's seed is computed
@@ -671,7 +897,7 @@ func _print_status() -> void:
 	var predicting := false
 	var input_age := -1
 	if is_instance_valid(GameManager.spawn_parent):
-		var p: Player = GameManager.find_player(str(multiplayer.get_unique_id()))
+		var p: Player = GameManager.find_player(MatchSession.local_id_string())
 		if p != null and p.rollback_sync != null:
 			var rb := p.rollback_sync as RollbackSynchronizer
 			if rb != null:
@@ -689,6 +915,13 @@ func _print_status() -> void:
 	# the offset would read as a huge bogus number.
 	var offset := get_tick_offset_ticks() if NetworkTime.tick > 0 else 0
 
+	var pos_text := ""
+	if "--test-move" in OS.get_cmdline_user_args() and is_instance_valid(GameManager.spawn_parent):
+		var test_player: Player = GameManager.find_player(MatchSession.local_id_string())
+		if test_player != null:
+			pos_text = " pos=(%.1f,%.1f,%.1f)" % [
+				test_player.global_position.x, test_player.global_position.y, test_player.global_position.z]
+
 	print("[NTSYNC] %s#%d rate=%d tick=%d ref=%.2fs offset=%+d " % [
 			role, multiplayer.get_unique_id(), NetworkTime.tickrate, NetworkTime.tick,
 			NetworkTimeSynchronizer.get_time(), offset] +
@@ -698,8 +931,8 @@ func _print_status() -> void:
 		"history=%d/%d netTicks=%d resim=%d(%.1fms) " % [
 			NetworkRollback.history_start, NetworkRollback.history_limit,
 			net_ticks, resim_ticks, resim_ms] +
-		"inp=%d state=%d pred=%s age=%d" % [
-			last_input, last_state, predicting, input_age])
+		"inp=%d state=%d pred=%s age=%d%s" % [
+			last_input, last_state, predicting, input_age, pos_text])
 
 
 func _register_console_commands() -> void:
@@ -739,8 +972,21 @@ func _console_resync() -> void:
 
 func _on_connected_to_server() -> void:
 	if OS.is_debug_build(): print("Connected (id %d)" % multiplayer.get_unique_id())
+	if _reconnecting:
+		# The reconnect loop owns the resume handshake and the tick restart.
+		return
 	await enter_existing_game_scene()  # the big join stall is now behind us
 	await _await_settled()
+	# The dedicated-server handshake is sent only after the world exists, so the
+	# server never addresses a Player node the client has not built yet (#124).
+	if _use_match_session:
+		MatchSession.request_hello()
+		var welcomed := await _await_welcome(5.0)
+		if not welcomed:
+			push_error("Match session handshake timed out; leaving the server.")
+			LoadingScreen.hide_screen()
+			return_to_lobby()
+			return
 	await _adopt_server_tick_rate()
 	# The connection may have died (or been replaced by a re-host) while we were
 	# waiting; this coroutine cannot be cancelled, so re-check before starting a
@@ -771,20 +1017,105 @@ func _on_connected_to_server() -> void:
 	LoadingScreen.hide_screen()
 
 
+func _on_match_session_error(code: int, text: String) -> void:
+	push_error("[SESSION] error %d: %s" % [code, text])
+	LoadingScreen.hide_screen()
+	if _reconnecting and code in [Protocol.ErrorCode.SESSION_EXPIRED, Protocol.ErrorCode.BAD_TOKEN]:
+		_reconnecting = false
+		return_to_lobby()
+
+
 func _on_connection_failed() -> void:
 	if OS.is_debug_build(): print("Connection failed")
+	if _reconnecting:
+		return  # the reconnect loop decides whether to retry
 	return_to_lobby()
 
 
 func _server_disconnected() -> void:
 	if OS.is_debug_build(): print("Server has disconnected!")
+	if _reconnecting:
+		return
+	if _use_match_session and MatchSession.resume_token != "" and not _test_no_reconnect:
+		_begin_reconnect()
+		return
 	return_to_lobby()
+
+
+## Forced transport drop for tests, and the same path a real disconnect takes.
+func debug_force_drop() -> void:
+	if not _use_match_session:
+		return
+	_terminate_connection()
+	_server_disconnected()
+
+
+## Retry the connection until the server's resume grace expires.  On success the
+## same stable player id is rebound; score/team/loadout live on the server-side
+## Player node that was kept reserved.
+func _begin_reconnect() -> void:
+	if _reconnecting:
+		return
+	_reconnecting = true
+	MatchSession.stop_heartbeat()
+	LoadingScreen.show_screen(0.25, "Connection lost — reconnecting…")
+	var deadline := Time.get_ticks_msec() + int(Protocol.RESUME_GRACE_SECONDS * 1000.0)
+	while _reconnecting and Time.get_ticks_msec() < deadline:
+		LoadingScreen.report(0.4, "Reconnecting…")
+		var err := create_client(_match_host, _match_port)
+		if err == OK:
+			if await _await_connected(4.0):
+				MatchSession.local_peer_id = multiplayer.get_unique_id()
+				MatchSession.request_hello()
+				if await _await_welcome(5.0):
+					await _adopt_server_tick_rate()
+					if _can_resync():
+						NetworkTime.start()
+						# The world was not rebuilt across the drop, so the existing
+						# synchronizers still hold the old tick domain's cursors.
+						# Reset them after start (same rule as _reinit_time).
+						_reset_rollback_history()
+						var sync_deadline := Time.get_ticks_msec() + int(RESYNC_TIMEOUT_SECONDS * 1000.0)
+						while not NetworkTime.is_initial_sync_done() \
+								and Time.get_ticks_msec() < sync_deadline:
+							await get_tree().process_frame
+						_client_time_ready = NetworkTime.is_initial_sync_done()
+						_reconnecting = false
+						LoadingScreen.hide_screen()
+						if OS.is_debug_build():
+							print("[MATCH] resumed as player %d" % MatchSession.local_player_id)
+						return
+		_terminate_connection()
+		await get_tree().create_timer(2.0).timeout
+	_reconnecting = false
+	LoadingScreen.hide_screen()
+	push_error("Reconnect window expired; leaving the match.")
+	return_to_lobby()
+
+
+func _await_connected(timeout_seconds: float) -> bool:
+	var deadline := Time.get_ticks_msec() + int(timeout_seconds * 1000.0)
+	var saw_connecting := false
+	while Time.get_ticks_msec() < deadline:
+		var peer := multiplayer.multiplayer_peer
+		if peer != null:
+			var status := peer.get_connection_status()
+			if status == MultiplayerPeer.CONNECTION_CONNECTED:
+				return true
+			if status == MultiplayerPeer.CONNECTION_CONNECTING:
+				saw_connecting = true
+			elif status == MultiplayerPeer.CONNECTION_DISCONNECTED and saw_connecting:
+				return false
+		await get_tree().process_frame
+	return false
 
 
 func _terminate_connection() -> void:
 	if OS.is_debug_build(): print("terminate connection")
 	_client_time_ready = false
 	_host_tick_rate = -1
+	MatchSession.stop_heartbeat()
+	LanDiscovery.stop_announcing()
 	var mp = get_tree().get_multiplayer()
 	if mp.multiplayer_peer != null:
 		NetworkTime.stop()  # full stop: resets state so a re-host/re-join re-syncs
@@ -799,8 +1130,10 @@ func _terminate_connection() -> void:
 func _remove_game_scene() -> void:
 	if game_scene == null:
 		return
-	if game_scene.get_parent() != null:
-		game_scene.get_parent().remove_child(game_scene)
+	# queue_free WITHOUT remove_child.  Removing first makes Node.multiplayer
+	# null while netfox's deferred synchronizer re-processing is still queued,
+	# which throws "get_unique_id on a null value".  Keeping the node in the
+	# tree until the end of the frame gives those defers a valid tree.
 	game_scene.queue_free()
 	game_scene = null
 

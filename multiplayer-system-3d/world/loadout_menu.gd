@@ -95,7 +95,7 @@ const CARD_BORDER_SELECTED := HIGHLIGHT_COLOR
 # ─────────────────────────────────────────────
 
 func _ready() -> void:
-	player_id = str(multiplayer.get_unique_id())
+	player_id = MatchSession.local_id_string()
 
 	# Grab the character-panel border stylebox so hover can tween it.
 	_character_wrap_style = _character_wrap.get_theme_stylebox("panel") as StyleBoxFlat
@@ -154,6 +154,39 @@ func _ready() -> void:
 			_select_random_loadout()
 		else:
 			_select_character(_all_characters[0]["char"])
+
+	# A match-server join assigns the stable player id in `welcome`, which lands
+	# after this menu's `_ready`.  Without this the confirm RPC would carry the
+	# transport peer id and the server's ownership check would reject it.
+	if not MatchSession.welcomed.is_connected(_on_match_welcomed):
+		MatchSession.welcomed.connect(_on_match_welcomed)
+
+	# Test hook for headless/automated cross-process runs: confirm the initial
+	# random loadout so the player actually spawns without a mouse.  Never runs
+	# on a dedicated server, which has no local player.
+	if not NetworkManager.is_dedicated_server() and "--auto-loadout" in OS.get_cmdline_user_args():
+		_auto_confirm_when_ready.call_deferred()
+
+
+func _on_match_welcomed(_info: Dictionary) -> void:
+	if not bot_edit_mode:
+		player_id = MatchSession.local_id_string()
+
+
+## Headless test hook.  The loadout RPC must not be sent until the stable player
+## id has arrived *and* the replicated Player node exists on this client;
+## otherwise the server's effect-sync RPCs address a node that is not there yet
+## (docs/05-known-issues.md #124).
+func _auto_confirm_when_ready() -> void:
+	var deadline := Time.get_ticks_msec() + 10000
+	while Time.get_ticks_msec() < deadline:
+		var local := MatchSession.local_id_string()
+		if MatchSession.local_player_id > 0 and GameManager.find_player(local) != null:
+			break
+		await get_tree().process_frame
+	if not bot_edit_mode:
+		player_id = MatchSession.local_id_string()
+	_on_confirm_pressed()
 
 
 ## Credit for the ability icons, tucked into the bottom-right corner.  The
@@ -297,7 +330,7 @@ func _finish_bot_edit() -> void:
 	bot_edit_mode = false
 	_bot_applying = false
 	_bot_name = ""
-	player_id = str(multiplayer.get_unique_id())
+	player_id = MatchSession.local_id_string()
 	_leave_party_button.visible = true
 	_randomize_on_death_check.visible = true
 	_mode_label.text = _get_mode_description()
@@ -1007,11 +1040,31 @@ func _randomize_column(key: String, weapons: Array[Weapon]) -> void:
 		_select_card(card)
 
 
+## Bounded retry count for the deferred confirm above; ~10 s at 60 fps.
+var _confirm_defer_count: int = 0
+
+
 func _on_confirm_pressed() -> void:
 	if selected_class == null or selected_character == null:
 		return
 	if selected_primary == null or selected_secondary == null or selected_melee == null:
 		return
+
+	# On a match client, the stable player id arrives with `welcome` and the
+	# Player node arrives via the spawner afterwards.  Defer until both exist;
+	# sending earlier puts the id or the node out of step with the server.
+	if not multiplayer.is_server():
+		var local := MatchSession.local_id_string()
+		if MatchSession.role == MatchSession.Role.CLIENT \
+				and (MatchSession.local_player_id == 0 or GameManager.find_player(local) == null):
+			_confirm_defer_count += 1
+			if _confirm_defer_count < 600:
+				_on_confirm_pressed.call_deferred()
+			else:
+				push_error("Loadout confirm timed out waiting for the local Player node.")
+			return
+		_confirm_defer_count = 0
+		player_id = local
 
 	# Capture everything before hiding: in bot mode the hide triggers the
 	# visibility handler, and player_id must not be restored before the RPC.
@@ -1057,7 +1110,9 @@ func _request_loadout(tpid: String, pp: String, sp: String, mp: String, team: Pl
 	if not multiplayer.is_server():
 		return
 	var sid := multiplayer.get_remote_sender_id()
-	if sid != 0 and str(sid) != tpid and not tpid.begins_with("bot_"):
+	# `tpid` is a stable player id; map the sending peer to its player before
+	# comparing.  Legacy P2P falls back to the peer id, matching the old check.
+	if sid != 0 and MatchSession.player_id_string_for_peer(sid) != tpid and not tpid.begins_with("bot_"):
 		return
 	var primary: Weapon = load(pp) as Weapon
 	var secondary: Weapon = load(sp) as Weapon

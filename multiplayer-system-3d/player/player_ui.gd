@@ -212,6 +212,17 @@ func _ensure_built() -> void:
 	_rebuild_status_effects()
 
 
+## Re-evaluate construction after the player is bound to an owning peer.  On a
+## match client the replicated Player arrives before the client knows which peer
+## it belongs to, so `_ready` saw the wrong authority and skipped building.
+func on_owner_bound() -> void:
+	var should_build := is_multiplayer_authority() and not _owner_player.is_bot
+	visible = should_build
+	if should_build:
+		_ensure_built()
+		refresh_visibility()
+
+
 ## Show/hide this player's real HUD for a local spectator.  Built on demand, so
 ## a remote player/bot costs nothing until someone actually watches them.
 ## Called by world/spectator_controller.gd on this peer's Player copy only.
@@ -1186,7 +1197,7 @@ func _update_health() -> void:
 	if _health_bar_public:
 		_health_bar_public.text = "%d" % int(hp)
 		# Color by enemy/ally
-		var local_id := str(multiplayer.get_unique_id())
+		var local_id := MatchSession.local_id_string()
 		var local := GameManager.find_player(local_id)
 		if local and _owner_player:
 			if _owner_player.team != local.team:

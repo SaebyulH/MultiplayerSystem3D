@@ -460,17 +460,86 @@ var _randomize_on_death: bool = false
 # Used to be _pending_spawn_position / _has_pending_spawn — removed.
 
 
+## Stable identity, assigned by SpawnManager before `add_child`.
+## `player_id` is the node name / score key and survives a reconnect;
+## `owner_peer_id` is the current ENet peer and is rebindable.  Both stay 0/1
+## on legacy P2P paths, which fall back to the old name-derived authority.
+var player_id: int = 0
+var owner_peer_id: int = 0
+
+
+## The ENet peer that currently owns this player's input.  Bots belong to the
+## server; legacy P2P players fall back to "node name is the network id".
+func owning_peer_id() -> int:
+	if is_bot:
+		return 1
+	if owner_peer_id > 0:
+		return owner_peer_id
+	return str(name).to_int()
+
+
+## True when this player belongs to the local peer.  Use this instead of
+## comparing `get_unique_id()` to `name.to_int()`.
+func is_owned_by_local_peer() -> bool:
+	if is_bot:
+		return false
+	return multiplayer.get_unique_id() == owning_peer_id()
+
+
+## Sender validation for an RPC: 0 means the server ran it locally.
+func is_owned_by_peer(peer_id: int) -> bool:
+	if peer_id == 0:
+		return true
+	return owning_peer_id() == peer_id
+
+
 func _enter_tree() -> void:
+	_apply_input_authority()
+
+
+## Root state authority is always the server; input authority belongs to the
+## player's owning peer.  Clients re-run this once they learn their stable player
+## id (the owner peer is not part of the spawn payload).
+func _apply_input_authority() -> void:
 	if is_bot:
 		player_input.set_multiplayer_authority(1)
 		body.set_multiplayer_authority(1)
 		$DamageNumberManager.set_multiplayer_authority(1)
 	else:
-		var id := str(name).to_int()
+		# Legacy P2P never sets owner_peer_id before add_child, so fall back to
+		# the historic "node name is the network id" convention.
+		var id := owner_peer_id if owner_peer_id > 0 else str(name).to_int()
 		set_multiplayer_authority(1)
 		player_input.set_multiplayer_authority(id)
 		body.set_multiplayer_authority(id)
 		$DamageNumberManager.set_multiplayer_authority(id)
+
+
+## Server → all peers: the owning peer dropped and the slot is reserved.  The
+## Player node stays (score/team/loadout), but is despawned until a resume
+## respawns it through `rpc_reset`.
+@rpc("authority", "call_local", "reliable")
+func set_reserved(reserved: bool) -> void:
+	if reserved:
+		if OS.is_debug_build():
+			print("[PLAYER %s] reserved -> despawn" % name)
+		despawn()
+
+
+## Bind this player to a (possibly new) owning peer.  Used on the client when it
+## finds its own replicated Player, and by the reconnect path.
+func bind_owner_peer(peer_id: int) -> void:
+	owner_peer_id = peer_id
+	_apply_input_authority()
+	# `_ready` could not tell whose player this was before the binding, so it
+	# disabled prediction.  Re-evaluate now that ownership is known.
+	if not multiplayer.is_server() and rollback_sync != null:
+		rollback_sync.enable_prediction = is_owned_by_local_peer()
+	# The replicated Player was built before this client knew it owned it, so
+	# its HUD skipped construction (`PlayerBodyUI._ready` builds from authority).
+	var ui := body.get_node_or_null("PlayerUI")
+	if ui != null and ui.has_method("on_owner_bound"):
+		ui.on_owner_bound()
 
 
 func _ready() -> void:
@@ -495,6 +564,15 @@ func _ready() -> void:
 	add_to_group("players")
 	attribute_component.health_changed.connect(_health_changed)
 	attribute_component.no_health.connect(no_health)
+	# Dedicated-server topology: a client predicts only its own player; remote
+	# players are driven by server state and interpolated.  The server predicts
+	# everyone so a missing input never stalls its simulation.  Full states are
+	# sent every ~0.5 s and diff states acknowledged every ~133 ms; tune from
+	# measured bandwidth rather than shrinking these blindly.
+	if not multiplayer.is_server():
+		rollback_sync.enable_prediction = is_owned_by_local_peer()
+	rollback_sync.full_state_interval = 45
+	rollback_sync.diff_ack_interval = 12
 	rollback_sync.process_settings()
 
 	# Give each player its own collider shape.  Shape3D resources are shared across
@@ -554,7 +632,7 @@ func _get_spawn_transform() -> Transform3D:
 			return node.get_random_spawn_transform(team)
 	return Transform3D()
 
-@rpc("any_peer", "call_local")
+@rpc("any_peer", "call_local", "reliable")
 func rpc_reset(transform: Transform3D) -> void:
 	despawn()
 	# Spectator mode stays despawned across every reset path — map swap, round
@@ -574,6 +652,9 @@ func rpc_reset(transform: Transform3D) -> void:
 	if spawn.origin == Vector3.ZERO:
 		spawn = Transform3D(Basis.IDENTITY, Vector3(0, 12, 0))
 	_spawn_pending_transform = spawn
+	if OS.is_debug_build():
+		print("[PLAYER %s] rpc_reset timer=%.2f spawn=%s" % [
+			name, respawn_timer, spawn.origin])
 	velocity = Vector3.ZERO
 	knockback_velocity = Vector3.ZERO
 	_reset_movement_tech()
@@ -888,9 +969,7 @@ func spawn():
 	# cannot re-show it underneath that toggle.
 	$Body/PlayerUI.refresh_visibility()
 	if not is_bot:
-		var my_id := multiplayer.get_unique_id()
-		var player_id := name.to_int()
-		if my_id == player_id:
+		if is_owned_by_local_peer():
 			_apply_camera_mode()
 			#$BodyHurtbox/CollisionShape3D.hide()
 		else:
@@ -993,6 +1072,8 @@ func _physics_process(delta: float) -> void:
 	elif not spawned and _spawn_pending_transform.origin != Vector3.ZERO:
 		var spawn := _spawn_pending_transform
 		_spawn_pending_transform = Transform3D()
+		if OS.is_debug_build():
+			print("[PLAYER %s] auto-spawn at %s" % [name, spawn.origin])
 		global_position = spawn.origin
 		# Face the way the spawn marker was aimed.  Only the authority needs to write
 		# this: `Body`'s MultiplayerSynchronizer replicates `.:rotation`, so the other
@@ -2008,8 +2089,7 @@ func change_health(health: float, changer: String, is_headshot: bool = false, fa
 ## True when the RPC came from this player's owning peer (or ran locally on the
 ## server, where get_remote_sender_id() is 0).
 func _dev_request_is_owner() -> bool:
-	var sid := multiplayer.get_remote_sender_id()
-	return sid == 0 or sid == name.to_int()
+	return is_owned_by_peer(multiplayer.get_remote_sender_id())
 
 
 func dev_set_health_fraction(frac: float) -> void:

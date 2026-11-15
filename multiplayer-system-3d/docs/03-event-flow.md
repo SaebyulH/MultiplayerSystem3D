@@ -121,6 +121,201 @@ Invariants that follow, and are easy to break:
 
 ---
 
+## Match-session join (dedicated server)
+
+The default boot still uses the P2P flow above. A direct `--connect=host[:port]`
+join (and, later, every lobby join) uses `MatchSession` instead. The ordering
+there is different and deliberately later than the P2P one:
+
+```
+join_party(host, port, use_match_session=true)
+  MatchSession.begin_client(LOBBY_MAP_PATH)      # staging map path known before the world
+  create_client(...)
+_on_connected_to_server()
+  await enter_existing_game_scene()              # client loads the staging map locally
+  await _await_settled()
+  MatchSession.request_hello()                   # only now: the world exists
+  await _await_welcome(5.0)                      # stable player id + map path/hash
+  await _adopt_server_tick_rate()
+  NetworkTime.start()
+  ...
+MatchSession (client, _process)
+  wait for GameManager.find_player(local_player_id)
+  bind owner_peer_id + PlayerUI, send client_node_ready
+```
+
+Server side:
+
+```
+hello(peer)
+  validate protocol/build, allocate stable player_id
+  hide existing players' synchronizers from this peer
+  add the Player node (stable id as name), wait one frame
+  send welcome
+client_node_ready(player_id)
+  verify the sender owns that id
+  mark the peer ready, enable player sync visibility,
+  then sync existing-player state
+```
+
+Invariants:
+
+- **`hello` is sent after the world is built.** The server must not add a Player
+  or send node-addressed RPCs before that. This is the fix for
+  `05-known-issues.md` #124.
+- **The client binds its own owner peer after `welcome`.** The spawn payload
+  carries the stable id as the node name but not the owning peer, so the client
+  re-applies input authority (`Player.bind_owner_peer`) and rebuilds the HUD.
+- **Maps are local files.** Both sides load the same path; the server sends
+  only path + SHA-256. A mismatch rejects the join (`MAP_MISMATCH`).
+- **Player sync visibility is explicit.** In a match session every
+  `MultiplayerSynchronizer` on a Player starts with `public_visibility = false`;
+  peers are opted in on `client_node_ready`. A public synchronizer ignores a
+  per-peer `false` override, which is why the flag must be off.
+- **A new Player's sync is hidden for three frames** so existing peers receive
+  the spawner packet before state sync. This is a heuristic, not a barrier; see
+  `05-known-issues.md` #126 for the map case and the planned chunked join state.
+- **Map swaps are not yet barrier-safe.** The server broadcasts
+  `phase_changed(ACTIVE, path, hash)` and respawns immediately; clients load
+  locally after receiving it. `#126` tracks the missing `map_ready` handshake.
+
+## Local host transition (default, no service)
+
+The default launch boots the offline shell. Pressing Host Match opens the host
+menu; Start (map/teams/bots) then converts the process into a listen server:
+
+```
+host_menu._on_start_pressed()
+  capture host team + autofill, write manual-bot teams to lobby_bots
+  GameManager.pending_host_setup = {...}
+  NetworkManager.host_local_match(8080, selected_map)
+    NetworkTime.stop()                 # old offline tick loop
+    _remove_game_scene()               # queue_free only, keep the node in-tree
+    await process_frame
+    call_deferred boot_listen_server(port, map)
+      try create_server on 8080, 8081, ...
+      load world1 with the chosen map
+      world_1 applies pending_host_setup, then LanDiscovery.start_announcing(port)
+```
+
+A busy port is not fatal: the listen server tries the next port in the 16-port
+range and advertises the one it got. Only `--server` exits on a bind failure.
+No loading screen appears before Start.
+
+Invariants:
+
+- **Free the world before the peer is replaced/null.** The old shell's netfox
+  synchronizers can run deferred `process_settings`; a detached node has
+  `multiplayer == null` and throws (known-issue #132). `_remove_game_scene` now
+  only calls `queue_free()`.
+- **Keep the offline peer until `create_server()` installs the ENet peer.** No
+  null window.
+- **The deferred boot lets `NetworkEvents` observe the server transition.**
+  `NetworkTime.stop()` leaves the state INACTIVE, then `create_server()` makes
+  `is_server()` true and `on_server_start` starts the loop.
+- **The host is player 1; joiners are 2+.** `SpawnManager` registers the host
+  player on a listen server; `register_host_player(1)` sets `host_player_id`.
+
+The resulting session uses the same match-session handshake, stable ids, local
+maps, heartbeat/reaper, and resume as a dedicated server.
+
+JoinParty opens a two-tab popup. **LAN** calls
+`LanDiscovery.discover()`: it probes UDP `7355-7370` on localhost, each /24
+broadcast and `255.255.255.255`; each host answers on `7355 + (port - 8080)`
+with a JSON announce and an instance id. **Direct IP** accepts `ip[:port]` or a
+join code. Both call `join_party(..., use_match_session=true)`. The LAN announce
+is unauthenticated metadata; the join is still validated by the handshake.
+
+## C lobby join
+
+`lobbyd` (`server/lobbyd/lobbyd.c`) is metadata only; gameplay still uses the
+match-session flow above. The additional hop is:
+
+```
+client                          lobbyd                       match server
+POST /v1/matches        ->  allocate id/port, fork/exec  ->  [server] ready
+   <- endpoint + grant
+POST /v1/matches/{code}/join
+   <- endpoint + grant
+join_match(endpoint, grant)
+   -> hello(..., grant)
+                                server validates HMAC + match id
+   <- welcome / session_error(BAD_TOKEN)
+```
+
+Invariants:
+
+- **The grant is validated before a player is added.** `MatchSession.hello`
+  checks the HMAC, expiry, and match id; a missing/invalid grant produces
+  `BAD_TOKEN` and no Player node. With no secret configured the check is a dev
+  no-op.
+- **The client sends `hello` only after its world exists**, as above. The grant
+  changes nothing about that ordering.
+- **Maps still load locally.** The lobby never carries map bytes.
+- **`lobbyd` is not a gameplay relay.** It spawns one headless Godot per match
+  and supervises the process; all UDP traffic is direct.
+- **Starting a map is a server request.** In staging the room host is a client;
+  `world/host_menu.gd` sends `MatchSession.request_start_match(path)`, the
+  server re-checks host identity and the map path, then calls
+  `load_match_map`.
+
+Known P3 limits: lobbyd's browser count is issued grants, not live players; the
+phase is always `staging`; there is no control channel or child re-adoption
+(#129). The HMAC secret is passed on argv for the WSL/Windows dev path (#128).
+
+## Reconnect / resume (match sessions)
+
+A dropped client does not rebuild the world. The same `MatchSession` and
+`world1.tscn` stay alive; only the ENet peer is replaced.
+
+```
+server                          client
+peer_disconnected
+  entry.state = RESERVED
+  set_reserved.rpc(true)   ->   despawn body (+ every other peer)
+  reserve Player node
+                              _server_disconnected()
+                                _begin_reconnect()  (2 s retries, 90 s cap)
+                                create_client(host, port)
+  <- hello(resume_token)
+  validate HMAC + match id
+  find RESERVED entry
+  bind_peer.rpc(id, new_peer)
+  show_players_to_peer
+  rpc_reset (reliable)    ->   despawn + 1 s respawn at a team spawn
+  welcome(resumed=true, rotated token)
+                          ->   rebind local player/HUD, node_ready
+                                NetworkTime.start()
+                                _reset_rollback_history()
+                                hide loading screen
+```
+
+Invariants:
+
+- **The Player node is not freed on a drop.** Score, team, and loadout live on
+  it; only the owner peer is rebound. The slot expires after the grace period,
+  at which point the node is freed and the leaderboard entry removed.
+- **`rpc_reset` is reliable now.** It was `any_peer` + `call_local` +
+  unreliable; a dropped resume RPC left the client despawned forever.
+- **Reset rollback history after `NetworkTime.start()`, not before.** The
+  synchronizers still hold the old tick domain's cursors because the world was
+  not rebuilt. Resetting before start stamps them with the dying tick.
+- **Input authority is rebound on both sides.** `bind_peer` is
+  `call_local`; the server and every client (including the resumed one) call
+  `Player.bind_owner_peer(new_peer)`. Skipping it leaves input gathering on the
+  old peer id: the client looks alive but cannot move.
+- **Sync visibility is per peer.** The resumed peer needs
+  `show_players_to_peer(new_peer)`; without it state freezes at the pre-drop
+  tick even though input resumes.
+- **Heartbeats are independent of ENet.** A frozen client's UDP socket stays
+  open, so the server reaps on 10 s of silence and takes the same reserve path.
+- **The map can change while disconnected.** `welcome` carries the current map
+  path/hash and emits `phase_changed` if it differs; `world_1` loads it locally
+  before the respawn settles.
+
+Test hooks: `--test-drop-after=N`, `--test-silent-after=N`,
+`--test-no-reconnect`, and the server-side `--test-resume-grace=N`.
+
 ## Full fragile / order-dependent list
 
 1. **Deferred re-host is load-bearing** (`network_manager.gd:return_to_lobby`). Any synchronous teardown + re-`create_server()` kills `NetworkTime` and thus movement.

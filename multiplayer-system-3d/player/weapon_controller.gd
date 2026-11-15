@@ -537,11 +537,8 @@ func _physics_process(delta: float) -> void:
 
 	if _parent_player.is_bot:
 		_process_fire()  # server drives bot firing directly
-	else:
-		var my_id: int = multiplayer.get_unique_id()
-		var owner_id: int = _parent_player.name.to_int()
-		if my_id == owner_id:
-			_process_fire()
+	elif _parent_player.is_owned_by_local_peer():
+		_process_fire()
 
 func _tick_timers(delta: float) -> void:
 	if _fire_cooldown > 0.0:
@@ -1723,10 +1720,8 @@ func request_reload() -> void:
 	if not multiplayer.is_server():
 		return
 	var sender_id: int = multiplayer.get_remote_sender_id()
-	if not _parent_player.is_bot:
-		var owner_id: int = _parent_player.name.to_int()
-		if sender_id != 0 and sender_id != owner_id:
-			return
+	if not _parent_player.is_bot and not _parent_player.is_owned_by_peer(sender_id):
+		return
 	if not _begin_reload_server():
 		if sender_id != 0 and sender_id != 1:
 			_reload_rejected.rpc_id(sender_id)
@@ -2771,7 +2766,7 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 						if not is_equal_approx(weapon_fire.backshot_multiplier, 1.0) and is_backshot:
 							damage *= weapon_fire.backshot_multiplier
 							if not _parent_player.is_bot:
-								play_backshot_sound.rpc_id(_parent_player.name.to_int())
+								play_backshot_sound.rpc_id(_parent_player.owning_peer_id())
 						var player_name = victim.name
 						if victim.team == get_parent().team and victim.team != Player.Team.FFA:
 							damage *= Player.FRIENDLY_FIRE_MULTIPLIER
@@ -2831,7 +2826,7 @@ func _apply_shape_damage(weapon: Weapon, weapon_fire_index: int, shape_hits: Dic
 		if not is_equal_approx(weapon_fire.backshot_multiplier, 1.0) and is_backshot:
 			damage *= weapon_fire.backshot_multiplier
 			if not _parent_player.is_bot:
-				play_backshot_sound.rpc_id(_parent_player.name.to_int())
+				play_backshot_sound.rpc_id(_parent_player.owning_peer_id())
 		if victim.team == get_parent().team and victim.team != Player.Team.FFA:
 			damage *= Player.FRIENDLY_FIRE_MULTIPLIER
 		if multiplayer.is_server():

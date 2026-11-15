@@ -32,6 +32,11 @@ var spawn_manager: SpawnManager
 ## Auto-fill bots are deliberately NOT recorded here, so they're freed on exit.
 var lobby_bots: Array[Dictionary] = []
 
+## Host-menu choices captured in the local shell and applied by `world_1` once
+## the listen server has built its SpawnManager: host team, autofill flag and
+## targets.  Cleared after it is applied.
+var pending_host_setup: Dictionary = {}
+
 # --- Dev-menu display flags (world/dev_menu.gd) ---------------------------
 # Purely local: they are never networked and only affect the peer that set
 # them.  They live on GameManager (not on the world) so they survive a world

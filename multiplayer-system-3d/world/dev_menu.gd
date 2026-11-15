@@ -316,7 +316,7 @@ func _build_bots_tab() -> Control:
 # ─────────────────────────────────────────────────────────────
 
 func _local_player() -> Player:
-	return GameManager.find_player(str(multiplayer.get_unique_id()))
+	return GameManager.find_player(MatchSession.local_id_string())
 
 
 func _refresh_state() -> void:

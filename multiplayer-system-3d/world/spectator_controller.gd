@@ -135,7 +135,7 @@ func _apply_camera(target: Player) -> void:
 ## this runs per frame; it is only re-resolved before the node exists.
 func _local_player() -> Player:
 	if _local == null or not is_instance_valid(_local):
-		_local = GameManager.find_player(str(multiplayer.get_unique_id()))
+		_local = GameManager.find_player(MatchSession.local_id_string())
 	return _local
 
 

@@ -60,7 +60,13 @@ static var ui_open: bool = false
 
 const FIRE_ACTIONS: Array[String] = ["primary_fire", "secondary_fire", "tertiary_fire"]
 
+## Headless test hook: `--test-move` walks the player forward so cross-process
+## harnesses can prove the server accepted input.  Never a gameplay path.
+var _test_move := false
+
+
 func _ready() -> void:
+	_test_move = "--test-move" in OS.get_cmdline_user_args()
 	NetworkTime.before_tick_loop.connect(_gather)
 
 func _gather() -> void:
@@ -110,6 +116,8 @@ func _gather() -> void:
 		queued_teleport_trigger_dir = Vector3.ZERO
 		return
 	input_dir  = Input.get_vector("move_left", "move_right", "move_forward", "move_backward")
+	if _test_move:
+		input_dir = Vector2(0, -1)  # forward
 	jump_input = Input.is_action_pressed("ui_accept")
 	crouch     = Input.is_action_pressed("crouch")
 	dash_input = Input.is_action_pressed("dash")

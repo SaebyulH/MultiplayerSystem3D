@@ -371,6 +371,13 @@ func _sync_to_clients(target_peer: int = 0) -> void:
 		blocking.append(_client_blocks_actions.get(id, false))
 	if target_peer > 0:
 		_rpc_sync_effects.rpc_id(target_peer, ids, names, times, blocking)
+	elif MatchSession.role == MatchSession.Role.SERVER:
+		# Do not address a Player node a joining peer has not received yet
+		# (docs/05-known-issues.md #124).  Legacy P2P (role NONE) broadcasts
+		# exactly as before.
+		for peer_id in multiplayer.get_peers():
+			if MatchSession.is_peer_ready(peer_id):
+				_rpc_sync_effects.rpc_id(peer_id, ids, names, times, blocking)
 	else:
 		_rpc_sync_effects.rpc(ids, names, times, blocking)
 	client_effects_changed.emit()
