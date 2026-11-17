@@ -363,12 +363,12 @@ shape = SubResource("ConvexPolygonShape3D_4unj1")
 
 [node name="entity_1_PlayerSpawn" parent="FuncGodotMap" unique_id=1614452669 instance=ExtResource("99_spawn")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -0.5, -1.9375, -3.25)
-func_godot_properties = Dictionary[String, Variant]({
+func_godot_properties = {
 "classname": "PlayerSpawn",
 "mangle": "0 0 0",
 "origin": "-104 -16 -62",
 "team": 2
-})
+}
 
 [node name="entity_2_BigBox" parent="FuncGodotMap" unique_id=1847235070 instance=ExtResource("15_qwukf")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -7, 5.03125, 5)
@@ -384,32 +384,32 @@ transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -6.5
 
 [node name="entity_6_PlayerSpawn" parent="FuncGodotMap" unique_id=253738455 instance=ExtResource("99_spawn")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -1.5, 5.0625, 4.25)
-func_godot_properties = Dictionary[String, Variant]({
+func_godot_properties = {
 "classname": "PlayerSpawn",
 "mangle": "0 0 0",
 "origin": "136 -48 162",
 "team": 2
-})
+}
 
 [node name="entity_7_PlayerSpawn" parent="FuncGodotMap" unique_id=1851425994 instance=ExtResource("99_spawn")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0.5, 5.0625, 4.25)
 team = 1
-func_godot_properties = Dictionary[String, Variant]({
+func_godot_properties = {
 "classname": "PlayerSpawn",
 "mangle": "0 0 0",
 "origin": "136 16 162",
 "team": 1
-})
+}
 
 [node name="entity_8_PlayerSpawn" parent="FuncGodotMap" unique_id=1252266000 instance=ExtResource("99_spawn")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 2.5, 5.0625, 4.25)
 team = 0
-func_godot_properties = Dictionary[String, Variant]({
+func_godot_properties = {
 "classname": "PlayerSpawn",
 "mangle": "0 0 0",
 "origin": "136 80 162",
 "team": 0
-})
+}
 
 [node name="entity_9_BigBox" parent="FuncGodotMap" unique_id=1614068563 instance=ExtResource("15_qwukf")]
 transform = Transform3D(-1.5195453, 2.1143084, 1.4901953, 1.4901953, 2.1282196, -1.5, -2.1143084, -0.019545257, -2.1282196, -2.3039405, -1.2570626, -9)

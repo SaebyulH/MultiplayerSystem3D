@@ -860,7 +860,11 @@ func _process(delta: float) -> void:
 	# The FPS counter is peer-owned, not viewer-owned: keep it live even while
 	# our own HUD is hidden for spectator mode.  No-op for non-owner HUDs.
 	_update_fps()
-	if not visible:
+	# A match client learns its authority from the replicated `owner_peer_id`
+	# before `Player.bind_owner_peer()` calls on_owner_bound(): the rule above
+	# un-hides this Control while it is still unbuilt, and every widget below
+	# is null until _ensure_built() runs.  Stay dormant until then.
+	if not _built or not visible:
 		return
 
 	_border_time += delta

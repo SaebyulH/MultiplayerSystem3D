@@ -166,6 +166,13 @@ Invariants:
 - **The client binds its own owner peer after `welcome`.** The spawn payload
   carries the stable id as the node name but not the owning peer, so the client
   re-applies input authority (`Player.bind_owner_peer`) and rebuilds the HUD.
+  **The two are not atomic.** The replicated `owner_peer_id` setter flips
+  authority first, so `PlayerBodyUI._should_show()` turns true while the HUD is
+  still unbuilt (its `_ready` ran under the pre-sync fallback authority); every
+  built widget is null until `on_owner_bound()` → `_ensure_built()`. `_process`
+  therefore guards on `_built` as well as `visible` (`player_ui.gd`), or a
+  joining client crashes in `_update_scope_charge_ui` on a null
+  `_scope_charge_bar`.
 - **Maps are local files.** Both sides load the same path; the server sends
   only path + SHA-256. A mismatch rejects the join (`MAP_MISMATCH`).
 - **Player sync visibility is explicit.** In a match session every
