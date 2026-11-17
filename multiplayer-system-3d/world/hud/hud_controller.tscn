@@ -25,12 +25,12 @@ alignment = 1
 [node name="SpiBar" parent="TeamBarRow" instance=ExtResource("3_team")]
 visible = false
 custom_minimum_size = Vector2(240, 28)
-team_color = Color(0.88, 0.24, 0.24, 1)
+team_color = Color(1, 0.275, 0.333, 1)
 
 [node name="SciBar" parent="TeamBarRow" instance=ExtResource("3_team")]
 visible = false
 custom_minimum_size = Vector2(240, 28)
-team_color = Color(0.2, 0.6, 0.86, 1)
+team_color = Color(0.176, 0.831, 0.749, 1)
 
 [node name="OvertimeLabel" type="Label" parent="."]
 visible = false
@@ -63,7 +63,7 @@ theme_override_constants/separation = 8
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 6
 theme_override_font_sizes/font_size = 18
-theme_override_colors/font_color = Color(0.85, 0.85, 0.85, 1)
+theme_override_colors/font_color = Color(0.929, 0.945, 0.961, 1)
 horizontal_alignment = 1
 
 [node name="PanelContainer" type="Control" parent="Root/MainVBox"]

@@ -28,6 +28,9 @@ var player_id: String
 ## snapshotted/restored around the session, and confirm never sets
 ## `world.class_selected` or captures the mouse.
 var bot_edit_mode := false
+## True while opened from the staging room.  Confirm returns to staging with the
+## mouse visible instead of capturing input for gameplay.
+var staging_mode := false
 var _bot_name := ""
 ## Set while the confirm RPC is in flight so the visibility handler does not
 ## restore `player_id` before _request_loadout has read it.
@@ -81,12 +84,12 @@ var _section_header_style: StyleBox = null     # blue chip (grabbed from AGENT h
 var _section_header_font: Font = null          # bold white font (grabbed from AGENT header)
 var _portrait_buttons: Dictionary = {}         # character resource_path -> portrait Button
 
-# ── Card style colours ───────────────────────
-const HIGHLIGHT_COLOR := Color(0.35, 0.65, 1.0, 1)   # blue
-const CARD_BG_NORMAL := Color(0.10, 0.11, 0.15, 1)
-const CARD_BG_HOVER := Color(0.16, 0.18, 0.24, 1)
-const CARD_BG_SELECTED := Color(0.15, 0.25, 0.35, 1)
-const CARD_BORDER_NORMAL := Color(0.30, 0.32, 0.38, 1)
+# ── Card style colours (mirror ui/ui_theme.gd) ─
+const HIGHLIGHT_COLOR := Color(0.176, 0.831, 0.749, 1)   # teal
+const CARD_BG_NORMAL := Color(0.102, 0.125, 0.161, 0.64)
+const CARD_BG_HOVER := Color(0.137, 0.169, 0.212, 0.88)
+const CARD_BG_SELECTED := Color(0.176, 0.831, 0.749, 0.14)
+const CARD_BORDER_NORMAL := Color(0.165, 0.196, 0.239, 1)
 const CARD_BORDER_HOVER := HIGHLIGHT_COLOR
 const CARD_BORDER_SELECTED := HIGHLIGHT_COLOR
 
@@ -137,6 +140,8 @@ func _ready() -> void:
 	_build_icon_credit()
 	_populate_mode_info.call_deferred()
 
+	_style_action_buttons()
+
 	_confirm_button.pressed.connect(_on_confirm_pressed)
 	_randomize_once_button.pressed.connect(_on_randomize_once_pressed)
 	_leave_party_button.pressed.connect(_on_leave_party_pressed)
@@ -166,6 +171,18 @@ func _ready() -> void:
 	# on a dedicated server, which has no local player.
 	if not NetworkManager.is_dedicated_server() and "--auto-loadout" in OS.get_cmdline_user_args():
 		_auto_confirm_when_ready.call_deferred()
+
+
+func _style_action_buttons() -> void:
+	_confirm_button.add_theme_font_override("font", UITheme.FONT_EXTRABOLD)
+	_confirm_button.add_theme_stylebox_override("normal", UITheme.button_style(UITheme.Kind.PRIMARY))
+	_confirm_button.add_theme_stylebox_override("hover", UITheme.button_style(UITheme.Kind.PRIMARY, true))
+	_confirm_button.add_theme_stylebox_override("pressed", UITheme.button_style(UITheme.Kind.PRIMARY, false, true))
+	_confirm_button.add_theme_stylebox_override("disabled", UITheme.button_style(UITheme.Kind.DISABLED))
+	_randomize_once_button.add_theme_stylebox_override("normal", UITheme.button_style(UITheme.Kind.SECONDARY))
+	_randomize_once_button.add_theme_stylebox_override("hover", UITheme.button_style(UITheme.Kind.SECONDARY, true))
+	_leave_party_button.add_theme_stylebox_override("normal", UITheme.button_style(UITheme.Kind.DANGER))
+	_leave_party_button.add_theme_stylebox_override("hover", UITheme.button_style(UITheme.Kind.DANGER, true))
 
 
 ## Restore the process-local build saved by the title flow or a previous confirm.
@@ -230,6 +247,13 @@ func _build_icon_credit() -> void:
 		Control.PRESET_BOTTOM_RIGHT, Control.PRESET_MODE_MINSIZE, 8)
 
 
+## Staging opens this screen above its own CanvasLayer (staging is layer 5).
+func set_staging_mode(on: bool) -> void:
+	staging_mode = on
+	if _canvas:
+		_canvas.layer = 8 if on else 2
+
+
 func _on_visibility_changed() -> void:
 	# world_1.gd toggles self.visible to show/hide the loadout menu.
 	#
@@ -273,6 +297,7 @@ func open_for_bot(bot_name: String) -> bool:
 	_leave_party_button.visible = false
 	_randomize_on_death_check.visible = false
 	_mode_label.text = "EDITING BOT: %s" % bot_name
+	_confirm_button.text = "APPLY TO BOT"
 	_select_character(bot.get_character())
 	_select_bot_weapons(bot)
 	visible = true
@@ -351,6 +376,7 @@ func _finish_bot_edit() -> void:
 	_leave_party_button.visible = true
 	_randomize_on_death_check.visible = true
 	_mode_label.text = _get_mode_description()
+	_confirm_button.text = "LOCK IN"
 
 	var ch: Character = snap.get("character", null)
 	if ch:
@@ -396,7 +422,7 @@ func _build_character_picker() -> void:
 		for char in cls.characters:
 			if not char:
 				continue
-			flow.add_child(_make_portrait_button(char))
+			flow.add_child(_make_portrait_button(char, cls))
 
 
 func _make_section_header(text: String) -> PanelContainer:
@@ -406,27 +432,17 @@ func _make_section_header(text: String) -> PanelContainer:
 	var label := Label.new()
 	label.text = text
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.add_theme_color_override("font_color", Color.WHITE)
+	label.add_theme_color_override("font_color", UITheme.TEAL)
 	if _section_header_font:
 		label.add_theme_font_override("font", _section_header_font)
-	label.add_theme_font_size_override("font_size", 16)
+	label.add_theme_font_size_override("font_size", 13)
 	panel.add_child(label)
 	return panel
 
 
-func _make_portrait_button(char: Character) -> Button:
-	var btn := Button.new()
-	btn.icon = char.portrait
-	btn.expand_icon = true
-	btn.custom_minimum_size = Vector2(84, 84)
+func _make_portrait_button(char: Character, cls: Class) -> Button:
+	var btn := UITheme.character_card(char, cls, "normal", Vector2(92, 122))
 	btn.tooltip_text = char.character_name
-	btn.focus_mode = Control.FOCUS_NONE
-
-	btn.add_theme_stylebox_override("normal", _portrait_style(CARD_BG_NORMAL, CARD_BORDER_NORMAL))
-	btn.add_theme_stylebox_override("hover", _portrait_style(CARD_BG_NORMAL, CARD_BORDER_HOVER))
-	btn.add_theme_stylebox_override("pressed", _portrait_style(CARD_BG_SELECTED, CARD_BORDER_SELECTED))
-	btn.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
-
 	btn.mouse_entered.connect(_on_portrait_hover.bind(char))
 	btn.pressed.connect(_on_pick_character.bind(char))
 	_portrait_buttons[char.resource_path] = btn
@@ -438,9 +454,11 @@ func _refresh_portrait_selection() -> void:
 	for path in _portrait_buttons:
 		var btn: Button = _portrait_buttons[path]
 		var is_selected: bool = path == selected_path
-		btn.add_theme_stylebox_override("normal", _portrait_style(
-			CARD_BG_SELECTED if is_selected else CARD_BG_NORMAL,
-			CARD_BORDER_SELECTED if is_selected else CARD_BORDER_NORMAL))
+		btn.add_theme_stylebox_override("normal", UITheme.card_style(
+			UITheme.State.SELECTED if is_selected else UITheme.State.NORMAL))
+		btn.add_theme_stylebox_override("hover", UITheme.card_style(
+			UITheme.State.SELECTED if is_selected else UITheme.State.HOVER))
+		btn.add_theme_stylebox_override("pressed", UITheme.card_style(UITheme.State.SELECTED))
 
 
 func _portrait_style(bg: Color, border: Color) -> StyleBoxFlat:
@@ -657,7 +675,11 @@ func _select_character(char: Character) -> void:
 	_refresh_character_preview()
 
 	if _character_name_label:
-		_character_name_label.text = char.character_name if char else ""
+		if char and selected_class:
+			_character_name_label.text = "%s  ·  %s" % [
+				char.character_name.to_upper(), selected_class.class_display_name.to_upper()]
+		else:
+			_character_name_label.text = char.character_name if char else ""
 
 	_rebuild_weapon_columns()
 	_refresh_abilities()
@@ -743,7 +765,7 @@ func _refresh_abilities() -> void:
 func _on_character_hover_enter() -> void:
 	if _character_wrap_style:
 		var tw := create_tween()
-		tw.tween_property(_character_wrap_style, "border_color", Color(1.0, 0.85, 0.4, 1), 0.15)
+		tw.tween_property(_character_wrap_style, "border_color", UITheme.TEAL, 0.15)
 	_change_agent_overlay.visible = true
 	if selected_character:
 		_show_character_info(selected_character)
@@ -752,7 +774,7 @@ func _on_character_hover_enter() -> void:
 func _on_character_hover_exit() -> void:
 	if _character_wrap_style:
 		var tw := create_tween()
-		tw.tween_property(_character_wrap_style, "border_color", Color(0.35, 0.4, 0.5, 1), 0.15)
+		tw.tween_property(_character_wrap_style, "border_color", UITheme.LINE, 0.15)
 	_change_agent_overlay.visible = false
 
 
@@ -1118,12 +1140,19 @@ func _on_confirm_pressed() -> void:
 		"randomize_on_death": rand_on_death,
 	}
 
-	# Hide our canvas (don't free — user can re-open with H later).
+	# Hide our canvas (don't free — user can re-open with H later).  Opened from
+	# staging, control returns to the staging overlay rather than to gameplay.
+	var was_staging := staging_mode
+	set_staging_mode(false)
 	visible = false  # triggers _process() → _canvas.visible = false
 
 	world.class_selected = true
-	PlayerInput.ui_open = false
-	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+	if was_staging:
+		PlayerInput.ui_open = true
+		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	else:
+		PlayerInput.ui_open = false
+		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 
 	if multiplayer.is_server():
 		_request_loadout(target_id, primary_path, secondary_path, melee_path, Player.Team.FFA, character_path, class_path, rand_on_death, respawn)

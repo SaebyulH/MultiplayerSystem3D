@@ -4,18 +4,15 @@
 [ext_resource type="Texture2D" path="res://assets/loadingscreen.png" id="2_bg"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_track"]
-bg_color = Color(0.05, 0.05, 0.08, 0.6)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
+bg_color = Color(0.067, 0.086, 0.114, 0.85)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.165, 0.196, 0.239, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fill"]
-bg_color = Color(0.878431, 0.4, 0.4, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
+bg_color = Color(1, 0.275, 0.333, 1)
 
 [node name="LoadingScreen" type="CanvasLayer"]
 layer = 100
@@ -24,36 +21,43 @@ script = ExtResource("1_loading")
 [node name="Background" type="TextureRect" parent="."]
 anchor_right = 1.0
 anchor_bottom = 1.0
+modulate = Color(1, 1, 1, 0.32)
 texture = ExtResource("2_bg")
 expand_mode = 1
 stretch_mode = 6
 
+[node name="Scrim" type="ColorRect" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.043, 0.055, 0.075, 0.62)
+
 [node name="Content" type="CenterContainer" parent="."]
-anchor_right = 0.5
+anchor_right = 1.0
 anchor_bottom = 1.0
 
 [node name="VBox" type="VBoxContainer" parent="Content"]
-custom_minimum_size = Vector2(420, 0)
-theme_override_constants/separation = 16
+custom_minimum_size = Vector2(460, 0)
+theme_override_constants/separation = 14
 
 [node name="Title" type="Label" parent="Content/VBox"]
-theme_override_colors/font_color = Color(0.878431, 0.4, 0.4, 1)
-theme_override_font_sizes/font_size = 32
+theme_override_colors/font_color = Color(0.929, 0.945, 0.961, 1)
+theme_override_font_sizes/font_size = 34
 text = "LOADING"
+horizontal_alignment = 1
 
 [node name="ProgressBar" type="ProgressBar" parent="Content/VBox"]
-custom_minimum_size = Vector2(420, 24)
-theme_override_colors/font_color = Color(0.878431, 0.4, 0.4, 1)
+custom_minimum_size = Vector2(460, 22)
 theme_override_styles/background = SubResource("StyleBoxFlat_track")
 theme_override_styles/fill = SubResource("StyleBoxFlat_fill")
 show_percentage = false
 
 [node name="PercentLabel" type="Label" parent="Content/VBox"]
-theme_override_colors/font_color = Color(0.878431, 0.4, 0.4, 1)
-theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.929, 0.945, 0.961, 1)
+theme_override_font_sizes/font_size = 22
 horizontal_alignment = 1
 text = "0%"
 
 [node name="StatusLabel" type="Label" parent="Content/VBox"]
-theme_override_colors/font_color = Color(0.878431, 0.4, 0.4, 1)
-theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.541, 0.58, 0.639, 1)
+theme_override_font_sizes/font_size = 15
+horizontal_alignment = 1

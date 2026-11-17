@@ -646,6 +646,15 @@ func _request_cast(index: int, mode: int) -> bool:
 		# owner's bar would sit full until the effect replicated back.
 		if ability is MeteredAbility:
 			_set_meter(index, ability, want_on)
+		# Timed self-buffs and action poses replicate their state to this peer,
+		# but a weapon-fire burst runs only on the server.  Start the HUD window
+		# locally so its icon+ring appears on the shot that started the cast.
+		if ability is WeaponFireAbility and _parent_player != null \
+				and _parent_player.weapon_controller != null:
+			var burst := (ability as WeaponFireAbility).burst_duration()
+			if burst > 0.0:
+				_parent_player.weapon_controller.start_ability_visual(
+					ability.ability_name, burst)
 		_cast_ability.rpc_id(1, index, mode, target_names, want_on)
 	return true
 

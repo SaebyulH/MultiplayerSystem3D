@@ -12,7 +12,7 @@ signal card_pressed(card)
 
 const ICON_ASPECT := 9.0 / 16.0   # killfeed icons are 256x144
 const ICON_HEIGHT_SCALE := 0.6    # shrink the icon (and card) height ~25%
-const CONTENT_MARGIN := 6.0        # matches the panel stylebox content margins
+const CONTENT_MARGIN := 7.0        # MUST match the card stylebox's content margins
 
 @onready var icon: TextureRect = $VBox/Icon
 @onready var placeholder: ColorRect = $VBox/Placeholder

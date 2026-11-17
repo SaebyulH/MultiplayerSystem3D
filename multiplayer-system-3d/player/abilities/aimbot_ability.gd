@@ -10,6 +10,14 @@ extends Ability
 @export var duration: float = 8.0
 @export var max_angle_deg: float = 8.0
 
+func active_effect_id() -> String:
+	return "aimbot"
+
+
+func active_effect_duration() -> float:
+	return duration
+
+
 func activate(player: Player) -> void:
 	if not player.status_effect_manager:
 		return

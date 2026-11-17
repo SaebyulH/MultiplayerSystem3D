@@ -13,6 +13,7 @@ class_name LoadingScreen
 static var current: LoadingScreen = null
 
 
+@onready var _background: TextureRect = $Background
 @onready var _progress: ProgressBar = $Content/VBox/ProgressBar
 @onready var _percent: Label = $Content/VBox/PercentLabel
 @onready var _status: Label = $Content/VBox/StatusLabel
@@ -55,6 +56,15 @@ func _ready() -> void:
 	current = self
 	_progress.value = 0.0
 	_percent.text = "0%"
+	# Show the map being loaded when one is already chosen.  Falls back to the
+	# authored splash for the very first boot.
+	var path := GameManager.pending_match_map
+	if path == "":
+		path = MatchSession.target_map_path
+	var md := UITheme.map_data_for_path(path)
+	if md and md.map_image:
+		_background.texture = md.map_image
+		_background.modulate = Color(1, 1, 1, 0.45)
 
 
 func set_progress(v: float) -> void:

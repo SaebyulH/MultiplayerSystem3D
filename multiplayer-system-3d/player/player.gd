@@ -188,6 +188,10 @@ var bashdown_time: float = 0.0            # > 0 while the lunge window is open
 var bashdown_dir: Vector3 = Vector3.ZERO  # frozen look direction at cast
 var bashdown_slamming: bool = false       # true during the slam-down phase
 
+# Cached result of is_ability_pose_active(), so _process only has to refresh the
+# weapon holster when the pose actually changes (not every rendered frame).
+var _ability_pose_active := false
+
 # Dash-jump timing.
 var dash_jump_locked: bool = false     # timing failed; locked out this dash
 
@@ -1859,6 +1863,15 @@ func _process(_delta: float) -> void:
 		_hurtboxes_active = not noclip_active
 		_set_hurtboxes_active(_hurtboxes_active)
 
+	# Action abilities take the weapon out of the hands and drop the hold pose
+	# (same presentation as out of combat).  The pose state itself is derived
+	# from rollback/effect state on every peer, so only the edges need work.
+	var pose_active := is_ability_pose_active()
+	if pose_active != _ability_pose_active:
+		_ability_pose_active = pose_active
+		if weapon_controller:
+			weapon_controller.refresh_holstered()
+
 	# _update_visibility first: its set_public_health_visible() is what updates the
 	# bar's `size` from the target's max health, and _update_health_bar() is what
 	# reads `size` for centering.  The other order mis-centres the bar for one
@@ -2565,6 +2578,11 @@ func get_character() -> Character:
 ## Apply character stat offsets on top of base values.
 func set_character(char: Character) -> void:
 	_character = char
+	# Keep the replicated path in step for callers that bypass the loadout RPC
+	# (bots in SpawnManager, LoadoutProfile.apply_to_player).  Staging and the
+	# scoreboard read this on every peer to show the right portrait.
+	if char and char.resource_path != "":
+		_loadout_character_path = char.resource_path
 	if char:
 		attribute_component.starting_health = 100.0 * char.health_mult
 		attribute_component.reset_health()
@@ -2654,7 +2672,119 @@ func is_bashing() -> bool:
 	return bashdown_time > 0.0 or bashdown_slamming
 
 
+## True while an action ability owns the body: shoulder charge, bashdown, noclip,
+## the heal channel, calligraphy, or a weapon-fire burst (Carpet Bomb).  The
+## animation tree drops HoldBlend to 0 for the whole window, so the arms read as
+## "casting" until a real ability animation replaces this placeholder.
+func is_ability_pose_active() -> bool:
+	if is_ability_pose_holster_active():
+		return true
+	# Weapon-fire bursts fire from the actual weapon, so they hide the model
+	# visually but must NOT set `_holstered`: the burst's next shot checks
+	# `_is_ready()`, and holstering would abort it after the first projectile.
+	return weapon_controller != null \
+		and weapon_controller.get_active_ability_remaining() > 0.0
+
+
+## The subset of the pose that also takes the gun away for real (blocks firing
+## and switching).  Weapon-fire bursts are deliberately excluded — they hide the
+## model only.  Derived from rollback state / the replicated effect mirror, so
+## every peer that can see the state agrees.
+func is_ability_pose_holster_active() -> bool:
+	if is_charging() or is_bashing():
+		return true
+	if status_effect_manager != null:
+		if status_effect_manager.has_effect("noclip"):
+			return true
+		if status_effect_manager.has_effect("heal_over_time"):
+			return true
+		if status_effect_manager.has_effect("calligraphy") \
+				or status_effect_manager.has_effect("calligraphy_hold"):
+			return true
+	return false
+
+
+## The running action ability as `{ability, remaining, duration}` in seconds, or
+## an empty dictionary when none of the pose abilities is active.  Drives the
+## HUD's icon + countdown ring.  The noclip meter is per-peer (like every ability
+## pool), so its ring is exact for the owner and approximate for a spectator.
+func get_active_ability_state() -> Dictionary:
+	if is_charging() and _charge_ability != null:
+		return {
+			"ability": _charge_ability,
+			"remaining": charge_time,
+			"duration": _charge_ability.charge_duration,
+		}
+	if is_bashing() and _bashdown_ability != null:
+		return {
+			"ability": _bashdown_ability,
+			"remaining": maxf(bashdown_time, 0.0),
+			"duration": maxf(_bashdown_ability.lunge_duration, 0.0001),
+		}
+	if status_effect_manager == null or ability_manager == null:
+		return {}
+	if status_effect_manager.has_effect("noclip"):
+		for i in ability_manager.abilities.size():
+			var a := ability_manager.abilities[i]
+			if a is MeteredAbility:
+				var max_meter := maxf((a as MeteredAbility).max_meter, 0.0001)
+				return {
+					"ability": a,
+					"remaining": ability_manager.get_meter_fraction(i) * max_meter,
+					"duration": max_meter,
+				}
+	# Ability-triggered bursts/volleys (Carpet Bomb, Davy Crockett, …): the
+	# weapon controller owns their wall-clock window.
+	if weapon_controller != null:
+		var burst_name := weapon_controller.get_active_ability_name()
+		if burst_name != "":
+			var burst_remaining := weapon_controller.get_active_ability_remaining()
+			if burst_remaining > 0.0:
+				for a in ability_manager.abilities:
+					if a is WeaponFireAbility and a.ability_name == burst_name:
+						return {
+							"ability": a,
+							"remaining": burst_remaining,
+							"duration": weapon_controller.get_active_ability_duration(),
+						}
+	# Any timed self-buff: invisibility, wallhack, aimbot, size change, heal
+	# channel, …  Each ability names the effect it keeps on the caster.
+	var times := status_effect_manager.get_active_effect_times()
+	for a in ability_manager.abilities:
+		var eid := a.active_effect_id()
+		if eid == "" or not status_effect_manager.has_effect(eid):
+			continue
+		var remaining := _effect_remaining(times, eid)
+		if remaining <= 0.0 or is_inf(remaining):
+			continue
+		return {
+			"ability": a,
+			"remaining": remaining,
+			"duration": maxf(a.active_effect_duration(), remaining),
+		}
+	if status_effect_manager.has_effect("calligraphy") \
+			or status_effect_manager.has_effect("calligraphy_hold"):
+		for a in ability_manager.abilities:
+			if a is CalligraphyAbility:
+				# No timer: the raise/hold/cancel sequence is state-driven.  A
+				# static full ring communicates "active, no countdown".
+				return {"ability": a, "remaining": 1.0, "duration": 1.0}
+	return {}
+
+
 ## Whether [param other] is on an opposing team (or everyone, in FFA).
+## Remaining seconds for [param effect_id] in a `get_active_effect_times()`
+## snapshot, resolving per-application suffixed ids through the manager's
+## base-id rule (e.g. `shrink#123` -> `shrink`).
+func _effect_remaining(times: Dictionary, effect_id: String) -> float:
+	if times.has(effect_id):
+		return float(times[effect_id])
+	for key in times:
+		if StatusEffectManager.base_effect_id(str(key)) == effect_id:
+			return float(times[key])
+	return 0.0
+
+
 func _is_enemy_of(other: Player) -> bool:
 	return team == Team.FFA or other.team != team
 

@@ -37,14 +37,14 @@ const CHARGE_BAR_GAP := 2.0
 const CHARGE_BAR_INSET := 4.0
 const CHARGE_BAR_CLEARANCE := 2.0
 ## Slot background — the stamina bar's, so the two read as the same widget family.
-const CHARGE_SLOT_COLOR := Color(0.08, 0.08, 0.08, 0.80)
+const CHARGE_SLOT_COLOR := Color(0.043, 0.055, 0.075, 0.85)
 ## A charge still regenerating.
-const CHARGE_FILL_COLOR := Color(0.70, 0.70, 0.70, 0.55)
+const CHARGE_FILL_COLOR := Color(0.541, 0.58, 0.639, 0.55)
 ## A banked charge — and, by the same meaning, a meter that is running or full.
 ## Amber rather than the stamina bar's cyan: that colour is the stamina bar's
 ## identity, and this one already means "ready" on this HUD (_ability_use_label,
 ## the shield readout).
-const CHARGE_FULL_COLOR := Color(0.95, 0.85, 0.30)
+const CHARGE_FULL_COLOR := Color(0.176, 0.831, 0.749)
 
 ## Icon box, as a fraction of the disc's diameter.  Derived from `radius` at draw
 ## time rather than stored, so it rides the BASE_DIAMETER -> ACTIVE_DIAMETER resize
@@ -177,11 +177,11 @@ func _draw() -> void:
 	# Background disc: dim while cooling, bright when ready/active.  A running
 	# meter reads as "in use" the same way an equipped ability does.
 	if on_cooldown:
-		draw_circle(center, radius, Color(0.12, 0.12, 0.12, 0.55))
+		draw_circle(center, radius, Color(0.043, 0.055, 0.075, 0.78))
 	elif active or meter_active:
-		draw_circle(center, radius, Color(1.0, 1.0, 1.0, 0.9))
+		draw_circle(center, radius, Color(0.176, 0.831, 0.749, 0.92))
 	else:
-		draw_circle(center, radius, Color(0.30, 0.30, 0.30, 0.55))
+		draw_circle(center, radius, Color(0.102, 0.125, 0.161, 0.78))
 
 	# Fill-up pie: bright wedge grows clockwise from the top as it readies.
 	if on_cooldown and cooldown_fraction > 0.0 and cooldown_fraction < 1.0:
@@ -192,7 +192,7 @@ func _draw() -> void:
 		for i in steps + 1:
 			var ang := from + sweep * float(i) / float(steps)
 			pts.append(center + Vector2(cos(ang), sin(ang)) * radius)
-		draw_colored_polygon(pts, Color(1.0, 1.0, 1.0, 0.35))
+		draw_colored_polygon(pts, Color(0.176, 0.831, 0.749, 0.30))
 
 	_draw_icon(center, radius)
 	_draw_charge_bars(center, radius)

@@ -23,6 +23,16 @@ extends Ability
 @export var duration: float = 10.0
 
 
+func active_effect_id() -> String:
+	return effect.effect_id if effect != null else ""
+
+
+func active_effect_duration() -> float:
+	if override_duration:
+		return maxf(duration, 0.0)
+	return effect.base_duration if effect != null else 0.0
+
+
 func activate(player: Player) -> void:
 	if effect == null:
 		push_warning("[SelfEffectAbility] %s has no effect assigned" % ability_name)

@@ -6,6 +6,14 @@ extends Ability
 
 @export var duration: float = 10.0
 
+func active_effect_id() -> String:
+	return "wallhacking"
+
+
+func active_effect_duration() -> float:
+	return duration
+
+
 func activate(player: Player) -> void:
 	if not player.status_effect_manager:
 		return

@@ -13,6 +13,9 @@ var play_token: int = 0
 # -- Leaderboard overlay --
 var _lb_canvas: CanvasLayer = null
 var _lb_rows: VBoxContainer = null
+## player name -> ping label, so a new ping snapshot updates text in place
+## instead of rebuilding the table (which would reset the scroll position).
+var _lb_ping_labels: Dictionary = {}
 
 # Pitch constants (E-based semitone scaling)
 const PITCH_E   := pow(2.0, 0.0 / 12.0)
@@ -36,16 +39,18 @@ const PITCH_E2  := pow(2.0, 12.0 / 12.0)
 # reference tab's feel.
 const TEMPO_SCALE := 1.3
 
-# Leaderboard column layout
-const LB_COLS := 9
-const LB_PORTRAIT := 48.0
-const LB_NAME := 240.0
-const LB_NUM := 96.0
+# Leaderboard column layout.  Rows are HBox panels, not one shared grid, so
+# fixed widths keep columns aligned across sections while still allowing a
+# per-row background and accent strip.
+const LB_PORTRAIT := 40.0
+const LB_NAME := 200.0
+const LB_NUM := 66.0
+const LB_PING := 60.0
 
-const LB_HDR_COL := Color(0.55, 0.55, 0.6)
-const LB_SELF := Color(0.35, 0.65, 1.0)    # blue
-const LB_TEAM := Color(0.72, 0.72, 0.74)   # grey
-const LB_ENEMY := Color(0.95, 0.42, 0.42)  # red
+const LB_HDR_COL := Color(0.541, 0.58, 0.639)   # muted
+const LB_SELF := Color(1, 0.76, 0.29)          # amber: you
+const LB_TEAM := Color(0.929, 0.945, 0.961)    # text
+const LB_ENEMY := Color(1, 0.275, 0.333)       # red
 
 
 # A single "note" in a killstreak sting: one or more simultaneous pitches
@@ -117,6 +122,7 @@ func _ready() -> void:
 	# Entering/leaving spectator mode moves a row between sections without a
 	# score change.
 	Leaderboard.roster_changed.connect(_on_scores_changed)
+	MatchSession.pings_changed.connect(_refresh_ping_labels)
 	_build_leaderboard_ui()
 
 
@@ -128,6 +134,7 @@ func _lb_cell(text: String, width: float, align: int, col: Color, font_size: int
 	if expand:
 		lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	lbl.add_theme_font_size_override("font_size", font_size)
+	lbl.add_theme_font_override("font", UITheme.FONT_SEMIBOLD)
 	lbl.add_theme_color_override("font_color", col)
 	if clip:
 		lbl.clip_text = true
@@ -140,27 +147,42 @@ func _lb_cell(text: String, width: float, align: int, col: Color, font_size: int
 func _lb_portrait(portrait: Texture2D) -> TextureRect:
 	var rect: TextureRect = TextureRect.new()
 	rect.custom_minimum_size = Vector2(LB_PORTRAIT, LB_PORTRAIT)
-	rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	rect.texture = portrait
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return rect
 
 
-func _lb_header_grid() -> GridContainer:
-	var grid: GridContainer = GridContainer.new()
-	grid.columns = LB_COLS
-	grid.add_theme_constant_override("h_separation", 10)
-	grid.add_theme_constant_override("v_separation", 2)
-	grid.add_child(_lb_cell("", LB_PORTRAIT, HORIZONTAL_ALIGNMENT_CENTER, LB_HDR_COL, 15))
-	grid.add_child(_lb_cell("PLAYER", LB_NAME, HORIZONTAL_ALIGNMENT_LEFT, LB_HDR_COL, 15, true))
-	grid.add_child(_lb_cell("K", LB_NUM, HORIZONTAL_ALIGNMENT_RIGHT, LB_HDR_COL, 15, false, false, "Kills"))
-	grid.add_child(_lb_cell("D", LB_NUM, HORIZONTAL_ALIGNMENT_RIGHT, LB_HDR_COL, 15, false, false, "Deaths"))
-	grid.add_child(_lb_cell("Streak", LB_NUM, HORIZONTAL_ALIGNMENT_RIGHT, LB_HDR_COL, 15, false, false, "Killstreak"))
-	grid.add_child(_lb_cell("DMG", LB_NUM, HORIZONTAL_ALIGNMENT_RIGHT, LB_HDR_COL, 15, false, false, "Damage Dealt"))
-	grid.add_child(_lb_cell("Self DMG", LB_NUM, HORIZONTAL_ALIGNMENT_RIGHT, LB_HDR_COL, 15, false, false, "Self Damage"))
-	grid.add_child(_lb_cell("Self Heal", LB_NUM, HORIZONTAL_ALIGNMENT_RIGHT, LB_HDR_COL, 15, false, false, "Heal Self"))
-	grid.add_child(_lb_cell("Heal Other", LB_NUM, HORIZONTAL_ALIGNMENT_RIGHT, LB_HDR_COL, 15, false, false, "Heal Others"))
-	return grid
+func _lb_spacer(width: float) -> Control:
+	var c := Control.new()
+	c.custom_minimum_size = Vector2(width, 1)
+	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return c
+
+
+## One shared header row.  Same widths as the player rows so the columns line
+## up across SPI / SCI / FFA without a GridContainer coupling them.
+func _lb_header_row() -> PanelContainer:
+	var panel := PanelContainer.new()
+	panel.add_theme_stylebox_override("panel",
+		UITheme.flat_style(Color(UITheme.SLATE.r, UITheme.SLATE.g, UITheme.SLATE.b, 0.9), 0, 4.0))
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	panel.add_child(row)
+	row.add_child(_lb_spacer(3.0))
+	row.add_child(_lb_spacer(LB_PORTRAIT))
+	row.add_child(_lb_cell("PLAYER", LB_NAME, HORIZONTAL_ALIGNMENT_LEFT, LB_HDR_COL, 11, true))
+	for entry in [
+		["K", "Kills"], ["D", "Deaths"], ["STREAK", "Killstreak"],
+		["DMG", "Damage Dealt"], ["SELF DMG", "Self Damage"],
+		["SELF HEAL", "Heal Self"], ["HEAL OTHER", "Heal Others"],
+	]:
+		row.add_child(_lb_cell(entry[0], LB_NUM, HORIZONTAL_ALIGNMENT_RIGHT,
+			LB_HDR_COL, 11, false, false, entry[1]))
+	row.add_child(_lb_cell("PING", LB_PING, HORIZONTAL_ALIGNMENT_RIGHT,
+		LB_HDR_COL, 11, false, false, "Round-trip time in ms"))
+	return panel
 
 
 func _lb_team_name(team: int) -> String:
@@ -172,33 +194,41 @@ func _lb_team_name(team: int) -> String:
 
 func _lb_team_color(team: int) -> Color:
 	match team:
-		Player.Team.SPI: return Color(0.95, 0.5, 0.5)
-		Player.Team.SCI: return Color(0.5, 0.7, 1.0)
-		_: return Color(0.7, 0.7, 0.7)
+		Player.Team.SPI: return Color(1, 0.275, 0.333)
+		Player.Team.SCI: return Color(0.176, 0.831, 0.749)
+		_: return Color(1, 0.76, 0.29)
 
 
-func _lb_team_header(team: int) -> Label:
-	var lbl: Label = Label.new()
-	lbl.text = _lb_team_name(team)
-	lbl.add_theme_font_size_override("font_size", 16)
-	lbl.add_theme_color_override("font_color", _lb_team_color(team))
-	return lbl
+## Section band: tinted slate with a 3 px accent strip on the left.
+func _lb_section_header(text: String, color: Color) -> PanelContainer:
+	var panel := PanelContainer.new()
+	var style := UITheme.flat_style(
+		Color(UITheme.SLATE.r, UITheme.SLATE.g, UITheme.SLATE.b, 0.55), 0, 0.0)
+	style.content_margin_left = 10.0
+	style.content_margin_top = 5.0
+	style.content_margin_right = 10.0
+	style.content_margin_bottom = 5.0
+	style.border_color = color
+	style.border_width_left = 3
+	panel.add_theme_stylebox_override("panel", style)
+	var lbl := UITheme.section_label(text, color)
+	lbl.add_theme_font_size_override("font_size", 13)
+	lbl.custom_minimum_size = Vector2(0, 22)
+	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	panel.add_child(lbl)
+	return panel
 
 
-func _lb_disconnected_header() -> Label:
-	var lbl := Label.new()
-	lbl.text = "DISCONNECTED PLAYERS"
-	lbl.add_theme_font_size_override("font_size", 16)
-	lbl.add_theme_color_override("font_color", LB_HDR_COL)
-	return lbl
+func _lb_team_header(team: int) -> Control:
+	return _lb_section_header(_lb_team_name(team), _lb_team_color(team))
 
 
-func _lb_spectator_header() -> Label:
-	var lbl := Label.new()
-	lbl.text = "SPECTATORS"
-	lbl.add_theme_font_size_override("font_size", 16)
-	lbl.add_theme_color_override("font_color", LB_HDR_COL)
-	return lbl
+func _lb_disconnected_header() -> Control:
+	return _lb_section_header("DISCONNECTED PLAYERS", LB_HDR_COL)
+
+
+func _lb_spectator_header() -> Control:
+	return _lb_section_header("SPECTATORS", LB_HDR_COL)
 
 
 func _lb_row_color(is_self: bool, team: int, self_team: int) -> Color:
@@ -209,35 +239,81 @@ func _lb_row_color(is_self: bool, team: int, self_team: int) -> Color:
 	return LB_TEAM
 
 
-func _lb_add_row(grid: GridContainer, player_name: String, self_team: int) -> void:
+func _lb_add_row(parent: VBoxContainer, player_name: String, self_team: int) -> void:
 	var is_self: bool = player_name == player_id
 	var pnode: Player = GameManager.find_player(player_name)
 	var team: int = pnode.team if pnode else Player.Team.FFA
+	var accent: Color = _lb_team_color(team)
 	var col: Color = _lb_row_color(is_self, team, self_team)
 
-	var portrait: Texture2D = null
-	if pnode and pnode._character:
-		portrait = pnode._character.portrait
+	var panel := PanelContainer.new()
+	var style := UITheme.card_style(UITheme.State.NORMAL)
+	style.bg_color = Color(UITheme.SLATE.r, UITheme.SLATE.g, UITheme.SLATE.b, 0.42)
+	style.border_color = Color(accent.r, accent.g, accent.b, 0.35)
+	if is_self:
+		style.bg_color = Color(UITheme.AMBER.r, UITheme.AMBER.g, UITheme.AMBER.b, 0.10)
+		style.border_color = UITheme.AMBER
+	panel.add_theme_stylebox_override("panel", style)
+	parent.add_child(panel)
 
-	grid.add_child(_lb_portrait(portrait))
-	grid.add_child(_lb_cell(str(player_name), LB_NAME, HORIZONTAL_ALIGNMENT_LEFT, col, 16, true, true))
-	grid.add_child(_lb_cell(str(Leaderboard.get_kills(player_name)), LB_NUM, HORIZONTAL_ALIGNMENT_RIGHT, col, 16))
-	grid.add_child(_lb_cell(str(Leaderboard.get_deaths(player_name)), LB_NUM, HORIZONTAL_ALIGNMENT_RIGHT, col, 16))
-	grid.add_child(_lb_cell(str(Leaderboard.get_killstreak(player_name)), LB_NUM, HORIZONTAL_ALIGNMENT_RIGHT, col, 16))
-	grid.add_child(_lb_cell(str(int(abs(Leaderboard.get_damage(player_name)))), LB_NUM, HORIZONTAL_ALIGNMENT_RIGHT, col, 16))
-	grid.add_child(_lb_cell(str(int(abs(Leaderboard.get_self_damage(player_name)))), LB_NUM, HORIZONTAL_ALIGNMENT_RIGHT, col, 16))
-	grid.add_child(_lb_cell(str(int(Leaderboard.get_self_heal(player_name))), LB_NUM, HORIZONTAL_ALIGNMENT_RIGHT, col, 16))
-	grid.add_child(_lb_cell(str(int(Leaderboard.get_heal_others(player_name))), LB_NUM, HORIZONTAL_ALIGNMENT_RIGHT, col, 16))
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	panel.add_child(row)
+
+	var strip := ColorRect.new()
+	strip.color = accent
+	strip.custom_minimum_size = Vector2(3, 0)
+	strip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(strip)
+
+	var char_res := UITheme.player_character(pnode)
+	row.add_child(_lb_portrait(char_res.portrait if char_res else null))
+
+	row.add_child(_lb_cell(str(player_name), LB_NAME, HORIZONTAL_ALIGNMENT_LEFT, col, 14, true, true))
+	row.add_child(_lb_cell(str(Leaderboard.get_kills(player_name)), LB_NUM, HORIZONTAL_ALIGNMENT_RIGHT, col, 14))
+	row.add_child(_lb_cell(str(Leaderboard.get_deaths(player_name)), LB_NUM, HORIZONTAL_ALIGNMENT_RIGHT, col, 14))
+	row.add_child(_lb_cell(str(Leaderboard.get_killstreak(player_name)), LB_NUM, HORIZONTAL_ALIGNMENT_RIGHT, col, 14))
+	row.add_child(_lb_cell(str(int(abs(Leaderboard.get_damage(player_name)))), LB_NUM, HORIZONTAL_ALIGNMENT_RIGHT, col, 14))
+	row.add_child(_lb_cell(str(int(abs(Leaderboard.get_self_damage(player_name)))), LB_NUM, HORIZONTAL_ALIGNMENT_RIGHT, col, 14))
+	row.add_child(_lb_cell(str(int(Leaderboard.get_self_heal(player_name))), LB_NUM, HORIZONTAL_ALIGNMENT_RIGHT, col, 14))
+	row.add_child(_lb_cell(str(int(Leaderboard.get_heal_others(player_name))), LB_NUM, HORIZONTAL_ALIGNMENT_RIGHT, col, 14))
+
+	var ping := _lb_cell("", LB_PING, HORIZONTAL_ALIGNMENT_RIGHT, LB_HDR_COL, 14)
+	_lb_ping_labels[player_name] = ping
+	_update_ping_label(ping, player_name, pnode)
+	row.add_child(ping)
 
 
-func _lb_team_grid(players: Array, self_team: int) -> GridContainer:
-	var grid: GridContainer = GridContainer.new()
-	grid.columns = LB_COLS
-	grid.add_theme_constant_override("h_separation", 10)
-	grid.add_theme_constant_override("v_separation", 2)
+func _update_ping_label(label: Label, player_name: String, pnode: Player) -> void:
+	if pnode != null and pnode.is_bot:
+		label.text = "BOT"
+		label.add_theme_color_override("font_color", LB_HDR_COL)
+		return
+	var ms := MatchSession.ping_ms_for(player_name)
+	if ms < 0:
+		label.text = "—"
+		label.add_theme_color_override("font_color", Color(0.361, 0.396, 0.447))
+		return
+	label.text = str(ms)
+	label.add_theme_color_override("font_color",
+		UITheme.TEAL if ms <= 40 else (UITheme.AMBER if ms <= 90 else UITheme.RED))
+
+
+## A ping snapshot arrived: rewrite the visible ping cells in place so the
+## table does not rebuild (and the scroll position does not jump).
+func _refresh_ping_labels() -> void:
+	for player_name in _lb_ping_labels:
+		var label: Label = _lb_ping_labels[player_name]
+		if is_instance_valid(label):
+			_update_ping_label(label, str(player_name), GameManager.find_player(str(player_name)))
+
+
+func _lb_team_grid(players: Array, self_team: int) -> VBoxContainer:
+	var list := VBoxContainer.new()
+	list.add_theme_constant_override("separation", 4)
 	for p in players:
-		_lb_add_row(grid, p, self_team)
-	return grid
+		_lb_add_row(list, p, self_team)
+	return list
 
 
 func _get_team(player_name: String) -> int:
@@ -259,7 +335,7 @@ func _build_leaderboard_ui() -> void:
 	get_tree().root.add_child(_lb_canvas)
 
 	var dim: ColorRect = ColorRect.new()
-	dim.color = Color(0.0, 0.02, 0.06, 0.78)
+	dim.color = Color(0.02, 0.03, 0.045, 0.86)
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_lb_canvas.add_child(dim)
 
@@ -270,13 +346,13 @@ func _build_leaderboard_ui() -> void:
 	var panel: PanelContainer = PanelContainer.new()
 	panel.custom_minimum_size = Vector2(1080, 600)
 	var pstyle: StyleBoxFlat = StyleBoxFlat.new()
-	pstyle.bg_color = Color(0.05, 0.05, 0.08, 0.94)
-	pstyle.set_border_width_all(2)
-	pstyle.border_color = Color(0.3, 0.3, 0.4, 0.8)
-	pstyle.content_margin_left = 20.0
-	pstyle.content_margin_top = 14.0
-	pstyle.content_margin_right = 20.0
-	pstyle.content_margin_bottom = 14.0
+	pstyle.bg_color = Color(0.067, 0.086, 0.114, 0.96)
+	pstyle.set_border_width_all(1)
+	pstyle.border_color = Color(0.165, 0.196, 0.239, 1)
+	pstyle.content_margin_left = 22.0
+	pstyle.content_margin_top = 16.0
+	pstyle.content_margin_right = 22.0
+	pstyle.content_margin_bottom = 16.0
 	panel.add_theme_stylebox_override("panel", pstyle)
 	center.add_child(panel)
 
@@ -285,11 +361,13 @@ func _build_leaderboard_ui() -> void:
 	panel.add_child(vbox)
 
 	var title: Label = Label.new()
-	title.text = "LEADERBOARD  (hold Tab)"
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.text = "LEADERBOARD  //  HOLD TAB"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	title.add_theme_font_override("font", UITheme.FONT_EXTRABOLD)
 	title.add_theme_font_size_override("font_size", 24)
-	title.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9))
+	title.add_theme_color_override("font_color", Color(0.929, 0.945, 0.961))
 	vbox.add_child(title)
+	vbox.add_child(UITheme.accent_bar(UITheme.RED, 2))
 
 	vbox.add_child(HSeparator.new())
 
@@ -315,9 +393,11 @@ func _rebuild_leaderboard() -> void:
 		return
 
 	for child in _lb_rows.get_children():
+		_lb_rows.remove_child(child)
 		child.queue_free()
+	_lb_ping_labels.clear()
 
-	_lb_rows.add_child(_lb_header_grid())
+	_lb_rows.add_child(_lb_header_row())
 
 	var self_team: int = _get_self_team()
 	var teams := {Player.Team.SPI: [], Player.Team.SCI: [], Player.Team.FFA: []}

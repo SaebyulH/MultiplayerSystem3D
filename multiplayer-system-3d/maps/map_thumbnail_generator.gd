@@ -17,8 +17,10 @@ extends Node
 
 const MAP_DATA_DIR := "res://maps/map_data"
 const THUMBNAIL_DIR := "res://map_thumbnails"
-const THUMBNAIL_WIDTH := 512
-const THUMBNAIL_HEIGHT := 288
+## Large enough to use a thumbnail as a full-screen staging background, not
+## just a small card.  16:9 so TextureRect can cover without distortion.
+const THUMBNAIL_WIDTH := 1024
+const THUMBNAIL_HEIGHT := 576
 
 
 var _started := false
@@ -57,7 +59,36 @@ func _ready() -> void:
 		get_tree().quit()
 		return
 
+	_cleanup_orphans()
 	_process_next()
+
+
+## Remove MapData / thumbnail pairs whose map is no longer scanned.  Without
+## this a renamed or deleted map leaves a stale entry that the map pickers list
+## forever (the generator itself was listed this way at game_mode -1).
+func _cleanup_orphans() -> void:
+	var expected: Dictionary = {}
+	for entry in _map_entries:
+		expected[str(entry["display_name"])] = true
+
+	for file_name in DirAccess.get_files_at(MAP_DATA_DIR):
+		if not file_name.ends_with(".tres"):
+			continue
+		var base := file_name.get_basename()
+		if expected.has(base):
+			continue
+		var path := MAP_DATA_DIR + "/" + file_name
+		if DirAccess.remove_absolute(ProjectSettings.globalize_path(path)) == OK:
+			print("  removed orphan MapData %s" % path)
+
+	for file_name in DirAccess.get_files_at(THUMBNAIL_DIR):
+		if not file_name.ends_with(".png"):
+			continue
+		var base := file_name.get_basename()
+		if expected.has(base):
+			continue
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(THUMBNAIL_DIR + "/" + file_name))
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(THUMBNAIL_DIR + "/" + file_name + ".import"))
 
 
 func _process_next() -> void:

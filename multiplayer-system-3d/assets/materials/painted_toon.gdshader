@@ -84,6 +84,19 @@ uniform float normal_strength : hint_range(0.0, 2.0) = 1.0;
 // use the separate AO slot below).  Multiply, not replace — see above.
 uniform bool use_orm_texture = false;
 uniform sampler2D orm_texture : hint_default_white;
+
+// Separate metallic / roughness maps, for sources that keep them apart rather
+// than packed.  StandardMaterial3D (every GLB-imported weapon material) stores
+// them as two textures with an arbitrary channel each, so the channel is a
+// uniform rather than a fixed convention.  Multiply into the scalars exactly
+// like the ORM halves do, so a material can carry a map, a scalar, or both.
+uniform bool use_metallic_texture = false;
+uniform sampler2D metallic_texture : hint_default_white;
+uniform int metallic_channel : hint_range(0, 4) = 0;
+uniform bool use_roughness_texture = false;
+uniform sampler2D roughness_texture : hint_default_white;
+uniform int roughness_channel : hint_range(0, 4) = 0;
+
 uniform float metallic : hint_range(0.0, 1.0) = 0.0;
 uniform float roughness : hint_range(0.0, 1.0) = 0.75;
 // Matte by default: this feeds both the stylised highlight's F0 and the
@@ -215,6 +228,23 @@ float paint_pattern(vec3 p) {
 	return n * 0.5 + 0.5;
 }
 
+// One channel of a map lookup, selected by a uniform.  The numbering mirrors
+// BaseMaterial3D.TextureChannel (0 = R, 1 = G, 2 = B, 3 = A, 4 = grayscale),
+// which is what the converter copies straight across; grayscale reads red
+// because a grayscale texture is identical on every channel.
+float pick_channel(vec4 c, int channel) {
+	if (channel == 1) {
+		return c.g;
+	}
+	if (channel == 2) {
+		return c.b;
+	}
+	if (channel == 3) {
+		return c.a;
+	}
+	return c.r;
+}
+
 // Quantises `x` into `steps` bands with a controllable edge.
 //
 // `softness` widens the transition centred on each band boundary: at 0 the
@@ -298,6 +328,12 @@ void fragment() {
 		vec3 orm = texture(orm_texture, uv).rgb;
 		rough *= orm.g;
 		metal *= orm.b;
+	}
+	if (use_metallic_texture) {
+		metal *= pick_channel(texture(metallic_texture, uv), metallic_channel);
+	}
+	if (use_roughness_texture) {
+		rough *= pick_channel(texture(roughness_texture, uv), roughness_channel);
 	}
 	ROUGHNESS = clamp(rough, 0.0, 1.0);
 	METALLIC = clamp(metal, 0.0, 1.0);

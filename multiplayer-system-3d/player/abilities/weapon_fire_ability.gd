@@ -12,3 +12,17 @@ extends Ability
 
 func activate(player: Player) -> void:
 	player.weapon_controller.fire_weapon_fire(weapon_fire, interrupt_shooting_weapon, ability_name)
+
+
+## Visible duration of this ability's burst/volley in seconds, or 0 for a
+## single-shot ability.  The server's WeaponController uses the same formula;
+## the owning client uses it to start the HUD window optimistically, because
+## CAST_MODE.SERVER abilities do not run activate() on the client.
+func burst_duration() -> float:
+	if weapon_fire == null \
+			or weapon_fire.multishot_mode != WeaponFire.MultishotMode.BURST:
+		return 0.0
+	var shots := weapon_fire.multishot_data.size()
+	if shots <= 1:
+		return 0.0
+	return maxf(float(shots - 1) * weapon_fire.burst_post_shoot_delay, 0.05)

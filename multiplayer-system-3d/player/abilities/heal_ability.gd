@@ -29,6 +29,14 @@ extends Ability
 @export var block_actions_during_heal: bool = false
 
 
+func active_effect_id() -> String:
+	return "heal_over_time" if heal_over_time else ""
+
+
+func active_effect_duration() -> float:
+	return heal_duration if heal_over_time else 0.0
+
+
 func activate(player: Player) -> void:
 	if not heal_over_time or player.status_effect_manager == null:
 		# No manager means no effect would ever tick — pay out instantly rather

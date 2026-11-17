@@ -18,6 +18,7 @@
 [ext_resource type="Script" uid="uid://dmbwmsfd27dhh" path="res://player/player_ui.gd" id="34_ge24q"]
 [ext_resource type="Script" uid="uid://hpdd6uclsu15" path="res://components/damage_number_manager.gd" id="35_dmn"]
 [ext_resource type="Script" uid="uid://kdykdal5y20s" path="res://components/status_effect/status_effect_manager.gd" id="36_sem"]
+[ext_resource type="Script" path="res://player/status_effect_visuals.gd" id="40_sev"]
 [ext_resource type="Script" uid="uid://bdmuw10y2pn2q" path="res://player/rim_pivot.gd" id="37_rim"]
 [ext_resource type="Script" uid="uid://bj4qs4kn7cbu2" path="res://player/weapon_tilt.gd" id="38_tilt"]
 [ext_resource type="Script" uid="uid://qchppmq42pd7" path="res://player/abilities/ability_manager.gd" id="39_am"]
@@ -38,6 +39,9 @@ properties/3/replication_mode = 2
 properties/4/path = NodePath(".:in_combat")
 properties/4/spawn = true
 properties/4/replication_mode = 2
+properties/5/path = NodePath(".:_loadout_character_path")
+properties/5/spawn = true
+properties/5/replication_mode = 1
 
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_2ieo8"]
 properties/0/path = NodePath(".:current_weapon_index")
@@ -499,6 +503,9 @@ metadata/_custom_type_script = "uid://cxit1cumphn3q"
 [node name="StatusEffectManager" type="Node" parent="." unique_id=2003061514]
 script = ExtResource("36_sem")
 
+[node name="StatusEffectVisuals" type="Node3D" parent="." unique_id=1149318552]
+script = ExtResource("40_sev")
+
 [node name="PlayerInput" type="Node" parent="." unique_id=1318037509]
 script = ExtResource("2_onrkg")
 
@@ -569,14 +576,6 @@ visible = false
 billboard = 1
 modulate = Color(1, 0.7809618, 0.4214451, 1)
 text = "Ammo"
-font_size = 200
-
-[node name="StatusBarPublic" type="Label3D" parent="Body" unique_id=1287184985]
-transform = Transform3D(0.17002402, 0, 0, 0, 0.17002402, 0, 0, 0, 0.17002402, 0, 1.8696897, 0)
-visible = false
-billboard = 1
-modulate = Color(0, 0, 0, 1)
-text = "text"
 font_size = 200
 
 [node name="HealthBarPublic" type="Label3D" parent="Body" unique_id=889122120]

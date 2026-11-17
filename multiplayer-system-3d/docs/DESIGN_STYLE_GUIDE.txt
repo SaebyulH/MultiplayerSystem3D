@@ -1,0 +1,264 @@
+MULTIPLAYER SYSTEM 3D — UI / DESIGN STYLE GUIDE
+================================================
+Status: living document.  Source of truth for the visual language of every
+screen: shell menus, staging, loadout, in-match HUD, results, debug tooling.
+
+Implementation source of truth: ui/ui_theme.gd (autoload `UITheme`).  If a
+token changes here, change it there in the same commit.  Screens must not
+declare their own palette; use the UITheme constants and builders.
+
+Inspiration: the reference screens in ref/ (Valorant agent select, buy menu,
+custom game lobby) — taken as a language, not copied element for element.
+
+
+1. BRAND PILLARS
+----------------
+1. Tactical, not playful.  Flat surfaces, hard edges, thin rules.
+2. High contrast.  Ink backgrounds, one bright action colour, one selection
+   colour.  Everything else is a muted slate.
+3. Identity through portraits and maps, not ornaments.  Character art and map
+   thumbnails carry the screen; chrome stays quiet.
+4. One accent means one thing.  Red = act / danger / SPI.  Teal = select /
+   confirm / SCI.  Amber = neutral FFA / warning.
+5. Readable at a glance during play.  HUD text is short, uppercase, and never
+   relies on colour alone.
+
+
+2. COLOUR TOKENS
+----------------
+INK        #0B0E13   page/backdrop base, HUD scrims
+INK_2      #11161D   panel surface (use 0.88-0.97 alpha for overlays)
+SLATE      #1A2029   cards, secondary surface
+SLATE_HI   #232B36   card hover
+LINE       #2A323D   1 px borders, separators
+LINE_HI    #3A4452   hover borders
+TEXT       #EDF1F5   primary text
+MUTED      #8A94A3   labels, secondary text
+DIM_TEXT   #5C6572   disabled, hints
+
+RED        #FF4655   primary CTA, danger, SPI
+RED_DEEP   #C22B39   pressed CTA, destructive hover
+TEAL       #2DD4BF   selection, confirmation, SCI
+TEAL_DEEP  #1F8F80   pressed selection
+AMBER      #FFC24B   FFA, warnings, "self" in scoreboards
+GREEN      #6EE7A8   positive delta (heal) only
+
+Team mapping (canonical order SPI -> SCI -> FFA):
+  SPI = RED, SCI = TEAL, FFA = AMBER.
+Never swap these; the HUD, roster, scoreboard and objective widgets all read
+from the same mapping.
+
+Usage rules:
+- A screen may use at most one filled RED element: the primary action.
+- Selected state = TEAL border + 12-14% TEAL fill.  Never a full teal block
+  behind dark text except for the active tab underline and ability disc.
+- Destructive actions (LEAVE MATCH, leave party) use the DANGER style; they
+  are never the primary action on the same row.
+- Panels never use a saturated background.  Saturated colour lives in borders,
+  accent strips, badges, and 1-3 px rules.
+
+
+3. TYPOGRAPHY
+-------------
+Family: Montserrat (assets/fonts/Montserrat/static/).
+  Regular   body, lists, descriptions
+  SemiBold  buttons, names, table values
+  ExtraBold titles, primary CTA labels
+  Black     title-screen wordmark only
+
+Scale (px): 44 display / 30 title / 22 section-large / 15 section /
+14 body / 12 small / 11 micro.
+
+Rules:
+- Display, title, section, buttons and badges are UPPERCASE.
+- Section headers use +2 px glyph tracking; the title wordmark uses +3 px.
+  Tracking lives in FontVariation, not in the string.
+- Body copy and descriptions keep sentence case.  Never uppercase a paragraph.
+- One font family.  Do not mix Century Gothic or Kaisei into screens.
+- Numbers in scoreboards and stat rows are right-aligned and use SemiBold.
+
+
+4. SPACING, SHAPE, BORDERS
+--------------------------
+Spacing scale: 4 / 8 / 12 / 16 / 24 / 32.  Gaps between siblings 8-12; panel
+padding 10-24; screen margin 24-56.
+Corner radius: 0 for panels, cards, buttons and badges.  The only rounded
+shape is the circular ability/widget disc (HUD).
+Borders:
+  1 px LINE  default card/panel
+  2 px TEAL  selected card
+  3 px accent tab underline (RED when active)
+  3 px left strip for section headers and kill-feed rows
+
+Elevation is replaced by translucency: overlays use INK at 0.86-0.97 alpha;
+the world behind is still faintly visible.
+
+
+5. COMPONENT SPECS
+------------------
+Primary button (one per screen)
+  RED fill, 1 px RED border, 9/16 px padding, SemiBold/ExtraBold label,
+  white text.  Hover: fill lightens ~8%.  Pressed: RED_DEEP.
+  Disabled: SLATE at 35% + DIM_TEXT, never a red tint.
+Secondary button
+  2.5% white fill, 1 px LINE, TEXT label.  Hover: 7% white fill + TEAL border.
+Ghost button
+  No fill, no border; hover 6% white.  For close/back/small actions.
+Danger button
+  RED_DEEP fill or transparent with RED border; for leave/end match.
+
+Panel
+  INK_2 88-97%, 1 px LINE, 10-24 padding.  No shadow.
+Card
+  SLATE 64-88%, 1 px LINE.  Hover: SLATE_HI + LINE_HI.  Selected: 12-14%
+  teal fill + 2 px TEAL border.  Disabled: 50% opacity.
+Section header
+  SLATE band, 3 px RED (or accent) left border, 13-15 px tracked uppercase
+  label in the accent colour.  No solid colour chips.
+Map card
+  16:9 thumbnail (KEEP_ASPECT_COVERED), name bottom-left, mode badge bottom
+  right.  Selected = teal frame.  Minimum 176x128 in pickers; 232x168 in the
+  main grid.
+Agent card
+  Square portrait top, tracked name bottom, 92x124 default.  Selected = teal
+  frame + white name.  Dim = portrait at 45% opacity.
+Roster card
+  3 px team-colour strip, 38 px portrait, name + agent, HOST/BOT/YOU tags,
+  READY/WAITING at the right.  READY is TEAL; WAITING is DIM_TEXT.
+Stat row
+  1 px LINE box, uppercase micro label left, value right in SemiBold.
+Badge
+  16% fill + 75% border of the accent colour, micro tracked uppercase text.
+Tab
+  Uppercase tracked label, muted when inactive; active = white + 3 px RED
+  underline.  Inactive underline 1 px LINE on hover only.
+
+
+6. SCREEN RECIPES
+-----------------
+Title
+  Full-bleed dimmed map thumbnail, vertical ink gradient, centred Black
+  wordmark, 240x3 RED rule, pulsing "CLICK TO DEPLOY" in TEAL.  Credits and
+  build tag in the corners at micro size.
+
+Match Menu (HostServer)
+  Full-screen frame (56 px horizontal margin).  Header: title + RED rule +
+  subtitle + CLOSE.  Tab bar under a 1 px divider.
+  START MATCH: left = 3-column map-card grid (thumbnails mandatory); right =
+  briefing panel with large preview, name, mode badge, mode description,
+  match-name field, full-width RED CREATE MATCH.
+  FIND MATCH: server cards with map thumbnail, name, LAN/Online source,
+  players, state, JOIN button; direct IP row at the bottom.
+  PARTY: centred unavailable panel, no fake controls.
+
+Staging room
+  Current map thumbnail as a full-screen background at ~42% opacity with an
+  ink scrim.  Header: map name, mode + description, phase, player count,
+  LEAVE.  Map row: large preview + host-only horizontal map-card picker.
+  Roster columns for the teams the selected map mode uses (SPI + SCI for team
+  modes, FFA only for Deathmatch), with colour headers, JOIN and +BOT.
+  The overlay background is opaque; the staging map's 3D view must not show
+  through between panels.
+  Bottom: SELECT AGENT strip grouped by class + EDIT LOADOUT + LOCK IN, then
+  JOIN IN PROGRESS / START GAME.
+  Selecting an agent applies immediately; LOCK IN is the READY flag.
+
+Loadout (agent select)
+  AGENTS // LOADOUT header.  Left: large 3D preview framed with a 2 px
+  border that turns TEAL on hover, still click-to-open the full agent picker
+  (portrait cards).  Centre: weapon columns PRIMARY / SECONDARY / MELEE with
+  weapon-card tiles, selected = teal fill + border.  Right: INFO panel with
+  stats/description in stat-row style.  Bottom centre: four ability discs.
+  Primary action is LOCK IN (RED); RANDOMIZE secondary; LEAVE PARTY danger.
+
+Pause
+  Narrow ink panel: PAUSED title, RED rule, local agent portrait + name,
+  full-width menu rows (RESUME primary, then secondary rows), LEAVE MATCH
+  danger at the bottom.
+
+Results
+  Ink overlay, "MATCH RESULTS" title, winner line in team colour, table with
+  PLAYER / K / D / DMG, team accent strip and portrait per row, alternating
+  row tint, RED RETURN TO LOBBY.
+
+HUD
+  Ink/slate panels at 0.55-0.9 alpha, Montserrat SemiBold, uppercase labels.
+  Health bar: TEAL, RED below 30%.  Stamina: TEAL cells.  Reload: AMBER.
+  Ability discs: ink disc + teal rim; active disc = TEAL; cooldown pie TEAL.
+  Running ability (action poses, timed self-buffs, weapon-fire bursts such as
+  Carpet Bomb; calligraphy shows a full ring):
+  72 px ink disc under the crosshair, ability icon inside, a 4 px ring that
+  drains clockwise from the top. Ring colour TEAL > 50 %, AMBER 20-50 %,
+  RED < 20 %. It replaces the "USING X" text for its duration. Instant
+  abilities, passives and targeted effects on someone else keep the text.
+  While a burst fires (Carpet Bomb), the arms use the out-of-combat pose and
+  the weapon model is hidden; the gun returns when the last shot is fired.
+  Kill feed: ink row, 3 px relationship strip (RED enemy, TEAL teammate,
+  AMBER you), white name text, weapon icon.
+  Leaderboard: ink panel, team section bands with a 3 px accent, self row
+  outlined in AMBER, opponent rows RED, teammates TEXT, each row carries a
+  team-colour strip, portrait and fixed-width stat columns. PING is the last
+  column: TEAL <= 40 ms, AMBER <= 90 ms, RED above, BOT / em dash when unknown.
+
+Debug UI
+  Same palette and components as gameplay UI.  Debug colour is not an excuse
+  for a different theme; only the content is developer-facing.
+
+
+7. MOTION
+---------
+Hover: 80 ms, colour/border only.
+Select: 120 ms, fill/border/opacity.
+Open/close: 120-160 ms fade; no bounce, no spring, no scale > 1.04.
+Pulsing text is reserved for the title prompt.
+No looping decoration in menus.  The 3D character preview is static by design.
+
+
+8. ACCESSIBILITY
+----------------
+- Body text contrast >= 4.5:1 against its surface (TEXT on INK/SLATE passes;
+  DIM_TEXT is for non-essential hints only).
+- Never encode meaning with colour alone: READY also has the word, teams also
+  have their name, selected cards also have a visible border.
+- Minimum interactive target 36 px high; primary CTA 44-52 px.
+- All destructive actions are confirmed by their label (LEAVE), not only by
+  colour.
+
+
+9. ASSET RULES
+--------------
+- Character portraits: square, >= 256x256, transparent or ink background,
+  generated by player/character_portrait_generator.gd.
+- Map thumbnails: 16:9, >= 1024x576, generated by
+  maps/map_thumbnail_generator.gd (never hand-cropped screenshots).
+- Weapon icons: killfeed PNGs, 16:9, white silhouette on transparent.
+- Never bake text into an image; text must be a Label so it restyles and
+  localises.
+- New icons go through the game-icons.net pipeline with svg/scale=0.25 and
+  mipmaps enabled; credit lives in the loadout screen (CC BY 3.0).
+
+
+10. ADDING A SCREEN
+-------------------
+1. Build Controls in code or a .tscn; do not introduce a local palette.
+2. Use UITheme constants and builders: panel_style, card_style,
+   button_style, display_label, section_label, body_label, badge, stat_row,
+   map_card, character_card, roster_card.
+3. Set the screen's CanvasLayer; overlays go above the world (2-8, 20 for
+   the title gate).
+4. Use a full-rect SCRIM behind modals.
+5. Every modal restores PlayerInput.ui_open and the mouse mode on close.
+6. Add the screen's recipe to section 6 in the same commit.
+
+
+11. DO / DON'T
+--------------
+DO    let a map thumbnail or a portrait be the visual anchor.
+DO    keep one primary action per screen.
+DO    use uppercase, tracked labels for structure and sentence case for detail.
+DO    align on the 8 px grid.
+DON'T fill large areas with RED or TEAL.
+DON'T use rounded corners, drop shadows, or gradients on panels.
+DON'T mix a second font family or a second accent hue for decoration.
+DON'T show a disabled control with no explanation; say why in a hint line.
+DON'T ship an empty card; use a dim placeholder silhouette.

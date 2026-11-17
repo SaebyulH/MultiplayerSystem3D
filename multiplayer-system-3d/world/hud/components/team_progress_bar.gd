@@ -11,7 +11,7 @@ class_name TeamProgressBar
 ##   add_child(bar)
 
 @export var team_color: Color = Color.WHITE
-@export var bg_color: Color = Color(0.12, 0.12, 0.12, 0.85)
+@export var bg_color: Color = Color(0.067, 0.086, 0.114, 0.92)
 @export var bar_height: float = 28.0
 
 @onready var _bg_rect: ColorRect = $BgRect

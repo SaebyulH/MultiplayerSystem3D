@@ -86,6 +86,20 @@ func is_charged() -> bool:
 	return max_charges > 1
 
 ## INSTANT cast — called the moment the ability key is pressed.
+## Status-effect id this ability keeps on the caster while it runs, or "" for
+## abilities without a mirrored timed effect.  The HUD's active-ability readout
+## uses this to cover any timed self-buff (invisibility, wallhack, aimbot, size
+## change, heal channel) without a per-ability HUD branch.
+func active_effect_id() -> String:
+	return ""
+
+
+## Total authored duration in seconds for [method active_effect_id].  0 means
+## "unknown"; the HUD then uses the remaining time as the total (full ring).
+func active_effect_duration() -> float:
+	return 0.0
+
+
 func activate(player: Player) -> void:
 	pass
 

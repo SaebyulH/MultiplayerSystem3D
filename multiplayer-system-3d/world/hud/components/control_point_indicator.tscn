@@ -8,13 +8,13 @@ script = ExtResource("1_cpi")
 [node name="BgRect" type="ColorRect" parent="."]
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0.135, 0.135, 0.135, 0.9)
+color = Color(0.067, 0.086, 0.114, 0.92)
 
 [node name="FillRect" type="ColorRect" parent="."]
 anchor_right = 1.0
 anchor_top = 1.0
 anchor_bottom = 1.0
-color = Color(0.45, 0.45, 0.45, 1)
+color = Color(0.541, 0.58, 0.639, 1)
 
 [node name="Label" type="Label" parent="."]
 anchor_right = 1.0

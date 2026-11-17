@@ -170,8 +170,15 @@ static func scan_maps() -> Array[Dictionary]:
 	out.sort_custom(func(a, b): return a["display_name"] < b["display_name"])
 	return out
 
-## Loads every MapData .tres under res://maps/map_data, sorted by display name.
-## This is the map-list source for the host menu (grouped by game mode).
+## Loads every **playable** MapData .tres under res://maps/map_data, sorted by
+## display name.  This is the live map-list source (host menu, Match Menu,
+## staging room, start-match validation).
+##
+## A MapData is only returned when it names a real map scene and carries a
+## gameplay mode.  The thumbnail generator used to leave a stale entry behind
+## (game_mode -1, pointing at maps/map_thumbnail_generator.tscn) that showed up
+## as a selectable map; filtering on the mode makes that class of pollution
+## impossible without having to remember to delete the file.
 static func scan_map_data() -> Array[MapData]:
 	var out: Array[MapData] = []
 	var dir := DirAccess.open("res://maps/map_data")
@@ -183,10 +190,29 @@ static func scan_map_data() -> Array[MapData]:
 	while f != "":
 		if not dir.current_is_dir() and f.ends_with(".tres"):
 			var data := load("res://maps/map_data/" + f) as MapData
-			if data:
+			if _is_playable_map_data(data):
 				out.append(data)
 		f = dir.get_next()
 	dir.list_dir_end()
 
 	out.sort_custom(func(a, b): return a.display_name < b.display_name)
 	return out
+
+
+## True when [param data] points at a real, playable map scene.  Utility scenes
+## (the thumbnail generator, the lobby) are authored with no mode (-1) or
+## MAIN_MENU and must never appear in a match picker.
+static func _is_playable_map_data(data: MapData) -> bool:
+	if data == null:
+		return false
+	if data.map_scene_path.is_empty():
+		return false
+	if data.map_scene_path.begins_with("res://maps/map_data/"):
+		return false
+	if not ResourceLoader.exists(data.map_scene_path):
+		return false
+	if data.game_mode < 0:
+		return false
+	if data.game_mode == GameModeComponent.GameMode.MAIN_MENU:
+		return false
+	return true

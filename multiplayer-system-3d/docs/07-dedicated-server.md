@@ -245,6 +245,15 @@ Rules:
 - Do not hand-edit `maps/manifest.json`. The tool owns it.
 - `.scn` maps are included; `main_menu_world.tscn` is included because it is the
   staging map.
+- **Map thumbnails are hashed too.** `map_thumbnails/*.png` and
+  `maps/map_data/*.tres` sit under the manifest root, so regenerating map art
+  (the 1024x576 thumbnail bump, the stale generator entry removal) changes the
+  manifest. Regenerate it in the same commit; a `-- --check` failure after a
+  UI/asset-only change is almost always this.
+- **Only playable `MapData` entries reach the pickers.** `scan_map_data()`
+  filters out entries with no gameplay `game_mode` and entries pointing at a
+  missing scene, so a stale tool-generated `.tres` cannot be selected even if
+  it is accidentally re-created.
 
 ## Protocol rules
 

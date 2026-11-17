@@ -34,12 +34,12 @@ const NAME_FONT_SIZE := 18
 const TAG_FONT_SIZE := 15
 
 # Section background colours, keyed by the player's relation to the local player.
-const COLOR_ENEMY := Color(0.62, 0.12, 0.12)
-const COLOR_ENEMY_LIGHT := Color(0.80, 0.34, 0.34)
-const COLOR_TEAMMATE := Color(0.30, 0.30, 0.33)
-const COLOR_TEAMMATE_LIGHT := Color(0.52, 0.52, 0.55)
-const COLOR_YOU := Color(0.16, 0.40, 0.72)
-const COLOR_YOU_LIGHT := Color(0.34, 0.56, 0.85)
+const COLOR_ENEMY := Color(1, 0.275, 0.333)
+const COLOR_ENEMY_LIGHT := Color(1, 0.45, 0.5)
+const COLOR_TEAMMATE := Color(0.176, 0.831, 0.749)
+const COLOR_TEAMMATE_LIGHT := Color(0.45, 0.9, 0.83)
+const COLOR_YOU := Color(1, 0.76, 0.29)
+const COLOR_YOU_LIGHT := Color(1, 0.82, 0.4)
 
 enum Relationship { YOU, TEAMMATE, ENEMY }
 
@@ -200,7 +200,11 @@ func _prune() -> void:
 func _make_section(bg_color: Color) -> PanelContainer:
 	var panel := PanelContainer.new()
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = bg_color
+	# Flat ink row with a relationship-coloured edge; the reference kill feeds
+	# read as one dark strip, not a block of saturated colour.
+	sb.bg_color = Color(UITheme.INK.r, UITheme.INK.g, UITheme.INK.b, 0.88)
+	sb.border_color = bg_color
+	sb.border_width_left = 3
 	sb.content_margin_left = 8.0
 	sb.content_margin_right = 8.0
 	panel.add_theme_stylebox_override("panel", sb)

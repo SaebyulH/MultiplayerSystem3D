@@ -15,6 +15,7 @@ Class-based team FPS (TF2-style hero shooter) on **Godot 4.7** (Forward Plus, Jo
 | 5 | [`05-known-issues.md`](05-known-issues.md) | High-signal TODO backlog (perf bugs, correctness fragilities), severity-ranked | triage before starting any perf/bug work; add entries here when you introduce risk |
 | 6 | [`06-trenchbroom-entities.md`](06-trenchbroom-entities.md) | The `trenchbroom/` func_godot pipeline: the entity folder system, FGD export, models, rotation | anything about map authoring, `trenchbroom/entities/*`, or a prop entity placed in TrenchBroom |
 | 7 | [`07-dedicated-server.md`](07-dedicated-server.md) | Target dedicated-server architecture, map manifest, protocol rules, migration phases | anything about the P2P → dedicated-server rework, `network/session_protocol.gd`, or `maps/manifest.json` |
+| 8 | [`DESIGN_STYLE_GUIDE.txt`](DESIGN_STYLE_GUIDE.txt) | UI palette, typography, components, screen recipes, asset rules | anything that adds or restyles a screen, HUD element, card, or popup |
 
 ## Contribution rule (binding)
 
@@ -32,7 +33,7 @@ Treat a missing doc update as an incomplete change.
 
 ## Architecture at a glance
 
-- **Autoload order is load-bearing** (`project.godot`): `MatchSession → NetworkManager → Console → Leaderboard → NetworkTime → NetworkTimeSynchronizer → NetworkRollback → NetworkEvents → NetworkPerformance → GameManager`. `NetworkEvents` wires `on_server_start/stop → NetworkTime.start/stop` in its `_ready`, which is safe only because `NetworkTime` loads before it. `MatchSession` first so `NetworkManager` can initialize a client/server session at boot.
+- **Autoload order is load-bearing** (`project.godot`): `MatchSession → NetworkManager → Console → Leaderboard → NetworkTime → NetworkTimeSynchronizer → NetworkRollback → NetworkEvents → NetworkPerformance → GameManager → UITheme`. `NetworkEvents` wires `on_server_start/stop → NetworkTime.start/stop` in its `_ready`, which is safe only because `NetworkTime` loads before it. `MatchSession` first so `NetworkManager` can initialize a client/server session at boot. `UITheme` is last: it installs the global `Window.theme` before the main scene builds any Control, and nothing earlier depends on it.
 - **The default boot is the local 3D shell**, with no peer and no external service. HostServer opens the host menu (map/teams/bots) and Start boots an in-process listen server directly into the chosen map on the first free port in `8080-8095`. JoinParty has **LAN** (UDP discovery on `7355-7370`) and **Direct IP** tabs; both join with the match-session handshake. `--legacy-p2p` keeps the old auto-host path. `--server` + `--connect` start a match session with a dedicated server where peer 1 is not a player. See `07-dedicated-server.md`.
 - **The C lobby is `server/lobbyd`.** It allocates UDP ports, spawns one headless Godot per match, issues HMAC join grants, and serves the 3D shell's match browser over loopback HTTP. `--lobby=http://host:port` enables it; it is control-plane only and never relays gameplay.
 - **Peer 1 is always the server and (in the legacy P2P path) the party leader.** In a match session it is only the server. Bots are fully server-authoritative.
@@ -40,6 +41,7 @@ Treat a missing doc update as an incomplete change.
 - **Movement is rollback-simulated; everything else is server-authoritative RPC.** Inputs (`input_dir`, `jump_input`, `crouch`, `dash_input`, ability trigger dirs) are rollback-synced; firing/reload/damage/effects/score are RPC. See `02-netcode.md`.
 - **Fire-held flags must never be rollback-synced** — netfox stomps them on re-simulation ticks. See `02-netcode.md`.
 - **`ConnectionUtils`** (`network/connection_utils.gd`, `class_name ConnectionUtils`) is a stateless `static` helper, **not** an autoload.
+- **All UI is styled from `UITheme`** (`ui/ui_theme.gd`). Screens use its palette tokens and builders; the autoload assigns one Theme to the root Window. `scan_map_data()` only returns map entries with a gameplay mode and a real scene, so the thumbnail generator can never be listed as a map.
 
 ## Top gotchas (the invariants most likely to bite you)
 

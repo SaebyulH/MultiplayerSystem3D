@@ -34,6 +34,7 @@ NetworkRollback="*uid://gas743comroj"
 NetworkEvents="*uid://bdmobxxptryj0"
 NetworkPerformance="*uid://cqgf7aqmjfoa3"
 GameManager="*uid://dvhvb2d8hlxoy"
+UITheme="*res://ui/ui_theme.gd"
 
 [display]
 
@@ -62,10 +63,6 @@ folder_colors={
 
 players=""
 payload=""
-
-[gui]
-
-theme/custom_font="uid://fibt75flrb5j"
 
 [input]
 

@@ -91,7 +91,10 @@ func _process(delta: float) -> void:
 	# Out of combat (spawn rooms, dev toggle) the player has no weapon in hand:
 	# drop the weapon-hold pose and the one-shot chain entirely.  Runs on every
 	# peer so a remote player's arms match the replicated flag.
-	var target_hold: float = 1.0 if player.in_combat else 0.0
+	# Action abilities (shoulder charge, bashdown, noclip, heal channel) drop the
+	# weapon-hold pose for their duration — the placeholder "casting" arms until
+	# real per-ability animations exist.  Same rule the weapon holster uses.
+	var target_hold: float = 1.0 if (player.in_combat and not player.is_ability_pose_active()) else 0.0
 	var current_hold: float = get("parameters/HoldBlend/blend_amount")
 	set(
 		"parameters/HoldBlend/blend_amount",

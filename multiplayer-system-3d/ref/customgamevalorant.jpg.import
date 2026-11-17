@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bfejbuyntirgu"
-path="res://.godot/imported/map_thumbnail_generator.png-be714bec4639602e0e44056bad5f67bf.ctex"
+uid="uid://cfmoup8isrj8y"
+path="res://.godot/imported/customgamevalorant.jpg-2d051a8f04a8d6c43fb64f034829e9fe.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://map_thumbnails/map_thumbnail_generator.png"
-dest_files=["res://.godot/imported/map_thumbnail_generator.png-be714bec4639602e0e44056bad5f67bf.ctex"]
+source_file="res://ref/customgamevalorant.jpg"
+dest_files=["res://.godot/imported/customgamevalorant.jpg-2d051a8f04a8d6c43fb64f034829e9fe.ctex"]
 
 [params]
 

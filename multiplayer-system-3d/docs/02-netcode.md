@@ -347,7 +347,8 @@ Other modes follow the same shape: `koth_mode.gd:23-39` and `domination_mode.gd:
   - **Bots** (`is_bot`, set at `spawn_manager.gd:129-131`): `player_input`, `body`, `DamageNumberManager` → authority **1**.
   - **Humans**: root `Player` → authority **1** (server), but `player_input` → `id`, `body` → `id`, `DamageNumberManager` → `id`.
 - Everything else (`WeaponController`, `AttributeComponent`, `StatusEffectManager`, `AbilityManager`, `HurtComponent2`) inherits root authority = **server (1)**. This is why ammo/health/effects are server-authoritative while the human keeps authority only over `player_input` (rollback input source) and `body` (camera look).
-- Root `MultiplayerSynchronizer` (node under `Player`, config `SceneReplicationConfig_1s1yo` in `player.tscn`) replicates `AttributeComponent:health`, `.:team`, `.:is_spectating`, `.:owner_peer_id` and `.:in_combat` (all spawn + on-change). The `WeaponController`'s `MultiplayerSynchronizer` (config `SceneReplicationConfig_2ieo8`) replicates `current_weapon_index` on change.
+- Root `MultiplayerSynchronizer` (node under `Player`, config `SceneReplicationConfig_1s1yo` in `player.tscn`) replicates `AttributeComponent:health`, `.:team`, `.:is_spectating`, `.:owner_peer_id`, `.:in_combat` and `.:_loadout_character_path` (all spawn + on-change). The `WeaponController`'s `MultiplayerSynchronizer` (config `SceneReplicationConfig_2ieo8`) replicates `current_weapon_index` on change.
+- **The character *path* is replicated; the `Character` resource is not.** `Player.set_character()` writes `_loadout_character_path` whenever it applies a non-empty resource, which covers `_request_loadout`/`_apply_loadout`, late-join `rpc_sync_full_state`, `LoadoutProfile.apply_to_player`, and `SpawnManager`'s bot loadout paths (bots never set the path explicitly). Peers resolve it with `UITheme.character_for_path()` to show a portrait in staging, the pause menu and the scoreboard. Treat the resource properties themselves (stats, abilities) as derived from that path, not synced.
 - **Bots are fully server-authoritative**: `BotController._physics_process` guards `is_bot`, `multiplayer.is_server()`, `spawned` (`bot_controller.gd:188-194`) and writes directly into `player.player_input.input_dir`/`jump_input`/fire flags. Bot `player_input` authority is 1 and `_gather()` skips bots (`player_input.gd:71-72`), so bot input is written by `BotController` on the server and recorded/broadcast by the RollbackSynchronizer from peer 1.
 - Bots' aim (`_apply_smooth_aim`, `bot_controller.gd:343-353`) writes `player.body.rotation.y`/head pitch directly — meaningful only because the server owns the bot's body node.
 - **Bot survival, hearing and hunt state is server-local.** The recent-damage bucket, threat pressure, cover/flee timers, the `Decision.State.FLEE`/`SEARCH` states, the heard-sound memory and the hunt sweep points live only on peer 1 inside `BotController`. They are not `Player` state, not in any `MultiplayerSynchronizer`, and have no RPC; a client simply sees the resulting movement/aim through the normal bot input replication. Manual-bot `survival` overrides persist in `GameManager.lobby_bots` like every other trait. **Hearing is a distance check, not a detection cone:** footsteps report a 12 m radius scaled by the listener's awareness (×0.65–1.1) and gunshots 35 m. A sound from a **teammate or the bot itself is ignored**, and a bot already engaging an enemy ignores new sounds, so two bots on one team will never hunt each other no matter how close they are. A two-bot FFA test inside footstep range does work (verified by a temporary probe).
@@ -384,6 +385,17 @@ Self-targeted only, and split by what each flag actually gates:
 **Dev flags are toggles, never rollback state.** They are not in `RollbackSynchronizer.state_properties` and are not part of `rpc_sync_full_state`. Stamina and dev noclip are the flags every peer must agree on (they gate rollback movement), which is why they are broadcast; a late joiner does not inherit either until the next toggle. The visual flags (HUD/model) are deliberately local and persist across world swaps — `world_1._ready()` re-applies the world-HUD one to the rebuilt HUD nodes.
 
 **Combat mode is a replicated Player state, not a local display flag.** `Player.in_combat` defaults to `true` and is in the root `MultiplayerSynchronizer` (spawn + on-change), so all peers agree. Its setter calls `WeaponController.refresh_holstered()`, which ORs "not in combat" into the calligraphy-holster predicate; while holstered the viewmodel is hidden, `_is_ready()` is false (firing and weapon switching are refused) and pending fire/charge/scope state is cleared. `player/animation_tree.gd` smoothly drives `parameters/HoldBlend/blend_amount` to `1.0` in combat and `0.0` out of it — 0 drops the weapon-hold pose and the whole one-shot chain, 1 restores them. The dev toggle only flips this state; map zones (spawn rooms) will write it later. Do **not** poll the status-effect mirror per frame: `calligraphy_release` removes the hold effect and fires in the same call, so the holster must stay signal/edge driven.
+
+**Action abilities use the same arms-out presentation for their window.** `Player.is_ability_pose_active()` is derived from state every peer already has — `charge_time > 0` and `bashdown_time`/`bashdown_slamming` (rollback), plus the mirrored `noclip`, `heal_over_time` and calligraphy effects — so the pose agrees on every peer without a new replicated flag. `Player._process` edge-detects the change and calls `WeaponController.refresh_holstered()` once; `animation_tree.gd` targets HoldBlend `0.0` while posing.
+
+**The HUD's active-ability readout is broader than the pose.** `Player.get_active_ability_state()` returns `{ability, remaining, duration}` for:
+- charge / bashdown (rollback state, authored duration from the cached ability);
+- noclip (per-peer meter; authoritatively early-ended by the effect);
+- weapon-fire bursts/volleys (`WeaponFireAbility`, e.g. FlyGirl's Carpet Bomb): `WeaponController` records the wall-clock window `(shots - 1) × burst_post_shoot_delay` and the ability name; `Player` maps that name back to the ability for its icon. SERVER-mode abilities do not run `activate()` on the owner client, so `AbilityManager._request_cast` starts the same window locally (`start_ability_visual`) when it sends the cast; the shots themselves stay server-only;
+- any timed **self-effect** ability: each ability names the effect it keeps on the caster via `Ability.active_effect_id()` / `active_effect_duration()` (invisibility, wallhack, aimbot, `SelfEffectAbility`, heal-over-time), and the remaining time comes from the replicated effect mirror. Suffixed stacking ids resolve through `StatusEffectManager.base_effect_id()`;
+- calligraphy (state-driven, drawn with a full ring).
+
+Instant abilities, passive buffs and targeted effects on someone else return empty and keep the old "USING X" text. Weapon-fire bursts **do** own the arms-out pose — you cannot attack while one is firing — but they hide the weapon **visually only** (`WeaponController.set_weapon_visual_hidden`), never via `_holstered`: the burst's next shot checks `_is_ready()`, and a real holster would abort it after the first projectile. At the end of the window the model and HoldBlend restore. Timed self-buffs keep the weapon in hand; charge/bashdown/noclip/heal/calligraphy holster for real. The noclip ring reads the per-peer meter, so it is exact for the owner and approximate for a spectator (same limitation as #46).
 
 **Bot loadout editing reuses the normal loadout path.** `LoadoutMenuUI.open_for_bot()` retargets the single menu instance (`player_id` = the bot's name) and confirm calls `_request_loadout`, whose sender check already permits `bot_` targets. That path respawns the bot via `rpc_reset` and updates the persistent `GameManager.lobby_bots` entry.
 
@@ -875,6 +887,39 @@ live in `defaults/status_effects/`: `size_change.tres` (2.0, what Rampage used t
   100/100 --cast--> 50/50 --25 dmg--> 25/50 --expires--> 50/100
   ```
 
+### World-space effect visuals — the text above the head is gone
+
+`player/status_effect_visuals.gd` (a `Node3D` child of every `Player`, node
+`StatusEffectVisuals`) replaces the old `StatusBarPublic` `Label3D` that printed
+`"Burn 2.3s, Slow 1.1s"` above the model. Effects now read off the character
+itself:
+
+- `burn` — flame particles wrapping the torso, rising.
+- `bleed` — red droplets falling off the body.
+- `poison` — green mist seeping upward.
+- `slow` — cold blue haze at the legs.
+- `stun` — yellow sparks around the head.
+- `heal_over_time` — green sparkles rising.
+- `invincible` — golden shimmer.
+
+Invisible, enlarge/shrink, noclip, wallhack and aimbot deliberately have **no
+entry**: the model already shows them. The visual set is a `CONFIGS`
+dictionary in the script, so adding one is a data entry, not a new scene.
+
+It is **purely cosmetic and local** and has no RPC of its own. It listens to
+`StatusEffectManager.client_effects_changed` — the same replicated mirror the
+HUD uses — so the server and every client agree on which effect is active
+without new network state, and a mid-match joiner gets the right visuals from
+the spawn sync. Lookups go through `has_effect()` (base-id fallback), so stacked
+ids (`shrink#123`) work.
+
+Particle systems are built **lazily** the first time an effect appears and are
+only `emitting` while it is active; `_process` is disarmed altogether when
+nothing is running. Amounts stay in the high 20s at most, at 30 fixed FPS. The local
+player's own visuals are hidden in first person (the HUD border already says
+what they have, and fire in your own face is noise); they show in third person
+and on every remote player.
+
 ---
 
 ## 8. The tick domain and the session tick rate
@@ -1158,11 +1203,27 @@ they already have, with no RPC and no per-frame work.
 - **`MatchSession.set_phase()` writes `phase` locally before broadcasting.**
   `broadcast_phase` is `call_remote`, so omitting the local write left the
   server's own room phase stale and made `welcome` carry the wrong phase.
+- **Ping is a server-sampled snapshot, not per-client state.**
+  `MatchSession._broadcast_pings()` runs every 2 s on the server only. It reads
+  `ENetPacketPeer.get_statistic(ENetPacketPeer.PEER_LAST_ROUND_TRIP_TIME)` for
+  each connected peer, maps the peer to its stable player id, adds the
+  listen-host row as 0 ms, then sends one `_rpc_ping_snapshot` (authority,
+  unreliable) and emits `pings_changed`. Clients mirror the dictionary;
+  `ping_ms_for()` returns -1 for an unknown row (bot, reserved slot, legacy
+  P2P). The leaderboard rewrites only its ping labels on `pings_changed` so a
+  snapshot never rebuilds the table or resets its scroll position.
 - **Staging actions are server-validated RPCs:** `request_set_staging_map`,
-  `request_add_bot`, `request_set_ready`, `request_switch_team`,
-  `request_join_in_progress`, `request_start_match`, `request_end_match`.
+  `request_add_bot`, `request_set_ready`, `request_set_team`,
+  `request_switch_team`, `request_join_in_progress`, `request_start_match`,
+  `request_end_match`.
   Host-only actions re-check `host_player_id`; self actions validate the sender
-  maps to the claimed player id.
+  maps to the claimed player id. `request_set_team` is the direct SPI/SCI/FFA
+  form the three-column staging UI uses; `request_switch_team` remains the
+  legacy SPI↔SCI toggle. Both require `Phase.STAGING` and range-check the team.
 - **`GameManager.local_loadout` is local state, not rollback or replicated
   state.** It is applied through the existing `_request_loadout` path so the
   server remains the authority for the actual weapon/character resources.
+  `world_1.apply_local_loadout(build, respawn)` is the single send helper used
+  by the title flow, staging agent select and the Loadout screen; staging
+  passes `respawn = false` because `should_loadout_respawn()` is already false
+  during staging.

@@ -55,24 +55,27 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _build() -> void:
 	var dim := ColorRect.new()
-	dim.color = Color(0, 0, 0, 0.55)
+	dim.color = UITheme.SCRIM
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(dim)
 
+	var center := CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(center)
+
 	var panel := PanelContainer.new()
-	panel.set_anchors_preset(Control.PRESET_CENTER)
-	panel.custom_minimum_size = Vector2(560, 0)
-	add_child(panel)
+	panel.custom_minimum_size = Vector2(600, 0)
+	panel.add_theme_stylebox_override("panel", UITheme.panel_style(UITheme.INK_2, UITheme.LINE, 1, 24))
+	center.add_child(panel)
 
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 10)
 	panel.add_child(vbox)
 
-	var title := Label.new()
-	title.text = "FIND A MATCH"
+	var title := UITheme.display_label("FIND A MATCH", 28, UITheme.TEXT)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 28)
 	vbox.add_child(title)
+	vbox.add_child(UITheme.accent_bar(UITheme.RED, 3))
 
 	_list = ItemList.new()
 	_list.custom_minimum_size = Vector2(520, 260)
@@ -90,23 +93,25 @@ func _build() -> void:
 	row.add_child(_code)
 
 	var join_btn := Button.new()
-	join_btn.text = "Join"
+	join_btn.text = "JOIN"
+	join_btn.add_theme_stylebox_override("normal", UITheme.button_style(UITheme.Kind.PRIMARY))
+	join_btn.add_theme_stylebox_override("hover", UITheme.button_style(UITheme.Kind.PRIMARY, true))
+	join_btn.add_theme_stylebox_override("pressed", UITheme.button_style(UITheme.Kind.PRIMARY, false, true))
 	join_btn.pressed.connect(_on_join_pressed)
 	row.add_child(join_btn)
 
 	var refresh_btn := Button.new()
-	refresh_btn.text = "Refresh"
+	refresh_btn.text = "REFRESH"
 	refresh_btn.pressed.connect(_refresh)
 	row.add_child(refresh_btn)
 
 	var close_btn := Button.new()
-	close_btn.text = "Close (Esc)"
+	close_btn.text = "CLOSE  (Esc)"
 	close_btn.pressed.connect(close)
 	vbox.add_child(close_btn)
 
-	_status = Label.new()
+	_status = UITheme.body_label("", UITheme.FS_SMALL, UITheme.MUTED)
 	_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_status.add_theme_font_size_override("font_size", 14)
 	vbox.add_child(_status)
 
 

@@ -97,6 +97,7 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 | 145 | 🟡 Medium | UX | The old `JoinParty` Area3D and its LAN/Direct popup still exist beside the HostServer Match Menu. The plan removes them, but that is a map/3D edit and was deliberately deferred. |
 | 146 | 🟢 Low | Flow | Host migration is still the existing reserved-slot expiry path (90 s), not immediate promotion. A listen-server host quitting still ends the server. |
 | 147 | 🟢 Low | Tooling | New test hooks: `--test-title-start`, `--test-staging-start`, `--test-staging-map=`, `--test-end-match`. They are debug-only paths in `world_1.gd`. |
+| 148 | 🟡 Medium | Visuals | Weapon models are re-shaded at spawn by `WeaponToonMaterials`; transparency, `cull_mode` and `uv1_offset` are not carried |
 
 
 ---
@@ -1456,6 +1457,15 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 - **Why:** the aim ray goes from the camera along its forward with a `WORLD | HURTBOX` mask. The player's own hurtboxes are `PhysicalBone3D` bodies on the HURTBOX layer (`player.tscn` `Physical Bone DEF-*` nodes), and the ray starts at the camera — so when the arm shortens, the ray passes through the player's own arms/shoulders/legs and `_third_person_aim_target()` returns a point on the player. `_aim_body_head_at_point` then yaws/pitches the body at itself, which reads as being "caught" on geometry. RayCast3D `hit_from_inside` is false by default, so this only bites once the origin leaves the shape and the ray re-enters another bone.
 - **Fix:** `Player._ready` adds every `CollisionObject3D` in the player's subtree as an exception on `third_person_raycast` — the same superset `weapon_controller` excludes per shot. **Residual TODO:** the sweep runs once at `_ready`, so a collidable spawned later into the player subtree (a new model/prop body on WORLD or HURTBOX) is not excluded; add it to the sweep point or keep such collidables off those two layers.
 
+### 148. Weapon toon materials are derived at spawn, and a few source properties have no shader equivalent
+
+- **Files:** `weapon/weapon_toon_materials.gd` (`WeaponToonMaterials`), `assets/materials/weapon_toon.tres`, `assets/materials/painted_toon.gdshader` (the Surface group's separate metallic/roughness maps), `player/weapon_controller.gd` (`spawn_weapon_model`, `WEAPON_TOON_PRESET`); harness `tools/verify_weapon_toon.tscn`.
+- **Symptom:** none today — the harness instantiates every `.tscn` under `res://weapon/` and asserts no opaque `StandardMaterial3D` survives. The risk is the same shape as #54: weapon meshes mostly live inside imported GLBs, so a GLB reimport that changes the material layout converts a different set of surfaces, silently.
+- **What is deliberately dropped, not bugs.** Materials whose `transparency != DISABLED` are left on PBR, because the toon shader is opaque — the same exception #54 records for `blackhat`'s glasses (a scope lens must stay see-through). `cull_mode` cannot be carried: `render_mode` is compile-time, and `assets/weapon_models/ak_test/ak.tres` is `CULL_DISABLED`, so a weapon that relies on double-sided rendering would need a `cull_disabled` variant of the shader rather than a uniform. `uv1_offset` has no uniform (only `uv1_scale`, carried as `uv_scale`).
+- **What the source keeps, and what it does not.** The source keeps its textures — albedo, normal/AO/emission, and the *separate* metallic/roughness maps with their channel selectors (`BaseMaterial3D.metallic_texture_channel` etc.) — but **not** its `metallic`, `roughness` or `metallic_specular` scalars. Those three define the family look: the character materials are non-metal, sit around roughness 0.85 and carry no stylised highlight. A gunmetal source is `metallic = 1.0`, and under this shader that multiplies the whole diffuse ramp by `(1 - METALLIC)` — it is why the first pass read as a different shading family. The maps still multiply the preset's level, so metal/roughness detail survives without lifting the surface out of the character look.
+- **The shader change is additive.** `use_metallic_texture` / `use_roughness_texture` and their channel uniforms default off, so every character and map material on `painted_toon.gdshader` is unaffected; the harness checks the mapping on a synthetic material.
+- **Tuning is one file.** `weapon_toon.tres` carries the whole weapon look; `albedo_gain` (2.0 to start, parity with the character materials) and `toon_specular_size` are the knobs that matter, and the shader only compiles when something is drawn, so the visual half is an in-game check.
+
 ## Not bugs, but worth knowing
 
 - **`painted_toon.gdshader`'s back rim is deliberately light-independent — it glows in pitch darkness and ignores shadow.** It is `1 - dot(NORMAL, VIEW)` written to `EMISSION` from `fragment()` (`:251-277`), never from `light()`. That *is* the feature: it fakes a light behind the subject regardless of what the scene's lights are doing, so it reads as a back light from any angle and under any lighting. It follows that the rim is not occluded by anything, does not dim in shadow, and stays on when the surface is otherwise unlit — verified by rendering it with every light and the ambient switched off, where it is the only thing on screen. If it ever reads as a bug ("why is this glowing in a dark room"), it is working as designed; turn `rim_enabled` off. The reason it lives in `EMISSION` rather than `light()` is that `light()` runs once **per light**, so a rim written there would be added N times.
@@ -1524,4 +1534,47 @@ These are real but not current bottlenecks — revisit only if profiling flags t
 - `singletons/game_manager.gd:24-28` — ✅ guarded 2026-10-23: `find_player` / `get_despawn_position` and `Player._get_spawn_transform` now check `is_instance_valid(spawn_parent)` first and return `null` / a zero transform. Previously they hard-errored when SpawnParent was null or freed (an isolated harness, or a lookup racing scene teardown).
 - `ui/main_menu.gd:236,241,248-250` — calls `NetworkManager.create_client()` / `enter_existing_game_scene()` directly. Dead today (the 2D menu is bypassed), but those entry points no longer start a tick loop or hide the loading screen on their own; a revived menu would produce a client that can look and shoot but not move. Route it through `NetworkManager.join_party()`.
 - `network/network_manager.gd` `_await_settled()` — on a machine that never gets two consecutive frames under `SETTLE_FRAME_SECONDS` (10 fps), a join waits the full `SETTLE_TIMEOUT_SECONDS` (5 s) behind the loading screen before starting the tick loop. It logs a debug warning when it gives up; tune the threshold if this ever bites.
-- `maps/map_data/map_thumbnail_generator.tres` — the thumbnail tool scanned **itself**. `ConnectionUtils.scan_maps()` walks every `*.tscn` under `res://maps`, and `maps/map_thumbnail_generator.tscn` lives there, so `map_thumbnail_generator.gd` wrote a `MapData` for its own scene (`display_name = "map_thumbnail_generator"`, `map_scene_path` → itself, no `game_mode`). It is harmless while it sits unread, but it **is** in the HostServer browser (it sorts under whatever the `game_mode` default is), and selecting it would `load_match_map` a plain `Node` — no `GameModeComponent`, no spawns, and not a `map.gd` `Map` at all, so the round starts with no objective and nothing for the spawn lookup to answer with. Delete the stray `.tres` (and its `map_thumbnails/map_thumbnail_generator.png`), and/or have `scan_maps()` skip the tool scene.
+- ✅ **FIXED 2026-11-17 — the thumbnail tool was listed as a map.**
+  `maps/map_data/map_thumbnail_generator.tres` (no `game_mode`, scene → the
+  tool itself) was returned by `ConnectionUtils.scan_map_data()` and offered
+  in the Match Menu and staging picker; selecting it would `load_match_map` a
+  plain `Node`. The stale `.tres`, its thumbnail and `.import` are deleted,
+  `scan_map_data()` now returns only entries with a real scene path and a
+  gameplay `game_mode` (`network/connection_utils.gd:_is_playable_map_data`),
+  and the generator runs an orphan-cleanup pass before it renders. If a
+  future tool scene is added under `res://maps`, add it to `scan_maps()`'s
+  excluded list as well.
+- **`UITheme` is a global `Window.theme`.** It restyles every Control in the
+  process, including the Console addon and any future third-party UI. If one
+  of those breaks visually, override locally in that addon rather than
+  narrowing the global theme. Theme lookup still falls back to the engine
+  default theme for items the custom theme does not define (icons, sliders),
+  so new controls inherit sensible defaults.
+- **Portraits in the staging roster depend on the synchronizer, not on
+  `_character`.** `UITheme.roster_card` reads
+  `Player._loadout_character_path`, which is spawn + on-change replicated.
+  A player whose loadout has never been applied has an empty path and shows
+  a blank portrait slot; that is expected, not a missing asset. Do not fall
+  back to `player._character` on a client — it is only populated after the
+  loadout RPC lands and would make the row flicker between empty and filled.
+- **Staging roster rebuilds are signature-gated on purpose.**
+  `world/staging_room.gd:_refresh_roster` rebuilds cards only when the
+  player/team/ready/character signature changes. The screen also runs a
+  250 ms `_refresh` timer; rebuilding nodes on every tick would churn the
+  scene and leak the queued-free children. Preserve the signature check when
+  adding roster fields.
+- **The active-ability ring for noclip reads the per-peer meter.** The pose
+  itself is derived from the replicated `noclip` effect and is correct on every
+  peer, but the ring's remaining fraction comes from
+  `AbilityManager.get_meter_fraction()`, which is local per peer (#46). The
+  owner sees the true countdown; a spectator's bound HUD sees an empty ring.
+  Shoulder charge, bashdown and heal-over-time are derived from rollback state /
+  the effect mirror and are accurate everywhere.
+- **`WeaponCard.CONTENT_MARGIN` must equal the card stylebox's content
+  margins.** `weapon_card.gd:_fit_icon()` sets the icon's *minimum* width from
+  the card's current `size.x - 2 * CONTENT_MARGIN`. If the stylebox margins in
+  `weapon_card.tscn` are larger than the constant, each layout pass asks for a
+  slightly wider card and the minimum width runs away: the loadout columns
+  reached 200 000 px each and pushed the INFO panel off-screen (found while
+  restyling the card margins 6 → 7). Keep the two numbers in lock-step, or
+  rewrite `_fit_icon` to derive the margin from the stylebox.

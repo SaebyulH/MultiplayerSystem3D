@@ -8,7 +8,7 @@ class_name DeathmatchPanel
 ## blue background.
 
 const _entry_scene := preload("res://world/hud/panels/deathmatch_entry.tscn")
-const OWN_BG := Color(0.25, 0.5, 0.9, 0.45)  # light blue for the local player
+const OWN_BG := Color(0.176, 0.831, 0.749, 0.45)  # light blue for the local player
 
 @onready var _left_container: HBoxContainer = $LeftBar/Container
 @onready var _right_container: HBoxContainer = $RightBar/Container

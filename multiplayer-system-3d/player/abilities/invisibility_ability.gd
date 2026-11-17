@@ -7,6 +7,14 @@ extends Ability
 
 @export var duration: float = 6.0
 
+func active_effect_id() -> String:
+	return "invisible"
+
+
+func active_effect_duration() -> float:
+	return duration
+
+
 func activate(player: Player) -> void:
 	if not player.status_effect_manager:
 		return

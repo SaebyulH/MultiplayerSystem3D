@@ -19,7 +19,7 @@ mouse_filter = 2
 [node name="Bg" type="ColorRect" parent="LeftBar"]
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0.13, 0.13, 0.15, 0.45)
+color = Color(0.043, 0.055, 0.075, 0.82)
 
 [node name="Container" type="HBoxContainer" parent="LeftBar"]
 anchor_right = 1.0
@@ -38,7 +38,7 @@ mouse_filter = 2
 [node name="Bg" type="ColorRect" parent="RightBar"]
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0.13, 0.13, 0.15, 0.45)
+color = Color(0.043, 0.055, 0.075, 0.82)
 
 [node name="Container" type="HBoxContainer" parent="RightBar"]
 anchor_right = 1.0
@@ -57,6 +57,6 @@ offset_right = 300.0
 offset_top = -20.0
 offset_bottom = 20.0
 theme_override_font_sizes/font_size = 20
-theme_override_colors/font_color = Color(1, 0.85, 0.3, 1)
+theme_override_colors/font_color = Color(1, 0.76, 0.29, 1)
 horizontal_alignment = 1
 vertical_alignment = 1

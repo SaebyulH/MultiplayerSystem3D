@@ -70,6 +70,12 @@ var dev_hide_player_hud := false
 ## are never affected.
 var dev_hide_world_hud := false
 
+## Local-only, non-dev: true while a full-screen pre-match overlay (the staging
+## room) owns the screen.  The gameplay HUD and the mode HUD are built and
+## would otherwise show through the overlay's translucent scrim.  Distinct from
+## the dev flags so closing the overlay restores whatever the player chose.
+var suppress_gameplay_hud := false
+
 ## Stop every bot's AI.  Server-local: bots only simulate on peer 1.
 var dev_freeze_bots := false
 

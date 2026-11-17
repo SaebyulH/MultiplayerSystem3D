@@ -2,46 +2,53 @@
 
 [ext_resource type="Script" uid="uid://cy5ftw8ias1tn" path="res://world/loadout_menu.gd" id="1_loadout"]
 [ext_resource type="PackedScene" path="res://world/character_subviewport_preview.tscn" id="2_charprev"]
-[ext_resource type="FontFile" path="res://assets/CenturyGothic - Century Gothic - Regular.ttf" id="3_font"]
+[ext_resource type="FontFile" path="res://assets/fonts/Montserrat/static/Montserrat-SemiBold.ttf" id="3_font"]
 
 [sub_resource type="StyleBoxFlat" id="panel_style"]
 content_margin_left = 10.0
 content_margin_top = 10.0
 content_margin_right = 10.0
 content_margin_bottom = 10.0
-bg_color = Color(0, 0, 0, 0)
+bg_color = Color(0.067, 0.086, 0.114, 0.88)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.165, 0.196, 0.239, 1)
 
 [sub_resource type="StyleBoxFlat" id="wrap_style"]
 resource_local_to_scene = true
-bg_color = Color(0, 0, 0, 0)
+bg_color = Color(0.043, 0.055, 0.075, 0.5)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.35, 0.4, 0.5, 1)
+border_color = Color(0.165, 0.196, 0.239, 1)
 
 [sub_resource type="StyleBoxFlat" id="picker_style"]
 content_margin_left = 24.0
 content_margin_top = 20.0
 content_margin_right = 24.0
 content_margin_bottom = 24.0
-bg_color = Color(0.04, 0.05, 0.09, 0.72)
+bg_color = Color(0.043, 0.055, 0.075, 0.97)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.4, 0.45, 0.55, 0.8)
+border_color = Color(0.176, 0.831, 0.749, 1)
 
 [sub_resource type="StyleBoxFlat" id="header_style"]
-content_margin_left = 6.0
-content_margin_top = 4.0
-content_margin_right = 6.0
-content_margin_bottom = 4.0
-bg_color = Color(0.35, 0.65, 1, 1)
+content_margin_left = 10.0
+content_margin_top = 5.0
+content_margin_right = 10.0
+content_margin_bottom = 5.0
+bg_color = Color(0.102, 0.125, 0.161, 0.9)
+border_width_left = 3
+border_color = Color(1, 0.275, 0.333, 1)
 
 [sub_resource type="FontVariation" id="header_font"]
 base_font = ExtResource("3_font")
-variation_embolden = 0.6
+spacing_glyph = 2
 
 [node name="LoadoutMenu" type="Control" unique_id=1926619931]
 layout_mode = 3
@@ -72,20 +79,17 @@ theme_override_constants/separation = 10
 
 [node name="Title" type="Label" parent="LoadoutMenuCanvas/Root/Col" unique_id=2017952308]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.92, 0.92, 0.92, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 6
+theme_override_colors/font_color = Color(0.929, 0.945, 0.961, 1)
+theme_override_fonts/font = SubResource("header_font")
 theme_override_font_sizes/font_size = 30
-text = "—  LOADOUT  —"
-horizontal_alignment = 1
+text = "AGENTS  //  LOADOUT"
+horizontal_alignment = 0
 
 [node name="ModeLabel" type="Label" parent="LoadoutMenuCanvas/Root/Col" unique_id=1603525625]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.85, 0.85, 0.5, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 4
-theme_override_font_sizes/font_size = 15
-horizontal_alignment = 1
+theme_override_colors/font_color = Color(0.541, 0.58, 0.639, 1)
+theme_override_font_sizes/font_size = 14
+horizontal_alignment = 0
 
 [node name="MainRow" type="HBoxContainer" parent="LoadoutMenuCanvas/Root/Col" unique_id=1151837365]
 layout_mode = 2
@@ -109,7 +113,7 @@ theme_override_styles/panel = SubResource("header_style")
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_fonts/font = SubResource("header_font")
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 14
 text = "AGENT"
 horizontal_alignment = 1
 
@@ -149,8 +153,9 @@ vertical_alignment = 1
 
 [node name="CharacterNameLabel" type="Label" parent="LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox" unique_id=1609807803]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.92, 0.92, 0.92, 1)
-theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.929, 0.945, 0.961, 1)
+theme_override_fonts/font = SubResource("header_font")
+theme_override_font_sizes/font_size = 20
 horizontal_alignment = 1
 
 [node name="LoadoutPanel" type="PanelContainer" parent="LoadoutMenuCanvas/Root/Col/MainRow" unique_id=867736845]
@@ -183,7 +188,7 @@ theme_override_styles/panel = SubResource("header_style")
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_fonts/font = SubResource("header_font")
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 14
 text = "SECONDARY"
 horizontal_alignment = 1
 
@@ -212,7 +217,7 @@ theme_override_styles/panel = SubResource("header_style")
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_fonts/font = SubResource("header_font")
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 14
 text = "PRIMARY"
 horizontal_alignment = 1
 
@@ -241,7 +246,7 @@ theme_override_styles/panel = SubResource("header_style")
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_fonts/font = SubResource("header_font")
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 14
 text = "MELEE"
 horizontal_alignment = 1
 
@@ -272,14 +277,14 @@ theme_override_styles/panel = SubResource("header_style")
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_fonts/font = SubResource("header_font")
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 14
 text = "INFO"
 horizontal_alignment = 1
 
 [node name="InfoLabel" type="RichTextLabel" parent="LoadoutMenuCanvas/Root/Col/MainRow/InfoPanel/VBox" unique_id=1854972228]
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_colors/default_color = Color(0.82, 0.82, 0.82, 1)
+theme_override_colors/default_color = Color(0.82, 0.84, 0.86, 1)
 theme_override_font_sizes/normal_font_size = 13
 bbcode_enabled = true
 fit_content = true
@@ -302,25 +307,25 @@ theme_override_constants/separation = 8
 
 [node name="RandomizeOnceButton" type="Button" parent="LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/ActionBar" unique_id=1273385815]
 layout_mode = 2
-theme_override_font_sizes/font_size = 16
-text = "  RANDOMIZE  "
+theme_override_font_sizes/font_size = 13
+text = "RANDOMIZE"
 
 [node name="RandomizeOnDeathCheck" type="CheckBox" parent="LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/ActionBar" unique_id=1435045485]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.75, 0.75, 0.75, 1)
-theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.541, 0.58, 0.639, 1)
+theme_override_font_sizes/font_size = 13
 text = "Randomize on every death"
 
 [node name="ConfirmButton" type="Button" parent="LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/ActionBar" unique_id=135613251]
 layout_mode = 2
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 18
 disabled = true
-text = "  CONFIRM BUILD  "
+text = "LOCK IN"
 
 [node name="LeavePartyButton" type="Button" parent="LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/ActionBar" unique_id=1288852290]
 layout_mode = 2
-theme_override_font_sizes/font_size = 18
-text = "Leave Party"
+theme_override_font_sizes/font_size = 13
+text = "LEAVE PARTY"
 
 [node name="CharacterPicker" type="PanelContainer" parent="LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/Wrap" unique_id=1296227671]
 visible = false

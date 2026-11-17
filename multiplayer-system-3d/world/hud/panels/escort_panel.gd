@@ -45,31 +45,31 @@ func update_display(data: Dictionary) -> void:
 	match state:
 		"PUSHING":
 			_state_label.text = "PUSHING  ×%d" % attackers
-			_fill_rect.color = Color(0.88, 0.24, 0.24)
+			_fill_rect.color = Color(1, 0.275, 0.333)
 		"CONTESTED":
 			_state_label.text = "CONTESTED  ATK×%d  DEF×%d" % [attackers, defenders]
-			_fill_rect.color = Color(0.95, 0.65, 0.10)
+			_fill_rect.color = Color(1, 0.76, 0.29)
 		"RETURNING":
 			_state_label.text = "RETURNING"
-			_fill_rect.color = Color(0.35, 0.55, 0.90)
+			_fill_rect.color = Color(0.176, 0.831, 0.749)
 		"IDLE":
 			_state_label.text = "IDLE  (%.1fs)" % return_cd
-			_fill_rect.color = Color(0.45, 0.45, 0.45)
+			_fill_rect.color = Color(0.541, 0.58, 0.639)
 		"AT_CHECKPOINT":
 			_state_label.text = "CHECKPOINT"
-			_fill_rect.color = Color(0.85, 0.75, 0.10)
+			_fill_rect.color = Color(1, 0.76, 0.29)
 		"ROLLFORWARD":
 			_state_label.text = "ROLLING"
 			_fill_rect.color = Color(0.90, 0.45, 0.10)
 		"DELIVERED":
 			_state_label.text = "DELIVERED!"
-			_fill_rect.color = Color(0.20, 0.75, 0.20)
+			_fill_rect.color = Color(0.176, 0.831, 0.749)
 		"LOCKED":
 			_state_label.text = "LOCKED"
-			_fill_rect.color = Color(0.20, 0.20, 0.20)
+			_fill_rect.color = Color(0.102, 0.125, 0.161)
 		_:
 			_state_label.text = state
-			_fill_rect.color = Color(0.50, 0.50, 0.50)
+			_fill_rect.color = Color(0.541, 0.58, 0.639)
 
 	_rebuild_checkpoints(checkpoints, next_cp)
 
@@ -98,7 +98,7 @@ func _rebuild_checkpoints(checkpoints: Array, next_idx: int) -> void:
 	for i in checkpoints.size():
 		var cp_p := checkpoints[i] as float
 		var marker: ColorRect = _checkpoint_markers[i]
-		marker.color = Color.WHITE if i >= next_idx else Color(0.30, 0.30, 0.30)
+		marker.color = Color.WHITE if i >= next_idx else Color(0.165, 0.196, 0.239)
 		marker.anchor_left  = clampf(cp_p, 0.0, 1.0)
 		marker.anchor_right = clampf(cp_p, 0.0, 1.0)
 

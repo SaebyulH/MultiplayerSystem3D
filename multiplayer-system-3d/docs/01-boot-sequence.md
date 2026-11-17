@@ -135,6 +135,19 @@ A dedicated server still preloads the player scene and staging map because it ru
 
 The menu's `CanvasLayer` starts visible, so the loadout screen covers the world on boot.
 
+**Layout (2026-11-17).** `AGENTS // LOADOUT` header; left panel = a large 3D
+agent preview in a 2 px frame (teal on hover) that opens the full agent picker
+on click; centre = PRIMARY / SECONDARY / MELEE weapon-card columns (selected =
+teal fill + border, hover/selection fills the INFO panel); right = INFO panel
+with the character/weapon stats; bottom centre = the four ability discs. All
+colours and fonts come from `UITheme`; the confirm action is **LOCK IN**.
+
+The screen is also opened by the staging room's `EDIT LOADOUT` button. In that
+case `set_staging_mode(true)` raises the CanvasLayer above staging (layer 8 vs
+5), and confirm returns to staging with `PlayerInput.ui_open` still true and
+the mouse visible rather than capturing input for gameplay. `respawn` is
+already false there via `world.should_loadout_respawn()`.
+
 The same instance doubles as the dev menu's bot editor. `open_for_bot(name)` snapshots the
 local player's pending selection (character, three weapons, randomize-on-death), points
 `player_id` at the bot, hides Leave Party / randomize-on-death, and preselects the bot's
@@ -301,6 +314,12 @@ Entry points: `world/world_1.gd:47-48` (Main Menu button), `world/loadout_menu.g
 | `network/network_manager.gd` (return_to_lobby) | (unchanged) | `VISIBLE` |
 | `player/player_input.gd:123-132` (click-to-capture / Esc-to-release) | read-only gate | `CAPTURED` / `VISIBLE` |
 
+`world_1._sync_flow_ui()` may only reclaim input (clear `ui_open` + capture the
+mouse) when no other screen owns it. Its guard lists the loadout menu, pause
+menu, staging/title and — since 2026-11-17 — `dev_menu.is_open()`. Without the
+dev-menu clause, a live match's 250 ms flow tick cleared `ui_open` right after
+the `0` press, so the menu stayed visible with the mouse still captured.
+
 The dev menu refuses to open when `ui_open` is already true (the initial loadout screen,
 the Host/Join popups), so it never steals input from another menu. `HostServer` and
 `JoinParty` now make the same check before opening; previously they could stack a popup on
@@ -338,6 +357,11 @@ shown only on an OFFLINE boot when `GameManager.title_seen` is false. It owns
 content is created or moved. Click/Enter/Space emits `start_requested`, is
 consumed, and frees the layer.
 
+Visually it is the map thumbnail pipeline reused as a backdrop: a `MapData`
+image (2fort, or the first playable map) at 38 % opacity, a vertical ink
+gradient, the Montserrat Black wordmark, a red rule, and a pulsing
+"CLICK TO DEPLOY". All fonts and colours come from `UITheme`.
+
 `world_1._on_title_start()` sets `title_seen`, applies
 `GameManager.local_loadout` (or rolls one through `player/loadout_profile.gd`),
 and calls `Player.rpc_spawn_now()` so the local player appears without the
@@ -354,25 +378,65 @@ writes it on confirm. It is not saved to disk yet.
 `world/host_server_area.gd` no longer opens `host_menu.tscn`. It opens
 `world/globe_menu.gd` on the existing HostServer Area3D, with the prompt
 "Match Menu (E)". The menu has three tabs:
-- **Start Match** — map picker; `CREATE MATCH` starts an in-process listen
+- **Start Match** — a map-card grid built from `MapData.map_image`
+  thumbnails (the source is `ConnectionUtils.scan_map_data()`); hovering or
+  selecting a card fills the briefing panel with the large preview, map name,
+  mode badge and mode description. `CREATE MATCH` starts an in-process listen
   server in the lobby map (or a lobbyd match when `LobbyClient` is enabled).
-- **Find Match** — merged LAN (`LanDiscovery`) and lobbyd rows. The direct-IP
-  field remains, using the 6-character `ConnectionUtils` IP code.
+- **Find Match** — merged LAN (`LanDiscovery`) and lobbyd cards. LAN rows show
+  the map thumbnail when the announced map name matches a `MapData`; the
+  direct-IP field remains, using the 6-character `ConnectionUtils` IP code.
 - **Party** — disabled placeholder; the party service is not implemented.
+
+`scan_map_data()` ignores entries with no gameplay mode, so tool scenes
+(`map_thumbnail_generator`) can never be listed as playable maps.
 
 `GameManager.pending_match_map` carries the selected target into the staging
 world. `MatchSession.target_map_path` broadcasts it to joined peers.
 
-### 13.4 Staging room
+### 13.4 Staging room (agent select)
 `world/staging_room.gd` is a local CanvasLayer shown while
 `MatchSession.phase` is STAGING/COUNTDOWN/LOADING, or while a client is waiting
-to JOIN IN PROGRESS. It shows the roster (team, BOT/HOST/READY tags), target
-map picker, host ADD BOT, self SWITCH TEAM, READY, LEAVE MATCH, and START GAME.
-The staging map is still the 3D lobby map; the room is only an overlay.
+to JOIN IN PROGRESS. The staging map is still the 3D lobby map; the room is
+only an overlay.
+
+Layout:
+- The selected map's `MapData.map_image` is a full-screen background at ~42 %
+  opacity behind an ink scrim.
+- Header: map name, mode + description, phase, player count, LEAVE.
+- Map row: a large preview plus a horizontal **map-card picker** (host only).
+- Roster columns in canonical order **SPI → SCI → FFA**, but only the teams the
+  selected map's mode uses are shown: **Deathmatch → FFA only**, every other
+  mode → **SPI and SCI**. With no map selected the team layout (SPI/SCI) is the
+  default. Each column has a colour header, a player count, `+ BOT` (host) and
+  a `JOIN` button (`CURRENT`, disabled, on the local player's team). The server
+  normalizes anyone on a hidden team onto a valid one (balanced, ties to the
+  first column) every refresh, and again on START. Roster cards show the
+  player's character portrait (from the replicated
+  `Player._loadout_character_path`), name, agent, HOST/BOT/YOU tags, and
+  READY/WAITING.
+- The screen is **fully opaque**: an ink base covers the whole viewport, the
+  map thumbnail is drawn over it and dimmed by the scrim. The staging map's 3D
+  view (and the local player's body) must never be visible between panels.
+- Bottom: **SELECT AGENT** strip grouped by the three classes, `EDIT LOADOUT`,
+  and `LOCK IN` (the READY flag), then JOIN IN PROGRESS / START GAME.
+
+While the overlay is open, `GameManager.suppress_gameplay_hud` is set so the
+player HUD (health/ammo/ability discs) and the mode HUD/kill feed cannot show
+through the scrim. It is a local, non-dev flag: the dev-menu hide toggles and a
+world swap reset it independently.
+
+Picking an agent applies the build immediately through
+`world_1.apply_local_loadout(build, false)` — `LoadoutProfile.build_for_character`
+keeps a weapon the new class still offers, otherwise takes the first of each
+column. `EDIT LOADOUT` opens the Loadout screen in `staging_mode`: the menu is
+raised above the staging layer and confirm returns to staging with `ui_open`
+and the mouse still visible instead of capturing input for gameplay.
 
 Client-host staging actions go through `MatchSession` RPCs:
 `request_set_staging_map`, `request_add_bot`, `request_set_ready`,
-`request_switch_team`, `request_start_match`, `request_end_match`, and
+`request_set_team` (direct SPI/SCI/FFA join), `request_switch_team` (legacy
+toggle), `request_start_match`, `request_end_match`, and
 `request_join_in_progress`. The server re-checks `host_player_id` where needed.
 
 ### 13.5 Countdown and map-ready barrier
@@ -389,14 +453,26 @@ were told ACTIVE, and the client `welcome` carried the stale phase.
 
 ### 13.6 Pause, results, return
 `world/pause_menu.gd` opens on Esc when an ACTIVE match has a spawned local
-player and no other menu owns input. It has RESUME, LOADOUT, LEAVE MATCH and a
-host-only END MATCH. There is no settings page.
+player and no other menu owns input. It shows the local agent portrait + name
+and has RESUME, CHANGE AGENT / LOADOUT, LEAVE MATCH and a host-only END MATCH.
+There is no settings page.
 
 `world/post_match.gd` opens on `MatchSession.Phase.RESULTS`, shows the winner
 label carried by `MatchSession.result_text` and the authoritative
-`Leaderboard` stats, then returns after 10 s. `GameModeComponent.match_won`
-is wired to `NetworkManager.end_match()` on the server (including dedicated
-servers via `world_1.on_match_map_loaded()`).
+`Leaderboard` stats as a team-coloured scoreboard (portrait, K/D/DMG), then
+returns after 10 s. `GameModeComponent.match_won` is wired to
+`NetworkManager.end_match()` on the server (including dedicated servers via
+`world_1.on_match_map_loaded()`).
+
+### 13.8 UI theme
+`ui/ui_theme.gd` is autoloaded as **`UITheme`** (after `GameManager`). Its
+`_ready()` installs one `Theme` on the root Window, which cascades to every
+Control in the game (CanvasLayer children included). It also owns the palette
+constants, Montserrat font set, style builders, and the shared widgets used by
+the shell: `map_card`, `character_card`, `roster_card`, `stat_row`, `badge`,
+`display_label`, `section_label`, `body_label`. New screens must use these
+instead of local colours. The written spec is
+[`DESIGN_STYLE_GUIDE.txt`](DESIGN_STYLE_GUIDE.txt).
 
 `return_to_lobby()` sets the server phase to CLOSED when leaving a RESULTS
 session (so clients skip the resume path), and a LISTEN_SERVER host now
@@ -407,3 +483,8 @@ returns to the OFFLINE shell rather than the legacy P2P boot.
 - `--test-staging-start` + optional `--test-staging-map=res://maps/X.tscn`
   starts a staging match from a host boot.
 - `--test-end-match` ends an active host match after 6 s.
+- `--test-leaderboard` opens the leaderboard after 1 s so a headless/movie run
+  can inspect it.
+- `--test-staging-map=res://maps/X.tscn` also sets the staging target when
+  combined with `--test-host-local` *without* `--test-staging-start`, so an
+  idle staging screen shows that map's mode-dependent team columns.

@@ -5,6 +5,12 @@ class_name WeaponController extends Node
 ## 0.05 = pitch varies Ã‚Â±5 % (0.95 Ã¢â‚¬â€œ 1.05).  Higher values sound more chaotic.
 const PITCH_RANGE: float = 0.05
 const RIM_LAYER := 1 << 9  # render layer 10, the shared rim-light layer
+## The painted-toon look every spawned weapon model is re-shaded through, so a weapon
+## matches the character holding it.  See [WeaponToonMaterials].
+const WEAPON_TOON_PRESET := preload("res://assets/materials/weapon_toon.tres")
+## Preloaded rather than reached through its `class_name`: a headless run does not rescan
+## the global class cache, so a freshly added class would fail to resolve.
+const WEAPON_TOON_CONVERTER := preload("res://weapon/weapon_toon_materials.gd")
 ## Name of the AnimationTree blend node that holds the weapon's hold (arm) animation.
 const HOLD_ANIM_NODE := &"HoldAnim"
 ## Name of the AnimationTree one-shot node that plays the empty-mag reload over the hold.
@@ -134,8 +140,16 @@ var _is_inspecting: bool = false
 var _ability_fire_interrupt: bool = false
 
 ## Name of the ability currently mid-burst/volley (empty when none).  Read by
-## the HUD to show the "USING ..." prompt while a burst is firing.
+## the HUD to show the active-ability icon + countdown ring.
 var _active_ability_name: String = ""
+## Model hidden for an ability pose that must not block the weapon (a burst
+## still needs `_is_ready()` true).  Separate from `_holstered`, which gates
+## firing and switching.
+var _visual_hidden: bool = false
+## Wall-clock window of that burst/volley, so the HUD can draw a draining ring.
+## A burst is `shots - 1` gaps of `burst_post_shoot_delay`; the last shot ends it.
+var _ability_fire_started_ms: int = 0
+var _ability_fire_duration: float = 0.0
 
 # Scope (ADS) transition state — drives both the viewmodel scope animation and
 # the FOV interpolation.  NONE while idle; SCOPING_IN/OUT during a transition.
@@ -662,6 +676,8 @@ func reset() -> void:
 	_is_inspecting = false
 	_ability_fire_interrupt = false
 	_active_ability_name = ""
+	_ability_fire_duration = 0.0
+	_visual_hidden = false
 	_cancel_scope()
 	_scoped_charge_time = 0.0
 	_current_shot_amp_mult = 1.0
@@ -978,7 +994,12 @@ func spawn_weapon_model() -> void:
 	parent.add_child(current_weapon_model)
 	# A model spawned while holstered (a respawn or loadout change mid-hold) must
 	# come up hidden, or it would appear in hand behind the carried drawing.
-	current_weapon_model.visible = not _holstered
+	_reconcile_weapon_model_visibility()
+
+	# Shade the weapon through the same painted-toon shader as the character holding it,
+	# keeping its own albedo / normal / metallic / roughness maps.  Cosmetic and local:
+	# every peer derives the same materials from the same scene.
+	WEAPON_TOON_CONVERTER.apply(current_weapon_model, WEAPON_TOON_PRESET)
 
 	_refresh_muzzles()
 
@@ -2312,8 +2333,7 @@ func set_holstered(value: bool) -> void:
 	if value == _holstered:
 		return
 	_holstered = value
-	if current_weapon_model != null and is_instance_valid(current_weapon_model):
-		current_weapon_model.visible = not value
+	_reconcile_weapon_model_visibility()
 	if value:
 		# Nothing should survive the hand-off.  A draw or a pending shot that kept
 		# its state across the holster would resume the moment the gun came back,
@@ -2334,7 +2354,29 @@ func set_holstered(value: bool) -> void:
 func _refresh_holstered() -> void:
 	var sem := _parent_player.status_effect_manager if _parent_player != null else null
 	var out_of_combat := _parent_player != null and not _parent_player.in_combat
-	set_holstered(out_of_combat or (sem != null and sem.is_weapon_holstered()))
+	# Action abilities take the gun out of the hands for their window.  This is
+	# edge-driven by Player._process, not a per-frame mirror poll, so the
+	# calligraphy_release ordering documented above is unchanged.
+	var blocking := _parent_player != null and _parent_player.is_ability_pose_holster_active()
+	set_holstered(out_of_combat or blocking or (sem != null and sem.is_weapon_holstered()))
+	# Bursts (Carpet Bomb) hide the model without blocking the weapon, so the
+	# burst itself can keep firing from the same WeaponController.
+	var visual := _parent_player != null and _parent_player.is_ability_pose_active() \
+		and not _holstered
+	set_weapon_visual_hidden(visual)
+
+
+## Hide/show the weapon model for a pose that must not block firing.
+func set_weapon_visual_hidden(value: bool) -> void:
+	if value == _visual_hidden:
+		return
+	_visual_hidden = value
+	_reconcile_weapon_model_visibility()
+
+
+func _reconcile_weapon_model_visibility() -> void:
+	if current_weapon_model != null and is_instance_valid(current_weapon_model):
+		current_weapon_model.visible = not (_holstered or _visual_hidden)
 
 
 ## Public entry for Player's `in_combat` setter.  Deliberately does not add a
@@ -2373,7 +2415,7 @@ func fire_weapon_fire(fire: WeaponFire, interrupt_shooting: bool = true, ability
 			# Volley — fire the projectiles over time (burst).
 			if interrupt_shooting:
 				_ability_fire_interrupt = true
-			_active_ability_name = ability_name
+			_begin_ability_fire_window(fire, ability_name)
 			_ability_projectile_volley(fire, 0)
 		else:
 			# Fire every projectile at once (single or shotgun-style spread).
@@ -2399,7 +2441,7 @@ func fire_weapon_fire(fire: WeaponFire, interrupt_shooting: bool = true, ability
 	if fire.multishot_mode == WeaponFire.MultishotMode.BURST and fire.multishot_data.size() > 1:
 		if interrupt_shooting:
 			_ability_fire_interrupt = true
-		_active_ability_name = ability_name
+		_begin_ability_fire_window(fire, ability_name)
 		_ability_burst_shot(weapon, 0)
 	else:
 		_execute_fire(weapon, 0)
@@ -2413,10 +2455,53 @@ func get_active_ability_name() -> String:
 	return _active_ability_name
 
 
+## Authored length of the running burst/volley in seconds (0 when none).
+func get_active_ability_duration() -> float:
+	return _ability_fire_duration
+
+
+## Seconds left in the running burst/volley (0 when none).  Wall-clock, visual
+## only: the shots themselves are still scheduled by their own timers.
+func get_active_ability_remaining() -> float:
+	if _active_ability_name == "" or _ability_fire_duration <= 0.0:
+		return 0.0
+	var elapsed := float(Time.get_ticks_msec() - _ability_fire_started_ms) / 1000.0
+	return clampf(_ability_fire_duration - elapsed, 0.0, _ability_fire_duration)
+
+
+## Client-side visual-only window for a SERVER-mode burst ability.  The server
+## owns the actual shots and its own window; the owning client never runs
+## activate(), so without this its HUD would have nothing to count down.
+func start_ability_visual(ability_name: String, duration: float) -> void:
+	if ability_name == "" or duration <= 0.0:
+		return
+	_active_ability_name = ability_name
+	_ability_fire_started_ms = Time.get_ticks_msec()
+	_ability_fire_duration = duration
+	# Match the server's fire suppression for the same window; the server still
+	# resolves every shot, this only stops the client's optimistic fire path.
+	_ability_fire_interrupt = true
+	# Clear only if no newer burst replaced this one.
+	var stamp := _ability_fire_started_ms
+	get_tree().create_timer(duration).timeout.connect(func():
+		if _ability_fire_started_ms == stamp:
+			_finish_ability_fire()
+	)
+
+
+## Start the HUD window for an ability-triggered burst/volley.
+func _begin_ability_fire_window(fire: WeaponFire, ability_name: String) -> void:
+	_active_ability_name = ability_name
+	_ability_fire_started_ms = Time.get_ticks_msec()
+	var shots := maxi(fire.multishot_data.size(), 1)
+	_ability_fire_duration = maxf(float(shots - 1) * fire.burst_post_shoot_delay, 0.05)
+
+
 ## Clear the ability-fire state when a burst/volley finishes (or is aborted).
 func _finish_ability_fire() -> void:
 	_ability_fire_interrupt = false
 	_active_ability_name = ""
+	_ability_fire_duration = 0.0
 
 
 ## Fire one shot of an ability-triggered burst, then schedule the next via an

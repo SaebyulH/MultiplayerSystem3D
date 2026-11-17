@@ -24,10 +24,10 @@ func set_cp_state(data: Dictionary) -> void:
 
 	if locked:
 		_bg_rect.color = Color(0.1, 0.1, 0.1, 0.85)
-		_fill_rect.color = Color(0.2, 0.2, 0.2)
+		_fill_rect.color = Color(0.102, 0.125, 0.161)
 		_fill_rect.anchor_top = 1.0
 		_label.text = "LOCKED"
-		_label.modulate = Color(0.5, 0.5, 0.5)
+		_label.modulate = Color(0.541, 0.58, 0.639)
 		_pct_label.text = ""
 		return
 
@@ -62,9 +62,9 @@ func set_cp_state(data: Dictionary) -> void:
 
 static func _team_color(team: Player.Team) -> Color:
 	match team:
-		Player.Team.SPI: return Color(0.88, 0.24, 0.24)
-		Player.Team.SCI: return Color(0.25, 0.65, 0.90)
-		_: return Color(0.45, 0.45, 0.45)
+		Player.Team.SPI: return Color(1, 0.275, 0.333)
+		Player.Team.SCI: return Color(0.176, 0.831, 0.749)
+		_: return Color(0.541, 0.58, 0.639)
 
 static func _dim(c: Color) -> Color:
 	return Color(c.r * 0.3, c.g * 0.3, c.b * 0.3, 0.90)

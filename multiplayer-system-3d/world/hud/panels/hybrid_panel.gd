@@ -62,28 +62,28 @@ func _show_escort_phase(data: Dictionary) -> void:
 	match state:
 		"PUSHING":
 			_escort_state.text = "PUSHING  ×%d" % attackers
-			_escort_fill.color = Color(0.88, 0.24, 0.24)
+			_escort_fill.color = Color(1, 0.275, 0.333)
 		"CONTESTED":
 			_escort_state.text = "CONTESTED"
-			_escort_fill.color = Color(0.95, 0.65, 0.10)
+			_escort_fill.color = Color(1, 0.76, 0.29)
 		"RETURNING":
 			_escort_state.text = "RETURNING"
-			_escort_fill.color = Color(0.35, 0.55, 0.90)
+			_escort_fill.color = Color(0.176, 0.831, 0.749)
 		"IDLE":
 			_escort_state.text = "IDLE  (%.1fs)" % return_cd
-			_escort_fill.color = Color(0.45, 0.45, 0.45)
+			_escort_fill.color = Color(0.541, 0.58, 0.639)
 		"AT_CHECKPOINT":
 			_escort_state.text = "CHECKPOINT"
-			_escort_fill.color = Color(0.85, 0.75, 0.10)
+			_escort_fill.color = Color(1, 0.76, 0.29)
 		"DELIVERED":
 			_escort_state.text = "DELIVERED!"
-			_escort_fill.color = Color(0.20, 0.75, 0.20)
+			_escort_fill.color = Color(0.176, 0.831, 0.749)
 		"LOCKED":
 			_escort_state.text = "LOCKED"
-			_escort_fill.color = Color(0.20, 0.20, 0.20)
+			_escort_fill.color = Color(0.102, 0.125, 0.161)
 		_:
 			_escort_state.text = state
-			_escort_fill.color = Color(0.50, 0.50, 0.50)
+			_escort_fill.color = Color(0.541, 0.58, 0.639)
 
 	_rebuild_checkpoints(checkpoints, next_cp)
 
@@ -112,7 +112,7 @@ func _rebuild_checkpoints(checkpoints: Array, next_idx: int) -> void:
 	for i in checkpoints.size():
 		var cp_p := checkpoints[i] as float
 		var marker: ColorRect = _checkpoint_markers[i]
-		marker.color = Color.WHITE if i >= next_idx else Color(0.30, 0.30, 0.30)
+		marker.color = Color.WHITE if i >= next_idx else Color(0.165, 0.196, 0.239)
 		marker.anchor_left  = clampf(cp_p, 0.0, 1.0)
 		marker.anchor_right = clampf(cp_p, 0.0, 1.0)
 

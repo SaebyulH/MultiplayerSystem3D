@@ -39,6 +39,9 @@ var _session_map_path: String = ""
 
 func _ready() -> void:
 	GameManager.spawn_parent = %SpawnParent
+	# Defensive reset: GameManager outlives the scene, so a world swapped out
+	# while the staging overlay was open must not leave the new HUD suppressed.
+	GameManager.suppress_gameplay_hud = false
 	# Projectiles live under the world, not under the Player that fired them: the
 	# Player is hidden on death and freed on disconnect, either of which would take
 	# its in-flight projectiles with it.  Set before SpawnManager is added below, so
@@ -157,6 +160,21 @@ func _ready() -> void:
 	if multiplayer.is_server():
 		_wire_match_end.call_deferred()
 
+	if "--test-leaderboard" in OS.get_cmdline_user_args():
+		_show_test_leaderboard.call_deferred()
+
+
+## Test hook: hold the leaderboard open after the roster exists so a headless /
+## movie run can inspect it.  Never reaches normal gameplay.
+func _show_test_leaderboard() -> void:
+	await get_tree().create_timer(1.0).timeout
+	# Re-assert: any unhandled input event with Tab not held calls
+	# hide_leaderboard(), and the Movie Maker still forwards OS mouse events.
+	while is_inside_tree():
+		if is_instance_valid(game_menu):
+			game_menu.show_leaderboard()
+		await get_tree().create_timer(1.0).timeout
+
 
 ## Apply the host menu's choices captured in the local shell to the new listen
 ## server.  Manual bots are already re-added from `GameManager.lobby_bots`
@@ -242,7 +260,7 @@ func _on_session_phase_changed(_new_phase: int, new_path: String, _new_hash: Str
 ## Dev-menu "hide other HUD": the mode HUD and kill feed.
 ## Menus — GameMenu's loadout/leaderboard and the dev menu — are untouched.
 func apply_dev_world_hud_visibility() -> void:
-	var hide := GameManager.dev_hide_world_hud
+	var hide := GameManager.dev_hide_world_hud or GameManager.suppress_gameplay_hud
 	# Toggle the whole CanvasLayer, never HUDController._root: the 10 Hz HUD tick
 	# rewrites _root.visible and would immediately undo it.
 	var hud := game_menu.get_node_or_null("CanvasLayer") as CanvasLayer
@@ -271,6 +289,11 @@ func _setup_flow() -> void:
 	_flow_started = true
 	loadout_menu.visible = false
 	_wire_match_end()
+	# Test hook: let an idle staging run have a target map without going through
+	# the Match Menu, so the mode-dependent team columns can be exercised.
+	var test_staging_map := _arg_value("--test-staging-map=")
+	if test_staging_map != "" and GameManager.pending_match_map == "":
+		GameManager.pending_match_map = test_staging_map
 	if multiplayer.is_server() and MatchSession.role == MatchSession.Role.SERVER \
 			and GameManager.pending_match_map != "":
 		MatchSession.set_staging_map(GameManager.pending_match_map)
@@ -447,8 +470,11 @@ func _sync_flow_ui() -> void:
 		post_match.visible = false
 
 	if _can_pause() and PlayerInput.ui_open and not loadout_menu.visible \
-			and not (pause_menu and pause_menu.visible):
-		# A staging overlay or title already owns input; don't add another.
+			and not (pause_menu and pause_menu.visible) \
+			and not (dev_menu and dev_menu.is_open()):
+		# A staging overlay, the title or the dev menu owns input; don't add
+		# another.  Without the dev-menu guard this 0.25 s tick reclaimed input
+		# 250 ms after pressing 0, leaving the menu visible with a captured mouse.
 		if not (_staging_open or (title_screen and title_screen.visible)):
 			PlayerInput.ui_open = false
 			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
@@ -473,8 +499,34 @@ func should_loadout_respawn() -> bool:
 	return MatchSession.phase == Protocol.Phase.ACTIVE
 
 
-func open_loadout() -> void:
+## Send a loadout build through the existing loadout RPCs.  Used by staging
+## agent select and anywhere that needs the same path as the Loadout screen
+## without duplicating the server/client branch.
+func apply_local_loadout(build: Dictionary, respawn := false) -> bool:
+	if not LoadoutProfileScript.is_valid(build):
+		return false
+	var local_id := MatchSession.local_id_string()
+	var pp := str(build.get("primary_path", ""))
+	var sp := str(build.get("secondary_path", ""))
+	var mp := str(build.get("melee_path", ""))
+	var cp := str(build.get("character_path", ""))
+	var class_path := str(build.get("class_path", ""))
+	var rand_on_death := bool(build.get("randomize_on_death", false))
+	GameManager.local_loadout = build.duplicate(true)
+	if multiplayer.is_server():
+		loadout_menu._request_loadout(local_id, pp, sp, mp, Player.Team.FFA,
+			cp, class_path, rand_on_death, respawn)
+	else:
+		loadout_menu._request_loadout.rpc_id(1, local_id, pp, sp, mp, Player.Team.FFA,
+			cp, class_path, rand_on_death, respawn)
+	return true
+
+
+## Open the Loadout screen.  `from_staging` raises it above the staging CanvasLayer
+## (layer 5) and makes confirm return to staging instead of capturing the mouse.
+func open_loadout(from_staging := false) -> void:
 	if loadout_menu:
+		loadout_menu.set_staging_mode(from_staging)
 		loadout_menu.visible = true
 		PlayerInput.ui_open = true
 		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)

@@ -1,0 +1,17 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" uid="uid://bftq4hr80wvml" path="res://assets/materials/painted_toon.gdshader" id="1_shader"]
+
+[resource]
+resource_name = "WeaponToon"
+shader = ExtResource("1_shader")
+shader_parameter/albedo_gain = 2.0
+shader_parameter/metallic = 0.0
+shader_parameter/roughness = 0.85
+shader_parameter/specular = 0.0
+shader_parameter/toon_steps = 3
+shader_parameter/toon_softness = 0.45
+shader_parameter/paint_scale = 12.0
+shader_parameter/toon_specular_strength = 0.0
+shader_parameter/rim_enabled = true
+shader_parameter/rim_width = 0.08

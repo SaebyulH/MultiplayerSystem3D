@@ -26,6 +26,8 @@ signal welcomed(info: Dictionary)
 signal session_error(code: int, text: String)
 signal player_left(player_id: int)
 signal phase_changed(phase: int, map_path: String, map_hash: String)
+## Emitted when a new server ping snapshot is available (server or client).
+signal pings_changed()
 
 var role: Role = Role.NONE
 
@@ -94,6 +96,12 @@ var _reserved_since: Dictionary = {}   # player_id -> ms
 var _preauth: Dictionary = {}          # peer_id -> ms
 var _heartbeat_timer: Timer
 var _heartbeat_seq: int = 0
+## Player name -> round-trip time in ms.  The server samples every connected
+## ENet peer and broadcasts a snapshot; clients only mirror it.  Missing entries
+## are unknown (-1), not "0 ms".
+var _ping_by_player: Dictionary = {}
+var _ping_timer: Timer
+const PING_INTERVAL := 2.0
 var _server_tick_accum: float = 0.0
 var _client_alive: float = 0.0
 ## Test override for the resume grace; production uses the protocol constant.
@@ -119,6 +127,12 @@ func _ready() -> void:
 	_heartbeat_timer.one_shot = false
 	_heartbeat_timer.timeout.connect(_send_heartbeat)
 	add_child(_heartbeat_timer)
+	_ping_timer = Timer.new()
+	_ping_timer.wait_time = PING_INTERVAL
+	_ping_timer.one_shot = false
+	_ping_timer.timeout.connect(_broadcast_pings)
+	add_child(_ping_timer)
+	_ping_timer.start()
 	var drop_arg := _arg_value("--test-drop-after=")
 	if drop_arg != "":
 		_test_drop_after = float(drop_arg)
@@ -367,6 +381,7 @@ func reset() -> void:
 	_last_heard.clear()
 	_reserved_since.clear()
 	_preauth.clear()
+	_ping_by_player.clear()
 	_server_ready = false
 	_spawn_manager = null
 	_node_ready_sent = false
@@ -378,6 +393,47 @@ func reset() -> void:
 		_heartbeat_timer.stop()
 	set_process(false)
 	_next_player_id = Protocol.FIRST_PLAYER_ID
+
+
+## Round-trip time for [param player_name] in ms, or -1 when unknown (a bot, a
+## reserved slot, or a peer the server has not sampled yet).
+func ping_ms_for(player_name: String) -> int:
+	return int(_ping_by_player.get(player_name, -1))
+
+
+## Server tick: sample every connected ENet peer and push one snapshot to all
+## clients.  Cheap (a handful of peers, one packet every 2 s) and never on the
+## gameplay path.  The host's own row is 0 ms; a dedicated server has no row.
+func _broadcast_pings() -> void:
+	if role != Role.SERVER or not multiplayer.has_multiplayer_peer():
+		return
+	var snapshot: Dictionary = {}
+	# A listen-server host is a player but has no ENet peer of its own; its row
+	# is 0 ms.  `local_player_id` stays 0 on the server side, so use the roster's
+	# host id.  A dedicated server sets neither and has no row.
+	if host_player_id > 0:
+		snapshot[str(host_player_id)] = 0
+	elif local_player_id > 0:
+		snapshot[str(local_player_id)] = 0
+	var net := multiplayer.multiplayer_peer as ENetMultiplayerPeer
+	if net != null:
+		for peer_id in multiplayer.get_peers():
+			var pid := player_id_for_peer(int(peer_id))
+			if pid <= 0:
+				continue
+			var peer := net.get_peer(int(peer_id))
+			if peer == null:
+				continue
+			snapshot[str(pid)] = int(peer.get_statistic(ENetPacketPeer.PEER_LAST_ROUND_TRIP_TIME))
+	_ping_by_player = snapshot
+	_rpc_ping_snapshot.rpc(snapshot)
+	pings_changed.emit()
+
+
+@rpc("authority", "call_remote", "unreliable")
+func _rpc_ping_snapshot(snapshot: Dictionary) -> void:
+	_ping_by_player = snapshot
+	pings_changed.emit()
 
 
 func stop_heartbeat() -> void:
@@ -938,6 +994,26 @@ func request_switch_team(player_id: int) -> void:
 		Player.Team.SPI: player.team = Player.Team.SCI
 		Player.Team.SCI: player.team = Player.Team.SPI
 		_: pass
+
+
+## Staging self team change to a specific team (SPI/SCI/FFA).  Unlike
+## `request_switch_team`, this is not a toggle, so the three-column staging UI
+## can send a direct join.  The server applies the change.
+@rpc("any_peer", "call_remote", "reliable")
+func request_set_team(player_id: int, team: int) -> void:
+	if not multiplayer.is_server() or role != Role.SERVER:
+		return
+	if phase != Protocol.Phase.STAGING:
+		return
+	if team < int(Player.Team.SPI) or team > int(Player.Team.FFA):
+		return
+	var peer_id := multiplayer.get_remote_sender_id()
+	if peer_id != 0 and player_id_for_peer(peer_id) != player_id:
+		return
+	var player := GameManager.find_player(str(player_id))
+	if player == null:
+		return
+	player.team = team
 
 
 ## Host-only room end.  The match server validates the sender against

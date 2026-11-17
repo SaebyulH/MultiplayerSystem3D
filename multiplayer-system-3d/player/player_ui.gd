@@ -19,7 +19,6 @@ var _spectator_bound := false
 # Public UI (visible above the player model for other players)
 @onready var _ammo_bar_public: Label3D = $"../AmmoBarPublic"
 @onready var _health_bar_public: Label3D = $"../HealthBarPublic"
-@onready var _status_bar_public: Label3D = $"../StatusBarPublic"
 
 # -- Built UI nodes --
 
@@ -66,6 +65,13 @@ var _charge_min_tick: ColorRect
 # Ability display (bottom-center row of circles) and "USING" prompt.
 var _ability_container: HBoxContainer
 var _ability_use_label: Label
+## Icon + countdown ring for a *running* action ability; replaces the text
+## prompt while shoulder charge / bashdown / noclip / heal channel is active.
+## Preloaded by path rather than via class_name: a freshly added script is not
+## in the global class cache until the editor rescans, which breaks a cold
+## headless boot.
+const ActiveAbilityIndicatorScript := preload("res://player/hud/active_ability_indicator.gd")
+var _active_ability_indicator = null
 var _ability_circles: Array[AbilityCircle] = []
 var _ability_indices: Array[int] = []
 
@@ -147,7 +153,7 @@ const BAR_WIDTH: float = 260.0
 const BAR_HEIGHT: float = 28.0
 const HEALTH_TOP: float = 120.0  # distance from bottom
 
-const HUD_FONT_PATH := "res://assets/CenturyGothic - Century Gothic - Regular.ttf"
+const HUD_FONT_PATH := "res://assets/fonts/Montserrat/static/Montserrat-SemiBold.ttf"
 
 # Stamina / dash indicator layout
 const DASH_CELL_WIDTH: float = 28.0
@@ -278,7 +284,7 @@ func _build_ui() -> void:
 
 
 ## Apply the clean HUD font (Century Gothic), no outline, and a white-ish colour.
-func _apply_hud_font(control: Control, size: int, color: Color = Color(1.0, 1.0, 1.0, 1.0)) -> void:
+func _apply_hud_font(control: Control, size: int, color: Color = Color(0.929, 0.945, 0.961, 1.0)) -> void:
 	if _hud_font:
 		control.add_theme_font_override("font", _hud_font)
 	control.add_theme_constant_override("outline_size", 0)
@@ -402,7 +408,7 @@ func _build_charge_ui() -> void:
 	# the player has no way to tell "released too early" from "nothing happened".
 	# Anchored as a fraction of the bar so it tracks any future resize.
 	_charge_min_tick = ColorRect.new()
-	_charge_min_tick.color = Color(1.0, 0.9, 0.3, 0.9)
+	_charge_min_tick.color = Color(1.0, 0.76, 0.29, 0.9)
 	_charge_min_tick.anchor_top    = 0.0
 	_charge_min_tick.anchor_bottom = 1.0
 	_charge_min_tick.offset_left   = -1.0
@@ -522,7 +528,7 @@ func _build_health() -> void:
 	bar.add_child(_health_bar_bg)
 
 	_health_bar_fill = ColorRect.new()
-	_health_bar_fill.color = Color(1.0, 1.0, 1.0, 1.0)
+	_health_bar_fill.color = Color(0.176, 0.831, 0.749, 1.0)
 	_health_bar_fill.anchor_left   = 0.0
 	_health_bar_fill.anchor_right  = 1.0
 	_health_bar_fill.anchor_top    = 0.0
@@ -599,7 +605,7 @@ func _build_ammo() -> void:
 	_reload_bar_bg.anchor_bottom = 1.0
 	reload_container.add_child(_reload_bar_bg)
 	_reload_bar_fill = ColorRect.new()
-	_reload_bar_fill.color = Color(0.85, 0.85, 0.30)
+	_reload_bar_fill.color = UITheme.AMBER
 	_reload_bar_fill.anchor_left   = 0.0
 	_reload_bar_fill.anchor_right  = 1.0
 	_reload_bar_fill.anchor_top    = 0.0
@@ -643,7 +649,7 @@ func _build_stamina() -> void:
 	_stamina_feedback.offset_bottom = -206.0
 	_stamina_feedback.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_stamina_feedback.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
-	_apply_hud_font(_stamina_feedback, 16, Color(0.6, 0.85, 1.0))
+	_apply_hud_font(_stamina_feedback, 16, UITheme.TEAL)
 	_stamina_feedback.text = ""
 	add_child(_stamina_feedback)
 
@@ -668,14 +674,14 @@ func _build_stamina() -> void:
 
 		# Empty slot background.
 		var bg := ColorRect.new()
-		bg.color = Color(0.08, 0.08, 0.08, 0.80)
+		bg.color = Color(0.043, 0.055, 0.075, 0.82)
 		bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		cell.add_child(bg)
 
 		# Fill - anchor_right is driven by the current charge fraction, so a
 		# recovering charge renders as a partially filled rectangle.
 		var fill := ColorRect.new()
-		fill.color = Color(0.30, 0.85, 0.95)
+		fill.color = Color(0.176, 0.831, 0.749, 1.0)
 		fill.anchor_left   = 0.0
 		fill.anchor_right  = 0.0
 		fill.anchor_top    = 0.0
@@ -730,6 +736,20 @@ func _build_abilities() -> void:
 	_ability_use_label.add_theme_font_size_override("font_size", 20)
 	_ability_use_label.text = ""
 	add_child(_ability_use_label)
+
+	# Running-ability readout: icon in a disc with a draining countdown ring,
+	# below the crosshair (the text prompt's slot, hidden while this shows).
+	_active_ability_indicator = ActiveAbilityIndicatorScript.new()
+	_active_ability_indicator.anchor_left   = 0.5
+	_active_ability_indicator.anchor_right  = 0.5
+	_active_ability_indicator.anchor_top    = 0.5
+	_active_ability_indicator.anchor_bottom = 0.5
+	_active_ability_indicator.offset_left   = -36.0
+	_active_ability_indicator.offset_top    = 46.0
+	_active_ability_indicator.offset_right  = 36.0
+	_active_ability_indicator.offset_bottom = 118.0
+	_active_ability_indicator.visible = false
+	add_child(_active_ability_indicator)
 
 func _build_respawn_timer() -> void:
 	# -- Respawn countdown (center of screen) --
@@ -891,7 +911,8 @@ func _should_show() -> bool:
 	return is_multiplayer_authority() \
 		and not _owner_player.is_bot \
 		and not _owner_player.is_spectating \
-		and not GameManager.dev_hide_player_hud
+		and not GameManager.dev_hide_player_hud \
+		and not GameManager.suppress_gameplay_hud
 
 
 ## Apply the visibility rule to the Control and to the two overlays that do NOT
@@ -904,7 +925,8 @@ func refresh_visibility() -> void:
 		# The FPS counter belongs to the peer, not to the viewed player: keep it
 		# up while spectating (the dev "hide player HUD" toggle still hides it).
 		_fps_canvas.visible = (is_multiplayer_authority() and not _owner_player.is_bot) \
-			and not GameManager.dev_hide_player_hud
+			and not GameManager.dev_hide_player_hud \
+			and not GameManager.suppress_gameplay_hud
 	if _preview_layer:
 		_preview_layer.visible = show
 	if is_instance_valid(_owner_player) and _owner_player.damage_number_manager:
@@ -1190,7 +1212,7 @@ func _update_health() -> void:
 	var pct := clampf(hp / max_hp, 0.0, 1.0)
 
 	_health_bar_fill.anchor_right = pct
-	_health_bar_fill.color = Color(0.85, 0.2, 0.2) if pct < 0.3 else Color(1.0, 1.0, 1.0)
+	_health_bar_fill.color = UITheme.RED if pct < 0.3 else UITheme.TEAL
 	_health_value_label.text = "%d" % ceili(hp)
 	_health_max_label.text = "/%d" % int(max_hp)
 
@@ -1351,20 +1373,20 @@ func _update_team() -> void:
 	match player.team:
 		Player.Team.SPI:
 			txt = "SPI"
-			col = Color(0.88, 0.24, 0.24)
+			col = UITheme.RED
 		Player.Team.SCI:
 			txt = "SCI"
-			col = Color(0.25, 0.65, 0.90)
+			col = UITheme.TEAL
 		Player.Team.FFA:
 			txt = "FFA"
-			col = Color(0.70, 0.70, 0.70)
+			col = UITheme.AMBER
 	_team_label.text = txt
 	_team_label.modulate = col
 
 func _update_character() -> void:
 	if _owner_player and _owner_player._character:
 		_character_label.text = _owner_player._character.character_name
-		_character_label.modulate = Color(0.7, 0.7, 0.7)
+		_character_label.modulate = UITheme.MUTED
 	else:
 		_character_label.text = ""
 
@@ -1403,6 +1425,8 @@ func _update_ability_cooldowns() -> void:
 	var am: AbilityManager = _owner_player.ability_manager if _owner_player else null
 	if not am:
 		_ability_use_label.text = ""
+		if _active_ability_indicator:
+			_active_ability_indicator.visible = false
 		return
 
 	var abilities: Array[Ability] = am.get_abilities()
@@ -1428,6 +1452,24 @@ func _update_ability_cooldowns() -> void:
 		_ability_circles[j].set_meter(am.get_meter_fraction(i), am.is_meter_active(i),
 			ability is MeteredAbility)
 		_ability_circles[j].set_active(am.equipped_index == i)
+
+	# A running action ability owns the prompt: icon + draining ring instead of
+	# the "USING X" text.  The state is derived on the Player from rollback /
+	# effect state, so it ends exactly when the ability does.
+	var active_state: Dictionary = {}
+	if _owner_player and _owner_player.has_method("get_active_ability_state"):
+		active_state = _owner_player.get_active_ability_state()
+	var active_ability := active_state.get("ability", null) as Ability
+	if _active_ability_indicator:
+		_active_ability_indicator.visible = active_ability != null
+		if active_ability != null:
+			var duration := maxf(float(active_state.get("duration", 0.0)), 0.0001)
+			var remaining := clampf(float(active_state.get("remaining", 0.0)), 0.0, duration)
+			_active_ability_indicator.set_state(active_ability.icon, remaining / duration)
+	_ability_use_label.visible = active_ability == null
+	if active_ability != null:
+		_ability_use_label.text = ""
+		return
 
 	# "USING X" prompt while an ability is in progress — either an equipped
 	# (non-instant) ability, or a burst fire that is still firing its shots.
@@ -1588,15 +1630,6 @@ func _update_status_effect_countdowns() -> void:
 		if times.has(list_id):
 			_effect_list_labels[list_id].text = "■ %s  %.1fs" % [list_id.capitalize(), times[list_id]]
 			_effect_list_labels[list_id].visible = true
-
-	# ---- Public world-space status bar (above the player model) ----
-	if _status_bar_public:
-		var names: Dictionary = sem.get_active_effect_names()
-		var parts := PackedStringArray()
-		for id in ids:
-			parts.append(str(names.get(id, id.capitalize())))
-		_status_bar_public.text = ", ".join(parts)
-		_status_bar_public.visible = not parts.is_empty()
 
 
 func _update_border_shader_time() -> void:

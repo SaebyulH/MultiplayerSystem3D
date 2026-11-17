@@ -124,28 +124,33 @@ func _build_popup() -> void:
 	get_tree().root.add_child(_popup_layer)
 
 	var dim := ColorRect.new()
-	dim.color = Color(0, 0, 0, 0.55)
+	dim.color = UITheme.SCRIM
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_popup_layer.add_child(dim)
 
+	var center := CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_popup_layer.add_child(center)
+
 	var panel := PanelContainer.new()
-	panel.set_anchors_preset(Control.PRESET_CENTER)
-	panel.custom_minimum_size = Vector2(460, 0)
-	_popup_layer.add_child(panel)
+	panel.custom_minimum_size = Vector2(520, 0)
+	panel.add_theme_stylebox_override("panel", UITheme.panel_style(UITheme.INK_2, UITheme.LINE, 1, 24))
+	center.add_child(panel)
 
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 12)
 	panel.add_child(vbox)
 
-	var title := Label.new()
-	title.text = "JOIN MATCH" if NetworkManager.role == NetworkManager.Role.OFFLINE else "JOIN PARTY"
+	var title := UITheme.display_label(
+		"JOIN MATCH" if NetworkManager.role == NetworkManager.Role.OFFLINE else "JOIN PARTY",
+		28, UITheme.TEXT)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 28)
 	vbox.add_child(title)
+	vbox.add_child(UITheme.accent_bar(UITheme.RED, 3))
 
 	_tabs = TabContainer.new()
 	_tabs.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_tabs.custom_minimum_size = Vector2(460, 260)
+	_tabs.custom_minimum_size = Vector2(470, 280)
 	vbox.add_child(_tabs)
 
 	# ── LAN tab ─────────────────────────────────────────────
@@ -159,20 +164,22 @@ func _build_popup() -> void:
 	_lan_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	lan.add_child(_lan_list)
 
-	_lan_status = Label.new()
+	_lan_status = UITheme.body_label("", UITheme.FS_SMALL, UITheme.MUTED)
 	_lan_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_lan_status.add_theme_font_size_override("font_size", 14)
 	lan.add_child(_lan_status)
 
 	var lan_row := HBoxContainer.new()
 	lan_row.add_theme_constant_override("separation", 8)
 	lan.add_child(lan_row)
 	var lan_join := Button.new()
-	lan_join.text = "Join Selected"
+	lan_join.text = "JOIN SELECTED"
+	lan_join.add_theme_stylebox_override("normal", UITheme.button_style(UITheme.Kind.PRIMARY))
+	lan_join.add_theme_stylebox_override("hover", UITheme.button_style(UITheme.Kind.PRIMARY, true))
+	lan_join.add_theme_stylebox_override("pressed", UITheme.button_style(UITheme.Kind.PRIMARY, false, true))
 	lan_join.pressed.connect(_on_lan_join_pressed)
 	lan_row.add_child(lan_join)
 	var lan_refresh := Button.new()
-	lan_refresh.text = "Refresh"
+	lan_refresh.text = "REFRESH"
 	lan_refresh.pressed.connect(_refresh_lan)
 	lan_row.add_child(lan_refresh)
 
@@ -190,23 +197,27 @@ func _build_popup() -> void:
 	_address_input.placeholder_text = "IP[:port]  or  join code"
 	direct.add_child(_address_input)
 
-	_status_label = Label.new()
+	_status_label = UITheme.body_label("", UITheme.FS_SMALL, UITheme.AMBER)
 	_status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_status_label.add_theme_font_size_override("font_size", 16)
 	direct.add_child(_status_label)
 
 	var join_btn := Button.new()
-	join_btn.text = "Join"
+	join_btn.text = "JOIN"
+	join_btn.custom_minimum_size = Vector2(0, 44)
+	join_btn.add_theme_font_override("font", UITheme.FONT_EXTRABOLD)
+	join_btn.add_theme_stylebox_override("normal", UITheme.button_style(UITheme.Kind.PRIMARY))
+	join_btn.add_theme_stylebox_override("hover", UITheme.button_style(UITheme.Kind.PRIMARY, true))
+	join_btn.add_theme_stylebox_override("pressed", UITheme.button_style(UITheme.Kind.PRIMARY, false, true))
 	join_btn.pressed.connect(_on_join_pressed)
 	direct.add_child(join_btn)
 
 	_join_local_btn = Button.new()
-	_join_local_btn.text = "Join Local (This Computer)"
+	_join_local_btn.text = "JOIN LOCAL (THIS COMPUTER)"
 	_join_local_btn.pressed.connect(_on_join_local_pressed)
 	direct.add_child(_join_local_btn)
 
 	var close_btn := Button.new()
-	close_btn.text = "Close (Esc)"
+	close_btn.text = "CLOSE  (Esc)"
 	close_btn.pressed.connect(_close_popup)
 	vbox.add_child(close_btn)
 

@@ -17,13 +17,13 @@ class_name DevMenu
 
 const BOT_PANEL_SCENE := preload("res://world/spawn_bot_menu.tscn")
 
-const BLUE := Color(0.35, 0.65, 1.0, 1)
-const PANEL_BG := Color(0.05, 0.05, 0.08, 0.96)
-const PANEL_BORDER := Color(0.3, 0.3, 0.4, 0.8)
-const CARD_BG := Color(0.10, 0.11, 0.15, 1)
-const CARD_BORDER := Color(0.30, 0.32, 0.38, 1)
-const TEXT := Color(0.9, 0.9, 0.9)
-const DIM := Color(0.0, 0.02, 0.06, 0.78)
+const BLUE := Color(0.176, 0.831, 0.749, 1)
+const PANEL_BG := Color(0.067, 0.086, 0.114, 0.97)
+const PANEL_BORDER := Color(0.165, 0.196, 0.239, 1)
+const CARD_BG := Color(0.102, 0.125, 0.161, 0.72)
+const CARD_BORDER := Color(0.165, 0.196, 0.239, 1)
+const TEXT := Color(0.929, 0.945, 0.961)
+const DIM := Color(0.02, 0.03, 0.045, 0.86)
 
 var _canvas: CanvasLayer
 var _tabs: TabContainer
@@ -618,7 +618,7 @@ func _panel_style() -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = PANEL_BG
 	sb.border_color = PANEL_BORDER
-	sb.set_border_width_all(2)
+	sb.set_border_width_all(1)
 	sb.content_margin_left = 16.0
 	sb.content_margin_top = 14.0
 	sb.content_margin_right = 16.0
@@ -630,7 +630,7 @@ func _box(bg: Color, border: Color) -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = bg
 	sb.border_color = border
-	sb.set_border_width_all(2)
+	sb.set_border_width_all(1)
 	sb.content_margin_left = 8.0
 	sb.content_margin_top = 6.0
 	sb.content_margin_right = 8.0
@@ -642,8 +642,10 @@ func _section_header(text: String) -> PanelContainer:
 	var panel := PanelContainer.new()
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = BLUE
-	sb.content_margin_left = 8.0
+	sb.bg_color = CARD_BG
+	sb.border_color = BLUE
+	sb.border_width_left = 3
+	sb.content_margin_left = 10.0
 	sb.content_margin_top = 4.0
 	sb.content_margin_right = 8.0
 	sb.content_margin_bottom = 4.0
@@ -651,8 +653,8 @@ func _section_header(text: String) -> PanelContainer:
 	var lbl := Label.new()
 	lbl.text = text
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	lbl.add_theme_color_override("font_color", Color.WHITE)
-	lbl.add_theme_font_size_override("font_size", 15)
+	lbl.add_theme_color_override("font_color", BLUE)
+	lbl.add_theme_font_size_override("font_size", 13)
 	panel.add_child(lbl)
 	return panel
 

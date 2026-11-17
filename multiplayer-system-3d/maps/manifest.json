@@ -16,7 +16,7 @@
     "res://maps/esc_castle.tscn": "1e19c3560f5af4f394e1d0087ad1bb42e428d1f48cdb4c4a57a82751fd989218",
     "res://maps/hyb_castle.tscn": "58186e69f822686effc4dfc8847ae66325ae46d80c43a5c1c81cc0e41a03dda9",
     "res://maps/koth_castle.tscn": "4512a56c5d234325edbaaea0c7aefe7030f4ad8923abcacf9576061533357fcd",
-    "res://maps/main_menu_world.tscn": "1712abded0ce878c91856036bd7d2d0d6efa71383fbb12e03a633890071e493a",
+    "res://maps/main_menu_world.tscn": "8e3c384440db93d5b19ab09e78da6a3b35968c4dd7c5ea29521273b72955fc5a",
     "res://maps/map_data/2fort.tres": "5758e9136b293ff251e2e3ef43c7f71802bcb5978d660efa5705123cd2be3188",
     "res://maps/map_data/bind.tres": "6808f473528d46761107dfb0ffe6ecdf5c341c34f705531c9edca1a3549075e8",
     "res://maps/map_data/castle.tres": "27907c3ef5a270fd73ef93292d99a40ed0d384bc149025662372d288c3da60af",
@@ -31,12 +31,11 @@
     "res://maps/map_data/esc_castle.tres": "7839334ba16a58abed177732ce3fd00f23658da799c8e803843856a678fb1764",
     "res://maps/map_data/hyb_castle.tres": "046a1173d609d3dcad460ac508b3cfbff71f2dfa3d1fdae962341e46dbfbbd4e",
     "res://maps/map_data/koth_castle.tres": "fb64fe3c3d8057de74b972abd70538cac178b51e5d482e5f51c96392833969d0",
-    "res://maps/map_data/map_thumbnail_generator.tres": "992dfe323c4cd11d37e424cd00a3020fd57ba0b08a67ee02f5e80d6f7e9dbefe",
     "res://maps/map_game_mode_assigner.tscn": "b6cd1348da26a4063a972d2654ca3be39e01c0931ff3ffa7092525a5531d8903",
     "res://maps/map_thumbnail_generator.tscn": "109c2a7695d3c95cc27768ca2913f042042a94c9fe4f4fb3e49860e96278955b",
     "res://maps/underground.tscn": "44fb3b9ba497c5eca11ad804ec81685221d873b052bd0dc37377965465b0dc42"
   },
-  "manifest_sha": "3aa481ecaff9da7339e00579ac335946188cae37237bc3d4050e79a01c69b790",
-  "protocol": 1,
+  "manifest_sha": "7604ddabc2d58f39a933b31d34d7f81a62299415713f634253ff3a20d45c943d",
+  "protocol": 2,
   "schema": 1
 }

@@ -47,6 +47,38 @@ static func random_build() -> Dictionary:
 	}
 
 
+## Build a valid loadout around [param character]'s class.  Weapons already in
+## [param previous] are kept when the new class still offers them; otherwise the
+## first weapon of each column is used.  Staging agent-select uses this so a
+## character change never sends a weapon the class cannot equip.
+static func build_for_character(character: Character, cls: Class, previous: Dictionary = {}) -> Dictionary:
+	if character == null or cls == null:
+		return {}
+	var primary := _pick_weapon(cls.primary_weapons, str(previous.get("primary_path", "")))
+	var secondary := _pick_weapon(cls.secondary_weapons, str(previous.get("secondary_path", "")))
+	var melee := _pick_weapon(cls.melee_weapons, str(previous.get("melee_path", "")))
+	if primary == null or secondary == null or melee == null:
+		return {}
+	return {
+		"class_path": cls.resource_path,
+		"character_path": character.resource_path,
+		"primary_path": primary.resource_path,
+		"secondary_path": secondary.resource_path,
+		"melee_path": melee.resource_path,
+		"randomize_on_death": bool(previous.get("randomize_on_death", false)),
+	}
+
+
+static func _pick_weapon(weapons: Array[Weapon], preferred_path: String) -> Weapon:
+	if weapons.is_empty():
+		return null
+	if preferred_path != "":
+		for weapon in weapons:
+			if weapon and weapon.resource_path == preferred_path:
+				return weapon
+	return weapons[0]
+
+
 static func is_valid(build: Dictionary) -> bool:
 	for key in ["character_path", "class_path", "primary_path", "secondary_path", "melee_path"]:
 		if str(build.get(key, "")) == "":
