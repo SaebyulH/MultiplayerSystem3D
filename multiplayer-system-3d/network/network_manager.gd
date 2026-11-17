@@ -562,6 +562,11 @@ func return_to_lobby() -> void:
 	_reconnecting = false
 	_match_host = ""
 	_match_port = SERVER_PORT
+	# A finished listen match must tell clients not to attempt a resume against
+	# the server we are about to close.
+	if multiplayer.is_server() and MatchSession.role == MatchSession.Role.SERVER \
+			and MatchSession.phase == Protocol.Phase.RESULTS:
+		MatchSession.set_phase(Protocol.Phase.CLOSED)
 	MatchSession.stop_heartbeat()
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	LoadingScreen.hide_screen()  # in case a join failed mid-connect and left it up
@@ -577,7 +582,7 @@ func return_to_lobby() -> void:
 	match role:
 		Role.DEDICATED_SERVER:
 			get_tree().quit()
-		Role.CLIENT, Role.OFFLINE:
+		Role.CLIENT, Role.OFFLINE, Role.LISTEN_SERVER:
 			role = Role.OFFLINE
 			call_deferred("boot_offline_lobby")
 		_:
@@ -587,7 +592,7 @@ func return_to_lobby() -> void:
 
 ## Server-authoritative map swap (lobby -> match).  The MultiplayerSpawner
 ## replicates the Map removal/addition to every connected peer.
-func load_match_map(map_path: String) -> void:
+func load_match_map(map_path: String, set_active: bool = true, respawn_players: bool = true) -> void:
 	if not multiplayer.is_server():
 		return
 	var sp: Node3D = GameManager.spawn_parent
@@ -606,6 +611,8 @@ func load_match_map(map_path: String) -> void:
 	var new_map: Node = load(map_path).instantiate()
 	new_map.name = "Map"
 	sp.add_child(new_map)
+	if game_scene != null and game_scene.has_method("on_match_map_loaded"):
+		game_scene.on_match_map_loaded()
 
 	# Match sessions: every peer loads the map from its own build.  The server
 	# announces path + hash; clients verify and build it locally (no map bytes
@@ -613,13 +620,64 @@ func load_match_map(map_path: String) -> void:
 	if MatchSession.role == MatchSession.Role.SERVER:
 		var hash := FileAccess.get_sha256(map_path)
 		MatchSession.map_hash = hash
-		MatchSession.set_phase(Protocol.Phase.ACTIVE, map_path, hash)
+		if set_active:
+			MatchSession.set_phase(Protocol.Phase.ACTIVE, map_path, hash)
 
 	# Respawn existing players on the new map (after it exists so
 	# _get_spawn_transform() finds it).
-	for child in sp.get_children():
+	if respawn_players:
+		for child in sp.get_children():
+			if child is Player:
+				child.rpc_reset.rpc(child._get_spawn_transform())
+
+
+## Server-side staging -> match transition.  The staging world remains the
+## lobby map; this countdowns, announces the target map, swaps it locally, waits
+## for every client's MAP_READY, then activates and respawns players.
+func start_staging_match(map_path: String = "") -> void:
+	if not multiplayer.is_server():
+		return
+	if MatchSession.role != MatchSession.Role.SERVER:
+		return
+	var path := map_path
+	if path == "":
+		path = MatchSession.target_map_path
+	if path == "":
+		path = GameManager.pending_match_map
+	if path == "" or not FileAccess.file_exists(path):
+		push_error("start_staging_match: no valid target map.")
+		return
+	MatchSession.set_staging_map(path)
+	MatchSession.set_phase(Protocol.Phase.COUNTDOWN)
+	LoadingScreen.show_screen(0.2, "Match starting in 5...")
+	await get_tree().create_timer(5.0).timeout
+	if not is_instance_valid(GameManager.spawn_parent):
+		return
+
+	var hash := FileAccess.get_sha256(path)
+	LoadingScreen.report(0.55, "Loading map...")
+	MatchSession.set_phase(Protocol.Phase.LOADING, path, hash)
+	load_match_map(path, false, false)
+	var ready := await MatchSession.await_map_ready(Protocol.MAP_MATCH_DEADLINE_SECONDS)
+	if not ready:
+		push_warning("[MATCH] map-ready barrier timed out; activating anyway.")
+	LoadingScreen.report(0.9, "Spawning players...")
+	MatchSession.set_phase(Protocol.Phase.ACTIVE, path, hash)
+	for child in GameManager.spawn_parent.get_children():
 		if child is Player:
 			child.rpc_reset.rpc(child._get_spawn_transform())
+	LoadingScreen.hide_screen()
+
+
+## End the current match from the server.  Clients receive RESULTS, show the
+## local results overlay, then leave through the normal return path.
+func end_match(result_text: String = "") -> void:
+	if not multiplayer.is_server():
+		return
+	if MatchSession.role != MatchSession.Role.SERVER:
+		return
+	MatchSession.set_results(result_text)
+	MatchSession.set_phase(Protocol.Phase.RESULTS)
 
 
 # ─────────────────────────────────────────────
@@ -1045,7 +1103,8 @@ func _server_disconnected() -> void:
 	if OS.is_debug_build(): print("Server has disconnected!")
 	if _reconnecting:
 		return
-	if _use_match_session and MatchSession.resume_token != "" and not _test_no_reconnect:
+	if _use_match_session and MatchSession.resume_token != "" and not _test_no_reconnect \
+			and MatchSession.phase != Protocol.Phase.CLOSED:
 		_begin_reconnect()
 		return
 	return_to_lobby()

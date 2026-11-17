@@ -1,0 +1,14 @@
+[remap]
+
+importer="func_godot.map"
+type="Resource"
+uid="uid://1yo1teii21sc"
+path="res://.godot/imported/3d_main_menu.map-40147170a99445057cc95259459f2a3a.tres"
+
+[deps]
+
+source_file="res://trenchbroom/maps/3d_main_menu.map"
+dest_files=["res://.godot/imported/3d_main_menu.map-40147170a99445057cc95259459f2a3a.tres"]
+
+[params]
+

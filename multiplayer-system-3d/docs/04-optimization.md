@@ -144,6 +144,16 @@ Added 2026-09-25 with the `Weapon.charged` feature. Recorded here so it is not m
 - **Per shot:** one extra multiply on the launch-speed line and one on the damage scalar in `_spawn_projectile` (`2674`), plus one on each of the two hitscan damage sites.
 - **Deliberately NOT in the rollback path.** `_charge_active`/`_charge_time` are broadcast state, never `RollbackSynchronizer` properties — the same rule as the fire flags (`02-netcode.md` §1). Adding them there would re-simulate the draw and multiply this cost by the tick count for no benefit.
 
+## Third-person recoil view kick (per-frame, owner only) — negligible
+
+`Player._apply_third_person_recoil` runs only while `third_person` is true (the flag is per-peer and
+only the owner turns it on) from the existing `Player._process` → `_update_third_person_aim`, which
+was already doing a per-frame aim correction there. Cost: two basis reads (the body one
+orthonormalised), one `inverse()`, four `Basis` multiplies and one global-basis write on the camera. No allocation, no raycast (the camera's
+existing child RayCast3D supplies the aim target). The parent `ThirdPersonPitch`/`Root` rotations
+are unchanged — the kick is rebuilt on the camera each frame, so it cannot accumulate. See
+`02-netcode.md` §3.
+
 ## Dev-menu status line (per-frame, owner only) — negligible
 
 Added 2026-10-24 with the expanded dev menu. `PlayerUI._update_dev_status()` composes

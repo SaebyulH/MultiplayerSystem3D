@@ -3,6 +3,13 @@
 A precise, ordered walkthrough of everything that happens from pressing Play to standing in a playable lobby/match, plus the join / leave / map-swap transitions. This is the highest-traffic part of the codebase: most "it won't start / can't move / players invisible" bugs live here.
 
 > File names: the world script is `world/world_1.gd` (scene `world/world1.tscn`). The loadout menu is `world/loadout_menu.gd`. `class_select.gd` exists only under `backup/` — its role was merged into `loadout_menu.gd`.
+>
+> **2026-11-17: the default/offline and match-session flow changed.** The
+> default shell now shows a one-per-process title gate, spawns with a stored
+> process build, uses the HostServer Area3D as the Match Menu, and routes
+> create/join through a staging room. The old "mandatory Loadout screen on
+> world creation" description below applies to `--legacy-p2p` and to the old
+> listen/direct paths that have not been migrated. See Stage 13.
 
 ---
 
@@ -313,3 +320,90 @@ top of another menu and clear `ui_open` when it closed.
 8. **`_request_loadout` sender validation** (`loadout_menu.gd:879-881`) depends on human ids always being `str(network_id)`.
 9. **First spawn ~1 s delay** (`player.gd:17`, `503`).
 10. **`loadout_menu.gd:859-860` comment drift** — the sync is via `visibility_changed`, not `_process`.
+
+---
+
+## Stage 13 — Non-blocking local flow (title, match menu, staging, pause, results)
+
+Implemented 2026-11-17. Applies when `world_1._new_flow_eligible()` is true:
+- role `OFFLINE` (default/--offline/--lobby shell), or
+- role `LISTEN_SERVER`/`CLIENT` with `MatchSession.role != NONE` (match session).
+
+`--legacy-p2p` and legacy P2P joins keep the old mandatory Loadout flow.
+
+### 13.1 Title
+`world/title_screen.gd` is a local CanvasLayer created by `world_1.gd`. It is
+shown only on an OFFLINE boot when `GameManager.title_seen` is false. It owns
+`ui_open` and the mouse and gives the lobby a full-screen dark cover; no 3D
+content is created or moved. Click/Enter/Space emits `start_requested`, is
+consumed, and frees the layer.
+
+`world_1._on_title_start()` sets `title_seen`, applies
+`GameManager.local_loadout` (or rolls one through `player/loadout_profile.gd`),
+and calls `Player.rpc_spawn_now()` so the local player appears without the
+normal 1 s respawn countdown. Returning to the lobby does not show the title
+again; the stored build is applied and the player spawns immediately.
+
+### 13.2 Build store
+`GameManager.local_loadout` is a process-local dictionary of resource paths
+(`class_path`, `character_path`, `primary_path`, `secondary_path`,
+`melee_path`, `randomize_on_death`). The Loadout screen restores it on open and
+writes it on confirm. It is not saved to disk yet.
+
+### 13.3 Match Menu (HostServer is the globe)
+`world/host_server_area.gd` no longer opens `host_menu.tscn`. It opens
+`world/globe_menu.gd` on the existing HostServer Area3D, with the prompt
+"Match Menu (E)". The menu has three tabs:
+- **Start Match** — map picker; `CREATE MATCH` starts an in-process listen
+  server in the lobby map (or a lobbyd match when `LobbyClient` is enabled).
+- **Find Match** — merged LAN (`LanDiscovery`) and lobbyd rows. The direct-IP
+  field remains, using the 6-character `ConnectionUtils` IP code.
+- **Party** — disabled placeholder; the party service is not implemented.
+
+`GameManager.pending_match_map` carries the selected target into the staging
+world. `MatchSession.target_map_path` broadcasts it to joined peers.
+
+### 13.4 Staging room
+`world/staging_room.gd` is a local CanvasLayer shown while
+`MatchSession.phase` is STAGING/COUNTDOWN/LOADING, or while a client is waiting
+to JOIN IN PROGRESS. It shows the roster (team, BOT/HOST/READY tags), target
+map picker, host ADD BOT, self SWITCH TEAM, READY, LEAVE MATCH, and START GAME.
+The staging map is still the 3D lobby map; the room is only an overlay.
+
+Client-host staging actions go through `MatchSession` RPCs:
+`request_set_staging_map`, `request_add_bot`, `request_set_ready`,
+`request_switch_team`, `request_start_match`, `request_end_match`, and
+`request_join_in_progress`. The server re-checks `host_player_id` where needed.
+
+### 13.5 Countdown and map-ready barrier
+`NetworkManager.start_staging_match(path)` sets COUNTDOWN, waits 5 s, sets
+LOADING with path + SHA-256, swaps the map locally, waits for
+`MatchSession.await_map_ready()` (all connected peers ACK via `MAP_READY`;
+deadline `MAP_MATCH_DEADLINE_SECONDS`), then sets ACTIVE and `rpc_reset`s the
+players. `MatchSession.notify_map_ready()` is sent by `world_1` after a client
+installs a LOADING map.
+
+**`MatchSession.set_phase()` now sets the server's own `phase` before the
+call_remote broadcast.** Previously the host stayed in STAGING while clients
+were told ACTIVE, and the client `welcome` carried the stale phase.
+
+### 13.6 Pause, results, return
+`world/pause_menu.gd` opens on Esc when an ACTIVE match has a spawned local
+player and no other menu owns input. It has RESUME, LOADOUT, LEAVE MATCH and a
+host-only END MATCH. There is no settings page.
+
+`world/post_match.gd` opens on `MatchSession.Phase.RESULTS`, shows the winner
+label carried by `MatchSession.result_text` and the authoritative
+`Leaderboard` stats, then returns after 10 s. `GameModeComponent.match_won`
+is wired to `NetworkManager.end_match()` on the server (including dedicated
+servers via `world_1.on_match_map_loaded()`).
+
+`return_to_lobby()` sets the server phase to CLOSED when leaving a RESULTS
+session (so clients skip the resume path), and a LISTEN_SERVER host now
+returns to the OFFLINE shell rather than the legacy P2P boot.
+
+### 13.7 Test hooks
+- `--test-title-start` dismisses the title automatically.
+- `--test-staging-start` + optional `--test-staging-map=res://maps/X.tscn`
+  starts a staging match from a host boot.
+- `--test-end-match` ends an active host match after 6 s.

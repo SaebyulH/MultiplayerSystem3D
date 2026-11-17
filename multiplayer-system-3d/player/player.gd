@@ -131,6 +131,21 @@ var dev_hide_model := false
 ## always despawned — see rpc_reset()/spawn() and _sync_dev_spectating().
 var is_spectating := false
 
+## Combat mode.  Server-authoritative and replicated (root MultiplayerSynchronizer,
+## player.tscn) so every peer hides the same player's weapon.  Default in combat —
+## normal gameplay never leaves it.  Non-combat is for future map zones (spawn
+## rooms) and is currently exposed only through the dev menu.  While false,
+## WeaponController is holstered (viewmodel hidden, firing/switching refused) and
+## the AnimationTree's HoldBlend sits at 0.0 — see WeaponController.refresh_holstered()
+## and player/animation_tree.gd.
+var in_combat: bool = true:
+	set(value):
+		if in_combat == value:
+			return
+		in_combat = value
+		if weapon_controller:
+			weapon_controller.refresh_holstered()
+
 ## Local-only: the player this peer is currently watching.  Owned by
 ## world/spectator_controller.gd and never networked.  _update_visibility() uses
 ## it so reveals/invisibility match the spectated player's perspective.
@@ -197,6 +212,10 @@ var queue_velocity := Vector3(0.0, 0.0, 0.0)
 @export var attribute_component: AttributeComponent
 @onready var camera := %Camera3D
 @onready var third_person_camera := $ThirdPersonRoot/ThirdPersonPitch/SpringArm3D/ThirdPersonCamera3D as Camera3D
+## The third-person camera's authored local basis.  The recoil kick is composed
+## onto this every frame rather than accumulated into the node, so it cannot
+## drift and does not touch the mouse-driven ThirdPersonPitch above it.
+@onready var _third_person_camera_rest_basis: Basis = third_person_camera.transform.basis
 @onready var third_person_root := $ThirdPersonRoot as Node3D
 @onready var third_person_pitch := $ThirdPersonRoot/ThirdPersonPitch as Node3D
 @onready var third_person_raycast := $ThirdPersonRoot/ThirdPersonPitch/SpringArm3D/ThirdPersonCamera3D/RayCast3D as RayCast3D
@@ -594,6 +613,16 @@ func _ready() -> void:
 	# _process, where get_bone_pose_* already returns the un-modified pose.
 	if mannequin_skeleton:
 		mannequin_skeleton.skeleton_updated.connect(_copy_mannequin_pose)
+	# The third-person aim ray (ThirdPersonCamera3D/RayCast3D, mask WORLD|HURTBOX)
+	# starts at the spring camera, which collapses onto the player when a wall is
+	# behind them.  The player's own hurtboxes are PhysicalBone3D bodies on
+	# HURTBOX, so a collapsed camera makes the ray clip the player's own arms /
+	# shoulders; `_third_person_aim_target()` then returns a point on the player
+	# and the body aim snaps ("caught on something").  Exclude the player's whole
+	# subtree, the same superset the fire ray excludes.  Nodes spawned later are
+	# not in this list — keep new collidables off WORLD/HURTBOX or add them here.
+	for node in find_children("*", "CollisionObject3D", true, false):
+		third_person_raycast.add_exception(node as CollisionObject3D)
 	# Give each player its own animation tree.  tree_root (and its nested nodes,
 	# e.g. the ArmsAnim hold node) is a shared SubResource across scene instances,
 	# so changing one player's weapon hold would change every player's.
@@ -728,6 +757,15 @@ func rpc_reset(transform: Transform3D) -> void:
 	# Randomize weapons on death if the option is enabled.
 	if multiplayer.is_server() and _randomize_on_death and not _loadout_class_path.is_empty():
 		_randomize_weapons_from_class()
+
+## Spawn at [param transform] without the respawn countdown.  Used by the
+## title/lobby entry, where the player should appear on the same click that
+## dismisses the title.  Death and round resets keep using rpc_reset() so their
+## 1 s timing is unchanged.
+@rpc("authority", "call_local", "reliable")
+func rpc_spawn_now(transform: Transform3D) -> void:
+	rpc_reset(transform)
+	respawn_timer = 0.0
 
 ## Full-state sync for a late-joining peer.  Handles visibility, weapon loadout
 ## and size-change state in one atomic RPC so the player does not flicker into
@@ -2313,6 +2351,28 @@ func _sync_dev_noclip(on: bool) -> void:
 	dev_noclip = on
 
 
+func dev_set_in_combat(on: bool) -> void:
+	if multiplayer.is_server():
+		_apply_dev_combat_mode(on)
+	else:
+		_dev_in_combat_request.rpc_id(1, on)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _dev_in_combat_request(on: bool) -> void:
+	if not multiplayer.is_server() or not _dev_request_is_owner():
+		return
+	_apply_dev_combat_mode(on)
+
+
+## Server entry point.  `in_combat` itself is replicated by the root
+## MultiplayerSynchronizer (late joiners get the spawn value), so there is no
+## extra broadcast: unlike spectating, leaving combat has no ordered side effect
+## that would need to travel with the flag.
+func _apply_dev_combat_mode(on: bool) -> void:
+	in_combat = on
+
+
 func dev_set_spectating(on: bool) -> void:
 	if multiplayer.is_server():
 		_apply_dev_spectating(on)
@@ -2654,11 +2714,12 @@ func aimbot_find_target() -> Player:
 	return best
 
 
-## Rotate the head (body yaw + head pitch) so the camera aims at `point`.
-## `recoil_free` (third-person aim) uses a forward that ignores the Recoil node's
-## offset, so recoil visibly kicks; the default (aimbot) uses the real camera
-## forward and keeps compensating recoil.
-func _aim_body_head_at_point(point: Vector3, recoil_free: bool = false) -> void:
+## Rotate the head (body yaw + head pitch) so the fire camera aims at `point`.
+## The current forward used for the correction is the real camera forward, recoil
+## included: the third-person view carries the same recoil kick (see
+## `_apply_third_person_recoil`), so the body must compensate it to keep the shot
+## on the crosshair — aiming recoil-free there would apply the kick twice.
+func _aim_body_head_at_point(point: Vector3) -> void:
 	if camera == null or body == null:
 		return
 	var cam := camera as Camera3D
@@ -2676,17 +2737,10 @@ func _aim_body_head_at_point(point: Vector3, recoil_free: bool = false) -> void:
 		return
 	dir = dir.normalized()
 
-	# Current aim forward.  Recoil-free reconstructs it from body yaw + head pitch
-	# so the recoil (on the parent Recoil node) is not read back and canceled.
-	var aim_fwd: Vector3
-	if recoil_free:
-		var cy := cos(body.rotation.y)
-		var sy := sin(body.rotation.y)
-		var cp := cos(head_node.rotation.x)
-		var sp := sin(head_node.rotation.x)
-		aim_fwd = Vector3(-sy * cp, sp, -cy * cp)
-	else:
-		aim_fwd = camera_forward()
+	# The real fire forward, recoil included — this is the direction the body has
+	# to correct, not the recoil-free pose, or the kick would be cancelled here
+	# and applied a second time by the shot.
+	var aim_fwd: Vector3 = camera_forward()
 
 	# Yaw: rotate the body around Y to align the horizontal component.  Skip when
 	# the target is nearly straight up/down (the crosshair sits almost directly
@@ -2718,14 +2772,43 @@ func _third_person_aim_target() -> Vector3:
 	return third_person_camera.global_position + (-third_person_camera.global_transform.basis.z) * 10000.0
 
 
+## Apply the Recoil node's rotation to the third-person camera, so the view kicks
+## exactly like the first-person one and the centred crosshair keeps marking the
+## fire direction (the shot comes from the first-person camera, which hangs under
+## Recoil; the orbit rig does not, hence this mirror).
+##
+## The kick is rebuilt from the rest rig every frame rather than accumulated, so
+## it cannot drift and the mouse-driven ThirdPersonPitch above it is untouched.
+##
+## Frame matters: `Recoil` sits *above* `Head`, so its rotation acts about the
+## body's (unpitched) axes.  The kick must therefore be conjugated into world
+## space — `body * recoil * body⁻¹` — and applied on the left of the whole view
+## basis, exactly like it transforms the first-person camera.  Composing it onto
+## the pitched camera's local basis would tilt the pitch axis with the view and
+## skew the kick when looking steeply up or down.  The camera and its child
+## RayCast3D rotate together, so `_third_person_aim_target()` follows the kicked
+## crosshair.
+func _apply_third_person_recoil() -> void:
+	if third_person_camera == null or body == null:
+		return
+	var body_basis: Basis = body.global_transform.basis.orthonormalized()
+	var kick: Basis = body_basis * (%Recoil as Node3D).basis * body_basis.inverse()
+	var rig_basis: Basis = third_person_camera.get_parent().global_transform.basis
+	third_person_camera.global_transform.basis = kick * rig_basis * _third_person_camera_rest_basis
+
+
 ## Third-person aim tick: point the body/head at the crosshair so the character
-## model visually aims where the third-person camera looks.
+## model visually aims where the third-person camera looks.  Runs after the view
+## has been kicked, so the aim target and `camera_forward()` carry the same kick
+## and the body holds its mouse aim: the shot then lands on the centred dot
+## instead of above it.
 func _update_third_person_aim() -> void:
 	if not third_person:
 		return
+	_apply_third_person_recoil()
 	if not _is_own_model() or not spawned:
 		return
-	_aim_body_head_at_point(_third_person_aim_target(), true)
+	_aim_body_head_at_point(_third_person_aim_target())
 
 
 ## Snap the third-person rig to the player's current facing (yaw on the root,
@@ -2737,6 +2820,9 @@ func _sync_third_person_rig() -> void:
 	var head_node := camera.get_parent() as Node3D
 	third_person_root.rotation.y = body.rotation.y
 	third_person_pitch.rotation.x = head_node.rotation.x if head_node else 0.0
+	# Re-derive the camera basis now instead of waiting for the next aim tick, and
+	# clear any kick left over from the last time this view was up.
+	_apply_third_person_recoil()
 
 
 ## The charge speed from the ability resource, or a sensible fallback.

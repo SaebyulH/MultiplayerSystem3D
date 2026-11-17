@@ -1,0 +1,226 @@
+// Game: MultiplayerSystem3D
+// Format: Valve
+// Generator: TrenchBroom 2026.2 (Build v2026.2 Release Win64)
+// entity 0
+{
+"mapversion" "220"
+"wad" ""
+"classname" "worldspawn"
+// brush 0
+{
+( 0 -64 -48 ) ( 0 -63 -48 ) ( 0 -64 -47 ) Material-LIB/BrickWall[Damaged]/BrickWall[Damaged] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -64 -384 -48 ) ( -64 -384 -47 ) ( -63 -384 -48 ) Material-LIB/BrickWall[Damaged]/BrickWall[Damaged] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -64 -64 -64 ) ( -63 -64 -64 ) ( -64 -63 -64 ) Material-LIB/BrickWall[Damaged]/BrickWall[Damaged] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 64 64 128 ) ( 64 65 128 ) ( 65 64 128 ) Material-LIB/BrickWall[Damaged]/BrickWall[Damaged] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 64 384 -16 ) ( 65 384 -16 ) ( 64 384 -15 ) Material-LIB/BrickWall[Damaged]/BrickWall[Damaged] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 64 64 -16 ) ( 64 64 -15 ) ( 64 65 -16 ) Material-LIB/BrickWall[Damaged]/BrickWall[Damaged] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 1
+{
+( -128 -64 128 ) ( -128 -63 128 ) ( -128 -64 129 ) Material-LIB/Metal/Metal[Black] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -64 -384 128 ) ( -64 -384 129 ) ( -63 -384 128 ) Material-LIB/Metal/Metal[Black] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -64 -64 128 ) ( -63 -64 128 ) ( -64 -63 128 ) Material-LIB/Metal/Metal[Black] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 64 64 160 ) ( 64 65 160 ) ( 65 64 160 ) Material-LIB/Metal/Metal[Black] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 64 384 160 ) ( 65 384 160 ) ( 64 384 161 ) Material-LIB/Metal/Metal[Black] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 192 64 160 ) ( 192 64 161 ) ( 192 65 160 ) Material-LIB/Metal/Metal[Black] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 2
+{
+( -1088 192 -48 ) ( -1088 193 -48 ) ( -1088 192 -47 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -128 384 -48 ) ( -128 384 -47 ) ( -127 384 -48 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -128 192 -64 ) ( -127 192 -64 ) ( -128 193 -64 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 0 320 384 ) ( 0 321 384 ) ( 1 320 384 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 0 448 -16 ) ( 1 448 -16 ) ( 0 448 -15 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 192 320 -16 ) ( 192 320 -15 ) ( 192 321 -16 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 3
+{
+( -1088 64 -112 ) ( -1088 65 -112 ) ( -1088 64 -111 ) Material-LIB/Metal/Metal[Black] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -192 -384 -112 ) ( -192 -384 -111 ) ( -191 -384 -112 ) Material-LIB/Metal/Metal[Black] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -192 64 -96 ) ( -191 64 -96 ) ( -192 65 -96 ) Material-LIB/Metal/Metal[Black] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -64 192 -64 ) ( -64 193 -64 ) ( -63 192 -64 ) Material-LIB/Metal/Metal[Black] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -64 384 -80 ) ( -63 384 -80 ) ( -64 384 -79 ) Material-LIB/Metal/Metal[Black] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 64 192 -80 ) ( 64 192 -79 ) ( 64 193 -80 ) Material-LIB/Metal/Metal[Black] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 4
+{
+( -1088 -640 -48 ) ( -1088 -639 -48 ) ( -1088 -640 -47 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -128 -448 -48 ) ( -128 -448 -47 ) ( -127 -448 -48 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -128 -640 -64 ) ( -127 -640 -64 ) ( -128 -639 -64 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 0 -512 384 ) ( 0 -511 384 ) ( 1 -512 384 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 0 -384 -16 ) ( 1 -384 -16 ) ( 0 -384 -15 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 192 -512 -16 ) ( 192 -512 -15 ) ( 192 -511 -16 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 5
+{
+( -576 -64 128 ) ( -576 -63 128 ) ( -576 -64 129 ) Material-LIB/Metal/Metal[Black] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -448 -384 128 ) ( -448 -384 129 ) ( -447 -384 128 ) Material-LIB/Metal/Metal[Black] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -448 -64 128 ) ( -447 -64 128 ) ( -448 -63 128 ) Material-LIB/Metal/Metal[Black] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -320 64 160 ) ( -320 65 160 ) ( -319 64 160 ) Material-LIB/Metal/Metal[Black] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -320 384 160 ) ( -319 384 160 ) ( -320 384 161 ) Material-LIB/Metal/Metal[Black] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -448 64 160 ) ( -448 64 161 ) ( -448 65 160 ) Material-LIB/Metal/Metal[Black] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 6
+{
+( -448 -192 128 ) ( -448 -191 128 ) ( -448 -192 129 ) Material-LIB/Metal/Metal[Black] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -384 -384 128 ) ( -384 -384 129 ) ( -383 -384 128 ) Material-LIB/Metal/Metal[Black] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -384 -192 128 ) ( -383 -192 128 ) ( -384 -191 128 ) Material-LIB/Metal/Metal[Black] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -256 -64 160 ) ( -256 -63 160 ) ( -255 -64 160 ) Material-LIB/Metal/Metal[Black] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -256 -256 160 ) ( -255 -256 160 ) ( -256 -256 161 ) Material-LIB/Metal/Metal[Black] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -128 -64 160 ) ( -128 -64 161 ) ( -128 -63 160 ) Material-LIB/Metal/Metal[Black] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 7
+{
+( -448 448 128 ) ( -448 449 128 ) ( -448 448 129 ) Material-LIB/Metal/Metal[Black] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -384 256 128 ) ( -384 256 129 ) ( -383 256 128 ) Material-LIB/Metal/Metal[Black] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -384 448 128 ) ( -383 448 128 ) ( -384 449 128 ) Material-LIB/Metal/Metal[Black] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -256 576 160 ) ( -256 577 160 ) ( -255 576 160 ) Material-LIB/Metal/Metal[Black] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -256 384 160 ) ( -255 384 160 ) ( -256 384 161 ) Material-LIB/Metal/Metal[Black] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -128 576 160 ) ( -128 576 161 ) ( -128 577 160 ) Material-LIB/Metal/Metal[Black] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 8
+{
+( -128 -64 160 ) ( -128 -63 160 ) ( -128 -64 161 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -64 -256 160 ) ( -64 -256 161 ) ( -63 -256 160 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -64 -64 160 ) ( -63 -64 160 ) ( -64 -63 160 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 64 64 192 ) ( 64 65 192 ) ( 65 64 192 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 64 256 192 ) ( 65 256 192 ) ( 64 256 193 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -112 64 192 ) ( -112 64 193 ) ( -112 65 192 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 9
+{
+( -448 -128 160 ) ( -448 -127 160 ) ( -448 -128 161 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -80 -272 160 ) ( -80 -272 161 ) ( -79 -272 160 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -80 -128 160 ) ( -79 -128 160 ) ( -80 -127 160 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 48 0 192 ) ( 48 1 192 ) ( 49 0 192 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 48 -256 192 ) ( 49 -256 192 ) ( 48 -256 193 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -128 0 192 ) ( -128 0 193 ) ( -128 1 192 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 10
+{
+( -448 400 160 ) ( -448 401 160 ) ( -448 400 161 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -80 256 160 ) ( -80 256 161 ) ( -79 256 160 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -80 400 160 ) ( -79 400 160 ) ( -80 401 160 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 48 528 192 ) ( 48 529 192 ) ( 49 528 192 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 48 272 192 ) ( 49 272 192 ) ( 48 272 193 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -128 528 192 ) ( -128 528 193 ) ( -128 529 192 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 11
+{
+( -464 -64 160 ) ( -464 -63 160 ) ( -464 -64 161 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -400 -256 160 ) ( -400 -256 161 ) ( -399 -256 160 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -400 -64 160 ) ( -399 -64 160 ) ( -400 -63 160 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -272 64 192 ) ( -272 65 192 ) ( -271 64 192 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -272 256 192 ) ( -271 256 192 ) ( -272 256 193 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -448 64 192 ) ( -448 64 193 ) ( -448 65 192 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 12
+{
+( -576 -64 160 ) ( -576 -63 160 ) ( -576 -64 161 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -512 -208 160 ) ( -512 -208 161 ) ( -511 -208 160 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -512 -64 160 ) ( -511 -64 160 ) ( -512 -63 160 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -384 64 192 ) ( -384 65 192 ) ( -383 64 192 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -384 208 192 ) ( -383 208 192 ) ( -384 208 193 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -560 64 192 ) ( -560 64 193 ) ( -560 65 192 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 13
+{
+( 192 -512 -48 ) ( 192 -511 -48 ) ( 192 -512 -47 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -96 -448 -48 ) ( -96 -448 -47 ) ( -95 -448 -48 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -96 -512 -64 ) ( -95 -512 -64 ) ( -96 -511 -64 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 32 -384 384 ) ( 32 -383 384 ) ( 33 -384 384 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 32 448 -16 ) ( 33 448 -16 ) ( 32 448 -15 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 224 -384 -16 ) ( 224 -384 -15 ) ( 224 -383 -16 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 14
+{
+( -960 -256 -96 ) ( -960 -384 -96 ) ( -960 -384 -128 ) Material-LIB/Metal/Metal[Black] [ 0 -1.0000000000000002 0 0 ] [ 0 0 1.0000000000000002 548.5713 ] 0 0.063 0.063
+( -960 -256 -96 ) ( -576 -256 160 ) ( -576 -384 160 ) Material-LIB/Metal/Metal[Black] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -960 -384 -96 ) ( -576 -384 160 ) ( -576 -384 128 ) Material-LIB/Metal/Metal[Black] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -576 -256 128 ) ( -576 -256 160 ) ( -960 -256 -96 ) Material-LIB/Metal/Metal[Black] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -960 -256 -128 ) ( -960 -384 -128 ) ( -576 -384 128 ) Material-LIB/Metal/Metal[Black] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -576 -384 160 ) ( -576 -256 160 ) ( -576 -256 128 ) Material-LIB/Metal/Metal[Black] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 15
+{
+( -960 384 -96 ) ( -960 256 -96 ) ( -960 256 -128 ) Material-LIB/Metal/Metal[Black] [ 0 -1.0000000000000002 0 0 ] [ 0 0 1.0000000000000002 548.5713 ] 0 0.063 0.063
+( -960 384 -96 ) ( -576 384 160 ) ( -576 256 160 ) Material-LIB/Metal/Metal[Black] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -960 256 -96 ) ( -576 256 160 ) ( -576 256 128 ) Material-LIB/Metal/Metal[Black] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -576 384 128 ) ( -576 384 160 ) ( -960 384 -96 ) Material-LIB/Metal/Metal[Black] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -960 384 -128 ) ( -960 256 -128 ) ( -576 256 128 ) Material-LIB/Metal/Metal[Black] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -576 256 160 ) ( -576 384 160 ) ( -576 384 128 ) Material-LIB/Metal/Metal[Black] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 16
+{
+( -512 0 -48 ) ( -512 1 -48 ) ( -512 0 -47 ) Material-LIB/StonePillars/StonePillars [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -576 -192 -48 ) ( -576 -192 -47 ) ( -575 -192 -48 ) Material-LIB/StonePillars/StonePillars [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -576 0 -64 ) ( -575 0 -64 ) ( -576 1 -64 ) Material-LIB/StonePillars/StonePillars [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -448 128 128 ) ( -448 129 128 ) ( -447 128 128 ) Material-LIB/StonePillars/StonePillars [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -448 192 -16 ) ( -447 192 -16 ) ( -448 192 -15 ) Material-LIB/StonePillars/StonePillars [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -448 128 -16 ) ( -448 128 -15 ) ( -448 129 -16 ) Material-LIB/StonePillars/StonePillars [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+}
+// entity 1
+{
+"classname" "PlayerSpawn"
+"origin" "-104 -16 -62"
+}
+// entity 2
+{
+"classname" "BigBox"
+"origin" "160 -224 161"
+}
+// entity 3
+{
+"classname" "Forklift"
+"origin" "128 224 224"
+}
+// entity 4
+{
+"classname" "HealthPackSpawner"
+"origin" "-16 -208 164"
+}
+// entity 5
+{
+"classname" "HealthPackSpawner"
+"origin" "80 -208 164"
+}
+// entity 6
+{
+"classname" "PlayerSpawn"
+"origin" "136 -48 162"
+"team" "2"
+}
+// entity 7
+{
+"classname" "PlayerSpawn"
+"origin" "136 16 162"
+"team" "1"
+}
+// entity 8
+{
+"classname" "PlayerSpawn"
+"origin" "136 80 162"
+"team" "0"
+}
+// entity 9
+{
+"classname" "BigBox"
+"origin" "-288 -73.7261 -40.226"
+"scale" "3"
+"mangle" "-30 -35 -35"
+}
+// entity 10
+{
+"classname" "BigBox"
+"origin" "-224 -25.726 151.774"
+"scale" "3"
+"mangle" "-30 85 -35"
+}
+// entity 11
+{
+"classname" "BigBox"
+"origin" "-288 -73.726 279.774"
+"scale" "3"
+"mangle" "-30 -35 -35"
+}

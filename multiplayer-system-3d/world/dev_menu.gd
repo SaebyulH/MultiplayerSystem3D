@@ -43,6 +43,7 @@ var _spectate_check: CheckButton
 var _player_hud_check: CheckButton
 var _world_hud_check: CheckButton
 var _model_check: CheckButton
+var _combat_check: CheckButton
 # Bots-tab widgets (server only).
 var _freeze_bots_check: CheckButton
 var _show_paths_check: CheckButton
@@ -240,6 +241,8 @@ func _build_general_tab() -> Control:
 	display_grid.add_child(_world_hud_check)
 	_model_check = _make_check("Hide my model (weapon stays)", _on_model_toggled)
 	display_grid.add_child(_model_check)
+	_combat_check = _make_check("Out of combat (weapons hidden)", _on_combat_toggled)
+	display_grid.add_child(_combat_check)
 
 	vb.add_child(HSeparator.new())
 	vb.add_child(_section_header("TEAM"))
@@ -339,6 +342,7 @@ func _refresh_state() -> void:
 		_ignore_bots_check.button_pressed = p.dev_hidden_from_bots
 		_spectate_check.button_pressed = p.is_spectating
 		_model_check.button_pressed = p.dev_hide_model
+		_combat_check.button_pressed = not p.in_combat
 	_player_hud_check.button_pressed = GameManager.dev_hide_player_hud
 	_world_hud_check.button_pressed = GameManager.dev_hide_world_hud
 	if _freeze_bots_check:
@@ -455,6 +459,14 @@ func _on_model_toggled(on: bool) -> void:
 		p.dev_set_hide_model(on)
 
 
+func _on_combat_toggled(out_of_combat: bool) -> void:
+	if _syncing:
+		return
+	var p := _local_player()
+	if p:
+		p.dev_set_in_combat(not out_of_combat)
+
+
 func _apply_world_hud_visibility() -> void:
 	var world := get_parent()
 	if world and world.has_method("apply_dev_world_hud_visibility"):
@@ -475,6 +487,7 @@ func _on_reset_dev_flags() -> void:
 		p.dev_set_hidden_from_bots(false)
 		p.dev_set_spectating(false)
 		p.dev_set_hide_model(false)
+		p.dev_set_in_combat(true)
 	GameManager.dev_hide_player_hud = false
 	GameManager.dev_hide_world_hud = false
 	GameManager.dev_freeze_bots = false

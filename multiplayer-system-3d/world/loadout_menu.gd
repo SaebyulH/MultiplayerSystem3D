@@ -145,9 +145,9 @@ func _ready() -> void:
 	_character_svc.mouse_entered.connect(_on_character_hover_enter)
 	_character_svc.mouse_exited.connect(_on_character_hover_exit)
 
-	# Populate the menu. The first load picks a random character + loadout; later
-	# loads fall back to the first character (assault) so we don't re-randomize.
-	if not _all_characters.is_empty():
+	# Populate the menu.  A stored process build wins; otherwise the first load
+	# rolls once and later loads fall back to the first character.
+	if not _restore_saved_build() and not _all_characters.is_empty():
 		if not _initial_selection_done:
 			_initial_selection_done = true
 			randomize()
@@ -166,6 +166,23 @@ func _ready() -> void:
 	# on a dedicated server, which has no local player.
 	if not NetworkManager.is_dedicated_server() and "--auto-loadout" in OS.get_cmdline_user_args():
 		_auto_confirm_when_ready.call_deferred()
+
+
+## Restore the process-local build saved by the title flow or a previous confirm.
+func _restore_saved_build() -> bool:
+	var build: Dictionary = GameManager.local_loadout
+	if not LoadoutProfile.is_valid(build):
+		return false
+	var char_res := load(str(build.get("character_path", ""))) as Character
+	if char_res == null:
+		return false
+	_initial_selection_done = true
+	_select_character(char_res)
+	_select_card_matching("primary", load(str(build.get("primary_path", ""))) as Weapon)
+	_select_card_matching("secondary", load(str(build.get("secondary_path", ""))) as Weapon)
+	_select_card_matching("melee", load(str(build.get("melee_path", ""))) as Weapon)
+	_randomize_on_death_check.button_pressed = bool(build.get("randomize_on_death", false))
+	return true
 
 
 func _on_match_welcomed(_info: Dictionary) -> void:
@@ -1088,6 +1105,18 @@ func _on_confirm_pressed() -> void:
 		return
 
 	var rand_on_death := _randomize_on_death_check.button_pressed
+	var respawn := true
+	if world != null and world.has_method("should_loadout_respawn"):
+		respawn = bool(world.should_loadout_respawn())
+
+	GameManager.local_loadout = {
+		"character_path": character_path,
+		"class_path": class_path,
+		"primary_path": primary_path,
+		"secondary_path": secondary_path,
+		"melee_path": melee_path,
+		"randomize_on_death": rand_on_death,
+	}
 
 	# Hide our canvas (don't free — user can re-open with H later).
 	visible = false  # triggers _process() → _canvas.visible = false
@@ -1097,16 +1126,16 @@ func _on_confirm_pressed() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 
 	if multiplayer.is_server():
-		_request_loadout(target_id, primary_path, secondary_path, melee_path, Player.Team.FFA, character_path, class_path, rand_on_death)
+		_request_loadout(target_id, primary_path, secondary_path, melee_path, Player.Team.FFA, character_path, class_path, rand_on_death, respawn)
 	else:
-		_request_loadout.rpc_id(1, target_id, primary_path, secondary_path, melee_path, Player.Team.FFA, character_path, class_path, rand_on_death)
+		_request_loadout.rpc_id(1, target_id, primary_path, secondary_path, melee_path, Player.Team.FFA, character_path, class_path, rand_on_death, respawn)
 
 # ─────────────────────────────────────────────
 #  RPCs (mirrors ClassSelectUI)
 # ─────────────────────────────────────────────
 
 @rpc("any_peer", "reliable")
-func _request_loadout(tpid: String, pp: String, sp: String, mp: String, team: Player.Team, cp: String = "", class_path := "", rand_on_death := false) -> void:
+func _request_loadout(tpid: String, pp: String, sp: String, mp: String, team: Player.Team, cp: String = "", class_path := "", rand_on_death := false, respawn := true) -> void:
 	if not multiplayer.is_server():
 		return
 	var sid := multiplayer.get_remote_sender_id()
@@ -1159,7 +1188,8 @@ func _request_loadout(tpid: String, pp: String, sp: String, mp: String, team: Pl
 	player._loadout_class_path = class_path
 	player.set_randomize_on_death(rand_on_death)
 	_apply_loadout.rpc(tpid, pp, sp, mp, team, cp)
-	player.rpc_reset.rpc(player._get_spawn_transform())
+	if respawn:
+		player.rpc_reset.rpc(player._get_spawn_transform())
 	# Keep the persistent manual-bot roster in step so a dev-menu edit survives
 	# return_to_lobby.  Autofill bots have no entry (no-op).
 	if tpid.begins_with("bot_") and GameManager.spawn_manager:

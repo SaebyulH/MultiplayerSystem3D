@@ -5,7 +5,7 @@ extends Area3D
 ## "Press E to host" and E opens the full host menu (world/host_menu.tscn).
 ## A joined player instead sees "MUST BE PARTY LEADER" and cannot interact.
 
-const HOST_MENU_SCENE := preload("res://world/host_menu.tscn")
+const GLOBE_MENU_SCRIPT := preload("res://world/globe_menu.gd")
 
 @onready var prompt_label: Label3D = $PromptLabel
 
@@ -30,9 +30,7 @@ func _ready() -> void:
 func _ensure_menu() -> bool:
 	if _menu != null and is_instance_valid(_menu):
 		return true
-	if not _is_leader():
-		return false
-	_menu = HOST_MENU_SCENE.instantiate()
+	_menu = GLOBE_MENU_SCRIPT.new()
 	if _menu == null:
 		return false
 	get_tree().root.add_child(_menu)
@@ -92,15 +90,7 @@ func _refresh_prompt() -> void:
 		prompt_label.visible = false
 		return
 	prompt_label.visible = true
-	if _lobby_shell():
-		if LobbyClient.is_enabled():
-			prompt_label.text = "Create Match (E)" if _is_leader() else "MUST BE PARTY LEADER TO CREATE"
-		else:
-			prompt_label.text = "Host Match (E)" if _is_leader() else "MUST BE PARTY LEADER TO HOST"
-	elif _lobby_staging():
-		prompt_label.text = "Start Match (E)" if _is_leader() else "MUST BE PARTY LEADER TO START"
-	else:
-		prompt_label.text = "Host Server (E)" if _is_leader() else "MUST BE PARTY LEADER"
+	prompt_label.text = "Match Menu (E)"
 
 
 # ─────────────────────────────────────────────
@@ -108,24 +98,18 @@ func _refresh_prompt() -> void:
 # ─────────────────────────────────────────────
 
 func _unhandled_input(event: InputEvent) -> void:
-	if _menu != null and is_instance_valid(_menu) and _menu.is_open():
+	if _menu != null and is_instance_valid(_menu) and _menu.visible:
 		if event.is_action_pressed("ui_cancel") or (event.is_action_pressed("interact") and not event.is_echo()):
-			_menu.close()
+			_menu.close_menu()
 		return
 	if not _local_player_inside():
 		return
-	if event.is_action_pressed("interact") and not event.is_echo() and _is_leader():
-		# Another menu (loadout, dev hacks, …) owns input.  Without this, the
-		# popup opens on top of it and its close clears ui_open underneath.
+	if event.is_action_pressed("interact") and not event.is_echo():
+		# Another menu (loadout, dev hacks, …) owns input.
 		if PlayerInput.ui_open:
 			return
-		if _lobby_shell() and LobbyClient.is_enabled():
-			_create_match_via_lobby()
-			return
-		# Local shell without lobbyd: open the host menu first so the host picks
-		# the map/teams/bots; `_on_start_pressed` boots the listen server.
 		if _ensure_menu():
-			_menu.open()
+			_menu.open_menu()
 
 
 func _create_match_via_lobby() -> void:

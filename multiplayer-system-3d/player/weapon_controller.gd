@@ -528,6 +528,10 @@ func _ready() -> void:
 	var sem := _parent_player.get_node_or_null("StatusEffectManager") as StatusEffectManager
 	if sem != null:
 		sem.client_effects_changed.connect(_refresh_holstered)
+	# Initial state: the combat flag may already be false (replicated before this
+	# node's _ready, or a dev toggle that landed early), and the weapon model was
+	# spawned above before any refresh ran.
+	_refresh_holstered()
 
 	player_input.previous_weapon.connect(previous_weapon)
 	player_input.next_weapon.connect(next_weapon)
@@ -2323,12 +2327,21 @@ func set_holstered(value: bool) -> void:
 		_cancel_scope()
 
 
-## Recompute the holster from the effect mirror.  Called on every mirror change,
-## including the removal that immediately precedes a calligraphy throw — which is
-## what lets that throw reach fire_weapon_fire with the gun already back in hand.
+## Recompute the holster from the effect mirror and the player's combat mode.
+## Called on every mirror change, including the removal that immediately precedes
+## a calligraphy throw — which is what lets that throw reach fire_weapon_fire with
+## the gun already back in hand — and by Player's `in_combat` setter.
 func _refresh_holstered() -> void:
 	var sem := _parent_player.status_effect_manager if _parent_player != null else null
-	set_holstered(sem != null and sem.is_weapon_holstered())
+	var out_of_combat := _parent_player != null and not _parent_player.in_combat
+	set_holstered(out_of_combat or (sem != null and sem.is_weapon_holstered()))
+
+
+## Public entry for Player's `in_combat` setter.  Deliberately does not add a
+## per-frame poll: calligraphy_release removes the hold effect and fires in the
+## same call, so re-reading the mirror mid-frame would still say "holstered".
+func refresh_holstered() -> void:
+	_refresh_holstered()
 
 
 ## Fire a standalone WeaponFire resource on demand.  Used by abilities (e.g.

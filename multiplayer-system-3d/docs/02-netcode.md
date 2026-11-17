@@ -174,6 +174,14 @@ On remote peers the camera basis for that player's copy is stale, so camera-rela
 
 Ammo correction to clients: `_sync_mag` (`2317`) clamps and re-emits `mag_changed`. Reload completion uses `_confirm_reload_done`.
 
+**Third person mirrors the recoil onto the view.** `_fire_single_shot` takes its origin and basis from `_raycast.get_parent()` = `Body/Recoil/Head/Camera3D`; `Recoil` is that camera's grandparent, so the kick is baked into the fire direction on every peer. In first person the live view camera *is* that camera, so the centred crosshair is the fire direction by construction. In third person the view is the orbiting `ThirdPersonRoot` rig, a sibling of `Body` that never inherits `Recoil`, so `_apply_third_person_recoil` rebuilds the camera basis every frame (`_update_third_person_aim`, before the aim correction; `_sync_third_person_rig` on entry) as `kick * rig_basis * rest_local`, where `kick = body_global * recoil_local * body_global⁻¹` is the recoil conjugated into world space. The view kicks with the shot, the crosshair stays centred, and it keeps meaning the fire direction. Three invariants follow:
+
+- **The kick must be world-space, not camera-local.** `Recoil` sits *above* `Head`, so it rotates about the body's unpitched axes. Composing its local basis onto the pitched camera basis would skew the kick when looking steeply up or down.
+- **`_aim_body_head_at_point` must correct with the real `camera_forward()`, recoil included.** The aim target is the kicked camera's RayCast3D hit, so the target and the forward both carry the kick and the body holds its pre-kick mouse aim. Reconstructing a *recoil-free* forward (the old `recoil_free` mode, since removed) would turn the body onto the kicked target and the shot would then get the kick a second time.
+- **Do not write the kick into `ThirdPersonPitch`/`ThirdPersonRoot`.** Those are written directly by mouse look (`body.gd:_apply_mouse_look`); the kick lives on the camera node so the two cannot fight or accumulate.
+
+**The third-person aim ray must exclude the shooter.** `ThirdPersonCamera3D/RayCast3D` masks `WORLD | HURTBOX` and starts at the spring camera, which collapses onto the body when a wall is behind the player; the player's own hurtboxes are `PhysicalBone3D` bodies on HURTBOX, so without the exclusion in `Player._ready` the ray clips the player's own arms and the aim point lands on the shooter (`05-known-issues.md` #140). The exclusion is the player's whole subtree, mirroring the fire ray, and is built once at `_ready`.
+
 ### Charged weapons (bow): the draw is broadcast state, the shot is scored server-side
 
 `Weapon.charged` (`weapon/weapon.gd`, the `Charge` group) turns a weapon into hold-to-fire: holding the trigger draws it, releasing looses it. The draw scales damage, projectile speed and spread, and applies a movement multiplier. Full charge is the weapon's authored stats; every `uncharged_*` export is the other end of its ramp, so a charged weapon with all of them at `1.0`/`0.0` behaves exactly like an ordinary one.
@@ -339,7 +347,7 @@ Other modes follow the same shape: `koth_mode.gd:23-39` and `domination_mode.gd:
   - **Bots** (`is_bot`, set at `spawn_manager.gd:129-131`): `player_input`, `body`, `DamageNumberManager` → authority **1**.
   - **Humans**: root `Player` → authority **1** (server), but `player_input` → `id`, `body` → `id`, `DamageNumberManager` → `id`.
 - Everything else (`WeaponController`, `AttributeComponent`, `StatusEffectManager`, `AbilityManager`, `HurtComponent2`) inherits root authority = **server (1)**. This is why ammo/health/effects are server-authoritative while the human keeps authority only over `player_input` (rollback input source) and `body` (camera look).
-- Root `MultiplayerSynchronizer` (`player/player.tscn:454-455`, config 26-32) replicates `AttributeComponent:health` (spawn + always) and `.:team` (spawn + always). The `WeaponController`'s `MultiplayerSynchronizer` (474-475, config 34-37) replicates `current_weapon_index` on change.
+- Root `MultiplayerSynchronizer` (node under `Player`, config `SceneReplicationConfig_1s1yo` in `player.tscn`) replicates `AttributeComponent:health`, `.:team`, `.:is_spectating`, `.:owner_peer_id` and `.:in_combat` (all spawn + on-change). The `WeaponController`'s `MultiplayerSynchronizer` (config `SceneReplicationConfig_2ieo8`) replicates `current_weapon_index` on change.
 - **Bots are fully server-authoritative**: `BotController._physics_process` guards `is_bot`, `multiplayer.is_server()`, `spawned` (`bot_controller.gd:188-194`) and writes directly into `player.player_input.input_dir`/`jump_input`/fire flags. Bot `player_input` authority is 1 and `_gather()` skips bots (`player_input.gd:71-72`), so bot input is written by `BotController` on the server and recorded/broadcast by the RollbackSynchronizer from peer 1.
 - Bots' aim (`_apply_smooth_aim`, `bot_controller.gd:343-353`) writes `player.body.rotation.y`/head pitch directly — meaningful only because the server owns the bot's body node.
 - **Bot survival, hearing and hunt state is server-local.** The recent-damage bucket, threat pressure, cover/flee timers, the `Decision.State.FLEE`/`SEARCH` states, the heard-sound memory and the hunt sweep points live only on peer 1 inside `BotController`. They are not `Player` state, not in any `MultiplayerSynchronizer`, and have no RPC; a client simply sees the resulting movement/aim through the normal bot input replication. Manual-bot `survival` overrides persist in `GameManager.lobby_bots` like every other trait. **Hearing is a distance check, not a detection cone:** footsteps report a 12 m radius scaled by the listener's awareness (×0.65–1.1) and gunshots 35 m. A sound from a **teammate or the bot itself is ignored**, and a bot already engaging an enemy ignores new sounds, so two bots on one team will never hunt each other no matter how close they are. A two-bot FFA test inside footstep range does work (verified by a temporary probe).
@@ -363,6 +371,7 @@ Self-targeted only, and split by what each flag actually gates:
 | Dev noclip | every peer (rollback movement) | the server broadcasts `@rpc("authority", "call_local", "reliable") _sync_dev_noclip`; every peer must simulate the same movement mode. The client does **not** set it optimistically |
 | Bots ignore me | local copy + the server's copy | bots simulate only on peer 1, so the client sends an owner-gated request; not broadcast to third parties |
 | Hide player HUD / hide other HUD / hide model | local only (`GameManager`, `Player`) | never networked — they affect only the peer that set them. The other-HUD toggle hides the mode HUD CanvasLayer and the kill feed; menus are never touched |
+| Out of combat (weapons hidden) | every peer (`Player.in_combat`, root synchronizer) | default `true`; the client sends an owner-gated request, the server writes the replicated flag. No extra broadcast is needed — every peer derives the holster and `HoldBlend` from the value |
 | Freeze all bots / remove all bots / randomize bot skills / show nav paths | server only | the Bots tab is disabled for clients; `SpawnManager.remove_all_bots` is server-gated, and skill/trait edits are server-local because bots only simulate on peer 1. Show nav paths is a display flag (`GameManager.dev_show_bot_paths`) read inside the gated `BotController` tick, so clients have nothing to draw |
 | Bot team / skill / advanced traits (including Self-preservation) | server only (team via `Player.dev_set_team`) | list edits write directly to `BotController` on the host; team uses the existing owner-gated player RPC path. No broadcast is needed because only peer 1 simulates bots. Manual roster entries persist team/skill/overrides for return-to-lobby; auto-fill bots do not |
 
@@ -373,6 +382,8 @@ Self-targeted only, and split by what each flag actually gates:
 **A dev toggle that changes no data still has to notify.** `PlayerUI._update_ammo()` runs only from `WeaponController.mag_changed` / `weapon_changed`, not on a timer — so a flag that only changes how the ammo *reads* (the infinite-ammo override) must emit even when it mutates no magazine. `set_dev_infinite_ammo()` therefore emits `mag_changed` when switching **off**; the on-path already repaints through the refill/`_sync_all_mags`. Do not "optimise" that emit away. Cooldowns/stamina are polled per frame by the HUD; god mode is mirrored, so its indicator needs no notification of its own.
 
 **Dev flags are toggles, never rollback state.** They are not in `RollbackSynchronizer.state_properties` and are not part of `rpc_sync_full_state`. Stamina and dev noclip are the flags every peer must agree on (they gate rollback movement), which is why they are broadcast; a late joiner does not inherit either until the next toggle. The visual flags (HUD/model) are deliberately local and persist across world swaps — `world_1._ready()` re-applies the world-HUD one to the rebuilt HUD nodes.
+
+**Combat mode is a replicated Player state, not a local display flag.** `Player.in_combat` defaults to `true` and is in the root `MultiplayerSynchronizer` (spawn + on-change), so all peers agree. Its setter calls `WeaponController.refresh_holstered()`, which ORs "not in combat" into the calligraphy-holster predicate; while holstered the viewmodel is hidden, `_is_ready()` is false (firing and weapon switching are refused) and pending fire/charge/scope state is cleared. `player/animation_tree.gd` smoothly drives `parameters/HoldBlend/blend_amount` to `1.0` in combat and `0.0` out of it — 0 drops the weapon-hold pose and the whole one-shot chain, 1 restores them. The dev toggle only flips this state; map zones (spawn rooms) will write it later. Do **not** poll the status-effect mirror per frame: `calligraphy_release` removes the hold effect and fires in the same call, so the holster must stay signal/edge driven.
 
 **Bot loadout editing reuses the normal loadout path.** `LoadoutMenuUI.open_for_bot()` retargets the single menu instance (`player_id` = the bot's name) and confirm calls `_request_loadout`, whose sender check already permits `bot_` targets. That path respawns the bot via `rpc_reset` and updates the persistent `GameManager.lobby_bots` entry.
 
@@ -1131,3 +1142,27 @@ they already have, with no RPC and no per-frame work.
 10. **The tick domain is monotonic and only repairable by a full re-seed** — never apply a tick rate after `NetworkTime.start()`, and never let the watchdog resync the host. §8, `05-known-issues.md` #18.
 11. **Ability charges are per-peer and never reconciled** — the pool and the inter-cast interval are tracked independently on the client (optimistic) and the server (authoritative), exactly like the cooldowns beside them, so they drift by ~½ RTT and a boundary cast can be refused with no refund. `05-known-issues.md` #46.
 12. **A metered ability's pool is per-peer too, and its *toggle* makes that worse than a refused cast** — a refused charge merely delays a cast, but two peers whose on/off flags disagree would flip in opposite directions and stay inverted, so the direction is carried with the cast (`want_on`) and `_set_meter` is idempotent. A refused turn-on still leaves the client draining a bar for something that is not running until the local pool empties and it corrects itself. `05-known-issues.md` #47.
+
+---
+
+## Local-flow RPC additions (2026-11-17)
+
+- **`Player.rpc_spawn_now(transform)`** is an `authority`/`call_local`/`reliable`
+  RPC used only by the title/lobby entry. It calls `rpc_reset(transform)` and
+  then zeroes `respawn_timer`, so the player appears on the next physics tick
+  without the normal 1 s death/respawn overlay. Death, round reset, reconnect
+  and map swaps still use the unchanged 1 s `rpc_reset` path.
+- **`MatchSession.client_map_ready` / `await_map_ready`** implement the
+  `MAP_READY` barrier. The server enters ACTIVE only after every connected
+  peer ACKs the LOADING map (or the 15 s `MAP_MATCH_DEADLINE_SECONDS` expires).
+- **`MatchSession.set_phase()` writes `phase` locally before broadcasting.**
+  `broadcast_phase` is `call_remote`, so omitting the local write left the
+  server's own room phase stale and made `welcome` carry the wrong phase.
+- **Staging actions are server-validated RPCs:** `request_set_staging_map`,
+  `request_add_bot`, `request_set_ready`, `request_switch_team`,
+  `request_join_in_progress`, `request_start_match`, `request_end_match`.
+  Host-only actions re-check `host_player_id`; self actions validate the sender
+  maps to the claimed player id.
+- **`GameManager.local_loadout` is local state, not rollback or replicated
+  state.** It is applied through the existing `_request_loadout` path so the
+  server remains the authority for the actual weapon/character resources.

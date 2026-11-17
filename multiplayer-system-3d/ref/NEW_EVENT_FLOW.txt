@@ -1,0 +1,1114 @@
+NEW EVENT FLOW - CORRECTED IMPLEMENTATION PLAN
+================================================
+
+Branch: netcode-rework
+Date: 2026-11-17
+Revision: 3 (corrected against the repository)
+Implementation status: partial. Phases 1, 2 (Menu shell), 3 (merged list),
+4, 5 and 7 (join-in-progress) are landed in code. Phase 6 (parties) is a
+disabled Party-tab placeholder; immediate host migration, full staging
+drag-team assignment and live lobbyd status remain open. See
+docs/01-boot-sequence.md Stage 13 and docs/05-known-issues.md #140-#147.
+
+Revision 2 was written without access to this repository. It mixed desired
+behavior with claims about the current build. This revision separates the two
+and turns the proposal into a file-level implementation plan.
+
+Read every statement as one of:
+
+  [CURRENT]  Verified behavior in the code today.
+  [TARGET]   A product decision to implement. Not present today.
+  [PLAN]     A concrete implementation step, with the files it touches.
+  [GAP]      Something Revision 2 assumed exists but does not.
+
+The baseline player-visible flow is recorded in ref/PLAYER_FLOW.txt. This
+document does not replace that description until the corresponding phase is
+actually implemented.
+
+
+1. CURRENT GROUND TRUTH
+-----------------------
+
+1.1 Boot
+  [CURRENT] `project.godot` main scene is `world/main.tscn`.
+  [CURRENT] `world/main.gd::_boot()` shows `LoadingScreen`, preloads six heavy
+			resources, then routes on command-line flags.
+  [CURRENT] The default route is `NetworkManager.boot_offline_lobby()`:
+			OfflineMultiplayerPeer, role OFFLINE, `NetworkTime.start()`
+			called manually by `create_offline_peer()`.
+  [CURRENT] The loading screen hides after two rendered frames. There is no
+			title screen and no click-to-start gate.
+  [CURRENT] `world1.tscn` is built immediately with
+			`maps/main_menu_world.tscn` as the map.
+  [CURRENT] A dedicated `--server` process skips all local UI and has no local
+			player.
+
+1.2 Lobby and loadout
+  [CURRENT] `world_1.gd::_ready()` sets `PlayerInput.ui_open = true`, shows the
+			mouse, and adds SpawnManager plus player 1 in every host context.
+  [CURRENT] The Loadout screen starts visible. It is mandatory before the
+			player can move. Confirm calls `_request_loadout`, which applies
+			weapons/character and calls `Player.rpc_reset(spawn_transform)`.
+  [CURRENT] `Player.rpc_reset` despawns and sets `respawn_timer = 1.0`
+			(`Player.respawn_time`). The player becomes visible after that
+			timer in `_physics_process`.
+  [CURRENT] The first Loadout opening randomizes character and one weapon per
+			column (`LoadoutMenuUI._initial_selection_done` static). Later
+			openings select the first character, not a stored build.
+  [CURRENT] There is no process-wide or on-disk loadout store. The menu's
+            selection state dies with the world.
+  [CURRENT] `LoadoutMenuUI._on_confirm_pressed()` always ends in
+            `_request_loadout`; there is no "apply without respawn" mode.
+  [CURRENT] The Loadout screen's "Leave Party" button calls
+			`NetworkManager.return_to_lobby()`. This is the only in-game exit
+			today.
+
+1.3 Lobby interaction and hosting
+  [CURRENT] `maps/main_menu_world.tscn` contains two Area3D zones:
+			`HostServer` (`world/host_server_area.gd`) and `JoinParty`
+			(`world/join_party_area.gd`).
+  [CURRENT] HostServer opens `world/host_menu.tscn` only for the local match
+			host (`MatchSession.local_is_host()`), and only when
+			`PlayerInput.ui_open` is false.
+  [CURRENT] The Host menu contains map selection, team assignment, add bot,
+			auto-fill, and Start.
+  [CURRENT] In the OFFLINE shell Start stores host team/autofill in
+			`GameManager.pending_host_setup` and calls
+			`NetworkManager.host_local_match(port, selected_map)`. That boots a
+			listen server **directly into the selected map**, not into a
+			staging room.
+  [CURRENT] In a LISTEN_SERVER or LEGACY_P2P context Start calls
+			`NetworkManager.load_match_map(path)` directly.
+  [CURRENT] In a CLIENT context Start sends
+			`MatchSession.request_start_match.rpc_id(1, path)`; the server
+			validates the sender and loads the map.
+  [CURRENT] Team assignment in the Host menu writes `Player.team` locally and
+			assumes replication. Auto-fill/add-bot call
+			`GameManager.spawn_manager` locally. A client cannot use these
+			paths, because it has no local SpawnManager.
+
+1.4 Joining
+  [CURRENT] JoinParty opens a custom popup built in `join_party_area.gd`.
+			It has a LAN tab and a Direct IP tab.
+  [CURRENT] LAN discovery uses `LanDiscovery` and UDP 7355-7370. The announce
+			contains map path/name, player count, max, phase/state, port,
+			match id. It does not contain a match name, host name, mode, build
+			id, or ping.
+  [CURRENT] The Direct IP tab accepts `ip[:port]` or a 6-character base-62
+			"join code". `ConnectionUtils` owns that code; it encodes an IPv4
+			address and always assumes port 8080. It is not the same format as
+			lobbyd's match code.
+  [CURRENT] In the default OFFLINE shell, both joins call `join_party(...,
+            use_match_session = true)`. `--legacy-p2p` uses the old P2P path.
+  [CURRENT] `LobbyClient` (`network/lobby_client.gd`) has only
+            `create_match()`, `list_matches()`, and `join_by_code()`. It has no
+            match-detail, leave, or party API.
+  [CURRENT] The optional lobbyd browser is `world/match_browser.gd`. It is
+            separate from the LAN/Direct popup and only lists lobbyd matches.
+
+1.5 Match session
+  [CURRENT] `MatchSession` already owns stable `player_id`, roster, `hello`/
+            `welcome`, heartbeat/reaper, resume, phase broadcast, and
+            `host_player_id`.
+  [CURRENT] `MatchProtocol.Phase` already defines ALLOCATING, STARTING,
+            STAGING, COUNTDOWN, LOADING, ACTIVE, RESULTS, DRAINING, CLOSED and
+            CRASHED.
+  [CURRENT] Only STAGING and ACTIVE are actually used today. `boot_server`
+            starts in STAGING; `load_match_map` calls
+            `MatchSession.set_phase(ACTIVE, path, hash)` immediately.
+  [CURRENT] There is no countdown, ready-up, staging-state broadcast, switch
+            team, staging bot management, map-ready barrier, or results phase.
+  [CURRENT] `MatchProtocol.Message.MAP_READY` exists as a constant but no RPC
+            implements it. `docs/05-known-issues.md` #126 records the missing
+            map barrier.
+  [CURRENT] `MatchSession.hello` does not reject a join based on phase. A
+            client can technically connect while the server is ACTIVE, but
+            there is no join-in-progress UI or team-balancing step.
+  [CURRENT] In a dedicated match the room host is a client:
+            `hello` assigns `host_player_id` to the first client. In a listen
+            server the host is player 1 / the server process.
+  [CURRENT] Host migration exists only in `_expire_reserved`: when the host's
+			reserved slot expires after `RESUME_GRACE_SECONDS` (90 s), it
+			promotes the lowest surviving connected player. It is not an
+			immediate "earliest joiner" promotion.
+  [CURRENT] There is no end-match request, kick, or host-leave command.
+  [CURRENT] Reconnect/resume works for 90 s with a rotated single-use token.
+  [CURRENT] `world_1.gd` uses `MatchSession.phase_changed` to load a new map
+			on a client, and `world1.tscn` has a MultiplayerSpawner for the
+			legacy path.
+
+1.6 Dedicated lobbyd
+  [CURRENT] `server/lobbyd/lobbyd.c` is an HTTP control plane that allocates
+			UDP ports 7000-7019, forks one `--server` Godot per match, issues
+			HMAC grants, and reaps children.
+  [CURRENT] It has no control channel to the child. The browser's `players`
+            value is the number of issued grants, not live players. Its
+            `state` is always `staging` or `closed`; it does not know whether a
+            match is ACTIVE or in RESULTS. This is documented as known issue
+            #129.
+  [CURRENT] Match codes are 5 characters from a Crockford-style alphabet.
+			The game's Direct IP code is 6 characters from a base-62 alphabet.
+  [CURRENT] lobbyd cannot allocate a party/lobby instance, cannot spawn a
+			non-match lobby process, and has no party endpoints.
+  [CURRENT] `--lobby=http://...` is the only way to enable LobbyClient. The
+			default game requires no external service.
+
+1.7 UI / exit
+  [CURRENT] In a match, Esc releases the mouse (`PlayerInput._input`). It does
+			not open a pause menu.
+  [CURRENT] H toggles the Loadout screen after the first confirm. The
+			Loadout screen has "Leave Party", which returns to a fresh local
+			offline lobby.
+  [CURRENT] `GameModeComponent` has its own PhaseState (SETUP, ACTIVE,
+			OVERTIME, ROUND_END, MATCH_END) and syncs round state at 10 Hz.
+			This is separate from `MatchSession.Phase`.
+  [CURRENT] A Deathmatch end label exists in the mode HUD. There is no
+			full-screen post-match results screen and no automatic return to
+			the lobby.
+  [CURRENT] There is no settings/options system (no volume, sensitivity, FOV,
+			or keybind UI). A pause-menu "SETTINGS" entry would be new work,
+			not a wiring exercise.
+  [CURRENT] There is no web export target. A title screen click is still a
+			useful input gate, but the "web audio gesture" rationale from
+			Revision 2 does not apply to the current build.
+
+
+2. CORRECTIONS TO REVISION 2
+----------------------------
+
+C1. "The lobby world is built behind the Title Screen."
+	[GAP] No title screen exists. The loading screen hands directly to the
+	lobby. The target can still be implemented by building `world1` first and
+	putting a title CanvasLayer over it, but it is new work.
+
+C2. "No mandatory Loadout screen; the player spawns right after the title
+    click."
+	[GAP] The current Loadout screen is mandatory and the player is
+	despawned. `world_1._ready()` sets `ui_open = true`; `SpawnManager` adds
+	player 1; `Player.rpc_reset` starts a 1 s timer. Removing the gate requires
+	an explicit immediate-spawn path.
+
+C3. "The rolled or hand-picked build is stored for the process and re-applied
+    whenever a new world is created."
+	[GAP] There is no loadout store. `LoadoutMenuUI` has per-instance selection
+	plus the `_initial_selection_done` static. `_request_loadout` applies to
+	whichever Player node exists in the current world. A new world resets it.
+
+C4. "In the lobby, confirming applies instantly with no death or respawn."
+	[GAP] `_request_loadout()` unconditionally calls
+	`player.rpc_reset.rpc(player._get_spawn_transform())`. There is no
+	no-respawn variant.
+
+C5. "HostServer and JoinParty are removed; the Globe replaces both."
+	[TARGET] Correct target, but both scenes and scripts still exist. This is
+	a map edit plus script removal, not a documentation-only change.
+
+C6. "The whole party follows the leader."
+	[GAP] There is no party concept anywhere: no PartyManager, no party code,
+	no party roster, no lobbyd party API, and no follow command. It is a new
+	subsystem, not a small addition to MatchSession.
+
+C7. "The party lobby is allocated on the VPS with the same infrastructure as
+    matches."
+	[GAP] lobbyd only allocates match processes (`--server`) with match
+	grants. It cannot allocate a lobby/party process. Its child supervision is
+	also one-way: it reaps a child but has no control channel (#129). A party
+	lobby needs a new allocation type and lifecycle.
+
+C8. "The staging room is a 2D screen; everyone sits there until the host
+    starts."
+	[TARGET] The current server's staging map is the 3D
+    `main_menu_world.tscn`; clients are in the same world and can walk around.
+    A 2D staging overlay can be built in `world1.tscn` while the server keeps
+    the lobby map as its staging map, but the screen, roster, ready state, and
+    start flow do not exist yet.
+
+C9. "The host presses START GAME and the match starts."
+    [GAP] Today `request_start_match` calls `load_match_map` immediately. There
+    is no countdown, no staging lock, no map-ready barrier, and no
+    `COUNTDOWN`/`LOADING` phase use. `MatchProtocol.MAP_READY` is unused and
+    the missing barrier is known issue #126.
+
+C10. "The host role passes to the earliest joiner when the host leaves."
+	[GAP] Current host migration happens only when the host's reserved slot
+	expires after 90 s, and it picks the lowest surviving connected player by
+	id. Immediate promotion and the "earliest joiner" rule are new behavior.
+	On a listen server the host is the server process, so the match cannot
+	survive the host leaving at all.
+
+C11. "Matches run on your VPS, so the match does not end when the host
+    leaves."
+	[GAP] Only lobbyd-spawned dedicated matches run on the VPS. The default
+	no-service flow is a listen server on the player's machine. Host-leave
+    semantics must be defined separately for listen, dedicated, and party
+    lobby.
+
+C12. "Find Match replaces the LAN tab, Direct IP tab, and the lobbyd browser."
+    [TARGET] Correct target, but the current sources are three separate
+    implementations with different fields:
+      - LAN announce: map/path, players, max, phase/state, port, match id.
+      - Direct IP: no server metadata at all.
+      - LobbyClient/lobbyd: id, code, endpoint, issued grants, max, state.
+    A merged list needs source adapters and additional fields; it cannot be a
+    reskin of any one current list.
+
+C13. "The list shows live player counts, IN PROGRESS, ping, player lists,
+    build version."
+    [GAP] lobbyd reports issued grants, not live players, and never reports
+    ACTIVE. LAN reports a coarse `state` and no ping/version. The match server
+    would need to report status to lobbyd, or the client would need to probe
+    each endpoint/count players itself. Ping is not currently measured for
+    unjoined servers at all.
+
+C14. "Party Code and Match Code must never share a format."
+    [GAP] The existing code has two formats already:
+      - `ConnectionUtils` IP code: 6 characters, base-62 alphabet, encodes
+        IPv4, always port 8080.
+      - lobbyd match code: 5 characters, Crockford-style alphabet, maps to a
+        match record.
+	Revision 2's proposed 6-character party code would collide with the IP
+	code format. Use a distinct party namespace (for example a `P` prefix or a
+	different length) and keep the old IP code labelled "IP Code".
+
+C15. "Join in progress is allowed by the flow."
+	[GAP] `hello` currently does not check `MatchSession.phase`, so a late
+	join is not explicitly rejected. But there is no join-in-progress UI, no
+	team balancing, no spawn/despawn rule, and the client still sees the old
+	mandatory Loadout screen. "Allowed" is an intended policy, not an
+	implemented feature.
+
+C16. "Esc opens the pause menu."
+	[GAP] Esc currently releases the mouse. There is no pause menu, no
+	settings system, and no leave-match command. Settings in a pause menu is
+	separate work and should not be promised in the first implementation.
+
+C17. "After a match everyone returns to the 3D lobby with their party."
+	[GAP] There is no server match-end broadcast and no return-to-party flow.
+	A client's `return_to_lobby()` tears down its world and re-boots a local
+    offline lobby. A listen host doing this also ends the server for its
+    clients. Dedicated servers have no local UI. The end-of-match flow must be
+    designed per role.
+
+C18. "Staging team assignment and bot controls are moved from the Host menu."
+    [GAP] Current Host-menu team assignment and bot functions run against
+    local `Player` nodes / `GameManager.spawn_manager`. On a dedicated match
+    the host is a client with no SpawnManager, so these controls must become
+    server-validated RPCs.
+
+C19. "The lobby is rendered behind the title screen with an orbiting camera."
+    [TARGET] There is no title scene or menu camera today. The lobby map has a
+	standalone `Camera3D` that is not current; the player's own camera is
+	current only after spawn. A title camera needs an explicit
+	`Camera3D.make_current()`, or a dedicated title SubViewport/world.
+
+C20. "The player can move immediately after the title click."
+	[GAP] The network tick loop is already running in the offline shell
+	(`create_offline_peer()` starts NetworkTime), but the player body is
+	despawned until loadout. The missing piece is the spawn path, not the
+	network clock.
+
+C21. "A randomized first build is a test convenience."
+	[GAP] The current first-open random selection exists inside
+	`LoadoutMenuUI`; there is no stored build to apply on the title click. A
+	new store and a direct server apply are required.
+
+C22. "LAN and lobbyd are just two sources in the list."
+	[GAP] LAN discovery modules and lobbyd LobbyClient are separate; the
+	lobbyd match browser is only built when `LobbyClient.is_enabled()`. A
+	source abstraction and a stable-key diff model are new code.
+
+C23. "Party kick disconnects a member back to their own offline lobby."
+	[GAP] There is no kick RPC and no party server to send it. A server-side
+	party lobby would need an ENet RPC plus `disconnect_peer` and a client
+	handling path; a leader-hosted listen server would need the same.
+
+C24. "Party members return to the same party lobby after a match."
+	[GAP] The current match server is a separate process from the lobby in
+	the lobbyd model. Returning requires the party lobby process to remain
+	alive while its members are in a match, and the clients to store/rejoin
+	its endpoint and grants. lobbyd has no such lifecycle today.
+
+
+3. TARGET FLOW (CORRECTED)
+--------------------------
+
+This is the target state after all phases. It is not current behavior.
+
+State machine:
+
+  BOOT
+	-> LOADING
+	-> TITLE (default/offline only; skipped by direct routes)
+	-> LOBBY (3D map, player spawned with stored/default build)
+		 |
+		 | E at the Globe
+		 v
+	  GLOBE MENU
+		[START MATCH] [FIND MATCH] [PARTY]
+		 |
+		 | create / join
+		 v
+	  CONNECTING (loading screen)
+		 |
+		 v
+	  STAGING ROOM (MatchSession phase STAGING)
+		 |
+		 | host START GAME
+		 v
+	  COUNTDOWN (5 s)
+		 |
+		 v
+	  LOADING (map path + hash; clients load locally; MAP_READY barrier)
+		 |
+		 v
+	  ACTIVE MATCH (spawn, play)
+		 |
+		 | GameModeComponent MATCH_END / host END MATCH
+		 v
+	  RESULTS (MatchSession phase RESULTS)
+		 |
+		 +-> back to 3D LOBBY
+			  (party lobby if still in a party)
+
+3.1 Boot and Title
+  [TARGET] The default/--offline route builds the lobby world behind a new
+  full-screen title CanvasLayer. It shows "MULTIPLAYER SYSTEM 3D" and a
+  pulsing "Click anywhere to start". The lobby camera is rendered behind it,
+  dimmed. `ui_open = true`, mouse visible, no player spawned, no HUD.
+  [TARGET] Click/Enter/Space starts once. It fades out, applies the stored
+  build (or a random build on first run), spawns the local player immediately
+  (no 1 s respawn overlay), captures the mouse, and consumes the click so it
+  cannot fire.
+  [TARGET] The title appears once per process and never after returning to
+  the lobby or a failed join.
+  [TARGET] Skip routes: --connect, --server, --listen-server, --lobby-create,
+  --lobby-join, and all --test-* routes.
+  [PLAN] This requires an explicit `NetworkManager` boot mode or a
+  `main.gd` flag so the title is not added by every route that builds
+  `world1.tscn`.
+
+3.2 Lobby spawn and loadout
+  [TARGET] The player spawns with a stored build. If no stored build exists,
+  roll a random character and one weapon per column using the same data
+  (`Class`, `Character`, `Weapon`) as the current Loadout menu, then store it.
+  [TARGET] H opens the Loadout screen. In the lobby, Confirm applies the build
+  without killing or respawning the player. In an active match, Confirm still
+  kills/respawns as today.
+  [TARGET] The Loadout screen no longer has "Leave Party"; party and match
+  exits live in the Party tab and the pause menu.
+  [PLAN] Do not move the network clock. The offline tick loop is already
+  active. Only the player spawn path changes.
+
+3.3 Globe
+  [TARGET] One large rotating Globe replaces both pads. Prompt while inside:
+  "Match Menu (E)". Any player may open it. Restrictions are disabled buttons
+  inside the menu, not a pad label.
+  [TARGET] While open: `ui_open = true`, mouse visible, movement/fire input
+  neutral. Esc/E/CLOSE closes it. It refuses to open while another menu owns
+  input.
+  [TARGET] The menu remembers the last tab in this process. If the lobby
+  service is unavailable, Find Match and Party show a disabled state with a
+  clear reason; Start Match remains usable for a local listen server.
+
+3.4 Globe: START MATCH
+  [TARGET] Reuse the current map preview and map browser
+  (`ConnectionUtils.scan_map_data()`, `MapData.map_image`,
+  `map_scene_path`). Remove team assignment and bot controls from this tab.
+  Add:
+	- match name (default "<player>'s Match")
+	- visibility (PUBLIC / PARTY ONLY / PRIVATE)
+	- max players (bounded by the map or the protocol default)
+	- optional password (defer; see open decisions)
+  [TARGET] CREATE MATCH creates the match, takes the party leader and party
+  members to the staging room, and makes the creator the Match Host.
+  [GAP] The current Host menu has no match-name, visibility, max-player, or
+  password fields. These are new data and new server/lobbyd metadata.
+
+3.5 Globe: FIND MATCH
+  [TARGET] One list with LAN and lobbyd sources, tagged [LAN] / [ONLINE], with
+  stable selection by match id or `ip:port`, in-place diff updates, sortable
+  columns, and a details pane.
+  [TARGET] Details: name, map art/name, mode, host, counts, state, source,
+  code, build version. Player list and ping only where the source actually
+  provides them.
+  [GAP] The current lobbyd client has no detail/leave API and no live status;
+  the match server must report phase/roster to lobbyd, or the list must show
+  the fields it can actually know. Do not fake ping or live counts.
+  [TARGET] Direct IP remains as a collapsed legacy section ("IP Code"), using
+  the existing 6-character `ConnectionUtils` code. Join Local keeps its
+  current disabled-when-hosting behavior.
+
+3.6 Globe: PARTY
+  [TARGET] Party code, copy button, join-by-code, member list with leader
+  crown, statuses (IN LOBBY / IN STAGING / IN MATCH), promote/kick for the
+  leader, leave party.
+  [GAP] This requires the new Party service described in section 5. Until it
+  exists, the Party tab is a disabled placeholder, not a partially working
+  list.
+  [TARGET] Party members in a party lobby are real players in the 3D lobby
+  map. This requires a shared lobby server, not just a roster popup.
+
+3.7 Connecting
+  [TARGET] The existing loading screen remains: "Connecting...", "Loading
+  world...", "Spawning players...". Failures return to the lobby and show a
+  non-blocking reason. Optionally reopen the Globe on FIND MATCH if that is
+  desired (see open decisions).
+
+3.8 Staging Room
+  [TARGET] A 2D CanvasLayer over `world1.tscn`, shown when the local process
+  is in a match session and `MatchSession.phase == STAGING` (or COUNTDOWN),
+  and not in the offline lobby shell.
+  [TARGET] Header: match name, map name, mode/description, code, player count,
+  visibility.
+  [TARGET] Roster: FFA one list; team modes SPI (left, red) / SCI (right,
+  blue). Each row: portrait, name/id, host crown, party marker, ping, READY,
+  [BOT]. Party members grouped and tagged; "Party split" if necessary.
+  [TARGET] Loadout: compact stored build with a CHANGE button that opens the
+  existing Loadout screen over the staging room. RANDOMIZE and "Randomize on
+  every death" are available. Confirm in staging must apply without a respawn.
+  [TARGET] Everyone: SWITCH TEAM (team modes), READY toggle, LEAVE MATCH.
+  [TARGET] Host only: ADD BOT, REMOVE BOT, AUTO-FILL WITH BOTS, CHANGE MAP,
+  MATCH SETTINGS (name/visibility/max/kick), START GAME.
+  [TARGET] Ready is advisory. Start is blocked only by technical conditions:
+  a peer mid-connection, or a team mode with no player/bot on a team. Show the
+  reason in a tooltip.
+  [TARGET] Join in progress: if the server phase is ACTIVE, the staging room
+  shows "Match in progress" and a JOIN IN PROGRESS button; the server assigns
+  the smaller team (or the party's team if possible).
+  [PLAN] The staging room must be data-driven from a new staging snapshot,
+  not from each client's local assumptions. The server owns teams, ready,
+  match settings, bots, and the selected map.
+
+3.9 Countdown and map start
+  [TARGET] Host START GAME enters `MatchSession.Phase.COUNTDOWN` for 5 s,
+  broadcasts the countdown, locks teams/bots, then enters `LOADING`.
+  [TARGET] The server announces the selected map path + SHA-256. Clients load
+  the map locally (existing model), send `MAP_READY`, and the server only
+  enters ACTIVE after the barrier or a deadline.
+  [TARGET] Players spawn after the normal spawn timer, the staging room
+  closes, and the match HUD appears.
+  [GAP] Current `load_match_map()` sets ACTIVE immediately and does not use
+  `MAP_READY`. This is known issue #126 and must be fixed before the countdown
+  flow is meaningful.
+
+3.10 Match and pause
+  [TARGET] No mandatory Loadout screen on spawn. H opens Loadout; Confirm
+  kills/respawns as it does today.
+  [TARGET] Esc with no other menu opens a pause menu:
+	  RESUME
+	  LOADOUT
+	  LEAVE MATCH (confirm)
+	  END MATCH (host only, confirm)
+  [TARGET] SETTINGS is omitted until a settings system exists. Do not ship a
+  dead button.
+  [TARGET] The match keeps running for everyone while a pause menu is open.
+
+3.11 Results and return
+  [TARGET] On `GameModeComponent.match_won` (or host END MATCH) the server
+  enters `MatchSession.Phase.RESULTS`, freezes gameplay, and broadcasts the
+  winner, mode result, scores, and a results deadline.
+  [TARGET] A full-screen results screen shows the Tab-leaderboard layout,
+  winner banner, and personal stats for about 10 s.
+  [TARGET] Return behavior is role-specific:
+	  - Dedicated/lobbyd match: clients return to the local/party lobby; the
+		match process is closed by lobbyd or exits after results.
+	  - Listen server with the host playing: either keep the process alive and
+		swap back to the lobby map with phase STAGING (preferred, preserves
+		the session), or end the server and let clients rejoin their own
+		lobby. The plan uses the map-swap-back path to avoid another
+		teardown/re-host.
+	  - Legacy P2P: keep current return-to-lobby semantics.
+  [GAP] There is no server end-match command and no client return-to-party
+  path. `return_to_lobby()` currently tears down the local world and
+  re-boots a fresh offline lobby; on a listen server that also ends the
+  server for clients.
+
+3.12 Join in progress
+  [TARGET] The server accepts a join while ACTIVE only as an explicit
+  `JOIN IN PROGRESS` action. The client reaches staging, then requests spawn.
+  The server assigns a team, applies the stored/confirmed loadout, and
+  respawns the player. The lobby list must know the room is active (see
+  lobbyd status).
+  [GAP] The current handshake happens to accept late clients, but there is no
+  policy, UI, or team assignment. Do not call this implemented until the
+  staging/join action exists.
+
+
+4. IMPLEMENTATION PLAN
+----------------------
+
+The phases are ordered to keep the game runnable after each one. Do not start
+a later phase by deleting current working paths first.
+
+PHASE 0 - Protocol and state model (no visible behavior)
+  Files:
+	network/session_protocol.gd
+	network/match_session.gd
+	docs/07-dedicated-server.md
+  Work:
+	- Add a `SessionKind` distinction: OFFLINE_LOBBY, MATCH_STAGING,
+	  MATCH_ACTIVE, PARTY_LOBBY. Do not overload `MatchSession.phase` alone;
+	  today a plain offline lobby also has phase STAGING.
+	- Keep `MatchProtocol.Phase` as the room lifecycle. Keep
+	  `GameModeComponent.PhaseState` as the round lifecycle. Document the
+	  distinction.
+	- Add message ids for the new staging/party/result messages. Existing
+	  `MAP_READY` is already defined; do not reuse a number for a different
+	  shape.
+	- Define a serializable match descriptor (id, code, name, map path/name,
+	  mode, host name, counts, phase, build, source) and a party descriptor.
+	- Bump `MatchProtocol.VERSION` on the first RPC shape change. The C
+	  supervisor must be updated in the same commit if it mirrors constants.
+  Exit gate:
+	- Existing offline boot, LAN join, Direct IP join, lobbyd join, reconnect,
+	  and map start still pass the current smoke tests.
+	- No visible UI change.
+
+PHASE 1 - Title, immediate lobby spawn, loadout store
+  Files:
+	ui/title_screen.tscn (new), ui/title_screen.gd (new)
+	world/main.tscn / world/main.gd
+	world/world1.tscn / world/world_1.gd
+	world/loadout_menu.gd
+	player/player.gd
+	singletons/game_manager.gd or a new loadout store autoload
+  Work:
+	- Add a title CanvasLayer, shown only for the default/--offline boot.
+	  Hold the world built behind it; set `ui_open = true`, mouse visible, no
+	  player spawn, no HUD. Use a dedicated current camera for the lobby
+	  backdrop or hide the scene behind the dim.
+	- Add a local build store (for example `GameManager.local_loadout`) with
+	  class/character/primary/secondary/melee paths and randomize-on-death.
+	  Decide whether it is process-only or saved with ConfigFile; start
+	  process-only unless persistence is requested.
+	- Add a server-authoritative "apply build now" path and a "spawn now"
+	  path. `Player.rpc_reset` is not enough: it always waits
+	  `respawn_time`. Either add an optional respawn-delay parameter (protocol
+	  bump) or a separate reliable spawn RPC. Keep death respawns at 1 s.
+	- On the title click: apply the stored build, spawn immediately, capture
+	  the mouse, consume the click.
+	- In the lobby, Confirm changes the build with no `rpc_reset`. In a match,
+	  Confirm keeps the existing kill/respawn path.
+	- Remove or hide "Leave Party" only when the Party/Pause replacements
+	  exist; otherwise keep a working exit.
+  Exit gate:
+	- Default boot reaches the title, then a spawned lobby player, with no
+	  mandatory Loadout screen and no 1 s spawn overlay.
+	- H -> change build in the lobby does not kill or move the player.
+	- --connect and dedicated routes do not show the title.
+
+PHASE 2 - Globe replaces the two pads
+  Files:
+	maps/main_menu_world.tscn
+	world/globe_area.gd (new)
+	world/globe_menu.gd / .tscn (new; may reuse host_menu code)
+	world/host_menu.gd / .tscn
+	world/host_server_area.gd (remove after migration)
+	world/join_party_area.gd (remove after migration)
+	world/world1.tscn (menu/exit hooks if needed)
+  Work:
+	- Add one Globe Area3D to the lobby map with a rotating mesh and a
+	  billboard prompt. Use the existing Area3D body tracking pattern.
+	- Implement the Globe menu shell with tabs and a persistent footer.
+	  Restrict movement/input exactly as the current Host menu does.
+	- Move the map preview/browser into the START MATCH tab. Remove team
+	  assignment and bot controls from this tab.
+	- Keep a hidden/legacy path until the new flow is verified, then delete
+	  the old pads and scripts. Update `maps/main_menu_world.tscn` and the docs
+	  in the same change.
+  Exit gate:
+	- Only the Globe opens a match menu; Host/Join pads are gone.
+	- Start Match still reaches a valid match in the no-service flow (until
+	  Phase 4 changes it to staging).
+
+PHASE 3 - One Find Match list
+  Files:
+	world/globe_menu.gd (Find Match tab)
+	network/lobby_client.gd
+	world/match_browser.gd (fold in, then remove)
+	network/lan_discovery.gd
+	server/lobbyd/lobbyd.c
+	new server-list model (for example world/server_list_model.gd)
+  Work:
+	- Define a source adapter interface returning match descriptors from
+	  LanDiscovery and LobbyClient.
+	- Add the missing lobbyd client calls: match detail, leave, and whatever
+	  is needed for the list. Do not expose data the source does not have.
+	- Add stable-key diffing: key = match id for lobbyd, `ip:port` for LAN.
+	  Update rows in place; never clear the list and lose selection/scroll.
+	- Keep Direct IP as a collapsed legacy section using
+	  `ConnectionUtils` (6-character IP code). Do not merge it with lobbyd
+	  match codes.
+	- Add LAN fields (match name, mode, build id) and lobbyd fields only when
+	  the server/lobby actually supplies them. Ping requires a real probe;
+	  show "unknown" until measured.
+	- Add source tags [ONLINE]/[LAN] and disabled reasons.
+  Exit gate:
+	- LAN and lobbyd entries coexist; auto-refresh preserves selection.
+	- Joining from either source uses the existing match-session handshake.
+	- No fake live counts, ping, or phase.
+
+PHASE 4 - Staging room and start sequence
+  Files:
+	world/staging_room.gd / .tscn (new)
+	world/world1.tscn / world/world_1.gd
+	network/match_session.gd
+	network/network_manager.gd
+	world/loadout_menu.gd
+	world/spawn_manager.gd
+	world/host_menu.gd (reuse map select/settings pieces)
+	world/game_menu.gd / HUD visibility
+  Work:
+	- Add a staging CanvasLayer, hidden by default, driven by
+	  `MatchSession` state. It owns `ui_open`, the mouse, and a full-screen
+	  input block.
+	- Add a server-authoritative staging snapshot RPC: match settings, roster
+	  (stable id, display name, team, party code, ready, bot flag), and the
+	  selected map. Throttle it; do not broadcast per frame.
+	- Add server RPCs for host actions: set match map, set settings, assign
+	  team, add bot, remove bot, autofill, start, kick. Validate
+	  `is_player_host` on the server.
+	- Add self actions: ready toggle, switch team (balance margin), leave
+	  match (before start).
+	- Move team/bot controls out of HostMenu into StagingRoom. Keep the
+	  existing drag-and-drop widgets if useful; change their backing state to
+	  server RPCs.
+	- Apply loadout in staging without respawn. Reuse the stored build;
+	  sending a client change must be server-validated and broadcast.
+	- Change the host Start path to a countdown coroutine:
+		phase COUNTDOWN -> broadcast countdown -> phase LOADING -> load map
+		-> wait for MAP_READY (deadline) -> phase ACTIVE -> rpc_reset players.
+	  `load_match_map` must stop setting ACTIVE immediately. Add the
+	  `MAP_READY` RPC and barrier from #126.
+	- A leave-before-start returns the client to the lobby without ending
+	  the match server for everyone.
+  Exit gate:
+	- Two clients reach staging, host changes teams/bots/map, both ready, host
+	  starts, countdown runs, both load the map, spawn once, and see the match
+	  HUD.
+	- A client can join staging without a mandatory Loadout screen.
+	- A map change in staging does not load the map until start.
+
+PHASE 5 - Pause, leave, results, return
+  Files:
+	world/pause_menu.gd / .tscn (new)
+	world/post_match.gd / .tscn (new)
+	world/world_1.gd
+	network/match_session.gd
+	network/network_manager.gd
+	world/game_mode_component.gd (only if event wiring is needed)
+	world/game_menu.gd / hud_controller.gd
+  Work:
+	- Add Esc handling when no menu owns input. The pause menu sets
+	  `ui_open` and mouse visible; Resume restores capture. Do not add a
+	  settings page until a settings system exists.
+	- LEAVE MATCH: request leave, tear down locally, return to the local or
+	  party lobby. Do not pull other party members out of the match.
+	- END MATCH (host): server-validated; finish gameplay and move all
+	  clients to RESULTS.
+	- On `GameModeComponent.match_won` or END MATCH: server sets
+	  `MatchSession.Phase.RESULTS`, broadcasts winner/scores/results deadline,
+	  then either swaps back to the staging/lobby map for a listen server or
+	  lets the dedicated process close. Clients show the results overlay and
+	  then return.
+	- Make the return path idempotent and safe with `ui_open`, mouse mode,
+	  loading screen, NetworkTime, and the deferred re-host invariant. Do not
+	  call `return_to_lobby()` from inside a synchronous server teardown.
+  Exit gate:
+	- Esc pause works in a match, H loadout still works, leave returns only
+	  the leaving player.
+	- Match end shows results on all peers and returns everyone without
+	  killing the remaining listen server unexpectedly.
+
+PHASE 6 - Parties and the 3D party lobby
+  Files:
+	network/party_manager.gd (new autoload, optional name PartySession)
+	network/session_protocol.gd
+	network/match_session.gd (or a separate party session)
+	network/lobby_client.gd
+	world/globe_menu.gd (Party tab)
+	world/world1.tscn / world_1.gd (party lobby mode)
+	world/player.gd / spawn_manager.gd (party lobby spawn)
+	server/lobbyd/lobbyd.c
+  Work:
+	- This is the largest phase; see section 5 for architecture.
+	- A party lobby is a headless Godot hosting `main_menu_world.tscn` with
+	  players as clients, not a local list in one client. Reuse the dedicated
+	  server world path (`world1` skips local player/UI) but add a session
+	  kind PARTY_LOBBY.
+	- lobbyd must allocate and supervise a lobby process, or a separate
+	  service must do it. Do not claim the existing match allocation is
+	  sufficient.
+	- Party code -> lobby endpoint/grant; leader -> first player in the
+	  party lobby; promote/kick/toggle-ready/party chat hooks are server RPCs.
+	- Follow: leader creates/joins a match; party lobby broadcasts the match
+	  code/endpoint; each member obtains their own grant and connects. This
+	  avoids requiring a lobbyd control channel for the first version.
+	- Return: members reconnect to the party lobby endpoint; the lobby process
+	  must outlive the match or be recreated by party code.
+  Exit gate:
+	- Two clients create/join a party, see each other in the 3D lobby, promote,
+	  kick, follow the leader into a match, and return to the same party.
+	- No-service mode has a clear "party service unavailable" state, not a
+	  broken flow.
+
+PHASE 7 - Join in progress, host migration, live lobby status
+  Files:
+	network/match_session.gd
+	network/network_manager.gd
+	world/staging_room.gd
+	server/lobbyd/lobbyd.c
+	network/lobby_client.gd
+  Work:
+	- Add explicit JOIN IN PROGRESS handling in staging, with team assignment
+	  and loadout apply. Do not rely on the current accidental late-join
+	  acceptance.
+	- Add immediate host-leave promotion for dedicated matches (or a short
+	  grace if reconnect is desired); keep the distinction from the existing
+	  90 s reserved-slot expiry. On a listen server, host leave ends the
+	  server; state that in UI.
+	- Add match-server status reporting to lobbyd (players, phase, results,
+	  build, name) so Find Match can show IN PROGRESS and live counts. This
+	  is the prerequisite for the merged list's state columns and for
+	  lobbyd's current #129 limitation.
+	- Add kick handling and the matching client toast. Match kicks do not
+	  blacklist; party kicks are handled by the party lobby server.
+  Exit gate:
+	- List shows ACTIVE/IN PROGRESS from a real server, not a guess.
+	- A late joiner reaches staging, chooses JOIN IN PROGRESS, is balanced,
+	  spawns, and can leave.
+	- Host leave promotes the correct player immediately on dedicated.
+
+PHASE 8 - Cleanup, docs, and tests
+  Work:
+	- Delete `world/host_server_area.gd`, `world/join_party_area.gd`,
+	  `world/match_browser.gd` once the Globe/Find Match replaces them.
+	- Remove the old Host menu team/bot code if it is fully moved.
+	- Keep Dev Hacks > Bots as a debug-only tool; do not make it the normal
+	  bot manager.
+	- Update docs/01-boot-sequence.md, 02-netcode.md, 03-event-flow.md,
+	  05-known-issues.md, 07-dedicated-server.md, CLAUDE.md, and
+	  ref/PLAYER_FLOW.txt in the same change as each behavioral phase.
+	- Extend the existing cross-process smoke in tests/net rather than
+	  building a new framework. Add scenarios for title/lobby spawn, staging,
+	  start barrier, results, party (if implemented), and join in progress.
+  Exit gate:
+	- Documentation matches code.
+	- Every new flow has a runnable manual or existing-harness check.
+
+
+5. PARTY ARCHITECTURE (THE LARGEST GAP)
+---------------------------------------
+
+5.1 What does not exist
+  - No party state, code, roster, leader, invite, kick, or follow.
+  - No `Party*` autoload or scene.
+  - lobbyd has no party endpoints, no lobby allocation, no control channel,
+	no live player counts, and no phase updates (#129).
+  - The match server and lobby server are different processes in the lobbyd
+	model. A party cannot share a 3D lobby without a lobby server.
+
+5.2 Two real options
+  Option A - VPS party lobby (matches the product decision)
+	- lobbyd (or a sibling service) allocates a headless Godot process that
+	  hosts `main_menu_world.tscn` with a new `--party-lobby` role.
+	- The process uses the existing dedicated-server world path: no local
+	  player/UI, SpawnManager adds joining players, MatchSession handles
+	  roster/heartbeat/resume.
+	- Party code resolves to that lobby endpoint.
+	- The lobby server owns leader/member state and can broadcast a match
+	  code for followers. Members obtain their own grants via lobbyd and
+	  connect to the match.
+	- Requires: new lobbyd allocation type, new client PartyManager, party
+	  RPCs, lobby lifetime policy, and a return path after the match.
+  Option B - Leader-hosted lobby (not recommended for this codebase)
+	- The party leader runs a listen server for the lobby. Simpler to stand
+	  up, but NAT/firewall and host migration become player-facing problems.
+	- The current host-migration code only applies to reserved slots on a
+	  server and would need a separate lobby implementation.
+  Recommendation: Option A, because it matches the stated product decision
+  and avoids host migration for the lobby. Option B is only acceptable if
+  parties are explicitly LAN-only.
+
+5.3 Minimum viable party sequence (Option A)
+  1. Party leader creates a party. lobbyd allocates a lobby process and
+	 returns a party code, endpoint, and grant.
+  2. Leader connects to the lobby process. The server assigns leader id.
+  3. Member joins by party code: lobbyd returns the same endpoint plus a
+	 fresh grant; the client connects to the same lobby process.
+  4. The lobby server's MatchSession roster is the party roster. It sends a
+     party-state snapshot (members, leader, status) to every member.
+  5. Leader creates a match via lobbyd. The lobby server broadcasts the match
+	 code (and/or endpoint) to members. Each member calls lobbyd's join for
+	 that match and receives their own grant.
+  6. Members leave the lobby server for the match. The lobby process remains
+	 reserved/kept alive so they can return.
+  7. After results, members reconnect to the party lobby endpoint with a new
+	 grant. If the lobby expired, the party is reformed with a new code; do
+	 not silently lose the party.
+  8. Promote/kick are lobby-server RPCs:
+	   - promote: set leader id, broadcast.
+	   - kick: disconnect that peer, send a toast; the client boots its own
+		 offline lobby.
+	 Leader disconnect: implement immediate promotion on the lobby server;
+	 do not wait for the 90 s reserved-slot expiry.
+
+5.4 Party data and code format
+  - Party code namespace must be distinct from:
+	  - lobbyd match code (5 chars, Crockford-style),
+	  - `ConnectionUtils` IP code (6 chars, base-62).
+	Use a prefix such as `P-<code>` for display and a separate
+	`join_party_by_code` endpoint. Do not reuse the IP-code parser.
+  - Party membership is server-authoritative in the party lobby. The local
+	PartyManager only mirrors it for UI.
+  - Party size: 4 until changed. A party larger than a team is split; the
+	staging room shows "Party split".
+  - Party status values: IN LOBBY, IN STAGING, IN MATCH. These require the
+	lobby server to know follower transitions, not merely the client UI.
+
+5.5 No-service behavior
+  With no lobby service, there are no party codes and no VPS lobby. The
+  default shell remains solo + LAN/Direct. The Party tab is disabled with a
+  reason. This is a deliberate scope boundary, not a bug.
+
+
+6. PROTOCOL AND DATA MODEL NOTES
+--------------------------------
+
+6.1 MatchSession
+  Add a session kind (or a separate PartySession) so `phase == STAGING` can
+  mean:
+	- offline lobby (no match),
+	- match staging,
+	- party lobby staging.
+  Do not use `map_path == main_menu_world.tscn` alone: a listen server can
+  stage there and a party lobby also uses it.
+
+6.2 Match descriptor
+  Fields needed by the list and staging:
+	id, code, name, endpoint, map_path, map_display_name, mode, host_name,
+	players, max_players, phase/state, build_id, source (LAN/ONLINE),
+	visibility, party_only, password_required, ping (optional).
+  Only populate fields the source knows. The current lobbyd API has no
+  name, map, mode, host, build, or ping; add them to lobbyd and the child
+  status report before showing them.
+
+6.3 Staging snapshot
+	match: name, map, mode, visibility, max, host id
+	players: stable id, display name, team, party code, ready, bot flag
+	selected map path (not loaded yet)
+  Send on change and at a low fixed rate; do not add per-frame work.
+
+6.4 Match lifecycle
+  Use `MatchProtocol.Phase`:
+	STAGING -> COUNTDOWN -> LOADING -> ACTIVE -> RESULTS -> CLOSED.
+  Use `GameModeComponent.PhaseState` only for rounds:
+	SETUP / OBJECTIVE_LOCKED / ACTIVE / OVERTIME / ROUND_END / MATCH_END.
+  Results is a room-level phase; MATCH_END is a round/mode result. Wire
+  `GameModeComponent.match_won` to the room-level RESULTS transition.
+
+6.5 Map start barrier
+  Add the `MAP_READY` RPC that is missing today:
+	server: LOADING + path/hash -> broadcast
+	client: load local map -> send MAP_READY
+	server: wait all ready or MAP_MATCH_DEADLINE_SECONDS (15 s) -> ACTIVE
+  `load_match_map` must stop setting ACTIVE immediately. This is #126.
+
+6.6 Codes
+  - lobbyd match code: keep 5-char Crockford.
+  - Direct IP join code: keep 6-char base-62; label it "IP Code".
+  - Party code: separate namespace/prefix; do not parse with
+	`ConnectionUtils.looks_like_code`.
+  - Never pass one code format to another's join endpoint without an
+    explicit type.
+
+6.7 Protocol version
+  Bump `MatchProtocol.VERSION` for every RPC shape change. `BUILD_ID` stays
+  "dev" until the export pipeline replaces it. The C supervisor must be built
+  from the same constants when it mirrors a value.
+
+
+7. FILE-BY-FILE CHANGE MAP
+--------------------------
+
+  network/session_protocol.gd        Phase/message/error constants; new
+                                     staging/party/results messages; version.
+  network/match_session.gd           Session kind, staging snapshot, ready,
+                                     team, bot, start/countdown, map_ready,
+                                     results, immediate host migration, party
+                                     lobby variant or separate PartySession.
+  network/network_manager.gd         Title/staging boot routes, host to
+                                     staging, return-to-party, start sequence,
+                                     results teardown, no synchronous re-host.
+  network/lobby_client.gd            Detail/leave/party calls; no fabricated
+                                     fields.
+  network/party_manager.gd           New: party code, roster mirror, follow,
+                                     promote/kick, return-to-party.
+  server/lobbyd/lobbyd.c             Match metadata/status, live counts, phase,
+                                     new party/lobby allocation, codes,
+                                     lifecycle, auth; keep dev limits explicit.
+  world/main.gd / main.tscn          Title route and skip rules.
+  ui/title_screen.*                  New title overlay/input gate.
+  maps/main_menu_world.tscn          Remove HostServer/JoinParty; add Globe.
+  world/globe_area.gd                New interactive Globe (Area3D pattern).
+  world/globe_menu.gd/.tscn          New tabbed menu; reuse map browser.
+  world/host_server_area.gd          Remove after Globe migration.
+  world/join_party_area.gd           Remove after Globe migration.
+  world/match_browser.gd             Fold into Find Match; remove.
+  world/world1.tscn / world_1.gd     Title/staging/pause/results overlays;
+                                     phase handling; no mandatory loadout.
+  world/loadout_menu.gd              Stored build, apply-without-respawn,
+                                     remove Leave Party when replacement lands.
+  player/player.gd                   Immediate lobby spawn / optional respawn
+                                     delay; loadout store apply.
+  world/spawn_manager.gd             Staging bot APIs; server-only authority;
+                                     no client-local assumptions.
+  world/staging_room.gd/.tscn        New 2D staging room, roster, ready, teams,
+                                     bots, loadout, start.
+  world/pause_menu.gd/.tscn          New pause menu (no settings until it
+                                     exists).
+  world/post_match.gd/.tscn          New results overlay.
+  world/game_mode_component.gd       Bridge match_won to room results; no
+                                     change to round simulation.
+  world/hud/hud_controller.gd        Hide mode HUD in staging/results; keep
+                                     existing match HUD.
+  world/dev_menu.gd                  Keep debug-only; do not make it the
+                                     normal bot manager.
+  docs/*.md, CLAUDE.md,             Update in the same change as the code.
+  ref/PLAYER_FLOW.txt
+
+
+8. INVARIANTS THAT MUST SURVIVE
+-------------------------------
+
+1. Movement dies if the rollback tick loop is not running. Preserve the
+   `NetworkEvents`/`NetworkTime` rules in docs/03-event-flow.md:
+   - Never add a second listener to `NetworkEvents.on_client_start`.
+   - Let `NetworkManager` start the client clock after the join settles.
+   - `_terminate_connection()` must do the full `NetworkTime.stop()`.
+   - Defer any teardown + re-host across a frame.
+2. `_remove_game_scene()` must keep using `queue_free()` without detaching
+   first (#132).
+3. Maps stay local assets. Only path + SHA-256 cross the wire. Verify with
+   `MatchManifest`.
+4. Stable player identity stays separate from ENet peer identity. Do not
+   derive authority from `str(name).to_int()`.
+5. `MultiplayerSpawner` scene resolution is by file path and UID. Keep
+   `_spawnable_scenes` deduped and deterministic.
+6. Do not make the staging overlay a replicated map node. It is a local
+   CanvasLayer built on each peer, like the current menus.
+7. `ui_open` must have exactly one owner. Every new menu (title, Globe,
+   staging, pause, results) must set/restore it and must refuse to stack on
+   another menu.
+8. Dedicated servers still skip local UI/player/camera and only add remote
+   players. The party lobby is a server, so it follows the same rule.
+9. Server-only mutations use `@rpc("authority", ...)`; owner-initiated RPCs
+   validate the sender. Team, ready, bots, match settings, start, results, and
+   party actions are server-owned.
+10. Do not fake lobbyd data. If the source does not report live counts or
+    phase, show that it is unknown until Phase 7 adds reporting.
+11. `Player.rpc_reset` stays the death/respawn path at 1 s. Immediate lobby
+    spawn is a separate, explicit path; do not silently change every respawn.
+12. Docs are part of the deliverable: every behavioral phase updates the
+    matching docs and `05-known-issues.md` if it introduces risk.
+
+
+9. DECISIONS AND OPEN QUESTIONS (REFRAMED)
+------------------------------------------
+
+9.1 Decided by the product document, retained here
+  - Parties are a first-class concept; members share a 3D lobby.
+  - Staging is a 2D pre-match screen.
+  - The host alone starts; READY is advisory.
+  - Join in progress is allowed.
+  - After a match everyone returns to the 3D lobby.
+  - Party members follow the leader automatically.
+
+9.2 Questions with code impact
+  1. PARTY LOBBY HOSTING. VPS lobby instance (recommended) or leader's PC?
+	 Code impact: VPS requires a new lobbyd allocation type and a party
+	 lobby process; leader-hosted requires NAT handling and a lobby host
+	 migration path that does not exist. Until one is chosen, implement the
+	 Party tab as disabled and do not half-build it.
+  2. PARTY SIZE. Assumed 4. A party larger than a team forces a split marker;
+	 the current team assignment code has no party concept.
+  3. PASSWORDS / PRIVATE MATCHES. Out of scope for the first slice. They
+	 require match metadata, lobbyd validation, and a grant/join check.
+	 PUBLIC/PARTY ONLY can be metadata-only initially; PRIVATE needs code
+	 enforcement.
+  4. LAN + lobbyd IN ONE LIST. Yes; use source adapters and source tags.
+	 Direct IP stays collapsed and deprecated. Do not merge code formats.
+  5. RENAME THE 6-CHARACTER IP CODE. Yes, label it "IP Code" and keep it
+	 separate. The current `ConnectionUtils` parser is not a match/party code.
+  6. REMOVE "LEAVE PARTY" FROM LOADOUT. Only after the Party tab and pause
+	 menu exist. Until then it is the only working exit; do not remove it
+	 early.
+  7. REOPEN GLOBE AFTER FAILED JOIN. Optional. If implemented, preserve the
+	 Find Match selection and show the error in the menu; do not open it
+	 before the loading screen is hidden.
+  8. PARTY HUD WIDGET AND STAGING CHAT. The party widget is cheap once the
+	 party state exists; chat has no service or UI today and is deferred.
+  9. LEADER QUITS. Party lobby: promote immediately (not the 90 s reserved
+	 expiry). Match: host migration is separate from party leadership.
+	 If the party lobby process dies, reform the party; do not silently
+	 claim the old party survived.
+ 10. SETTINGS. Defer. There is no settings system; a pause-menu Settings
+	 page is a separate feature.
+ 11. TITLE INPUT. Click is enough for the first implementation; Enter/Space
+	 is a small addition. Web-specific audio gating is not relevant to the
+	 current export.
+
+
+10. ACCEPTANCE AND TEST PLAN
+----------------------------
+
+Use the existing tools; do not build a new framework.
+
+Existing commands:
+  "C:/tools/godot/godot_console.exe" --path . --headless --quit-after 240
+  "C:/tools/godot/godot_console.exe" --path . --headless res://tools/...
+  powershell -ExecutionPolicy Bypass -File tests/net/run_net_smoke.ps1
+  server/lobbyd/smoke.sh (API-only)
+  server/build_linux.sh
+
+Scenarios to add in order:
+
+  S1 Title/lobby
+	Default boot -> loading -> title -> click -> spawn -> move -> H loadout
+	with no respawn. Confirm no mandatory Loadout screen.
+
+  S2 Globe
+	Globe prompt; open/close; only one menu owns input; Start Match reaches
+	the current match creation path; Find Match opens; Party disabled when
+	no service.
+
+  S3 Staging
+	Host + client join; staging snapshot; team change; ready; add bot;
+	autofill; change map; start countdown.
+
+  S4 Start barrier
+	Start with two clients; both load the map locally; MAP_READY; no peer
+	enters ACTIVE before the map exists; both spawn once.
+
+  S5 Results/return
+	End match; results on every peer; return to lobby; no dead NetworkTime;
+	no duplicate loading screen; no double re-host.
+
+  S6 Join in progress
+	Join an ACTIVE match; staging shows join action; team balance; spawn;
+	leave returns only that client.
+
+  S7 Party (after Phase 6)
+	Create/join/promote/kick/follow/return; member sees the leader's match;
+    leader leave promotion is immediate on the party lobby; no party in
+    no-service mode.
+
+  S8 Reconnect/lobbyd
+    Resume inside grace; match server reports ACTIVE/live counts to lobbyd;
+    list does not lose selection on refresh; Direct IP still works.
+
+Per phase exit gate is the phase's own scenarios, not the full set. Do not
+mark a phase complete because the UI looks correct; verify the network
+ordering and the server-side authority.
+
+End of corrected plan.

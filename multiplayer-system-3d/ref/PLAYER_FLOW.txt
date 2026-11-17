@@ -1,0 +1,939 @@
+MULTIPLAYER SYSTEM 3D - PLAYER EXPERIENCE AND SCREEN FLOW
+=========================================================
+
+Snapshot of branch `netcode-rework`, 2026-11-17.
+
+> **2026-11-17 implementation update:** the default/offline and match-session
+> flow no longer starts with a mandatory Loadout screen. It now has a
+> one-per-process title gate, immediate spawn from a process-local build, a
+> HostServer "Match Menu", a 2D staging room, countdown + MAP_READY, Esc pause,
+> and a results/return overlay. This file remains the baseline description of
+> the old flow; see docs/01-boot-sequence.md Stage 13 for the implemented
+> flow and ref/NEW_EVENT_FLOW.txt for the remaining party/host-migration work.
+
+This file describes what the player actually sees and does, in order, from
+launching the game to playing a match, joining another host, leaving, and using
+the in-game menus. It covers every screen, popup, overlay and HUD element that
+exists in the current code, including the unconventional 3D main menu.
+
+Primary sources:
+  world/main.gd / world/main.tscn
+  ui/loading_screen.tscn
+  maps/main_menu_world.tscn (the 3D lobby)
+  world/world_1.gd, world/world1.tscn
+  world/loadout_menu.tscn / loadout_menu.gd
+  world/host_server_area.gd, world/host_menu.gd
+  world/join_party_area.gd, world/match_browser.gd
+  network/network_manager.gd, network/match_session.gd
+  player/player.gd, player/player_input.gd, player/player_ui.gd
+  world/hud/hud_controller.gd and world/hud/panels/*
+  world/game_menu.gd (leaderboard / killstreak music host)
+  ui/kill_feed.gd
+  world/dev_menu.gd, world/spawn_bot_menu.gd
+  world/spectator_controller.gd
+  project.godot (input map)
+
+
+TERMINOLOGY
+------------
+Host / party leader : the process that owns the server. In the normal local
+					  flow this is the same person playing.
+Lobby               : the 3D map `maps/main_menu_world.tscn`, game mode
+					  MAIN_MENU. It is a real playable map, not a 2D menu.
+Match               : any other map loaded through the Host menu or a staging
+					  "Start Match".
+Offline shell       : the default boot. No network service is required. The
+					  process runs on an OfflineMultiplayerPeer and can later
+					  become a listen server or connect to another host.
+Loading screen      : `ui/loading_screen.tscn`, a full-screen CanvasLayer that
+					  is part of `world/main.tscn`, not part of the game world.
+
+Note: the old 2D main menu `ui/main_menu.tscn` still exists on disk but is not
+instanced by `world/main.tscn`, so the player never sees it. All menu flow is
+either in-world (interaction zones) or a CanvasLayer popup built in code.
+
+
+1. LAUNCH: THE LOADING SCREEN
+-----------------------------
+Pressing Play (or running godot_console.exe with no routing flags) starts
+`world/main.tscn`. Its root is a Control named "Main" containing the
+`LoadingScreen` CanvasLayer. `main.gd::_boot()` shows it immediately.
+
+What the player sees:
+
+  - A full-screen, dark translucent background.
+  - A centred vertical stack:
+	  Title          "LOADING"        (32 px, warm red/coral)
+	  ProgressBar    horizontal bar   (same warm red fill)
+	  PercentLabel   "0%" ... "100%"  (20 px)
+	  StatusLabel    contextual text  (16 px, e.g. "Loading resources...")
+
+Boot sequence behind the screen:
+
+  1. The status reads "Loading resources...".
+  2. Six heavy resources are requested on background threads in parallel:
+	   maps/main_menu_world.tscn
+	   world/spawn_manager.tscn
+	   world/spawn_bot_menu.tscn
+	   player/player_classes/assault.tres
+	   player/player_classes/assassin.tres
+	   player/player_classes/assistance.tres
+	 Their combined progress fills the bar up to 70 percent.
+  3. The default route (no command-line flags) calls
+	 `NetworkManager.boot_offline_lobby()`:
+	   - role OFFLINE, OfflineMultiplayerPeer, NetworkTime started manually
+	   - status "Starting local lobby..."
+	   - progress checkpoint 75 percent
+	   - `world1.tscn` is instantiated under Main with the lobby map path
+	   - progress checkpoints 80 percent ("Loading world...") and 90 percent
+		 ("Spawning players...")
+  4. The bar is set to 100 percent, the status is cleared, the screen waits two
+	 rendered frames so D3D12 shader compilation happens behind it, then the
+	 loading screen hides.
+
+Command-line routes reach the same loading screen but branch earlier:
+
+  --server              headless dedicated match server. No local player, no
+						UI. The screen is hidden when boot finishes; in
+						practice nobody sees it.
+  --listen-server       host + play in one process into the lobby map.
+  --offline             same local shell as the default.
+  --connect=host[:port] show the screen, then join directly.
+  --lobby=...           boot the local shell with the C lobby browser enabled.
+  --lobby-create        create a lobbyd match, then join it.
+  --lobby-join=CODE     join a lobbyd match by code, then join its endpoint.
+  --legacy-p2p          old auto-host P2P lobby; no Host-into-match conversion.
+
+When the loading screen hides, the player is inside the 3D lobby for the first
+time, and the mandatory initial Loadout screen is already open over it.
+
+
+2. THE INITIAL LOADOUT SCREEN (MANDATORY)
+------------------------------------------
+The Loadout screen is a normal game scene node (`%LoadoutMenu` inside
+`world1.tscn`) whose `LoadoutMenuCanvas` CanvasLayer renders over the world.
+It starts visible, and `world_1.gd` sets `PlayerInput.ui_open = true` and the
+mouse to VISIBLE, so the player cannot move or shoot yet.
+
+This is the same screen used later for the H key loadout menu and for editing
+bots; only the surrounding mode differs.
+
+Layout, left to right and top to bottom:
+
+  Title row
+	"—  LOADOUT  —"                       centred, large.
+	ModeLabel                             below the title. In the lobby it is
+										  empty; in a match it shows the mode:
+											KOTH        "King of the Hill -- Hold the point to win"
+											CONTROL     "Control -- Best of 3, hold the point"
+											DOMINATION  "Domination -- Hold the most points to score"
+											ESCORT      "Escort -- Push the payload to the end"
+											HYBRID      "Hybrid -- Capture the point, then escort"
+											DEATHMATCH  "Deathmatch -- First to 20 kills wins"
+
+  Main row, three panels
+
+	AGENT panel (left)
+	  Blue "AGENT" header.
+	  A 3D character preview in a SubViewport (its own World3D, own lights and
+	  sky) showing the selected character, frozen mid-idle pose.
+		- Hover: the panel border tweens to gold and a "CHANGE AGENT" overlay
+		  appears.
+		- Left-drag on the model: spins the model.
+		- Left-click without dragging: opens the in-place character picker.
+	  Character name below the preview.
+	  Action bar:
+		Button      "  RANDOMIZE  "            rolls one random weapon in each
+											   column.
+		CheckBox    "Randomize on every death"  server re-randomizes the
+											   weapon loadout on each death.
+		Button      "  CONFIRM BUILD  "         disabled until a class exists
+											   for the selected character.
+		Button      "Leave Party"               hidden while editing a bot.
+
+	  Character picker (overlays the preview when open):
+		Close button "X" at top right.
+		One section per class, each with a blue class-name header and a flow of
+		84x84 portrait buttons. Hovering a portrait updates the INFO panel for
+		that character. Clicking one selects it and closes the picker.
+
+	LOADOUT panel (middle)
+	  Three scrolling columns, in this order:
+		"SECONDARY" column
+		"PRIMARY" column
+		"MELEE" column
+	  Each column contains weapon cards. A card shows a weapon icon / image,
+	  and the weapon display name. Hover highlights its border and fills the
+	  INFO panel with stats. Click selects one card per column; the selected
+	  card gets a blue background and border. The first weapon in each column
+	  is selected automatically when a character is chosen.
+
+	INFO panel (right)
+	  Blue "INFO" header and a rich-text body. It is context-sensitive:
+		- hovering/selecting a character: description, stat groups (Movement,
+		  Air, Slide, Combat, Defense; only non-default values are printed),
+		  and the ability list.
+		- hovering/selecting a weapon: mag size, reload, hitscan/projectile
+		  damage, headshot multiplier, falloff, rate of fire, auto/semi,
+		  ammo cost, multishot mode, movement-speed modifier.
+		- hovering an ability disc: description, cooldown, instant/equip.
+
+  Ability strip (below the main row)
+	Four AbilityCircle discs, corresponding to ability slots 1-4. They show
+	the ability icon (or its name when it has no icon); unassigned slots show
+	"UNASSIGNED". Hovering a disc fills the INFO panel with that ability's data.
+
+  Bottom-right corner
+    A small grey credit label: "Icons: game-icons.net (CC BY 3.0)".
+
+Initial selection rules:
+  - The first time the process opens this screen, it randomizes the character
+    and one weapon in each column, so the menu does not always open on the
+    same build.
+  - Later openings in the same process (return-to-lobby, map swap, H key)
+    select the first character and its first weapons instead, so a returning
+    player is not re-randomized.
+
+Confirming:
+  - CONFIRM validates that a class, character and all three weapons are
+    selected.
+  - On a match client it defers the RPC until the stable player id and the
+    replicated Player node exist (retrying roughly 600 frames), so the server
+    does not address a missing node.
+  - The screen hides, `world.class_selected = true`, `ui_open` becomes false,
+    the mouse is captured, and `_request_loadout` runs on the server (or is sent
+    to peer 1).
+  - The server applies the weapon loadout and character, broadcasts both to
+    the other peers, stores the loadout paths for late joiners, applies the
+    randomize-on-death flag, and calls `player.rpc_reset(spawn_transform)`.
+  - `rpc_reset` despawns the player and starts the respawn timer, which is 1.0
+    second by default. During that second the player HUD shows the centred
+    message "Spawning in 1..." over a translucent black band. Then `spawn()`
+    shows the body, re-enables collision, makes the correct camera current,
+    and plays the weapon pull-out animation.
+
+After the first confirm, the player is standing in the lobby with normal
+first-person control.
+
+
+3. THE 3D LOBBY
+---------------
+`maps/main_menu_world.tscn` is an ordinary Map node with
+`GameModeComponent.game_mode = MAIN_MENU`. It is a playable 3D space built in
+TrenchBroom, with a floor, walls, props (a big box, a forklift), health-pack
+spawners, team spawn markers and a navigation region. The player walks, jumps,
+dashes and shoots here exactly as in a match.
+
+Two interaction pads are visible in the world:
+
+  HostServer (Area3D)
+    A cylinder-shaped pad with a billboard Label3D above it. The label is
+    hidden until the local player is inside the trigger. Text depends on the
+    process role and whether this player is the leader:
+      Default local shell, no lobbyd:
+        leader   "Host Match (E)"
+        other    "MUST BE PARTY LEADER TO HOST"
+      Staging match (listen server or joined client):
+        leader   "Start Match (E)"
+        other    "MUST BE PARTY LEADER TO START"
+      lobbyd enabled:
+        leader  "Create Match (E)"
+        other   "MUST BE PARTY LEADER TO CREATE"
+      legacy P2P:
+        leader  "Host Server (E)"
+        other   "MUST BE PARTY LEADER"
+    Pressing E only works for the local leader, and only when no other menu
+    currently owns input (`PlayerInput.ui_open` false).
+
+  JoinParty (Area3D)
+    A second pad with its own billboard Label3D, shown only while the local
+    player is inside:
+      lobbyd enabled   "Find Match (E)"
+      offline shell    "Join Match (E)"
+      anything else    "Join Party (E)"
+    Any player can use it, leader or not.
+
+HUD in the lobby:
+  - The normal player HUD is visible once the player is spawned: crosshair,
+    health, stamina, ability circles, ammo, weapon list, kill feed, FPS.
+  - The game-mode HUD is suppressed because the map is MAIN_MENU. The round
+    timer bar, team bars, round score and mode panels are hidden.
+  - The deathmatch top roster is still shown in the lobby with kills hidden:
+    portraits of everyone present, split left and right across the top. In a
+    solo lobby this is just the local player.
+  - There is no objective, no round timer, no win condition, and no auto-host
+    in the default route.
+
+Basic controls available here (and in a match):
+  WASD                move
+  Space               jump (double jump where applicable)
+  C / Q / Ctrl        crouch / slide
+  Shift               dash (stamina cells at the bottom left)
+  Left mouse          primary fire
+  Right mouse         secondary fire / aim
+  Middle mouse        tertiary fire
+  R                   reload
+  Z / mouse wheel up  previous weapon
+  X / mouse wheel down next weapon
+  1 2 3 4             abilities
+  E                   interact with a zone (only where prompted)
+  F                   toggle first / third person
+  Tab (hold)          leaderboard
+  H                   toggle Loadout screen after the first confirm
+  0                   Dev Hacks menu (debug builds only)
+  Y                   inspect weapon
+  Esc                 close an open menu; otherwise release the mouse.
+                      Clicking captures it again, and that click does not fire.
+
+
+4. HOSTING FROM THE LOBBY: THE HOST MENU
+----------------------------------------
+Entry:
+  Walk into HostServer as the leader and press E. In the default local shell
+  this opens the Host menu. The menu is built on demand (only the first time it
+  is opened), because building it scans every MapData resource.
+  The menu has its own CanvasLayer at layer 2, with a full-screen dark overlay
+  and a centred 1120 x 640 panel.
+
+While it is open:
+  PlayerInput.ui_open = true, the mouse is visible, and the player cannot move
+  or shoot. Esc or E closes it and restores mouse capture.
+
+Screen contents:
+
+  Title
+    "HOST SERVER", centred.
+
+  Left: MAP SELECT panel
+    Blue "MAP SELECT" header.
+    A large map preview card (thumbnail, map display name in caps, and the
+    mode name underneath).
+    Clicking the preview toggles an in-place map browser that covers it.
+    The initial selection is the first DEATHMATCH map found, or the first map
+    if there is no deathmatch map.
+
+    Map browser:
+      A scrolling list of every MapData, grouped under blue mode headers in
+      the fixed order:
+        DEATHMATCH, ESCORT, DOMINATION, KOTH, HYBRID, CONTROL
+      Each group is a two-column grid of 180 x 120 cards. A card shows the map
+      thumbnail and name in caps. Hovering its border blue; clicking selects
+      that map, closes the browser, updates the preview and re-runs team
+      auto-assignment if the game mode changed.
+
+  Right: TEAM ASSIGNMENT panel
+    Blue "TEAM ASSIGNMENT" header.
+	The layout depends on the selected map's mode.
+
+	Team modes (Escort, Domination, KOTH, Hybrid, Control):
+	  Two drag-and-drop columns side by side: "TEAM SPI" (red header) on the
+	  left and "TEAM SCI" (blue header) on the right. This SPI-then-SCI order
+	  is the canonical order everywhere in the UI.
+	  Each player or bot in the current world is a 36 px card with their
+	  character portrait and their id/name. Cards can be dragged from one
+	  column to the other; dropping on a column or on a card assigns that team.
+	  On open, assignment alternates automatically, starting with SCI
+	  (sci <= spi gets SCI, otherwise SPI).
+
+	FFA mode (Deathmatch):
+	  One list with an "FFA" grey header and every player/bot card in a
+	  single column. Everyone is auto-assigned to FFA.
+
+	Any player or bot added since the last refresh is auto-assigned a default
+	(FFA for deathmatch, SCI otherwise).
+
+  Bottom bar
+	CheckBox  "AUTO-FILL WITH BOTS"
+			  At Start, fills each team to 5 players, or FFA to 8 players,
+			  with ephemeral bots. Ephemeral bots are not written to the
+			  persistent lobby roster.
+	Button    "ADD BOT"
+			  Spawns a bot into the current lobby immediately and adds it to
+			  the assignment. In a team mode it picks whichever team currently
+			  has fewer players; in FFA it adds FFA.
+	Spacer
+	Button    "START SERVER"
+	Button    "CLOSE"
+			  Same as Esc/E: hide menu, restore input and mouse capture.
+
+START SERVER, default local shell (no external lobby):
+  - Manual-bot team edits are written back to `GameManager.lobby_bots` so the
+	bots follow the host into the next match.
+  - The host's chosen team, the auto-fill flag, whether the mode is FFA, the
+    FFA target (8) and team size (5) are stored in
+    `GameManager.pending_host_setup`.
+  - The menu closes.
+  - `NetworkManager.host_local_match()`:
+      shows the loading screen again at 35 percent with status
+      "Starting local server..."
+      stops NetworkTime, removes the lobby world, waits a frame (so the
+      network event system observes the stop), then boots a listen server
+      directly into the chosen map on the first free UDP port in 8080-8095.
+      Status becomes "Starting listen server on <port>..." and then the screen
+      hides after the world is built.
+  - The new `world1.tscn` loads the chosen map as "Map", creates SpawnManager,
+    adds player 1 and re-adds manual bots from the saved roster, then applies
+    the pending host setup: host team, and auto-fill bots up to 5 per team or
+    8 in FFA.
+  - The player lands in a fresh world with the Loadout screen open again and
+    must confirm a loadout before spawning into the match map.
+
+START SERVER / START MATCH, staging or legacy paths:
+  - Listen host / legacy host: teams are applied directly to the Player
+    nodes, auto-fill bots are added, and `NetworkManager.load_match_map(path)`
+    swaps the current "Map" node. The world is not rebuilt, so the Loadout
+    screen is not reopened; every existing Player is reset and respawns at a
+    spawn point after the normal 1 s timer.
+  - Dedicated-server host (a client process that is the room host): the same
+    host menu is shown, but Start sends `MatchSession.request_start_match` to
+    the server instead of loading the map locally.
+  - In all staging paths the hosted map replicates to every joined client
+	through the world's MultiplayerSpawner.
+
+lobbyd-enabled host:
+  The Host menu is bypassed. Pressing E on HostServer immediately calls the
+  lobby service; the prompt label changes to "Creating match..." while the
+  request is in flight, then the process joins the allocated endpoint. On
+  failure the prompt is restored.
+
+
+5. JOINING ANOTHER HOST: THE JOIN POPUP
+---------------------------------------
+Entry:
+  Walk into JoinParty and press E. The popup is a CanvasLayer at layer 2 with
+  a full-screen dim and a centred panel about 460 px wide. Its title is
+  "JOIN MATCH" in the offline shell and "JOIN PARTY" otherwise.
+
+Layout:
+
+  TabContainer with two tabs.
+
+  LAN tab (the default tab)
+	ItemList, about 440 x 170. Each discovered server is one row:
+      "<MAP NAME>    <players>/<max>    <state>    <ip>:<port>"
+	Below it, a status label:
+      "Searching..."
+      "No servers found on the LAN."
+      "<n> server(s) found."
+      "LAN discovery disabled (--no-discovery)."
+	Buttons:
+	  "Join Selected"  if nothing is selected: status "Select a server first."
+					   if the entry is incomplete: "That server entry is
+                       incomplete."
+	  "Refresh"        runs discovery again.
+	The list refreshes automatically every 2 seconds while the popup is open.
+	Discovery probes UDP ports 7355-7370 plus localhost, /24 broadcasts and
+	255.255.255.255.
+
+  Direct IP tab
+	A wide button showing this machine's detected address and join code:
+      "Your IP:  <ip>:8080"
+      "Join Code:  <6-character code>"
+      and "   (click to cycle)" when more than one local IP was detected.
+      Clicking it cycles through detected addresses and writes the current one
+      into the address field.
+    LineEdit with placeholder "IP[:port]  or  join code", prefilled with the
+    detected IP when the popup opens.
+    Status label:
+      "You are hosting here - run a second instance to test joining."
+      "Invalid join code."
+      "Invalid port."
+    Buttons:
+      "Join"
+        An empty field defaults to 127.0.0.1.
+        A 6-character alphanumeric value is decoded as a join code (IPv4,
+        always port 8080).
+        "ip:port" is accepted with an explicit port.
+        The popup closes and the process joins.
+      "Join Local (This Computer)"
+        Joins 127.0.0.1:8080. This button is disabled, with the tooltip
+        "Already hosting on this computer.", when this process is already
+        hosting a network server. The offline peer deliberately does not
+        count, so the second local instance can still use it.
+  Button "Close (Esc)" below the tabs.
+
+Closing the popup (Esc, E, Close, or a successful join) restores `ui_open` to
+false and recaptures the mouse.
+
+Join sequence after a LAN or Direct join:
+  1. The join popup closes.
+  2. The loading screen reappears at 10 percent with status "Connecting...".
+  3. The joiner's own lobby world is removed.
+  4. A client peer is created and connects to the host.
+  5. On connect, the client builds a fresh `world1.tscn` with no map and no
+	 SpawnManager. The host's MultiplayerSpawner replicates the current "Map"
+     node and all existing Player nodes.
+     Behind the loading screen the progress reads "Loading world..." and then
+     "Spawning players...".
+  6. In the default local-shell join the match-session handshake is used: the
+     client sends `hello` after its world exists, receives `welcome`, adopts
+	 the server's tick rate, starts its network clock, then hides the loading
+	 screen.
+  7. The client sees the Loadout screen over the replicated world, confirms a
+	 loadout, and spawns into whatever map the host currently has loaded:
+	 the lobby if the host is still in the lobby, otherwise the match map.
+	 Existing players are synced to the new peer with a full-state RPC one
+	 frame later, so they do not appear invisible or with the wrong weapons.
+
+If the connection fails, `return_to_lobby()` runs: the loading screen is
+hidden, the client peer is torn down and the process boots a fresh local 3D
+lobby.
+
+lobbyd join:
+  When `LobbyClient` is enabled, JoinParty does not build the LAN/Direct popup.
+  It opens the MATCH BROWSER instead:
+	Title "FIND A MATCH", centred panel about 560 px wide.
+	ItemList of matches, each row "<code>    <players>/<max>    <state>".
+	Selecting a row fills the join-code field.
+	LineEdit placeholder "Join code".
+	Buttons "Join", "Refresh", "Close (Esc)".
+	Status line:
+      "Refreshing..."
+      "<n> match(es)"
+      "No matches - create one at the Host zone."
+      "Pick a match or enter a code."
+      "Joining <code>..."
+      "Join failed: <reason>"
+	The list auto-refreshes every 3 seconds while open. Join asks the lobby
+	service for the match endpoint and grant, closes the browser, and runs the
+	normal connect flow ("Connecting..." on the loading screen).
+	Esc, E or Close closes the browser.
+
+
+6. STARTING IN A MATCH: THE LOADOUT SCREEN AGAIN
+------------------------------------------------
+Every fresh world (a listen server booted from the Host menu, a direct
+`--connect` join, a lobbyd join) re-instantiates `world1.tscn`, so the Loadout
+screen opens again and is mandatory before spawning.
+
+  - The ModeLabel now shows the mode description listed in section 2.
+  - The first-open random loadout rule does not apply again: after the first
+	selection in the process, the menu opens on the first character and its
+	first weapons. The player is expected to adjust and confirm.
+  - Confirm applies the loadout on the server, broadcasts it to other peers,
+	and respawns the player after 1 second at a spawn marker for their team.
+  - A joined client cannot confirm until its stable player id has arrived and
+	its replicated Player node exists; the confirm retries until both are
+	present.
+
+In a staging lobby the players may already be standing in the lobby while the
+host chooses a map. When the host starts the match, `load_match_map` replaces
+the "Map" node in place; the Loadout screen does not reopen, and each player is
+reset and respawns on the new map after the 1 s timer.
+
+
+7. THE IN-MATCH HUD
+-------------------
+This is the screen while playing a match. It is assembled from three layers:
+the player HUD built in code under the Player, the HUDController CanvasLayer
+for mode state, and separate CanvasLayers for the kill feed, leaderboard and
+spectator overlay.
+
+7.1 Player HUD (always for the local human player)
+  Crosshair
+	A small 6x6 green dot at the exact screen centre.
+
+  Health (bottom centre-left)
+	Large current HP number, smaller "/max" beside it, a 260 x 28 white bar
+	underneath, then the team label (SPI red, SCI blue, FFA grey) and the
+	character name. When HP drops below 30 percent the bar turns red and a red
+	gradient appears behind the number. A delta label above the block shows
+	"-<n>" in red or "+<n>" in green for 2 seconds after a change, then fades.
+
+  Stamina / dash (bottom left, above the ability row)
+	A row of rectangular cells, one per stamina slot (28 x 12 each). Filled
+	portions are cyan; a recovering slot shows a partial fill. During the
+	dash-jump window the fills flash a lighter blue. A short timing-feedback
+	message appears above them when applicable.
+
+  Abilities (bottom centre)
+	Four circular slots, keyed 1-4. Each shows its icon (or name), a cooldown
+	pie, a charge strip when the ability has multiple charges, and a meter bar
+	when it is a metered ability. The equipped/active slot is tinted. While an
+	ability is in progress or being aimed, the text "USING <NAME>" appears
+	just below the crosshair.
+	A targeted ability also draws small 30 px preview discs beside each valid
+	target, level with the target's head and offset to the right, so they do
+    not overlap the target health bar. The disc is dark with an ability-colour
+    rim.
+
+  Ammo (bottom centre-right)
+    Large current magazine count, smaller "/max" beside it. Infinite-ammo
+    weapons show an infinity symbol. During a reload the left magazine value
+    is shown and a thin yellow progress bar runs along the very bottom edge of
+    the screen. A shield weapon adds a right-aligned "Shield  <hp> / <max>"
+    readout that changes colour as it drops and reads "Shield  BROKEN" when
+    broken.
+
+  Weapon list (right side, vertically centred)
+    Every weapon in the current loadout, with the active one highlighted, plus
+    per-weapon reload progress bars for the non-active slots.
+
+  Charge / scope indicators (flanking the crosshair)
+    - Charged weapons: a horizontal bar to the LEFT of the crosshair, a yellow
+      tick marking the minimum charge, and a multiplier readout further left
+      (for example "0.75").
+    - Scoped damage-amp: a bar to the RIGHT of the crosshair with a multiplier
+      readout further right (for example "3.0").
+    - ADS/scoped weapons: a full-screen scope/ADS image overlay when aiming.
+
+  Status effects
+    A full-screen shader border per active effect (bleed, poison, stun, flame,
+    and the generic status border in other colours). A right-side list below
+    the weapon list shows each active effect id and its remaining seconds,
+    with a summary string available to other UI.
+
+  Damage feedback
+    Floating damage numbers at the impact point, and a public health bar
+    projected above other players that is green for teammates and red for
+    enemies. Wallhack / reveal effects outline players and show their health
+    client-side only.
+
+  Respawn overlay
+    While dead and waiting, a centred black translucent band with
+    "Spawning in <n>..." over the middle of the screen.
+
+  FPS readout
+    Top right, green, on its own very high CanvasLayer so it draws over other
+    HUD layers.
+
+  Dev status (debug builds)
+    Top left, amber text listing active dev flags such as "GOD MODE",
+    "NOCLIP" and "BOTS IGNORE ME", only when at least one is on.
+
+7.2 Mode HUD (HUDController CanvasLayer)
+  Timer bar
+    A full-width bar across the very top showing the current phase timer
+    against the round time. It turns into the overtime presentation when
+    overtime starts. Hidden in the lobby.
+
+  Team bars
+    Two team progress bars under the timer, shown only in KOTH, CONTROL and
+    DOMINATION:
+      KOTH / CONTROL  SPI and SCI held-time vs. the capture time needed,
+                      labelled "SPI  m:ss / m:ss" and "SCI  m:ss / m:ss".
+      DOMINATION      SPI and SCI points vs. points to win, labelled
+                      "SPI  n / n" and "SCI  n / n".
+
+  Overtime label
+    "OVERTIME" near the top, shown only during the OVERTIME phase.
+
+  Round score
+    For non-deathmatch modes, centred near the bottom of the mode panel area:
+    "Rounds:  SPI <wins>/<target>  —  SCI <wins>/<target>".
+
+  Mode panels
+    A panel swapped in by mode, anchored across the lower centre:
+      KOTH / CONTROL  KOTH panel (shared)
+      DOMINATION      Domination panel
+      ESCORT          Escort panel (payload progress, state, attackers,
+                      defenders, return countdown, checkpoint progresses)
+      HYBRID          Hybrid panel (point-capture state, then payload data)
+	Each panel is updated from server state at the mode's sync rate and on
+	mode signals (phase changes, time updates, round/match won, overtime,
+	objective updates).
+
+  Deathmatch top strip
+	In DEATHMATCH, a full-width top strip replaces the mode panel: player
+	portraits with kill counts, split into left and right halves around the
+	timer. The local player gets a light blue background. The top roster also
+	appears in every other mode and in the lobby, but with kills hidden.
+	When the match ends: "<winner> wins!  Match over  —  First to 20 kills!"
+	or, if the timer expired, "... — Most kills after time!".
+
+7.3 Kill feed (top right)
+  A two-section row per kill:
+	[killer portrait | killer name | weapon icon | HS/BS] [victim name | portrait]
+  Killer section colours: red for an enemy, grey for a teammate, blue for you.
+  Victim section uses the lighter variant of the same relation.
+  Newest entries appear at the bottom and older entries are pushed up. At most
+  5 entries are visible; each lives 8 seconds, slides in over 0.25 s and fades
+  out over 1.5 s. "HS" marks a headshot, "BS" a backshot. Weapon icons are
+  pre-rendered PNGs; if a weapon has no icon, its name is shown instead.
+
+7.4 Leaderboard (hold Tab)
+  A full-screen dim with a centred 1080 x 600 panel:
+	Title "LEADERBOARD  (hold Tab)".
+	Columns: portrait, PLAYER, K, D, Streak, DMG, Self DMG, Self Heal,
+	Heal Other.
+	Sections, in order:
+	  SPI, SCI, FFA (only teams that have players), sorted by kills
+	  SPECTATORS (players in spectator mode), sorted by name
+	  DISCONNECTED PLAYERS (slots still reserved), sorted by kills
+	The local player's row is blue, teammates are grey, enemies are red.
+    Releasing Tab hides it. It rebuilds itself when scores or the roster
+    change, and while visible on each score update.
+
+7.5 Killstreak feedback
+  When the local player's own killstreak changes, `game_menu.gd` plays the
+  killstreak theme: one short phrase per streak level (1 through 30), built
+  from pooled one-shot AudioStreamPlayers. It is audio, not a visible screen.
+
+
+8. A TYPICAL MATCH, MOMENT BY MOMENT
+------------------------------------
+  1. Confirm loadout. Screen hides, mouse captures.
+  2. "Spawning in 1..." for one second, then the body appears at a team spawn
+	 point facing the direction authored on the spawn marker.
+  3. The weapon plays its pull-out animation and is briefly unusable.
+  4. The player moves, shoots, uses abilities, takes damage. Health regen,
+	 damage numbers, status-effect borders, kill feed entries and the
+	 leaderboard all update from server-authoritative state.
+  5. On death: the character's death sound plays at the death location, a
+     physical ragdoll of the character (or of the mannequin) spawns and flops
+     from the death pose for about 25 seconds, and the player is despawned.
+     The respawn overlay counts down 1 second, then the player respawns at a
+     team spawn. Weapons, health, shield and status effects are reset. If
+     "Randomize on every death" was checked, the server rolls a new weapon
+     loadout from the same class before the respawn.
+  6. The kill feed shows the kill for 8 seconds. The local player's killstreak
+	 plays its phrase.
+  7. Hold Tab at any time to see the leaderboard.
+  8. H reopens the Loadout screen mid-match. Confirming a new build kills and
+	 respawns the player (the server applies the new weapons/character and
+	 calls rpc_reset). Esc closes the screen without applying anything, after
+	 the first confirm.
+  9. Esc with no menu open only releases the mouse; the game keeps running.
+	 Click re-captures the mouse without firing.
+ 10. F toggles first/third person. In third person the camera moves behind
+	 the player and the player's head is shown; in first person the head is
+     hidden.
+
+Objective play:
+  - KOTH / CONTROL: stand in the trigger volume of the control point to cap
+    it; the team bars and the mode panel show progress and held time.
+  - DOMINATION: capture and hold multiple points; owned points generate
+    score.
+  - ESCORT: stand near the cart to push it along its route; leaving it for
+    10 seconds (or immediately on a rollback-zone stretch) lets it slide back.
+    Checkpoints and the next checkpoint progress are shown in the panel.
+  - HYBRID: capture the initial point, then escort the payload.
+  - DEATHMATCH: kill count only; the top strip and end label carry the score.
+
+Match end:
+  - Deathmatch shows the end label on the top strip. Round-based modes update
+    the round score and the mode panel through ROUND_END / MATCH_END phases.
+  - There is no pause menu and no automatic return to the lobby. The player
+    leaves with the Leave Party button on the Loadout screen (H), or by
+    disconnecting/closing the process.
+
+
+9. SPECTATOR MODE (DEV MENU)
+----------------------------
+Spectator mode is toggled from Dev Hacks > General > "Spectator mode (not
+spawned)". It is server-authoritative and replicated: the server despawns the
+player on every peer and refuses to revive them on reset until the flag is
+cleared.
+
+When it turns on:
+  - The Dev Hacks menu closes and the mouse is captured.
+  - The local player's body is hidden and inert; a dedicated local spectator
+	camera takes over the viewport.
+  - A top-centre overlay appears:
+	  Title   "SPECTATING  <player id>"
+			  or "SPECTATING" with hint "No players to spectate" if nobody is
+			  available.
+	  Hint    "FIRST PERSON   ·   LMB / RMB switch   ·   F first/third   ·   Esc exit"
+			  ("THIRD PERSON" replaces "FIRST PERSON" when toggled.)
+  - The spectator follows the target's first-person camera; third person is a
+    3 m spring arm behind the target that collides with world geometry only.
+  - The target's own HUD is bound and shown to the spectator where available.
+	Ability cooldown/meter state is not networked, so a spectator always reads
+	those as ready.
+  - Controls: LMB next target, RMB previous target, F toggle first/third,
+	Esc exit. Targets cycle in sorted node-name order among alive, spawned,
+	non-spectating players and bots.
+  - The Tab leaderboard lists spectators under "SPECTATORS" rather than under
+	their team.
+  - Exiting (Esc or clearing the dev toggle) restores the player body on the
+	next reset/respawn; the player stays despawned until a reset path runs.
+
+
+10. IN-GAME MENUS WHILE PLAYING
+-------------------------------
+Loadout screen (H)
+  The same screen as section 2. The world stays visible behind its dim, but
+  both the mode HUD and the player HUD are hidden while a menu owns input
+  (`ui_open`). Esc closes it without applying; confirm applies and respawns.
+  The Leave Party button is the only in-game exit to the lobby.
+
+Leaderboard (hold Tab)
+  Section 7.4. It is an overlay, not a menu: it does not set `ui_open`, so
+  movement and firing continue behind it.
+
+Dev Hacks menu (0, debug builds)
+  A 780 x 560 centred panel titled "DEV HACKS", on its own CanvasLayer, with a
+  full-screen dim. It refuses to open while another menu already owns input
+  (the initial Loadout screen, Host menu, Join/LAN/Direct popup, match
+  browser). "0" toggles it; Esc closes it. The footer reads "0 / Esc to
+  close".
+
+  Tab 1: General
+	Scrollable, two-column where noted.
+	  HEALTH
+		"No Health" / "Half Health" / "Full Health" / "Respawn now"
+		"God mode (no damage taken)" check
+	  GAMEPLAY TOGGLES
+        "No ability cooldowns"
+        "No stamina cooldowns"
+        "Infinite ammo (all weapons)"
+        "Infinite ability meters"
+        "Dev noclip (fly through walls)"
+        "Bots ignore me"
+        "Spectator mode (not spawned)"
+	  DISPLAY (local only)
+        "Hide player HUD"
+        "Hide other HUD"
+        "Hide my model (weapon stays)"
+	  TEAM
+		SPI / SCI / FFA buttons
+      "Reset all dev flags"
+	Health, team and god mode are server-authoritative requests. Cooldowns,
+	ammo, bots-ignore-me and meters are per-peer. Stamina and noclip are
+	broadcast because they gate rollback movement. Display toggles are local
+	only and persist across world swaps.
+
+  Tab 2: Bots (party leader / server only)
+	For a client the tab title becomes "Bots (leader only)" and the tab is
+	disabled; its body reads "Only the party leader can manage bots."
+
+	For the host:
+	  Tools row:
+        "Freeze all bots"
+		"Show nav paths"   draws each bot's remaining route (green navmesh,
+                           orange partial, blue TravelGraph, red direct) and an
+                           intent label above its head.
+        "Randomize bot skills"
+        "Remove all bots"  disabled when there are no bots.
+      Below: the bot manager panel.
+        Left:
+          Character portrait; clicking it opens an in-place character picker
+          grouped by class.
+          TEAM buttons SPI / SCI / FFA.
+          "SPAWN BOT" button.
+        Right: a scrolling "BOTS" list. Each bot row contains:
+          portrait, bot name, team OptionButton (SPI/SCI/FFA),
+          "EDIT" button, "X" remove button,
+          a "SKILL" slider 0.00-1.00 with a numeric readout,
+          a "▶ ADVANCED" / "▼ ADVANCED" disclosure that expands into a
+          "TRAIT OVERRIDES" block with one slider each for
+          Reaction time, Tracking speed, Accuracy, Aggression, Lead quality,
+          Movement quality, Awareness and Self-preservation, plus RESET.
+          Overridden traits show an asterisk after their value.
+        Hovering a bot row opens a floating "BOT LOADOUT" preview to the side
+        of the row: portrait, character name, class and team, and the primary,
+        secondary and melee weapon names.
+        Team, skill and trait edits apply immediately, redraw the row, and are
+        persisted for manual bots so they survive return-to-lobby.
+        "EDIT" opens the normal Loadout screen retargeted at that bot:
+          ModeLabel "EDITING BOT: <bot name>"
+          Leave Party and Randomize-on-death are hidden.
+          Confirm applies the loadout to the bot and respawns it, then returns
+          to the Dev Hacks menu on the Bots tab. Esc/H/X cancels and restores
+		  the local player's pending selection, also returning to the Bots tab.
+		Spawned bots are fully server-authoritative. Bots never cast abilities.
+
+
+11. LEAVING: RETURN TO THE LOBBY
+--------------------------------
+There is no "pause" screen. The exit path is the "Leave Party" button on the
+Loadout screen (open it with H during a match), and also automatic failure
+paths (connection failed, server disconnected).
+
+`NetworkManager.return_to_lobby()`:
+  1. Sets the mouse to visible and hides any loading screen.
+  2. Stops NetworkTime and closes the peer (freeing the port).
+  3. Removes and queue-frees the world scene.
+  4. Defers a fresh boot:
+	   - a joined client or an offline process becomes OFFLINE and boots the
+		 local 3D lobby shell again;
+	   - a legacy host re-hosts the P2P lobby;
+	   - a dedicated server quits.
+
+What the player sees after leaving:
+  - The match HUD disappears with the world.
+  - The local lobby is built again with the Loadout screen open over it,
+	`ui_open` true and the mouse visible.
+  - Because the process has already made its initial selection, the screen
+	opens on the first character and first weapons rather than a random build.
+  - Confirming the loadout respawns the player in the lobby after 1 second.
+
+Disconnect with a resumable match session:
+  Instead of leaving immediately, the client shows the loading screen at 25
+  percent with "Connection lost - reconnecting...", then "Reconnecting..."
+  while it retries the endpoint every 2 seconds for up to the server's 90 s
+  resume grace. On success the same stable player id is rebound, the existing
+  world is kept, the network clock restarts, rollback history is reset, and the
+  loading screen hides. On expiry or a bad token the client returns to the
+  local lobby as above.
+
+
+12. ALTERNATE LAUNCH ROUTES (PLAYER-VISIBLE DIFFERENCES)
+--------------------------------------------------------
+Default (no flags)
+  Offline 3D lobby. Host Match converts to an in-process listen server.
+  Join uses the match-session handshake (LAN or Direct IP).
+
+--offline
+  Same shell, explicitly.
+
+--legacy-p2p
+  The old auto-host lobby. HostServer says "Host Server (E)" and its Host menu
+  Start swaps the map in place with `load_match_map`; JoinParty uses the old
+  P2P join path (no match-session handshake). Otherwise the same screens.
+
+--listen-server
+  Boots host + play directly into the lobby map, already a server. HostServer
+  becomes "Start Match (E)" and the Host menu's Start swaps the lobby for the
+  chosen map in place. Joined clients receive the lobby first, then the match
+  map when the host starts.
+
+--connect=host[:port]
+  Skips the local lobby entirely: loading screen, direct join, replicated
+  world, Loadout screen, spawn. Leaving returns to the local offline shell.
+
+--server
+  Headless dedicated match server. Peer 1 is not a player. No loading screen,
+  no HUD, no menus, no local player; it only runs the simulation that clients
+  connect to.
+
+--lobby=http://host:port
+  The local 3D shell, but HostServer creates matches through the external
+  lobby service and JoinParty opens the "FIND A MATCH" browser.
+
+--lobby-create / --lobby-join=CODE
+  Create or join a lobby-service match immediately at boot; the loading screen
+  stays up through the look-up and the subsequent join.
+
+--test-host-local / --test-host-map
+  Test hooks: boots the shell and immediately hosts into a map. Not a normal
+  play path; used by cross-process smoke tests.
+
+
+13. SCREEN / POPUP INVENTORY
+----------------------------
+Loading screen        ui/loading_screen.tscn - boot, connect, reconnect,
+					  "Starting local server...", "Starting listen server...".
+3D lobby              maps/main_menu_world.tscn - normal playable map,
+					  MAIN_MENU mode, HostServer and JoinParty pads.
+Loadout screen        world/loadout_menu.tscn - mandatory first selection,
+					  H in match, bot editor.
+Character picker      overlay inside Loadout, opened by clicking the preview.
+Host menu             world/host_menu.tscn - map browser, team assignment,
+					  auto-fill, add bot, start/close.
+Join popup            built in join_party_area.gd - LAN tab and Direct IP tab.
+Match browser         world/match_browser.gd - lobbyd "FIND A MATCH".
+Player HUD            player/player_ui.gd - crosshair, health, stamina,
+					  abilities, ammo, weapon list, reload, shields, charge,
+					  scope, status effects, damage numbers, respawn countdown,
+					  FPS, dev status.
+Mode HUD              world/hud/hud_controller.gd - timer bar, team bars,
+					  overtime, round score, mode panels, deathmatch top strip.
+Kill feed             ui/kill_feed.gd - top-right kill entries.
+Leaderboard           world/game_menu.gd - hold Tab, full-screen overlay.
+Spectator overlay     world/spectator_controller.gd - title, hint, camera.
+Dev Hacks menu        world/dev_menu.gd - General and Bots tabs.
+Bot manager           world/spawn_bot_menu.gd - spawn row, live bot rows,
+					  skill/trait sliders, hover loadout preview.
+
+End of file.

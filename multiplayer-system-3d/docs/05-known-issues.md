@@ -88,6 +88,15 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 | 115 | 🟢 Low | Memory | Spectator HUDs are built on demand and persist per watched target for the session |
 | 116 | 🟢 Low | Correctness | A bot's character/weapon loadout is applied server-side with no broadcast, so a client's copy (and its spectator HUD) shows a bare mannequin |
 | 138 | 🟠 High | Netcode | ✅ FIXED — Remote Player authority was the stable player id, not the ENet peer: body/aim sync rejected on every client; input ownership could stay empty |
+| 139 | 🟡 Medium | Fragility | `HoldBlend` was authored at `0.0` and never written; it is now driven to `1.0` in combat, so the weapon-hold pose and one-shot arm chain are live for the first time |
+| 140 | 🟠 High | Flow | Phase transition was server-local only: `MatchSession.set_phase()` broadcast ACTIVE but left the host's own `phase` at STAGING, so a later `welcome` carried a stale phase and host-side OR-checks saw the wrong room state. ✅ FIXED 2026-11-17 |
+| 141 | 🟡 Medium | Flow | Party service is not implemented. The Globe Party tab is an explicit disabled placeholder; there is no PartyManager, party lobby allocation, follow, promote or kick. |
+| 142 | 🟡 Medium | Flow | Staging team assignment is self-service `SWITCH TEAM` plus host `ADD BOT`; there is no host drag-and-drop assignment or team-balance validation yet. Ready is advisory and local/server-mirrored only. |
+| 143 | 🟡 Medium | Flow | `GameManager.local_loadout` is process-local; it is not saved to disk. A process restart rolls a new build. |
+| 144 | 🟡 Medium | Flow | The merged Find Match list shows only fields the sources actually provide. lobbyd still reports issued grants/`staging` (no live phase), and LAN has no ping/host name; do not add those columns without server status reporting. |
+| 145 | 🟡 Medium | UX | The old `JoinParty` Area3D and its LAN/Direct popup still exist beside the HostServer Match Menu. The plan removes them, but that is a map/3D edit and was deliberately deferred. |
+| 146 | 🟢 Low | Flow | Host migration is still the existing reserved-slot expiry path (90 s), not immediate promotion. A listen-server host quitting still ends the server. |
+| 147 | 🟢 Low | Tooling | New test hooks: `--test-title-start`, `--test-staging-start`, `--test-staging-map=`, `--test-end-match`. They are debug-only paths in `world_1.gd`. |
 
 
 ---
@@ -1433,6 +1442,20 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 - **Verification:** dedicated server + two concurrent `--connect --auto-loadout --test-move` clients: zero `Ignoring sync data` in both client logs and on the server; both `[NTSYNC]` lines keep `inp` tracking `tick` and `state` fresh with `pred=false`. Listen host + one client unchanged.
 - **Residual (TODO):** `process_settings()` clears that Player's state history on the owning client, so a bind that lands mid-session can log a few `netfox::DiffHistoryEncoder Reference tick … missing` warnings until the next full state (`full_state_interval = 45`). Harmless today; if it becomes visible, refresh ownership without tearing down the state history. The smoke harness still has no third-observer assertion — see `tests/net/run_net_smoke.ps1` and #137.
 
+### 139. `HoldBlend` was dead audio-visual state and is now live in combat
+
+- **Files:** `player/player.tscn:712` (`parameters/HoldBlend/blend_amount`), `player/animation_tree.gd` (`HOLD_RATE` and the target blend), `player/player.gd` (`in_combat`), `player/weapon_controller.gd` (`_refresh_holstered` / `refresh_holstered`).
+- **Symptom / risk:** the `HoldBlend` parameter shipped at `0.0` and no script ever wrote it, so the `OneShot` chain (pullout / putaway / reload / inspect / shoot arm animations) and the `HoldAnim` weapon-hold pose were fully muted. Combat mode now ramps it to `1.0`, which enables that entire branch for the first time — any long-masked animation defect (wrong clip, missing hand IK, one-shot leaking past its window) will now be visible in normal gameplay.
+- **Suggested fix / check:** verify draw, reload (empty and non-empty), inspect, shoot and holster-out transitions in first and third person before shipping. If one clip misbehaves, fix it on the tree rather than reverting the blend; the non-combat pose depends on the same parameter reaching `0.0`.
+- **Replication note:** `in_combat` is replicated (root `MultiplayerSynchronizer`, spawn + on-change). A client-side dev toggle goes through the owner-gated request, identical to noclip/spectating. Do not add a per-frame poll of the effect mirror to derive the holster — it breaks the calligraphy throw path (see `02-netcode.md` §5).
+
+### 140. Third-person aim ray hit the player's own hurtboxes — `[FIXED 2026-11-17]`
+
+- **Files:** `player/player.tscn:531-533` (`ThirdPersonCamera3D/RayCast3D`, `collision_mask = 5`), `player/player.gd` (`_ready` exception sweep, `_third_person_aim_target`).
+- **Symptom:** in third person the body/aim occasionally snapped sideways or downward, most visibly with the player's back against a wall — when the `SpringArm3D` collapses and the camera comes close to the character model.
+- **Why:** the aim ray goes from the camera along its forward with a `WORLD | HURTBOX` mask. The player's own hurtboxes are `PhysicalBone3D` bodies on the HURTBOX layer (`player.tscn` `Physical Bone DEF-*` nodes), and the ray starts at the camera — so when the arm shortens, the ray passes through the player's own arms/shoulders/legs and `_third_person_aim_target()` returns a point on the player. `_aim_body_head_at_point` then yaws/pitches the body at itself, which reads as being "caught" on geometry. RayCast3D `hit_from_inside` is false by default, so this only bites once the origin leaves the shape and the ray re-enters another bone.
+- **Fix:** `Player._ready` adds every `CollisionObject3D` in the player's subtree as an exception on `third_person_raycast` — the same superset `weapon_controller` excludes per shot. **Residual TODO:** the sweep runs once at `_ready`, so a collidable spawned later into the player subtree (a new model/prop body on WORLD or HURTBOX) is not excluded; add it to the sweep point or keep such collidables off those two layers.
+
 ## Not bugs, but worth knowing
 
 - **`painted_toon.gdshader`'s back rim is deliberately light-independent — it glows in pitch darkness and ignores shadow.** It is `1 - dot(NORMAL, VIEW)` written to `EMISSION` from `fragment()` (`:251-277`), never from `light()`. That *is* the feature: it fakes a light behind the subject regardless of what the scene's lights are doing, so it reads as a back light from any angle and under any lighting. It follows that the rim is not occluded by anything, does not dim in shadow, and stays on when the surface is otherwise unlit — verified by rendering it with every light and the ambient switched off, where it is the only thing on screen. If it ever reads as a bug ("why is this glowing in a dark room"), it is working as designed; turn `rim_enabled` off. The reason it lives in `EMISSION` rather than `light()` is that `light()` runs once **per light**, so a rim written there would be added N times.
@@ -1457,6 +1480,35 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 - **The loadout menu's bot-edit mode is cancelled by hiding it, and confirm hides before the RPC runs.** `_on_visibility_changed` restores the local player's pending selection and `player_id`; `_bot_applying` suppresses that restore while confirm is in flight, and confirm captures the target id and paths into locals first. Reordering those operations applies the bot's loadout to the local player — keep the guard.
 - **The three damage-feedback sounds are wired in two different places, and "kill sound" is not a one-shot.** The hit and headshot cues are `_hit_sound` / `_crit_sound` in `weapon_controller.gd:56-58`, preloaded `AudioStream`s played through `AudioPool` by `play_hit_sound` / `play_crit_sound` (fired from `AttributeComponent.apply_health_delta`, `components/attribute_component.gd:209-211`). `_play_sound` forwards an optional `volume_db`, and the headshot cue's level is the tunable `CRIT_SOUND_VOLUME_DB` (`+12 dB` so it reads over the hit cue). The kill cue is `GameMenu.base_sound` on `world/world1.tscn` — `world/game_menu.gd:_on_killstreak_changed` builds a 30-kill melody by spawning an `AudioStreamPlayer` per note and setting `pitch_scale` from a semitone table, so **the assigned clip is a melodic sample, not a single hit**. Swapping `base_sound` for an impact/whoosh clip means every note of the killstreak theme is that clip re-pitched (and long clips overlap heavily). If a single one-shot per kill is wanted instead, change `_on_killstreak_changed` rather than the asset.
 - **`ui_open` is now guarded when the lobby interaction areas open their popups.** `HostServer`/`JoinParty` used to open on E regardless of another menu, and their close handler then cleared `ui_open` underneath it. The dev menu assumes `ui_open` is owned by exactly one menu, so both areas now return early when it is already true.
+
+## New local-flow gaps (2026-11-17)
+
+- **`MatchSession.set_phase()` must write the server's own `phase`.** The
+  broadcast is `@rpc("authority", "call_remote")`, so a server that only called
+  `broadcast_phase.rpc()` kept its local phase at STAGING. Host-side checks
+  (`world_1._sync_flow_ui`, `request_join_in_progress`, `await_map_ready`) and
+  the `welcome` phase then disagreed with the clients. The assignment now
+  happens before the broadcast; do not move it back into `broadcast_phase`.
+- **The staging overlay is local, not replicated.** `world/staging_room.gd` is
+  created by `world_1` for every non-dedicated peer and reads `Player` nodes,
+  `MatchSession.phase`, and READY flags. Do not parent it under `SpawnParent`.
+- **READY is advisory and per-peer.** The server keeps `_ready_flags` and
+  broadcasts changes; START GAME does not block on them. Team balance and host
+  drag-assignment are still open.
+- **The map-ready barrier only covers clients that are connected when LOADING
+  starts.** A client that joins after LOADING enters through the normal
+  `welcome` path and loads the announced map; it is not retroactively counted
+  in the in-flight barrier. This is safe because the server only activates
+  after its current peer set ACKs, but a late join during LOADING can reach
+  the staging/join-in-progress path after ACTIVE.
+- **`GameManager.local_loadout` is process-only.** Add a ConfigFile/player
+  profile before treating it as persistent. The title flow rolls a random
+  build if the dictionary is empty.
+- **`world/host_menu.tscn` is now unused by the HostServer globe.** Keep it
+  only if another entry point is intended; otherwise remove it with the old
+  pads in the deferred 3D-cleanup phase.
+- **`JoinParty` remains.** Its popup duplicates part of Find Match and must be
+  removed with the Area3D in the deferred map edit (known issue 145).
 
 ## Lower priority (recorded, not blocking)
 

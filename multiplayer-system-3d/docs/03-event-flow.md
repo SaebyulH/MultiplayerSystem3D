@@ -337,3 +337,50 @@ Test hooks: `--test-drop-after=N`, `--test-silent-after=N`,
 11. **`loadout_menu.gd:859-860` comment drift** — the comment says `visible = false` triggers `_process()` → `_canvas.visible = false`, but the sync is via the `visibility_changed` signal (`loadout_menu.gd:101`, `143-157`), not `_process`. Cosmetic but means the mechanism is one degree more indirect than the comment suggests.
 12. **`_terminate_connection` must do the full `NetworkTime.stop()`** — not the low-level synchronizer stop — or a subsequent `start()` won't cleanly reset. It also clears `_client_time_ready` / `_host_tick_valid`, so the watchdog stays quiet across the transition.
 13. **`ui/main_menu.gd` still calls `create_client()` / `enter_existing_game_scene()` directly** — dead today (the 2D menu is bypassed), but those entry points no longer start a tick loop or hide the loading screen on their own. Anything that revives them must go through `join_party()` instead.
+
+---
+
+## Staging, countdown and the map-ready barrier (2026-11-17)
+
+The new local/match-session flow adds room phases on top of the existing
+connection lifecycle. The ordering rules above still apply unchanged.
+
+```
+host Globe START / staging START GAME
+  NetworkManager.start_staging_match(path)
+    MatchSession.set_phase(COUNTDOWN)
+    await 5 s
+    MatchSession.set_phase(LOADING, path, SHA256)
+    load_match_map(path, set_active=false, respawn_players=false)
+    await MatchSession.await_map_ready(MAP_MATCH_DEADLINE_SECONDS)
+      clients receive phase_changed(LOADING) -> world_1 installs local map
+      -> MatchSession.notify_map_ready() -> client_map_ready RPC
+    MatchSession.set_phase(ACTIVE)
+    rpc_reset all players
+```
+
+Invariants:
+
+- **`MatchSession.set_phase()` must update the server's own `phase` before the
+  `broadcast_phase` RPC.** That RPC is `call_remote`, so without the explicit
+  assignment the host remained in STAGING while every client was told ACTIVE;
+  the next client `welcome` then carried the stale STAGING phase.
+- **`load_match_map(..., set_active=false, respawn_players=false)` is for the
+  barrier path.** The default call still sets ACTIVE and respawns immediately
+  for legacy callers.
+- **The staging map is still `main_menu_world.tscn`.** Staging is a local
+  CanvasLayer; `MatchSession.target_map_path` is only the map START GAME will
+  load.
+- **Join in progress is explicit.** A client joining an ACTIVE match sits in
+  the staging overlay and sends `MatchSession.request_join_in_progress`; the
+  server assigns a team and `rpc_reset`s it. The handshake no longer relies on
+  accidentally accepting an ACTIVE join.
+- **`return_to_lobby()` sets CLOSED before closing a RESULTS listen server.**
+  This prevents clients from spending the 90 s resume grace reconnecting to a
+  server that is intentionally going away.
+- **`MatchSession.reset()` clears target map, READY flags and map-ready ACKs.**
+  A re-used process must not carry those into the next room.
+
+Known gaps: there is no server-side ready gate (READY is advisory), no party
+lobby service, and host migration is still the existing reserved-slot expiry
+path rather than immediate promotion.

@@ -16,6 +16,8 @@ const CROUCH_ENTER_RATE: float = 9.0
 const CROUCH_RETURN_RATE: float = 7.0
 const AIR_ENTER_RATE: float = 16.0
 const AIR_EXIT_RATE: float = 10.0
+# HoldBlend: 0 = locomotion/air only, 1 = weapon-hold pose + one-shot chain.
+const HOLD_RATE: float = 12.0
 
 var _blend_vec: Vector2 = Vector2.ZERO
 
@@ -83,6 +85,17 @@ func _process(delta: float) -> void:
 	set(
 		"parameters/JumpBlend/blend_amount",
 		_smooth_towards(current_air, target_air, air_rate, delta)
+	)
+
+	# ── Combat-mode hold blend ────────────────────────────────────────
+	# Out of combat (spawn rooms, dev toggle) the player has no weapon in hand:
+	# drop the weapon-hold pose and the one-shot chain entirely.  Runs on every
+	# peer so a remote player's arms match the replicated flag.
+	var target_hold: float = 1.0 if player.in_combat else 0.0
+	var current_hold: float = get("parameters/HoldBlend/blend_amount")
+	set(
+		"parameters/HoldBlend/blend_amount",
+		_smooth_towards(current_hold, target_hold, HOLD_RATE, delta)
 	)
 
 

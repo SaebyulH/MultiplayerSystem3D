@@ -38,7 +38,15 @@ var local_peer_id: int = 0
 var match_id: String = ""
 var map_path: String = ""
 var map_hash: String = ""
+## Map the staging room will load on START GAME.  The staging map itself stays
+## the lobby map; this is only the selected match map path.
+var target_map_path: String = ""
+## Room-level result banner, set by the server when it enters RESULTS.
+var result_text: String = ""
 var phase: int = Protocol.Phase.STAGING
+## Staging READY flags.  Server-authoritative; advisory only for the host.
+var _ready_flags: Dictionary = {}
+var local_ready := false
 var host_player_id: int = 0
 var server_tick_rate: int = 90
 ## The UDP port the match server actually bound (host side).  Used by LAN
@@ -69,6 +77,9 @@ var _spawn_manager: Node = null
 ## broadcasts (status effects first) must not be sent to a peer before this, or
 ## they address a node that has not replicated yet (#124).
 var _ready_peers: Dictionary = {}
+## Peers that have confirmed the match map exists in their world.  Used by the
+## start sequence's map-ready barrier (docs/05-known-issues.md #126).
+var _map_ready_peers: Dictionary = {}
 var _node_ready_sent: bool = false
 var _last_wait_log_ms: int = 0
 var _test_start_sent: bool = false
@@ -338,6 +349,8 @@ func reset() -> void:
 	match_id = ""
 	map_path = ""
 	map_hash = ""
+	target_map_path = ""
+	result_text = ""
 	join_grant = ""
 	resume_token = ""
 	welcome_count = 0
@@ -348,6 +361,9 @@ func reset() -> void:
 	_peer_to_player.clear()
 	_pending_peers.clear()
 	_ready_peers.clear()
+	_map_ready_peers.clear()
+	_ready_flags.clear()
+	local_ready = false
 	_last_heard.clear()
 	_reserved_since.clear()
 	_preauth.clear()
@@ -591,6 +607,8 @@ func _send_welcome(peer_id: int, player_id: int, resumed: bool = false) -> void:
 			peer_id, player_id, map_path, resumed])
 	welcome.rpc_id(peer_id, Protocol.VERSION, player_id, peer_id, server_tick_rate,
 		map_path, map_hash, phase, host_player_id, NetworkTime.tick, resumed, token)
+	if target_map_path != "":
+		_rpc_set_staging_map.rpc_id(peer_id, target_map_path)
 
 
 func _send_error(peer_id: int, code: int, text: String) -> void:
@@ -605,6 +623,7 @@ func _on_peer_disconnected(peer_id: int) -> void:
 	_pending_peers.erase(peer_id)
 	_ready_peers.erase(peer_id)
 	_last_heard.erase(peer_id)
+	_map_ready_peers.erase(peer_id)
 	if player_id == 0:
 		return
 	var entry: Dictionary = _players.get(player_id, {})
@@ -754,7 +773,199 @@ func request_start_match(new_map_path: String) -> void:
 		return
 	if OS.is_debug_build():
 		print("[MATCH] start approved: %s" % new_map_path)
-	NetworkManager.load_match_map(new_map_path)
+	NetworkManager.start_staging_match(new_map_path)
+
+
+## Server-selected staging map.  The server keeps the lobby map loaded while
+## players are in the staging room; this path is what START GAME will load.
+func set_staging_map(new_path: String) -> void:
+	if not multiplayer.is_server():
+		return
+	target_map_path = new_path
+	_rpc_set_staging_map.rpc(new_path)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_set_staging_map(new_path: String) -> void:
+	target_map_path = new_path
+
+
+## Host-only staging map change, for a dedicated/lobbyd host who is a client.
+@rpc("any_peer", "call_remote", "reliable")
+func request_set_staging_map(new_path: String) -> void:
+	if not multiplayer.is_server() or role != Role.SERVER:
+		return
+	var pid := player_id_for_peer(multiplayer.get_remote_sender_id())
+	if not is_player_host(pid):
+		return
+	if not new_path.begins_with("res://maps/") or not FileAccess.file_exists(new_path):
+		return
+	var allowed := false
+	for entry in ConnectionUtils.scan_map_data():
+		var md := entry as MapData
+		if md != null and md.map_scene_path == new_path:
+			allowed = true
+			break
+	if allowed:
+		set_staging_map(new_path)
+
+
+## Client confirmation that it finished loading the announced map.
+func notify_map_ready() -> void:
+	if multiplayer.is_server():
+		_map_ready_peers[Protocol.SERVER_PEER_ID] = true
+		return
+	if local_player_id <= 0:
+		return
+	client_map_ready.rpc_id(Protocol.SERVER_PEER_ID, local_player_id)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func client_map_ready(player_id: int) -> void:
+	if not multiplayer.is_server() or role != Role.SERVER:
+		return
+	var peer_id := multiplayer.get_remote_sender_id()
+	if peer_id == 0 or player_id_for_peer(peer_id) != player_id:
+		return
+	_map_ready_peers[peer_id] = true
+
+
+## Server-side map barrier.  The host/listen server is always considered ready;
+## every other connected peer must ACK.  Returns false on timeout.
+func await_map_ready(timeout_seconds: float) -> bool:
+	if not multiplayer.is_server():
+		return true
+	_map_ready_peers[Protocol.SERVER_PEER_ID] = true
+	var deadline := Time.get_ticks_msec() + int(timeout_seconds * 1000.0)
+	while Time.get_ticks_msec() < deadline:
+		var pending := false
+		for pid_key in _players.keys():
+			var entry: Dictionary = _players[pid_key]
+			if int(entry.get("state", SlotState.CONNECTED)) != SlotState.CONNECTED:
+				continue
+			var peer_id := int(entry.get("peer_id", 0))
+			if peer_id == 0 or peer_id == Protocol.SERVER_PEER_ID:
+				continue
+			if not _map_ready_peers.has(peer_id):
+				pending = true
+				break
+		if not pending:
+			return true
+		await get_tree().process_frame
+	return false
+
+
+## Late join: spawn the player into an already-ACTIVE match.  The client's
+## stored build was applied in world_1 before it asked for this.
+@rpc("any_peer", "call_remote", "reliable")
+func request_join_in_progress(player_id: int) -> void:
+	if not multiplayer.is_server() or role != Role.SERVER:
+		return
+	var peer_id := multiplayer.get_remote_sender_id()
+	if peer_id == 0 or player_id_for_peer(peer_id) != player_id:
+		return
+	if phase != Protocol.Phase.ACTIVE:
+		return
+	var player := GameManager.find_player(str(player_id))
+	if player == null:
+		return
+	var frame := _choose_balanced_team()
+	if frame != Player.Team.FFA or player.team == Player.Team.FFA:
+		player.team = frame
+	player.rpc_reset.rpc(player._get_spawn_transform())
+
+
+func is_ready(player_id: int) -> bool:
+	return bool(_ready_flags.get(player_id, false))
+
+
+func set_local_ready(on: bool) -> void:
+	if multiplayer.is_server():
+		local_ready = on
+		_ready_flags[local_player_id if local_player_id > 0 else 1] = on
+		_rpc_ready.rpc(local_player_id if local_player_id > 0 else 1, on)
+		return
+	if local_player_id > 0:
+		request_set_ready.rpc_id(Protocol.SERVER_PEER_ID, on)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func request_set_ready(on: bool) -> void:
+	if not multiplayer.is_server() or role != Role.SERVER:
+		return
+	var pid := player_id_for_peer(multiplayer.get_remote_sender_id())
+	if pid == 0:
+		return
+	_ready_flags[pid] = on
+	_rpc_ready.rpc(pid, on)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_ready(player_id: int, on: bool) -> void:
+	_ready_flags[player_id] = on
+	if player_id == local_player_id:
+		local_ready = on
+
+
+## Host-only staging bot spawn.  A dedicated/lobbyd host is a client and has no
+## local SpawnManager, so this must cross the wire.
+@rpc("any_peer", "call_remote", "reliable")
+func request_add_bot(team: int) -> void:
+	if not multiplayer.is_server() or role != Role.SERVER:
+		return
+	if not is_player_host(player_id_for_peer(multiplayer.get_remote_sender_id())):
+		return
+	if phase != Protocol.Phase.STAGING:
+		return
+	if GameManager.spawn_manager:
+		GameManager.spawn_manager.add_bot(team)
+
+
+## Staging self team switch.  Team modes only; the server applies the change.
+@rpc("any_peer", "call_remote", "reliable")
+func request_switch_team(player_id: int) -> void:
+	if not multiplayer.is_server() or role != Role.SERVER:
+		return
+	if phase != Protocol.Phase.STAGING:
+		return
+	var peer_id := multiplayer.get_remote_sender_id()
+	if peer_id != 0 and player_id_for_peer(peer_id) != player_id:
+		return
+	var player := GameManager.find_player(str(player_id))
+	if player == null:
+		return
+	match player.team:
+		Player.Team.SPI: player.team = Player.Team.SCI
+		Player.Team.SCI: player.team = Player.Team.SPI
+		_: pass
+
+
+## Host-only room end.  The match server validates the sender against
+## host_player_id, then sets RESULTS for every room-level UI.
+@rpc("any_peer", "call_remote", "reliable")
+func request_end_match() -> void:
+	if not multiplayer.is_server() or role != Role.SERVER:
+		return
+	if not is_player_host(player_id_for_peer(multiplayer.get_remote_sender_id())):
+		return
+	NetworkManager.end_match()
+
+
+func _choose_balanced_team() -> Player.Team:
+	if not is_instance_valid(GameManager.spawn_parent):
+		return Player.Team.FFA
+	var spi := 0
+	var sci := 0
+	for child in GameManager.spawn_parent.get_children():
+		if child is Player:
+			var p := child as Player
+			if p.team == Player.Team.SPI:
+				spi += 1
+			elif p.team == Player.Team.SCI:
+				sci += 1
+	if spi == 0 and sci == 0:
+		return Player.Team.FFA
+	return Player.Team.SCI if sci <= spi else Player.Team.SPI
 
 
 ## Server → all peers.  Used by the map-start flow; P2 only needs the signal.
@@ -766,9 +977,30 @@ func broadcast_phase(new_phase: int, new_map_path: String, new_map_hash: String)
 	phase_changed.emit(new_phase, new_map_path, new_map_hash)
 
 
+## Server → every peer: result banner for the RESULTS screen.
+func set_results(text: String) -> void:
+	if not multiplayer.is_server():
+		return
+	result_text = text
+	_rpc_set_results.rpc(text)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_set_results(text: String) -> void:
+	result_text = text
+
+
 func set_phase(new_phase: int, new_map_path: String = "", new_map_hash: String = "") -> void:
 	if not multiplayer.is_server():
 		return
+	# The server is authoritative and broadcast_phase is call_remote-only, so
+	# the server's own copy must be updated explicitly.  Without this a host
+	# stayed in STAGING while its clients were told ACTIVE.
+	phase = new_phase
+	if new_phase == Protocol.Phase.COUNTDOWN:
+		_ready_flags.clear()
+	if new_phase == Protocol.Phase.LOADING:
+		_map_ready_peers.clear()
 	if new_map_path != "":
 		map_path = new_map_path
 		map_hash = new_map_hash

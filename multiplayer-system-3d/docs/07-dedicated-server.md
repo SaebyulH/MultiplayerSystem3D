@@ -13,6 +13,14 @@
 > map-ready barrier (#126), lobbyd's control channel and child re-adoption
 > (#129), LAN announce signing (#133 — accepted risk; the join is still
 > handshake-validated), and the 10-match/64-player benchmark + soak (below).
+>
+> **2026-11-17 local-flow slice:** the default shell now has a one-per-process
+> title gate, a stored process build, a HostServer "Match Menu" (Globe),
+> 2D staging room, COUNTDOWN/LOADING/ACTIVE transitions with a `MAP_READY`
+> barrier, pause menu and results overlay. The party service, host drag-team
+> assignment, immediate host migration and live lobbyd status are still not
+> implemented; see `ref/NEW_EVENT_FLOW.txt` phases 6–7 and
+> `05-known-issues.md` #140–#147.
 
 The netcode is being moved from "every player hosts their own server, peer 1 is
 host + party leader" to **dedicated match servers behind a central lobby**. The
@@ -117,13 +125,13 @@ path after node readiness, and there is no `map_ready` barrier on a map swap
 Launching with no flags boots the local 3D shell on an `OfflineMultiplayerPeer`
 (the offline peer reports `unique_id=1`, so the local player is the leader).
 
-- **Host Match** (`HostServer` zone) opens the existing **host menu first**:
-  map, team assignment, manual bots, autofill. No loading screen until Start.
-  Start captures the choices in `GameManager.pending_host_setup` and calls
-  `NetworkManager.host_local_match(port, selected_map)`, which frees the shell
-  and boots a listen server **directly into that map**. `world_1` applies the
-  host team and autofill after player 1 spawns; manual-bot team edits were
-  written back to `GameManager.lobby_bots`.
+- **Host Match** (`HostServer` zone, the Globe) opens `world/globe_menu.gd`.
+  Its Start Match tab picks the target map; CREATE MATCH stores it in
+  `GameManager.pending_match_map` and boots a listen server into the **lobby
+  staging map**, not directly into the match map. The staging room then owns
+  team/bot/ready/start controls. The old `host_menu.tscn` path is legacy.
+  Start reaches the match through `NetworkManager.start_staging_match()`:
+  COUNTDOWN -> LOADING + `MAP_READY` barrier -> ACTIVE -> respawn.
 - **Ports:** the listen server tries `8080`, `8081`, … up to 16 ports and keeps
   the first free one. A second host on one machine therefore hosts on 8081
   instead of exiting. A local host failure (no free port) returns to the shell.

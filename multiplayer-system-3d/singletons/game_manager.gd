@@ -37,6 +37,25 @@ var lobby_bots: Array[Dictionary] = []
 ## targets.  Cleared after it is applied.
 var pending_host_setup: Dictionary = {}
 
+## Target map chosen in the Globe/staging flow.  The staging world itself is
+## always the lobby map; this is the map START GAME will load.
+var pending_match_map: String = ""
+
+## Process-local build.  Survives world rebuilds so the title/lobby spawn and
+## staging room do not reopen the mandatory Loadout screen.
+var local_loadout: Dictionary = {}
+
+## True after the one-per-process title gate has been dismissed.
+var title_seen := false
+
+
+func get_or_create_local_loadout() -> Dictionary:
+	if LoadoutProfile.is_valid(local_loadout):
+		return local_loadout
+	local_loadout = LoadoutProfile.random_build()
+	return local_loadout
+
+
 # --- Dev-menu display flags (world/dev_menu.gd) ---------------------------
 # Purely local: they are never networked and only affect the peer that set
 # them.  They live on GameManager (not on the world) so they survive a world

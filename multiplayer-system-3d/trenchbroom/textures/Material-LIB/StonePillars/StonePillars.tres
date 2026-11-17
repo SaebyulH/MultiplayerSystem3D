@@ -1,0 +1,15 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://carsi0qa8sagu"]
+
+[ext_resource type="Texture2D" uid="uid://csvnk1q3537e0" path="res://trenchbroom/textures/Material-LIB/StonePillars/StonePillars.png" id="1_g1j13"]
+[ext_resource type="Texture2D" uid="uid://piyr6dw3jip5" path="res://trenchbroom/textures/Material-LIB/StonePillars/StonePillars_metallic.png" id="2_umvjv"]
+[ext_resource type="Texture2D" uid="uid://bixpp3yqumsp0" path="res://trenchbroom/textures/Material-LIB/StonePillars/StonePillars_normal.png" id="3_qocv0"]
+[ext_resource type="Texture2D" uid="uid://ucsxq30a1cf3" path="res://trenchbroom/textures/Material-LIB/StonePillars/StonePillars_roughness.png" id="4_nuh1w"]
+
+[resource]
+albedo_texture = ExtResource("1_g1j13")
+metallic_specular = 0.0
+metallic_texture = ExtResource("2_umvjv")
+roughness_texture = ExtResource("4_nuh1w")
+normal_enabled = true
+normal_texture = ExtResource("3_qocv0")
+texture_filter = 2

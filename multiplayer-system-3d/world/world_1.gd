@@ -6,10 +6,25 @@ extends Node3D
 
 const DEV_MENU_SCRIPT := preload("res://world/dev_menu.gd")
 const SPECTATOR_CONTROLLER_SCRIPT := preload("res://world/spectator_controller.gd")
+const TITLE_SCREEN_SCRIPT := preload("res://world/title_screen.gd")
+const STAGING_ROOM_SCRIPT := preload("res://world/staging_room.gd")
+const PAUSE_MENU_SCRIPT := preload("res://world/pause_menu.gd")
+const POST_MATCH_SCRIPT := preload("res://world/post_match.gd")
+const LoadoutProfileScript := preload("res://player/loadout_profile.gd")
+const Protocol := preload("res://network/session_protocol.gd")
 ## Preloaded rather than referenced through `class_name` (load-order race).
 const MatchManifestScript := preload("res://network/match_manifest.gd")
 var dev_menu
 var spectator_controller
+var title_screen: CanvasLayer
+var staging_room: CanvasLayer
+var pause_menu: CanvasLayer
+var post_match: CanvasLayer
+var _flow_timer: Timer
+var _staging_open := false
+var _results_open := false
+var _flow_started := false
+var _auto_join_sent := false
 
 ## The global kill feed.  Kept as a member so the dev-menu "hide other HUD"
 ## toggle can hide it; it is a local CanvasLayer, not a replicated node.
@@ -111,6 +126,37 @@ func _ready() -> void:
 		# must re-apply its persisted dev display flag to the fresh HUD nodes.
 		apply_dev_world_hud_visibility()
 
+		# New local flow overlays.  All are local CanvasLayers: never replicated
+		# and never parented to SpawnParent.
+		title_screen = TITLE_SCREEN_SCRIPT.new()
+		add_child(title_screen)
+		title_screen.visible = false
+		title_screen.start_requested.connect(_on_title_start)
+
+		staging_room = STAGING_ROOM_SCRIPT.new()
+		add_child(staging_room)
+		pause_menu = PAUSE_MENU_SCRIPT.new()
+		add_child(pause_menu)
+		post_match = POST_MATCH_SCRIPT.new()
+		add_child(post_match)
+
+		_flow_timer = Timer.new()
+		_flow_timer.wait_time = 0.25
+		_flow_timer.one_shot = false
+		_flow_timer.timeout.connect(_sync_flow_ui)
+		add_child(_flow_timer)
+		_flow_timer.start()
+
+		if not MatchSession.phase_changed.is_connected(_on_flow_phase_changed):
+			MatchSession.phase_changed.connect(_on_flow_phase_changed)
+		if not MatchSession.welcomed.is_connected(_on_flow_welcomed):
+			MatchSession.welcomed.connect(_on_flow_welcomed)
+
+		_setup_flow.call_deferred()
+
+	if multiplayer.is_server():
+		_wire_match_end.call_deferred()
+
 
 ## Apply the host menu's choices captured in the local shell to the new listen
 ## server.  Manual bots are already re-added from `GameManager.lobby_bots`
@@ -183,6 +229,8 @@ func _install_session_map(path: String) -> void:
 	GameManager.spawn_parent.add_child(map)
 	_session_map_path = path
 	if OS.is_debug_build(): print("CLIENT MAP ADDED " + path)
+	if MatchSession.phase == Protocol.Phase.LOADING:
+		MatchSession.notify_map_ready.call_deferred()
 
 
 func _on_session_phase_changed(_new_phase: int, new_path: String, _new_hash: String) -> void:
@@ -203,10 +251,256 @@ func apply_dev_world_hud_visibility() -> void:
 	if is_instance_valid(_kill_feed):
 		_kill_feed.visible = not hide
 
+# ─────────────────────────────────────────────
+#  Local flow: title, stored build, staging, pause, results
+# ─────────────────────────────────────────────
+
+func _new_flow_eligible() -> bool:
+	if NetworkManager.is_dedicated_server():
+		return false
+	if NetworkManager.role == NetworkManager.Role.OFFLINE:
+		return true
+	if NetworkManager.role in [NetworkManager.Role.LISTEN_SERVER, NetworkManager.Role.CLIENT]:
+		return MatchSession.role != MatchSession.Role.NONE
+	return false
+
+
+func _setup_flow() -> void:
+	if not _new_flow_eligible():
+		return
+	_flow_started = true
+	loadout_menu.visible = false
+	_wire_match_end()
+	if multiplayer.is_server() and MatchSession.role == MatchSession.Role.SERVER \
+			and GameManager.pending_match_map != "":
+		MatchSession.set_staging_map(GameManager.pending_match_map)
+
+	if "--test-staging-start" in OS.get_cmdline_user_args() \
+			and multiplayer.is_server() and MatchSession.role == MatchSession.Role.SERVER:
+		var test_map := _arg_value("--test-staging-map=")
+		if test_map == "":
+			test_map = MatchSession.target_map_path
+		if test_map == "" and not ConnectionUtils.scan_map_data().is_empty():
+			test_map = ConnectionUtils.scan_map_data()[0].map_scene_path
+		if test_map != "":
+			MatchSession.set_staging_map(test_map)
+			NetworkManager.start_staging_match.call_deferred(test_map)
+
+	if NetworkManager.role == NetworkManager.Role.OFFLINE and not GameManager.title_seen:
+		_show_title()
+		if "--test-title-start" in OS.get_cmdline_user_args():
+			_on_title_start.call_deferred()
+		return
+
+	var spawn_now := NetworkManager.role == NetworkManager.Role.OFFLINE \
+		or (NetworkManager.role == NetworkManager.Role.LISTEN_SERVER
+			and MatchSession.phase == Protocol.Phase.ACTIVE)
+	await _apply_local_build(spawn_now)
+	if NetworkManager.role == NetworkManager.Role.CLIENT \
+			and MatchSession.phase == Protocol.Phase.ACTIVE \
+			and "--auto-loadout" in OS.get_cmdline_user_args():
+		await get_tree().process_frame
+		if MatchSession.local_player_id > 0:
+			MatchSession.request_join_in_progress.rpc_id(1, MatchSession.local_player_id)
+	_sync_flow_ui()
+	if "--test-end-match" in OS.get_cmdline_user_args() and multiplayer.is_server():
+		await get_tree().create_timer(6.0).timeout
+		NetworkManager.end_match("TEST RESULTS")
+
+
+func _show_title() -> void:
+	title_screen.visible = true
+	loadout_menu.visible = false
+	class_selected = false
+	PlayerInput.ui_open = true
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+
+
+func _on_title_start() -> void:
+	GameManager.title_seen = true
+	if title_screen:
+		title_screen.visible = false
+	await _apply_local_build(true)
+	_sync_flow_ui()
+
+
+func _apply_local_build(spawn_now: bool) -> void:
+	var local_id := MatchSession.local_id_string()
+	var player: Player = null
+	var deadline := Time.get_ticks_msec() + 10000
+	while Time.get_ticks_msec() < deadline:
+		# The stable id arrives with `welcome`, after the client starts waiting.
+		local_id = MatchSession.local_id_string()
+		player = GameManager.find_player(local_id)
+		if player != null:
+			break
+		await get_tree().process_frame
+	if player == null:
+		return
+	var build := GameManager.get_or_create_local_loadout()
+	if not LoadoutProfileScript.is_valid(build):
+		return
+	if not GameManager.local_loadout.is_empty():
+		build = GameManager.local_loadout
+	var pp := str(build.get("primary_path", ""))
+	var sp := str(build.get("secondary_path", ""))
+	var mp := str(build.get("melee_path", ""))
+	var cp := str(build.get("character_path", ""))
+	var class_path := str(build.get("class_path", ""))
+	var rand_on_death := bool(build.get("randomize_on_death", false))
+	if multiplayer.is_server():
+		loadout_menu._request_loadout(local_id, pp, sp, mp, Player.Team.FFA,
+			cp, class_path, rand_on_death, false)
+	else:
+		loadout_menu._request_loadout.rpc_id(1, local_id, pp, sp, mp, Player.Team.FFA,
+			cp, class_path, rand_on_death, false)
+	class_selected = true
+	loadout_menu.visible = false
+	if spawn_now and multiplayer.is_server():
+		var spawn_tf := player._get_spawn_transform()
+		if multiplayer.get_peers().is_empty():
+			player.rpc_spawn_now(spawn_tf)
+		else:
+			player.rpc_spawn_now.rpc(spawn_tf)
+		PlayerInput.ui_open = false
+		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+
+
+func on_match_map_loaded() -> void:
+	_wire_match_end()
+
+
+func _wire_match_end() -> void:
+	var gmc := GameManager.game_mode_component
+	if gmc == null or not multiplayer.is_server():
+		return
+	if not gmc.match_won.is_connected(_on_gmc_match_won):
+		gmc.match_won.connect(_on_gmc_match_won)
+
+
+func _on_gmc_match_won(winner: Player.Team) -> void:
+	var text := "Match over"
+	match winner:
+		Player.Team.SPI: text = "TEAM SPI wins"
+		Player.Team.SCI: text = "TEAM SCI wins"
+		Player.Team.FFA: text = "Match over"
+	NetworkManager.end_match(text)
+
+
+func _on_flow_phase_changed(_phase: int, _map_path: String, _map_hash: String) -> void:
+	_sync_flow_ui.call_deferred()
+
+
+func _on_flow_welcomed(_info: Dictionary) -> void:
+	_sync_flow_ui.call_deferred()
+
+
+func _sync_flow_ui() -> void:
+	if not _flow_started or not is_instance_valid(staging_room):
+		return
+	if title_screen and is_instance_valid(title_screen) and title_screen.visible:
+		return
+	var player := GameManager.find_player(MatchSession.local_id_string())
+	var staging := false
+	var join_mode := false
+	if MatchSession.role != MatchSession.Role.NONE:
+		if MatchSession.phase in [
+			Protocol.Phase.STAGING,
+			Protocol.Phase.COUNTDOWN,
+			Protocol.Phase.LOADING,
+		]:
+			staging = true
+		elif MatchSession.phase == Protocol.Phase.ACTIVE \
+				and NetworkManager.role == NetworkManager.Role.CLIENT \
+				and player != null and not player.spawned:
+			staging = true
+			join_mode = true
+
+	if staging:
+		if not _staging_open:
+			staging_room.open(self, join_mode)
+			_staging_open = true
+		else:
+			staging_room.world = self
+			if not PlayerInput.ui_open and not loadout_menu.visible:
+				PlayerInput.ui_open = true
+				Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+		if join_mode and not _auto_join_sent \
+				and "--auto-loadout" in OS.get_cmdline_user_args() \
+				and MatchSession.local_player_id > 0:
+			_auto_join_sent = true
+			MatchSession.request_join_in_progress.rpc_id(1, MatchSession.local_player_id)
+		return
+	if _staging_open:
+		staging_room.close()
+		_staging_open = false
+
+	if MatchSession.role != MatchSession.Role.NONE \
+			and MatchSession.phase == Protocol.Phase.RESULTS:
+		if not _results_open:
+			_results_open = true
+			post_match.open(MatchSession.result_text)
+		return
+
+	if _results_open:
+		_results_open = false
+		post_match.visible = false
+
+	if _can_pause() and PlayerInput.ui_open and not loadout_menu.visible \
+			and not (pause_menu and pause_menu.visible):
+		# A staging overlay or title already owns input; don't add another.
+		if not (_staging_open or (title_screen and title_screen.visible)):
+			PlayerInput.ui_open = false
+			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+
+
+func _can_pause() -> bool:
+	if MatchSession.role == MatchSession.Role.NONE:
+		return false
+	var player := GameManager.find_player(MatchSession.local_id_string())
+	if player == null or not player.spawned:
+		return false
+	if MatchSession.phase != Protocol.Phase.ACTIVE:
+		return false
+	return not _staging_open and not _results_open
+
+
+func should_loadout_respawn() -> bool:
+	if MatchSession.role == MatchSession.Role.NONE:
+		return true
+	if _staging_open or _results_open:
+		return false
+	return MatchSession.phase == Protocol.Phase.ACTIVE
+
+
+func open_loadout() -> void:
+	if loadout_menu:
+		loadout_menu.visible = true
+		PlayerInput.ui_open = true
+		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+
+
+func _arg_value(prefix: String) -> String:
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with(prefix):
+			return arg.substr(prefix.length())
+	return ""
+
+
 func _on_main_menu_pressed() -> void:
 	NetworkManager.return_to_lobby()
 
 func _unhandled_input(event: InputEvent) -> void:
+	# Pause owns Esc while open.
+	if pause_menu and pause_menu.visible:
+		if event.is_action_pressed("ui_cancel"):
+			pause_menu.close()
+			get_viewport().set_input_as_handled()
+		return
+
+	if title_screen and is_instance_valid(title_screen) and title_screen.visible:
+		return
+
 	# Dev menu owns input while it is logically open — including while its
 	# canvas is hidden during a bot-loadout edit.
 	if event.is_action_pressed("dev_menu"):
@@ -248,3 +542,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			loadout_menu.visible = false
 			PlayerInput.ui_open = false
 			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+	elif event.is_action_pressed("ui_cancel") and _can_pause() \
+			and not PlayerInput.ui_open:
+		pause_menu.open(self)
+		get_viewport().set_input_as_handled()
