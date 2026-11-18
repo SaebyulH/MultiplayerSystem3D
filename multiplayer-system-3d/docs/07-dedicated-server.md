@@ -222,6 +222,56 @@ servers. lobbyd has no control channel yet, so the browser's player count is a
 count of issued grants and the phase is always `staging`; it also does not
 re-adopt live children after a restart (#129).
 
+## Build size & texture import policy
+
+The packed Linux dedicated server is dominated by imported assets, not code.
+Its size is controlled entirely by `.import` sidecars and `export_presets.cfg`;
+nothing in gameplay code changes it.
+
+- **Texture import caps.** `process/size_limit` is set on the texture imports
+  of the heavy 3D roots — **1024** for `assets/character_models`,
+  `assets/weapon_models`, `assets/props*`, `assets/map_models_old` and
+  `trenchbroom/textures`, **2048** for `assets/environment` (the equirect sky).
+  The cap applies to the *imported* texture, so the PCK shrinks without
+  rewriting the source art. A new import defaults to `size_limit=0`; a 4K
+  source dropped in without the cap ships at full size.
+- **`export_filter="all_resources"` is required.** Maps and loadouts are loaded
+  by path string (`MapData.map_scene_path`, `res://weapon/...`,
+  `res://player/characters|player_classes/`), so the exporter cannot infer them
+  as dependencies. Anything unreferenced therefore ships unless it is listed in
+  `exclude_filter`.
+- **`exclude_filter` carries the dead weight:** `backup/` (pre-resize originals),
+  the authoring reference dumps (`FuncGodot Manual/`, `ref/`, `Unity/`,
+  `Unreal Engine/`, `GodotAnims/`), all `*.blend` sources, unused fonts
+  (Kaisei, Montserrat) and three unreferenced character/weapon models.
+- **Never exclude a path a runtime string can still reach.** The three map
+  materials that pointed into `backup/` were repointed to the live downscaled
+  copies under `trenchbroom/textures/` *before* the exclusion. Adding a map,
+  prop or loadout that points into an excluded tree breaks the build silently —
+  the PCK just loses the file.
+- **`trenchbroom/models/` is not editor-only — do not exclude it.** The
+  TrenchBroom display GLBs are also runtime meshes: `world/special_entities/player_spawn.tscn`
+  and `practice_target_spawn.tscn` instance `trenchbroom/models/mannequin_static.glb`,
+  and `weapon/projectiles/scenes/wood.tscn` instances `BigBox.glb`. Excluding
+  the folder produced exactly the silent break described above on the live
+  droplet: `Can't load dependency: 'res://trenchbroom/models/mannequin_static.glb'`
+  → `Failed loading resource: …player_spawn.scn` → a failed
+  `Preload failed: res://maps/main_menu_world.tscn`, while the service still
+  reported `active (running)` and listened on 7000. The warning is the export
+  step: a grep for `trenchbroom/models` shows 32 references, and only the first
+  few lines are tooling.
+- **Map textures stay lossless (`compress/mode=0`).** Switching
+  `trenchbroom/textures` to VRAM compression (`compress/mode=2`) made the PCK
+  *larger* (147 MB → 211 MB): tiling normals and masks compress better
+  losslessly than at 4–8 bpp. Character/weapon textures are already VRAM mode
+  and gain from the size cap instead.
+- **Regenerate `maps/manifest.json` after any map edit** (see below) — the
+  manifest hashes map-scene bytes, and the `hyb_castle` repoint changed them.
+
+Measured 2026-11-18: 1.47 GB → 700 MB for the same preset. The steps landed as
+1.47 GB → 718 MB (texture caps + `backup/` and reference-dump exclusions) →
+700 MB (unused fonts and unreferenced models).
+
 ## Map manifest workflow
 
 Maps are static and large (`maps/bind.tscn` is ~46 MB) and must never cross
