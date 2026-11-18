@@ -411,7 +411,6 @@ points = PackedVector3Array(0.5, 16, 8.5, 0.5, 0, 8.5, -0.5, 16, 8.5, -0.5, 0, 8
 [node name="Game" type="Node3D" unique_id=159294576 node_paths=PackedStringArray("despawn_location") groups=["map_nav_geometry"]]
 script = ExtResource("1_q7lo8")
 despawn_location = NodePath("Despawn")
-toon_world_enabled = true
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=765331845]
 environment = SubResource("Environment_jaf4h")

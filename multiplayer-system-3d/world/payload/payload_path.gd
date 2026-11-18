@@ -79,8 +79,8 @@ func configure(points: Array[PayloadPathPoint]) -> void:
 ## Drops everything derived from the curve, so none of it reaches the `.tscn`.
 ##
 ## The tube mesh is the important half: it is a generated [ArrayMesh] plus a [ShaderMaterial],
-## and as a node property it would serialize into every map scene that carries a route — the
-## same trade [ToonMaterialConverter] makes, for the same reason.  [member zones] and
+## and as a node property it would serialize into every map scene that carries a route, a
+## generated SubResource per map.  [member zones] and
 ## [member path_points] are not `@export`, so they would not serialize anyway; clearing them
 ## keeps the in-memory object honest against what is on disk.
 ##

@@ -11,7 +11,6 @@ uniform vec4 effect_color : source_color = vec4(1.0, 0.0, 0.0, 1.0);
 uniform float pulse_speed : hint_range(0.1, 10.0) = 2.0;
 uniform float noise_intensity : hint_range(0.0, 1.0) = 0.3;
 uniform float noise_scale : hint_range(1.0, 100.0) = 25.0;
-uniform float u_time : hint_range(0.0, 3600.0) = 0.0;
 
 // Quick hash for per-pixel variation.
 float hash(vec2 p) {
@@ -25,22 +24,23 @@ void fragment() {
 	// Border band:  0 = edge, 1 = inner boundary, >1 = beyond border.
 	float edge = d / 0.055;
 
-	// Smooth falloff so the border fades inward.
-	float falloff = 1.0 - smoothstep(0.0, 1.0, edge);
-
-	// Base pulse: slow sine that varies along the perimeter.
-	float pulse = sin(u_time * pulse_speed + d * 18.0) * 0.25 + 0.85;
-
-	// Noise adds organic / electric variation.
-	float n = hash(floor(UV * noise_scale + u_time * pulse_speed * 0.15)) * noise_intensity;
-
-	float alpha = falloff * (pulse + n);
-	alpha = clamp(alpha, 0.0, 1.0);
-
-	// Fade out fully beyond the border band.
+	// Everything past the band is fully transparent.  Skip the pulse and hash
+	// there: this shader covers the whole screen and the interior is ~89% of it.
 	if (edge > 1.0) {
-		alpha = 0.0;
-	}
+		COLOR = vec4(0.0);
+	} else {
+		// Smooth falloff so the border fades inward.
+		float falloff = 1.0 - smoothstep(0.0, 1.0, edge);
 
-	COLOR = vec4(effect_color.rgb, effect_color.a * alpha);
+		// Base pulse: slow sine that varies along the perimeter.
+		float pulse = sin(TIME * pulse_speed + d * 18.0) * 0.25 + 0.85;
+
+		// Noise adds organic / electric variation.
+		float n = hash(floor(UV * noise_scale + TIME * pulse_speed * 0.15)) * noise_intensity;
+
+		float alpha = falloff * (pulse + n);
+		alpha = clamp(alpha, 0.0, 1.0);
+
+		COLOR = vec4(effect_color.rgb, effect_color.a * alpha);
+	}
 }

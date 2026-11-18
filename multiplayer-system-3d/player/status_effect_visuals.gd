@@ -105,7 +105,11 @@ var _sem: StatusEffectManager = null
 var _nodes: Dictionary = {}
 ## effect_id -> bool, the mirror state last seen on the manager.
 var _active: Dictionary = {}
-var _fade_curve: CurveTexture = null
+## Shared across every player: the configs are identical per effect id and none
+## of these resources is mutated after construction.  Only the GPUParticles3D
+## node itself (visibility/emitting/transform) stays per player.
+static var _fade_curve: CurveTexture = null
+static var _shared: Dictionary = {}
 
 
 func _ready() -> void:
@@ -163,16 +167,33 @@ func _build(id: String, cfg: Dictionary) -> GPUParticles3D:
 	p.visible = false
 	p.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	# Particles rise/fall out of the emitter's own box; the default 1 m AABB
-	# culls the top of tall effects.
-	p.visibility_aabb = AABB(Vector3(-1.5, -1.5, -1.5), Vector3(3.0, 4.0, 3.0))
-	p.process_material = _build_process(cfg)
-	p.draw_pass_1 = _build_quad(cfg.get("quad", 0.4))
-	p.material_override = _build_material(cfg)
+	# culls the top of tall effects.  Bleeding sprays downward, so it needs the
+	# extra room below.
+	var dir: Vector3 = cfg["direction"]
+	var down: float = 3.0 if dir.y < 0.0 else 1.5
+	p.visibility_aabb = AABB(Vector3(-1.5, -down, -1.5), Vector3(3.0, down + 2.5, 3.0))
+	var shared := _shared_resources(id, cfg)
+	p.process_material = shared["process"]
+	p.draw_pass_1 = shared["quad"]
+	p.material_override = shared["material"]
 	add_child(p)
 	return p
 
 
-func _build_process(cfg: Dictionary) -> ParticleProcessMaterial:
+## Builds (once per effect id) the resources every player's systems share.
+static func _shared_resources(id: String, cfg: Dictionary) -> Dictionary:
+	if _shared.has(id):
+		return _shared[id]
+	var entry := {
+		"process": _build_process(cfg),
+		"quad": _build_quad(cfg.get("quad", 0.4)),
+		"material": _build_material(cfg),
+	}
+	_shared[id] = entry
+	return entry
+
+
+static func _build_process(cfg: Dictionary) -> ParticleProcessMaterial:
 	var m := ParticleProcessMaterial.new()
 	m.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
 	m.emission_box_extents = cfg["box"]
@@ -188,13 +209,13 @@ func _build_process(cfg: Dictionary) -> ParticleProcessMaterial:
 	return m
 
 
-func _build_quad(size: float) -> QuadMesh:
+static func _build_quad(size: float) -> QuadMesh:
 	var q := QuadMesh.new()
 	q.size = Vector2(size, size)
 	return q
 
 
-func _build_material(cfg: Dictionary) -> StandardMaterial3D:
+static func _build_material(cfg: Dictionary) -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -208,7 +229,7 @@ func _build_material(cfg: Dictionary) -> StandardMaterial3D:
 
 ## One shared fade curve: hold briefly, then fall to zero.  Shared by every
 ## effect so the curve resource is not duplicated per particle system.
-func _get_fade_curve() -> CurveTexture:
+static func _get_fade_curve() -> CurveTexture:
 	if _fade_curve == null:
 		var curve := Curve.new()
 		curve.add_point(Vector2(0.0, 0.0))

@@ -550,7 +550,6 @@ detail_sample_max_error = 0.1
 [node name="Game" type="Node3D" unique_id=159294576 node_paths=PackedStringArray("despawn_location") groups=["map_nav_geometry"]]
 script = ExtResource("1_75vr2")
 despawn_location = NodePath("Despawn")
-toon_world_enabled = true
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=765331845]
 environment = SubResource("Environment_yhcpw")

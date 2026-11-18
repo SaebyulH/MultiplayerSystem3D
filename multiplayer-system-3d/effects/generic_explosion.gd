@@ -17,7 +17,7 @@ class_name GenericExplosion
 ##
 ## Colour customisation:
 ##   [member effect_color] is multiplied with each particle material's
-##   albedo / emission shader parameters at runtime.  Set it to a non-white
+##   albedo (and emission, when enabled) at runtime.  Set it to a non-white
 ##   colour to create ice (blue), poison (green), void (purple), etc.
 ##   explosions without duplicating textures.
 
@@ -94,39 +94,16 @@ func _apply_scale_to_particle(_p: GPUParticles3D, _scale: float) -> void:
 ## Applies [color] tint to [p]'s material override.
 ## Override for custom colour-mapping behaviour.
 func _apply_color_to_particle(p: GPUParticles3D, color: Color) -> void:
-	var material: Material = p.material_override
+	# Every explosion particle now uses StandardMaterial3D: duplicate the shared
+	# scene resource, tint it, and hand the instance its own copy.
+	var material := p.material_override as StandardMaterial3D
 	if material == null:
 		return
-
-	if material is ShaderMaterial:
-		material = material.duplicate()
-		p.material_override = material
-		# Tint albedo (present on virtually all our particle shaders).
-		if _shader_has_param(material, "albedo"):
-			var original: Color = material.get_shader_parameter("albedo")
-			material.set_shader_parameter("albedo", original * color)
-		# Tint emission (present on shaders that glow, e.g. Boom, Cloud).
-		if _shader_has_param(material, "emission"):
-			var original: Color = material.get_shader_parameter("emission")
-			material.set_shader_parameter("emission", original * color)
-	elif material is StandardMaterial3D:
-		material = material.duplicate()
-		p.material_override = material
-		material.albedo_color = material.albedo_color * color
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-## Returns true if [param_name] is declared as a uniform in [mat]'s shader.
-func _shader_has_param(mat: ShaderMaterial, param_name: String) -> bool:
-	if mat.shader == null:
-		return false
-	# Crude but effective: the shader source is GLSL text, so a substring
-	# check tells us whether the uniform is declared.  False positives are
-	# unlikely for these specific parameter names ("albedo", "emission").
-	return param_name in mat.shader.code
+	material = material.duplicate()
+	p.material_override = material
+	material.albedo_color = material.albedo_color * color
+	if material.emission_enabled:
+		material.emission = material.emission * color
 
 
 # ---------------------------------------------------------------------------

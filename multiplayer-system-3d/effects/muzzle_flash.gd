@@ -11,8 +11,14 @@ func set_color(color: Color) -> void:
 	$Sparks.material_override.albedo_color = color
 	$OmniLight3D.light_color = color
 
+## Wall-clock ms at which the muzzle light goes out.  A newer shot can only
+## extend it, so overlapping automatic-fire shots never hide each other early.
+var _light_until_msec: int = 0
+
+
 func _ready() -> void:
 	set_color(DEFAULT_COLOR)
+	set_process(false)
 
 
 ## Fires the muzzle flash effect.
@@ -26,6 +32,13 @@ func fire(flash_color: Color = DEFAULT_COLOR) -> void:
 	$Sparks.emitting = true
 	$OmniLight3D.show()
 
-	var duration :float= $MuzzlePlanes.lifetime
-	await get_tree().create_timer(duration).timeout
+	var until := Time.get_ticks_msec() + int($MuzzlePlanes.lifetime * 1000.0)
+	_light_until_msec = maxi(_light_until_msec, until)
+	set_process(true)
+
+
+func _process(_delta: float) -> void:
+	if Time.get_ticks_msec() < _light_until_msec:
+		return
 	$OmniLight3D.hide()
+	set_process(false)

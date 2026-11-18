@@ -986,7 +986,7 @@ date the moment it is saved. It writes two nodes under the **`Map` root** — ne
 **Only the curve is saved; everything derived from it is rebuilt on every peer.** The zone table and
 the glowing route line are stripped before the save (`PayloadPath.strip_derived()`) and rebuilt at
 load, because as node properties they would serialize a generated `ArrayMesh` and a `ShaderMaterial`
-into every map that carries a route — the same trade the toon materials make (#96). So the route
+into every map that carries a route as generated `SubResource`s. So the route
 *curve* is visible and editable in the Godot editor, and the glowing line is not; that residual is
 `05-known-issues.md` #86.
 

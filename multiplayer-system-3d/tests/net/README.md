@@ -36,7 +36,6 @@ host on the first free port in the `8092` range.  Logs are written to
 | `tools/map_manifest.tscn -- --check` | pass |
 | `tools/verify_brush_entities.tscn` | pass |
 | `tools/verify_payload_path.tscn` | 2 failures (#135, map-authoring fixture) |
-| `tools/verify_toon_world_swap.tscn` | 1 failure (#136, material converter) |
 | `tools/rim_layer_check.tscn` | exit 0 (netfox teardown warnings are noise) |
 
 Run a tool harness directly:

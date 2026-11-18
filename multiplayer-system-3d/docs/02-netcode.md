@@ -1165,7 +1165,7 @@ its `Curve3D` are written into the scene at editor time — `PayloadPathBuilder.
 Map's tool button and from its save hook — so a route is saved state rather than something that only
 appears at runtime. What is *not* saved is everything derived from that curve: the zone table and the
 glowing tube are stripped before the save and rebuilt at load, because as node properties they would
-bloat every map scene that carries a route (the same trade `ToonMaterialConverter` makes).
+bloat every map scene that carries a route with generated `SubResource`s.
 
 That rebuild is `PayloadPathBuilder.ensure_path()`, which runs a `call_deferred` from each path point
 and from the cart and is **idempotent** — whoever gets there first finds the baked shell and calls
@@ -1256,7 +1256,9 @@ they already have, with no RPC and no per-frame work.
   `MatchSession._broadcast_pings()` runs every 2 s on the server only. It reads
   `ENetPacketPeer.get_statistic(ENetPacketPeer.PEER_LAST_ROUND_TRIP_TIME)` for
   each connected peer, maps the peer to its stable player id, adds the
-  listen-host row as 0 ms, then sends one `_rpc_ping_snapshot` (authority,
+  listen-host row as 0 ms **only when that host has no ENet peer of its own**
+  (a dedicated server's room host is a remote client and keeps its sampled RTT —
+  `05-known-issues.md` #153), then sends one `_rpc_ping_snapshot` (authority,
   unreliable) and emits `pings_changed`. Clients mirror the dictionary;
   `ping_ms_for()` returns -1 for an unknown row (bot, reserved slot, legacy
   P2P). The leaderboard rewrites only its ping labels on `pings_changed` so a

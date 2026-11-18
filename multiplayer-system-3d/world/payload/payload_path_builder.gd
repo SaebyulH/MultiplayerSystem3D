@@ -17,9 +17,8 @@ class_name PayloadPathBuilder
 ## is visible in the Godot editor and saved with the map.  The parts derived from the curve
 ## (the zones, the `PathLine` tube, the follower's settings) are *stripped* before the save and
 ## rebuilt on every peer by [method ensure_path] calling [method PayloadPath.configure], exactly
-## as the whole route used to be built.  Keeping the derived half out of the file is the same
-## trade [ToonMaterialConverter] makes; it also means the route stays map furniture every peer
-## derives, rather than state that replicates.
+## as the whole route used to be built.  Keeping the derived half out of the file also means
+## the route stays map furniture every peer derives, rather than state that replicates.
 ##
 ## [b]The runtime build is still the fallback.[/b]  A map that was never baked — the three
 ## legacy maps, or a scene opened before anyone pressed the button — still gets a transient

@@ -206,12 +206,16 @@ group_uniforms;
 // sticks to the surface instead of swimming through it.
 //
 // This has to be a varying rather than a global: Godot has no mutable global
-// shader variables ("Global non-constant variables are not supported"), so
-// there is no way to compute the noise once in fragment() and hand the result
-// to light().  Both functions derive it from this varying instead — which also
-// makes it independent of how many lights the fragment ends up shading.
+// shader variables ("Global non-constant variables are not supported").  It is
+// written once in vertex() and read by both fragment() and light().
 varying vec3 v_obj_pos;
 varying vec3 v_world_normal;
+
+// Per-fragment values handed to light(), which runs once per light.  Both are
+// light-independent, so computing them in light() would repeat the same work
+// for every light touching the fragment.  Assigned directly in fragment().
+varying float v_paint;
+varying float v_rim;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -308,9 +312,14 @@ void fragment() {
 	base *= albedo_gain;
 
 	// --- Painted tonal variation -------------------------------------------
+	// One field for this fragment, shared with light(): albedo jitter and the
+	// band-edge wobble must agree, and light() must not recompute it per light.
+	v_paint = 0.5;
+	if (paint_value_jitter > 0.0 || paint_terminator_jitter > 0.0) {
+		v_paint = paint_pattern(v_obj_pos * paint_scale);
+	}
 	if (paint_value_jitter > 0.0) {
-		float paint = paint_pattern(v_obj_pos * paint_scale);
-		base *= 1.0 + (paint - 0.5) * 2.0 * paint_value_jitter;
+		base *= 1.0 + (v_paint - 0.5) * 2.0 * paint_value_jitter;
 	}
 
 	ALBEDO = base;
@@ -359,9 +368,10 @@ void fragment() {
 	// has to stand on its own at exactly `rim_min_opacity`, using the
 	// user-authored `rim_color` since there's no real light to take a colour
 	// from here.  The brightness-driven remainder is added in light() below.
+	v_rim = 0.0;
 	if (rim_enabled) {
-		float rim = compute_rim(NORMAL, VIEW);
-		vec3 rim_rgb = rim_color.rgb * rim_color.a * rim * rim_strength;
+		v_rim = compute_rim(NORMAL, VIEW);
+		vec3 rim_rgb = rim_color.rgb * rim_color.a * v_rim * rim_strength;
 		emit += rim_rgb * rim_min_opacity;
 	}
 
@@ -376,11 +386,12 @@ void light() {
 	// two tones to work with on a curved surface.
 	float wrapped = clamp((ndotl + shadow_wrap) / (1.0 + shadow_wrap), 0.0, 1.0);
 
-	// Wobble the band edge so it looks brushed on.  Same field as the albedo
-	// jitter in fragment(); recomputed here because there is no global to
-	// carry it across (see the varying above).
-	float paint = paint_pattern(v_obj_pos * paint_scale);
-	float ramp_in = clamp(wrapped + (paint - 0.5) * paint_terminator_jitter, 0.0, 1.0);
+	// Wobble the band edge so it looks brushed on.  Uses the field fragment()
+	// already computed — light() runs once per light and must not repeat it.
+	float ramp_in = wrapped;
+	if (paint_terminator_jitter > 0.0) {
+		ramp_in = clamp(wrapped + (v_paint - 0.5) * paint_terminator_jitter, 0.0, 1.0);
+	}
 	float bands = toon_ramp(ramp_in, float(toon_steps), toon_softness);
 
 	// Warm the lit bands, cool the shadowed ones.
@@ -396,21 +407,25 @@ void light() {
 	// --- Stylised highlight -------------------------------------------------
 	// A Blinn-Phong lobe pushed through a threshold, so the highlight is a
 	// shaped blob rather than a falloff.  Roughness only sets how tight the
-	// lobe is; the threshold controls how much of it survives.
-	float gloss = clamp(1.0 - ROUGHNESS, 0.0, 1.0);
-	float power = exp2(mix(2.0, 11.0, gloss));
-	vec3 h = normalize(LIGHT + VIEW);
-	float lobe = pow(clamp(dot(NORMAL, h), 0.0, 1.0), power);
+	// lobe is; the threshold controls how much of it survives.  Skipped
+	// entirely when the material has no highlight, which is every shipped
+	// preset (the rim does that job on characters).
+	if (toon_specular_strength > 0.0) {
+		float gloss = clamp(1.0 - ROUGHNESS, 0.0, 1.0);
+		float power = exp2(mix(2.0, 11.0, gloss));
+		vec3 h = normalize(LIGHT + VIEW);
+		float lobe = pow(clamp(dot(NORMAL, h), 0.0, 1.0), power);
 
-	float threshold = mix(0.95, 0.02, toon_specular_size);
-	float soft = mix(0.002, 0.4, toon_specular_softness);
-	float spec = smoothstep(threshold, min(threshold + soft, 1.0), lobe);
+		float threshold = mix(0.95, 0.02, toon_specular_size);
+		float soft = mix(0.002, 0.4, toon_specular_softness);
+		float spec = smoothstep(threshold, min(threshold + soft, 1.0), lobe);
 
-	// Keep the highlight off surfaces the light is not actually hitting.
-	spec *= smoothstep(0.0, 0.2, ndotl);
+		// Keep the highlight off surfaces the light is not actually hitting.
+		spec *= smoothstep(0.0, 0.2, ndotl);
 
-	vec3 f0 = mix(vec3(0.16 * specular * specular), ALBEDO, METALLIC);
-	SPECULAR_LIGHT += f0 * spec * toon_specular_strength * LIGHT_COLOR * ATTENUATION;
+		vec3 f0 = mix(vec3(0.16 * specular * specular), ALBEDO, METALLIC);
+		SPECULAR_LIGHT += f0 * spec * toon_specular_strength * LIGHT_COLOR * ATTENUATION;
+	}
 
 	// --- Back rim: the brightness- and colour-reactive part -----------------
 	// `light()` runs once per light influencing this fragment, and
@@ -422,7 +437,14 @@ void light() {
 	// what keeps them from fighting: whatever this adds only ever raises the
 	// rim's effective opacity above `rim_min_opacity`, never below it.
 	if (rim_enabled) {
-		float rim = compute_rim(NORMAL, VIEW);
+		// v_rim is the light-independent geometry, computed once in fragment().
+		// Only a normal-mapped material needs a re-read: fragment() saw the
+		// pre-normal-map NORMAL while light() sees the mapped one.  No shipped
+		// preset enables a normal map here.
+		float rim = v_rim;
+		if (use_normal_map) {
+			rim = compute_rim(NORMAL, VIEW);
+		}
 		if (rim > 0.0001) {
 			// The colour and brightness this specific light is actually
 			// delivering to this fragment right now, post shadow/falloff.

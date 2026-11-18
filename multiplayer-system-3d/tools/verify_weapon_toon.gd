@@ -92,7 +92,7 @@ func _synthetic_pass(preset: ShaderMaterial) -> void:
 	blended.albedo_color = Color(1, 1, 1, 0.3)
 
 	var custom := ShaderMaterial.new()
-	custom.shader = load("res://assets/materials/painted_toon_world.gdshader")
+	custom.shader = load("res://assets/materials/painted_toon.gdshader")
 
 	var root := Node3D.new()
 	add_child(root)

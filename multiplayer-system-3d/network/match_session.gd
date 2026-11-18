@@ -403,18 +403,16 @@ func ping_ms_for(player_name: String) -> int:
 
 ## Server tick: sample every connected ENet peer and push one snapshot to all
 ## clients.  Cheap (a handful of peers, one packet every 2 s) and never on the
-## gameplay path.  The host's own row is 0 ms; a dedicated server has no row.
+## gameplay path.
+##
+## Only the *listen-server* host is forced to 0 ms: it is a player inside the
+## server process and has no ENet peer of its own, so there is nothing to
+## measure.  A dedicated server's room host is the first client to send `hello`
+## — it is remote, has a real peer, and must report its real RTT (`#153`).
 func _broadcast_pings() -> void:
 	if role != Role.SERVER or not multiplayer.has_multiplayer_peer():
 		return
 	var snapshot: Dictionary = {}
-	# A listen-server host is a player but has no ENet peer of its own; its row
-	# is 0 ms.  `local_player_id` stays 0 on the server side, so use the roster's
-	# host id.  A dedicated server sets neither and has no row.
-	if host_player_id > 0:
-		snapshot[str(host_player_id)] = 0
-	elif local_player_id > 0:
-		snapshot[str(local_player_id)] = 0
 	var net := multiplayer.multiplayer_peer as ENetMultiplayerPeer
 	if net != null:
 		for peer_id in multiplayer.get_peers():
@@ -425,6 +423,14 @@ func _broadcast_pings() -> void:
 			if peer == null:
 				continue
 			snapshot[str(pid)] = int(peer.get_statistic(ENetPacketPeer.PEER_LAST_ROUND_TRIP_TIME))
+	# The listen host's roster entry carries the server's own peer id (1).  A
+	# dedicated host's entry carries its ENet peer id and was sampled above.
+	if host_player_id > 0 and not snapshot.has(str(host_player_id)):
+		var host_entry: Dictionary = _players.get(host_player_id, {})
+		if int(host_entry.get("peer_id", 0)) == Protocol.SERVER_PEER_ID:
+			snapshot[str(host_player_id)] = 0
+	elif local_player_id > 0 and not snapshot.has(str(local_player_id)):
+		snapshot[str(local_player_id)] = 0
 	_ping_by_player = snapshot
 	_rpc_ping_snapshot.rpc(snapshot)
 	pings_changed.emit()

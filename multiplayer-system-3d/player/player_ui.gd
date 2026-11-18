@@ -880,7 +880,6 @@ func _add_border_material(id: String, shader: Shader, color: Color, pulse_speed:
 	mat.set_shader_parameter("pulse_speed", pulse_speed)
 	mat.set_shader_parameter("noise_intensity", noise_intensity)
 	mat.set_shader_parameter("noise_scale", noise_scale)
-	mat.set_shader_parameter("u_time", 0.0)
 	_effect_materials[id] = mat
 
 # --------------------------------------------------
@@ -906,7 +905,6 @@ func _process(delta: float) -> void:
 		return
 
 	_border_time += delta
-	_update_border_shader_time()
 	_update_dev_status()
 	_update_stamina()
 	_update_scope_charge_ui()
@@ -1592,7 +1590,9 @@ func _rebuild_status_effects() -> void:
 			# No custom on-screen effect defined — render no border for this effect.
 			continue
 		var cr := _create_border_overlay()
-		cr.material = mat.duplicate()  # unique instance so multiple effects don't share uniforms
+		# The shaders read animation time from the canvas TIME built-in, so the
+		# material carries no per-overlay state and can be shared.
+		cr.material = mat
 		_border_overlays[id] = cr
 		_border_overlays[id].visible = true
 
@@ -1653,12 +1653,6 @@ func _update_status_effect_countdowns() -> void:
 		if times.has(list_id):
 			_effect_list_labels[list_id].text = "■ %s  %.1fs" % [list_id.capitalize(), times[list_id]]
 			_effect_list_labels[list_id].visible = true
-
-
-func _update_border_shader_time() -> void:
-	for bcr: ColorRect in _border_overlays.values():
-		if bcr.visible and bcr.material is ShaderMaterial:
-			(bcr.material as ShaderMaterial).set_shader_parameter("u_time", _border_time)
 
 
 func _create_border_overlay(col := Color.WHITE) -> ColorRect:

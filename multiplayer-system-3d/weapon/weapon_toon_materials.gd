@@ -5,7 +5,7 @@ extends RefCounted
 ## character holding it is not interrupted by a PBR gun, keeping every texture the
 ## weapon material carried.
 ##
-## [b]Why runtime, and why not [ToonMaterialConverter].[/b]  Weapon models are
+## [b]Why runtime, and why not authored `.tres` files.[/b]  Weapon models are
 ## instantiated at runtime from ~40 scenes whose meshes mostly live inside imported
 ## GLBs, with inline [StandardMaterial3D] sub-resources and [member MeshInstance3D.material_override]
 ## on top.  Authoring per-surface `.tres` files the way the characters do would mean the
@@ -13,19 +13,16 @@ extends RefCounted
 ## the single spawn site (`WeaponController.spawn_weapon_model()`) covers the first-person
 ## weapon, every remote player's weapon and every bot's.
 ##
-## [b]Its policy differs from [ToonMaterialConverter] on purpose.[/b]  The map converter lets
-## the preset own every scalar, because a func_godot map's materials are interchangeable.
-## A weapon's are not: gunmetal, wood and polymer differ in roughness and metallic in ways
-## the preset cannot know.  So the preset owns the toon *look* (ramp, noise, rim, gain,
-## specular shaping) and the source keeps its surface detail — albedo, normal, AO,
-## emission, and the [i]separate[/i] metallic/roughness maps with their channel selectors,
-## which is what [member BaseMaterial3D.metallic_texture] and
+## [b]The preset owns the look; the source keeps its surface detail.[/b]  Gunmetal, wood and
+## polymer differ in roughness and metallic in ways the preset cannot know, so it owns the
+## toon *look* (ramp, noise, rim, gain, specular shaping) and the source keeps albedo,
+## normal, AO, emission, and the [i]separate[/i] metallic/roughness maps with their channel
+## selectors, which is what [member BaseMaterial3D.metallic_texture] and
 ## [member BaseMaterial3D.roughness_texture] actually are.
 ##
-## [b]Nothing here is networked.[/b]  Like [ToonMaterialConverter] and the old team tinting,
-## this is cosmetic and local: every peer derives the same materials from the same scene.
-## Weapon models are re-instantiated on a swap, never un-tooned, so there is no restore or
-## refresh path.
+## [b]Nothing here is networked.[/b]  Like the old team tinting, this is cosmetic and local:
+## every peer derives the same materials from the same scene.  Weapon models are
+## re-instantiated on a swap, never un-tooned, so there is no restore or refresh path.
 
 
 ## Re-shades every mesh and CSG surface under [param root] and returns
