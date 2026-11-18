@@ -150,6 +150,8 @@ func _collect_targets() -> Array[Player]:
 		var p := child as Player
 		if p == null or p == local or p.is_spectating or not p.spawned:
 			continue
+		if p.is_practice_target:
+			continue
 		out.append(p)
 	out.sort_custom(func(a, b): return String(a.name) < String(b.name))
 	return out
@@ -306,6 +308,7 @@ func _build_overlay() -> void:
 
 	_title = Label.new()
 	_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_title.add_theme_font_override("font", UITheme.FONT_DISPLAY)
 	_title.add_theme_font_size_override("font_size", 22)
 	_title.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0))
 	_title.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0))

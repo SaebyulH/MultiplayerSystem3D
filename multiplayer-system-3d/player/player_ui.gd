@@ -29,6 +29,7 @@ var _health_max_label: Label
 var _health_critical: ColorRect
 
 var _health_delta_label: Label
+var _character_portrait: TextureRect
 var _team_label: Label
 var _character_label: Label
 var _hud_font: Font = null
@@ -153,7 +154,7 @@ const BAR_WIDTH: float = 260.0
 const BAR_HEIGHT: float = 28.0
 const HEALTH_TOP: float = 120.0  # distance from bottom
 
-const HUD_FONT_PATH := "res://assets/fonts/Montserrat/static/Montserrat-SemiBold.ttf"
+const HUD_FONT_PATH := "res://assets/fonts/Switzer/Switzer-Medium.otf"
 
 # Stamina / dash indicator layout
 const DASH_CELL_WIDTH: float = 28.0
@@ -477,7 +478,7 @@ func _build_health() -> void:
 	container.anchor_right  = 0.5
 	container.anchor_top    = 1.0
 	container.anchor_bottom = 1.0
-	container.offset_left   = -360.0
+	container.offset_left   = -450.0
 	container.offset_top    = -150.0
 	container.offset_right  = -176.0
 	container.offset_bottom = -16.0
@@ -491,12 +492,29 @@ func _build_health() -> void:
 	_health_critical.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	container.add_child(_health_critical)
 
+	# Portrait + stacked health readout.  The portrait is the owner's identity
+	# cue: identical HUD regardless of team, so the face says who you are.
+	var row := HBoxContainer.new()
+	row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	row.add_theme_constant_override("separation", 10)
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	container.add_child(row)
+
+	_character_portrait = TextureRect.new()
+	_character_portrait.custom_minimum_size = Vector2(72, 72)
+	_character_portrait.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_character_portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_character_portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	_character_portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_character_portrait.visible = false
+	row.add_child(_character_portrait)
+
 	# Number + bar + team/character, stacked.
 	var vbox := VBoxContainer.new()
-	vbox.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	vbox.add_theme_constant_override("separation", 2)
 	vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	container.add_child(vbox)
+	row.add_child(vbox)
 
 	# Big current / small max, bottom-aligned to a shared baseline.
 	var num_box := HBoxContainer.new()
@@ -1389,6 +1407,11 @@ func _update_character() -> void:
 		_character_label.modulate = UITheme.MUTED
 	else:
 		_character_label.text = ""
+	if _character_portrait:
+		var char_res: Character = _owner_player._character if _owner_player else null
+		var tex: Texture2D = char_res.portrait if char_res else null
+		_character_portrait.texture = tex
+		_character_portrait.visible = tex != null
 
 func _rebuild_abilities() -> void:
 	for child in _ability_container.get_children():

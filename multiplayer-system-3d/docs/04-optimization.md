@@ -315,6 +315,13 @@ new hot path later.
 - **The width scales with max health by design** — 20 px per 100 max HP — and NOT with distance:
   the bar is projected with `unproject_position`, like the damage numbers.
 
+## Practice targets and the timed range — event-driven
+
+- **Practice targets are full `Player` nodes but do no per-frame work of their own.** `BotController` is removed before they enter the tree, `AttributeComponent._process` returns immediately for them (no regen), and the server only touches them on a hit. A lobby with a dummy costs the same as an idle player.
+- **No ragdoll per kill.** `Player.no_health()` skips `_spawn_ragdoll.rpc(...)` for practice targets. A 30-kill run would otherwise leave up to 30 corpse bodies (each `RAGDOLL_LIFETIME = 25 s`) in the lobby.
+- **The range has no polls beyond a cheap prompt check.** `PracticeRange._process` only accumulates the HUD timer while a run is live and updates the label at 10 Hz; it compares the desired prompt string each frame, rewriting the `InteractionPrompt` only on change (the prompt's own `_process` is one bool compare for the `ui_open` hide). Spawn points are one raycast per kill, not per frame. No group scans, no per-frame `find_player` loop — the only `find_player` calls are in `_set_range_ammo`, once per player entry/exit (or per grant/revoke at run start and end), never per tick.
+- **Run state is an RPC per kill, not a synced property.** One reliable broadcast at start, per kill, and at finish; there is nothing to interpolate and no per-frame bandwidth.
+
 ## Spectator mode (local only, only while watching) — negligible
 
 - `world/spectator_controller.gd::_process` exists on every peer but early-returns unless the local player's `is_spectating` is true. The local `Player` is cached (no per-frame `find_player`). While active, the steady-state cost is one camera-transform copy, one FOV copy, and an idempotent loop over the target's handful of head meshes.

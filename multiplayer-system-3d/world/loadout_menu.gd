@@ -1,10 +1,14 @@
 extends Control
 class_name LoadoutMenuUI
 
-## Clean, professional loadout-selection screen.
-## Mirrors ClassSelectUI: a CanvasLayer added to the root viewport renders
-## above all other UI.  Class is inferred from the selected character, so
-## there is no separate class-selection step.
+## Clean, professional character-select screen: YOUR TEAM roster on the left, a
+## rotating 3D agent in the centre, agent details / abilities / loadout on the
+## right, and a class-grouped agent strip along the bottom.  Class is inferred
+## from the selected character, so there is no separate class-selection step.
+##
+## A CanvasLayer added to the root viewport renders above all other UI.  The
+## screen keeps one 3D preview alive for its whole lifetime and renders it only
+## on change (see LoadoutPreviewRig).
 
 ## Disable the 3D character-preview SubViewport entirely.  Set to true to skip
 ## spawning the preview model (the separate World3D is the expensive part).
@@ -14,6 +18,9 @@ const PREVIEW_DISABLED := false
 ## The menu is re-instantiated on return-to-lobby; we only want to randomize on
 ## the very first load, not on subsequent loads.
 static var _initial_selection_done := false
+
+const WEAPON_KEYS: Array[String] = ["primary", "secondary", "melee"]
+const PREVIEW_SWAP_DELAY := 0.08
 
 @onready var world := $"../../.."
 
@@ -47,51 +54,65 @@ var selected_primary: Weapon = null
 var selected_secondary: Weapon = null
 var selected_melee: Weapon = null
 
-# ── Scene templates (instantiated for repeated elements) ──
-const _weapon_card_scene := preload("res://world/loadout/weapon_card.tscn")
-const _ability_circle := preload("res://player/hud/ability_circle.gd")
-
 # ── Scene nodes (defined in loadout_menu.tscn) ──
 @onready var _canvas: CanvasLayer = $LoadoutMenuCanvas
-@onready var _confirm_button: Button = $LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/ActionBar/ConfirmButton
-@onready var _randomize_once_button: Button = $LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/ActionBar/RandomizeOnceButton
-@onready var _randomize_on_death_check: CheckBox = $LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/ActionBar/RandomizeOnDeathCheck
-@onready var _leave_party_button: Button = $LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/ActionBar/LeavePartyButton
-@onready var _mode_label: Label = $LoadoutMenuCanvas/Root/Col/ModeLabel
-@onready var _info_label: RichTextLabel = $LoadoutMenuCanvas/Root/Col/MainRow/InfoPanel/VBox/InfoLabel
+@onready var _title: Label = $LoadoutMenuCanvas/Root/Col/Header/Title
+@onready var _mode_label: Label = $LoadoutMenuCanvas/Root/Col/Header/ModeLabel
+@onready var _team_vbox: VBoxContainer = $LoadoutMenuCanvas/Root/Col/MainRow/TeamPanel/VBox
+@onready var _operative_label: Label = $LoadoutMenuCanvas/Root/Col/MainRow/PreviewPanel/OperativeLabel
+@onready var _preview_svc: SubViewportContainer = $LoadoutMenuCanvas/Root/Col/MainRow/PreviewPanel/PreviewFrame/Svc
+@onready var _character_viewport: SubViewport = $LoadoutMenuCanvas/Root/Col/MainRow/PreviewPanel/PreviewFrame/Svc/CharacterViewport
+@onready var _preview_rig: LoadoutPreviewRig = $LoadoutMenuCanvas/Root/Col/MainRow/PreviewPanel/PreviewFrame/Svc/CharacterViewport/Node3D/PreviewRig
+@onready var _brackets: Control = $LoadoutMenuCanvas/Root/Col/MainRow/PreviewPanel/PreviewFrame/Brackets
+@onready var _drag_hint: Label = $LoadoutMenuCanvas/Root/Col/MainRow/PreviewPanel/PreviewFrame/DragHint
+@onready var _preview_mode_button: Button = $LoadoutMenuCanvas/Root/Col/MainRow/PreviewPanel/PreviewFrame/PreviewModeButton
+@onready var _detail_vbox: VBoxContainer = $LoadoutMenuCanvas/Root/Col/MainRow/DetailPanel/VBox
+@onready var _agent_groups: HBoxContainer = $LoadoutMenuCanvas/Root/Col/MainRow/PreviewPanel/PreviewFrame/AgentStripPanel/AgentStrip/AgentGroups
+@onready var _popover: WeaponPopover = $LoadoutMenuCanvas/WeaponPopover
+@onready var _popover_catcher: Control = $LoadoutMenuCanvas/PopoverCatcher
 
-# Character panel
-@onready var _character_viewport: SubViewport = $LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/Wrap/Svc/CharacterViewport
-@onready var _character_wrap: Panel = $LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/Wrap
-@onready var _character_svc: SubViewportContainer = $LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/Wrap/Svc
-@onready var _change_agent_overlay: Label = $LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/Wrap/ChangeAgentOverlay
-@onready var _character_name_label: Label = $LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/CharacterNameLabel
-@onready var _character_picker: PanelContainer = $LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/Wrap/CharacterPicker
+# ── Detail-panel widgets (built in code) ─────
+var _class_label: Label
+var _hover_label: Label
+var _name_label: Label
+var _info_scroll: ScrollContainer
+var _info_box: VBoxContainer
+var _ability_row: HBoxContainer
+var _ability_panel: PanelContainer
+var _ability_collapse_button: Button
+var _abilities_collapsed := false
+var _hovered_character: Character = null
+var _loadout_row: VBoxContainer
+var _confirm_button: Button
+var _randomize_once_button: Button
+var _randomize_on_death_check: CheckBox
+var _leave_party_button: Button
 
-# Ability strip
-@onready var _ability_slots_hbox: HBoxContainer = $LoadoutMenuCanvas/AbilitySlotsHbox
+# ── Team panel ──────────────────────────────
+var _team_list: VBoxContainer
+var _team_signature := ""
+var _roster_timer: Timer
+var _operative_index := 1
+var _operative_total := 1
 
-var _character_preview_root: Node3D = null
-var _character_preview_model: Node3D = null
-var _character_dragging: bool = false
-var _character_drag_moved: bool = false
-var _character_wrap_style: StyleBoxFlat = null
+# ── Agent strip ─────────────────────────────
+var _agent_buttons: Dictionary = {}      # character resource_path -> Button
+var _class_labels: Dictionary = {}       # class resource_path -> Label
 
-var _column_lists: Dictionary = {}       # column key -> inner card VBoxContainer
-var _card_style: Dictionary = {}         # card -> StyleBoxFlat
-var _selected_card: Dictionary = {}      # column key -> selected card
-var _section_header_style: StyleBox = null     # blue chip (grabbed from AGENT header)
-var _section_header_font: Font = null          # bold white font (grabbed from AGENT header)
-var _portrait_buttons: Dictionary = {}         # character resource_path -> portrait Button
+# ── Loadout slots / abilities ───────────────
+var _weapon_slots: Dictionary = {}       # key -> Button
+var _weapon_slot_labels: Dictionary = {} # key -> Label
+var _weapon_slot_thumbs: Dictionary = {} # key -> TextureRect
+var _weapon_slot_missing: Dictionary = {} # key -> Control (shown when no icon)
+var _ability_tiles: Array[Control] = []
 
-# ── Card style colours (mirror ui/ui_theme.gd) ─
-const HIGHLIGHT_COLOR := Color(0.176, 0.831, 0.749, 1)   # teal
-const CARD_BG_NORMAL := Color(0.102, 0.125, 0.161, 0.64)
-const CARD_BG_HOVER := Color(0.137, 0.169, 0.212, 0.88)
-const CARD_BG_SELECTED := Color(0.176, 0.831, 0.749, 0.14)
-const CARD_BORDER_NORMAL := Color(0.165, 0.196, 0.239, 1)
-const CARD_BORDER_HOVER := HIGHLIGHT_COLOR
-const CARD_BORDER_SELECTED := HIGHLIGHT_COLOR
+# ── Preview / popover ───────────────────────
+var _drag_button := 0
+var _preview_mode := 1   # 0 standing, 1 walking, 2 running
+var _bracket_lines: Array[ColorRect] = []
+var _displayed_weapon: Weapon = null
+var _pending_preview_weapon: Weapon = null
+var _preview_timer: Timer
 
 # ─────────────────────────────────────────────
 #  Lifecycle
@@ -100,19 +121,19 @@ const CARD_BORDER_SELECTED := HIGHLIGHT_COLOR
 func _ready() -> void:
 	player_id = MatchSession.local_id_string()
 
-	# Grab the character-panel border stylebox so hover can tween it.
-	_character_wrap_style = _character_wrap.get_theme_stylebox("panel") as StyleBoxFlat
+	_style_layout()
+	_build_team_panel()
+	_build_detail_panel()
+	_build_ability_overlay()
+	_style_action_buttons()
+	_build_bracket_lines()
+	_setup_preview()
+	_setup_popover()
+	_preview_rig.set_active(visible)
 
 	if PREVIEW_DISABLED:
-		_character_svc.visible = false
+		_preview_svc.visible = false
 		_character_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
-
-	# Weapon cards get instantiated into these per-column list containers.
-	_column_lists = {
-		"secondary": $LoadoutMenuCanvas/Root/Col/MainRow/LoadoutPanel/VBox/Cols/SecondaryColumn/Scroll/List,
-		"primary":   $LoadoutMenuCanvas/Root/Col/MainRow/LoadoutPanel/VBox/Cols/PrimaryColumn/Scroll/List,
-		"melee":     $LoadoutMenuCanvas/Root/Col/MainRow/LoadoutPanel/VBox/Cols/MeleeColumn/Scroll/List,
-	}
 
 	# Sync canvas visibility immediately (menu starts visible, matching self.visible).
 	_canvas.visible = visible
@@ -120,45 +141,31 @@ func _ready() -> void:
 
 	# Load classes
 	var loaded_classes: Array[Class] = []
-	for path in [
-		"res://player/player_classes/assault.tres",
-		"res://player/player_classes/assassin.tres",
-		"res://player/player_classes/assistance.tres",
-	]:
+	for path in LoadoutProfile.CLASS_PATHS:
 		var c := load(path) as Class
 		if c:
 			loaded_classes.append(c)
 	load_classes(loaded_classes)
 
-	# Grab the blue header chip + bold font from the AGENT header so the picker
-	# section headers match the PRIMARY/SECONDARY/… headers exactly.
-	var agent_header := $LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/Header as PanelContainer
-	_section_header_style = agent_header.get_theme_stylebox("panel")
-	_section_header_font = (agent_header.get_node("Label") as Label).get_theme_font("font")
-
-	_build_character_picker()
+	_build_agent_strip()
 	_build_icon_credit()
 	_populate_mode_info.call_deferred()
-
-	_style_action_buttons()
 
 	_confirm_button.pressed.connect(_on_confirm_pressed)
 	_randomize_once_button.pressed.connect(_on_randomize_once_pressed)
 	_leave_party_button.pressed.connect(_on_leave_party_pressed)
-
-	_character_svc.gui_input.connect(_on_character_gui_input)
-	_character_svc.mouse_entered.connect(_on_character_hover_enter)
-	_character_svc.mouse_exited.connect(_on_character_hover_exit)
 
 	# Populate the menu.  A stored process build wins; otherwise the first load
 	# rolls once and later loads fall back to the first character.
 	if not _restore_saved_build() and not _all_characters.is_empty():
 		if not _initial_selection_done:
 			_initial_selection_done = true
-			randomize()
 			_select_random_loadout()
 		else:
 			_select_character(_all_characters[0]["char"])
+
+	_refresh_team_list()
+	_roster_timer.start()
 
 	# A match-server join assigns the stable player id in `welcome`, which lands
 	# after this menu's `_ready`.  Without this the confirm RPC would carry the
@@ -173,16 +180,70 @@ func _ready() -> void:
 		_auto_confirm_when_ready.call_deferred()
 
 
+func _style_layout() -> void:
+	_title.add_theme_font_override("font", UITheme.FONT_DISPLAY)
+	_title.add_theme_font_size_override("font_size", 30)
+	_title.add_theme_color_override("font_color", UITheme.TEXT)
+
+	_mode_label.add_theme_font_size_override("font_size", UITheme.FS_SMALL)
+	_mode_label.add_theme_color_override("font_color", UITheme.MUTED)
+
+	_operative_label.add_theme_font_override("font", UITheme.FONT_MEDIUM)
+	_operative_label.add_theme_font_size_override("font_size", UITheme.FS_MICRO)
+	_operative_label.add_theme_color_override("font_color", UITheme.MUTED)
+
+	_drag_hint.add_theme_font_size_override("font_size", UITheme.FS_MICRO)
+	_drag_hint.add_theme_color_override("font_color", UITheme.DIM_TEXT)
+
+	_preview_mode_button.add_theme_font_size_override("font_size", UITheme.FS_MICRO)
+	_preview_mode_button.add_theme_stylebox_override("normal", UITheme.button_style(UITheme.Kind.SECONDARY))
+	_preview_mode_button.add_theme_stylebox_override("hover", UITheme.button_style(UITheme.Kind.SECONDARY, true))
+	_preview_mode_button.add_theme_stylebox_override("pressed", UITheme.button_style(UITheme.Kind.SECONDARY, false, true))
+	_update_preview_mode_label()
+
+	var team_panel := _team_vbox.get_parent() as PanelContainer
+	if team_panel:
+		team_panel.add_theme_stylebox_override("panel", UITheme.panel_style(
+			Color(UITheme.INK_2.r, UITheme.INK_2.g, UITheme.INK_2.b, 0.86),
+			UITheme.LINE, 1, 12))
+	var detail_panel := _detail_vbox.get_parent() as PanelContainer
+	if detail_panel:
+		detail_panel.add_theme_stylebox_override("panel", UITheme.panel_style(
+			Color(UITheme.INK_2.r, UITheme.INK_2.g, UITheme.INK_2.b, 0.9),
+			UITheme.LINE, 1, 16))
+
+
 func _style_action_buttons() -> void:
 	_confirm_button.add_theme_font_override("font", UITheme.FONT_EXTRABOLD)
+	_confirm_button.add_theme_font_size_override("font_size", 18)
 	_confirm_button.add_theme_stylebox_override("normal", UITheme.button_style(UITheme.Kind.PRIMARY))
 	_confirm_button.add_theme_stylebox_override("hover", UITheme.button_style(UITheme.Kind.PRIMARY, true))
 	_confirm_button.add_theme_stylebox_override("pressed", UITheme.button_style(UITheme.Kind.PRIMARY, false, true))
 	_confirm_button.add_theme_stylebox_override("disabled", UITheme.button_style(UITheme.Kind.DISABLED))
+
+	_randomize_once_button.add_theme_font_size_override("font_size", 13)
 	_randomize_once_button.add_theme_stylebox_override("normal", UITheme.button_style(UITheme.Kind.SECONDARY))
 	_randomize_once_button.add_theme_stylebox_override("hover", UITheme.button_style(UITheme.Kind.SECONDARY, true))
-	_leave_party_button.add_theme_stylebox_override("normal", UITheme.button_style(UITheme.Kind.DANGER))
-	_leave_party_button.add_theme_stylebox_override("hover", UITheme.button_style(UITheme.Kind.DANGER, true))
+	_randomize_once_button.add_theme_stylebox_override("pressed", UITheme.button_style(UITheme.Kind.SECONDARY, false, true))
+
+	# Danger as an outline, not a fill: LOCK IN is the screen's only filled RED
+	# element (DESIGN_STYLE_GUIDE §2).
+	_leave_party_button.add_theme_font_size_override("font_size", 13)
+	_leave_party_button.add_theme_stylebox_override("normal", _danger_outline(false))
+	_leave_party_button.add_theme_stylebox_override("hover", _danger_outline(true))
+	_leave_party_button.add_theme_stylebox_override("pressed", _danger_outline(true))
+
+
+func _danger_outline(hover: bool) -> StyleBoxFlat:
+	var s := StyleBoxFlat.new()
+	s.content_margin_left = 16
+	s.content_margin_right = 16
+	s.content_margin_top = 9
+	s.content_margin_bottom = 9
+	s.bg_color = Color(UITheme.RED.r, UITheme.RED.g, UITheme.RED.b, 0.12 if hover else 0.0)
+	s.border_color = UITheme.RED
+	s.set_border_width_all(1)
+	return s
 
 
 ## Restore the process-local build saved by the title flow or a previous confirm.
@@ -199,6 +260,7 @@ func _restore_saved_build() -> bool:
 	_select_card_matching("secondary", load(str(build.get("secondary_path", ""))) as Weapon)
 	_select_card_matching("melee", load(str(build.get("melee_path", ""))) as Weapon)
 	_randomize_on_death_check.button_pressed = bool(build.get("randomize_on_death", false))
+	_set_displayed_weapon(selected_primary)
 	return true
 
 
@@ -264,9 +326,22 @@ func _on_visibility_changed() -> void:
 	# no physics), so keeping it alive + rendered once is free.
 	if not _canvas:
 		return
-	if _canvas.visible == visible:
-		return
-	_canvas.visible = visible
+	if _canvas.visible != visible:
+		_canvas.visible = visible
+	if visible:
+		_refresh_team_list()
+		_refresh_agent_selection()
+		if _roster_timer:
+			_roster_timer.start()
+		if _preview_rig:
+			_preview_rig.set_active(true)
+			_preview_rig.render_once()
+	else:
+		if _roster_timer:
+			_roster_timer.stop()
+		if _preview_rig:
+			_preview_rig.set_active(false)
+		_close_weapon_popover()
 	# Bot-edit mode is cancelled by hiding the screen (Esc / H / the dev menu
 	# closing).  `_bot_applying` suppresses this during confirm, where the hide
 	# happens before the loadout RPC reads player_id.
@@ -300,6 +375,7 @@ func open_for_bot(bot_name: String) -> bool:
 	_confirm_button.text = "APPLY TO BOT"
 	_select_character(bot.get_character())
 	_select_bot_weapons(bot)
+	_set_displayed_weapon(selected_primary)
 	visible = true
 	PlayerInput.ui_open = true
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
@@ -307,8 +383,7 @@ func open_for_bot(bot_name: String) -> bool:
 
 
 func _snapshot_local_selection() -> void:
-	# Card *nodes* are useless here: _select_character() rebuilds the columns.
-	# Store the resources the cards point at and re-select by identity later.
+	# Store the resources, not nodes: _select_character() rebuilds the slots.
 	_bot_snapshot = {
 		"character": selected_character,
 		"primary": selected_primary,
@@ -322,46 +397,25 @@ func _select_bot_weapons(bot: Player) -> void:
 	var weapons: Array[Weapon] = []
 	if bot.weapon_controller:
 		weapons = bot.weapon_controller.get_weapons()
-	var keys: Array[String] = ["primary", "secondary", "melee"]
-	for i in mini(weapons.size(), keys.size()):
-		_select_card_matching(keys[i], weapons[i])
+	for i in mini(weapons.size(), WEAPON_KEYS.size()):
+		_select_card_matching(WEAPON_KEYS[i], weapons[i])
 
 
-## Select the card in [param key]'s column that shows [param weapon].  Bot
-## weapons are deep copies, so match their resource path when they have one and
-## fall back to the display name.
-func _select_card_matching(key: String, weapon: Weapon) -> void:
-	if weapon == null:
-		return
-	var list: VBoxContainer = _column_lists.get(key)
-	if list == null:
-		return
-	for child in list.get_children():
-		var card := child as WeaponCard
-		if card == null:
-			continue
-		var card_weapon: Weapon = card.get_meta("weapon")
-		if card_weapon == null:
-			continue
-		if card_weapon.resource_path != "" and card_weapon.resource_path == weapon.resource_path:
-			_select_card(card)
-			return
-		if card_weapon.display_name == weapon.display_name:
-			_select_card(card)
-			return
-
-
-func _select_saved_card(key: String, weapon: Weapon) -> void:
-	if weapon == null:
-		return
-	var list: VBoxContainer = _column_lists.get(key)
-	if list == null:
-		return
-	for child in list.get_children():
-		var card := child as WeaponCard
-		if card and card.get_meta("weapon") == weapon:
-			_select_card(card)
-			return
+## Select the slot in [param key] that shows [param weapon].  Bot weapons are
+## deep copies, so match their resource path when they have one and fall back to
+## the display name.
+func _select_card_matching(key: String, weapon: Weapon) -> bool:
+	if weapon == null or selected_class == null:
+		return false
+	for candidate in _weapons_for(key):
+		if candidate.resource_path != "" and candidate.resource_path == weapon.resource_path:
+			_apply_weapon_selection(key, candidate, false)
+			return true
+	for candidate in _weapons_for(key):
+		if candidate.display_name == weapon.display_name:
+			_apply_weapon_selection(key, candidate, false)
+			return true
+	return false
 
 
 ## Leave bot-edit mode and restore the local player's pending selection.
@@ -381,11 +435,12 @@ func _finish_bot_edit() -> void:
 	var ch: Character = snap.get("character", null)
 	if ch:
 		_select_character(ch)
-		_select_saved_card("primary", snap.get("primary", null) as Weapon)
-		_select_saved_card("secondary", snap.get("secondary", null) as Weapon)
-		_select_saved_card("melee", snap.get("melee", null) as Weapon)
+		_select_card_matching("primary", snap.get("primary", null) as Weapon)
+		_select_card_matching("secondary", snap.get("secondary", null) as Weapon)
+		_select_card_matching("melee", snap.get("melee", null) as Weapon)
 	_randomize_on_death_check.button_pressed = bool(snap.get("randomize_on_death", false))
 	_bot_snapshot = {}
+	_set_displayed_weapon(selected_primary)
 	bot_edit_finished.emit()
 
 
@@ -393,179 +448,550 @@ func _on_leave_party_pressed() -> void:
 	_canvas.queue_free()
 	NetworkManager.return_to_lobby()
 
+
 # ─────────────────────────────────────────────
-#  Character picker
+#  Team panel
 # ─────────────────────────────────────────────
 
-func _build_character_picker() -> void:
-	# Populate the in-place picker: a close button, then one section per class
-	# (blue header + a wrap of character portrait buttons).
-	var vb := _character_picker.get_node("VBox") as VBoxContainer
+func _build_team_panel() -> void:
+	_team_vbox.add_child(UITheme.display_label("YOUR TEAM", 24, UITheme.TEXT))
+	_team_vbox.add_child(UITheme.accent_bar(UITheme.LINE, 1))
 
-	var close := Button.new()
-	close.text = "✕"
-	close.flat = true
-	close.size_flags_horizontal = Control.SIZE_SHRINK_END
-	close.pressed.connect(_close_picker)
-	vb.add_child(close)
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_team_vbox.add_child(scroll)
 
-	for cls in available_classes:
-		if not cls or cls.characters.is_empty():
+	_team_list = VBoxContainer.new()
+	_team_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_team_list.add_theme_constant_override("separation", 6)
+	scroll.add_child(_team_list)
+
+	_roster_timer = Timer.new()
+	_roster_timer.wait_time = 1.0
+	_roster_timer.timeout.connect(_refresh_team_list)
+	add_child(_roster_timer)
+
+
+func _refresh_team_list() -> void:
+	if _team_list == null or not is_instance_valid(GameManager.spawn_parent):
+		return
+	var local_id := MatchSession.local_id_string()
+	var local := GameManager.find_player(local_id)
+	var players: Array[Player] = []
+	for child in GameManager.spawn_parent.get_children():
+		if not child is Player:
 			continue
-		vb.add_child(_make_section_header(cls.class_display_name.to_upper()))
+		var p := child as Player
+		if p.is_practice_target:
+			continue
+		# "Your team": in a team match the roster is the local player's team;
+		# in FFA (or before a team exists) everyone is your opponent.
+		if local != null and local.team != Player.Team.FFA and p.team != local.team \
+				and str(p.name) != local_id:
+			continue
+		players.append(p)
+	players.sort_custom(func(a: Player, b: Player) -> bool:
+		var a_local := str(a.name) == local_id
+		var b_local := str(b.name) == local_id
+		if a_local != b_local:
+			return a_local
+		if a.is_bot != b.is_bot:
+			return not a.is_bot
+		return str(a.name).naturalnocasecmp_to(str(b.name)) < 0)
 
-		var flow := HFlowContainer.new()
-		flow.add_theme_constant_override("h_separation", 8)
-		flow.add_theme_constant_override("v_separation", 8)
-		vb.add_child(flow)
+	_operative_index = 1
+	for i in players.size():
+		if str(players[i].name) == local_id:
+			_operative_index = i + 1
+			break
+	_operative_total = maxi(players.size(), 1)
+	_update_operative_label()
 
-		for char in cls.characters:
-			if not char:
-				continue
-			flow.add_child(_make_portrait_button(char, cls))
+	var parts: PackedStringArray = []
+	for p in players:
+		parts.append("%s|%d|%s|%s|%s" % [p.name, p.team, p.is_bot,
+			p._loadout_character_path,
+			selected_character.resource_path if p.name == local_id and selected_character else ""])
+	var signature := "\n".join(parts)
+	if signature == _team_signature:
+		return
+	_team_signature = signature
+
+	for child in _team_list.get_children():
+		_team_list.remove_child(child)
+		child.queue_free()
+	if players.is_empty():
+		var empty := UITheme.body_label("— NO PLAYERS —", UITheme.FS_MICRO, UITheme.DIM_TEXT)
+		empty.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		empty.custom_minimum_size = Vector2(0, 30)
+		_team_list.add_child(empty)
+		return
+	for p in players:
+		_team_list.add_child(_make_team_row(p, str(p.name) == local_id))
 
 
-func _make_section_header(text: String) -> PanelContainer:
+func _make_team_row(p: Player, is_local: bool) -> Control:
 	var panel := PanelContainer.new()
-	if _section_header_style:
-		panel.add_theme_stylebox_override("panel", _section_header_style)
-	var label := Label.new()
-	label.text = text
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.add_theme_color_override("font_color", UITheme.TEAL)
-	if _section_header_font:
-		label.add_theme_font_override("font", _section_header_font)
-	label.add_theme_font_size_override("font_size", 13)
-	panel.add_child(label)
+	panel.add_theme_stylebox_override("panel",
+		UITheme.card_style(UITheme.State.SELECTED if is_local else UITheme.State.NORMAL))
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(row)
+
+	var accent := ColorRect.new()
+	accent.color = UITheme.TEAL if is_local else UITheme.team_color(p.team)
+	accent.custom_minimum_size = Vector2(3, 0)
+	accent.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(accent)
+
+	var char_res: Character = selected_character if is_local else UITheme.player_character(p)
+	var portrait := TextureRect.new()
+	portrait.custom_minimum_size = Vector2(40, 40)
+	portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	portrait.texture = char_res.portrait if char_res else null
+	portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(portrait)
+
+	var info := VBoxContainer.new()
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info.add_theme_constant_override("separation", 0)
+	info.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(info)
+
+	var name_label := UITheme.body_label(str(p.name), UITheme.FS_SMALL, UITheme.TEXT)
+	name_label.add_theme_font_override("font", UITheme.FONT_BOLD)
+	name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	info.add_child(name_label)
+
+	var char_label := UITheme.body_label(
+		char_res.character_name if char_res else "—", UITheme.FS_MICRO, UITheme.MUTED)
+	char_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	info.add_child(char_label)
+
+	var tag := ""
+	var tag_color := UITheme.MUTED
+	if is_local:
+		tag = "YOU"
+		tag_color = UITheme.TEAL
+	elif MatchSession.is_player_host(str(p.name).to_int()):
+		tag = "HOST"
+	if tag != "":
+		var tag_label := UITheme.body_label(tag, UITheme.FS_MICRO, tag_color)
+		tag_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		row.add_child(tag_label)
 	return panel
 
 
-func _make_portrait_button(char: Character, cls: Class) -> Button:
-	var btn := UITheme.character_card(char, cls, "normal", Vector2(92, 122))
-	btn.tooltip_text = char.character_name
-	btn.mouse_entered.connect(_on_portrait_hover.bind(char))
-	btn.pressed.connect(_on_pick_character.bind(char))
-	_portrait_buttons[char.resource_path] = btn
+func _update_operative_label() -> void:
+	if _operative_label:
+		_operative_label.text = "OPERATIVE %02d / %02d" % [_operative_index, _operative_total]
+
+
+# ─────────────────────────────────────────────
+#  Detail panel
+# ─────────────────────────────────────────────
+
+func _build_detail_panel() -> void:
+	# Shown only while hovering an agent card that is not the current pick.
+	_hover_label = UITheme.section_label("SWITCHING TO", UITheme.TEAL)
+	_hover_label.add_theme_font_size_override("font_size", 10)
+	_hover_label.visible = false
+	_detail_vbox.add_child(_hover_label)
+
+	# Fixed-height name block: a long name changes the font size, never the
+	# panel layout (the label is clipped to this rect).
+	_name_label = UITheme.display_label("—", 56, UITheme.TEXT)
+	_name_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	_name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	_name_label.custom_minimum_size = Vector2(0, 64)
+	_name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_detail_vbox.add_child(_name_label)
+
+	_class_label = UITheme.section_label("AGENT", UITheme.TEAL)
+	_class_label.add_theme_font_size_override("font_size", UITheme.FS_MICRO)
+	_class_label.custom_minimum_size = Vector2(0, 14)
+	_detail_vbox.add_child(_class_label)
+
+	# The infographic owns all remaining vertical space; loadout and the action
+	# stack sit at the bottom of the panel, abilities float over the preview.
+	_info_scroll = ScrollContainer.new()
+	_info_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_info_scroll.custom_minimum_size = Vector2(0, 160)
+	_info_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_detail_vbox.add_child(_info_scroll)
+
+	_info_box = VBoxContainer.new()
+	_info_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_info_box.add_theme_constant_override("separation", 8)
+	_info_scroll.add_child(_info_box)
+
+	_detail_vbox.add_child(UITheme.section_label("LOADOUT", UITheme.MUTED))
+	_loadout_row = VBoxContainer.new()
+	_loadout_row.add_theme_constant_override("separation", 8)
+	_detail_vbox.add_child(_loadout_row)
+
+	_confirm_button = Button.new()
+	_confirm_button.text = "LOCK IN"
+	_confirm_button.custom_minimum_size = Vector2(0, 48)
+	_confirm_button.focus_mode = Control.FOCUS_NONE
+	_confirm_button.disabled = true
+	_detail_vbox.add_child(_confirm_button)
+
+	var randomize_row := HBoxContainer.new()
+	randomize_row.add_theme_constant_override("separation", 12)
+	_detail_vbox.add_child(randomize_row)
+
+	_randomize_once_button = Button.new()
+	_randomize_once_button.text = "RANDOMIZE"
+	_randomize_once_button.focus_mode = Control.FOCUS_NONE
+	randomize_row.add_child(_randomize_once_button)
+
+	_randomize_on_death_check = CheckBox.new()
+	_randomize_on_death_check.text = "Randomize on death"
+	_randomize_on_death_check.focus_mode = Control.FOCUS_NONE
+	_randomize_on_death_check.add_theme_color_override("font_color", UITheme.MUTED)
+	_randomize_on_death_check.add_theme_font_size_override("font_size", UITheme.FS_SMALL)
+	randomize_row.add_child(_randomize_on_death_check)
+
+	_leave_party_button = Button.new()
+	_leave_party_button.text = "LEAVE PARTY"
+	_leave_party_button.custom_minimum_size = Vector2(0, 36)
+	_leave_party_button.focus_mode = Control.FOCUS_NONE
+	_detail_vbox.add_child(_leave_party_button)
+
+
+## Ability discs float over the bottom of the preview (above the agent strip)
+## so they cost the detail panel no vertical space.  Collapsible.
+const ABILITY_PANEL_HEIGHT := 124.0
+const ABILITY_PANEL_COLLAPSED := 40.0
+
+
+func _build_ability_overlay() -> void:
+	var frame := _preview_svc.get_parent() as Control
+	if frame == null:
+		return
+	_ability_panel = PanelContainer.new()
+	_ability_panel.add_theme_stylebox_override("panel", UITheme.panel_style(
+		Color(UITheme.INK_2.r, UITheme.INK_2.g, UITheme.INK_2.b, 0.82),
+		UITheme.LINE, 1, 8))
+	_ability_panel.anchor_left = 0.0
+	_ability_panel.anchor_right = 1.0
+	_ability_panel.anchor_top = 1.0
+	_ability_panel.anchor_bottom = 1.0
+	_ability_panel.offset_left = 0.0
+	_ability_panel.offset_right = 0.0
+	_ability_panel.offset_bottom = -180.0
+	_ability_panel.offset_top = -180.0 - ABILITY_PANEL_HEIGHT
+	frame.add_child(_ability_panel)
+
+	var vb := VBoxContainer.new()
+	vb.add_theme_constant_override("separation", 4)
+	_ability_panel.add_child(vb)
+
+	var header := HBoxContainer.new()
+	header.add_theme_constant_override("separation", 8)
+	vb.add_child(header)
+	header.add_child(UITheme.section_label("ABILITIES", UITheme.MUTED))
+	var spacer := Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header.add_child(spacer)
+	_ability_collapse_button = Button.new()
+	_ability_collapse_button.text = "▾"
+	_ability_collapse_button.custom_minimum_size = Vector2(30, 0)
+	_ability_collapse_button.focus_mode = Control.FOCUS_NONE
+	_ability_collapse_button.add_theme_font_size_override("font_size", 12)
+	_ability_collapse_button.pressed.connect(_on_ability_collapse_pressed)
+	header.add_child(_ability_collapse_button)
+
+	_ability_row = HBoxContainer.new()
+	_ability_row.add_theme_constant_override("separation", 8)
+	_ability_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	_ability_row.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	vb.add_child(_ability_row)
+	_set_abilities_collapsed(false)
+
+
+func _on_ability_collapse_pressed() -> void:
+	_set_abilities_collapsed(not _abilities_collapsed)
+
+
+func _set_abilities_collapsed(collapsed: bool) -> void:
+	_abilities_collapsed = collapsed
+	if _ability_row:
+		_ability_row.visible = not collapsed
+	if _ability_panel:
+		var height := ABILITY_PANEL_COLLAPSED if collapsed else ABILITY_PANEL_HEIGHT
+		_ability_panel.offset_top = _ability_panel.offset_bottom - height
+	if _ability_collapse_button:
+		_ability_collapse_button.text = "▸" if collapsed else "▾"
+
+
+func _update_detail_header() -> void:
+	if _class_label:
+		_class_label.text = selected_class.class_display_name.to_upper() if selected_class else "AGENT"
+	if _name_label:
+		_set_name_text(selected_character.character_name if selected_character else "—")
+	if _hover_label:
+		_hover_label.visible = false
+
+
+## Long names shrink instead of reflowing the panel: the block height is fixed.
+func _set_name_text(text: String) -> void:
+	if _name_label == null:
+		return
+	_name_label.text = text.to_upper()
+	var length := _name_label.text.length()
+	var size := 56
+	if length > 9:
+		size = 48
+	if length > 13:
+		size = 40
+	if length > 17:
+		size = 34
+	if length > 22:
+		size = 28
+	_name_label.add_theme_font_size_override("font_size", size)
+
+
+# ─────────────────────────────────────────────
+#  Agent strip
+# ─────────────────────────────────────────────
+
+func _build_agent_strip() -> void:
+	for entry in UITheme.characters_by_class():
+		var cls: Class = entry.get("class", null)
+		var characters: Array = entry.get("characters", [])
+		if cls == null or characters.is_empty():
+			continue
+		var group := VBoxContainer.new()
+		group.add_theme_constant_override("separation", 6)
+		group.alignment = BoxContainer.ALIGNMENT_CENTER
+		_agent_groups.add_child(group)
+
+		var header := UITheme.section_label(cls.class_display_name, UITheme.MUTED)
+		header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		group.add_child(header)
+		_class_labels[cls.resource_path] = header
+
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 8)
+		row.alignment = BoxContainer.ALIGNMENT_CENTER
+		group.add_child(row)
+
+		for char_res in characters:
+			var char := char_res as Character
+			if char == null:
+				continue
+			row.add_child(_make_agent_card(char, cls))
+
+
+func _make_agent_card(char: Character, cls: Class) -> Button:
+	var btn := UITheme.character_card(char, cls, "normal", Vector2(92, 124))
+	btn.mouse_entered.connect(_on_agent_card_hover.bind(char))
+	btn.mouse_exited.connect(_on_agent_card_unhover)
+	btn.pressed.connect(_on_agent_card_pressed.bind(char))
+	_agent_buttons[char.resource_path] = btn
 	return btn
 
 
-func _refresh_portrait_selection() -> void:
+func _refresh_agent_selection() -> void:
 	var selected_path := selected_character.resource_path if selected_character else ""
-	for path in _portrait_buttons:
-		var btn: Button = _portrait_buttons[path]
+	for path in _agent_buttons:
+		var btn: Button = _agent_buttons[path]
 		var is_selected: bool = path == selected_path
 		btn.add_theme_stylebox_override("normal", UITheme.card_style(
 			UITheme.State.SELECTED if is_selected else UITheme.State.NORMAL))
 		btn.add_theme_stylebox_override("hover", UITheme.card_style(
 			UITheme.State.SELECTED if is_selected else UITheme.State.HOVER))
 		btn.add_theme_stylebox_override("pressed", UITheme.card_style(UITheme.State.SELECTED))
+	for path in _class_labels:
+		var label: Label = _class_labels[path]
+		var is_selected_class: bool = selected_class != null and path == selected_class.resource_path
+		label.add_theme_color_override("font_color",
+			UITheme.TEAL if is_selected_class else UITheme.MUTED)
 
 
-func _portrait_style(bg: Color, border: Color) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = bg
-	style.border_color = border
-	style.set_border_width_all(2)
-	style.content_margin_left = 4.0
-	style.content_margin_top = 4.0
-	style.content_margin_right = 4.0
-	style.content_margin_bottom = 4.0
-	return style
-
-
-func _on_portrait_hover(char: Character) -> void:
+## Hover previews the agent in the detail panel ("SWITCHING TO …") without
+## committing the pick; the card still applies it on click.
+func _on_agent_card_hover(char: Character) -> void:
 	_show_character_info(char)
-
-
-func _open_picker() -> void:
-	_refresh_portrait_selection()
-	_change_agent_overlay.visible = false
-	_character_svc.visible = false
-	_character_picker.visible = true
-	_on_picker_opened()
-
-
-func _close_picker() -> void:
-	_character_picker.visible = false
-	_character_svc.visible = true
-	_on_picker_closed()
-
-
-func _on_picker_opened() -> void:
-	# Pause the character model while the picker covers it — its jigglebones /
-	# physics are the main lag source behind the popup.
-	if _character_preview_model and is_instance_valid(_character_preview_model):
-		_character_preview_model.process_mode = Node.PROCESS_MODE_DISABLED
-
-
-func _on_picker_closed() -> void:
-	if _character_preview_model and is_instance_valid(_character_preview_model):
-		_character_preview_model.process_mode = Node.PROCESS_MODE_INHERIT
-
-
-func _on_pick_character(char: Character) -> void:
-	_select_character(char)
-	_close_picker()
-
-
-# ─────────────────────────────────────────────
-#  Weapon cards
-# ─────────────────────────────────────────────
-
-func _make_weapon_card(weapon: Weapon, key: String) -> WeaponCard:
-	var card := _weapon_card_scene.instantiate() as WeaponCard
-	card.set_meta("weapon", weapon)
-	card.set_meta("column", key)
-	card.set_meta("selected", false)
-	_card_style[card] = card.get_theme_stylebox("panel") as StyleBoxFlat
-
-	card.setup(weapon)
-	card.card_pressed.connect(_on_card_pressed)
-	card.mouse_entered.connect(_on_card_hover.bind(card))
-	card.mouse_exited.connect(_on_card_unhover.bind(card))
-
-	return card
-
-
-func _apply_card_state(card: WeaponCard) -> void:
-	var style: StyleBoxFlat = _card_style.get(card)
-	if style == null:
+	if _name_label == null or char == null:
 		return
-	var selected: bool = card.get_meta("selected", false)
-	style.bg_color = CARD_BG_SELECTED if selected else CARD_BG_NORMAL
-	style.border_color = CARD_BORDER_SELECTED if selected else CARD_BORDER_NORMAL
+	var hovering_other := char != selected_character
+	_hover_label.visible = hovering_other
+	if _class_label:
+		var cls := _char_to_class.get(char.resource_path) as Class
+		_class_label.text = cls.class_display_name.to_upper() if cls else "AGENT"
+	_set_name_text(char.character_name)
+
+	# Ghost the hovered agent in the preview to show it is not selected yet.
+	# The weapon must belong to the hovered agent's class, not the previous
+	# preview's class.
+	if char != selected_character and char != _hovered_character:
+		_hovered_character = char
+		if _preview_rig:
+			_preview_rig.show_character(char, _weapon_for_character(char), true)
 
 
-func _on_card_hover(card: WeaponCard) -> void:
-	var weapon: Weapon = card.get_meta("weapon")
-	_show_weapon_info(weapon)
-	var style: StyleBoxFlat = _card_style.get(card)
-	if style and not card.get_meta("selected", false):
-		style.border_color = CARD_BORDER_HOVER
+## Keep the displayed weapon if the target class offers it; otherwise take that
+## class's first primary so a ghost never holds the previous agent's gun.
+func _weapon_for_character(char: Character) -> Weapon:
+	var cls := _char_to_class.get(char.resource_path) as Class
+	if cls == null:
+		return _displayed_weapon
+	if _displayed_weapon != null:
+		for weapons in [cls.primary_weapons, cls.secondary_weapons, cls.melee_weapons]:
+			for weapon in weapons:
+				if weapon == _displayed_weapon:
+					return weapon
+				if weapon.resource_path != "" \
+						and weapon.resource_path == _displayed_weapon.resource_path:
+					return weapon
+	if not cls.primary_weapons.is_empty():
+		return cls.primary_weapons[0]
+	return _displayed_weapon
 
 
-func _on_card_unhover(card: WeaponCard) -> void:
-	var style: StyleBoxFlat = _card_style.get(card)
-	if style:
-		_apply_card_state(card)
+func _on_agent_card_unhover() -> void:
+	_update_detail_header()
+	if selected_character:
+		_show_character_info(selected_character)
+	if _hovered_character != null:
+		_hovered_character = null
+		if _preview_rig and selected_character:
+			_preview_rig.show_character(selected_character, _displayed_weapon, false)
 
 
-func _on_card_pressed(card: WeaponCard) -> void:
-	_select_card(card)
+func _on_agent_card_pressed(char: Character) -> void:
+	_select_character(char)
 
 
-func _select_card(card: WeaponCard) -> void:
-	var weapon: Weapon = card.get_meta("weapon")
-	var key: String = card.get_meta("column")
+# ─────────────────────────────────────────────
+#  Loadout slots
+# ─────────────────────────────────────────────
 
-	var prev: WeaponCard = _selected_card.get(key)
-	if prev and prev != card:
-		prev.set_meta("selected", false)
-		_apply_card_state(prev)
+func _build_loadout_slots() -> void:
+	for child in _loadout_row.get_children():
+		_loadout_row.remove_child(child)
+		child.queue_free()
+	_weapon_slots.clear()
+	_weapon_slot_labels.clear()
+	_weapon_slot_thumbs.clear()
+	_weapon_slot_missing.clear()
+	for key in WEAPON_KEYS:
+		var slot := Button.new()
+		slot.custom_minimum_size = Vector2(0, 86)
+		slot.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		slot.focus_mode = Control.FOCUS_NONE
+		slot.add_theme_stylebox_override("normal", UITheme.card_style(UITheme.State.NORMAL))
+		slot.add_theme_stylebox_override("hover", UITheme.card_style(UITheme.State.HOVER))
+		slot.add_theme_stylebox_override("pressed", UITheme.card_style(UITheme.State.SELECTED))
+		slot.pressed.connect(_on_weapon_slot_pressed.bind(key, slot))
+		slot.mouse_entered.connect(_on_weapon_slot_hover.bind(key))
+		slot.mouse_exited.connect(_on_weapon_slot_unhover)
+		_loadout_row.add_child(slot)
 
-	card.set_meta("selected", true)
-	_selected_card[key] = card
+		var content := HBoxContainer.new()
+		content.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		content.add_theme_constant_override("separation", 8)
+		content.set_anchors_and_offsets_preset(
+			Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 10)
+		slot.add_child(content)
 
+		# Killfeed thumbnail, same 16:9 silhouette art the old weapon cards drew.
+		var thumb := TextureRect.new()
+		thumb.custom_minimum_size = Vector2(112, 63)
+		thumb.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		thumb.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		thumb.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		thumb.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		content.add_child(thumb)
+		_weapon_slot_thumbs[key] = thumb
+
+		var missing := ColorRect.new()
+		missing.color = Color(UITheme.SLATE.r, UITheme.SLATE.g, UITheme.SLATE.b, 0.8)
+		missing.custom_minimum_size = Vector2(112, 63)
+		missing.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		content.add_child(missing)
+		_weapon_slot_missing[key] = missing
+
+		var text_col := VBoxContainer.new()
+		text_col.add_theme_constant_override("separation", 2)
+		text_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		text_col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		content.add_child(text_col)
+
+		var caption := UITheme.section_label(key, UITheme.MUTED)
+		caption.add_theme_font_size_override("font_size", UITheme.FS_MICRO)
+		caption.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		text_col.add_child(caption)
+
+		var name_label := UITheme.body_label("—", 14, UITheme.TEXT)
+		name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		text_col.add_child(name_label)
+
+		_weapon_slots[key] = slot
+		_weapon_slot_labels[key] = name_label
+
+
+## Re-pick each slot from the selected class, keeping the previous weapon when
+## the new class still offers it.
+func _rebuild_loadout_slots() -> void:
+	var previous := {
+		"primary": selected_primary,
+		"secondary": selected_secondary,
+		"melee": selected_melee,
+	}
+	selected_primary = _pick_weapon(_weapons_for("primary"), previous["primary"] as Weapon)
+	selected_secondary = _pick_weapon(_weapons_for("secondary"), previous["secondary"] as Weapon)
+	selected_melee = _pick_weapon(_weapons_for("melee"), previous["melee"] as Weapon)
+	for key in WEAPON_KEYS:
+		_update_weapon_slot_label(key)
+
+
+func _pick_weapon(weapons: Array[Weapon], previous: Weapon) -> Weapon:
+	if weapons.is_empty():
+		return null
+	if previous != null:
+		for weapon in weapons:
+			if weapon == previous or (previous.resource_path != "" \
+					and weapon.resource_path == previous.resource_path):
+				return weapon
+	return weapons[0]
+
+
+func _weapons_for(key: String) -> Array[Weapon]:
+	if selected_class == null:
+		return []
+	match key:
+		"primary":
+			return selected_class.primary_weapons
+		"secondary":
+			return selected_class.secondary_weapons
+		"melee":
+			return selected_class.melee_weapons
+	return []
+
+
+func _selected_weapon_for(key: String) -> Weapon:
+	match key:
+		"primary":
+			return selected_primary
+		"secondary":
+			return selected_secondary
+		"melee":
+			return selected_melee
+	return null
+
+
+func _apply_weapon_selection(key: String, weapon: Weapon, preview := true) -> void:
 	match key:
 		"primary":
 			selected_primary = weapon
@@ -573,116 +999,434 @@ func _select_card(card: WeaponCard) -> void:
 			selected_secondary = weapon
 		"melee":
 			selected_melee = weapon
+	_update_weapon_slot_label(key)
+	if _popover and _popover.is_open():
+		_popover.set_selected(weapon)
+	if preview:
+		_set_displayed_weapon(weapon)
 
-	_apply_card_state(card)
+
+func _update_weapon_slot_label(key: String) -> void:
+	var label: Label = _weapon_slot_labels.get(key)
+	if label == null:
+		return
+	var weapon := _selected_weapon_for(key)
+	label.text = weapon.display_name if weapon else "—"
+
+	var thumb: TextureRect = _weapon_slot_thumbs.get(key)
+	var missing: Control = _weapon_slot_missing.get(key)
+	var icon: Texture2D = weapon.killfeed_icon if weapon else null
+	if thumb:
+		thumb.texture = icon
+		thumb.visible = icon != null
+	if missing:
+		missing.visible = icon == null
+
+	var slot: Button = _weapon_slots.get(key)
+	if slot:
+		slot.tooltip_text = label.text
+
+
+func _on_weapon_slot_pressed(key: String, slot: Button) -> void:
+	_open_weapon_popover(key, slot)
+
+
+func _on_weapon_slot_hover(key: String) -> void:
+	var weapon := _selected_weapon_for(key)
+	if weapon:
+		_show_weapon_info(weapon)
+		_set_displayed_weapon(weapon)
+
+
+func _on_weapon_slot_unhover() -> void:
+	if selected_character:
+		_show_character_info(selected_character)
+
+
+# ─────────────────────────────────────────────
+#  Weapon popover
+# ─────────────────────────────────────────────
+
+func _setup_popover() -> void:
+	_popover.weapon_hovered.connect(_on_popover_weapon_hovered)
+	_popover.weapon_selected.connect(_on_popover_weapon_selected)
+	_popover_catcher.gui_input.connect(_on_popover_catcher_input)
+
+	_preview_timer = Timer.new()
+	_preview_timer.one_shot = true
+	_preview_timer.wait_time = PREVIEW_SWAP_DELAY
+	_preview_timer.timeout.connect(_flush_pending_preview_weapon)
+	add_child(_preview_timer)
+
+
+func _input(event: InputEvent) -> void:
+	if _popover == null or not _popover.is_open() or not is_visible_in_tree():
+		return
+	if event.is_action_pressed("ui_cancel"):
+		_close_weapon_popover()
+		get_viewport().set_input_as_handled()
+
+
+func _open_weapon_popover(key: String, slot: Button) -> void:
+	var weapons := _weapons_for(key)
+	if weapons.is_empty():
+		return
+	_popover.open_for(key, weapons, _selected_weapon_for(key))
+	_popover.position_near(slot)
+	_popover_catcher.visible = true
+	_popover.move_to_front()
+
+
+func _close_weapon_popover() -> void:
+	if _preview_timer and not _preview_timer.is_stopped():
+		_preview_timer.stop()
+		_flush_pending_preview_weapon()
+	if _popover_catcher:
+		_popover_catcher.visible = false
+	if _popover:
+		_popover.close()
+
+
+func _on_popover_catcher_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton:
+		var mb := event as InputEventMouseButton
+		if mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
+			_close_weapon_popover()
+
+
+func _on_popover_weapon_hovered(weapon: Weapon, _key: String) -> void:
+	if weapon == null:
+		return
 	_show_weapon_info(weapon)
+	_pending_preview_weapon = weapon
+	_preview_timer.start()
+
+
+func _on_popover_weapon_selected(weapon: Weapon, key: String) -> void:
+	_apply_weapon_selection(key, weapon, true)
+	_close_weapon_popover()
+
+
+func _flush_pending_preview_weapon() -> void:
+	if _pending_preview_weapon == null:
+		return
+	_set_displayed_weapon(_pending_preview_weapon)
+	_pending_preview_weapon = null
+
+
+## Put [param weapon] in the preview model's hand.  The last shown weapon stays
+## until the next call, so leaving a row or closing the popover never reverts it.
+func _set_displayed_weapon(weapon: Weapon) -> void:
+	_displayed_weapon = weapon
+	if PREVIEW_DISABLED or _preview_rig == null:
+		return
+	_preview_rig.set_weapon(weapon)
+
 
 # ─────────────────────────────────────────────
-#  Ability slots
+#  Ability tiles
 # ─────────────────────────────────────────────
 
-func _make_ability_slot(index: int, ability: Ability) -> Control:
-	var circle := _ability_circle.new() as AbilityCircle
-	circle.name = "Ability%d" % index
-	circle.mouse_filter = Control.MOUSE_FILTER_STOP
-	circle.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	circle.set_meta("ability", ability)
-	if ability:
-		circle.set_ability_name(ability.ability_name)
-		# Hides the name label when the ability has an icon, so the slot shows one
-		# or the other — see AbilityCircle.set_icon.
-		circle.set_icon(ability.icon)
-		circle.name_label.add_theme_color_override("font_color", Color(0.85, 0.85, 0.85))
-	else:
-		circle.set_ability_name("UNASSIGNED")
-		# No ability, so no icon, so set_icon(null) leaves this text showing.
-		circle.name_label.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
-	circle.name_label.add_theme_font_size_override("font_size", 12)
+func _make_ability_tile(index: int, ability: Ability) -> Control:
+	var tile := VBoxContainer.new()
+	tile.add_theme_constant_override("separation", 4)
+	tile.custom_minimum_size = Vector2(108, 0)
+	tile.set_meta("ability", ability)
 
-	circle.mouse_entered.connect(_on_ability_hover.bind(circle))
+	var box := PanelContainer.new()
+	box.custom_minimum_size = Vector2(108, 96)
+	# The hover handler reads the meta off the box, not the tile row.
+	box.set_meta("ability", ability)
+	box.mouse_filter = Control.MOUSE_FILTER_STOP
+	box.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	box.add_theme_stylebox_override("panel", UITheme.card_style(
+		UITheme.State.DISABLED if ability == null else UITheme.State.NORMAL))
+	box.mouse_entered.connect(_on_ability_hover.bind(box, true))
+	box.mouse_exited.connect(_on_ability_hover.bind(box, false))
+	tile.add_child(box)
 
-	return circle
+	var body := VBoxContainer.new()
+	body.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	body.add_theme_constant_override("separation", 2)
+	box.add_child(body)
+
+	var number := UITheme.body_label(str(index + 1), UITheme.FS_MICRO, UITheme.MUTED)
+	number.add_theme_font_override("font", UITheme.FONT_BOLD)
+	number.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	body.add_child(number)
+
+	var center := CenterContainer.new()
+	center.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	body.add_child(center)
+
+	var icon := TextureRect.new()
+	icon.custom_minimum_size = Vector2(44, 44)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.texture = ability.icon if ability else null
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	center.add_child(icon)
+
+	var name_label := UITheme.body_label(
+		ability.ability_name if ability else "—", UITheme.FS_MICRO,
+		UITheme.MUTED if ability else UITheme.DIM_TEXT)
+	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tile.add_child(name_label)
+	return tile
 
 
-func _on_ability_hover(circle: Control) -> void:
-	var ability: Ability = circle.get_meta("ability")
+func _on_ability_hover(box: PanelContainer, entered: bool) -> void:
+	var ability: Ability = box.get_meta("ability")
+	box.add_theme_stylebox_override("panel", UITheme.card_style(
+		UITheme.State.HOVER if entered and ability != null
+		else (UITheme.State.DISABLED if ability == null else UITheme.State.NORMAL)))
+	if not entered:
+		if selected_character:
+			_show_character_info(selected_character)
+		return
 	if ability:
 		_show_ability_info(ability)
 	else:
 		_show_info("Unassigned", "No ability is assigned to this slot.")
 
+
+func _refresh_ability_tiles() -> void:
+	if _ability_row == null:
+		return
+	for child in _ability_row.get_children():
+		_ability_row.remove_child(child)
+		child.queue_free()
+	_ability_tiles.clear()
+	for i in 4:
+		var ability: Ability = null
+		if selected_character and i < selected_character.abilities.size():
+			ability = selected_character.abilities[i]
+		var tile := _make_ability_tile(i, ability)
+		_ability_row.add_child(tile)
+		_ability_tiles.append(tile)
+
+
 # ─────────────────────────────────────────────
 #  Info panel
 # ─────────────────────────────────────────────
 
-func _show_info(title: String, body: String) -> void:
-	if _info_label == null:
+## The info panel is an infographic, not a text dump: description, trait
+## badges and pip bars on the same dark surface, in the theme's accent colours.
+
+func _clear_info() -> void:
+	if _info_box == null:
 		return
-	if title == "":
-		_info_label.text = body
-	else:
-		_info_label.text = "[b][font_size=18]%s[/font_size][/b]\n\n%s" % [title, body]
+	for child in _info_box.get_children():
+		_info_box.remove_child(child)
+		child.queue_free()
+
+
+func _info_title(text: String) -> void:
+	if _info_box == null:
+		return
+	var label := UITheme.body_label(text, 18, UITheme.TEXT)
+	label.add_theme_font_override("font", UITheme.FONT_SEMIBOLD)
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_info_box.add_child(label)
+
+
+func _info_section(text: String) -> void:
+	if _info_box == null:
+		return
+	var label := UITheme.section_label(text, UITheme.MUTED)
+	label.add_theme_font_size_override("font_size", UITheme.FS_MICRO)
+	_info_box.add_child(label)
+
+
+func _info_body(text: String) -> void:
+	if _info_box == null or text.is_empty():
+		return
+	var label := UITheme.body_label(text, UITheme.FS_SMALL, Color(0.82, 0.84, 0.86, 1))
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_info_box.add_child(label)
+
+
+func _info_chips(items: Array) -> void:
+	if _info_box == null or items.is_empty():
+		return
+	var flow := HFlowContainer.new()
+	flow.add_theme_constant_override("h_separation", 6)
+	flow.add_theme_constant_override("v_separation", 6)
+	for item in items:
+		flow.add_child(UITheme.badge(str(item[0]), item[1]))
+	_info_box.add_child(flow)
+
+
+func _stat_color(mult: float) -> Color:
+	if mult > 1.02:
+		return UITheme.TEAL
+	if mult < 0.98:
+		return UITheme.AMBER
+	return UITheme.MUTED
+
+
+func _stat_text(mult: float) -> String:
+	var pct := int(round((mult - 1.0) * 100.0))
+	if pct == 0:
+		return "BASE"
+	return ("+%d%%" % pct) if pct > 0 else ("%d%%" % pct)
+
+
+## Label + signed value + a 20-pip bar on a 0.5x..1.5x scale (base = half full).
+func _make_stat_bar(label_text: String, mult: float) -> Control:
+	var row := VBoxContainer.new()
+	row.add_theme_constant_override("separation", 3)
+
+	var head := HBoxContainer.new()
+	var name_label := UITheme.body_label(label_text, UITheme.FS_MICRO, UITheme.MUTED)
+	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head.add_child(name_label)
+	var value := UITheme.body_label(_stat_text(mult), UITheme.FS_SMALL, _stat_color(mult))
+	value.add_theme_font_override("font", UITheme.FONT_BOLD)
+	head.add_child(value)
+	row.add_child(head)
+
+	const PIPS := 20
+	var filled := int(round(clampf((mult - 0.5) / 1.0, 0.0, 1.0) * PIPS))
+	var fill_color := _stat_color(mult)
+	var bar := HBoxContainer.new()
+	bar.add_theme_constant_override("separation", 2)
+	for i in PIPS:
+		var pip := ColorRect.new()
+		pip.custom_minimum_size = Vector2(0, 7)
+		pip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		pip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		pip.color = fill_color if i < filled else Color(UITheme.LINE.r, UITheme.LINE.g, UITheme.LINE.b, 0.35)
+		bar.add_child(pip)
+	row.add_child(bar)
+	return row
+
+
+func _show_info(title: String, body: String) -> void:
+	_clear_info()
+	if title != "":
+		_info_title(title)
+	_info_body(body)
 
 
 func _show_weapon_info(weapon: Weapon) -> void:
-	if weapon == null:
+	if weapon == null or _info_box == null:
 		return
-	_show_info(weapon.display_name, _weapon_stats(weapon))
+	_clear_info()
+	_info_title(weapon.display_name)
+
+	var icon := TextureRect.new()
+	icon.custom_minimum_size = Vector2(150, 84)
+	icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.texture = weapon.killfeed_icon
+	if icon.texture != null:
+		_info_box.add_child(icon)
+
+	_info_section("WEAPON")
+	for fire in weapon.weapon_fires:
+		if fire.action_type != WeaponFire.ActionType.SHOOT:
+			continue
+		if fire.bullet_type == WeaponFire.BulletType.HITSCAN:
+			_info_box.add_child(UITheme.stat_row("DAMAGE", str(fire.hitscan_damage), UITheme.TEAL))
+			if fire.headshot_multiplier != 1.0:
+				_info_box.add_child(UITheme.stat_row("HEADSHOT", "×%.1f" % fire.headshot_multiplier, UITheme.TEAL))
+		else:
+			_info_box.add_child(UITheme.stat_row("DAMAGE", "PROJECTILE", UITheme.TEAL))
+			if fire.projectile_scene != null:
+				var proj := fire.projectile_scene.instantiate()
+				var hb_node: Node = proj.get_node_or_null("HitboxComponent")
+				if hb_node is HitboxComponent:
+					var hb := hb_node as HitboxComponent
+					_info_box.add_child(UITheme.stat_row("IMPACT", str(abs(hb.health_delta)), UITheme.TEAL))
+				proj.queue_free()
+		if fire.post_shoot_delay > 0.0:
+			_info_box.add_child(UITheme.stat_row("FIRE RATE",
+				"%d RPM" % int(round(60.0 / fire.post_shoot_delay)), UITheme.TEAL))
+		if fire.ammo_cost > 1:
+			_info_box.add_child(UITheme.stat_row("AMMO COST", str(fire.ammo_cost), UITheme.AMBER))
+		break
+	if not weapon.has_infinite_ammo:
+		_info_box.add_child(UITheme.stat_row("MAGAZINE", str(weapon.mag_size), UITheme.MUTED))
+		_info_box.add_child(UITheme.stat_row("RELOAD", "%.1fs" % weapon.reload_time, UITheme.MUTED))
+	if not is_equal_approx(weapon.player_speed_multiplier, 1.0):
+		var pct := int(round((weapon.player_speed_multiplier - 1.0) * 100.0))
+		var speed_text := ("+%d%%" % pct) if pct > 0 else ("%d%%" % pct)
+		_info_box.add_child(UITheme.stat_row("MOVE SPEED",
+			speed_text, _stat_color(weapon.player_speed_multiplier)))
 
 
 func _show_ability_info(ability: Ability) -> void:
-	# Passive abilities are informational only — show just their description.
-	if ability is PassiveAbility:
-		_show_info(ability.ability_name, ability.description)
+	if ability == null or _info_box == null:
 		return
-	var parts: PackedStringArray = []
-	if not ability.description.is_empty():
-		parts.append(ability.description)
-	parts.append("Cooldown %.1fs" % ability.cooldown)
-	var cast := "Instant" if ability.cast_type == Ability.CastType.INSTANT else "Equip"
-	parts.append("Cast: %s" % cast)
-	_show_info(ability.ability_name, "  • %s" % "\n  • ".join(parts))
+	_clear_info()
+	if ability.icon != null:
+		var icon := TextureRect.new()
+		icon.custom_minimum_size = Vector2(56, 56)
+		icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.texture = ability.icon
+		_info_box.add_child(icon)
+	_info_title(ability.ability_name)
+	_info_body(ability.description)
+	if ability is PassiveAbility:
+		_info_chips([["PASSIVE", UITheme.AMBER]])
+		return
+	_info_box.add_child(UITheme.stat_row("COOLDOWN", "%.1fs" % ability.cooldown, UITheme.TEAL))
+	var cast := "INSTANT" if ability.cast_type == Ability.CastType.INSTANT else "EQUIP"
+	_info_box.add_child(UITheme.stat_row("CAST", cast, UITheme.MUTED))
 
 
 func _show_character_info(char: Character) -> void:
-	if char == null:
+	if char == null or _info_box == null:
 		return
-	var parts: PackedStringArray = []
-	if not char.description.is_empty():
-		parts.append("[i]%s[/i]" % char.description)
-	var stat_lines: PackedStringArray = _char_stat_lines(char)
-	if stat_lines.size() > 0:
-		parts.append("")
-		parts.append_array(stat_lines)
-	if char.abilities.size() > 0:
-		parts.append("")
-		parts.append("[b]Abilities[/b]")
-		for a in char.abilities:
-			if a:
-				parts.append("  %s" % a.ability_name)
-	_show_info(char.character_name, "\n".join(parts))
+	_clear_info()
+	_info_body(char.description)
+
+	var chips: Array = []
+	if char.passive_see_enemy_health:
+		chips.append(["SEES HEALTH", UITheme.AMBER])
+	if char.heal_on_kill > 0.0:
+		chips.append(["HEAL ON KILL %d" % int(char.heal_on_kill), UITheme.TEAL])
+	if char.regen_per_sec > 0.0:
+		chips.append(["REGEN %.1f/s" % char.regen_per_sec, UITheme.TEAL])
+	if char.lifesteal_percent > 0.0:
+		chips.append(["LIFESTEAL %.0f%%" % (char.lifesteal_percent * 100.0), UITheme.TEAL])
+	if char.air_jumps > 1:
+		chips.append(["AIR JUMPS %d" % char.air_jumps, UITheme.TEAL])
+	_info_chips(chips)
+
+	_info_section("ATTRIBUTES")
+	_info_box.add_child(_make_stat_bar("SPEED", char.speed_mult))
+	_info_box.add_child(_make_stat_bar("HEALTH", char.health_mult))
+	_info_box.add_child(_make_stat_bar("DAMAGE", char.damage_amp_mult))
+	_info_box.add_child(_make_stat_bar("FIRE RATE", 1.0 / maxf(char.shoot_delay_mult, 0.01)))
+	_info_box.add_child(_make_stat_bar("AIR CONTROL", char.air_accel_mult))
+	_info_box.add_child(_make_stat_bar("RELOAD", char.reload_speed_mult))
+
 
 # ─────────────────────────────────────────────
 #  Selection
 # ─────────────────────────────────────────────
 
 func _select_character(char: Character) -> void:
+	_hovered_character = null
 	selected_character = char
 	selected_class = null
 	if char:
 		selected_class = _char_to_class.get(char.resource_path) as Class
 
-	_refresh_character_preview()
-
-	if _character_name_label:
-		if char and selected_class:
-			_character_name_label.text = "%s  ·  %s" % [
-				char.character_name.to_upper(), selected_class.class_display_name.to_upper()]
-		else:
-			_character_name_label.text = char.character_name if char else ""
-
-	_rebuild_weapon_columns()
-	_refresh_abilities()
+	_ensure_loadout_slots()
+	_rebuild_loadout_slots()
+	_refresh_ability_tiles()
+	_refresh_agent_selection()
+	_update_detail_header()
+	_update_operative_label()
 
 	_confirm_button.disabled = selected_class == null
 	if selected_class == null:
@@ -690,215 +1434,144 @@ func _select_character(char: Character) -> void:
 	else:
 		_show_character_info(char)
 
-
-func _rebuild_weapon_columns() -> void:
-	_selected_card.clear()
-	_card_style.clear()
-	selected_primary = null
-	selected_secondary = null
-	selected_melee = null
-
-	var primaries: Array[Weapon] = []
-	var secondaries: Array[Weapon] = []
-	var melees: Array[Weapon] = []
-	if selected_class:
-		primaries = selected_class.primary_weapons
-		secondaries = selected_class.secondary_weapons
-		melees = selected_class.melee_weapons
-
-	_populate_column("primary", primaries)
-	_populate_column("secondary", secondaries)
-	_populate_column("melee", melees)
-
-	if selected_class:
-		_auto_select_first("primary", primaries)
-		_auto_select_first("secondary", secondaries)
-		_auto_select_first("melee", melees)
+	_refresh_character_preview()
+	_refresh_team_list()
 
 
-func _populate_column(key: String, weapons: Array[Weapon]) -> void:
-	var list: VBoxContainer = _column_lists.get(key)
-	if list == null:
-		return
-	for c in list.get_children():
-		list.remove_child(c)
-		c.queue_free()
-	if weapons.is_empty():
-		var empty := Label.new()
-		empty.text = "—"
-		empty.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		empty.add_theme_font_size_override("font_size", 14)
-		empty.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
-		list.add_child(empty)
-		return
-	for w in weapons:
-		list.add_child(_make_weapon_card(w, key))
-
-
-func _auto_select_first(key: String, weapons: Array[Weapon]) -> void:
-	if weapons.is_empty():
-		return
-	var list: VBoxContainer = _column_lists.get(key)
-	if list == null or list.get_child_count() == 0:
-		return
-	var first_card := list.get_child(0) as WeaponCard
-	_select_card(first_card)
-
-
-func _refresh_abilities() -> void:
-	if _ability_slots_hbox == null:
-		return
-	for c in _ability_slots_hbox.get_children():
-		_ability_slots_hbox.remove_child(c)
-		c.queue_free()
-	for i in 4:
-		var ability: Ability = null
-		if selected_character and i < selected_character.abilities.size():
-			ability = selected_character.abilities[i]
-		_ability_slots_hbox.add_child(_make_ability_slot(i, ability))
+## The slots live in the tscn detail panel and are built once.
+func _ensure_loadout_slots() -> void:
+	if _weapon_slots.is_empty():
+		_build_loadout_slots()
 
 
 # ─────────────────────────────────────────────
 #  Character preview
 # ─────────────────────────────────────────────
 
+func _setup_preview() -> void:
+	if PREVIEW_DISABLED:
+		return
+	_preview_svc.gui_input.connect(_on_character_gui_input)
+	_preview_svc.mouse_entered.connect(_on_character_hover_enter)
+	_preview_svc.mouse_exited.connect(_on_character_hover_exit)
+	_preview_svc.resized.connect(_on_preview_resized)
+	_preview_mode_button.pressed.connect(_on_preview_mode_pressed)
+	_on_preview_resized()
+
+
+## SubViewportContainer with `stretch` owns the viewport size; only the
+## render pass needs a nudge after a layout change.
+func _on_preview_resized() -> void:
+	if _preview_rig:
+		_preview_rig.render_once()
+
+
 func _on_character_hover_enter() -> void:
-	if _character_wrap_style:
-		var tw := create_tween()
-		tw.tween_property(_character_wrap_style, "border_color", UITheme.TEAL, 0.15)
-	_change_agent_overlay.visible = true
+	_set_bracket_color(UITheme.TEAL)
 	if selected_character:
 		_show_character_info(selected_character)
 
 
 func _on_character_hover_exit() -> void:
-	if _character_wrap_style:
-		var tw := create_tween()
-		tw.tween_property(_character_wrap_style, "border_color", UITheme.LINE, 0.15)
-	_change_agent_overlay.visible = false
+	_set_bracket_color(UITheme.LINE_HI)
 
 
-## Drag to spin the character; click (press+release without dragging) opens the picker.
+## LMB drag = turntable in both axes; RMB drag = pan; wheel = zoom.  Agents are
+## chosen from the bottom strip, so a click no longer opens a picker.
 func _on_character_gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
-		if mb.button_index == MOUSE_BUTTON_LEFT:
-			if mb.pressed:
-				_character_dragging = true
-				_character_drag_moved = false
-			else:
-				_character_dragging = false
-				if not _character_drag_moved:
-					_open_picker()
-	elif event is InputEventMouseMotion and _character_dragging:
+		if mb.pressed and mb.button_index == MOUSE_BUTTON_WHEEL_UP:
+			if _preview_rig:
+				_preview_rig.zoom(1.0)
+			_preview_svc.accept_event()
+		elif mb.pressed and mb.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+			if _preview_rig:
+				_preview_rig.zoom(-1.0)
+			_preview_svc.accept_event()
+		elif mb.button_index == MOUSE_BUTTON_LEFT or mb.button_index == MOUSE_BUTTON_RIGHT:
+			_drag_button = mb.button_index if mb.pressed else 0
+	elif event is InputEventMouseMotion and _drag_button != 0:
 		var mm := event as InputEventMouseMotion
-		if absf(mm.relative.x) > 0.01:
-			_character_drag_moved = true
-		if _character_preview_root:
-			_character_preview_root.rotation.y += mm.relative.x * 0.01
-			_character_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
+		if _preview_rig == null:
+			return
+		if _drag_button == MOUSE_BUTTON_LEFT:
+			_preview_rig.orbit(mm.relative.x, mm.relative.y)
+		else:
+			_preview_rig.pan(mm.relative.x, mm.relative.y)
+
+
+func _on_preview_mode_pressed() -> void:
+	_preview_mode = (_preview_mode + 1) % 3
+	_update_preview_mode_label()
+	if _preview_rig:
+		_preview_rig.set_preview_mode(_preview_mode)
+
+
+func _update_preview_mode_label() -> void:
+	if _preview_mode_button == null:
+		return
+	var names := ["STANDING", "WALKING", "RUNNING"]
+	_preview_mode_button.text = "PREVIEW: %s" % names[_preview_mode]
 
 
 func _refresh_character_preview() -> void:
-	_spawn_character_preview(selected_character)
-
-
-func _spawn_character_preview(char: Character) -> void:
-	if PREVIEW_DISABLED:
+	if PREVIEW_DISABLED or _preview_rig == null:
 		return
-	if _character_viewport == null:
+	_preview_rig.set_preview_mode(_preview_mode)
+	_preview_rig.show_character(selected_character, selected_primary)
+	_displayed_weapon = selected_primary
+
+
+func _build_bracket_lines() -> void:
+	if _brackets == null:
 		return
-	_clear_viewport(_character_viewport)
-	if char == null or char.character_scene == null:
-		return
-	var pr := _character_viewport.get_node_or_null("Node3D/PreviewRoot") as Node3D
-	if pr == null:
-		return
-	_character_preview_root = pr
-	var t0 := Time.get_ticks_usec()
-	var model := char.character_scene.instantiate() as Node3D
-	_character_preview_model = model
-	# The preview is a static pose — disable processing entirely so nothing on
-	# the model (animations, jigglebones, scripts) ticks while it sits in the menu.
-	model.process_mode = Node.PROCESS_MODE_DISABLED
-	pr.add_child(model)
+	var arms := [
+		# [left, top, right, bottom, h-origin, v-origin]
+		[0.0, 0.0, 0.0, 0.0, Vector2(0, 0)],
+		[1.0, 0.0, 1.0, 0.0, Vector2(28, 0)],
+		[0.0, 1.0, 0.0, 1.0, Vector2(0, 28)],
+		[1.0, 1.0, 1.0, 1.0, Vector2(28, 28)],
+	]
+	var length := 28.0
+	for spec in arms:
+		var ax: float = spec[0]
+		var ay: float = spec[1]
+		var origin: Vector2 = spec[4]
+		var hline := ColorRect.new()
+		hline.color = UITheme.LINE_HI
+		hline.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		hline.anchor_left = ax
+		hline.anchor_right = ax
+		hline.anchor_top = ay
+		hline.anchor_bottom = ay
+		hline.offset_left = -origin.x if ax > 0.5 else 0.0
+		hline.offset_right = 0.0 if ax > 0.5 else length
+		hline.offset_top = -1.0 if ay > 0.5 else 0.0
+		hline.offset_bottom = 0.0 if ay > 0.5 else 1.0
+		_brackets.add_child(hline)
+		_bracket_lines.append(hline)
 
-	var box := _visual_aabb(model)
-	if box.size.length_squared() <= 0.0001:
-		box = AABB(Vector3(-0.5, -0.9, -0.5), Vector3(1.0, 1.8, 1.0))
-	model.position = -box.get_center()
-
-	var anims := model.find_children("*", "AnimationPlayer", true, false)
-	var anim: AnimationPlayer = anims[0] if not anims.is_empty() else null
-	if anim:
-		var anim_name := ""
-		if anim.has_animation("walk/idle"):
-			anim_name = "walk/idle"
-		elif anim.has_animation("walk/walk_w"):
-			anim_name = "walk/walk_w"
-		if anim_name != "":
-			anim.play(anim_name)
-			# The preview renders once (UPDATE_ONCE), so a looping animation only
-			# burns CPU.  Freeze it on a mid-cycle pose instead.
-			anim.seek(anim.current_animation_length * 0.5, true)
-			anim.pause()
-
-	var camera := _character_viewport.get_node_or_null("Node3D/Camera3D") as Camera3D
-	if camera:
-		var radius := box.size.length() * 0.5
-		var fov := deg_to_rad(camera.fov)
-		var distance := radius / tan(fov * 0.5)
-		distance = maxf(distance * 1.15, radius + 0.5)
-		camera.position = Vector3(0, 0, -distance)
-		camera.look_at(Vector3.ZERO)
-	_character_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
-
-	if OS.is_debug_build():
-		var ms := (Time.get_ticks_usec() - t0) / 1000.0
-		var meshes := model.find_children("*", "MeshInstance3D", true, false).size()
-		var phys := model.find_children("*", "PhysicsBody3D", true, false).size()
-		var skel := model.find_child("Skeleton3D", true, false) as Skeleton3D
-		var bones := skel.get_bone_count() if skel else 0
-		print("[DEBUG PREVIEW] spawned '%s' in %.2f ms | meshes=%d bones=%d physics_bodies=%d" % [char.character_name, ms, meshes, bones, phys])
-
-# ─────────────────────────────────────────────
-#  Preview helpers (mirrors ClassSelectUI)
-# ─────────────────────────────────────────────
-
-func _clear_viewport(vp: SubViewport) -> void:
-	var pr: Node = vp.get_node_or_null("Node3D/PreviewRoot")
-	if not pr:
-		return
-	for child in pr.get_children():
-		child.queue_free()
+		var vline := ColorRect.new()
+		vline.color = UITheme.LINE_HI
+		vline.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		vline.anchor_left = ax
+		vline.anchor_right = ax
+		vline.anchor_top = ay
+		vline.anchor_bottom = ay
+		vline.offset_left = -1.0 if ax > 0.5 else 0.0
+		vline.offset_right = 0.0 if ax > 0.5 else 1.0
+		vline.offset_top = -length if ay > 0.5 else 0.0
+		vline.offset_bottom = 0.0 if ay > 0.5 else length
+		_brackets.add_child(vline)
+		_bracket_lines.append(vline)
 
 
-func _visual_aabb(root: Node3D) -> AABB:
-	var box := AABB()
-	if root is VisualInstance3D:
-		var aabb := (root as VisualInstance3D).get_aabb()
-		if aabb.size.length_squared() > 0.0:
-			box = box.merge(aabb)
-	for child in root.get_children():
-		if not child is Node3D:
-			continue
-		var child_box := _visual_aabb(child as Node3D)
-		if child_box.size.length_squared() > 0.0:
-			box = box.merge(_aabb_transformed(child_box, (child as Node3D).transform))
-	return box
+func _set_bracket_color(color: Color) -> void:
+	for line in _bracket_lines:
+		if is_instance_valid(line):
+			line.color = color
 
-
-func _aabb_transformed(aabb: AABB, xform: Transform3D) -> AABB:
-	var out := AABB()
-	out = out.expand(xform * aabb.position)
-	out = out.expand(xform * (aabb.position + Vector3(aabb.size.x, 0, 0)))
-	out = out.expand(xform * (aabb.position + Vector3(0, aabb.size.y, 0)))
-	out = out.expand(xform * (aabb.position + Vector3(0, 0, aabb.size.z)))
-	out = out.expand(xform * (aabb.position + Vector3(aabb.size.x, aabb.size.y, 0)))
-	out = out.expand(xform * (aabb.position + Vector3(aabb.size.x, 0, aabb.size.z)))
-	out = out.expand(xform * (aabb.position + Vector3(0, aabb.size.y, aabb.size.z)))
-	out = out.expand(xform * (aabb.position + aabb.size))
-	return out
 
 # ─────────────────────────────────────────────
 #  Classes
@@ -915,6 +1588,7 @@ func load_classes(classes: Array[Class]) -> void:
 			if char:
 				_char_to_class[char.resource_path] = cls
 				_all_characters.append({"char": char, "class": cls})
+
 
 # ─────────────────────────────────────────────
 #  Stats (mirrors ClassSelectUI)
@@ -1042,6 +1716,7 @@ func _add_stat_group(lines: PackedStringArray, title: String, stats: Array) -> v
 		lines.append("[b]%s[/b]" % title)
 		lines.append_array(group_lines)
 
+
 # ─────────────────────────────────────────────
 #  Randomize / Confirm
 # ─────────────────────────────────────────────
@@ -1057,6 +1732,7 @@ func _select_random_loadout() -> void:
 	_randomize_column("primary", selected_class.primary_weapons)
 	_randomize_column("secondary", selected_class.secondary_weapons)
 	_randomize_column("melee", selected_class.melee_weapons)
+	_set_displayed_weapon(selected_primary)
 
 
 func _on_randomize_once_pressed() -> void:
@@ -1065,18 +1741,14 @@ func _on_randomize_once_pressed() -> void:
 	_randomize_column("primary", selected_class.primary_weapons)
 	_randomize_column("secondary", selected_class.secondary_weapons)
 	_randomize_column("melee", selected_class.melee_weapons)
+	_set_displayed_weapon(selected_primary)
 
 
 func _randomize_column(key: String, weapons: Array[Weapon]) -> void:
 	if weapons.is_empty():
 		return
-	var list: VBoxContainer = _column_lists.get(key)
-	if list == null or list.get_child_count() == 0:
-		return
-	var idx := randi() % weapons.size()
-	if idx >= 0 and idx < list.get_child_count():
-		var card := list.get_child(idx) as WeaponCard
-		_select_card(card)
+	var weapon := weapons[randi() % weapons.size()]
+	_apply_weapon_selection(key, weapon, false)
 
 
 ## Bounded retry count for the deferred confirm above; ~10 s at 60 fps.

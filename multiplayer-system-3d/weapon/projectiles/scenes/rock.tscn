@@ -2,7 +2,7 @@
 
 [ext_resource type="PackedScene" uid="uid://6mr0d18yn8po" path="res://weapon/projectiles/scenes/simple_projectile.tscn" id="1_gv5ci"]
 [ext_resource type="Script" uid="uid://bvkx76wgvdc6t" path="res://weapon/projectiles/scenes/arrow.gd" id="2_ig5vf"]
-[ext_resource type="Texture2D" uid="uid://0h6uvrkyhoxc" path="res://backup/trenchbroom/textures/Material-LIB/Nature/SurfaceRock/SurfaceRock.png" id="3_ig5vf"]
+[ext_resource type="Texture2D" uid="uid://dftdjc30rqito" path="res://trenchbroom/textures/Material-LIB/Nature/SurfaceRock/SurfaceRock.png" id="3_ig5vf"]
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_uq63q"]
 radius = 1.3071613

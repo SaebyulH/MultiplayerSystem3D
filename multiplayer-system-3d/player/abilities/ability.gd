@@ -85,6 +85,12 @@ func _validate_property(property: Dictionary) -> void:
 func is_charged() -> bool:
 	return max_charges > 1
 
+## False for a passive ability the simulation drives by itself (see
+## AirControlAbility).  AbilityManager refuses to cast those from a key or a
+## fire button; their effect is applied by the movement/effect code instead.
+func is_castable() -> bool:
+	return true
+
 ## INSTANT cast — called the moment the ability key is pressed.
 ## Status-effect id this ability keeps on the caster while it runs, or "" for
 ## abilities without a mirrored timed effect.  The HUD's active-ability readout

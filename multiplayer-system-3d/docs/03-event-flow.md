@@ -58,7 +58,7 @@ Because `NetworkEvents` ignores `OfflineMultiplayerPeer`, `create_server()` must
 
 ## Join a party (become client)
 
-1. The joiner is already their own host (offline or real server). They walk into `JoinParty` and press `E`.
+1. The joiner is already their own host (offline or real server). They walk into `HostServer`, press `E`, and open the Match Menu's FIND MATCH tab.
 2. `join_party(ip)` → `_remove_game_scene()` (free the solo world) → `create_client(ip)` (`network_manager.gd:96-100`).
 3. `create_client()` → `_terminate_connection()` (stop `NetworkTime`, close + null the old peer) → create an ENet client → set `multiplayer_peer` (`46-55`).
 4. On connect, `NetworkManager._on_connected_to_server()` → `enter_existing_game_scene()` (a fresh client `world1.tscn` with **no** map; the map replicates from the host) (`159-161`, `62-66`).
@@ -232,10 +232,10 @@ Invariants:
 The resulting session uses the same match-session handshake, stable ids, local
 maps, heartbeat/reaper, and resume as a dedicated server.
 
-JoinParty opens a two-tab popup. **LAN** calls
+The Match Menu's FIND MATCH tab is the join UI. Its LAN list calls
 `LanDiscovery.discover()`: it probes UDP `7355-7370` on localhost, each /24
 broadcast and `255.255.255.255`; each host answers on `7355 + (port - 8080)`
-with a JSON announce and an instance id. **Direct IP** accepts `ip[:port]` or a
+with a JSON announce and an instance id. The DIRECT row accepts `ip[:port]` or a
 join code. Both call `join_party(..., use_match_session=true)`. The LAN announce
 is unauthenticated metadata; the join is still validated by the handshake.
 
@@ -258,10 +258,12 @@ join_match(endpoint, grant)
 
 Invariants:
 
-- **The grant is validated before a player is added.** `MatchSession.hello`
-  checks the HMAC, expiry, and match id; a missing/invalid grant produces
-  `BAD_TOKEN` and no Player node. With no secret configured the check is a dev
-  no-op.
+- **The grant check is temporarily advisory** (known issue #149). `MatchSession.hello`
+  still runs the HMAC/expiry/match-id validation, but a missing or invalid grant
+  only logs a warning and the player is added anyway. Before #149 it produced
+  `BAD_TOKEN` and no Player node, which blocked every direct-IP join to a server
+  with `MATCH_SECRET` set. Restore the refusal once lobbyd admission is the only
+  join path.
 - **The client sends `hello` only after its world exists**, as above. The grant
   changes nothing about that ordering.
 - **Maps still load locally.** The lobby never carries map bytes.

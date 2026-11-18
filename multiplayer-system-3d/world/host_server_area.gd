@@ -1,23 +1,24 @@
 extends Area3D
 ## HostServer interaction zone in the 3D lobby.
 ##
-## Only the party leader (peer 1) can host: inside the zone they see
-## "Press E to host" and E opens the full host menu (world/host_menu.tscn).
-## A joined player instead sees "MUST BE PARTY LEADER" and cannot interact.
+## Inside the zone the local player sees a crosshair HUD prompt ("E MATCH
+## MENU") and E opens the globe menu.  The prompt is a local `InteractionPrompt`
+## built in code, not a Label3D in the map.
 
 const GLOBE_MENU_SCRIPT := preload("res://world/globe_menu.gd")
-
-@onready var prompt_label: Label3D = $PromptLabel
 
 var _players_inside: Array[Player] = []
 var _menu: Node = null
 var _creating := false
+var _prompt: InteractionPrompt = null
 
 
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 	body_exited.connect(_on_body_exited)
-	prompt_label.visible = false
+	_prompt = InteractionPrompt.new()
+	_prompt.name = "HostServerPrompt"
+	get_tree().root.add_child(_prompt)
 	# The menu is deliberately NOT built here.  host_menu._ready() scans every
 	# MapData, and each of those used to force Godot to parse its whole referenced
 	# map scene as an ext_resource -- ~50 MB of synchronous work, 47.7 MB of it
@@ -41,6 +42,9 @@ func _exit_tree() -> void:
 	if _menu and is_instance_valid(_menu):
 		_menu.queue_free()
 		_menu = null
+	if _prompt and is_instance_valid(_prompt):
+		_prompt.queue_free()
+		_prompt = null
 
 
 # ─────────────────────────────────────────────
@@ -86,11 +90,15 @@ func _lobby_staging() -> bool:
 
 
 func _refresh_prompt() -> void:
-	if not _local_player_inside():
-		prompt_label.visible = false
+	if _prompt == null:
 		return
-	prompt_label.visible = true
-	prompt_label.text = "Match Menu (E)"
+	if not _local_player_inside():
+		_prompt.hide_prompt()
+		return
+	if _creating:
+		_prompt.show_note("Creating match…")
+		return
+	_prompt.show_action("Match Menu")
 
 
 # ─────────────────────────────────────────────
@@ -116,7 +124,8 @@ func _create_match_via_lobby() -> void:
 	if _creating:
 		return
 	_creating = true
-	prompt_label.text = "Creating match…"
+	if _prompt:
+		_prompt.show_note("Creating match…")
 	var result: Dictionary = await LobbyClient.create_match()
 	if not result.has("endpoint") or not result.has("grant"):
 		push_error("Lobby create failed: %s" % result.get("error", "unknown"))

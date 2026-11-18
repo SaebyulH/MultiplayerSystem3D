@@ -14,9 +14,9 @@
     "res://maps/dom_castle.tscn": "27403c69503759f4b9e23a34b083e3168c0024462b0dea22be0779d72045dab6",
     "res://maps/dust2scn.scn": "4400649bf0232bc00be3dd099f30565613bb6f1959ab76b596e604a4bc1dc46b",
     "res://maps/esc_castle.tscn": "1e19c3560f5af4f394e1d0087ad1bb42e428d1f48cdb4c4a57a82751fd989218",
-    "res://maps/hyb_castle.tscn": "58186e69f822686effc4dfc8847ae66325ae46d80c43a5c1c81cc0e41a03dda9",
+    "res://maps/hyb_castle.tscn": "9e127bc40bc9732df7d9f98f7d95b9ead7af624356415ffc35bda6a5afbd71ed",
     "res://maps/koth_castle.tscn": "4512a56c5d234325edbaaea0c7aefe7030f4ad8923abcacf9576061533357fcd",
-    "res://maps/main_menu_world.tscn": "8e3c384440db93d5b19ab09e78da6a3b35968c4dd7c5ea29521273b72955fc5a",
+    "res://maps/main_menu_world.tscn": "1af70622832597dd5c0e44a47327178c7a4ebe4453708f38b4ce6eeee4698802",
     "res://maps/map_data/2fort.tres": "5758e9136b293ff251e2e3ef43c7f71802bcb5978d660efa5705123cd2be3188",
     "res://maps/map_data/bind.tres": "6808f473528d46761107dfb0ffe6ecdf5c341c34f705531c9edca1a3549075e8",
     "res://maps/map_data/castle.tres": "27907c3ef5a270fd73ef93292d99a40ed0d384bc149025662372d288c3da60af",
@@ -35,7 +35,7 @@
     "res://maps/map_thumbnail_generator.tscn": "109c2a7695d3c95cc27768ca2913f042042a94c9fe4f4fb3e49860e96278955b",
     "res://maps/underground.tscn": "44fb3b9ba497c5eca11ad804ec81685221d873b052bd0dc37377965465b0dc42"
   },
-  "manifest_sha": "7604ddabc2d58f39a933b31d34d7f81a62299415713f634253ff3a20d45c943d",
+  "manifest_sha": "cd950af4011de86f5255c4f6c187c15f771c7c1f11939186528511a58aaaf9a8",
   "protocol": 2,
   "schema": 1
 }

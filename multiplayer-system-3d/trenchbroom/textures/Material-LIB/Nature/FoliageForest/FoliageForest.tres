@@ -1,0 +1,15 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://crb4cds13qq6u"]
+
+[ext_resource type="Texture2D" uid="uid://b0a3lfgyy6n2l" path="res://trenchbroom/textures/Material-LIB/Nature/FoliageForest/FoliageForest.png" id="1_q1i81"]
+[ext_resource type="Texture2D" uid="uid://cruruj2qb06dw" path="res://trenchbroom/textures/Material-LIB/Nature/FoliageForest/FoliageForest_metallic.png" id="2_sh2hd"]
+[ext_resource type="Texture2D" uid="uid://bf12ovx2bb2qs" path="res://trenchbroom/textures/Material-LIB/Nature/FoliageForest/FoliageForest_normal.png" id="3_elu7g"]
+[ext_resource type="Texture2D" uid="uid://2cuxrquqbohy" path="res://trenchbroom/textures/Material-LIB/Nature/FoliageForest/FoliageForest_roughness.png" id="4_iqc41"]
+
+[resource]
+albedo_texture = ExtResource("1_q1i81")
+metallic_specular = 0.0
+metallic_texture = ExtResource("2_sh2hd")
+roughness_texture = ExtResource("4_iqc41")
+normal_enabled = true
+normal_texture = ExtResource("3_elu7g")
+texture_filter = 2

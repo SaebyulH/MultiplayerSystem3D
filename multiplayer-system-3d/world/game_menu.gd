@@ -363,7 +363,7 @@ func _build_leaderboard_ui() -> void:
 	var title: Label = Label.new()
 	title.text = "LEADERBOARD  //  HOLD TAB"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-	title.add_theme_font_override("font", UITheme.FONT_EXTRABOLD)
+	title.add_theme_font_override("font", UITheme.FONT_DISPLAY)
 	title.add_theme_font_size_override("font_size", 24)
 	title.add_theme_color_override("font_color", Color(0.929, 0.945, 0.961))
 	vbox.add_child(title)

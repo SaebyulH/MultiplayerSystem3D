@@ -5,7 +5,7 @@ The project deliberately splits simulation responsibility. Getting this wrong (e
 ## Topology
 
 - Two topologies coexist during the dedicated-server migration (`docs/07-dedicated-server.md`):
-  - **Default local shell + listen server:** the game boots on an `OfflineMultiplayerPeer`; HostServer converts the process into a listen server (peer 1 is the host player) and JoinParty uses the match-session handshake. No external service.
+  - **Default local shell + listen server:** the game boots on an `OfflineMultiplayerPeer`; HostServer converts the process into a listen server (peer 1 is the host player) and the Match Menu's FIND MATCH tab uses the match-session handshake. No external service.
   - **Match session (`--server` + `--connect`, or a lobbyd match):** a dedicated Godot server where peer 1 is **not** a player. Players have a stable integer `player_id` (node name / score key) separate from the rebindable `owner_peer_id` (ENet peer). Only the local player's movement is predicted on a client; remote players follow server state and are interpolated. Maps load from local files (path + SHA-256 on the wire), and players are added only after the client's world exists. `network/match_session.gd`.
   - **Legacy P2P (`--legacy-p2p`):** the old auto-host behaviour, kept for development.
 - In both topologies the rollback-vs-RPC split below is unchanged. Match sessions additionally set `enable_input_broadcast = false` on the Player synchronizer (inputs go to the server only) and tune `full_state_interval` / `diff_ack_interval` in `Player._ready`.
@@ -62,7 +62,7 @@ The project deliberately splits simulation responsibility. Getting this wrong (e
 
 ```
 state_properties = [
-  ":global_transform", ":velocity", ":stamina",
+  ":global_transform", ":velocity", ":stamina", ":air_control_meter",
   ":dash_held_prev", ":jump_held_prev", ":crouch_held_prev",
   ":air_jumps_used", ":air_dashes_used", ":dash_time", ":active_dash_dir",
   ":dash_grounded", ":dash_jump_locked", ":crouch_tap_timer",
@@ -293,6 +293,7 @@ Rules that fall out of where the stamp is applied:
 - **Both damage fields must be `float`.** `HitboxComponent.health_delta` always was; `ExplosionComponent.splash_health_delta` was declared `:= -75`, which infers **`int`**, so `-90 × 0.17` was stored as `-15` instead of `-15.3` (a 2 % under-count, and worse for smaller amps). It is now `: float = -75.0`; the `.tscn` values stay written as integer literals and coerce fine. Any new per-projectile damage export must be explicitly typed `float` for the same reason.
 - **`PlayerShield` reads the amped value for free**, because `shield.gd:207` absorbs `hitbox.health_delta` directly. That is a consistency win on the server and a divergence on clients — see `05-known-issues.md` #38.
 - **It is not replicated.** The projectile's `MultiplayerSynchronizer` carries only `global_transform` and `shooter_name`, so a client's copy holds the authored damage. Irrelevant for player damage (server-authoritative), but see #38 for the shield.
+- **Ability-fired shots add one more multiplier.** `_ability_damage_mult` is set by `fire_weapon_fire(..., damage_mult)` and folded into the projectile amp **and** both hitscan damage sites. It is always `1.0` on a normal shot (`fire_intent` resets it on the way in), so a normal weapon's authored damage is never touched. Calligraphy passes its drawing score; `WeaponFireAbility.damage_multiplier` passes the ability's authored value (Carpet Bomb: `0.1`, so the rocket launcher's own damage stays intact).
 
 **How this was verified (2026-09-25).** A throwaway headless harness drove the real chain — `_spawn_projectile` → `HitboxComponent._on_hurtbox_entered` / `ExplosionComponent.explode` → `HurtComponent._on_hurt_or_heal` → `AttributeComponent.apply_health_delta` — against real `Player` nodes and real weapon resources, once per character, comparing a Mannequin (`1.0`) shooter against a Stalker (`0.17`):
 
@@ -368,6 +369,7 @@ Self-targeted only, and split by what each flag actually gates:
 | No ability cooldowns | per-peer (`AbilityManager.dev_no_cooldowns`) | local copy + the server's copy (the `_cast_ability` backstop); not broadcast to third parties |
 | Infinite ability meters | per-peer (`AbilityManager.dev_no_meter_drain`) | local copy + the server's copy, same as cooldowns. A running meter reads full in `_meter_at`, so exhaustion and the HUD both see it |
 | Infinite ammo | per-peer (`WeaponController._dev_infinite_ammo`) | local copy + the server's copy (the `fire_intent` backstop); the server refills and broadcasts magazines with `_sync_all_mags`; the setter emits `mag_changed` on **both** transitions, because the HUD ammo readout is signal-driven and turning the hack off changes no magazine |
+| Range infinite ammo | every peer (`WeaponController._range_infinite_ammo`) | server-owned grant from `PracticeRange` (not a dev cheat); `Player.set_range_infinite_ammo` broadcasts `@rpc("authority", "call_local", "reliable") _sync_range_infinite_ammo` so the owner's HUD "∞" and reload/switch checks agree with the server backstop. A **separate** flag from the dev hack, so ending a run never clears a dev toggle; both feed `weapon_has_infinite_ammo` |
 | Infinite stamina | every peer (rollback state) | the server broadcasts `@rpc("authority", "call_local")`; `_apply_movement_from_input` tops the pool up before any gate |
 | Dev noclip | every peer (rollback movement) | the server broadcasts `@rpc("authority", "call_local", "reliable") _sync_dev_noclip`; every peer must simulate the same movement mode. The client does **not** set it optimistically |
 | Bots ignore me | local copy + the server's copy | bots simulate only on peer 1, so the client sends an owner-gated request; not broadcast to third parties |
@@ -417,6 +419,8 @@ Instant abilities, passive buffs and targeted effects on someone else return emp
 
 - The world's `MultiplayerSpawner` is `world/world1.tscn:95-97`: `spawn_path = "../SpawnParent"`, `_spawnable_scenes` = 13 uids (player + all maps + lobby). It replicates whatever node named `"Map"` is in `SpawnParent`, plus every `Player` node `SpawnManager` adds there.
 - Map swap is server-authoritative with no RPC — see `01-boot-sequence.md` Stage 11.
+- **Practice targets are ordinary `player.tscn` spawns under `SpawnParent`.** `world/special_entities/practice_target_spawn.gd` (map marker) and `world/practice_range.gd` (timed range) both add a Player exactly the way `SpawnManager` adds a bot, so the world spawner replicates it; the match-session restriction to `player.tscn` still applies and still works. The target sets `is_bot = true` (server-only; suppresses input gathering, the first-person HUD and cameras) and removes its `BotController` before entry, so nothing thinks. **`is_practice_target` is a replicated root property** (`player/player.tscn`): unlike `is_bot`, clients need it for roster/spectator/team filters, and a client copy has `is_bot == false`. Targets never call the Leaderboard (no damage/kill/death entries, no kill feed, no Deathmatch count) and never regen; `AttributeComponent.practice_target_died` is emitted **before** `health = new_health`, so a listener acts before the synchronous `no_health` → `rpc_reset` respawn. `Player.spawn_transform_provider` (server-only, `Callable.is_valid()` guarded) supplies the respawn transform instead of the map's random spawn. A `PracticeTargetSpawn` marker (the placable "bot that stands there") and a `PracticeRange` run target are **separate dummies**. The marker owns its own Player and respawns it at the marker; the range creates a run target in `_try_start`, respawns it at a new random point after every kill, and frees it when the run ends (or aborts). Markers are never adopted by a range. **Practice targets use a fixed `Player.PRACTICE_RESPAWN_DELAY` (0.1 s) on every peer, never `respawn_time` and never 0:** the queued spawn has to survive a few rollback ticks so netfox's history records the new position. At 0 the rollback tick re-applied the pre-death state and the dummy appeared to stay where it died even though the kill counter advanced. `PracticeRange._verify_respawn` is the backstop: four physics ticks after a death it forces `rpc_reset` with a fresh point if the target is still dead or has not moved. A `PracticeTargetSpawn` marker that stands inside a range is also adopted (`_adopt_range_dummies`); markers outside the range keep respawning on their marker.
+- **The shared range is server-owned.** Its start request is `@rpc("any_peer", "call_remote", "reliable")`, validated with `MatchSession.player_id_string_for_peer(sender)` + `Player.is_owned_by_peer(sender)` + server-side zone occupancy. Progress/result are `@rpc("authority", ...)` broadcasts; the elapsed time is read from the server clock and used verbatim in the result, while clients interpolate the live label between progress messages. One run at a time; any player's kills count. The progress and result payloads also carry the server's `_last_ms` / `_best_ms`, so every peer's zone prompt can show the last and best times (the server owns those numbers; a client never derives them). **While a run is live the zone grants infinite ammo to every real player inside it** — `_sync_range_ammo` reconciles on start/end and on body enter/exit, and `_clear_range_ammo` runs from finish, abort, target loss and `_exit_tree`, so a map swap cannot leave the grant on. The grant is the `Player` broadcast above, deliberately separate from the dev flag.
 - **`spawnable_scenes` requirement:** any scene spawned under a spawner's `spawn_path` must have its uid in `_spawnable_scenes`, or it won't replicate. Any map the scanner returns must be in the list.
 - **Resolution is by scene file path, not by index arithmetic.** `MultiplayerSpawner` matches the spawned node's `scene_file_path` against each entry's `Resource.get_path()` to pick the index that goes on the wire. A scene that is not a file on disk — notably an **inline `SubResource` `PackedScene`** — can never match, so it either fails to replicate or resolves to whatever its base scene is. That is known-issues #28: `rocket_launcher.tres` and `syringe_gun.tres` stored their projectiles as inline bundles whose base was the mesh-less `simple_projectile.tscn`, so remote peers instantiated an invisible projectile.
 - **Projectiles** are replicated by a **single world-level** `MultiplayerSpawner`: `world/world1.tscn` `ProjectilesParent/ProjectileSpawner` (`spawn_path = ".."`, 17 uids), reached through `GameManager.projectile_parent` (set in `world_1.gd:_ready()`, resolved in `WeaponController._projectile_parent()`). Projectiles are **not** parented to the Player that fired them — `Player.despawn()`'s `hide()` would cascade to them and a disconnect would free them.
@@ -472,7 +476,7 @@ Instant abilities, passive buffs and targeted effects on someone else return emp
 
 ### HealAbility — instant vs. channeled (`player/abilities/heal_ability.gd`)
 
-`HealAbility` has two modes, switched by `heal_over_time` (default **false** = the original instant heal; `heal.tres`, `breacher.tres` and `governess.tres` all keep that default, so this changed nothing for existing characters).
+`HealAbility` has two modes, switched by `heal_over_time` (default **false** = the original instant heal; `heal.tres` and `governess.tres` keep that default, so this changed nothing for existing characters). FlyGirl used to carry the instant heal and now carries Air Control instead (below).
 
 - **Instant:** `change_health(heal_amount, player.name)` — one `apply_health_delta`, one self-heal credit.
 - **Over time:** builds a `HealOverTimeEffect.new()` **per cast** and hands it to `apply_effect`. It is not authored as a `.tres` under `defaults/status_effects/`: `total_heal`, `base_duration`, `tick_interval` and `blocks_actions` are per-cast values taken off the ability, and an ability is a `Resource` shared by every player of that class (CLAUDE.md — duplicate mutable per-instance state).
@@ -708,6 +712,51 @@ amber once there is something to spend, matching the charge bars.
 **Not exercised:** a real two-peer session (the harness opens a local loopback server peer to make
 `StatusEffectManager` accept effects, but there is no second peer), and the movement/gameplay half of
 noclip itself, which is unchanged by this feature.
+
+### Air Control — a metered ability whose pool is rollback state
+
+Added 2026-11-18. `AirControlAbility` (`player/abilities/air_control_ability.gd`,
+`air_control.tres`) replaces FlyGirl's first ability (the instant heal). It is the **first passive
+metered ability**: it shares `MeteredAbility`'s exports and HUD shape, but it is never cast — the
+movement simulation drives it.
+
+**It drains by *how much* you air-strafe, not merely for holding a direction in the air.**
+`Player._air_strafe_factor` returns `1 - |dot(hvel.normalized(), wish_dir)|` while airborne with
+horizontal speed above `AIR_STRAFE_MIN_SPEED` (0.5 m/s): **0 when the input is aligned with travel**
+(holding W while looking forward — this is ordinary air acceleration, not a strafe), **1 when it is
+perpendicular** (the classic strafe/turn), and the sine of the angle in between. A near-zero
+horizontal speed returns 0, so the first push out of a standing jump does not count either.
+`_update_air_control_meter` then drains at `1 s/s × factor` and refills at
+`max_meter / recharge_seconds` whenever the factor is 0 (grounded, no input, aligned, or too slow).
+Authored: 3 s pool, 9 s recharge. With any meter
+left, the character's own `air_accel_mult` / `air_speed_cap_mult` apply (FlyGirl's 2.0 / 2.0); at 0
+m the multipliers are **replaced** by `depleted_air_accel_mult` / `depleted_air_speed_cap_mult`
+(0.5 / 0.5, Juggernaut's values) until it recharges. Replacing rather than scaling is deliberate: an
+empty pool must mean the same air control on every character.
+
+**The pool is rollback state on the Player, not AbilityManager's per-peer pool.** `_air_accelerate`
+runs inside `_rollback_tick`, so the server and the owning client must derive the same value from the
+same inputs and tick delta; the metered-ability pool is explicitly local per peer (≈ ½ RTT of drift),
+which would make the two predicting peers disagree about the player's air control. `air_control_meter`
+is therefore in the `RollbackSynchronizer`'s `state_properties` (`player.tscn`) and is reset full in
+`_refresh_air_control_ability()` (from `set_character`) and `_reset_movement_tech()` (respawn).
+`AbilityManager.get_meter_fraction` / `is_meter_active` **delegate** to the Player for this class, so
+the HUD bar shows the rollback value; the local meter pool the manager still allocates for the slot is
+unused. `dev_no_meter_drain` is honoured inside the rollback drain (it is set on the owner and server
+copies, the two peers that simulate this player). The `is_meter_active` answer is cosmetic: it reads
+`_air_strafe_draining`, a display-only flag set by the last simulated tick — the authoritative value
+is the rollback drain itself.
+
+**`Ability.is_castable()` is false for it.** `AbilityManager` refuses it at every cast entry point
+(key, `_request_cast`, and the server's `_cast_ability` backstop), so a press cannot toggle a phantom
+local meter. Bots holding FlyGirl run the same simulation, so an emptied pool also weakens bot air
+control on the server.
+
+**Verified 2026-11-18** with `res://verification/air_control_harness.tscn` (23/23): resource config,
+full start, proportional drain (perpendicular = full rate, aligned W = none, 45° diagonal = sine of
+the angle, below the speed threshold = none), refill rate, clamp at 0, the full-vs-empty
+air-acceleration step, HUD delegation, the drain flag, and the refused cast. **Not exercised:** a real two-peer session, so the new state
+property's reconciliation is untested — `05-known-issues.md` #150.
 
 ### Calligraphy — three phases, a fire lock that is not an input lockout, and a client-supplied score
 

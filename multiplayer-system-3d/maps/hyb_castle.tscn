@@ -29,7 +29,7 @@
 [ext_resource type="VoxelGIData" uid="uid://olwpqincyp8m" path="res://maps/voxel_GI/hyb_castle.VoxelGI_data.res" id="27_taxs3"]
 [ext_resource type="PackedScene" path="res://world/payload/payload_path.tscn" id="28_ferhk"]
 [ext_resource type="Script" uid="uid://bd3y5sf5jqdp3" path="res://world/payload/payload_path_line.gd" id="30_np21s"]
-[ext_resource type="Texture2D" uid="uid://cypkap56vso1x" path="res://backup/trenchbroom/textures/Material-LIB/MetalCracked/MetalCracked[Silver].png" id="31_vu70u"]
+[ext_resource type="Texture2D" uid="uid://d00p8k1uxpxva" path="res://trenchbroom/textures/Material-LIB/MetalCracked/MetalCracked[Silver].png" id="31_vu70u"]
 [ext_resource type="Texture2D" uid="uid://bnp7egcxsaaua" path="res://trenchbroom/textures/FreeStylized/wood_planks_22_1k/wood_planks_22_basecolor_1k.png" id="32_dk6f4"]
 
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_wnf2b"]

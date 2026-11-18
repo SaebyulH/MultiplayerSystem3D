@@ -300,7 +300,7 @@ func _get_bots() -> Array:
 	if not is_instance_valid(GameManager.spawn_parent):
 		return out
 	for child in GameManager.spawn_parent.get_children():
-		if child is Player and child.is_bot and not child.is_queued_for_deletion():
+		if child is Player and child.is_bot and not child.is_practice_target and not child.is_queued_for_deletion():
 			out.append(child)
 	# Canonical team order: SPI, then SCI, then FFA.  Names keep same-team bots
 	# stable between refreshes.

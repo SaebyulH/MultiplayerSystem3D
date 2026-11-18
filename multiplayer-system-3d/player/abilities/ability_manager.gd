@@ -404,6 +404,11 @@ func get_charge_bank_fraction(index: int) -> float:
 ## [MeteredAbility] — callers gate on the ability type themselves, so this is only
 ## ever drawn for a slot that has one.
 func get_meter_fraction(index: int) -> float:
+	# A passive metered ability's pool is rollback state on the Player, not this
+	# per-peer clock — the movement sim reads it every predicting peer.  Delegate
+	# so the HUD cannot show a different pool than the one gating air control.
+	if _ability_at(index) is AirControlAbility and _parent_player != null:
+		return _parent_player.get_air_control_meter_fraction()
 	var full := _max_meter_of(index)
 	if full <= 0.0:
 		return 0.0
@@ -412,6 +417,11 @@ func get_meter_fraction(index: int) -> float:
 ## Whether slot [param index]'s meter is currently running.  Drives the HUD's
 ## "in use" colour and the disc's bright state.
 func is_meter_active(index: int) -> bool:
+	# Same delegation as get_meter_fraction: the air-control meter is draining
+	# exactly while the rollback sim counted an actual strafe last tick (not
+	# merely airborne input — see Player._air_strafe_factor).
+	if _ability_at(index) is AirControlAbility:
+		return _parent_player != null and _parent_player.is_air_control_draining()
 	if index < 0 or index >= _meter_active.size():
 		return false
 	return _meter_active[index]
@@ -577,6 +587,9 @@ func _on_ability_key(index: int) -> void:
 	if ability == null:
 		print("[Ability] ability ", index, " is null")
 		return
+	# Passive abilities (air control) are driven by the simulation, not a key.
+	if not ability.is_castable():
+		return
 	# Only abilities that opt in can be used while dead (despawned).
 	if not _parent_player.spawned and not ability.can_be_used_while_dead:
 		return
@@ -609,6 +622,9 @@ func _request_cast(index: int, mode: int) -> bool:
 		return false
 	var ability: Ability = abilities[index]
 	if ability == null:
+		return false
+	# Passive abilities are never cast; their effect lives in the movement sim.
+	if not ability.is_castable():
 		return false
 	# Only abilities that opt in can be used while dead (despawned).
 	if not _parent_player.spawned and not ability.can_be_used_while_dead:
@@ -699,6 +715,9 @@ func _cast_ability(index: int, mode: int, target_names: Array = [], want_on: boo
 		return
 	var ability: Ability = abilities[index]
 	if ability == null:
+		return
+	# Server backstop for passive abilities: there is nothing to cast.
+	if not ability.is_castable():
 		return
 	# Server backstop: reject casts while despawned unless the ability opts in.
 	if not _parent_player.spawned and not ability.can_be_used_while_dead:

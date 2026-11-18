@@ -59,7 +59,7 @@ var _tracer_scene: PackedScene = preload("res://weapon/tracer.tscn")
 var _bullet_impact_scene: PackedScene = preload("res://effects/bullet_impact.tscn")
 var _bullet_hole_texture: Texture2D = preload("res://effects/bullet_hole.png")
 var _scratch_texture: Texture2D = preload("res://assets/scratch.png")
-var _hit_sound: AudioStream = preload("res://assets/sounds/free_sounds/hitsounds/universfield-punch-impact-hit-567196.mp3")
+var _hit_sound: AudioStream = preload("res://assets/sounds/hitmarker_tick.wav")
 var _hit_heal_sound: AudioStream = preload("res://assets/sounds/medkit_sound.mp3")
 var _crit_sound: AudioStream = preload("res://assets/sounds/free_sounds/hitsounds/u_68csiaifb5-bulletimpact3-442719.mp3")
 
@@ -166,8 +166,9 @@ var _scoped_charge_time: float = 0.0
 ## Damage-amp multiplier captured for the current shot (1.0 = no amp).  Reset to
 ## 1.0 for ability-fired shots so they never inherit the scoped amp.
 var _current_shot_amp_mult: float = 1.0
-## Extra damage multiplier for an ability-fired shot — the calligraphy score.  Set
-## by fire_weapon_fire and folded into the projectile amp in _spawn_projectile.
+## Extra damage multiplier for an ability-fired shot — the calligraphy score or
+## WeaponFireAbility.damage_multiplier.  Set by fire_weapon_fire, folded into the
+## projectile amp in _spawn_projectile and into both hitscan damage sites.
 ##
 ## A member rather than a parameter threaded down because the projectile path
 ## (_fire_projectile -> _spawn_projectile) is also reached from the normal fire
@@ -733,11 +734,16 @@ func _emit_weapon_changed() -> void:
 ## rebuild, so the override has to live outside them.
 var _dev_infinite_ammo := false
 
+## Target-range override: granted by `PracticeRange` for the duration of a run
+## and held separately from the dev flag, so ending a run never clears a hack
+## the dev menu turned on.
+var _range_infinite_ammo := false
 
-## Whether [param weapon] is infinite right now — its own authored flag or the
-## dev-menu override.  Every ammo/reload check goes through this.
+
+## Whether [param weapon] is infinite right now — its own authored flag or one
+## of the overrides.  Every ammo/reload check goes through this.
 func weapon_has_infinite_ammo(weapon: Weapon) -> bool:
-	return weapon.has_infinite_ammo or _dev_infinite_ammo
+	return weapon.has_infinite_ammo or _dev_infinite_ammo or _range_infinite_ammo
 
 
 func is_dev_infinite_ammo() -> bool:
@@ -755,9 +761,22 @@ func set_dev_infinite_ammo(on: bool) -> void:
 	if _dev_infinite_ammo == on:
 		return
 	_dev_infinite_ammo = on
+	_on_infinite_ammo_override_changed(on)
+
+
+## Target-range override, same refill/hud behaviour as the dev hack.  Driven by
+## `Player.set_range_infinite_ammo`, which broadcasts it to every peer.
+func set_range_infinite_ammo(on: bool) -> void:
+	if _range_infinite_ammo == on:
+		return
+	_range_infinite_ammo = on
+	_on_infinite_ammo_override_changed(on)
+
+
+func _on_infinite_ammo_override_changed(turned_on: bool) -> void:
 	if _weapons.is_empty():
 		return
-	if on:
+	if turned_on:
 		var mags: Array[int] = []
 		for w in _weapons:
 			w.mag_current = w.mag_size
@@ -2391,8 +2410,8 @@ func refresh_holstered() -> void:
 ## Runs on the server; the ability's activate() hook is already server-side.
 ##
 ## [param damage_mult] scales the shot's damage on top of the character's own amp.
-## Left at 1.0 by everything except the calligraphy throw, which passes its
-## drawing score.
+## Calligraphy passes its drawing score; WeaponFireAbility passes its authored
+## damage_multiplier (Carpet Bomb's 0.1); everything else leaves it at 1.0.
 func fire_weapon_fire(fire: WeaponFire, interrupt_shooting: bool = true, ability_name: String = "", damage_mult: float = 1.0) -> void:
 	if not fire:
 		return
@@ -2890,7 +2909,7 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 				else:
 					var distance := origin.distance_to(result.position)
 					var mult := _compute_falloff_multiplier(weapon, weapon_fire_index, distance)
-					var damage := weapon_fire.hitscan_damage * mult * _current_shot_amp_mult * _charge_damage_mult()
+					var damage := weapon_fire.hitscan_damage * mult * _current_shot_amp_mult * _charge_damage_mult() * _ability_damage_mult
 					var is_headshot := false
 					if (collider as HurtboxComponent).is_head and not is_equal_approx(weapon_fire.headshot_multiplier, 1.0):
 						damage *= weapon_fire.headshot_multiplier
@@ -2952,7 +2971,7 @@ func _apply_shape_damage(weapon: Weapon, weapon_fire_index: int, shape_hits: Dic
 		var collider: HurtboxComponent = hit["collider"]
 		var distance: float = hit["distance"]
 		var mult: float = _compute_falloff_multiplier(weapon, weapon_fire_index, distance)
-		var damage: float = weapon_fire.hitscan_damage * mult * _current_shot_amp_mult * _charge_damage_mult()
+		var damage: float = weapon_fire.hitscan_damage * mult * _current_shot_amp_mult * _charge_damage_mult() * _ability_damage_mult
 		var is_headshot := false
 		if hit["is_head"] and not is_equal_approx(weapon_fire.headshot_multiplier, 1.0):
 			damage *= weapon_fire.headshot_multiplier

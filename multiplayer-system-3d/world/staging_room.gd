@@ -636,6 +636,11 @@ func _normalize_teams_if_needed(path: String) -> void:
 		if not child is Player:
 			continue
 		var p := child as Player
+		# A practice target lives in SpawnParent but is not a participant.  Left
+		# in, team normalization would retag it SPI/SCI and friendly fire would
+		# silently turn damage off.
+		if p.is_practice_target:
+			continue
 		if counts.has(int(p.team)):
 			counts[int(p.team)] += 1
 		else:
@@ -683,6 +688,8 @@ func _refresh_roster(path: String) -> void:
 		if not child is Player:
 			continue
 		var p := child as Player
+		if p.is_practice_target:
+			continue
 		var pid := str(p.name).to_int()
 		var raw_team := p.team if by_team.has(p.team) else Player.Team.FFA
 		# A player still on a mode-invalid team (first frame before the server

@@ -1,54 +1,18 @@
-[gd_scene format=3 uid="uid://dmibwgb7msfrf"]
+[gd_scene load_steps=6 format=3 uid="uid://dmibwgb7msfrf"]
 
 [ext_resource type="Script" uid="uid://cy5ftw8ias1tn" path="res://world/loadout_menu.gd" id="1_loadout"]
 [ext_resource type="PackedScene" path="res://world/character_subviewport_preview.tscn" id="2_charprev"]
-[ext_resource type="FontFile" path="res://assets/fonts/Montserrat/static/Montserrat-SemiBold.ttf" id="3_font"]
+[ext_resource type="Script" path="res://world/loadout/loadout_preview_rig.gd" id="3_rig"]
+[ext_resource type="Script" path="res://world/loadout/weapon_popover.gd" id="4_popover"]
 
-[sub_resource type="StyleBoxFlat" id="panel_style"]
-content_margin_left = 10.0
-content_margin_top = 10.0
-content_margin_right = 10.0
-content_margin_bottom = 10.0
-bg_color = Color(0.067, 0.086, 0.114, 0.88)
-border_width_left = 1
+[sub_resource type="StyleBoxFlat" id="strip_style"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+bg_color = Color(0.067, 0.086, 0.114, 0.82)
 border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
 border_color = Color(0.165, 0.196, 0.239, 1)
-
-[sub_resource type="StyleBoxFlat" id="wrap_style"]
-resource_local_to_scene = true
-bg_color = Color(0.043, 0.055, 0.075, 0.5)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.165, 0.196, 0.239, 1)
-
-[sub_resource type="StyleBoxFlat" id="picker_style"]
-content_margin_left = 24.0
-content_margin_top = 20.0
-content_margin_right = 24.0
-content_margin_bottom = 24.0
-bg_color = Color(0.043, 0.055, 0.075, 0.97)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.176, 0.831, 0.749, 1)
-
-[sub_resource type="StyleBoxFlat" id="header_style"]
-content_margin_left = 10.0
-content_margin_top = 5.0
-content_margin_right = 10.0
-content_margin_bottom = 5.0
-bg_color = Color(0.102, 0.125, 0.161, 0.9)
-border_width_left = 3
-border_color = Color(1, 0.275, 0.333, 1)
-
-[sub_resource type="FontVariation" id="header_font"]
-base_font = ExtResource("3_font")
-spacing_glyph = 2
 
 [node name="LoadoutMenu" type="Control" unique_id=1926619931]
 layout_mode = 3
@@ -59,281 +23,160 @@ script = ExtResource("1_loadout")
 layer = 2
 
 [node name="Dim" type="ColorRect" parent="LoadoutMenuCanvas" unique_id=808155786]
+layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0, 0.02, 0.06, 0.78)
+color = Color(0.043, 0.055, 0.075, 0.94)
 
 [node name="Root" type="MarginContainer" parent="LoadoutMenuCanvas" unique_id=1970619532]
+layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 16
+theme_override_constants/margin_top = 18
 theme_override_constants/margin_right = 24
-theme_override_constants/margin_bottom = 110
+theme_override_constants/margin_bottom = 18
 
 [node name="Col" type="VBoxContainer" parent="LoadoutMenuCanvas/Root" unique_id=1990656511]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 8
 
-[node name="Title" type="Label" parent="LoadoutMenuCanvas/Root/Col" unique_id=2017952308]
+[node name="Header" type="HBoxContainer" parent="LoadoutMenuCanvas/Root/Col" unique_id=456550114]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.929, 0.945, 0.961, 1)
-theme_override_fonts/font = SubResource("header_font")
-theme_override_font_sizes/font_size = 30
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="LoadoutMenuCanvas/Root/Col/Header" unique_id=2017952308]
+layout_mode = 2
 text = "AGENTS  //  LOADOUT"
-horizontal_alignment = 0
 
-[node name="ModeLabel" type="Label" parent="LoadoutMenuCanvas/Root/Col" unique_id=1603525625]
+[node name="Spacer" type="Control" parent="LoadoutMenuCanvas/Root/Col/Header" unique_id=828655902]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.541, 0.58, 0.639, 1)
-theme_override_font_sizes/font_size = 14
-horizontal_alignment = 0
+size_flags_horizontal = 3
+
+[node name="ModeLabel" type="Label" parent="LoadoutMenuCanvas/Root/Col/Header" unique_id=1603525625]
+layout_mode = 2
+horizontal_alignment = 2
+vertical_alignment = 1
 
 [node name="MainRow" type="HBoxContainer" parent="LoadoutMenuCanvas/Root/Col" unique_id=1151837365]
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/separation = 12
+theme_override_constants/separation = 16
 
-[node name="CharacterPanel" type="PanelContainer" parent="LoadoutMenuCanvas/Root/Col/MainRow" unique_id=300346252]
+[node name="TeamPanel" type="PanelContainer" parent="LoadoutMenuCanvas/Root/Col/MainRow" unique_id=300346252]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="LoadoutMenuCanvas/Root/Col/MainRow/TeamPanel" unique_id=9366726]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="PreviewPanel" type="VBoxContainer" parent="LoadoutMenuCanvas/Root/Col/MainRow" unique_id=867736845]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_styles/panel = SubResource("panel_style")
-
-[node name="VBox" type="VBoxContainer" parent="LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel" unique_id=9366726]
-layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="Header" type="PanelContainer" parent="LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox" unique_id=456982347]
+[node name="OperativeLabel" type="Label" parent="LoadoutMenuCanvas/Root/Col/MainRow/PreviewPanel" unique_id=1603525626]
 layout_mode = 2
-theme_override_styles/panel = SubResource("header_style")
+text = "OPERATIVE 01 / 01"
 
-[node name="Label" type="Label" parent="LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/Header"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_fonts/font = SubResource("header_font")
-theme_override_font_sizes/font_size = 14
-text = "AGENT"
-horizontal_alignment = 1
-
-[node name="Wrap" type="Panel" parent="LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox" unique_id=229275701]
+[node name="PreviewFrame" type="Control" parent="LoadoutMenuCanvas/Root/Col/MainRow/PreviewPanel" unique_id=1718239696]
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_styles/panel = SubResource("wrap_style")
 
-[node name="Svc" type="SubViewportContainer" parent="LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/Wrap" unique_id=1572047746]
-layout_mode = 0
+[node name="Svc" type="SubViewportContainer" parent="LoadoutMenuCanvas/Root/Col/MainRow/PreviewPanel/PreviewFrame" unique_id=1572047746]
+layout_mode = 1
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 0
 stretch = true
 
-[node name="CharacterViewport" type="SubViewport" parent="LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/Wrap/Svc" unique_id=1694170062]
+[node name="CharacterViewport" type="SubViewport" parent="LoadoutMenuCanvas/Root/Col/MainRow/PreviewPanel/PreviewFrame/Svc" unique_id=1694170062]
 own_world_3d = true
 transparent_bg = true
 handle_input_locally = false
-size = Vector2i(442, 740)
+size = Vector2i(600, 900)
 render_target_update_mode = 4
 
-[node name="Node3D" parent="LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/Wrap/Svc/CharacterViewport" unique_id=1522238115 instance=ExtResource("2_charprev")]
+[node name="Node3D" parent="LoadoutMenuCanvas/Root/Col/MainRow/PreviewPanel/PreviewFrame/Svc/CharacterViewport" unique_id=1522238115 instance=ExtResource("2_charprev")]
 
-[node name="ChangeAgentOverlay" type="Label" parent="LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/Wrap" unique_id=1561621355]
-visible = false
-layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-theme_override_colors/font_color = Color(0.95, 0.95, 0.95, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 8
-theme_override_font_sizes/font_size = 24
-text = "CHANGE AGENT"
-horizontal_alignment = 1
-vertical_alignment = 1
+[node name="PreviewRig" type="Node3D" parent="LoadoutMenuCanvas/Root/Col/MainRow/PreviewPanel/PreviewFrame/Svc/CharacterViewport/Node3D" unique_id=1522238116]
+script = ExtResource("3_rig")
 
-[node name="CharacterNameLabel" type="Label" parent="LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox" unique_id=1609807803]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.929, 0.945, 0.961, 1)
-theme_override_fonts/font = SubResource("header_font")
-theme_override_font_sizes/font_size = 20
-horizontal_alignment = 1
-
-[node name="LoadoutPanel" type="PanelContainer" parent="LoadoutMenuCanvas/Root/Col/MainRow" unique_id=867736845]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_stretch_ratio = 2.0
-theme_override_styles/panel = SubResource("panel_style")
-
-[node name="VBox" type="VBoxContainer" parent="LoadoutMenuCanvas/Root/Col/MainRow/LoadoutPanel" unique_id=1938390696]
-layout_mode = 2
-theme_override_constants/separation = 6
-
-[node name="Cols" type="HBoxContainer" parent="LoadoutMenuCanvas/Root/Col/MainRow/LoadoutPanel/VBox" unique_id=1822975593]
-layout_mode = 2
-size_flags_vertical = 3
-theme_override_constants/separation = 10
-
-[node name="SecondaryColumn" type="VBoxContainer" parent="LoadoutMenuCanvas/Root/Col/MainRow/LoadoutPanel/VBox/Cols" unique_id=1718239696]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_stretch_ratio = 0.65
-size_flags_vertical = 3
-theme_override_constants/separation = 6
-
-[node name="Header" type="PanelContainer" parent="LoadoutMenuCanvas/Root/Col/MainRow/LoadoutPanel/VBox/Cols/SecondaryColumn" unique_id=1436417090]
-layout_mode = 2
-theme_override_styles/panel = SubResource("header_style")
-
-[node name="Label" type="Label" parent="LoadoutMenuCanvas/Root/Col/MainRow/LoadoutPanel/VBox/Cols/SecondaryColumn/Header"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_fonts/font = SubResource("header_font")
-theme_override_font_sizes/font_size = 14
-text = "SECONDARY"
-horizontal_alignment = 1
-
-[node name="Scroll" type="ScrollContainer" parent="LoadoutMenuCanvas/Root/Col/MainRow/LoadoutPanel/VBox/Cols/SecondaryColumn" unique_id=1812866393]
-layout_mode = 2
-size_flags_vertical = 3
-horizontal_scroll_mode = 0
-
-[node name="List" type="VBoxContainer" parent="LoadoutMenuCanvas/Root/Col/MainRow/LoadoutPanel/VBox/Cols/SecondaryColumn/Scroll" unique_id=1739196556]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 8
-
-[node name="PrimaryColumn" type="VBoxContainer" parent="LoadoutMenuCanvas/Root/Col/MainRow/LoadoutPanel/VBox/Cols" unique_id=88093523]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_stretch_ratio = 1.0
-size_flags_vertical = 3
-theme_override_constants/separation = 6
-
-[node name="Header" type="PanelContainer" parent="LoadoutMenuCanvas/Root/Col/MainRow/LoadoutPanel/VBox/Cols/PrimaryColumn" unique_id=1960519402]
-layout_mode = 2
-theme_override_styles/panel = SubResource("header_style")
-
-[node name="Label" type="Label" parent="LoadoutMenuCanvas/Root/Col/MainRow/LoadoutPanel/VBox/Cols/PrimaryColumn/Header"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_fonts/font = SubResource("header_font")
-theme_override_font_sizes/font_size = 14
-text = "PRIMARY"
-horizontal_alignment = 1
-
-[node name="Scroll" type="ScrollContainer" parent="LoadoutMenuCanvas/Root/Col/MainRow/LoadoutPanel/VBox/Cols/PrimaryColumn" unique_id=42737836]
-layout_mode = 2
-size_flags_vertical = 3
-horizontal_scroll_mode = 0
-
-[node name="List" type="VBoxContainer" parent="LoadoutMenuCanvas/Root/Col/MainRow/LoadoutPanel/VBox/Cols/PrimaryColumn/Scroll" unique_id=2064550047]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 8
-
-[node name="MeleeColumn" type="VBoxContainer" parent="LoadoutMenuCanvas/Root/Col/MainRow/LoadoutPanel/VBox/Cols" unique_id=1285226683]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_stretch_ratio = 0.65
-size_flags_vertical = 3
-theme_override_constants/separation = 6
-
-[node name="Header" type="PanelContainer" parent="LoadoutMenuCanvas/Root/Col/MainRow/LoadoutPanel/VBox/Cols/MeleeColumn" unique_id=1666941483]
-layout_mode = 2
-theme_override_styles/panel = SubResource("header_style")
-
-[node name="Label" type="Label" parent="LoadoutMenuCanvas/Root/Col/MainRow/LoadoutPanel/VBox/Cols/MeleeColumn/Header"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_fonts/font = SubResource("header_font")
-theme_override_font_sizes/font_size = 14
-text = "MELEE"
-horizontal_alignment = 1
-
-[node name="Scroll" type="ScrollContainer" parent="LoadoutMenuCanvas/Root/Col/MainRow/LoadoutPanel/VBox/Cols/MeleeColumn" unique_id=1862948022]
-layout_mode = 2
-size_flags_vertical = 3
-horizontal_scroll_mode = 0
-
-[node name="List" type="VBoxContainer" parent="LoadoutMenuCanvas/Root/Col/MainRow/LoadoutPanel/VBox/Cols/MeleeColumn/Scroll" unique_id=55782168]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 8
-
-[node name="InfoPanel" type="PanelContainer" parent="LoadoutMenuCanvas/Root/Col/MainRow" unique_id=1832622325]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_styles/panel = SubResource("panel_style")
-
-[node name="VBox" type="VBoxContainer" parent="LoadoutMenuCanvas/Root/Col/MainRow/InfoPanel" unique_id=236233394]
-layout_mode = 2
-theme_override_constants/separation = 6
-
-[node name="Header" type="PanelContainer" parent="LoadoutMenuCanvas/Root/Col/MainRow/InfoPanel/VBox" unique_id=838422601]
-layout_mode = 2
-theme_override_styles/panel = SubResource("header_style")
-
-[node name="Label" type="Label" parent="LoadoutMenuCanvas/Root/Col/MainRow/InfoPanel/VBox/Header"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_fonts/font = SubResource("header_font")
-theme_override_font_sizes/font_size = 14
-text = "INFO"
-horizontal_alignment = 1
-
-[node name="InfoLabel" type="RichTextLabel" parent="LoadoutMenuCanvas/Root/Col/MainRow/InfoPanel/VBox" unique_id=1854972228]
-layout_mode = 2
-size_flags_vertical = 3
-theme_override_colors/default_color = Color(0.82, 0.84, 0.86, 1)
-theme_override_font_sizes/normal_font_size = 13
-bbcode_enabled = true
-fit_content = true
-
-[node name="AbilitySlotsHbox" type="HBoxContainer" parent="LoadoutMenuCanvas" unique_id=1674520332]
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -160.0
-offset_top = -110.0
-offset_right = 160.0
-offset_bottom = -16.0
-theme_override_constants/separation = 16
-alignment = 1
-
-[node name="ActionBar" type="VBoxContainer" parent="LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox" unique_id=1047146190]
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="RandomizeOnceButton" type="Button" parent="LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/ActionBar" unique_id=1273385815]
-layout_mode = 2
-theme_override_font_sizes/font_size = 13
-text = "RANDOMIZE"
-
-[node name="RandomizeOnDeathCheck" type="CheckBox" parent="LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/ActionBar" unique_id=1435045485]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.541, 0.58, 0.639, 1)
-theme_override_font_sizes/font_size = 13
-text = "Randomize on every death"
-
-[node name="ConfirmButton" type="Button" parent="LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/ActionBar" unique_id=135613251]
-layout_mode = 2
-theme_override_font_sizes/font_size = 18
-disabled = true
-text = "LOCK IN"
-
-[node name="LeavePartyButton" type="Button" parent="LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/ActionBar" unique_id=1288852290]
-layout_mode = 2
-theme_override_font_sizes/font_size = 13
-text = "LEAVE PARTY"
-
-[node name="CharacterPicker" type="PanelContainer" parent="LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/Wrap" unique_id=1296227671]
-visible = false
+[node name="Brackets" type="Control" parent="LoadoutMenuCanvas/Root/Col/MainRow/PreviewPanel/PreviewFrame" unique_id=838422601]
+layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-theme_override_styles/panel = SubResource("picker_style")
+mouse_filter = 2
 
-[node name="VBox" type="VBoxContainer" parent="LoadoutMenuCanvas/Root/Col/MainRow/CharacterPanel/VBox/Wrap/CharacterPicker" unique_id=98624589]
+[node name="DragHint" type="Label" parent="LoadoutMenuCanvas/Root/Col/MainRow/PreviewPanel/PreviewFrame" unique_id=1047146190]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_left = -420.0
+offset_top = 4.0
+offset_right = -12.0
+offset_bottom = 24.0
+text = "LMB ROTATE  ·  RMB PAN  ·  SCROLL ZOOM"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="PreviewModeButton" type="Button" parent="LoadoutMenuCanvas/Root/Col/MainRow/PreviewPanel/PreviewFrame" unique_id=1674520333]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -224.0
+offset_top = -342.0
+offset_right = -12.0
+offset_bottom = -310.0
+text = "PREVIEW: WALKING"
+
+[node name="AgentStripPanel" type="PanelContainer" parent="LoadoutMenuCanvas/Root/Col/MainRow/PreviewPanel/PreviewFrame" unique_id=1674520332]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -172.0
+theme_override_styles/panel = SubResource("strip_style")
+
+[node name="AgentStrip" type="VBoxContainer" parent="LoadoutMenuCanvas/Root/Col/MainRow/PreviewPanel/PreviewFrame/AgentStripPanel" unique_id=1273385815]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="AgentGroups" type="HBoxContainer" parent="LoadoutMenuCanvas/Root/Col/MainRow/PreviewPanel/PreviewFrame/AgentStripPanel/AgentStrip" unique_id=1435045485]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 24
+alignment = 1
+
+[node name="DetailPanel" type="PanelContainer" parent="LoadoutMenuCanvas/Root/Col/MainRow" unique_id=300346253]
+custom_minimum_size = Vector2(500, 0)
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="LoadoutMenuCanvas/Root/Col/MainRow/DetailPanel" unique_id=9366727]
 layout_mode = 2
 theme_override_constants/separation = 10
+
+[node name="PopoverCatcher" type="Control" parent="LoadoutMenuCanvas" unique_id=135613251]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 0
+
+[node name="WeaponPopover" type="PanelContainer" parent="LoadoutMenuCanvas" unique_id=1288852290]
+visible = false
+layout_mode = 0
+script = ExtResource("4_popover")

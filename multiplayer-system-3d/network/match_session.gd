@@ -544,9 +544,12 @@ func hello(version: int, build_id: String, display_name: String,
 		_resume_player(resumed_id, peer_id)
 		return
 
+	# TEMPORARY (docs/05-known-issues.md #149): direct-IP joins carry no grant,
+	# so a server running with MATCH_SECRET set rejected every joiner and left
+	# them on the staging "WAITING FOR HOST" screen.  Accept the join anyway and
+	# restore the refusal once lobbyd admission is the only join path.
 	if not Grant.validate(join_grant_token, match_id):
-		_send_error(peer_id, Protocol.ErrorCode.BAD_TOKEN, "Invalid or expired join grant")
-		return
+		push_warning("[MATCH] peer %d joined without a valid join grant" % peer_id)
 
 	if _peer_to_player.has(peer_id):
 		# Duplicate hello (the client retried, or both sides raced a reconnect).

@@ -2,8 +2,9 @@
 
 > **Status: P5 complete; P6 verification/deploy assets in place.** The default
 > boot is the local 3D shell with no external service: HostServer opens the host
-> menu and boots an in-process listen server into the chosen map; JoinParty has
-> LAN discovery and Direct IP tabs, both using the match-session handshake.
+> menu and boots an in-process listen server into the chosen map; the Match
+> Menu's FIND MATCH tab has LAN discovery and a DIRECT row, both using the
+> match-session handshake.
 > `--legacy-p2p` keeps the old auto-host path. Match sessions have stable player
 > IDs, local map loading with SHA-256, prediction, reconnect/resume, single-use
 > resume tokens, heartbeat/reaper, host migration, RPC authority/owner checks,
@@ -81,11 +82,10 @@ combat stays server-authoritative.
 | `server/lobbyd/lobbyd.c` + `sha256.c` | C lobby/allocator/supervisor: HTTP JSON API, short codes, UDP port allocation, HMAC-SHA256 grants, `fork`/`execv` of one headless Godot per match, child reaping, SIGTERM drain. |
 | `server/lobbyd/Makefile` / `smoke.sh` / `run_dev.sh` | Build, API smoke test (no Godot), and the WSL dev runner that spawns the Windows Godot binary. |
 | `network/lobby_client.gd` | Autoload `LobbyClient`: create/list/join HTTP calls; disabled unless `--lobby=http://host:port` is set. |
-| `network/join_grant.gd` | HMAC-SHA256 grant verification on the match server (`MATCH_SECRET` or `--match-secret=`). Empty secret = dev accept-all. |
+| `network/join_grant.gd` | HMAC-SHA256 grant verification on the match server (`MATCH_SECRET` or `--match-secret=`). Empty secret = dev accept-all; as of #149 a configured secret also does not block a join (the check is advisory). |
 | `network/match_session.gd` | Also hosts `request_start_match` (server re-checks the sender is the room host) and sends the grant in `hello`. |
-| `world/match_browser.gd` | Server browser popup, built on `get_tree().root`; lists lobbyd matches, joins by row or code. |
+| `world/globe_menu.gd` | The Match Menu opened by HostServer: START MATCH map grid/preview/CREATE; FIND MATCH lists LAN and lobbyd matches and has the DIRECT IP/code row; PARTY is a placeholder. |
 | `world/host_server_area.gd` | Lobby shell: "Create Match" allocates via lobbyd. Lobby staging: "Start Match" opens the map picker. Legacy P2P unchanged. |
-| `world/join_party_area.gd` | Lobby enabled: opens the browser; legacy: keeps the IP/code popup. |
 | `world/host_menu.gd` | Start Match while connected as a client sends `MatchSession.request_start_match` to the server instead of calling `load_match_map` locally. |
 
 Verified commands (Windows dev, headless):
@@ -135,13 +135,14 @@ Launching with no flags boots the local 3D shell on an `OfflineMultiplayerPeer`
 - **Ports:** the listen server tries `8080`, `8081`, … up to 16 ports and keeps
   the first free one. A second host on one machine therefore hosts on 8081
   instead of exiting. A local host failure (no free port) returns to the shell.
-- **Join Match** (`JoinParty` zone) opens a two-tab popup:
+- **Join Match** (Match Menu → **FIND MATCH**) lists LAN and, with `--lobby`,
+  lobbyd matches, plus the DIRECT row:
   - **LAN**: `LanDiscovery.discover()` probes UDP `7355-7370` on `127.0.0.1`,
     every local /24 broadcast and `255.255.255.255`, and lists hosts (map,
     players/max, state, IP:port). Each host answers on `7355 + (port - 8080)`
     with a JSON announce and a per-process instance id (so the same host found
     at both localhost and its LAN IP appears once). The list refreshes every 2 s.
-  - **Direct IP**: `IP[:port]` or a 5-char join code (port defaults to 8080).
+  - **DIRECT**: `IP[:port]` or a join code (port defaults to 8080).
   Both join with `join_party(..., use_match_session=true)`, so stable ids,
   local maps, heartbeat and resume apply.
 - **Start Match** in staging opens the map picker; a listen host loads the map
@@ -351,7 +352,8 @@ powershell -ExecutionPolicy Bypass -File tests/net/run_net_smoke.ps1
 # Linux dedicated export (needs the Godot 4.7 Linux export templates)
 GODOT=/path/to/godot bash server/build_linux.sh
 
-# Deployment: build/install/systemd/env
+# Deployment: build/install/systemd/env, plus the exact live-VPS update and
+# rollback procedure ("update the VPS")
 cat server/README.md
 ```
 

@@ -1,11 +1,13 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Shader" path="res://assets/materials/preview_grid.gdshader" id="1_grid"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_lgt"]
 sky_top_color = Color(0.55, 0.62, 0.78, 1)
 sky_horizon_color = Color(0.7, 0.72, 0.78, 1)
 ground_bottom_color = Color(0.32, 0.3, 0.34, 1)
 ground_horizon_color = Color(0.7, 0.72, 0.78, 1)
-energy_multiplier = 0.8
+energy_multiplier = 0.65
 
 [sub_resource type="Sky" id="Sky_lgt"]
 sky_material = SubResource("ProceduralSkyMaterial_lgt")
@@ -16,6 +18,12 @@ sky = SubResource("Sky_lgt")
 ambient_light_source = 3
 ambient_light_energy = 0.5
 reflected_light_source = 2
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_grid"]
+size = Vector2(24, 24)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_grid"]
+shader = ExtResource("1_grid")
 
 [node name="Node3D" type="Node3D"]
 
@@ -28,18 +36,23 @@ fov = 30.0
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
 transform = Transform3D(0.8660254, -0.35355338, 0.35355338, -0.50000006, -0.6123725, 0.6123725, 0, -0.7071068, -0.7071068, 0, 1.6, 0)
-light_energy = 1.4
+light_energy = 0.9
 shadow_enabled = false
 
 [node name="OmniLight3D" type="OmniLight3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 0.9, -2)
-light_energy = 2.4
-omni_range = 8.0
+light_energy = 1.1
+omni_range = 5.0
 
 [node name="OmniLight3D2" type="OmniLight3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0.8, -1)
 light_color = Color(0.6, 0.7, 1, 1)
-light_energy = 1.8
-omni_range = 8.0
+light_energy = 0.9
+omni_range = 5.0
+
+[node name="Ground" type="MeshInstance3D" parent="."]
+cast_shadow = 0
+mesh = SubResource("PlaneMesh_grid")
+surface_material_override/0 = SubResource("ShaderMaterial_grid")
 
 [node name="PreviewRoot" type="Node3D" parent="."]

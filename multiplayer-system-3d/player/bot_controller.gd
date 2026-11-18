@@ -2486,6 +2486,10 @@ func _think() -> void:
 		var p := node as Player
 		if p == null or p == player or not p.spawned:
 			continue
+		# Practice targets are scenery, not opponents: a bot that acquired one
+		# would stand there farming an unmoving dummy forever.
+		if p.is_practice_target:
+			continue
 		# Dev-menu "bots ignore me": skip both combat and heal targeting.  Bots
 		# simulate only on the server, so this reads the server's copy.
 		if p.dev_hidden_from_bots:

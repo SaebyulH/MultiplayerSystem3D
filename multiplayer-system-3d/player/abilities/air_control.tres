@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="AirControlAbility" format=3]
+
+[ext_resource type="Script" path="res://player/abilities/air_control_ability.gd" id="1_airc"]
+[ext_resource type="Texture2D" uid="uid://b2041aiyqm667" path="res://assets/icons/game-icons.net.svg/icons/ffffff/transparent/1x1/delapouite/arrow-wings.svg" id="2_icon"]
+
+[resource]
+script = ExtResource("1_airc")
+ability_name = "Air Control"
+description = "A metered air-strafe tank. While it holds charge, FlyGirl keeps her full air acceleration and air-speed cap; when it empties, air control drops to Juggernaut level. Drains in proportion to how hard you strafe against your momentum, and refills when you are not air-strafing."
+icon = ExtResource("2_icon")
+max_meter = 3.0
+recharge_seconds = 9.0
+depleted_air_accel_mult = 0.5
+depleted_air_speed_cap_mult = 0.5

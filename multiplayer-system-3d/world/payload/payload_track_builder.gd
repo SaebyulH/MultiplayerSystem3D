@@ -62,7 +62,7 @@ const FALLBACK_RAILS: Array = [
 const FALLBACK_TIE_SIZE: Vector3 = Vector3(1.648438, 0.059082, 0.090698)
 const FALLBACK_TIE_SPACING: float = 0.25
 const FALLBACK_RAIL_TEXTURE: String = \
-	"res://backup/trenchbroom/textures/Material-LIB/MetalCracked/MetalCracked[Silver].png"
+	"res://trenchbroom/textures/Material-LIB/MetalCracked/MetalCracked[Silver].png"
 const FALLBACK_TIE_TEXTURE: String = \
 	"res://trenchbroom/textures/FreeStylized/wood_planks_22_1k/wood_planks_22_basecolor_1k.png"
 

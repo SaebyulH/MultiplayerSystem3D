@@ -193,8 +193,12 @@ func remove_all_bots() -> void:
 		return
 	var names: Array[String] = []
 	for child in spawn_parent.get_children():
-		if child is Player and (child as Player).is_bot and not child.is_queued_for_deletion():
-			names.append(str(child.name))
+		if child is Player:
+			var p := child as Player
+			# Practice targets are also `is_bot`, but they are not roster bots:
+			# "Remove all bots" must leave them standing.
+			if p.is_bot and not p.is_practice_target and not p.is_queued_for_deletion():
+				names.append(str(p.name))
 	for entity_id in names:
 		remove_bot(entity_id)
 

@@ -4,7 +4,7 @@
 [ext_resource type="Script" uid="uid://bxv3anwekoggx" path="res://player/character.gd" id="1_char"]
 [ext_resource type="Script" uid="uid://nwsvfqljwb2b" path="res://player/abilities/ability.gd" id="1_ckkow"]
 [ext_resource type="AudioStream" uid="uid://c4hcib02wpb8t" path="res://assets/sounds/flier_death.mp3" id="2_kaefc"]
-[ext_resource type="Script" uid="uid://cqveqjaj5p1jv" path="res://player/abilities/heal_ability.gd" id="2_moh7u"]
+[ext_resource type="Resource" path="res://player/abilities/air_control.tres" id="2_airc"]
 [ext_resource type="Script" uid="uid://lrht2lh1enw5" path="res://player/abilities/weapon_fire_ability.gd" id="3_a2xb3"]
 [ext_resource type="AudioStream" uid="uid://bwfdsxbmx4ko8" path="res://assets/sounds/empty_gun.mp3" id="4_ow7rt"]
 [ext_resource type="Texture2D" uid="uid://b6gktr1vfryte" path="res://defaults/default_damage_falloff_curve.tres" id="5_eak8f"]
@@ -18,16 +18,8 @@
 [ext_resource type="Script" uid="uid://bgnoupinctd73" path="res://player/abilities/passive_ability.gd" id="12_pasv"]
 [ext_resource type="Texture2D" uid="uid://dvsjaqp3bqii6" path="res://assets/icons/game-icons.net.svg/icons/ffffff/transparent/1x1/skoll/nuclear-bomb.svg" id="15_5qela"]
 [ext_resource type="Texture2D" uid="uid://du8s0sa6sd2mb" path="res://character_portraits/flygirl.png" id="16_eak8f"]
-[ext_resource type="Texture2D" uid="uid://btoifubrtotqb" path="res://assets/icons/game-icons.net.svg/icons/ffffff/transparent/1x1/zeromancer/heart-plus.svg" id="20_heal"]
 [ext_resource type="Texture2D" uid="uid://cd8qig5wt6pya" path="res://assets/icons/game-icons.net.svg/icons/ffffff/transparent/1x1/skoll/carpet-bombing.svg" id="21_bomb"]
 [ext_resource type="Texture2D" uid="uid://1fm6rpc7eqo4" path="res://assets/icons/game-icons.net.svg/icons/ffffff/transparent/1x1/lorc/feather.svg" id="22_lowg"]
-
-[sub_resource type="Resource" id="Resource_x7c3f"]
-script = ExtResource("2_moh7u")
-heal_amount = 100.0
-ability_name = "Heal 100 Health"
-cooldown = 3.0
-icon = ExtResource("20_heal")
 
 [sub_resource type="Resource" id="Resource_ur13p"]
 script = ExtResource("7_1o6mg")
@@ -52,10 +44,11 @@ metadata/_custom_type_script = "uid://djg0ti1n45f8b"
 [sub_resource type="Resource" id="Resource_bjvpn"]
 script = ExtResource("3_a2xb3")
 weapon_fire = SubResource("Resource_qisbw")
+damage_multiplier = 0.1
 ability_name = "Carpet Bomb"
 cooldown = 15.0
 icon = ExtResource("21_bomb")
-max_charges = 3
+max_charges = 2
 
 [sub_resource type="Resource" id="Resource_lowg"]
 script = ExtResource("12_pasv")
@@ -103,4 +96,4 @@ slide_entry_boost_mult = 0.5
 slope_gravity_mult = 1.4
 health_mult = 2.0
 death_sound = ExtResource("2_kaefc")
-abilities = Array[ExtResource("1_ckkow")]([SubResource("Resource_x7c3f"), SubResource("Resource_bjvpn"), SubResource("Resource_lowg"), SubResource("Resource_odo1h")])
+abilities = Array[ExtResource("1_ckkow")]([ExtResource("2_airc"), SubResource("Resource_bjvpn"), SubResource("Resource_lowg"), SubResource("Resource_odo1h")])

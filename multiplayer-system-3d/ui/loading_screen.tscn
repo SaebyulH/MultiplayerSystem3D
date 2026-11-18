@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" path="res://ui/loading_screen.gd" id="1_loading"]
 [ext_resource type="Texture2D" path="res://assets/loadingscreen.png" id="2_bg"]
+[ext_resource type="FontFile" path="res://assets/fonts/Anton/Anton-Regular.ttf" id="3_display"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_track"]
 bg_color = Color(0.067, 0.086, 0.114, 0.85)
@@ -41,6 +42,7 @@ theme_override_constants/separation = 14
 
 [node name="Title" type="Label" parent="Content/VBox"]
 theme_override_colors/font_color = Color(0.929, 0.945, 0.961, 1)
+theme_override_fonts/font = ExtResource("3_display")
 theme_override_font_sizes/font_size = 34
 text = "LOADING"
 horizontal_alignment = 1

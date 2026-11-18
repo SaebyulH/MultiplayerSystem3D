@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://c67ty1te1i08f"]
 
 [ext_resource type="Script" uid="uid://cmj4kvib6u07w" path="res://world/special_entities/health_pack.gd" id="1_hp"]
-[ext_resource type="Texture2D" uid="uid://cqu7s1apmcwry" path="res://backup/trenchbroom/textures/Material-LIB/Fabric/Fabric[White].png" id="2_oluw0"]
+[ext_resource type="Texture2D" uid="uid://di1mk7gh378m1" path="res://trenchbroom/textures/Material-LIB/Fabric/Fabric[White].png" id="2_oluw0"]
 [ext_resource type="Texture2D" uid="uid://dydeb5c5f2rwp" path="res://assets/images/greybox/greybox_red_grid.png" id="3_e7i6s"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_m7wls"]

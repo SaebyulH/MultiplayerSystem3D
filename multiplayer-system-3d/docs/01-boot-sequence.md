@@ -44,14 +44,14 @@ The engine then loads the main scene `res://world/main.tscn` (a `Control` root `
 | `--listen-server [--port=N]` | `NetworkManager.boot_listen_server()` — host + play in one process; fails loudly if the port is taken. |
 | `--offline` | `NetworkManager.boot_offline_lobby()` — local 3D lobby shell on `OfflineMultiplayerPeer`. |
 | `--connect=host[:port]` | `NetworkManager.join_party()` — direct-IP dev client; the join flow owns the loading screen. |
-| `--lobby=http://host:port` | Configures `LobbyClient` and boots the offline 3D shell; the HostServer zone creates a match through lobbyd, JoinParty opens the browser. |
+| `--lobby=http://host:port` | Configures `LobbyClient` and boots the offline 3D shell; the HostServer zone creates a match through lobbyd and the Match Menu's FIND MATCH tab lists lobbyd matches. |
 | `--lobby-create` | Creates a match through lobbyd, then connects to the returned endpoint with its grant. |
 | `--lobby-join=CODE` | Joins a lobbyd match by code, then connects with its grant. |
 | `--match-id=N` | Set by lobbyd on a dedicated server; bound into the join-grant check. |
 | `--test-host-local [--test-host-map=res://maps/X.tscn]` | Boots the local shell, then starts an in-process listen server (test hook for the Host Match flow). |
 | `--test-lan` | Boots the shell, scans the LAN discovery range, prints servers, exits. |
 | `--no-discovery` | Disables the LAN announce/probe sockets. |
-| **no flags (default)** | `NetworkManager.boot_offline_lobby()` — local 3D shell with no external service. HostServer opens the host menu (map/teams/bots) then starts a listen server in-process; JoinParty has LAN + Direct IP tabs and joins with the match-session handshake. |
+| **no flags (default)** | `NetworkManager.boot_offline_lobby()` — local 3D shell with no external service. HostServer opens the Match Menu: START MATCH creates a listen server in-process, FIND MATCH joins LAN/direct via the match-session handshake. |
 | `--legacy-p2p` | `NetworkManager.boot_to_lobby()` — old auto-host P2P behaviour. |
 
 `--auto-loadout` is a test hook for headless runs: it confirms the initial random loadout so a client actually spawns without mouse input. It is ignored on a dedicated server.
@@ -109,6 +109,8 @@ A dedicated server still preloads the player scene and staging map because it ru
 
 `world/world1.tscn:95-97` defines the `MultiplayerSpawner` (`spawn_path = "../SpawnParent"`) with 13 `_spawnable_scenes` uids (player + all maps, including lobby `uid://cgnm6fpurb2b2`).
 
+**Practice dummies spawn while the map is added.** Any map may carry a `PracticeTargetSpawn` marker: its `_ready` runs inside the host's `spawn_parent.add_child(map)` at line 27-29, before `SpawnManager` exists, needs only `GameManager.spawn_parent` and `player.tscn`, and guards on `multiplayer.has_multiplayer_peer() and multiplayer.is_server()`. The lobby has both: its `PracticeDummy` marker spawns a fixed-respawn standing dummy, and `PracticeRange` spawns a separate run target when a run starts and frees it when the run ends. Either way the dummy is a normal Player added to `SpawnParent`, so the world spawner (already alive) replicates it to joiners. Clients never spawn; map teardown (`_exit_tree`) frees the marker dummy, which is what clears old dummies on a map swap. While a range run is live, `PracticeRange` grants every real player inside the zone infinite ammo (`Player.set_range_infinite_ammo`, a separate override from the dev hack) and revokes it when the run ends, the player leaves, or the map is torn down. The zone prompt's second line shows the last and best completion times, mirrored to clients by the progress/result broadcasts.
+
 ---
 
 ## Stage 4 — `SpawnManager._ready` → local player (still despawned)
@@ -135,12 +137,28 @@ A dedicated server still preloads the player scene and staging map because it ru
 
 The menu's `CanvasLayer` starts visible, so the loadout screen covers the world on boot.
 
-**Layout (2026-11-17).** `AGENTS // LOADOUT` header; left panel = a large 3D
-agent preview in a 2 px frame (teal on hover) that opens the full agent picker
-on click; centre = PRIMARY / SECONDARY / MELEE weapon-card columns (selected =
-teal fill + border, hover/selection fills the INFO panel); right = INFO panel
-with the character/weapon stats; bottom centre = the four ability discs. All
-colours and fonts come from `UITheme`; the confirm action is **LOCK IN**.
+**Layout (2026-11-18).** `AGENTS // LOADOUT` header; three full-height columns:
+left = **YOUR TEAM** roster (local player TEAL, otherwise team colour); centre =
+the 3D agent preview filling the column, with operative index, corner brackets
+and a floating class-grouped **agent strip** over its lower edge (no picker
+popup — clicking an agent applies it immediately); right = a fixed-height Anton
+name block (long names shrink, never reflow), the class label **under** the
+name, and a scrolling **infographic** (description, trait badges, six 20-pip
+attribute bars with TEAL/AMBER/BASE colouring; weapon hover swaps in a
+thumbnail + stat rows; ability hover swaps in the ability icon, description and
+cooldown/cast rows), then three stacked **weapon slots** and the action stack.
+The four numbered **ability tiles** float in their own collapsible INK_2 band
+over the bottom of the preview (above the agent strip).  Hovering a different
+agent card swaps the preview to that model AND weapon rendered as a blue
+hologram (unlit ~0.18-alpha blue `material_override` with strong emission and a
+rim) and shows SWITCHING TO above the name. The ghost holds a weapon the
+hovered class actually offers (`_weapon_for_character`: keep the current display
+if the class has it, otherwise its first primary), never the previous agent's
+gun. All colours and fonts come
+from `UITheme`; the confirm action is **LOCK IN** (RED). Clicking a weapon slot
+opens a popover of that class column; hovering a popover row or the slot itself
+puts the weapon in the preview model's in-game hold pose, and the last hovered
+weapon stays displayed. Drag spins the model; the mouse wheel zooms it.
 
 The screen is also opened by the staging room's `EDIT LOADOUT` button. In that
 case `set_staging_mode(true)` raises the CanvasLayer above staging (layer 8 vs
@@ -164,17 +182,21 @@ triangular **▶ ADVANCED / ▼ ADVANCED** toggle that reveals a row for every
 and clears overrides. Skill/trait edits redraw `Style` immediately and are server-local
 (bots only simulate on peer 1).
 
-### Portrait assets behind the character picker
+### Portrait assets behind the agent strip
 
-The picker's buttons draw `Character.portrait` (`ui/kill_feed.gd`, `world/spawn_bot_menu.gd` and `world/game_menu.gd` read the same field), which is a pre-rendered 256×256 transparent PNG in `character_portraits/`. Those PNGs are produced **offline** by `player/character_portrait_generator.gd` — not at runtime, so nothing on the boot path regenerates them and a missing one is simply a blank icon.
+The strip's cards draw `Character.portrait` (`ui/kill_feed.gd`, `world/spawn_bot_menu.gd` and `world/game_menu.gd` read the same field), which is a pre-rendered 256×256 transparent PNG in `character_portraits/`. Those PNGs are produced **offline** by `player/character_portrait_generator.gd` — not at runtime, so nothing on the boot path regenerates them and a missing one is simply a blank icon.
 
 The generator lights each portrait with the **editor's own per-scene preview sun and environment**, because the character `.tscn` files contain no lights at all. It reads those settings back out of `res://.godot/editor/<scene>-editstate-<md5>.cfg`, which is machine-local and gitignored — so a portrait regenerated on another machine (or after a cache wipe) is lit by the engine defaults instead and still looks plausible. See `05-known-issues.md` #58, and #59 for the `uid=` stripping the same `ResourceSaver.save()` does to `player/characters/*.tres`.
 
 ### The live character preview
 
-`world/loadout_menu.tscn:121-135` — a `SubViewportContainer` + `SubViewport` (`CharacterViewport`) instances `world/character_subviewport_preview.tscn`, and `loadout_menu.gd:_spawn_character_preview()` (603-659) adds `Character.character_scene` under that scene's `PreviewRoot`. It frames the model with the preview's own `Camera3D` (distance derived from the model's visual AABB), renders **once** (`UPDATE_ONCE`), and leaves it alone: the model's `process_mode` is disabled and its idle animation is `seek()`ed and paused, so the preview costs nothing per frame between openings.
+`world/loadout_menu.tscn` — a `SubViewportContainer` + `SubViewport` (`CharacterViewport`) instances `world/character_subviewport_preview.tscn`; `world/loadout/loadout_preview_rig.gd` (`PreviewRig`) builds the agent under it. **It uses the real player rig, not a re-creation.** A detached `player.tscn` is instantiated (its root never enters the tree, so `Player._ready` never runs); only its `Body` subtree is kept under a pivot — the mannequin skeleton, the full `AnimationTree` blend tree, the aim `CCDIK3D`, both `CopyTransformModifier3D`s, `RotationDir`, `WeaponTilt` and the real `GunAttach` mount. `PlayerUI`, synchronizers, the camera, the physical-bone simulator and the damage/health labels are freed, every script that dereferences the Player parent (`Body`, `AnimationTree`, `Recoil`, `WeaponTilt`) is cleared, and the blend tree is duplicated so instances do not share it. `Character.character_scene` is parented like `Player._spawn_character_model` (mannequin transform) and mirrors the mannequin's bones via the same by-name pose copy. The weapon is instantiated with `weapon_offset/rotation/scale`, the `WeaponModel` vs legacy parenting rule and the weapon toon — the exact `WeaponController.spawn_weapon_model` path, on the real `GunAttach`.
 
-**The preview's whole appearance lives in that one scene.** `own_world_3d` gives the SubViewport its own `World3D`, so it inherits no environment and no lights from the lobby — `character_subviewport_preview.tscn` carries its own `WorldEnvironment` plus a `DirectionalLight3D` and two `OmniLight3D`s. Because the character materials are `painted_toon.gdshader` (whose `light()` override replaces the built-in direct-light path), what those lights do is the entire lit side of the model; the shadow side comes from the shader's `shadow_wrap` and the ambient the environment supplies. Before 2026-09-30 the scene had **no** environment, so its shadow side had no ambient at all and the darker characters (juggernaut, stalker) read as near-black. The current settings (sky `energy_multiplier` 0.8, sun 1.4, omnis 2.4/1.8) lift the juggernaut's mean pixel luminance `0.090` → `0.144` and the ghost's `0.307` → `0.331`, with highlight clipping essentially unchanged (`4.14%` → `4.33%` and `23.09%` → `23.66%`).
+The rig renders `UPDATE_ONCE` at 30 Hz while the screen is visible (a `0.033 s` timer; stopped when the menu hides), so the walk cycle is visible without paying a per-frame second-World3D render. Camera distance comes from the character's visual AABB (weapon excluded, so hovering never re-zooms). LMB drag **orbits the camera** around the agent on a sphere (elevation clamped to −0.25..1.25 rad); the rig itself is never rotated, so the character and the ground grid stay upright/level. RMB drag pans the model in the camera plane and the wheel adjusts a clamped zoom. `character_subviewport_preview.tscn` carries a transparent `Ground` plane shaded by `assets/materials/preview_grid.gdshader` (0.5 m cells, a major line every 2 m, `fwidth` anti-aliasing, faded past ~7 m); the rig drops it to the model's foot line and pans it with the agent (the grid travels with the character under RMB pan). The `PREVIEW: STANDING / WALKING / RUNNING` button at the preview's bottom-right cycles the animation state. Selecting a new agent rebuilds the rig; a weapon hover only swaps the weapon.
+
+**The tree is driven to match the in-game armed pose, or to the locomotion cycle, per preview mode.** There is no local Player to feed `animation_tree.gd`, so the rig writes the same parameters that script would: `WalkBlendSpace`/`CrouchBlendSpace`/`SprintBlendSpace` at `(0, -1)` (forward) in walk/run, `(0, 0)` when standing; `CrouchWalkSprintBlend3` is 1 in run and 0 otherwise; `JumpBlend = 0`. **`HoldBlend` is 1 when the weapon has a `human_anims` library** — the rig registers the library on the mannequin AnimationPlayer and assigns its `HOLD` animation to the blend tree's `HoldAnim` node exactly as `WeaponController._set_hold_anim` does, so the arms are on the weapon just like in combat. That chain has no locomotion, so in walking/running modes the **leg bones are copied from a second hidden mannequin** playing `walk/walk_w` or `sprint/sprint_w`, and everything above the hips stays on the hold tree. Weapons without a human library keep `HoldBlend = 0` and use the tree's own locomotion. The hold and `a_pose` clips point the body toward +X of the rig (which read as "looking right" only when the tree had no parameter driver); the walk clips face `-Z`, and the extracted aim IK runs on top in both modes. The pose copy runs on every render tick, not only on `skeleton_updated`, because the armed hold pose can be static while the leg source animates. No facing-correction yaw is applied; drag orbit is the only authored rotation.
+
+**The preview's whole appearance lives in that one scene.** `own_world_3d` gives the SubViewport its own `World3D`, so it inherits no environment and no lights from the lobby — `character_subviewport_preview.tscn` carries its own `WorldEnvironment` plus a `DirectionalLight3D` and two `OmniLight3D`s. Because the character materials are `painted_toon.gdshader` (whose `light()` override replaces the built-in direct-light path), what those lights do is the entire lit side of the model; the shadow side comes from the shader's `shadow_wrap` and the ambient the environment supplies. Before 2026-09-30 the scene had **no** environment, so its shadow side had no ambient at all and the darker characters (juggernaut, stalker) read as near-black. The current settings (sky `energy_multiplier` 0.65, sun 0.9, omnis 1.1/0.9 at range 5 — retuned 2026-11-18 for a less blown-out preview) lift the juggernaut's mean pixel luminance `0.090` → `0.144` and the ghost's `0.307` → `0.331`, with highlight clipping essentially unchanged (`4.14%` → `4.33%` and `23.09%` → `23.66%`).
 
 **Tune this by the sky's `energy_multiplier`, not `ambient_light_energy`.** Measured 2026-09-30: with `ambient_light_source = AMBIENT_SOURCE_SKY`, changing `ambient_light_energy` from 0.0 to 3.0 produced a **pixel-identical** render, while the sky material's `energy_multiplier` moves it directly. `ambient_light_energy` is the lever the Godot inspector suggests and it does nothing here — an earlier pass tuned it to 1.3 and concluded the ambient was working when the visible change was coming entirely from the lights.
 
@@ -211,11 +233,7 @@ The same rule governs the other apply sites — `_apply_loadout` (client, `:918-
 
 ## Stage 7 — Join flow: `join_party(ip)` → client
 
-`world/join_party_area.gd:20-25` — `_ready()` builds the popup `CanvasLayer` (layer 2, on `root`) and `ConnectionUtils.detect_ips()`. `_unhandled_input` (67-75) opens it on `interact` (E) when the local player is inside.
-
-`world/join_party_area.gd:137-151` — open/close popup sets `PlayerInput.ui_open` and mouse mode.
-
-`world/join_party_area.gd:176-196` — `_on_join_pressed()` (IP or 6-char code via `ConnectionUtils.code_to_ip`) and `_on_join_local_pressed()` (`127.0.0.1`) → `NetworkManager.join_party(address)`.
+`world/globe_menu.gd` — the Match Menu's **FIND MATCH** tab is the only join entry point: REFRESH builds LAN cards (`LanDiscovery.discover()`) and, when `LobbyClient` is enabled, lobbyd cards; the DIRECT row resolves `ip[:port]` or a 6-char code (`_on_join_ip`) and JOIN LOCAL dials `127.0.0.1`. Every path closes the menu and calls `NetworkManager.join_party(address, port, use_session)`.
 
 `network/network_manager.gd` — `join_party(host_ip, port)`:
 - `LoadingScreen.show_screen(0.1, "Connecting…")` — re-shows the boot loading screen to mask the connect-time spike (see Stage 8 / `05-known-issues.md` #18).
@@ -309,7 +327,6 @@ Entry points: `world/world_1.gd:47-48` (Main Menu button), `world/loadout_menu.g
 | `world/loadout_menu.gd:863-864` (confirm) | `false` | `CAPTURED` |
 | `world/dev_menu.gd` (`0` open / close) | `true` / `= loadout_menu.visible` | `VISIBLE` / `CAPTURED` |
 | `world/dev_menu.gd` → bot loadout edit | stays `true` (the loadout screen owns it) | `VISIBLE` |
-| `world/join_party_area.gd:142-143 / 150-151` | `true` / `false` | `VISIBLE` / `CAPTURED` |
 | `world/host_menu.gd:65-66 / 71-72` | `true` / `false` | `VISIBLE` / `CAPTURED` |
 | `network/network_manager.gd` (return_to_lobby) | (unchanged) | `VISIBLE` |
 | `player/player_input.gd:123-132` (click-to-capture / Esc-to-release) | read-only gate | `CAPTURED` / `VISIBLE` |
@@ -321,9 +338,9 @@ dev-menu clause, a live match's 250 ms flow tick cleared `ui_open` right after
 the `0` press, so the menu stayed visible with the mouse still captured.
 
 The dev menu refuses to open when `ui_open` is already true (the initial loadout screen,
-the Host/Join popups), so it never steals input from another menu. `HostServer` and
-`JoinParty` now make the same check before opening; previously they could stack a popup on
-top of another menu and clear `ui_open` when it closed.
+the Host/Join popups), so it never steals input from another menu. `HostServer`
+(`globe_menu.open_menu`) makes the same check before opening; previously the areas could
+stack a popup on top of another menu and clear `ui_open` when it closed.
 
 ---
 
@@ -359,7 +376,7 @@ consumed, and frees the layer.
 
 Visually it is the map thumbnail pipeline reused as a backdrop: a `MapData`
 image (2fort, or the first playable map) at 38 % opacity, a vertical ink
-gradient, the Montserrat Black wordmark, a red rule, and a pulsing
+gradient, the Anton wordmark, a red rule, and a pulsing
 "CLICK TO DEPLOY". All fonts and colours come from `UITheme`.
 
 `world_1._on_title_start()` sets `title_seen`, applies
@@ -376,8 +393,9 @@ writes it on confirm. It is not saved to disk yet.
 
 ### 13.3 Match Menu (HostServer is the globe)
 `world/host_server_area.gd` no longer opens `host_menu.tscn`. It opens
-`world/globe_menu.gd` on the existing HostServer Area3D, with the prompt
-"Match Menu (E)". The menu has three tabs:
+`world/globe_menu.gd` on the existing HostServer Area3D, with a crosshair HUD
+prompt (`ui/interaction_prompt.gd`: keycap `E` + "MATCH MENU"). The menu has
+three tabs:
 - **Start Match** — a map-card grid built from `MapData.map_image`
   thumbnails (the source is `ConnectionUtils.scan_map_data()`); hovering or
   selecting a card fills the briefing panel with the large preview, map name,
@@ -468,7 +486,7 @@ returns after 10 s. `GameModeComponent.match_won` is wired to
 `ui/ui_theme.gd` is autoloaded as **`UITheme`** (after `GameManager`). Its
 `_ready()` installs one `Theme` on the root Window, which cascades to every
 Control in the game (CanvasLayer children included). It also owns the palette
-constants, Montserrat font set, style builders, and the shared widgets used by
+constants, the Switzer UI font set and Anton display face, style builders, and the shared widgets used by
 the shell: `map_card`, `character_card`, `roster_card`, `stat_row`, `badge`,
 `display_label`, `section_label`, `body_label`. New screens must use these
 instead of local colours. The written spec is
@@ -485,6 +503,11 @@ returns to the OFFLINE shell rather than the legacy P2P boot.
 - `--test-end-match` ends an active host match after 6 s.
 - `--test-leaderboard` opens the leaderboard after 1 s so a headless/movie run
   can inspect it.
+- `--test-loadout-open` opens the character-select screen after 1.5 s so a
+  movie run can inspect it without pressing `H`.
 - `--test-staging-map=res://maps/X.tscn` also sets the staging target when
   combined with `--test-host-local` *without* `--test-staging-start`, so an
   idle staging screen shows that map's mode-dependent team columns.
+- `--test-range-autokill` (server, debug builds) starts a lobby target run and
+  kills the PracticeRange dummy every 2 s, for checking death/respawn
+  replication from a second connected peer.

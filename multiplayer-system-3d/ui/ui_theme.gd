@@ -36,12 +36,19 @@ const SCRIM := Color(0.02, 0.03, 0.045, 0.86)
 # ─────────────────────────────────────────────
 #  Typography
 # ─────────────────────────────────────────────
-const FONT_REGULAR := preload("res://assets/fonts/Montserrat/static/Montserrat-Regular.ttf")
-const FONT_MEDIUM := preload("res://assets/fonts/Montserrat/static/Montserrat-Medium.ttf")
-const FONT_SEMIBOLD := preload("res://assets/fonts/Montserrat/static/Montserrat-SemiBold.ttf")
-const FONT_BOLD := preload("res://assets/fonts/Montserrat/static/Montserrat-Bold.ttf")
-const FONT_EXTRABOLD := preload("res://assets/fonts/Montserrat/static/Montserrat-ExtraBold.ttf")
-const FONT_BLACK := preload("res://assets/fonts/Montserrat/static/Montserrat-Black.ttf")
+## UI text is Switzer (Helvetica-class neo-grotesque): Medium for everything,
+## Bold for numbers and emphasis.  Titles and all-caps display use Anton, a
+## condensed poster black.  See docs/DESIGN_STYLE_GUIDE.txt §3.
+const FONT_MEDIUM := preload("res://assets/fonts/Switzer/Switzer-Medium.otf")
+const FONT_BOLD := preload("res://assets/fonts/Switzer/Switzer-Bold.otf")
+const FONT_DISPLAY := preload("res://assets/fonts/Anton/Anton-Regular.ttf")
+
+# Aliases kept so existing call sites keep compiling; every non-display weight
+# resolves to one of the two Switzer files.
+const FONT_REGULAR := FONT_MEDIUM
+const FONT_SEMIBOLD := FONT_MEDIUM
+const FONT_EXTRABOLD := FONT_BOLD
+const FONT_BLACK := FONT_DISPLAY
 
 const FS_DISPLAY := 44
 const FS_TITLE := 28
@@ -59,8 +66,8 @@ var _char_cache: Dictionary = {}
 
 
 func _ready() -> void:
-	_font_track_wide = _tracked(FONT_BLACK, 3)
-	_font_track_section = _tracked(FONT_SEMIBOLD, 2)
+	_font_track_wide = _tracked(FONT_DISPLAY, 3)
+	_font_track_section = _tracked(FONT_MEDIUM, 2)
 	_theme = _build_theme()
 	var root := get_tree().root
 	if root:
@@ -332,10 +339,13 @@ func accent_bar(color: Color, height := 3) -> ColorRect:
 # ─────────────────────────────────────────────
 #  Typography helpers
 # ─────────────────────────────────────────────
+## Screen/panel title.  Always Anton (+3 px tracking) — `size` changes the
+## point size only, never the face, so a 20 px heading like the staging team
+## names stays a display title instead of falling back to Switzer.
 func display_label(text: String, size := FS_DISPLAY, color := TEXT) -> Label:
 	var label := Label.new()
 	label.text = text.to_upper()
-	label.add_theme_font_override("font", _font_track_wide if size >= FS_TITLE else _font_track_section)
+	label.add_theme_font_override("font", _font_track_wide)
 	label.add_theme_font_size_override("font_size", size)
 	label.add_theme_color_override("font_color", color)
 	return label

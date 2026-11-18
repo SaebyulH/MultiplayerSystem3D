@@ -163,6 +163,20 @@ func _ready() -> void:
 	if "--test-leaderboard" in OS.get_cmdline_user_args():
 		_show_test_leaderboard.call_deferred()
 
+	if "--test-loadout-open" in OS.get_cmdline_user_args():
+		_open_test_loadout.call_deferred()
+
+
+## Test hook: hold the loadout screen open so a movie/headless run can inspect
+## the character select without pressing H.
+func _open_test_loadout() -> void:
+	await get_tree().create_timer(1.5).timeout
+	if not is_instance_valid(loadout_menu):
+		return
+	loadout_menu.visible = true
+	PlayerInput.ui_open = true
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+
 
 ## Test hook: hold the leaderboard open after the roster exists so a headless /
 ## movie run can inspect it.  Never reaches normal gameplay.
@@ -207,7 +221,7 @@ func _count_team_players(team: Player.Team) -> int:
 	if not is_instance_valid(GameManager.spawn_parent):
 		return 0
 	for child in GameManager.spawn_parent.get_children():
-		if child is Player and (child as Player).team == team:
+		if child is Player and (child as Player).team == team and not (child as Player).is_practice_target:
 			count += 1
 	return count
 

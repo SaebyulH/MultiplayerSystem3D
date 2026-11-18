@@ -1,0 +1,186 @@
+// Game: MultiplayerSystem3D
+// Format: Valve
+// Generator: TrenchBroom 2026.2 (Build v2026.2 Release Win64)
+// entity 0
+{
+"mapversion" "220"
+"wad" ""
+"classname" "worldspawn"
+// brush 0
+{
+( -768 448 -48 ) ( -768 449 -48 ) ( -768 448 -47 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -576 0 -48 ) ( -576 0 -47 ) ( -575 0 -48 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -576 448 0 ) ( -575 448 0 ) ( -576 449 0 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -448 576 128 ) ( -448 577 128 ) ( -447 576 128 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -448 512 -16 ) ( -447 512 -16 ) ( -448 512 -15 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 768 576 -16 ) ( 768 576 -15 ) ( 768 577 -16 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 1
+{
+( -1088 704 -48 ) ( -1088 705 -48 ) ( -1088 704 -47 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -128 896 -48 ) ( -128 896 -47 ) ( -127 896 -48 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -128 704 0 ) ( -127 704 0 ) ( -128 705 0 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 0 832 384 ) ( 0 833 384 ) ( 1 832 384 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 0 960 -16 ) ( 1 960 -16 ) ( 0 960 -15 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 192 832 -16 ) ( 192 832 -15 ) ( 192 833 -16 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 2
+{
+( -768 64 -112 ) ( -768 65 -112 ) ( -768 64 -111 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -192 -768 -112 ) ( -192 -768 -111 ) ( -191 -768 -112 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -192 64 -128 ) ( -191 64 -128 ) ( -192 65 -128 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -64 192 0 ) ( -64 193 0 ) ( -63 192 0 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -64 768 -80 ) ( -63 768 -80 ) ( -64 768 -79 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 768 192 -80 ) ( 768 192 -79 ) ( 768 193 -80 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 3
+{
+( 1792 832 -112 ) ( 1792 833 -112 ) ( 1792 832 -111 ) Material-LIB/Metal/Metal[Black] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 2112 256 -112 ) ( 2112 256 -111 ) ( 2113 256 -112 ) Material-LIB/Metal/Metal[Black] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 2112 832 -96 ) ( 2113 832 -96 ) ( 2112 833 -96 ) Material-LIB/Metal/Metal[Black] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 2240 960 -64 ) ( 2240 961 -64 ) ( 2241 960 -64 ) Material-LIB/Metal/Metal[Black] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 2240 1280 -80 ) ( 2241 1280 -80 ) ( 2240 1280 -79 ) Material-LIB/Metal/Metal[Black] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 2816 960 -80 ) ( 2816 960 -79 ) ( 2816 961 -80 ) Material-LIB/Metal/Metal[Black] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 4
+{
+( -768 192 -48 ) ( -768 193 -48 ) ( -768 192 -47 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -576 -256 -48 ) ( -576 -256 -47 ) ( -575 -256 -48 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -576 192 0 ) ( -575 192 0 ) ( -576 193 0 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -448 320 128 ) ( -448 321 128 ) ( -447 320 128 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -448 0 -16 ) ( -447 0 -16 ) ( -448 0 -15 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -256 320 -16 ) ( -256 320 -15 ) ( -256 321 -16 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 5
+{
+( -256 0 0 ) ( -256 0 128 ) ( -256 -256 0 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0 -1.0000000000000002 0 0 ] [ 0 0 1.0000000000000002 -546.552 ] 0 0.163 0.163
+( -256 0 128 ) ( 256 0 128 ) ( 256 -256 0 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1.0000000000000002 0 0 0 ] [ 0 1.0000000000000002 0 69.10425 ] 0 0.163 0.163
+( 256 -256 0 ) ( 256 0 0 ) ( -256 0 0 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 256 0 0 ) ( 256 0 128 ) ( -256 0 128 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1.0000000000000002 0 0 0 ] [ 0 0 1.0000000000000002 -238.72388 ] 0 0.163 0.163
+( 256 -256 0 ) ( 256 0 128 ) ( 256 0 0 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0 1.0000000000000002 0 0 ] [ 0 0 1.0000000000000002 477.44806 ] 0 0.163 0.163
+}
+// brush 6
+{
+( -752 192 80 ) ( -752 193 80 ) ( -752 192 81 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -576 -256 80 ) ( -576 -256 81 ) ( -575 -256 80 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -576 192 128 ) ( -575 192 128 ) ( -576 193 128 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -448 320 256 ) ( -448 321 256 ) ( -447 320 256 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -448 -240 112 ) ( -447 -240 112 ) ( -448 -240 113 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -272 320 112 ) ( -272 320 113 ) ( -272 321 112 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 7
+{
+( -768 208 80 ) ( -768 209 80 ) ( -768 208 81 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -576 -240 80 ) ( -576 -240 81 ) ( -575 -240 80 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -576 208 128 ) ( -575 208 128 ) ( -576 209 128 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -448 336 256 ) ( -448 337 256 ) ( -447 336 256 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -448 32 112 ) ( -447 32 112 ) ( -448 32 113 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -752 336 112 ) ( -752 336 113 ) ( -752 337 112 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 8
+{
+( -784 192 80 ) ( -784 193 80 ) ( -784 192 81 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -592 -272 80 ) ( -592 -272 81 ) ( -591 -272 80 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -592 192 0 ) ( -591 192 0 ) ( -592 193 0 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -464 320 448 ) ( -464 321 448 ) ( -463 320 448 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -464 -240 112 ) ( -463 -240 112 ) ( -464 -240 113 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -752 320 112 ) ( -752 320 113 ) ( -752 321 112 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 9
+{
+( -272 192 80 ) ( -272 193 80 ) ( -272 192 81 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -80 -272 80 ) ( -80 -272 81 ) ( -79 -272 80 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -80 192 0 ) ( -79 192 0 ) ( -80 193 0 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 48 320 448 ) ( 48 321 448 ) ( 49 320 448 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 48 -240 112 ) ( 49 -240 112 ) ( 48 -240 113 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -240 320 112 ) ( -240 320 113 ) ( -240 321 112 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 10
+{
+( 240 192 80 ) ( 240 193 80 ) ( 240 192 81 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 432 -272 80 ) ( 432 -272 81 ) ( 433 -272 80 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 432 192 0 ) ( 433 192 0 ) ( 432 193 0 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 560 320 448 ) ( 560 321 448 ) ( 561 320 448 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 560 -240 112 ) ( 561 -240 112 ) ( 560 -240 113 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 272 320 112 ) ( 272 320 113 ) ( 272 321 112 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 11
+{
+( 752 192 80 ) ( 752 193 80 ) ( 752 192 81 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 944 -272 80 ) ( 944 -272 81 ) ( 945 -272 80 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 944 192 0 ) ( 945 192 0 ) ( 944 193 0 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 1072 320 448 ) ( 1072 321 448 ) ( 1073 320 448 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 1072 -240 112 ) ( 1073 -240 112 ) ( 1072 -240 113 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 784 320 112 ) ( 784 320 113 ) ( 784 321 112 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 12
+{
+( 256 192 -48 ) ( 256 193 -48 ) ( 256 192 -47 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 448 -256 -48 ) ( 448 -256 -47 ) ( 449 -256 -48 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 448 192 0 ) ( 449 192 0 ) ( 448 193 0 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 576 320 128 ) ( 576 321 128 ) ( 577 320 128 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 576 0 -16 ) ( 577 0 -16 ) ( 576 0 -15 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 768 320 -16 ) ( 768 320 -15 ) ( 768 321 -16 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 13
+{
+( 272 192 80 ) ( 272 193 80 ) ( 272 192 81 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 448 -256 80 ) ( 448 -256 81 ) ( 449 -256 80 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 448 192 128 ) ( 449 192 128 ) ( 448 193 128 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 576 320 256 ) ( 576 321 256 ) ( 577 320 256 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 576 -240 112 ) ( 577 -240 112 ) ( 576 -240 113 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 752 320 112 ) ( 752 320 113 ) ( 752 321 112 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 14
+{
+( 752 208 80 ) ( 752 209 80 ) ( 752 208 81 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 464 -240 80 ) ( 464 -240 81 ) ( 465 -240 80 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 464 208 128 ) ( 465 208 128 ) ( 464 209 128 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 592 336 256 ) ( 592 337 256 ) ( 593 336 256 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 592 496 112 ) ( 593 496 112 ) ( 592 496 113 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 768 336 112 ) ( 768 336 113 ) ( 768 337 112 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 15
+{
+( 704 64 16 ) ( 704 65 16 ) ( 704 64 17 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -192 -768 16 ) ( -192 -768 17 ) ( -191 -768 16 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -192 64 0 ) ( -191 64 0 ) ( -192 65 0 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -64 192 64 ) ( -64 193 64 ) ( -63 192 64 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -64 -272 48 ) ( -63 -272 48 ) ( -64 -272 49 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 768 -768 48 ) ( 752 -768 64 ) ( 752 -640 64 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 0.7071067811865476 0 -0.7071067811865476 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 768 192 48 ) ( 768 192 49 ) ( 768 193 48 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+}
+// entity 1
+{
+"classname" "BigBox"
+"origin" "160 -224 161"
+}
+// entity 2
+{
+"classname" "HealthPackSpawner"
+"origin" "-16 -208 164"
+}
+// entity 3
+{
+"classname" "HealthPackSpawner"
+"origin" "80 -208 164"
+}
+// entity 4
+{
+"classname" "PlayerSpawn"
+"origin" "-120 -48 162"
+"team" "2"
+}
+// entity 5
+{
+"classname" "PlayerSpawn"
+"origin" "-120 16 162"
+"team" "1"
+}
+// entity 6
+{
+"classname" "PlayerSpawn"
+"origin" "-120 80 162"
+"team" "0"
+}

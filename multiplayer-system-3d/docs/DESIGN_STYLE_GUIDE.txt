@@ -60,22 +60,30 @@ Usage rules:
 
 3. TYPOGRAPHY
 -------------
-Family: Montserrat (assets/fonts/Montserrat/static/).
-  Regular   body, lists, descriptions
-  SemiBold  buttons, names, table values
-  ExtraBold titles, primary CTA labels
-  Black     title-screen wordmark only
+Faces (two, no more):
+  UI text: Switzer (assets/fonts/Switzer/), Helvetica-class neo-grotesque.
+    Medium  everything: body, lists, descriptions, buttons, names, table
+            values, section headers, HUD labels
+    Bold    numbers and numeric emphasis only (damage numbers, stat deltas)
+  Display: Anton (assets/fonts/Anton/), condensed poster black.
+    Titles, screen headers, the title-screen wordmark and other large
+    all-caps display text.  Never body copy.  Single weight (400).
 
 Scale (px): 44 display / 30 title / 22 section-large / 15 section /
 14 body / 12 small / 11 micro.
 
 Rules:
 - Display, title, section, buttons and badges are UPPERCASE.
+- Every screen/panel title is Anton at any size, including titles below the
+  44 px display scale (``UITheme.display_label`` always uses the Anton
+  FontVariation; its ``size`` argument sets size, never the face).
 - Section headers use +2 px glyph tracking; the title wordmark uses +3 px.
   Tracking lives in FontVariation, not in the string.
 - Body copy and descriptions keep sentence case.  Never uppercase a paragraph.
-- One font family.  Do not mix Century Gothic or Kaisei into screens.
-- Numbers in scoreboards and stat rows are right-aligned and use SemiBold.
+- Two faces only (Switzer for UI, Anton for display).  Do not mix Century
+  Gothic, Kaisei or Montserrat into screens.
+- Numbers in scoreboards and stat rows are right-aligned and use Switzer
+  Medium; floating damage numbers use Switzer Bold.
 
 
 4. SPACING, SHAPE, BORDERS
@@ -129,9 +137,42 @@ Stat row
   1 px LINE box, uppercase micro label left, value right in SemiBold.
 Badge
   16% fill + 75% border of the accent colour, micro tracked uppercase text.
+Interaction prompt (lobby E-zones)
+  Compact INK_2 94% panel, 1 px LINE, 10 px padding, 0 radius, centred below
+  the crosshair, clear of the player HUD's centre column ("USING X" +14..44 px,
+  active-ability disc +46..118 px).  Leading 26x26
+  keycap: 1 px accent border, 14% accent fill, Switzer Bold key glyph.
+  Action label is a 15 px tracked uppercase section label in TEXT, with an
+  optional micro MUTED detail line under it.  Non-actionable states ("RUN IN
+  PROGRESS", "RANGE COOLDOWN") drop the keycap and render the label MUTED.
+  Fade 140 ms in / 100 ms out; never blocks input and hides while any menu
+  owns it.  Built by ui/interaction_prompt.gd from UITheme helpers only.
 Tab
   Uppercase tracked label, muted when inactive; active = white + 3 px RED
   underline.  Inactive underline 1 px LINE on hover only.
+Ability tile (loadout)
+  108x96 card, SLATE fill + 1 px LINE; micro numbered index top-left, 44 px
+  white icon centred, name micro MUTED under the card.  Hover: LINE_HI border
+  and the infographic switches to the ability (icon, description, cooldown and
+  cast rows).  No hint line under the row; the info panel owns hover detail.
+  The tiles live in the floating ABILITIES overlay panel, not the side panel.
+Info infographic (loadout right panel)
+  No section title: sentence-case description, then accent badges for traits
+  (SEES HEALTH, HEAL ON KILL, REGEN, LIFESTEAL, AIR JUMPS).  ATTRIBUTES: one
+  stat per row — micro tracked label left, signed value right in Switzer Bold
+  (TEAL above base, AMBER below, BASE muted), then a 20-pip bar on a 0.5x-1.5x
+  scale with base at half full.  Weapon hover: killfeed thumbnail, then
+  DAMAGE / HEADSHOT / FIRE RATE / MAGAZINE / RELOAD / MOVE SPEED in stat rows.
+Loadout slot (loadout)
+  Full-width 86 px card, 112x63 killfeed thumbnail at the left, micro tracked
+  PRIMARY / SECONDARY / MELEE caption + 14 px weapon name.  Hover: SLATE_HI.
+  Click opens the weapon popover; hover previews that weapon on the model.
+Weapon popover
+  INK_2 98% panel, 1 px LINE, 12 px padding, 320 px wide (360 max height,
+  scrollable).  Micro tracked column header, then 52 px rows: 64x36 killfeed
+  thumbnail + 12 px weapon name.  Hover = SLATE_HI; selected = 14% TEAL fill
+  + 2 px TEAL border + TEAL name.  Opens below the slot, flips above when it
+  would overflow, and pins 16 px from the viewport edges.
 
 
 6. SCREEN RECIPES
@@ -151,6 +192,18 @@ Match Menu (HostServer)
   players, state, JOIN button; direct IP row at the bottom.
   PARTY: centred unavailable panel, no fake controls.
 
+Target range HUD (3D lobby, every peer during a run)
+  Small centred panel at the top, 340 px wide, PANEL_BG + 1 px LINE.
+  DISPLAY title "TARGET RANGE" at FS_SECTION, a 3 px TEAL accent rule, then
+  "KILLS  n / 30" in Switzer Medium FS_BODY, the live time in Switzer Bold at
+  FS_TITLE, and on finish "TIME  ss.ss s     BEST  ss.ss s" in TEAL.
+  No grade, medal or colour rating: lower time is the only metric.  The panel
+  hides itself after ~6 s and never blocks input.  Built from UITheme helpers
+  (panel_style, display_label, accent_bar, body_label); no local palette.
+  The interaction prompt ("E  TARGET RANGE") carries a second MUTED line with
+  "LAST  ss.ss s     BEST  ss.ss s" once a run has completed; both are omitted
+  until the first finish.
+
 Staging room
   Current map thumbnail as a full-screen background at ~42% opacity with an
   ink scrim.  Header: map name, mode + description, phase, player count,
@@ -163,13 +216,43 @@ Staging room
   JOIN IN PROGRESS / START GAME.
   Selecting an agent applies immediately; LOCK IN is the READY flag.
 
-Loadout (agent select)
-  AGENTS // LOADOUT header.  Left: large 3D preview framed with a 2 px
-  border that turns TEAL on hover, still click-to-open the full agent picker
-  (portrait cards).  Centre: weapon columns PRIMARY / SECONDARY / MELEE with
-  weapon-card tiles, selected = teal fill + border.  Right: INFO panel with
-  stats/description in stat-row style.  Bottom centre: four ability discs.
-  Primary action is LOCK IN (RED); RANDOMIZE secondary; LEAVE PARTY danger.
+Loadout (character select)
+  AGENTS // LOADOUT header (Anton 30) with the mode note at the right.  Three
+  full-height columns inside 24 px screen margins:
+  LEFT: YOUR TEAM panel (280 px) — Anton 24 title, 1 px rule, roster rows with
+  a 3 px accent (TEAL for YOU, otherwise team colour), 40 px portrait, player
+  name + agent name, and a YOU/HOST tag.
+  CENTRE: the 3D agent preview fills the column.  Operative index in tracked
+  micro MUTED at the top-left, thin LINE_HI corner brackets (TEAL on hover),
+  and a DIM_TEXT "DRAG TO ROTATE · SCROLL TO ZOOM" hint above the strip.  The
+  class-grouped agent strip FLOATS over the preview's lower edge in an INK_2
+  82% band with a top 1 px LINE, so it consumes no layout height.
+  RIGHT: detail panel (500 px) runs to the bottom — Anton agent name in a
+  fixed-height block (long names shrink the type size, never reflow the panel),
+  micro tracked TEAL class label UNDER the name, then the scrolling infographic
+  (no section title; description, trait badges, six pip attribute bars), then
+  LOADOUT as three stacked 86 px slots (112x63 killfeed thumbnail,
+  PRIMARY/SECONDARY/MELEE caption, weapon name), full-width RED LOCK IN,
+  RANDOMIZE + randomize-on-death, LEAVE PARTY danger outline.  The four
+  108x96 ability tiles float in their own INK_2 82% band over the bottom of
+  the preview (above the agent strip) in a collapsible panel with a ▾/▸
+  header, so they cost the detail panel no height.  Hovering a different agent
+  card ghosts that model AND its weapon in the preview as a blue hologram
+  (unlit translucent blue material override with emission), and shows
+  SWITCHING TO above the name, in TEAL, until the pointer leaves.
+  Clicking a loadout slot opens a weapon popover.  Hovering a popover row OR a
+  loadout slot puts that weapon in the preview model's in-game hold pose; the
+  last hovered weapon stays displayed until the next pick.  Selecting an agent
+  in the strip applies it immediately; there is no separate picker popup.
+  A secondary `PREVIEW: STANDING / WALKING / RUNNING` button sits above the
+  strip at the preview's bottom-right and cycles the animation state.  LMB
+  drag orbits the camera around the agent, RMB drag pans it in the camera
+  plane (the ground grid pans with the agent), and the wheel zooms.  A
+  transparent ground grid under the agent (0.5 m cells, major lines every 2 m,
+  faded at the edge) keeps the orbit readable.  Primary action is LOCK IN
+  (RED); RANDOMIZE
+  secondary; LEAVE PARTY is the danger outline so LOCK IN stays the only
+  filled RED element.
 
 Pause
   Narrow ink panel: PAUSED title, RED rule, local agent portrait + name,
@@ -182,8 +265,11 @@ Results
   row tint, RED RETURN TO LOBBY.
 
 HUD
-  Ink/slate panels at 0.55-0.9 alpha, Montserrat SemiBold, uppercase labels.
+  Ink/slate panels at 0.55-0.9 alpha, Switzer Medium, uppercase labels.
   Health bar: TEAL, RED below 30%.  Stamina: TEAL cells.  Reload: AMBER.
+  The health block carries the owner's 72 px character portrait to its left,
+  square and aspect-covered, above the team/character labels; hidden until a
+  character is set.
   Ability discs: ink disc + teal rim; active disc = TEAL; cooldown pie TEAL.
   Running ability (action poses, timed self-buffs, weapon-fire bursts such as
   Carpet Bomb; calligraphy shows a full ring):

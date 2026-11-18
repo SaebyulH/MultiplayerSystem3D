@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://verification/air_control_harness.gd" id="1_harn"]
+
+[node name="AirControlHarness" type="Node"]
+script = ExtResource("1_harn")

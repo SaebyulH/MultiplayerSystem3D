@@ -3,6 +3,10 @@ class_name AttributeComponent
 
 signal health_changed
 signal no_health
+## Emitted on a practice target's killing blow, **before** the final health
+## assignment below emits `no_health` (which respawns the Player synchronously).
+## Carries the changer's name, like the Leaderboard kill path.
+signal practice_target_died(changer: String)
 
 var last_attacker = "NONE"
 ## Direction of the last damaging hit (away from the attacker), used to knock the
@@ -170,6 +174,10 @@ func _on_enemy_attacker_expired() -> void:
 func _flush_regen_stat() -> void:
 	if _pending_self_heal <= 0.0:
 		return
+	var owner_player: Player = get_parent() as Player
+	if owner_player != null and owner_player.is_practice_target:
+		_pending_self_heal = 0.0
+		return
 	Leaderboard.request_add_self_heal(get_parent().name, _pending_self_heal)
 	_pending_self_heal = 0.0
 
@@ -197,13 +205,20 @@ func apply_health_delta(delta: float, changer: String, changee: String, is_heads
 	# disconnected, or the source may be neutral.  The damage still lands — only
 	# the per-player feedback (sounds / damage numbers) needs a live source.
 	var changer_node: Player = GameManager.find_player(changer)
+	# Practice targets are not participants: all damage still lands and reports
+	# hit sounds / damage numbers, but nothing here may touch the match score,
+	# the kill feed or Deathmatch totals.
+	var owner_player: Player = get_parent() as Player
+	var is_practice := owner_player != null and owner_player.is_practice_target
 	if applied_delta < 0:
 		_time_since_last_damage = 0.0
 
 		if changee == changer:
-			Leaderboard.request_add_self_damage(changer, applied_delta)
+			if not is_practice:
+				Leaderboard.request_add_self_damage(changer, applied_delta)
 		else:
-			Leaderboard.request_add_damage(changer, applied_delta)
+			if not is_practice:
+				Leaderboard.request_add_damage(changer, applied_delta)
 			if changer_node != null and not changer_node.is_bot:
 				if is_headshot:
 					changer_node.weapon_controller.play_crit_sound.rpc_id(changer.to_int())
@@ -219,16 +234,23 @@ func apply_health_delta(delta: float, changer: String, changee: String, is_heads
 				_enemy_attacker_expiry.start()
 	else:
 		if changee == changer:
-			Leaderboard.request_add_self_heal(changer, applied_delta)
+			if not is_practice:
+				Leaderboard.request_add_self_heal(changer, applied_delta)
 		else:
-			Leaderboard.request_add_heal_other(changer, applied_delta)
+			if not is_practice:
+				Leaderboard.request_add_heal_other(changer, applied_delta)
 			if changer_node != null and not changer_node.is_bot:
 				changer_node.weapon_controller.play_hit_heal_sound.rpc_id(changer.to_int())
 				changer_node.damage_number_manager._receive_damage_number.rpc_id(changer.to_int(), changee, applied_delta)
 
 
 	if old_health > 0.0 and new_health <= 0.0:
-		if changee != changer:
+		if is_practice:
+			# Must fire before `health = new_health` below: that setter emits
+			# `no_health`, which respawns the Player synchronously.  A listener
+			# that finishes a run needs to free the target before that happens.
+			practice_target_died.emit(changer)
+		elif changee != changer:
 			# Resolve weapon info for the kill feed.
 			var weapon_name: String = ""
 			var killfeed_icon_path: String = ""
@@ -309,10 +331,15 @@ func _process(delta: float) -> void:
 	if not multiplayer.is_server():
 		return
 
+	# Practice targets never regenerate: a target that heals between shots is
+	# not a target.  Both the base and character regen are skipped here.
+	var p: Player = get_parent() as Player
+	if p != null and p.is_practice_target:
+		return
+
 	# Character regen overrides base values when set (non-null character).
 	var heal_rate: float = passive_heal_per_sec
 	var heal_delay: float = HEAL_DELAY
-	var p: Player = get_parent() as Player
 	if p and p._character:
 		heal_rate = p._character.regen_per_sec
 		heal_delay = p._character.regen_delay

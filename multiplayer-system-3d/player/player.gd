@@ -15,6 +15,11 @@ const FALL_DAMAGE_SOUND: AudioStream = preload("res://assets/sounds/universfield
 @export var tick_interpolator: TickInterpolator
 
 @export var respawn_time: float = 1.0
+## Practice targets respawn almost instantly.  It must not be 0: the queued
+## spawn has to survive a few rollback ticks so history records the new position,
+## otherwise netfox re-applies the pre-death state and the dummy appears to stay
+## where it died.  Same value on every peer (respawn_time is server-only).
+const PRACTICE_RESPAWN_DELAY: float = 0.1
 ## Seconds a death ragdoll corpse stays in the world before being freed.
 const RAGDOLL_LIFETIME: float = 25.0
 ## Impulse (N·s) applied to each ragdoll bone along the killing blow's direction.
@@ -30,6 +35,18 @@ const RAGDOLL_DEATH_IMPULSE: float = 4.0
 var respawn_timer: float = 0.0
 
 var is_bot: bool = false  # set by SpawnManager before add_child
+
+## True for a stationary, non-AI practice target.  Set before add_child; unlike
+## `is_bot` this IS replicated, because client-side roster/spectator filters
+## cannot see the server-only bot flag.  Practice targets never touch the
+## Leaderboard and are skipped by every "all Players are participants" scan.
+var is_practice_target: bool = false
+
+## Server-only respawn override.  When valid it replaces the map's random spawn
+## in `_get_spawn_transform()`, which is how a dummy returns to its marker and a
+## range target picks its next random point.  Never replicated: only the server
+## chooses a spawn and passes the concrete transform down through `rpc_reset`.
+var spawn_transform_provider: Callable = Callable()
 
 var entity_id: String :
 	get:
@@ -104,6 +121,19 @@ const DOWN_DASH_WINDOW: float = 0.44
 
 ## Current stamina (fractional - the fractional part is a bar recovering).
 var stamina: float = float(MAX_STAMINA)
+
+## Passive air-strafe meter (FlyGirl's AirControlAbility), in **seconds of use**.
+## Rollback state (see player.tscn's RollbackSynchronizer): _air_accelerate reads
+## it every tick on every predicting peer, so it cannot be a per-peer pool like
+## AbilityManager's noclip meter.  Drains in proportion to how misaligned the wish
+## direction is with actual travel (see _air_strafe_factor), refills otherwise;
+## at 0.0 the character's air multipliers are replaced by the ability's depleted
+## (Juggernaut-level) values.
+var air_control_meter: float = 0.0
+## Display-only mirror of "the meter drained this tick".  Not rollback state and
+## not networked — it only colours the HUD's meter bar, which reads it on the
+## owning peer.  Set by _update_air_control_meter inside the rollback tick.
+var _air_strafe_draining: bool = false
 
 ## Dev-menu "no stamina cooldowns".  Broadcast to every peer (see
 ## _sync_dev_infinite_stamina) because stamina is rollback state: a peer that
@@ -243,6 +273,8 @@ var _character: Character = null
 
 ## Cached ShoulderChargeAbility (read for its tunables inside the rollback tick).
 var _charge_ability: ShoulderChargeAbility = null
+## Cached passive air-control meter (FlyGirl only), read inside the rollback tick.
+var _air_control_ability: AirControlAbility = null
 
 ## Server-side list of players currently pinned to this charger (by name).
 var _pinned_players: Array[String] = []
@@ -697,6 +729,10 @@ func _health_changed():
 ## Every caller passes the result straight to `rpc_reset`, which is why this carries a
 ## transform rather than a bare position.
 func _get_spawn_transform() -> Transform3D:
+	if spawn_transform_provider.is_valid():
+		var provided: Transform3D = spawn_transform_provider.call()
+		if provided.origin != Vector3.ZERO:
+			return provided
 	if not is_instance_valid(GameManager.spawn_parent):
 		return Transform3D()
 	for node in GameManager.spawn_parent.get_children():
@@ -719,7 +755,10 @@ func rpc_reset(transform: Transform3D) -> void:
 	# pulse is still live and would damage enemies at the new spawn.
 	_noclip_exit_time = 0.0
 	_noclip_exit_hit.clear()
-	respawn_timer = respawn_time
+	# Practice targets use a fixed short delay on every peer.  `respawn_time` is
+	# a server-set plain var, so a client copy would otherwise keep the scene
+	# default (1 s) and show a dead dummy for a second after every range kill.
+	respawn_timer = PRACTICE_RESPAWN_DELAY if is_practice_target else respawn_time
 	var spawn := transform
 	if spawn.origin == Vector3.ZERO:
 		spawn = Transform3D(Basis.IDENTITY, Vector3(0, 12, 0))
@@ -953,8 +992,11 @@ func no_health() -> void:
 		# life.  (rpc_reset clears again below; this guards the death frame itself.)
 		if status_effect_manager:
 			status_effect_manager.clear_all_effects()
-		var death_impulse := attribute_component.last_hit_direction * RAGDOLL_DEATH_IMPULSE
-		_spawn_ragdoll.rpc(corpse_transform, death_impulse)
+		# Practice targets die up to 30 times per range run.  A corpse per kill
+		# would leave dozens of physics bodies in the lobby for RAGDOLL_LIFETIME.
+		if not is_practice_target:
+			var death_impulse := attribute_component.last_hit_direction * RAGDOLL_DEATH_IMPULSE
+			_spawn_ragdoll.rpc(corpse_transform, death_impulse)
 		rpc_reset.rpc(_get_spawn_transform())
 
 
@@ -1548,6 +1590,9 @@ func _find_bashdown_target() -> Player:
 		var other := node as Player
 		if other == null or other == self:
 			continue
+		# Practice targets stay where they are; they cannot be bashdown-pinned.
+		if other.is_practice_target:
+			continue
 		if not _is_enemy_of(other) or other.pinned_charger_name != "":
 			continue
 		var to := other.global_position - global_position
@@ -1610,6 +1655,9 @@ func _grab_nearby_enemies() -> void:
 	for node in get_tree().get_nodes_in_group("players"):
 		var other := node as Player
 		if other == null or other == self or not other.spawned:
+			continue
+		# Practice targets stay where they are; a charge must not carry them.
+		if other.is_practice_target:
 			continue
 		if not _is_enemy_of(other):
 			continue
@@ -1739,9 +1787,56 @@ func set_size_scale(mult: float) -> void:
 	_size_scale = mult
 	scale = Vector3.ONE * mult
 
+## Horizontal speed below which there is no meaningful travel direction to
+## strafe against — a jump straight up and a slow drift both read as 0 here.
+const AIR_STRAFE_MIN_SPEED: float = 0.5
+
+## How much the current input is **air-strafing**, 0..1: the sine of the angle
+## between the wish direction and the direction the player is actually travelling.
+##
+## 0 means the input is aligned with travel (holding W while looking forward is
+## not a strafe — it neither gains speed past the cap nor drains the meter), 1
+## means perpendicular (the classic strafe/turn).  Requires a travel direction,
+## so a near-zero horizontal speed returns 0: the first push out of a standing
+## jump is ordinary air acceleration, not a strafe.
+func _air_strafe_factor(wish_dir: Vector3) -> float:
+	if wish_dir.length_squared() <= 0.0001:
+		return 0.0
+	var hvel := Vector3(velocity.x, 0.0, velocity.z)
+	if hvel.length() < AIR_STRAFE_MIN_SPEED:
+		return 0.0
+	return 1.0 - absf(hvel.normalized().dot(wish_dir.normalized()))
+
+
+## Drain the passive air-control meter in proportion to the strafe factor, or
+## refill it when not strafing.  Runs inside the rollback tick (from
+## _apply_movement_from_input), so the server and the owning client derive the
+## same pool from the same inputs.
+func _update_air_control_meter(delta: float, on_floor: bool, wish_dir: Vector3) -> void:
+	if _air_control_ability == null:
+		_air_strafe_draining = false
+		return
+	if ability_manager != null and ability_manager.dev_no_meter_drain:
+		air_control_meter = maxf(_air_control_ability.max_meter, 0.0)
+		_air_strafe_draining = false
+		return
+	var factor: float = 0.0 if on_floor else _air_strafe_factor(wish_dir)
+	_air_strafe_draining = factor > 0.0
+	if factor > 0.0:
+		air_control_meter = maxf(air_control_meter - delta * factor, 0.0)
+		return
+	var full: float = maxf(_air_control_ability.max_meter, 0.0)
+	if air_control_meter >= full:
+		return
+	var recharge: float = _air_control_ability.recharge_seconds
+	if recharge > 0.0:
+		air_control_meter = minf(air_control_meter + full / recharge * delta, full)
+
+
 ## Reset all stamina / dash / air-action state on respawn.
 func _reset_movement_tech() -> void:
 	stamina = float(get_max_stamina())
+	air_control_meter = _air_control_ability.max_meter if _air_control_ability else 0.0
 	dash_held_prev = false
 	jump_held_prev = false
 	crouch_held_prev = false
@@ -1825,13 +1920,22 @@ func get_status_speed_mult() -> float:
 ## [param delta] – frame delta.
 func _air_accelerate(wish_dir: Vector3, wish_speed: float, delta: float) -> void:
 	var vel: Vector3 = Vector3(velocity.x, 0.0, velocity.z)
-	var eff_air_cap: float = _cmult(air_speed_cap, _character.air_speed_cap_mult if _character else 1.0)
+	var cap_mult: float = _character.air_speed_cap_mult if _character else 1.0
+	var accel_mult: float = _character.air_accel_mult if _character else 1.0
+	# AirControlAbility: the character's own high-air-control multipliers apply
+	# only while the air-strafe meter holds charge.  An empty pool replaces them
+	# with the ability's depleted values (Juggernaut-level) rather than scaling
+	# them, so "empty" means the same air control on every character.
+	if _air_control_ability != null and air_control_meter <= 0.0:
+		cap_mult = _air_control_ability.depleted_air_speed_cap_mult
+		accel_mult = _air_control_ability.depleted_air_accel_mult
+	var eff_air_cap: float = _cmult(air_speed_cap, cap_mult)
 	var capped_wish_speed: float = min(wish_speed, eff_air_cap)
 	var current_speed: float = vel.dot(wish_dir)
 	var add_speed: float = capped_wish_speed - current_speed
 	if add_speed <= 0.0:
 		return
-	var eff_air_accel: float = _cmult(air_acceleration, _character.air_accel_mult if _character else 1.0)
+	var eff_air_accel: float = _cmult(air_acceleration, accel_mult)
 	var accel_speed: float = eff_air_accel * capped_wish_speed * delta
 	accel_speed = min(accel_speed, add_speed)
 	vel += wish_dir * accel_speed
@@ -1925,6 +2029,11 @@ func _apply_movement_from_input(delta):
 	var right   := Vector3(cam_basis.x.x, 0, cam_basis.x.z).normalized()
 	var forward := right.cross(Vector3.UP)
 	var direction := (forward * input_dir.y + right * input_dir.x).normalized()
+
+	# Passive air-control meter.  Air "strafing" is exactly the condition under
+	# which _air_accelerate applies this tick: airborne with directional input.
+	# Everything else (grounded, or airborne with no steering) refills.
+	_update_air_control_meter(delta, on_floor, direction)
 
 	# -- Input edges --
 	# Rising-edge detection so presses replay deterministically under rollback.
@@ -2326,6 +2435,22 @@ func _dev_infinite_ammo_request(on: bool) -> void:
 		weapon_controller.set_dev_infinite_ammo(on)
 
 
+## Target-range grant, decided by `PracticeRange` on the server for the length
+## of a run.  Every peer gets the flag: the owner's copy drives the HUD "∞" and
+## its own reload/auto-switch checks, the server's copy is the `fire_intent`
+## backstop, and third-party copies keep the two from disagreeing.
+func set_range_infinite_ammo(on: bool) -> void:
+	if not multiplayer.is_server():
+		return
+	_sync_range_infinite_ammo.rpc(on)
+
+
+@rpc("authority", "call_local", "reliable")
+func _sync_range_infinite_ammo(on: bool) -> void:
+	if weapon_controller:
+		weapon_controller.set_range_infinite_ammo(on)
+
+
 func dev_set_no_meter_drain(on: bool) -> void:
 	if ability_manager:
 		ability_manager.set_dev_no_meter_drain(on)
@@ -2592,6 +2717,7 @@ func set_character(char: Character) -> void:
 	_refresh_bashdown_ability()
 	_refresh_teleport_ability()
 	_refresh_aimbot_ability()
+	_refresh_air_control_ability()
 	_spawn_character_model()
 	character_changed.emit()
 
@@ -2660,6 +2786,34 @@ func _refresh_aimbot_ability() -> void:
 			if a is AimbotAbility:
 				_aimbot_ability = a
 				return
+
+
+## Cache the character's passive air-control meter (if any) and start it full.
+## Called from set_character, i.e. whenever the ability list is replaced; the
+## respawn path resets it in _reset_movement_tech.
+func _refresh_air_control_ability() -> void:
+	_air_control_ability = null
+	if ability_manager:
+		for a in ability_manager.abilities:
+			if a is AirControlAbility:
+				_air_control_ability = a
+				break
+	air_control_meter = _air_control_ability.max_meter if _air_control_ability else 0.0
+
+
+## 0..1 remaining passive air-control meter.  Read by the HUD through
+## AbilityManager.get_meter_fraction, which delegates here for this ability.
+func get_air_control_meter_fraction() -> float:
+	if _air_control_ability == null or _air_control_ability.max_meter <= 0.0:
+		return 0.0
+	return clampf(air_control_meter / _air_control_ability.max_meter, 0.0, 1.0)
+
+
+## Whether the passive air-control meter drained on the last simulated tick.
+## Cosmetic HUD state only — the authority is the rollback value in
+## _update_air_control_meter.
+func is_air_control_draining() -> bool:
+	return _air_control_ability != null and _air_strafe_draining
 
 
 ## Whether a shoulder charge is currently active.

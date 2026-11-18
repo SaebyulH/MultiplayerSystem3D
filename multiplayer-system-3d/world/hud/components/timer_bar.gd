@@ -17,9 +17,7 @@ func _init() -> void:
 
 
 func _ready() -> void:
-	var font := load("res://assets/CenturyGothic - Century Gothic - Regular.ttf") as Font
-	if font:
-		_label.add_theme_font_override("font", font)
+	_label.add_theme_font_override("font", UITheme.FONT_MEDIUM)
 	_label.add_theme_constant_override("outline_size", 0)
 	_label.add_theme_color_override("font_color", Color(1, 1, 1, 1))
 

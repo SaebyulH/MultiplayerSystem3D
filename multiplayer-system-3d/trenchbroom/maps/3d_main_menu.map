@@ -8,219 +8,600 @@
 "classname" "worldspawn"
 // brush 0
 {
-( 0 -64 -48 ) ( 0 -63 -48 ) ( 0 -64 -47 ) Material-LIB/BrickWall[Damaged]/BrickWall[Damaged] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -64 -384 -48 ) ( -64 -384 -47 ) ( -63 -384 -48 ) Material-LIB/BrickWall[Damaged]/BrickWall[Damaged] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -64 -64 -64 ) ( -63 -64 -64 ) ( -64 -63 -64 ) Material-LIB/BrickWall[Damaged]/BrickWall[Damaged] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
-( 64 64 128 ) ( 64 65 128 ) ( 65 64 128 ) Material-LIB/BrickWall[Damaged]/BrickWall[Damaged] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
-( 64 384 -16 ) ( 65 384 -16 ) ( 64 384 -15 ) Material-LIB/BrickWall[Damaged]/BrickWall[Damaged] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( 64 64 -16 ) ( 64 64 -15 ) ( 64 65 -16 ) Material-LIB/BrickWall[Damaged]/BrickWall[Damaged] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -768 448 -48 ) ( -768 449 -48 ) ( -768 448 -47 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -576 0 -48 ) ( -576 0 -47 ) ( -575 0 -48 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -576 448 0 ) ( -575 448 0 ) ( -576 449 0 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -448 576 128 ) ( -448 577 128 ) ( -447 576 128 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -448 512 -16 ) ( -447 512 -16 ) ( -448 512 -15 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 768 576 -16 ) ( 768 576 -15 ) ( 768 577 -16 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
 }
 // brush 1
 {
-( -128 -64 128 ) ( -128 -63 128 ) ( -128 -64 129 ) Material-LIB/Metal/Metal[Black] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -64 -384 128 ) ( -64 -384 129 ) ( -63 -384 128 ) Material-LIB/Metal/Metal[Black] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -64 -64 128 ) ( -63 -64 128 ) ( -64 -63 128 ) Material-LIB/Metal/Metal[Black] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
-( 64 64 160 ) ( 64 65 160 ) ( 65 64 160 ) Material-LIB/Metal/Metal[Black] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
-( 64 384 160 ) ( 65 384 160 ) ( 64 384 161 ) Material-LIB/Metal/Metal[Black] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( 192 64 160 ) ( 192 64 161 ) ( 192 65 160 ) Material-LIB/Metal/Metal[Black] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -1088 704 -48 ) ( -1088 705 -48 ) ( -1088 704 -47 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -128 896 -48 ) ( -128 896 -47 ) ( -127 896 -48 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -128 704 0 ) ( -127 704 0 ) ( -128 705 0 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 0 832 384 ) ( 0 833 384 ) ( 1 832 384 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 0 960 -16 ) ( 1 960 -16 ) ( 0 960 -15 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 192 832 -16 ) ( 192 832 -15 ) ( 192 833 -16 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 }
 // brush 2
 {
-( -1088 192 -48 ) ( -1088 193 -48 ) ( -1088 192 -47 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -128 384 -48 ) ( -128 384 -47 ) ( -127 384 -48 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -128 192 -64 ) ( -127 192 -64 ) ( -128 193 -64 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
-( 0 320 384 ) ( 0 321 384 ) ( 1 320 384 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
-( 0 448 -16 ) ( 1 448 -16 ) ( 0 448 -15 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( 192 320 -16 ) ( 192 320 -15 ) ( 192 321 -16 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -768 64 -112 ) ( -768 65 -112 ) ( -768 64 -111 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -192 -768 -112 ) ( -192 -768 -111 ) ( -191 -768 -112 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -192 64 -128 ) ( -191 64 -128 ) ( -192 65 -128 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -64 192 0 ) ( -64 193 0 ) ( -63 192 0 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -64 768 -80 ) ( -63 768 -80 ) ( -64 768 -79 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 768 192 -80 ) ( 768 192 -79 ) ( 768 193 -80 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 }
 // brush 3
 {
-( -1088 64 -112 ) ( -1088 65 -112 ) ( -1088 64 -111 ) Material-LIB/Metal/Metal[Black] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -192 -384 -112 ) ( -192 -384 -111 ) ( -191 -384 -112 ) Material-LIB/Metal/Metal[Black] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -192 64 -96 ) ( -191 64 -96 ) ( -192 65 -96 ) Material-LIB/Metal/Metal[Black] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
-( -64 192 -64 ) ( -64 193 -64 ) ( -63 192 -64 ) Material-LIB/Metal/Metal[Black] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
-( -64 384 -80 ) ( -63 384 -80 ) ( -64 384 -79 ) Material-LIB/Metal/Metal[Black] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( 64 192 -80 ) ( 64 192 -79 ) ( 64 193 -80 ) Material-LIB/Metal/Metal[Black] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 1792 832 -112 ) ( 1792 833 -112 ) ( 1792 832 -111 ) Material-LIB/Metal/Metal[Black] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 2112 256 -112 ) ( 2112 256 -111 ) ( 2113 256 -112 ) Material-LIB/Metal/Metal[Black] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 2112 832 -96 ) ( 2113 832 -96 ) ( 2112 833 -96 ) Material-LIB/Metal/Metal[Black] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 2240 960 -64 ) ( 2240 961 -64 ) ( 2241 960 -64 ) Material-LIB/Metal/Metal[Black] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 2240 1280 -80 ) ( 2241 1280 -80 ) ( 2240 1280 -79 ) Material-LIB/Metal/Metal[Black] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 2816 960 -80 ) ( 2816 960 -79 ) ( 2816 961 -80 ) Material-LIB/Metal/Metal[Black] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 }
 // brush 4
 {
-( -1088 -640 -48 ) ( -1088 -639 -48 ) ( -1088 -640 -47 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -128 -448 -48 ) ( -128 -448 -47 ) ( -127 -448 -48 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -128 -640 -64 ) ( -127 -640 -64 ) ( -128 -639 -64 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
-( 0 -512 384 ) ( 0 -511 384 ) ( 1 -512 384 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
-( 0 -384 -16 ) ( 1 -384 -16 ) ( 0 -384 -15 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( 192 -512 -16 ) ( 192 -512 -15 ) ( 192 -511 -16 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -768 192 -48 ) ( -768 193 -48 ) ( -768 192 -47 ) BrickWall/BrickWall[Red] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -576 -256 -48 ) ( -576 -256 -47 ) ( -575 -256 -48 ) BrickWall/BrickWall[Red] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -576 192 0 ) ( -575 192 0 ) ( -576 193 0 ) BrickWall/BrickWall[Red] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -448 320 128 ) ( -448 321 128 ) ( -447 320 128 ) BrickWall/BrickWall[Red] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -448 0 -16 ) ( -447 0 -16 ) ( -448 0 -15 ) BrickWall/BrickWall[Red] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -256 320 -16 ) ( -256 320 -15 ) ( -256 321 -16 ) BrickWall/BrickWall[Red] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 }
 // brush 5
 {
-( -576 -64 128 ) ( -576 -63 128 ) ( -576 -64 129 ) Material-LIB/Metal/Metal[Black] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -448 -384 128 ) ( -448 -384 129 ) ( -447 -384 128 ) Material-LIB/Metal/Metal[Black] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -448 -64 128 ) ( -447 -64 128 ) ( -448 -63 128 ) Material-LIB/Metal/Metal[Black] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
-( -320 64 160 ) ( -320 65 160 ) ( -319 64 160 ) Material-LIB/Metal/Metal[Black] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
-( -320 384 160 ) ( -319 384 160 ) ( -320 384 161 ) Material-LIB/Metal/Metal[Black] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -448 64 160 ) ( -448 64 161 ) ( -448 65 160 ) Material-LIB/Metal/Metal[Black] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -256 0 0 ) ( -256 0 128 ) ( -256 -256 0 ) FreeStylized/ground_tiles_14_1k/ground_tiles_14_1k/ground_tiles_14_color_1k [ 0 -1.0000000000000002 0 0 ] [ 0 0 1.0000000000000002 -546.552 ] 0 0.163 0.163
+( -256 0 128 ) ( 256 0 128 ) ( 256 -256 0 ) FreeStylized/ground_tiles_14_1k/ground_tiles_14_1k/ground_tiles_14_color_1k [ 1.0000000000000002 0 0 0 ] [ 0 1.0000000000000002 0 69.10425 ] 0 0.163 0.163
+( 256 -256 0 ) ( 256 0 0 ) ( -256 0 0 ) FreeStylized/ground_tiles_14_1k/ground_tiles_14_1k/ground_tiles_14_color_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 256 0 0 ) ( 256 0 128 ) ( -256 0 128 ) FreeStylized/ground_tiles_14_1k/ground_tiles_14_1k/ground_tiles_14_color_1k [ -1.0000000000000002 0 0 0 ] [ 0 0 1.0000000000000002 -238.72388 ] 0 0.163 0.163
+( 256 -256 0 ) ( 256 0 128 ) ( 256 0 0 ) FreeStylized/ground_tiles_14_1k/ground_tiles_14_1k/ground_tiles_14_color_1k [ 0 1.0000000000000002 0 0 ] [ 0 0 1.0000000000000002 477.44806 ] 0 0.163 0.163
 }
 // brush 6
 {
-( -448 -192 128 ) ( -448 -191 128 ) ( -448 -192 129 ) Material-LIB/Metal/Metal[Black] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -384 -384 128 ) ( -384 -384 129 ) ( -383 -384 128 ) Material-LIB/Metal/Metal[Black] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -384 -192 128 ) ( -383 -192 128 ) ( -384 -191 128 ) Material-LIB/Metal/Metal[Black] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
-( -256 -64 160 ) ( -256 -63 160 ) ( -255 -64 160 ) Material-LIB/Metal/Metal[Black] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
-( -256 -256 160 ) ( -255 -256 160 ) ( -256 -256 161 ) Material-LIB/Metal/Metal[Black] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -128 -64 160 ) ( -128 -64 161 ) ( -128 -63 160 ) Material-LIB/Metal/Metal[Black] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -752 192 80 ) ( -752 193 80 ) ( -752 192 81 ) BrickWall/BrickWall[Red] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -576 -256 80 ) ( -576 -256 81 ) ( -575 -256 80 ) BrickWall/BrickWall[Red] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -576 192 128 ) ( -575 192 128 ) ( -576 193 128 ) BrickWall/BrickWall[Red] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -448 320 384 ) ( -448 321 384 ) ( -447 320 384 ) BrickWall/BrickWall[Red] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -448 -240 112 ) ( -447 -240 112 ) ( -448 -240 113 ) BrickWall/BrickWall[Red] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -272 320 112 ) ( -272 320 113 ) ( -272 321 112 ) BrickWall/BrickWall[Red] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 }
 // brush 7
 {
-( -448 448 128 ) ( -448 449 128 ) ( -448 448 129 ) Material-LIB/Metal/Metal[Black] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -384 256 128 ) ( -384 256 129 ) ( -383 256 128 ) Material-LIB/Metal/Metal[Black] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -384 448 128 ) ( -383 448 128 ) ( -384 449 128 ) Material-LIB/Metal/Metal[Black] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
-( -256 576 160 ) ( -256 577 160 ) ( -255 576 160 ) Material-LIB/Metal/Metal[Black] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
-( -256 384 160 ) ( -255 384 160 ) ( -256 384 161 ) Material-LIB/Metal/Metal[Black] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -128 576 160 ) ( -128 576 161 ) ( -128 577 160 ) Material-LIB/Metal/Metal[Black] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -768 208 80 ) ( -768 209 80 ) ( -768 208 81 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -576 -240 80 ) ( -576 -240 81 ) ( -575 -240 80 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -576 208 128 ) ( -575 208 128 ) ( -576 209 128 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -448 336 256 ) ( -448 337 256 ) ( -447 336 256 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -448 32 112 ) ( -447 32 112 ) ( -448 32 113 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -752 336 112 ) ( -752 336 113 ) ( -752 337 112 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
 }
 // brush 8
 {
-( -128 -64 160 ) ( -128 -63 160 ) ( -128 -64 161 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -64 -256 160 ) ( -64 -256 161 ) ( -63 -256 160 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -64 -64 160 ) ( -63 -64 160 ) ( -64 -63 160 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
-( 64 64 192 ) ( 64 65 192 ) ( 65 64 192 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
-( 64 256 192 ) ( 65 256 192 ) ( 64 256 193 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -112 64 192 ) ( -112 64 193 ) ( -112 65 192 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -784 192 80 ) ( -784 193 80 ) ( -784 192 81 ) BrickWall/BrickWall[Orange] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -592 -272 80 ) ( -592 -272 81 ) ( -591 -272 80 ) BrickWall/BrickWall[Orange] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -592 192 0 ) ( -591 192 0 ) ( -592 193 0 ) BrickWall/BrickWall[Orange] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -464 320 512 ) ( -464 321 512 ) ( -463 320 512 ) BrickWall/BrickWall[Orange] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -464 -240 112 ) ( -463 -240 112 ) ( -464 -240 113 ) BrickWall/BrickWall[Orange] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -752 320 112 ) ( -752 320 113 ) ( -752 321 112 ) BrickWall/BrickWall[Orange] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 }
 // brush 9
 {
-( -448 -128 160 ) ( -448 -127 160 ) ( -448 -128 161 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -80 -272 160 ) ( -80 -272 161 ) ( -79 -272 160 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -80 -128 160 ) ( -79 -128 160 ) ( -80 -127 160 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
-( 48 0 192 ) ( 48 1 192 ) ( 49 0 192 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
-( 48 -256 192 ) ( 49 -256 192 ) ( 48 -256 193 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -128 0 192 ) ( -128 0 193 ) ( -128 1 192 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -272 192 80 ) ( -272 193 80 ) ( -272 192 81 ) BrickWall/BrickWall[Orange] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -80 -272 80 ) ( -80 -272 81 ) ( -79 -272 80 ) BrickWall/BrickWall[Orange] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -80 192 0 ) ( -79 192 0 ) ( -80 193 0 ) BrickWall/BrickWall[Orange] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 48 320 512 ) ( 48 321 512 ) ( 49 320 512 ) BrickWall/BrickWall[Orange] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 48 -240 112 ) ( 49 -240 112 ) ( 48 -240 113 ) BrickWall/BrickWall[Orange] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -240 320 112 ) ( -240 320 113 ) ( -240 321 112 ) BrickWall/BrickWall[Orange] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 }
 // brush 10
 {
-( -448 400 160 ) ( -448 401 160 ) ( -448 400 161 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -80 256 160 ) ( -80 256 161 ) ( -79 256 160 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -80 400 160 ) ( -79 400 160 ) ( -80 401 160 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
-( 48 528 192 ) ( 48 529 192 ) ( 49 528 192 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
-( 48 272 192 ) ( 49 272 192 ) ( 48 272 193 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -128 528 192 ) ( -128 528 193 ) ( -128 529 192 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 240 192 80 ) ( 240 193 80 ) ( 240 192 81 ) BrickWall/BrickWall[Orange] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 432 -272 80 ) ( 432 -272 81 ) ( 433 -272 80 ) BrickWall/BrickWall[Orange] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 432 192 0 ) ( 433 192 0 ) ( 432 193 0 ) BrickWall/BrickWall[Orange] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 560 320 512 ) ( 560 321 512 ) ( 561 320 512 ) BrickWall/BrickWall[Orange] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 560 -240 112 ) ( 561 -240 112 ) ( 560 -240 113 ) BrickWall/BrickWall[Orange] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 272 320 112 ) ( 272 320 113 ) ( 272 321 112 ) BrickWall/BrickWall[Orange] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 }
 // brush 11
 {
-( -464 -64 160 ) ( -464 -63 160 ) ( -464 -64 161 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -400 -256 160 ) ( -400 -256 161 ) ( -399 -256 160 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -400 -64 160 ) ( -399 -64 160 ) ( -400 -63 160 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
-( -272 64 192 ) ( -272 65 192 ) ( -271 64 192 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
-( -272 256 192 ) ( -271 256 192 ) ( -272 256 193 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -448 64 192 ) ( -448 64 193 ) ( -448 65 192 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 752 192 80 ) ( 752 193 80 ) ( 752 192 81 ) BrickWall/BrickWall[Orange] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 944 -272 80 ) ( 944 -272 81 ) ( 945 -272 80 ) BrickWall/BrickWall[Orange] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 944 192 0 ) ( 945 192 0 ) ( 944 193 0 ) BrickWall/BrickWall[Orange] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 1072 320 512 ) ( 1072 321 512 ) ( 1073 320 512 ) BrickWall/BrickWall[Orange] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 1072 -240 112 ) ( 1073 -240 112 ) ( 1072 -240 113 ) BrickWall/BrickWall[Orange] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 784 320 112 ) ( 784 320 113 ) ( 784 321 112 ) BrickWall/BrickWall[Orange] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 }
 // brush 12
 {
-( -576 -64 160 ) ( -576 -63 160 ) ( -576 -64 161 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -512 -208 160 ) ( -512 -208 161 ) ( -511 -208 160 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -512 -64 160 ) ( -511 -64 160 ) ( -512 -63 160 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
-( -384 64 192 ) ( -384 65 192 ) ( -383 64 192 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
-( -384 208 192 ) ( -383 208 192 ) ( -384 208 193 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -560 64 192 ) ( -560 64 193 ) ( -560 65 192 ) FreeStylized/concrete_pillar_02_1k/concrete_pillar_02_1k/concrete_pillar_02_color_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 256 192 -48 ) ( 256 193 -48 ) ( 256 192 -47 ) BrickWall/BrickWall[Red] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 448 -256 -48 ) ( 448 -256 -47 ) ( 449 -256 -48 ) BrickWall/BrickWall[Red] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 448 192 0 ) ( 449 192 0 ) ( 448 193 0 ) BrickWall/BrickWall[Red] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 576 320 128 ) ( 576 321 128 ) ( 577 320 128 ) BrickWall/BrickWall[Red] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 576 0 -16 ) ( 577 0 -16 ) ( 576 0 -15 ) BrickWall/BrickWall[Red] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 768 320 -16 ) ( 768 320 -15 ) ( 768 321 -16 ) BrickWall/BrickWall[Red] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 }
 // brush 13
 {
-( 192 -512 -48 ) ( 192 -511 -48 ) ( 192 -512 -47 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -96 -448 -48 ) ( -96 -448 -47 ) ( -95 -448 -48 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -96 -512 -64 ) ( -95 -512 -64 ) ( -96 -511 -64 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
-( 32 -384 384 ) ( 32 -383 384 ) ( 33 -384 384 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
-( 32 448 -16 ) ( 33 448 -16 ) ( 32 448 -15 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( 224 -384 -16 ) ( 224 -384 -15 ) ( 224 -383 -16 ) FreeStylized/concrete_slabs_04_1k/concrete_slabs_04_1k/concrete_slabs_04_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 272 192 80 ) ( 272 193 80 ) ( 272 192 81 ) BrickWall/BrickWall[Red] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 448 -256 80 ) ( 448 -256 81 ) ( 449 -256 80 ) BrickWall/BrickWall[Red] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 448 192 128 ) ( 449 192 128 ) ( 448 193 128 ) BrickWall/BrickWall[Red] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 576 320 384 ) ( 576 321 384 ) ( 577 320 384 ) BrickWall/BrickWall[Red] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 576 -240 112 ) ( 577 -240 112 ) ( 576 -240 113 ) BrickWall/BrickWall[Red] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 752 320 112 ) ( 752 320 113 ) ( 752 321 112 ) BrickWall/BrickWall[Red] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 }
 // brush 14
 {
-( -960 -256 -96 ) ( -960 -384 -96 ) ( -960 -384 -128 ) Material-LIB/Metal/Metal[Black] [ 0 -1.0000000000000002 0 0 ] [ 0 0 1.0000000000000002 548.5713 ] 0 0.063 0.063
-( -960 -256 -96 ) ( -576 -256 160 ) ( -576 -384 160 ) Material-LIB/Metal/Metal[Black] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
-( -960 -384 -96 ) ( -576 -384 160 ) ( -576 -384 128 ) Material-LIB/Metal/Metal[Black] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -576 -256 128 ) ( -576 -256 160 ) ( -960 -256 -96 ) Material-LIB/Metal/Metal[Black] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -960 -256 -128 ) ( -960 -384 -128 ) ( -576 -384 128 ) Material-LIB/Metal/Metal[Black] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
-( -576 -384 160 ) ( -576 -256 160 ) ( -576 -256 128 ) Material-LIB/Metal/Metal[Black] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 752 208 80 ) ( 752 209 80 ) ( 752 208 81 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 464 -240 80 ) ( 464 -240 81 ) ( 465 -240 80 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 464 208 128 ) ( 465 208 128 ) ( 464 209 128 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 592 336 256 ) ( 592 337 256 ) ( 593 336 256 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 592 496 112 ) ( 593 496 112 ) ( 592 496 113 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 768 336 112 ) ( 768 336 113 ) ( 768 337 112 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
 }
 // brush 15
 {
-( -960 384 -96 ) ( -960 256 -96 ) ( -960 256 -128 ) Material-LIB/Metal/Metal[Black] [ 0 -1.0000000000000002 0 0 ] [ 0 0 1.0000000000000002 548.5713 ] 0 0.063 0.063
-( -960 384 -96 ) ( -576 384 160 ) ( -576 256 160 ) Material-LIB/Metal/Metal[Black] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
-( -960 256 -96 ) ( -576 256 160 ) ( -576 256 128 ) Material-LIB/Metal/Metal[Black] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -576 384 128 ) ( -576 384 160 ) ( -960 384 -96 ) Material-LIB/Metal/Metal[Black] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -960 384 -128 ) ( -960 256 -128 ) ( -576 256 128 ) Material-LIB/Metal/Metal[Black] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
-( -576 256 160 ) ( -576 384 160 ) ( -576 384 128 ) Material-LIB/Metal/Metal[Black] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 704 64 16 ) ( 704 65 16 ) ( 704 64 17 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 720 -768 64 ) ( 704 -768 48 ) ( 704 -640 48 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 0.7071067811865476 0 0.7071067811865476 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -192 -768 16 ) ( -192 -768 17 ) ( -191 -768 16 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -192 64 0 ) ( -191 64 0 ) ( -192 65 0 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -64 192 64 ) ( -64 193 64 ) ( -63 192 64 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -64 -256 48 ) ( -63 -256 48 ) ( -64 -256 49 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 768 -768 48 ) ( 752 -768 64 ) ( 752 -640 64 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 0.7071067811865476 0 -0.7071067811865476 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 768 192 48 ) ( 768 192 49 ) ( 768 193 48 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 }
 // brush 16
 {
-( -512 0 -48 ) ( -512 1 -48 ) ( -512 0 -47 ) Material-LIB/StonePillars/StonePillars [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -576 -192 -48 ) ( -576 -192 -47 ) ( -575 -192 -48 ) Material-LIB/StonePillars/StonePillars [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -576 0 -64 ) ( -575 0 -64 ) ( -576 1 -64 ) Material-LIB/StonePillars/StonePillars [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
-( -448 128 128 ) ( -448 129 128 ) ( -447 128 128 ) Material-LIB/StonePillars/StonePillars [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
-( -448 192 -16 ) ( -447 192 -16 ) ( -448 192 -15 ) Material-LIB/StonePillars/StonePillars [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
-( -448 128 -16 ) ( -448 128 -15 ) ( -448 129 -16 ) Material-LIB/StonePillars/StonePillars [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 720 64 80 ) ( 720 65 80 ) ( 720 64 81 ) clip [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -208 -768 80 ) ( -208 -768 81 ) ( -207 -768 80 ) clip [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -208 64 64 ) ( -207 64 64 ) ( -208 65 64 ) clip [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -80 192 192 ) ( -80 193 192 ) ( -79 192 192 ) clip [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -80 -256 112 ) ( -79 -256 112 ) ( -80 -256 113 ) clip [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 752 192 112 ) ( 752 192 113 ) ( 752 193 112 ) clip [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 17
+{
+( -768 64 16 ) ( -768 65 16 ) ( -768 64 17 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -752 -768 64 ) ( -768 -768 48 ) ( -768 -640 48 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 0.7071067811865476 0 0.7071067811865476 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -1664 -768 16 ) ( -1664 -768 17 ) ( -1663 -768 16 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -1664 64 0 ) ( -1663 64 0 ) ( -1664 65 0 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -1536 192 64 ) ( -1536 193 64 ) ( -1535 192 64 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -1536 -256 48 ) ( -1535 -256 48 ) ( -1536 -256 49 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -704 -768 48 ) ( -720 -768 64 ) ( -720 -640 64 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 0.7071067811865476 0 -0.7071067811865476 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -704 192 48 ) ( -704 192 49 ) ( -704 193 48 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 18
+{
+( -752 48 80 ) ( -752 49 80 ) ( -752 48 81 ) clip [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -1680 -784 80 ) ( -1680 -784 81 ) ( -1679 -784 80 ) clip [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -1680 48 64 ) ( -1679 48 64 ) ( -1680 49 64 ) clip [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -1552 176 448 ) ( -1552 177 448 ) ( -1551 176 448 ) clip [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -1552 -256 112 ) ( -1551 -256 112 ) ( -1552 -256 113 ) clip [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -720 176 112 ) ( -720 176 113 ) ( -720 177 112 ) clip [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 19
+{
+( -464 -688 0 ) ( -464 -687 0 ) ( -464 -688 1 ) FreeStylized/wood_planks_22_1k/wood_planks_22_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -480 -688 0 ) ( -480 -688 1 ) ( -479 -688 0 ) FreeStylized/wood_planks_22_1k/wood_planks_22_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -480 -688 0 ) ( -479 -688 0 ) ( -480 -687 0 ) FreeStylized/wood_planks_22_1k/wood_planks_22_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -448 -656 16 ) ( -448 -655 16 ) ( -447 -656 16 ) FreeStylized/wood_planks_22_1k/wood_planks_22_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -448 -272 16 ) ( -447 -272 16 ) ( -448 -272 17 ) FreeStylized/wood_planks_22_1k/wood_planks_22_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -448 -656 16 ) ( -448 -656 17 ) ( -448 -655 16 ) FreeStylized/wood_planks_22_1k/wood_planks_22_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 20
+{
+( -704 192 16 ) ( -704 192 17 ) ( -704 191 16 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 0 1.0000000000000002 0 0 ] [ 0 0 -1.0000000000000002 0 ] 0 0.063 0.063
+( 256 -768 48 ) ( 256 -768 49 ) ( 257 -768 48 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ -1.0000000000000002 0 0 0 ] [ 0 0 -1.0000000000000002 0 ] 0 0.063 0.063
+( -704 -768 48 ) ( -704 -752 64 ) ( -576 -752 64 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 0.7071067811865477 0 -0.7071067811865477 0 ] [ 0.7071067811865477 1.1102230246251565e-16 0.7071067811865477 0 ] 0 0.063 0.063
+( 128 192 0 ) ( 128 191 0 ) ( 129 192 0 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 256 64 64 ) ( 257 64 64 ) ( 256 63 64 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -704 -720 64 ) ( -704 -704 48 ) ( -576 -704 48 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 0.7071067811865477 0 0.7071067811865477 0 ] [ 0.7071067811865477 1.1102230246251565e-16 -0.7071067811865477 0 ] 0 0.063 0.063
+( 128 -704 16 ) ( 129 -704 16 ) ( 128 -704 17 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 1.0000000000000002 0 0 0 ] [ 0 0 -1.0000000000000002 0 ] 0 0.063 0.063
+( 704 64 48 ) ( 704 63 48 ) ( 704 64 49 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 0 -1.0000000000000002 0 0 ] [ 0 0 -1.0000000000000002 0 ] 0 0.063 0.063
+}
+// brush 21
+{
+( -720 64 80 ) ( -720 65 80 ) ( -720 64 81 ) clip [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -240 -768 80 ) ( -240 -768 81 ) ( -239 -768 80 ) clip [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -240 64 64 ) ( -239 64 64 ) ( -240 65 64 ) clip [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -112 192 448 ) ( -112 193 448 ) ( -111 192 448 ) clip [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -112 -752 112 ) ( -111 -752 112 ) ( -112 -752 113 ) clip [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 720 192 112 ) ( 720 192 113 ) ( 720 193 112 ) clip [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 22
+{
+( -128 -480 32 ) ( 0 -352 32 ) ( 0 -352 160 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -0.7071067811865476 -0.7071067811865476 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 32 -384 32 ) ( -32 -384 32 ) ( -32 -384 160 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 176 -32 0 ) ( 177 -32 0 ) ( 176 -31 0 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 304 96 64 ) ( 304 97 64 ) ( 305 96 64 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 64 -416 32 ) ( 96 -448 32 ) ( 96 -448 160 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -0.7071067811865476 0.7071067811865476 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 23
+{
+( 64 -416 32 ) ( 96 -448 160 ) ( 96 -448 32 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0.7071067811865476 -0.7071067811865476 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 32 -384 32 ) ( -32 -384 32 ) ( -32 -384 160 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 176 -32 0 ) ( 177 -32 0 ) ( 176 -31 0 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 304 96 32 ) ( 304 97 32 ) ( 305 96 32 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 304 -352 112 ) ( 305 -352 112 ) ( 304 -352 113 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 64 -352 16 ) ( 128 -416 16 ) ( 128 -416 144 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -0.7071067811865476 0.7071067811865476 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 24
+{
+( -128 -416 16 ) ( -64 -352 16 ) ( -64 -352 144 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -0.7071067811865476 -0.7071067811865476 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 32 -384 32 ) ( -32 -384 32 ) ( -32 -384 160 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 176 -32 0 ) ( 177 -32 0 ) ( 176 -31 0 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 304 96 32 ) ( 304 97 32 ) ( 305 96 32 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 304 -352 112 ) ( 305 -352 112 ) ( 304 -352 113 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -128 -480 32 ) ( 0 -352 160 ) ( 0 -352 32 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0.7071067811865476 0.7071067811865476 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 25
+{
+( 96 -512 32 ) ( 96 -448 32 ) ( 96 -448 160 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 176 -32 0 ) ( 177 -32 0 ) ( 176 -31 0 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 304 96 64 ) ( 304 97 64 ) ( 305 96 64 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 64 -544 32 ) ( 32 -576 32 ) ( 32 -576 160 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0.7071067811865476 0.7071067811865476 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 64 -416 32 ) ( 96 -448 32 ) ( 96 -448 160 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -0.7071067811865476 0.7071067811865476 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 26
+{
+( 96 -512 32 ) ( 96 -448 32 ) ( 96 -448 160 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 64 -544 32 ) ( 32 -576 160 ) ( 32 -576 32 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -0.7071067811865476 -0.7071067811865476 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 176 -32 0 ) ( 177 -32 0 ) ( 176 -31 0 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 304 96 32 ) ( 304 97 32 ) ( 305 96 32 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 64 -608 16 ) ( 128 -544 144 ) ( 128 -544 16 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0.7071067811865476 0.7071067811865476 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 128 96 112 ) ( 128 96 113 ) ( 128 97 112 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 27
+{
+( 96 -512 32 ) ( 96 -448 32 ) ( 96 -448 160 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 64 -416 32 ) ( 96 -448 160 ) ( 96 -448 32 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0.7071067811865476 -0.7071067811865476 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 176 -32 0 ) ( 177 -32 0 ) ( 176 -31 0 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 304 96 32 ) ( 304 97 32 ) ( 305 96 32 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 64 -352 16 ) ( 128 -416 16 ) ( 128 -416 144 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -0.7071067811865476 0.7071067811865476 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 128 96 112 ) ( 128 96 113 ) ( 128 97 112 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 28
+{
+( -32 -576 32 ) ( -64 -544 32 ) ( -64 -544 160 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0.7071067811865476 -0.7071067811865476 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 176 -32 0 ) ( 177 -32 0 ) ( 176 -31 0 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 304 96 64 ) ( 304 97 64 ) ( 305 96 64 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -32 -576 32 ) ( 32 -576 32 ) ( 32 -576 160 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 64 -544 32 ) ( 32 -576 32 ) ( 32 -576 160 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0.7071067811865476 0.7071067811865476 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 29
+{
+( -64 -608 16 ) ( -128 -544 16 ) ( -128 -544 144 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0.7071067811865476 -0.7071067811865476 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 176 -608 80 ) ( 176 -608 81 ) ( 177 -608 80 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 176 -32 0 ) ( 177 -32 0 ) ( 176 -31 0 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 304 96 32 ) ( 304 97 32 ) ( 305 96 32 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -32 -576 32 ) ( 32 -576 32 ) ( 32 -576 160 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -32 -576 32 ) ( -64 -544 160 ) ( -64 -544 32 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -0.7071067811865476 0.7071067811865476 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 30
+{
+( 64 -544 32 ) ( 32 -576 160 ) ( 32 -576 32 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -0.7071067811865476 -0.7071067811865476 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 176 -608 80 ) ( 176 -608 81 ) ( 177 -608 80 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 176 -32 0 ) ( 177 -32 0 ) ( 176 -31 0 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 304 96 32 ) ( 304 97 32 ) ( 305 96 32 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -32 -576 32 ) ( 32 -576 32 ) ( 32 -576 160 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 64 -608 16 ) ( 128 -544 144 ) ( 128 -544 16 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0.7071067811865476 0.7071067811865476 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 31
+{
+( -96 -512 32 ) ( -96 -448 32 ) ( -96 -448 160 ) Material-LIB/Nature/Water/Water [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -32 -576 32 ) ( -64 -544 32 ) ( -64 -544 160 ) Material-LIB/Nature/Water/Water [ 0.7071067811865476 -0.7071067811865476 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -128 -480 32 ) ( 0 -352 32 ) ( 0 -352 160 ) Material-LIB/Nature/Water/Water [ -0.7071067811865476 -0.7071067811865476 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -32 -576 32 ) ( 32 -576 160 ) ( 32 -576 32 ) Material-LIB/Nature/Water/Water [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 176 -32 0 ) ( 177 -32 0 ) ( 176 -31 0 ) Material-LIB/Nature/Water/Water [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 304 96 16 ) ( 304 97 16 ) ( 305 96 16 ) Material-LIB/Nature/Water/Water [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 32 -384 32 ) ( -32 -384 160 ) ( -32 -384 32 ) Material-LIB/Nature/Water/Water [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 64 -544 32 ) ( 32 -576 32 ) ( 32 -576 160 ) Material-LIB/Nature/Water/Water [ 0.7071067811865476 0.7071067811865476 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 64 -416 32 ) ( 96 -448 32 ) ( 96 -448 160 ) Material-LIB/Nature/Water/Water [ -0.7071067811865476 0.7071067811865476 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 96 -512 32 ) ( 96 -448 160 ) ( 96 -448 32 ) Material-LIB/Nature/Water/Water [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 32
+{
+( -96 -512 32 ) ( -96 -448 32 ) ( -96 -448 160 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -32 -576 32 ) ( 32 -576 160 ) ( 32 -576 32 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 176 -32 0 ) ( 177 -32 0 ) ( 176 -31 0 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 304 96 48 ) ( 304 97 48 ) ( 305 96 48 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -32 -576 32 ) ( -64 -544 160 ) ( -64 -544 32 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -0.7071067811865476 0.7071067811865476 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 33
+{
+( 64 -544 32 ) ( 32 -576 160 ) ( 32 -576 32 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -0.7071067811865476 -0.7071067811865476 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -32 -576 32 ) ( 32 -576 160 ) ( 32 -576 32 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 176 -32 0 ) ( 177 -32 0 ) ( 176 -31 0 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 304 96 48 ) ( 304 97 48 ) ( 305 96 48 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 96 -512 32 ) ( 96 -448 160 ) ( 96 -448 32 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 34
+{
+( 64 -416 32 ) ( 96 -448 160 ) ( 96 -448 32 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0.7071067811865476 -0.7071067811865476 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 176 -32 0 ) ( 177 -32 0 ) ( 176 -31 0 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 304 96 48 ) ( 304 97 48 ) ( 305 96 48 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 32 -384 32 ) ( -32 -384 160 ) ( -32 -384 32 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 96 -512 32 ) ( 96 -448 160 ) ( 96 -448 32 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 35
+{
+( -96 -512 32 ) ( -96 -448 32 ) ( -96 -448 160 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 176 -32 0 ) ( 177 -32 0 ) ( 176 -31 0 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 304 96 48 ) ( 304 97 48 ) ( 305 96 48 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 32 -384 32 ) ( -32 -384 160 ) ( -32 -384 32 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -128 -480 32 ) ( 0 -352 160 ) ( 0 -352 32 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0.7071067811865476 0.7071067811865476 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 36
+{
+( -32 -576 32 ) ( -64 -544 32 ) ( -64 -544 160 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0.7071067811865476 -0.7071067811865476 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -128 -480 32 ) ( 0 -352 32 ) ( 0 -352 160 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -0.7071067811865476 -0.7071067811865476 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 176 -32 0 ) ( 177 -32 0 ) ( 176 -31 0 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 304 96 64 ) ( 304 97 64 ) ( 305 96 64 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -96 -512 32 ) ( -96 -448 160 ) ( -96 -448 32 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 37
+{
+( -128 -32 80 ) ( -128 -31 80 ) ( -128 -32 81 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -64 -608 16 ) ( -128 -544 16 ) ( -128 -544 144 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0.7071067811865476 -0.7071067811865476 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 176 -32 0 ) ( 177 -32 0 ) ( 176 -31 0 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 304 96 32 ) ( 304 97 32 ) ( 305 96 32 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -32 -576 32 ) ( -64 -544 160 ) ( -64 -544 32 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -0.7071067811865476 0.7071067811865476 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -96 -512 32 ) ( -96 -448 160 ) ( -96 -448 32 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 38
+{
+( -128 -32 80 ) ( -128 -31 80 ) ( -128 -32 81 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -128 -416 16 ) ( -64 -352 16 ) ( -64 -352 144 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -0.7071067811865476 -0.7071067811865476 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 176 -32 0 ) ( 177 -32 0 ) ( 176 -31 0 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 304 96 32 ) ( 304 97 32 ) ( 305 96 32 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -128 -480 32 ) ( 0 -352 160 ) ( 0 -352 32 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0.7071067811865476 0.7071067811865476 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -96 -512 32 ) ( -96 -448 160 ) ( -96 -448 32 ) Material-LIB/BrickWall[Plaster]/BrickWall[Plaster][ii] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 39
+{
+( -272 -192 80 ) ( -272 -191 80 ) ( -272 -192 81 ) Material-LIB/Nature/Bark/Bark2 [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -80 -656 80 ) ( -80 -656 81 ) ( -79 -656 80 ) Material-LIB/Nature/Bark/Bark2 [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -80 -192 0 ) ( -79 -192 0 ) ( -80 -191 0 ) Material-LIB/Nature/Bark/Bark2 [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 48 -64 96 ) ( 48 -63 96 ) ( 49 -64 96 ) Material-LIB/Nature/Bark/Bark2 [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 48 -624 112 ) ( 49 -624 112 ) ( 48 -624 113 ) Material-LIB/Nature/Bark/Bark2 [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -240 -64 112 ) ( -240 -64 113 ) ( -240 -63 112 ) Material-LIB/Nature/Bark/Bark2 [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 40
+{
+( -304 -192 176 ) ( -304 -191 176 ) ( -304 -192 177 ) Material-LIB/Nature/FoliageForest/FoliageForest [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -80 -688 176 ) ( -80 -688 177 ) ( -79 -688 176 ) Material-LIB/Nature/FoliageForest/FoliageForest [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -80 -192 96 ) ( -79 -192 96 ) ( -80 -191 96 ) Material-LIB/Nature/FoliageForest/FoliageForest [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 48 -64 192 ) ( 48 -63 192 ) ( 49 -64 192 ) Material-LIB/Nature/FoliageForest/FoliageForest [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 48 -592 208 ) ( 49 -592 208 ) ( 48 -592 209 ) Material-LIB/Nature/FoliageForest/FoliageForest [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -208 -64 208 ) ( -208 -64 209 ) ( -208 -63 208 ) Material-LIB/Nature/FoliageForest/FoliageForest [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 41
+{
+( 208 -192 176 ) ( 208 -191 176 ) ( 208 -192 177 ) Material-LIB/Nature/FoliageForest/FoliageForest [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 432 -688 176 ) ( 432 -688 177 ) ( 433 -688 176 ) Material-LIB/Nature/FoliageForest/FoliageForest [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 432 -192 96 ) ( 433 -192 96 ) ( 432 -191 96 ) Material-LIB/Nature/FoliageForest/FoliageForest [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 560 -64 192 ) ( 560 -63 192 ) ( 561 -64 192 ) Material-LIB/Nature/FoliageForest/FoliageForest [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 560 -592 208 ) ( 561 -592 208 ) ( 560 -592 209 ) Material-LIB/Nature/FoliageForest/FoliageForest [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 304 -64 208 ) ( 304 -64 209 ) ( 304 -63 208 ) Material-LIB/Nature/FoliageForest/FoliageForest [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 42
+{
+( 240 -192 80 ) ( 240 -191 80 ) ( 240 -192 81 ) Material-LIB/Nature/Bark/Bark2 [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 432 -656 80 ) ( 432 -656 81 ) ( 433 -656 80 ) Material-LIB/Nature/Bark/Bark2 [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 432 -192 0 ) ( 433 -192 0 ) ( 432 -191 0 ) Material-LIB/Nature/Bark/Bark2 [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 560 -64 96 ) ( 560 -63 96 ) ( 561 -64 96 ) Material-LIB/Nature/Bark/Bark2 [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 560 -624 112 ) ( 561 -624 112 ) ( 560 -624 113 ) Material-LIB/Nature/Bark/Bark2 [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 272 -64 112 ) ( 272 -64 113 ) ( 272 -63 112 ) Material-LIB/Nature/Bark/Bark2 [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 43
+{
+( 592 -192 176 ) ( 592 -191 176 ) ( 592 -192 177 ) Material-LIB/Nature/FoliageForest/FoliageForest [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 816 -688 176 ) ( 816 -688 177 ) ( 817 -688 176 ) Material-LIB/Nature/FoliageForest/FoliageForest [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 816 -192 96 ) ( 817 -192 96 ) ( 816 -191 96 ) Material-LIB/Nature/FoliageForest/FoliageForest [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 944 -64 192 ) ( 944 -63 192 ) ( 945 -64 192 ) Material-LIB/Nature/FoliageForest/FoliageForest [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 944 -592 208 ) ( 945 -592 208 ) ( 944 -592 209 ) Material-LIB/Nature/FoliageForest/FoliageForest [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 688 -64 208 ) ( 688 -64 209 ) ( 688 -63 208 ) Material-LIB/Nature/FoliageForest/FoliageForest [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 44
+{
+( 624 -192 80 ) ( 624 -191 80 ) ( 624 -192 81 ) Material-LIB/Nature/Bark/Bark2 [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 816 -656 80 ) ( 816 -656 81 ) ( 817 -656 80 ) Material-LIB/Nature/Bark/Bark2 [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 816 -192 0 ) ( 817 -192 0 ) ( 816 -191 0 ) Material-LIB/Nature/Bark/Bark2 [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 944 -64 96 ) ( 944 -63 96 ) ( 945 -64 96 ) Material-LIB/Nature/Bark/Bark2 [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 944 -624 112 ) ( 945 -624 112 ) ( 944 -624 113 ) Material-LIB/Nature/Bark/Bark2 [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 656 -64 112 ) ( 656 -64 113 ) ( 656 -63 112 ) Material-LIB/Nature/Bark/Bark2 [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 45
+{
+( -688 -192 176 ) ( -688 -191 176 ) ( -688 -192 177 ) Material-LIB/Nature/FoliageForest/FoliageForest [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -464 -688 176 ) ( -464 -688 177 ) ( -463 -688 176 ) Material-LIB/Nature/FoliageForest/FoliageForest [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -464 -192 96 ) ( -463 -192 96 ) ( -464 -191 96 ) Material-LIB/Nature/FoliageForest/FoliageForest [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -336 -64 192 ) ( -336 -63 192 ) ( -335 -64 192 ) Material-LIB/Nature/FoliageForest/FoliageForest [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -336 -592 208 ) ( -335 -592 208 ) ( -336 -592 209 ) Material-LIB/Nature/FoliageForest/FoliageForest [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -592 -64 208 ) ( -592 -64 209 ) ( -592 -63 208 ) Material-LIB/Nature/FoliageForest/FoliageForest [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 46
+{
+( -656 -192 80 ) ( -656 -191 80 ) ( -656 -192 81 ) Material-LIB/Nature/Bark/Bark2 [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -464 -656 80 ) ( -464 -656 81 ) ( -463 -656 80 ) Material-LIB/Nature/Bark/Bark2 [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -464 -192 0 ) ( -463 -192 0 ) ( -464 -191 0 ) Material-LIB/Nature/Bark/Bark2 [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -336 -64 96 ) ( -336 -63 96 ) ( -335 -64 96 ) Material-LIB/Nature/Bark/Bark2 [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -336 -624 112 ) ( -335 -624 112 ) ( -336 -624 113 ) Material-LIB/Nature/Bark/Bark2 [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -624 -64 112 ) ( -624 -64 113 ) ( -624 -63 112 ) Material-LIB/Nature/Bark/Bark2 [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 47
+{
+( -272 208 80 ) ( -272 209 80 ) ( -272 208 81 ) BrickWall/BrickWall[Red] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -544 -240 80 ) ( -544 -240 81 ) ( -543 -240 80 ) BrickWall/BrickWall[Red] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -544 208 128 ) ( -543 208 128 ) ( -544 209 128 ) BrickWall/BrickWall[Red] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -416 336 384 ) ( -416 337 384 ) ( -415 336 384 ) BrickWall/BrickWall[Red] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -416 0 112 ) ( -415 0 112 ) ( -416 0 113 ) BrickWall/BrickWall[Red] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -256 336 112 ) ( -256 336 113 ) ( -256 337 112 ) BrickWall/BrickWall[Red] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 48
+{
+( 256 208 80 ) ( 256 209 80 ) ( 256 208 81 ) BrickWall/BrickWall[Red] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -16 -240 80 ) ( -16 -240 81 ) ( -15 -240 80 ) BrickWall/BrickWall[Red] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -16 208 128 ) ( -15 208 128 ) ( -16 209 128 ) BrickWall/BrickWall[Red] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 112 336 384 ) ( 112 337 384 ) ( 113 336 384 ) BrickWall/BrickWall[Red] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 112 0 112 ) ( 113 0 112 ) ( 112 0 113 ) BrickWall/BrickWall[Red] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 272 336 112 ) ( 272 336 113 ) ( 272 337 112 ) BrickWall/BrickWall[Red] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 49
+{
+( 64 224 80 ) ( 64 225 80 ) ( 64 224 81 ) BrickWall/BrickWall[Red] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -32 0 80 ) ( -32 0 81 ) ( -31 0 80 ) BrickWall/BrickWall[Red] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -32 224 128 ) ( -31 224 128 ) ( -32 225 128 ) BrickWall/BrickWall[Red] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 96 352 256 ) ( 96 353 256 ) ( 97 352 256 ) BrickWall/BrickWall[Red] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 96 16 112 ) ( 97 16 112 ) ( 96 16 113 ) BrickWall/BrickWall[Red] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 256 352 112 ) ( 256 352 113 ) ( 256 353 112 ) BrickWall/BrickWall[Red] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 50
+{
+( -256 224 80 ) ( -256 225 80 ) ( -256 224 81 ) BrickWall/BrickWall[Red] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -352 0 80 ) ( -352 0 81 ) ( -351 0 80 ) BrickWall/BrickWall[Red] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -352 224 128 ) ( -351 224 128 ) ( -352 225 128 ) BrickWall/BrickWall[Red] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -224 352 256 ) ( -224 353 256 ) ( -223 352 256 ) BrickWall/BrickWall[Red] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -224 16 112 ) ( -223 16 112 ) ( -224 16 113 ) BrickWall/BrickWall[Red] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -64 352 112 ) ( -64 352 113 ) ( -64 353 112 ) BrickWall/BrickWall[Red] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 51
+{
+( -256 224 208 ) ( -256 225 208 ) ( -256 224 209 ) BrickWall/BrickWall[Red] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -32 0 208 ) ( -32 0 209 ) ( -31 0 208 ) BrickWall/BrickWall[Red] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -32 224 256 ) ( -31 224 256 ) ( -32 225 256 ) BrickWall/BrickWall[Red] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 96 352 384 ) ( 96 353 384 ) ( 97 352 384 ) BrickWall/BrickWall[Red] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 96 16 240 ) ( 97 16 240 ) ( 96 16 241 ) BrickWall/BrickWall[Red] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 256 352 240 ) ( 256 352 241 ) ( 256 353 240 ) BrickWall/BrickWall[Red] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 52
+{
+( -752 -240 448 ) ( -752 -256 448 ) ( -752 -272 384 ) FreeStylized/metal_03_1k/metal_03_1k/metal_03_color_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -752 -256 448 ) ( -272 -256 448 ) ( -272 -272 384 ) FreeStylized/metal_03_1k/metal_03_1k/metal_03_color_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -272 -272 384 ) ( -272 -240 384 ) ( -752 -240 384 ) FreeStylized/metal_03_1k/metal_03_1k/metal_03_color_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -272 -240 384 ) ( -272 -240 448 ) ( -752 -240 448 ) FreeStylized/metal_03_1k/metal_03_1k/metal_03_color_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -272 -256 448 ) ( -272 -240 448 ) ( -272 -240 384 ) FreeStylized/metal_03_1k/metal_03_1k/metal_03_color_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 53
+{
+( 272 -240 448 ) ( 272 -256 448 ) ( 272 -272 384 ) FreeStylized/metal_03_1k/metal_03_1k/metal_03_color_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 272 -256 448 ) ( 752 -256 448 ) ( 752 -272 384 ) FreeStylized/metal_03_1k/metal_03_1k/metal_03_color_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 752 -272 384 ) ( 752 -240 384 ) ( 272 -240 384 ) FreeStylized/metal_03_1k/metal_03_1k/metal_03_color_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 752 -240 384 ) ( 752 -240 448 ) ( 272 -240 448 ) FreeStylized/metal_03_1k/metal_03_1k/metal_03_color_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 752 -256 448 ) ( 752 -240 448 ) ( 752 -240 384 ) FreeStylized/metal_03_1k/metal_03_1k/metal_03_color_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 54
+{
+( -240 16 448 ) ( -240 0 448 ) ( -240 -16 384 ) FreeStylized/metal_03_1k/metal_03_1k/metal_03_color_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -240 0 448 ) ( 240 0 448 ) ( 240 -16 384 ) FreeStylized/metal_03_1k/metal_03_1k/metal_03_color_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 240 -16 384 ) ( 240 16 384 ) ( -240 16 384 ) FreeStylized/metal_03_1k/metal_03_1k/metal_03_color_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 240 16 384 ) ( 240 16 448 ) ( -240 16 448 ) FreeStylized/metal_03_1k/metal_03_1k/metal_03_color_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 240 0 448 ) ( 240 16 448 ) ( 240 16 384 ) FreeStylized/metal_03_1k/metal_03_1k/metal_03_color_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 55
+{
+( -272 240 384 ) ( -272 240 448 ) ( -272 -240 448 ) FreeStylized/metal_03_1k/metal_03_1k/metal_03_color_1k [ 0 1.0000000000000002 0 0 ] [ 0 0 -1.0000000000000002 0 ] 0 0.063 0.063
+( -272 -240 448 ) ( -256 -240 448 ) ( -240 -240 384 ) FreeStylized/metal_03_1k/metal_03_1k/metal_03_color_1k [ -1.0000000000000002 0 0 0 ] [ 0 0 -1.0000000000000002 0 ] 0 0.063 0.063
+( -240 240 384 ) ( -272 240 384 ) ( -272 -240 384 ) FreeStylized/metal_03_1k/metal_03_1k/metal_03_color_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -256 -16 448 ) ( -272 -16 448 ) ( -272 -16 384 ) FreeStylized/metal_03_1k/metal_03_1k/metal_03_color_1k [ 1.0000000000000002 0 0 0 ] [ 0 0 -1.0000000000000002 0 ] 0 0.063 0.063
+( -256 -240 448 ) ( -256 240 448 ) ( -240 240 384 ) FreeStylized/metal_03_1k/metal_03_1k/metal_03_color_1k [ 0 -1.0000000000000002 0 0 ] [ 0 0 -1.0000000000000002 0 ] 0 0.063 0.063
+}
+// brush 56
+{
+( 256 -16 448 ) ( 256 -496 448 ) ( 240 -496 384 ) FreeStylized/metal_03_1k/metal_03_1k/metal_03_color_1k [ 0 -1.0000000000000002 0 0 ] [ 0 0 -1.0000000000000002 0 ] 0 0.063 0.063
+( 256 -240 448 ) ( 272 -240 448 ) ( 272 -240 384 ) FreeStylized/metal_03_1k/metal_03_1k/metal_03_color_1k [ 1.0000000000000002 0 0 0 ] [ 0 0 -1.0000000000000002 0 ] 0 0.063 0.063
+( 240 -496 384 ) ( 272 -496 384 ) ( 272 -16 384 ) FreeStylized/metal_03_1k/metal_03_1k/metal_03_color_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 272 -16 448 ) ( 256 -16 448 ) ( 240 -16 384 ) FreeStylized/metal_03_1k/metal_03_1k/metal_03_color_1k [ -1.0000000000000002 0 0 0 ] [ 0 0 -1.0000000000000002 0 ] 0 0.063 0.063
+( 272 -496 384 ) ( 272 -496 448 ) ( 272 -16 448 ) FreeStylized/metal_03_1k/metal_03_1k/metal_03_color_1k [ 0 1.0000000000000002 0 0 ] [ 0 0 -1.0000000000000002 0 ] 0 0.063 0.063
+}
+// brush 57
+{
+( -272 448 80 ) ( -272 449 80 ) ( -272 448 81 ) BrickWall/BrickWall[Orange] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -80 -16 80 ) ( -80 -16 81 ) ( -79 -16 80 ) BrickWall/BrickWall[Orange] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -80 448 0 ) ( -79 448 0 ) ( -80 449 0 ) BrickWall/BrickWall[Orange] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 48 576 512 ) ( 48 577 512 ) ( 49 576 512 ) BrickWall/BrickWall[Orange] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 48 16 112 ) ( 49 16 112 ) ( 48 16 113 ) BrickWall/BrickWall[Orange] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -240 576 112 ) ( -240 576 113 ) ( -240 577 112 ) BrickWall/BrickWall[Orange] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 58
+{
+( 240 448 80 ) ( 240 449 80 ) ( 240 448 81 ) BrickWall/BrickWall[Orange] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 432 -16 80 ) ( 432 -16 81 ) ( 433 -16 80 ) BrickWall/BrickWall[Orange] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 432 448 0 ) ( 433 448 0 ) ( 432 449 0 ) BrickWall/BrickWall[Orange] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 560 576 512 ) ( 560 577 512 ) ( 561 576 512 ) BrickWall/BrickWall[Orange] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 560 16 112 ) ( 561 16 112 ) ( 560 16 113 ) BrickWall/BrickWall[Orange] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 272 576 112 ) ( 272 576 113 ) ( 272 577 112 ) BrickWall/BrickWall[Orange] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
 }
 }
 // entity 1
 {
-"classname" "PlayerSpawn"
-"origin" "-104 -16 -62"
-}
-// entity 2
-{
 "classname" "BigBox"
 "origin" "160 -224 161"
 }
-// entity 3
-{
-"classname" "Forklift"
-"origin" "128 224 224"
-}
-// entity 4
+// entity 2
 {
 "classname" "HealthPackSpawner"
 "origin" "-16 -208 164"
 }
-// entity 5
+// entity 3
 {
 "classname" "HealthPackSpawner"
-"origin" "80 -208 164"
+"origin" "224 -480 164"
+}
+// entity 4
+{
+"classname" "PlayerSpawn"
+"origin" "8 176 146"
+"team" "2"
+}
+// entity 5
+{
+"classname" "PlayerSpawn"
+"origin" "8 128 146"
+"team" "1"
 }
 // entity 6
 {
 "classname" "PlayerSpawn"
-"origin" "136 -48 162"
-"team" "2"
+"origin" "8 80 146"
+"team" "0"
 }
 // entity 7
 {
-"classname" "PlayerSpawn"
-"origin" "136 16 162"
-"team" "1"
+"classname" "BigBox"
+"origin" "-512 -304 1"
+"mangle" "0 -30 0"
 }
 // entity 8
 {
-"classname" "PlayerSpawn"
-"origin" "136 80 162"
-"team" "0"
+"classname" "BigBox"
+"origin" "-656 -672 1"
+"mangle" "0 30 0"
 }
 // entity 9
 {
-"classname" "BigBox"
-"origin" "-288 -73.7261 -40.226"
-"scale" "3"
-"mangle" "-30 -35 -35"
+"classname" "Truck"
+"origin" "528 -336 48"
 }
 // entity 10
 {
-"classname" "BigBox"
-"origin" "-224 -25.726 151.774"
-"scale" "3"
-"mangle" "-30 85 -35"
+"classname" "PayloadTrackStraight"
+"origin" "624 -560 1"
 }
 // entity 11
 {
-"classname" "BigBox"
-"origin" "-288 -73.726 279.774"
-"scale" "3"
-"mangle" "-30 -35 -35"
+"classname" "PayloadTrackStraight"
+"origin" "560 -560 1"
+}
+// entity 12
+{
+"classname" "PayloadTrackStraight"
+"origin" "496 -560 1"
+}
+// entity 13
+{
+"classname" "Payload"
+"origin" "592 -512 32"
+"angle" "315"
 }

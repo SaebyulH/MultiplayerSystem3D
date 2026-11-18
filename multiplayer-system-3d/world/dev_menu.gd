@@ -147,6 +147,7 @@ func _build() -> void:
 	var title := Label.new()
 	title.text = "DEV HACKS"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_override("font", UITheme.FONT_DISPLAY)
 	title.add_theme_font_size_override("font_size", 24)
 	title.add_theme_color_override("font_color", Color.WHITE)
 	vb.add_child(title)
@@ -533,8 +534,10 @@ func _has_bots() -> bool:
 	if not is_instance_valid(GameManager.spawn_parent):
 		return false
 	for child in GameManager.spawn_parent.get_children():
-		if child is Player and (child as Player).is_bot and not child.is_queued_for_deletion():
-			return true
+		if child is Player:
+			var p := child as Player
+			if p.is_bot and not p.is_practice_target and not p.is_queued_for_deletion():
+				return true
 	return false
 
 

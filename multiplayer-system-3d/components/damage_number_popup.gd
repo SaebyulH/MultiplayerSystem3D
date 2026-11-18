@@ -24,7 +24,7 @@ var _fade_start: float = 0.4
 var _max_float: float = 0.6   # max Y drift before freezing
 
 const FALLOFF_VISIBLE_THRESHOLD := 0.995
-const BOLD_FONT_PATH := "res://assets/CenturyGothic-Bold - Century Gothic - Bold.ttf"
+const BOLD_FONT_PATH := "res://assets/fonts/Switzer/Switzer-Bold.otf"
 
 var _bold_font: Font = null
 
@@ -132,8 +132,8 @@ func _get_falloff_label() -> Label:
 	return lbl
 
 
-## Apply the bold Century Gothic font and a soft drop shadow (instead of an
-## outline) so damage numbers pop against the world.
+## Apply Switzer Bold and a soft drop shadow (instead of an outline) so damage
+## numbers pop against the world.
 func _apply_damage_font(lbl: Label) -> void:
 	if _bold_font == null:
 		_bold_font = load(BOLD_FONT_PATH) as Font

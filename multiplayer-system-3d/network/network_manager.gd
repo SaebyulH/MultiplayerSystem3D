@@ -111,8 +111,8 @@ var _host_tick_rate := -1
 var _check_accum := 0.0
 var _debug_accum := 0.0
 ## True when this join targets a match server that speaks the MatchSession
-## handshake.  Direct `--connect` joins set it; the legacy in-world JoinParty
-## path keeps using the old replication flow until P3 converts it.
+## handshake.  Direct `--connect` joins and the Match Menu's FIND MATCH both
+## set it; a caller that passes false keeps the old replication flow.
 var _use_match_session := false
 ## Resume state.  The endpoint and the server-issued token let a dropped client
 ## rejoin the same slot instead of being sent back to the lobby.
@@ -522,9 +522,9 @@ func boot_dedicated_server(port: int = SERVER_PORT, match_id: String = "") -> vo
 
 ## A player already in their own lobby connects to a host's lobby/match.
 ##
-## `use_match_session` selects the dedicated-server handshake.  The P3 lobby
-## turns it on for every join; until then only the direct `--connect` dev route
-## uses it, so the legacy in-world JoinParty path is unchanged.
+## `use_match_session` selects the dedicated-server handshake.  The Match Menu's
+## FIND MATCH and the direct `--connect` dev route both use it; a caller that
+## passes false keeps the legacy replication path.
 func join_party(host_ip: String, host_port: int = SERVER_PORT, use_match_session: bool = false, grant: String = "") -> void:
 	LoadingScreen.show_screen(0.1, "Connecting...")
 	role = Role.CLIENT
