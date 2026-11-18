@@ -287,15 +287,21 @@ The one-frame defer is fragile: existing players' `rpc_reset` already fired befo
 
 ## Stage 10 — Leave flow: `return_to_lobby()` (full ordering)
 
-Entry points: `world/world_1.gd:47-48` (Main Menu button), `world/loadout_menu.gd:160-162` (Leave Party), `network_manager.gd` (`_on_connection_failed`), `network_manager.gd` (`_server_disconnected`).
+Entry points: `world/post_match.gd:177-190` (results overlay **auto countdown** and its RETURN button), `world/pause_menu.gd` (Leave), `world/staging_room.gd` (Leave), `world/world_1.gd` (Leave Party), `world/loadout_menu.gd` (Leave Party), `network_manager.gd` (`_on_connection_failed`, `_server_disconnected`).
 
 `network/network_manager.gd` — `return_to_lobby()`, in exact order:
-1. line 106: `Input.set_mouse_mode(MOUSE_MODE_VISIBLE)`.
-2. line 107: `_terminate_connection()` (`174-180`): `NetworkTime.stop()` (full stop, resets `_state` to INACTIVE), `mp.multiplayer_peer.close()`, `mp.multiplayer_peer = null`. Closing the peer first frees port 8080.
-3. line 108: `_remove_game_scene()` (`146-152`): `remove_child` + `queue_free` + `game_scene = null`.
-4. line 114: `call_deferred("boot_to_lobby")` — re-host + reload lobby.
+1. `_lifecycle_epoch += 1`, capture `epoch` — cancels a superseded rehost.
+2. `Input.set_mouse_mode(MOUSE_MODE_VISIBLE)`.
+3. `_terminate_connection()`: `NetworkTime.stop()` (full stop, resets `_state` to INACTIVE), `mp.multiplayer_peer.close()`, `mp.multiplayer_peer = null`. Closing the peer first frees port 8080.
+4. `_remove_game_scene()`: `queue_free` only (never detach first, #132) + `game_scene = null`.
+5. `_rehost_after_stop_observed(epoch, role)` — awaits two process frames, then boots `boot_offline_lobby()` (CLIENT/OFFLINE/LISTEN_SERVER) or `boot_to_lobby()` (LEGACY_P2P).
 
-**Why the deferred re-host is the crux:** `NetworkEvents._process` polls `is_server()` once per frame, tracking a `_is_server` boolean. Closing the peer and immediately `create_server()` again **in the same frame** means the peer is null only between two process ticks, so `NetworkEvents` never sees the `true → false` transition: `on_server_stop` never fires, and `on_server_start` never **re-fires**, so `NetworkTime.start()` never runs on the re-host — even though `_terminate_connection` manually stopped it. Result: rollback tick loop dead, movement stops while look/shoot keep working. Deferring one frame guarantees the stop transition is observed, then the re-host re-triggers `on_server_start`. See `03-event-flow.md`.
+**Why the two-frame wait is the crux:** `NetworkEvents._process` polls `is_server()` once per frame, tracking a `_is_server` boolean.
+
+- A synchronous teardown + `create_server()` hides the `true → false` transition, so `on_server_start` never re-fires and the re-host's loop never starts.
+- The default shell re-hosts to an **offline peer**, which starts its own loop in `create_offline_peer()`. If it starts while `_is_server` is still true, the next poll emits `on_server_stop` → `NetworkTime.stop()` and kills that loop.
+
+`SceneTree` emits `process_frame` before node `_process`, so a *single* await (or the old `call_deferred`) still lands inside the next poll — which is why the results overlay's auto-leave (running from `post_match._process`, after the autoload's poll) left movement dead (`05-known-issues.md` #154). Two full frames guarantee one complete poll with no server peer present before the new loop starts. See `03-event-flow.md`.
 
 ---
 
@@ -346,7 +352,7 @@ stack a popup on top of another menu and clear `ui_open` when it closed.
 
 ## Fragile / order-dependent items (see `03-event-flow.md` for the full list)
 
-1. **Deferred re-host is load-bearing** (`network_manager.gd`).
+1. **The two-frame re-host wait is load-bearing** (`network_manager.gd:return_to_lobby` → `_rehost_after_stop_observed`). One frame is not enough; the stale `on_server_stop` kills the new loop.
 2. **Offline fallback needs the manual `NetworkTime.start()`** (`network_manager.gd`).
 3. **`CLAUDE.md` was stale** — boot is now `await NetworkManager.boot_to_lobby()` (direct, `world/main.gd:33`), and `class_select.gd` no longer exists outside `backup/`.
 4. **Peer-1 hardcoding everywhere** — `spawn_manager.gd:15`, `131`; `leaderboard_singleton.gd:236-258`; `loadout_menu.gd:869`; `host_server_area.gd:53-54`. Collapses if the server is ever not peer 1.

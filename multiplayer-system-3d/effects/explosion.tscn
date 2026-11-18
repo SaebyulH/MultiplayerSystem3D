@@ -4,6 +4,10 @@
 [ext_resource type="Script" uid="uid://bycoj14g3au4j" path="res://effects/explosion.gd" id="1_m0j43"]
 [ext_resource type="Texture2D" uid="uid://d04bdcsparr5v" path="res://effects/ExplodeFlash.png" id="2_82o5v"]
 [ext_resource type="Texture2D" uid="uid://7liph1bkabn2" path="res://effects/smoke2.png" id="3_cu3rm"]
+[ext_resource type="Texture2D" path="res://effects/explosion/noise.png" id="4_hy_noise"]
+[ext_resource type="Texture2D" path="res://effects/explosion/flame_atlas.png" id="5_hy_flame"]
+[ext_resource type="Texture2D" path="res://effects/explosion/comet.png" id="6_hy_comet"]
+[ext_resource type="Shader" path="res://effects/particle_toon.gdshader" id="7_hy_toon"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_debris"]
 albedo_color = Color(1.0695504, 0.6177279, 0.20698006, 1)
@@ -219,9 +223,97 @@ alpha_curve = SubResource("CurveTexture_3tyj0")
 [sub_resource type="TorusMesh" id="TorusMesh_yc3gs"]
 inner_radius = 0.9
 
+[sub_resource type="Curve" id="Hy_curve_fade"]
+_data = [Vector2(0, 1.0), 0.0, 0.0, 0, 0, Vector2(0.75, 1.0), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="Hy_tex_fade"]
+curve = SubResource("Hy_curve_fade")
+
+[sub_resource type="ParticleProcessMaterial" id="Hy_ppm_flames"]
+emission_shape = 1
+emission_sphere_radius = 0.2
+angle_min = -180.0
+angle_max = 180.0
+spread = 180.0
+initial_velocity_min = 0.1
+initial_velocity_max = 0.4
+gravity = Vector3(0, 0.5, 0)
+scale_min = 2.0
+scale_max = 3.0
+alpha_curve = SubResource("Hy_tex_fade")
+
+[sub_resource type="StandardMaterial3D" id="Hy_mat_flames"]
+render_priority = 1
+transparency = 1
+cull_mode = 2
+shading_mode = 0
+billboard_mode = 3
+vertex_color_use_as_albedo = true
+albedo_texture = ExtResource("5_hy_flame")
+particles_anim_h_frames = 4
+particles_anim_v_frames = 4
+particles_anim_loop = true
+
+[sub_resource type="ParticleProcessMaterial" id="Hy_ppm_spark"]
+particle_flag_align_y = true
+spread = 180.0
+initial_velocity_min = 7.0
+initial_velocity_max = 12.0
+damping_min = 2.0
+damping_max = 4.0
+scale_min = 1.5
+scale_max = 3.0
+color = Color(2.2, 1.0, 0.15, 1)
+alpha_curve = SubResource("Hy_tex_fade")
+
+[sub_resource type="StandardMaterial3D" id="Hy_mat_spark"]
+render_priority = 2
+transparency = 1
+cull_mode = 2
+shading_mode = 0
+blend_mode = 1
+billboard_mode = 3
+vertex_color_use_as_albedo = true
+albedo_texture = ExtResource("6_hy_comet")
+
+[sub_resource type="ShaderMaterial" id="Hy_sm_cloud"]
+render_priority = 0
+shader = ExtResource("7_hy_toon")
+shader_parameter/albedo_tex = ExtResource("1_jhnc4")
+shader_parameter/noise_tex = ExtResource("4_hy_noise")
+shader_parameter/col0 = Color(0.35, 0.16, 0.09, 1)
+shader_parameter/col1 = Color(0.62, 0.14, 0.02, 1)
+shader_parameter/col2 = Color(1.2, 0.3, 0.02, 1)
+shader_parameter/col3 = Color(2.1, 0.72, 0.05, 1)
+shader_parameter/col4 = Color(3.1, 1.75, 0.3, 1)
+shader_parameter/opacity = 0.7
+shader_parameter/dissolve_amount = 0.06
+shader_parameter/noise_scale = 0.7
+shader_parameter/soft_distance = 0.3
+shader_parameter/near_fade_distance = 0.5
+
+[sub_resource type="ShaderMaterial" id="Hy_sm_smoke"]
+render_priority = -2
+shader = ExtResource("7_hy_toon")
+shader_parameter/albedo_tex = ExtResource("3_cu3rm")
+shader_parameter/noise_tex = ExtResource("4_hy_noise")
+shader_parameter/col0 = Color(0.1, 0.08, 0.07, 1)
+shader_parameter/col1 = Color(0.2, 0.15, 0.12, 1)
+shader_parameter/col2 = Color(0.32, 0.25, 0.2, 1)
+shader_parameter/col3 = Color(0.45, 0.39, 0.34, 1)
+shader_parameter/col4 = Color(0.6, 0.55, 0.5, 1)
+shader_parameter/late_color = Color(0.48, 0.48, 0.48, 1)
+shader_parameter/late_mix = 0.8
+shader_parameter/opacity = 0.55
+shader_parameter/dissolve_amount = 0.04
+shader_parameter/noise_scale = 0.5
+shader_parameter/soft_distance = 0.8
+shader_parameter/near_fade_distance = 2.0
+
 [node name="Explosion" type="Node3D" unique_id=1946821248 node_paths=PackedStringArray("particles")]
 script = ExtResource("1_m0j43")
-particles = [NodePath("Debris"), NodePath("Cloud"), NodePath("Smoke"), NodePath("Boom"), NodePath("Ring"), NodePath("SmokeRings")]
+particles = [NodePath("Debris"), NodePath("Cloud"), NodePath("Smoke"), NodePath("Flames"), NodePath("Sparks"), NodePath("Boom"), NodePath("Ring"), NodePath("SmokeRings")]
 
 [node name="Debris" type="GPUParticles3D" parent="." unique_id=14220078]
 material_override = SubResource("StandardMaterial3D_debris")
@@ -236,7 +328,7 @@ process_material = SubResource("ParticleProcessMaterial_jh1to")
 draw_pass_1 = SubResource("CylinderMesh_16q0m")
 
 [node name="Cloud" type="GPUParticles3D" parent="." unique_id=1082139972]
-material_override = SubResource("StandardMaterial3D_cloud")
+material_override = SubResource("Hy_sm_cloud")
 emitting = false
 amount = 4
 lifetime = 0.5
@@ -249,7 +341,7 @@ process_material = SubResource("ParticleProcessMaterial_m0j43")
 draw_pass_1 = SubResource("QuadMesh_jhnc4")
 
 [node name="Smoke" type="GPUParticles3D" parent="." unique_id=968186526]
-material_override = SubResource("StandardMaterial3D_smoke")
+material_override = SubResource("Hy_sm_smoke")
 emitting = false
 amount = 5
 one_shot = true
@@ -258,6 +350,30 @@ randomness = 0.59
 fixed_fps = 48
 interpolate = false
 process_material = SubResource("ParticleProcessMaterial_16q0m")
+draw_pass_1 = SubResource("QuadMesh_jhnc4")
+
+[node name="Flames" type="GPUParticles3D" parent="." unique_id=3001]
+material_override = SubResource("Hy_mat_flames")
+emitting = false
+amount = 2
+lifetime = 0.5
+one_shot = true
+explosiveness = 1.0
+randomness = 0.7
+fixed_fps = 30
+process_material = SubResource("Hy_ppm_flames")
+draw_pass_1 = SubResource("QuadMesh_jhnc4")
+
+[node name="Sparks" type="GPUParticles3D" parent="." unique_id=3002]
+material_override = SubResource("Hy_mat_spark")
+emitting = false
+amount = 6
+lifetime = 0.45
+one_shot = true
+explosiveness = 1.0
+randomness = 1.0
+fixed_fps = 60
+process_material = SubResource("Hy_ppm_spark")
 draw_pass_1 = SubResource("QuadMesh_jhnc4")
 
 [node name="Boom" type="GPUParticles3D" parent="." unique_id=1685257908]

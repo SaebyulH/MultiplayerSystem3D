@@ -100,6 +100,8 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 | 149 | 🟠 High | Netcode | Join grants are temporarily advisory — any direct-IP join is accepted even when `MATCH_SECRET` is set (deliberate unblock for the public VPS) |
 | 151 | 🟡 Medium | Correctness | Practice targets are `Player`s under `SpawnParent`; any "all Players are participants" scan that forgets `is_practice_target` silently mis-scopes it |
 | 153 | 🟡 Medium | Netcode/UI | ✅ FIXED 2026-11-19 — Leaderboard showed the room host's ping as 0 ms on dedicated/VPS matches; the host row was forced to 0 before peer sampling |
+| 154 | 🟠 High | Netcode | ✅ FIXED 2026-11-19 — Results auto-return left the netfox tick loop dead: look/shoot worked in the returned lobby, movement did not |
+| 155 | 🟡 Medium | Flow | ✅ FIXED 2026-11-19 — A staging countdown coroutine could fire into the next session and swap the returned lobby to the match map |
 
 
 ---
@@ -193,11 +195,11 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 - **Why:** 2-3 full dictionary traversals + allocations every frame, for data that only changes on kills.
 - **Suggested fix:** poll the leaderboard at an interval or react to `scores_changed`, and have `get_players()` return a cached list.
 
-### 13. Explosion per-particle material dup + GLSL substring scan
+### 13. Explosion per-particle material dup + GLSL substring scan — `[RETIRED 2026-11-19]`
 - **Files:** `effects/generic_explosion.gd:42-129`
 - **Symptom:** `mat.duplicate(false)` / `material.duplicate()` per particle per explosion; `_shader_has_param` (`123`) does `param_name in mat.shader.code` (substring over full GLSL) per particle.
 - **Why:** allocation + expensive string scan per particle.
-- **Suggested fix:** cache the has-param result per shader once; reuse materials where safe.
+- **Status:** nothing spawns `effects/explosion.tscn` any more; `ExplosionComponent._explode_visual` uses `effects/rocket_impact/`, which allocates its two `ShaderMaterial`s once and never per particle. The file remains only for the retired scene — if that scene is ever revived, fix this first.
 
 ### 14. Shield recursive material traversal every frame during regen
 - **Files:** `player/shield.gd:130-193`
@@ -1500,6 +1502,21 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 - **Symptom:** on a dedicated or lobbyd-spawned match, the player who started the room showed `0` in the leaderboard ping column — the same value a listen-server host gets — even though the server and that player are on different machines. It made a VPS match look like it was running on the player's own device.
 - **Why:** `_broadcast_pings()` wrote `snapshot[str(host_player_id)] = 0` **before** sampling peers. On a dedicated server `host_player_id` is the first client to send `hello` (`match_session.gd:577-578`), not the local process; the comment claiming a dedicated server "sets neither" was wrong. Only a listen-server host is a player inside the server process with no ENet peer.
 - **Resolution:** the 0 ms row is now written only when the host's roster entry carries the server's own peer id (`Protocol.SERVER_PEER_ID`) and no peer sample exists. A dedicated room host is sampled like every other peer. Verified with `--server --port=8092` plus `--connect=127.0.0.1:8092`: the room host row reported real loopback RTT (500 ms during handshake settling, then 15 ms) instead of 0; a solo listen host (`--test-host-local`) still reports 0.
+
+### 154. Results auto-return left the rollback tick loop dead — `[FIXED 2026-11-19]`
+
+- **Files:** `network/network_manager.gd` (`return_to_lobby`, `create_offline_peer`, `_rehost_after_stop_observed`), `world/post_match.gd:177-190`, `addons/netfox/network-events.gd:93-107`.
+- **Symptom:** after a match ended and the results overlay auto-returned to the lobby (10 s countdown), WASD did nothing. Mouse look and firing still worked, which is the netfox signature: the rollback tick loop was dead.
+- **Why:** `NetworkEvents._process` samples `is_server()` once per frame and keeps `_is_server`. The auto-leave runs from `post_match._process`, i.e. **after** that frame's sample. `return_to_lobby()` nulls the peer, and the deferred boot then installs an `OfflineMultiplayerPeer` and calls `NetworkTime.start()` manually. On the next frame the poll still had `_is_server == true`, saw a non-server peer, emitted `on_server_stop` → `NetworkTime.stop()` and killed the freshly started loop. Nothing restarted it: `PlayerInput._gather` is bound to `NetworkTime.before_tick_loop` and `Player._rollback_tick` runs from it, so movement never simulates; look (`Body._input`) and fire (`WeaponController._physics_process`) do not use the loop. The RETURN TO LOBBY button path was not affected (input is dispatched before the autoload's `_process`).
+- **Resolution:** `return_to_lobby()` now re-hosts through `_rehost_after_stop_observed()`, which awaits **two** `process_frame` emissions. `SceneTree` emits `process_frame` before node `_process`, so one await still resumes before the poll; two guarantee one complete poll with no server peer present (the stop is a no-op) before the new peer installs its loop. Both the OFFLINE and LEGACY_P2P branches use it, and a monotonic `_lifecycle_epoch` cancels a superseded rehost so a double `return_to_lobby()` cannot build two lobbies.
+- **Verification:** `--test-title-start --test-host-local --test-host-map=res://maps/castle.tscn --test-end-match --test-move`. After `Returning to lobby...`, `[NTSYNC] tick=` keeps advancing (to 5000+ over the run). Reverting the helper to a single await reproduced the bug: `tick=0`, `inp=-1`, `pos` frozen for the rest of the run.
+
+### 155. A staging countdown could fire into the next session — `[FIXED 2026-11-19]`
+
+- **Files:** `network/network_manager.gd` (`start_staging_match`).
+- **Symptom:** leaving during the 5 s staging countdown and returning to the lobby left the new lobby eventually swapping itself to the match map, setting `LOADING` and waiting out the map-ready barrier.
+- **Why:** the only post-timer guard was `is_instance_valid(GameManager.spawn_parent)`, and the rebuilt lobby's `world_1._ready()` repoints `GameManager.spawn_parent` to the new world — so a coroutine from the dead session passed it.
+- **Resolution:** `start_staging_match()` captures `_lifecycle_epoch` after its entry guards and re-checks it (plus `MatchSession.role == SERVER`) after the countdown and after `await_map_ready()`. `return_to_lobby()`, `join_party()` and `host_local_match()` bump the epoch.
 
 ## Not bugs, but worth knowing
 

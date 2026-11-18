@@ -94,16 +94,28 @@ func _apply_scale_to_particle(_p: GPUParticles3D, _scale: float) -> void:
 ## Applies [color] tint to [p]'s material override.
 ## Override for custom colour-mapping behaviour.
 func _apply_color_to_particle(p: GPUParticles3D, color: Color) -> void:
-	# Every explosion particle now uses StandardMaterial3D: duplicate the shared
-	# scene resource, tint it, and hand the instance its own copy.
-	var material := p.material_override as StandardMaterial3D
-	if material == null:
-		return
-	material = material.duplicate()
-	p.material_override = material
-	material.albedo_color = material.albedo_color * color
-	if material.emission_enabled:
-		material.emission = material.emission * color
+	# Duplicate the shared scene resource, tint it, and hand the instance its own
+	# copy.  `get_shader_parameter` returns null for a parameter the shader does
+	# not declare, so both the standard materials and the hybrid toon shader work
+	# without a GLSL source scan.
+	var material: Material = p.material_override
+	if material is StandardMaterial3D:
+		var m: StandardMaterial3D = material.duplicate()
+		p.material_override = m
+		m.albedo_color = m.albedo_color * color
+		if m.emission_enabled:
+			m.emission = m.emission * color
+	elif material is ShaderMaterial:
+		var sm: ShaderMaterial = material.duplicate()
+		p.material_override = sm
+		for param in [
+			"albedo", "emission", "albedo_color", "mid_color", "shade_color",
+			"col0", "col1", "col2", "col3", "col4", "late_color",
+		]:
+			var value = sm.get_shader_parameter(param)
+			if value is Color:
+				var c: Color = value
+				sm.set_shader_parameter(param, c * color)
 
 
 # ---------------------------------------------------------------------------

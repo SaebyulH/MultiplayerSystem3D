@@ -1,0 +1,437 @@
+[gd_scene format=3 uid="uid://bu0bci3kls47y"]
+
+[ext_resource type="Script" path="res://effects/explosion.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://effects/explosion/puff_a.png" id="2_puffa"]
+[ext_resource type="Texture2D" path="res://effects/explosion/puff_b.png" id="3_puffb"]
+[ext_resource type="Texture2D" path="res://effects/explosion/puff_c.png" id="4_puffc"]
+[ext_resource type="Texture2D" path="res://effects/explosion/noise.png" id="5_noise"]
+[ext_resource type="Texture2D" path="res://effects/explosion/comet.png" id="6_comet"]
+[ext_resource type="Texture2D" path="res://effects/explosion/swoosh.png" id="7_swoosh"]
+[ext_resource type="Texture2D" path="res://effects/explosion/splat.png" id="8_splat"]
+[ext_resource type="Texture2D" path="res://effects/explosion/flame_atlas.png" id="9_flame"]
+[ext_resource type="Shader" path="res://effects/particle_toon.gdshader" id="10_toon"]
+
+[sub_resource type="QuadMesh" id="QuadMesh_quad"]
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_flat"]
+size = Vector2(1, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_chunk"]
+size = Vector3(0.1, 0.1, 0.1)
+
+[sub_resource type="Curve" id="Curve_core_scale"]
+_data = [Vector2(0, 0.35), 0.0, 0.0, 0, 0, Vector2(0.25, 1.0), 0.0, 0.0, 0, 0, Vector2(1, 0.8), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="CurveTex_core"]
+curve = SubResource("Curve_core_scale")
+
+[sub_resource type="Curve" id="Curve_smoke_scale"]
+_data = [Vector2(0, 0.45), 0.0, 0.0, 0, 0, Vector2(0.35, 1.0), 0.0, 0.0, 0, 0, Vector2(1, 1.15), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="CurveTex_smoke"]
+curve = SubResource("Curve_smoke_scale")
+
+[sub_resource type="Curve" id="Curve_ground_scale"]
+_data = [Vector2(0, 0.35), 0.0, 0.0, 0, 0, Vector2(0.15, 1.0), 0.0, 0.0, 0, 0, Vector2(1, 1.25), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="CurveTex_ground"]
+curve = SubResource("Curve_ground_scale")
+
+[sub_resource type="Curve" id="Curve_shrink"]
+_data = [Vector2(0, 1.0), 0.0, 0.0, 0, 0, Vector2(1, 0.35), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTex_shrink"]
+curve = SubResource("Curve_shrink")
+
+[sub_resource type="Curve" id="Curve_fade"]
+_data = [Vector2(0, 1.0), 0.0, 0.0, 0, 0, Vector2(0.75, 1.0), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="CurveTex_fade"]
+curve = SubResource("Curve_fade")
+
+[sub_resource type="Curve" id="Curve_quick"]
+_data = [Vector2(0, 1.0), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTex_quick"]
+curve = SubResource("Curve_quick")
+
+[sub_resource type="ParticleProcessMaterial" id="PPM_core"]
+emission_shape = 1
+emission_sphere_radius = 0.25
+angle_min = -180.0
+angle_max = 180.0
+direction = Vector3(0, 1, 0)
+spread = 180.0
+initial_velocity_min = 0.1
+initial_velocity_max = 0.5
+gravity = Vector3(0, 0.2, 0)
+scale_min = 1.6
+scale_max = 3.0
+scale_curve = SubResource("CurveTex_core")
+
+[sub_resource type="ParticleProcessMaterial" id="PPM_coredark"]
+emission_shape = 1
+emission_sphere_radius = 0.35
+angle_min = -180.0
+angle_max = 180.0
+direction = Vector3(0, 1, 0)
+spread = 180.0
+initial_velocity_min = 0.05
+initial_velocity_max = 0.4
+gravity = Vector3(0, 0.1, 0)
+scale_min = 1.8
+scale_max = 3.4
+scale_curve = SubResource("CurveTex_core")
+
+[sub_resource type="ParticleProcessMaterial" id="PPM_smoke"]
+emission_shape = 1
+emission_sphere_radius = 0.6
+angle_min = -180.0
+angle_max = 180.0
+direction = Vector3(0, 1, 0)
+spread = 180.0
+initial_velocity_min = 0.2
+initial_velocity_max = 0.7
+gravity = Vector3(0, 0.6, 0)
+scale_min = 1.6
+scale_max = 2.6
+scale_curve = SubResource("CurveTex_smoke")
+
+[sub_resource type="ParticleProcessMaterial" id="PPM_flames"]
+emission_shape = 1
+emission_sphere_radius = 0.2
+angle_min = -180.0
+angle_max = 180.0
+spread = 180.0
+initial_velocity_min = 0.1
+initial_velocity_max = 0.4
+gravity = Vector3(0, 0.5, 0)
+scale_min = 2.0
+scale_max = 3.0
+alpha_curve = SubResource("CurveTex_fade")
+
+[sub_resource type="ParticleProcessMaterial" id="PPM_comet"]
+particle_flag_align_y = true
+spread = 180.0
+initial_velocity_min = 6.0
+initial_velocity_max = 11.0
+damping_min = 2.0
+damping_max = 4.0
+scale_min = 2.0
+scale_max = 4.0
+scale_curve = SubResource("CurveTex_shrink")
+color = Color(2.2, 1.0, 0.15, 1)
+alpha_curve = SubResource("CurveTex_fade")
+
+[sub_resource type="ParticleProcessMaterial" id="PPM_spark"]
+particle_flag_align_y = true
+spread = 180.0
+initial_velocity_min = 9.0
+initial_velocity_max = 17.0
+damping_min = 3.0
+damping_max = 6.0
+scale_min = 0.8
+scale_max = 1.6
+scale_curve = SubResource("CurveTex_shrink")
+color = Color(1.8, 0.9, 0.2, 1)
+alpha_curve = SubResource("CurveTex_fade")
+
+[sub_resource type="ParticleProcessMaterial" id="PPM_debris"]
+angle_min = -180.0
+angle_max = 180.0
+spread = 70.0
+initial_velocity_min = 7.0
+initial_velocity_max = 13.0
+gravity = Vector3(0, -9.8, 0)
+angular_velocity_min = -420.0
+angular_velocity_max = 420.0
+scale_min = 0.6
+scale_max = 1.2
+
+[sub_resource type="ParticleProcessMaterial" id="PPM_embers"]
+emission_shape = 3
+emission_box_extents = Vector3(0.7, 0.02, 0.7)
+angle_min = -180.0
+angle_max = 180.0
+direction = Vector3(0, 1, 0)
+spread = 30.0
+initial_velocity_min = 1.2
+initial_velocity_max = 2.8
+gravity = Vector3(0, -7, 0)
+scale_min = 0.25
+scale_max = 0.5
+color = Color(2.4, 0.9, 0.1, 1)
+alpha_curve = SubResource("CurveTex_fade")
+
+[sub_resource type="ParticleProcessMaterial" id="PPM_speedlines"]
+particle_flag_align_y = true
+spread = 180.0
+initial_velocity_min = 6.0
+initial_velocity_max = 9.0
+scale_min = 1.4
+scale_max = 2.2
+scale_curve = SubResource("CurveTex_shrink")
+alpha_curve = SubResource("CurveTex_quick")
+color = Color(1.0, 1.0, 0.95, 1)
+
+[sub_resource type="ParticleProcessMaterial" id="PPM_flare"]
+emission_shape = 1
+emission_sphere_radius = 0.05
+scale_min = 3.0
+scale_max = 4.5
+color = Color(3.0, 2.4, 1.2, 1)
+alpha_curve = SubResource("CurveTex_quick")
+
+[sub_resource type="ParticleProcessMaterial" id="PPM_ground"]
+emission_shape = 1
+emission_sphere_radius = 0.1
+angle_min = -180.0
+angle_max = 180.0
+scale_min = 1.0
+scale_max = 1.6
+scale_curve = SubResource("CurveTex_ground")
+alpha_curve = SubResource("CurveTex_fade")
+color = Color(2.0, 0.7, 0.08, 1)
+
+[sub_resource type="ShaderMaterial" id="SM_core"]
+render_priority = 1
+shader = ExtResource("10_toon")
+shader_parameter/albedo_tex = ExtResource("2_puffa")
+shader_parameter/noise_tex = ExtResource("5_noise")
+shader_parameter/col0 = Color(0.35, 0.16, 0.09, 1)
+shader_parameter/col1 = Color(0.62, 0.14, 0.02, 1)
+shader_parameter/col2 = Color(1.2, 0.3, 0.02, 1)
+shader_parameter/col3 = Color(2.1, 0.72, 0.05, 1)
+shader_parameter/col4 = Color(3.1, 1.75, 0.3, 1)
+shader_parameter/late_mix = 0.0
+shader_parameter/opacity = 0.55
+shader_parameter/dissolve_amount = 0.5
+shader_parameter/noise_scale = 2.0
+shader_parameter/soft_distance = 0.3
+shader_parameter/near_fade_distance = 0.4
+
+[sub_resource type="ShaderMaterial" id="SM_coredark"]
+render_priority = 0
+shader = ExtResource("10_toon")
+shader_parameter/albedo_tex = ExtResource("3_puffb")
+shader_parameter/noise_tex = ExtResource("5_noise")
+shader_parameter/col0 = Color(0.15, 0.06, 0.04, 1)
+shader_parameter/col1 = Color(0.32, 0.07, 0.01, 1)
+shader_parameter/col2 = Color(0.7, 0.14, 0.01, 1)
+shader_parameter/col3 = Color(1.1, 0.3, 0.02, 1)
+shader_parameter/col4 = Color(1.6, 0.6, 0.08, 1)
+shader_parameter/late_mix = 0.0
+shader_parameter/opacity = 0.5
+shader_parameter/dissolve_amount = 0.6
+shader_parameter/noise_scale = 1.7
+shader_parameter/soft_distance = 0.3
+shader_parameter/near_fade_distance = 0.3
+
+[sub_resource type="ShaderMaterial" id="SM_smoke"]
+render_priority = -2
+shader = ExtResource("10_toon")
+shader_parameter/albedo_tex = ExtResource("4_puffc")
+shader_parameter/noise_tex = ExtResource("5_noise")
+shader_parameter/col0 = Color(0.1, 0.08, 0.07, 1)
+shader_parameter/col1 = Color(0.2, 0.15, 0.12, 1)
+shader_parameter/col2 = Color(0.32, 0.25, 0.2, 1)
+shader_parameter/col3 = Color(0.45, 0.39, 0.34, 1)
+shader_parameter/col4 = Color(0.6, 0.55, 0.5, 1)
+shader_parameter/late_color = Color(0.48, 0.48, 0.48, 1)
+shader_parameter/late_mix = 0.9
+shader_parameter/opacity = 0.45
+shader_parameter/dissolve_amount = 0.4
+shader_parameter/noise_scale = 1.2
+shader_parameter/soft_distance = 0.5
+shader_parameter/near_fade_distance = 2.2
+
+[sub_resource type="StandardMaterial3D" id="Mat_flames"]
+transparency = 1
+cull_mode = 2
+shading_mode = 0
+billboard_mode = 3
+vertex_color_use_as_albedo = true
+albedo_texture = ExtResource("9_flame")
+particles_anim_h_frames = 4
+particles_anim_v_frames = 4
+particles_anim_loop = true
+
+[sub_resource type="StandardMaterial3D" id="Mat_comet"]
+transparency = 1
+cull_mode = 2
+shading_mode = 0
+blend_mode = 1
+billboard_mode = 3
+vertex_color_use_as_albedo = true
+albedo_texture = ExtResource("6_comet")
+
+[sub_resource type="StandardMaterial3D" id="Mat_debris"]
+shading_mode = 0
+albedo_color = Color(0.22, 0.16, 0.12, 1)
+
+[sub_resource type="StandardMaterial3D" id="Mat_embers"]
+transparency = 1
+cull_mode = 2
+shading_mode = 0
+blend_mode = 1
+vertex_color_use_as_albedo = true
+albedo_texture = ExtResource("8_splat")
+
+[sub_resource type="StandardMaterial3D" id="Mat_speedlines"]
+transparency = 1
+cull_mode = 2
+shading_mode = 0
+blend_mode = 1
+billboard_mode = 3
+vertex_color_use_as_albedo = true
+albedo_texture = ExtResource("7_swoosh")
+
+[sub_resource type="StandardMaterial3D" id="Mat_ground"]
+transparency = 1
+cull_mode = 2
+shading_mode = 0
+blend_mode = 1
+vertex_color_use_as_albedo = true
+albedo_texture = ExtResource("8_splat")
+
+[node name="Explosion" type="Node3D" unique_id=1001 node_paths=PackedStringArray("particles")]
+script = ExtResource("1_script")
+particles = [NodePath("GroundFlash"), NodePath("Smoke"), NodePath("CoreDark"), NodePath("CoreBright"), NodePath("Flames"), NodePath("Comets"), NodePath("Sparks"), NodePath("Embers"), NodePath("SpeedLines"), NodePath("Flare"), NodePath("Debris")]
+
+[node name="GroundFlash" type="GPUParticles3D" parent="." unique_id=1002]
+position = Vector3(0, 0.03, 0)
+material_override = SubResource("Mat_ground")
+emitting = false
+amount = 1
+lifetime = 0.4
+one_shot = true
+explosiveness = 1.0
+fixed_fps = 60
+process_material = SubResource("PPM_ground")
+draw_pass_1 = SubResource("PlaneMesh_flat")
+
+[node name="Smoke" type="GPUParticles3D" parent="." unique_id=1003]
+material_override = SubResource("SM_smoke")
+emitting = false
+amount = 8
+lifetime = 1.4
+one_shot = true
+explosiveness = 0.8
+randomness = 0.6
+fixed_fps = 48
+process_material = SubResource("PPM_smoke")
+draw_pass_1 = SubResource("QuadMesh_quad")
+
+[node name="CoreDark" type="GPUParticles3D" parent="." unique_id=1004]
+material_override = SubResource("SM_coredark")
+emitting = false
+amount = 10
+lifetime = 0.65
+one_shot = true
+explosiveness = 0.82
+randomness = 0.6
+fixed_fps = 60
+process_material = SubResource("PPM_coredark")
+draw_pass_1 = SubResource("QuadMesh_quad")
+
+[node name="CoreBright" type="GPUParticles3D" parent="." unique_id=1005]
+material_override = SubResource("SM_core")
+emitting = false
+amount = 18
+lifetime = 0.6
+one_shot = true
+explosiveness = 0.82
+randomness = 0.6
+fixed_fps = 60
+process_material = SubResource("PPM_core")
+draw_pass_1 = SubResource("QuadMesh_quad")
+
+[node name="Flames" type="GPUParticles3D" parent="." unique_id=1006]
+material_override = SubResource("Mat_flames")
+emitting = false
+amount = 3
+lifetime = 0.5
+one_shot = true
+explosiveness = 1.0
+randomness = 0.7
+fixed_fps = 30
+process_material = SubResource("PPM_flames")
+draw_pass_1 = SubResource("QuadMesh_quad")
+
+[node name="Comets" type="GPUParticles3D" parent="." unique_id=1007]
+material_override = SubResource("Mat_comet")
+emitting = false
+amount = 4
+lifetime = 0.55
+one_shot = true
+explosiveness = 1.0
+randomness = 1.0
+fixed_fps = 60
+process_material = SubResource("PPM_comet")
+draw_pass_1 = SubResource("QuadMesh_quad")
+
+[node name="Sparks" type="GPUParticles3D" parent="." unique_id=1008]
+material_override = SubResource("Mat_comet")
+emitting = false
+amount = 10
+lifetime = 0.45
+one_shot = true
+explosiveness = 1.0
+randomness = 1.0
+fixed_fps = 60
+process_material = SubResource("PPM_spark")
+draw_pass_1 = SubResource("QuadMesh_quad")
+
+[node name="Embers" type="GPUParticles3D" parent="." unique_id=1009]
+position = Vector3(0, 0.05, 0)
+material_override = SubResource("Mat_embers")
+emitting = false
+amount = 8
+lifetime = 0.5
+one_shot = true
+explosiveness = 0.9
+randomness = 0.8
+fixed_fps = 45
+process_material = SubResource("PPM_embers")
+draw_pass_1 = SubResource("PlaneMesh_flat")
+
+[node name="SpeedLines" type="GPUParticles3D" parent="." unique_id=1010]
+material_override = SubResource("Mat_speedlines")
+emitting = false
+amount = 4
+lifetime = 0.25
+one_shot = true
+explosiveness = 1.0
+randomness = 0.9
+fixed_fps = 60
+process_material = SubResource("PPM_speedlines")
+draw_pass_1 = SubResource("QuadMesh_quad")
+
+[node name="Flare" type="GPUParticles3D" parent="." unique_id=1011]
+material_override = SubResource("Mat_comet")
+emitting = false
+amount = 1
+lifetime = 0.05
+one_shot = true
+explosiveness = 1.0
+fixed_fps = 60
+process_material = SubResource("PPM_flare")
+draw_pass_1 = SubResource("QuadMesh_quad")
+
+[node name="Debris" type="GPUParticles3D" parent="." unique_id=1012]
+material_override = SubResource("Mat_debris")
+emitting = false
+amount = 5
+lifetime = 0.8
+one_shot = true
+explosiveness = 1.0
+randomness = 0.8
+fixed_fps = 45
+process_material = SubResource("PPM_debris")
+draw_pass_1 = SubResource("BoxMesh_chunk")

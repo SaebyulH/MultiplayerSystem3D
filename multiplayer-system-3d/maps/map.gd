@@ -285,4 +285,3 @@ func _strip_derived_route() -> void:
 		var path := node as PayloadPath
 		if path != null:
 			path.strip_derived()
-

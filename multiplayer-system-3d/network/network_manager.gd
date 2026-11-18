@@ -122,6 +122,12 @@ var _reconnecting := false
 ## Test hook: drop without trying to resume, so the server-side grace expiry can
 ## be exercised.
 var _test_no_reconnect := false
+## Monotonic id of the latest lifecycle takeover (leave, join, host).
+##
+## Coroutines that outlive the frame that started them capture this and abort
+## when it moves, so a superseded `return_to_lobby()` re-host or staging
+## countdown cannot act on a session that no longer exists.
+var _lifecycle_epoch: int = 0
 
 
 func _ready() -> void:
@@ -481,6 +487,7 @@ func boot_listen_server(port: int = SERVER_PORT, map_path: String = LOBBY_MAP_PA
 func host_local_match(port: int = SERVER_PORT, map_path: String = LOBBY_MAP_PATH) -> void:
 	if role == Role.LISTEN_SERVER:
 		return
+	_lifecycle_epoch += 1  # cancel a pending return_to_lobby() re-host
 	LoadingScreen.show_screen(0.35, "Starting local server…")
 	MatchSession.reset()
 	_client_time_ready = false
@@ -527,6 +534,7 @@ func boot_dedicated_server(port: int = SERVER_PORT, match_id: String = "") -> vo
 ## passes false keeps the legacy replication path.
 func join_party(host_ip: String, host_port: int = SERVER_PORT, use_match_session: bool = false, grant: String = "") -> void:
 	LoadingScreen.show_screen(0.1, "Connecting...")
+	_lifecycle_epoch += 1  # cancel a pending return_to_lobby() re-host
 	role = Role.CLIENT
 	_use_match_session = use_match_session
 	_match_host = host_ip
@@ -559,6 +567,8 @@ func join_match(endpoint: String, grant: String) -> void:
 ## Leave the current match/party and return to a fresh solo lobby.
 func return_to_lobby() -> void:
 	if OS.is_debug_build(): print("Returning to lobby...")
+	_lifecycle_epoch += 1
+	var epoch := _lifecycle_epoch
 	_reconnecting = false
 	_match_host = ""
 	_match_port = SERVER_PORT
@@ -572,22 +582,50 @@ func return_to_lobby() -> void:
 	LoadingScreen.hide_screen()  # in case a join failed mid-connect and left it up
 	_terminate_connection()  # close peer FIRST so the port frees for re-host
 	_remove_game_scene()
-	# Re-host on a deferred call.  A synchronous teardown+rehost is invisible to
-	# NetworkEvents' per-frame is_server() polling, so it would never re-emit
-	# on_server_start -> NetworkTime.start(), leaving the rollback tick loop dead
-	# (movement stops while look/shoot still work).  Deferring lets NetworkEvents
-	# observe the server-stop transition first, then the re-host re-triggers it.
-	# A client leaving a dedicated match returns to the local 3D shell, not to a
-	# self-hosted P2P lobby.
+	# Re-host only after NetworkEvents has observed the teardown -- see
+	# _rehost_after_stop_observed().  A client leaving a dedicated match returns
+	# to the local 3D shell, not to a self-hosted P2P lobby.
 	match role:
 		Role.DEDICATED_SERVER:
 			get_tree().quit()
 		Role.CLIENT, Role.OFFLINE, Role.LISTEN_SERVER:
 			role = Role.OFFLINE
-			call_deferred("boot_offline_lobby")
+			_rehost_after_stop_observed(epoch, Role.OFFLINE)
 		_:
 			role = Role.LEGACY_P2P
-			call_deferred("boot_to_lobby")
+			_rehost_after_stop_observed(epoch, Role.LEGACY_P2P)
+
+
+## Re-host the lobby only after `NetworkEvents` has polled and seen the old
+## server peer go away.
+##
+## `NetworkEvents._process` samples `is_server()` once per frame and emits
+## `on_server_stop` -- wired to `NetworkTime.stop()` -- on the first frame it
+## sees the server disappear.  The offline re-host starts its own tick loop
+## (`create_offline_peer`), so if it installs the new peer before that sample,
+## the stale sample stops the fresh loop one frame later and rollback dies
+## (movement stops; look/shoot keep working).  That is exactly what happened
+## when the results overlay auto-returned from `_process`: the teardown ran
+## AFTER that frame's poll, and a single deferred boot still landed inside the
+## next frame's poll.
+##
+## `SceneTree` emits `process_frame` before node `_process`, so one await still
+## resumes before the poll.  Two full frames guarantee exactly one poll with no
+## server peer present: its `on_server_stop` is a no-op (the loop is already
+## stopped), and the new peer installs its loop afterwards.
+##
+## Do not wait on the `on_server_stop` signal instead: client returns never emit
+## it, it may already have fired that frame, and it never fires at all when
+## `NetworkEvents.enabled` is false.
+func _rehost_after_stop_observed(epoch: int, target_role: Role) -> void:
+	await get_tree().process_frame
+	await get_tree().process_frame
+	if epoch != _lifecycle_epoch or role != target_role:
+		return  # superseded by a newer leave/join/host
+	if target_role == Role.OFFLINE:
+		boot_offline_lobby()
+	else:
+		boot_to_lobby()
 
 
 ## Server-authoritative map swap (lobby -> match).  The MultiplayerSpawner
@@ -639,6 +677,7 @@ func start_staging_match(map_path: String = "") -> void:
 		return
 	if MatchSession.role != MatchSession.Role.SERVER:
 		return
+	var epoch := _lifecycle_epoch
 	var path := map_path
 	if path == "":
 		path = MatchSession.target_map_path
@@ -651,7 +690,10 @@ func start_staging_match(map_path: String = "") -> void:
 	MatchSession.set_phase(Protocol.Phase.COUNTDOWN)
 	LoadingScreen.show_screen(0.2, "Match starting in 5...")
 	await get_tree().create_timer(5.0).timeout
-	if not is_instance_valid(GameManager.spawn_parent):
+	# The next world repoints GameManager.spawn_parent, so is_instance_valid()
+	# alone cannot reject a countdown whose session was already torn down.
+	if epoch != _lifecycle_epoch or MatchSession.role != MatchSession.Role.SERVER \
+			or not is_instance_valid(GameManager.spawn_parent):
 		return
 
 	var hash := FileAccess.get_sha256(path)
@@ -659,6 +701,8 @@ func start_staging_match(map_path: String = "") -> void:
 	MatchSession.set_phase(Protocol.Phase.LOADING, path, hash)
 	load_match_map(path, false, false)
 	var ready := await MatchSession.await_map_ready(Protocol.MAP_MATCH_DEADLINE_SECONDS)
+	if epoch != _lifecycle_epoch or MatchSession.role != MatchSession.Role.SERVER:
+		return
 	if not ready:
 		push_warning("[MATCH] map-ready barrier timed out; activating anyway.")
 	LoadingScreen.report(0.9, "Spawning players...")

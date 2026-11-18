@@ -456,6 +456,12 @@ func stop_heartbeat() -> void:
 func local_id_string() -> String:
 	if local_player_id > 0:
 		return str(local_player_id)
+	if not multiplayer.has_multiplayer_peer():
+		# return_to_lobby() nulls the peer before the world is freed, and the old
+		# world's flow ticker can still run once.  Querying get_unique_id() then
+		# raises "No multiplayer peer is assigned"; the answer would be the
+		# server id anyway.
+		return "1"
 	return str(multiplayer.get_unique_id())
 
 

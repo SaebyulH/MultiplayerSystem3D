@@ -57,6 +57,9 @@ func explode(falloff_multiplier: float = 1.0):
 
 	var shooter_name: String = get_parent().shooter_name if ("shooter_name" in get_parent()) else "NONE"
 	var shooter_team: Player.Team = get_parent().shooter_team if ("shooter_name" in get_parent()) else "NONE"
+	# Read once: the projectile is frozen on the first tick, so a later
+	# _impact_normal() call would fall back to world up.
+	var normal := _impact_normal()
 
 	for i in range(tick_count):
 		if i > 0:
@@ -68,7 +71,7 @@ func explode(falloff_multiplier: float = 1.0):
 			return
 
 		_apply_explosion_tick(shooter_name, shooter_team, falloff_multiplier)
-		_explode_visual.rpc()
+		_explode_visual.rpc(normal)
 
 
 # ----------------------------------------------------
@@ -166,16 +169,29 @@ func _apply_explosion_tick(shooter_name: String, shooter_team: Player.Team, fall
 # ----------------------------------------------------
 # VISUAL EFFECT (replicated locally)
 # ----------------------------------------------------
-@rpc("call_local", "reliable")
-func _explode_visual():
-	if _explosion_scene == null:
-		_explosion_scene = load("res://effects/explosion.tscn")
+## Surface normal the impact plays against: opposite the parent projectile's
+## travel.  World up for a stationary airburst.
+func _impact_normal() -> Vector3:
+	var parent := get_parent()
+	if parent is RigidBody3D:
+		var velocity: Vector3 = (parent as RigidBody3D).linear_velocity
+		if velocity.length_squared() > 0.01:
+			return -velocity.normalized()
+	return Vector3.UP
 
-	var explosion := _explosion_scene.instantiate()
-	explosion.effect_color = explosion_color
+
+@rpc("call_local", "reliable")
+func _explode_visual(normal: Vector3):
+	if _explosion_scene == null:
+		_explosion_scene = load("res://effects/rocket_impact/rocket_impact.tscn")
+
 	var parent := get_parent()
 	if not parent:
 		return
-	explosion.position = position
+	var explosion := _explosion_scene.instantiate()
+	# The burst footprint rides the splash radius; play() orients it from the
+	# hit normal and the world's up vector.
+	explosion.effect_scale = maxf(splash_radius * 0.5, 0.2)
+	explosion.tint = explosion_color
 	parent.add_child(explosion)
-	explosion.start_effect(splash_radius)
+	explosion.play(global_position, normal, Vector3.UP)

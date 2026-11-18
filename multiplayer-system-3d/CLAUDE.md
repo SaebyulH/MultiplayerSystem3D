@@ -164,14 +164,14 @@ This is the subtle part — read carefully before touching `network_manager.gd`.
 
 `NetworkEvents` detects server start/stop by **polling `is_server()` once per frame in `_process`**. It also explicitly treats `OfflineMultiplayerPeer` as "not a server" (its `is_server()` returns false for it). Two consequences for our code:
 
-1. **A synchronous teardown + re-host is invisible to `NetworkEvents`.** If you close the peer and immediately `create_server()` again *in the same frame*, `NetworkEvents` never sees the intermediate "stopped" state, so `on_server_start` never re-fires and `NetworkTime.start()` never runs — the rollback tick loop dies and movement stops (while look/shoot, which don't use rollback, keep working). **This is why `return_to_lobby()` defers the re-host with `call_deferred("boot_to_lobby")`** — giving `NetworkEvents` one frame to observe the stop transition before the re-host re-triggers `on_server_start`.
+1. **A re-host must not start its loop inside a `NetworkEvents` poll window.** If you close the peer and immediately `create_server()` again *in the same frame*, `NetworkEvents` never sees the intermediate "stopped" state, so `on_server_start` never re-fires and `NetworkTime.start()` never runs — the rollback tick loop dies and movement stops (while look/shoot, which don't use rollback, keep working). The default shell's re-host is worse: `boot_offline_lobby()` starts the loop manually, and if the offline peer lands while `NetworkEvents._is_server` is still true from the match, the next poll's stale `on_server_stop` kills the fresh loop. **This is why `return_to_lobby()` goes through `_rehost_after_stop_observed()`, which awaits TWO process frames** (`SceneTree` emits `process_frame` before node `_process`, so one frame is not enough — the results overlay's auto-leave runs after that frame's poll). The helper also checks a monotonic `_lifecycle_epoch` so a double `return_to_lobby()` cannot build two lobbies. `05-known-issues.md` #154.
 2. **The offline fallback won't auto-start `NetworkTime`.** Because `NetworkEvents` ignores `OfflineMultiplayerPeer`, `create_server()` must call `NetworkTime.start()` **manually** when it falls back to an offline peer (otherwise the second local instance's lobby can't move).
 
 `NetworkManager._terminate_connection()` calls the **full `NetworkTime.stop()`** (not the low-level `NetworkTimeSynchronizer.stop()`) before nulling the peer — this resets `NetworkTime`'s internal `_state` to INACTIVE so a subsequent `NetworkTime.start()` succeeds cleanly on re-host/re-join. Note it does **not** clear `_tick`, `_initial_sync_done` or the reference clock, which is why the tick-domain watchdog gates itself on `NetworkManager._client_time_ready` rather than on netfox's state (between sessions `_tick` still holds the previous session's value).
 
 ### Boot (become host)
 
-1. `world/main.gd:_ready()` → `_boot()` → `await NetworkManager.boot_to_lobby()` (a **direct `await`**, not `call_deferred` — the deferred call lives in `return_to_lobby()`).
+1. `world/main.gd:_ready()` → `_boot()` → `await NetworkManager.boot_to_lobby()` (a **direct `await`** — the two-frame rehost lives in `return_to_lobby()`).
 2. `boot_to_lobby()` → `create_server()` (ENet server, `is_hosting_game = true`) then `load_game_scene("res://maps/main_menu_world.tscn")`.
 3. `load_game_scene()` instantiates `world/world1.tscn`, sets `game_scene.map_path`, and adds it as a child of `get_tree().current_scene` (the `Main` Control root).
 4. `world_1.gd._ready()`: sets `GameManager.spawn_parent = %SpawnParent`, opens the loadout menu (`PlayerInput.ui_open = true`), and — because `is_hosting_game` — loads the lobby map into `SpawnParent` (named `"Map"`) and creates a `SpawnManager` (which adds player id 1).
@@ -188,12 +188,13 @@ This is the subtle part — read carefully before touching `network_manager.gd`.
 
 ### Leave / disconnect
 
-`return_to_lobby()` is the single exit path, called by the "Leave Party" buttons (`world_1.gd`, `loadout_menu.gd`), `_on_connection_failed()`, and `_server_disconnected()`:
+`return_to_lobby()` is the single exit path, called by the "Leave Party" buttons (`world_1.gd`, `loadout_menu.gd`), the results overlay's **auto countdown** (`world/post_match.gd`), `_on_connection_failed()`, and `_server_disconnected()`:
 
-1. `Input.set_mouse_mode(VISIBLE)`.
-2. `_terminate_connection()` — full `NetworkTime.stop()`, then close + null the peer (frees port 8080 for the re-host).
-3. `_remove_game_scene()`.
-4. `call_deferred("boot_to_lobby")` — deferred so `NetworkEvents` sees the server-stop transition (see above), then re-hosts and reloads the lobby.
+1. Bump `_lifecycle_epoch` and capture it — cancels a superseded re-host.
+2. `Input.set_mouse_mode(VISIBLE)`.
+3. `_terminate_connection()` — full `NetworkTime.stop()`, then close + null the peer (frees port 8080 for the re-host).
+4. `_remove_game_scene()`.
+5. `_rehost_after_stop_observed(epoch, role)` — awaits two process frames so `NetworkEvents` observes the stop transition (see above), then re-hosts and reloads the lobby.
 
 ### Lobby → match map swap
 
@@ -344,7 +345,7 @@ Projectiles and the tracer / decal / impact effects that ride the same parent ar
 - Sound effects go through `AudioPool` (`effects/audio_pool.gd`), a pooled one-shot player — use it instead of spawning a fresh `AudioStreamPlayer` per event (footsteps, hits, muzzle blasts).
 - **Never use `:=` on a value with an untyped `Variant` source.** `%UniqueName` node references (e.g. `@onready var camera := %Camera3D`) are typed `Node`, so any property access off them (`camera.global_position`, `camera.fov`) yields `Variant` and `var x := camera.global_position` fails with "Cannot infer the type". Cast first (`var cam := camera as Camera3D`) or use an explicit type (`var pos: Vector3 = camera.global_position`).
 - **`as Array[T]` does not convert an array — it only type-checks one.** An untyped `Array` stays untyped, so the classic `dict.get(key, []) as Array[Player]` still fails the assignment with `Trying to assign an array of type "Array" to a variable of type "Array[Player]"`. Check `dict.has(key)` and index it, or build a properly typed default. An earlier `docs/05-known-issues.md` entry recommended the cast as the fix for this — it was wrong, and the corrected entry is #3's follow-up.
-- **Defer re-hosts across a frame.** Any teardown + re-`create_server()` must not happen synchronously in one frame, or `NetworkEvents` misses the transition and movement (rollback) dies. `return_to_lobby()` uses `call_deferred("boot_to_lobby")`.
+- **Never re-host inside one `NetworkEvents` poll window.** A teardown + re-host in one frame hides the transition and movement (rollback) dies; a one-frame defer is also not enough for the offline re-host, whose manual `NetworkTime.start()` is killed by the stale `on_server_stop`. `return_to_lobby()` uses `_rehost_after_stop_observed()` (two process frames + a lifecycle-epoch check). `05-known-issues.md` #154.
 - **The offline fallback needs a manual `NetworkTime.start()`.** `NetworkEvents` ignores `OfflineMultiplayerPeer`, so `create_server()` starts `NetworkTime` itself when it falls back.
 - **`NetworkManager` owns the client's `NetworkTime.start()`.** netfox's `on_client_start` listener is disconnected in `join_party()`; if you add one back — or start the loop before `_adopt_server_tick_rate()` — a joiner seeds its whole tick origin from a clock reading taken across the join stall, which is a 40-second desync. `03-event-flow.md`, `05-known-issues.md` #18.
 - **`NetworkTime.tick` is monotonic; only a full stop/start moves it.** Never apply a tick rate after `start()` — the client's seed is `seconds_to_ticks(...)` evaluated with the live rate, so a wrong multiplier there is unrecoverable. The session tick rate lives in `NetworkManager.apply_tick_rate()`, and it also derives netfox's *tick-count* limits from seconds (`HISTORY_SECONDS` / `CATCHUP_SECONDS`), so do not also set `history_limit` / `max_ticks_per_frame` in `project.godot`.

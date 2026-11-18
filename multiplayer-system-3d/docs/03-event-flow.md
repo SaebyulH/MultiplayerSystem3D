@@ -25,15 +25,20 @@ The rollback tick loop is driven by `NetworkTime` (started by `NetworkEvents`). 
 
 ---
 
-## Consequence 1 — A synchronous teardown + re-host is invisible to `NetworkEvents`
+## Consequence 1 — A re-host must not start its tick loop before `NetworkEvents` has observed the stop
 
-If you close the peer and immediately `create_server()` again **in the same frame**, `NetworkEvents` never sees the intermediate "stopped" state (the peer is null only between two `_process` ticks). So:
-- `on_server_stop` never fires, and
-- `on_server_start` never **re-fires**, so `NetworkTime.start()` never runs on the re-host — even though `_terminate_connection` manually stopped it.
+`return_to_lobby()` must not complete a teardown + re-host inside one `NetworkEvents`
+poll window. Two distinct failures live here, and the second is the one the
+default shell hits:
 
-Result: the rollback tick loop is dead and movement stops, while look/shoot (non-rollback) keep working.
+- **Synchronous teardown + `create_server()` in one frame.** The peer is null only between two polls, so `NetworkEvents` never sees the intermediate "stopped" state: `on_server_stop` never fires, `on_server_start` never **re-fires**, and `NetworkTime.start()` never runs on the re-host — even though `_terminate_connection` manually stopped it.
+- **The offline/lobby re-host starts its own loop.** `boot_offline_lobby()` → `create_offline_peer()` installs an `OfflineMultiplayerPeer` and calls `NetworkTime.start()` manually (Consequence 2). If that happens while `NetworkEvents._is_server` is still `true` from the match, the next poll sees a non-server peer (null / offline), emits `on_server_stop` → `NetworkTime.stop()`, and kills the fresh loop. Nothing restarts it: movement stops while look/shoot keep working (`05-known-issues.md` #154).
 
-**This is why `return_to_lobby()` defers the re-host** with `call_deferred("boot_to_lobby")` (`network_manager.gd:114`) — it gives `NetworkEvents` one frame to observe the stop transition before the re-host re-triggers `on_server_start`.
+Either way the result is a dead rollback loop.
+
+**`return_to_lobby()` re-hosts through `_rehost_after_stop_observed()`**, which awaits **two** `get_tree().process_frame` emissions before booting. `SceneTree` emits `process_frame` before node `_process`, so one await would still resume before that frame's poll — the *old* `call_deferred("boot_to_lobby")` rule had exactly this hole for the results overlay, whose auto-leave runs from `post_match._process` **after** the autoload's poll. Two full frames guarantee one complete poll with no server peer present, so its `on_server_stop` is a no-op before the new peer installs its loop.
+
+The helper also captures a monotonic `_lifecycle_epoch`, bumped by `return_to_lobby()`, `join_party()` and `host_local_match()`, and aborts if it moved — a double `return_to_lobby()` (results auto-leave plus a disconnect callback) must not build two lobbies.
 
 ## Consequence 2 — The offline fallback won't auto-start `NetworkTime`
 
@@ -69,12 +74,13 @@ Because `NetworkEvents` ignores `OfflineMultiplayerPeer`, `create_server()` must
 
 ## Leave / disconnect
 
-`return_to_lobby()` is the single exit path (called by the "Leave Party" buttons, `_on_connection_failed()`, `_server_disconnected()`), `network_manager.gd:104-114`:
+`return_to_lobby()` is the single exit path (called by the "Leave Party" buttons, `pause_menu`, `staging_room`, the results overlay's **auto countdown** at `post_match.gd:177-190`, `_on_connection_failed()`, `_server_disconnected()`), `network_manager.gd:return_to_lobby`:
 
-1. `Input.set_mouse_mode(VISIBLE)`.
-2. `_terminate_connection()` — full `NetworkTime.stop()`, then close + null the peer (frees port 8080 for re-host).
-3. `_remove_game_scene()`.
-4. `call_deferred("boot_to_lobby")` — deferred so `NetworkEvents` sees the server-stop transition (see Consequence 1), then re-hosts and reloads the lobby.
+1. Bump `_lifecycle_epoch` and capture it — cancels a superseded rehost.
+2. `Input.set_mouse_mode(VISIBLE)`.
+3. `_terminate_connection()` — full `NetworkTime.stop()`, then close + null the peer (frees port 8080 for re-host).
+4. `_remove_game_scene()`.
+5. `_rehost_after_stop_observed(epoch, role)` — awaits two process frames so `NetworkEvents` observes the stop transition (see Consequence 1), then boots the offline shell or the legacy P2P lobby.
 
 ---
 
@@ -333,7 +339,7 @@ Test hooks: `--test-drop-after=N`, `--test-silent-after=N`,
 
 ## Full fragile / order-dependent list
 
-1. **Deferred re-host is load-bearing** (`network_manager.gd:return_to_lobby`). Any synchronous teardown + re-`create_server()` kills `NetworkTime` and thus movement.
+1. **The re-host must wait for `NetworkEvents` to observe the stop** (`network_manager.gd:return_to_lobby` → `_rehost_after_stop_observed`). Any synchronous teardown + rehost, or a single deferred/awaited frame, lets the stale `on_server_stop` kill the new loop and thus movement.
 2. **Offline fallback needs manual `NetworkTime.start()`** (`network_manager.gd:create_server`).
 3. **Peer-1 hardcoding is everywhere** — `spawn_manager.gd:15` (adds player 1), `spawn_manager.gd:131` (bot authority 1), `leaderboard_singleton.gd:236-258` (`rpc_id(1)`), `loadout_menu.gd:869` (`rpc_id(1)`), `host_server_area.gd:53-54` (`get_unique_id() == 1`). The whole "party leader = peer 1 = server" model collapses if the server is ever not peer 1.
 4. **`NetworkManager` owns the client's `NetworkTime.start()`** — netfox's `on_client_start` listener is disconnected in `join_party()`, and the replacement lives at the end of the `_on_connected_to_server()` coroutine (see above). Both halves are required: reconnecting the netfox listener, or starting before `_adopt_server_tick_rate()`, reintroduces #18.
@@ -389,6 +395,13 @@ Invariants:
   server that is intentionally going away.
 - **`MatchSession.reset()` clears target map, READY flags and map-ready ACKs.**
   A re-used process must not carry those into the next room.
+- **A countdown coroutine must validate session identity, not node liveness.**
+  `start_staging_match()` waits 5 s (and then the map-ready barrier). The next
+  world repoints `GameManager.spawn_parent`, so `is_instance_valid()` alone let a
+  countdown from a torn-down session swap the returned lobby to the match map.
+  It now captures `NetworkManager._lifecycle_epoch` after its entry guards and
+  re-checks it (plus `MatchSession.role == SERVER`) after both awaits
+  (`05-known-issues.md` #155).
 
 Known gaps: there is no server-side ready gate (READY is advisory), no party
 lobby service, and host migration is still the existing reserved-slot expiry

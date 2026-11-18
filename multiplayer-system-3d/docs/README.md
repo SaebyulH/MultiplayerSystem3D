@@ -45,7 +45,7 @@ Treat a missing doc update as an incomplete change.
 
 ## Top gotchas (the invariants most likely to bite you)
 
-1. **Never do a synchronous teardown + re-host in one frame.** `return_to_lobby()` must `call_deferred("boot_to_lobby")`, or `NetworkEvents` misses the stop transition and the rollback tick loop dies (movement stops; look/shoot keep working). `network_manager.gd:104-114`.
+1. **Never re-host inside one `NetworkEvents` poll window.** `return_to_lobby()` must go through `_rehost_after_stop_observed()`, which waits **two** process frames. `NetworkEvents` polls `is_server()` once per frame; a synchronous or one-frame rehost (including the offline peer's manual `NetworkTime.start()`) is killed by the stale `on_server_stop`, and the rollback tick loop dies (movement stops; look/shoot keep working). `network_manager.gd:return_to_lobby`.
 2. **The offline fallback needs a manual `NetworkTime.start()`.** `NetworkEvents` treats `OfflineMultiplayerPeer` as "not a server", so the second local instance's lobby can't move without it. `network_manager.gd:27-43`.
 3. **`_sync_mag` is unreliable** (`@rpc("any_peer","call_local")`), unlike `_sync_all_mags`/`_confirm_reload_done`. Authoritative ammo can drop and client mag diverges. `weapon_controller.gd:2015`.
 4. **Movement is camera-relative but the camera basis is not synced** — remote simulation of movement/dash/charge uses a stale basis and relies on netfox state correction. `player.gd:1493`, `1864`; `body.gd:26-57`.
