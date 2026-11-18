@@ -81,7 +81,7 @@ func _ready() -> void:
 	_hud_timer.timeout.connect(_on_hud_tick)
 	_hud_timer.start()
 	if OS.is_debug_build():
-		print("[DEBUG] HUD FPS monitor active. Per line: FPS | process ms | physics ms | drawCalls | objects | physBodies | ui_open | menu_mode")
+		print("[DEBUG] HUD FPS monitor active. Per line: FPS | frame ms | physics max ms | drawCalls | objects | physBodies | ui_open | menu_mode")
 
 
 func _on_hud_tick() -> void:
@@ -112,13 +112,18 @@ func _process(delta: float) -> void:
 	if _dbg_accum < 1.0:
 		return
 	var fps := _dbg_frames / _dbg_accum
-	var proc_ms := Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0
+	# Wall frame time, measured here.  NOT Performance.TIME_PROCESS: that monitor
+	# reports the largest value from the last second, includes render/GPU-fence
+	# waits, and routinely reads 5-10x the real frame time (measured 7.4 ms avg
+	# beside a 600 FPS / 1.67 ms window).  TIME_PHYSICS_PROCESS keeps the same
+	# last-second-max semantics, so it is labelled as the physics peak.
+	var frame_ms := 1000.0 / fps
 	var phys_ms := Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0
 	var draw_calls := int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))
 	var objs := int(Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME))
 	var phys_bodies := int(Performance.get_monitor(Performance.PHYSICS_3D_ACTIVE_OBJECTS))
-	print("[DEBUG] FPS %.1f | proc %.2fms | phys %.2fms | drawCalls %d | objs %d | physBodies %d | ui_open=%s menu_mode=%s" % [
-		fps, proc_ms, phys_ms, draw_calls, objs, phys_bodies,
+	print("[DEBUG] FPS %.1f | frame %.2f ms | phys max %.2f ms | drawCalls %d | objs %d | physBodies %d | ui_open=%s menu_mode=%s" % [
+		fps, frame_ms, phys_ms, draw_calls, objs, phys_bodies,
 		PlayerInput.ui_open, _menu_mode,
 	])
 	_dbg_accum = 0.0

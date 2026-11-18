@@ -376,6 +376,32 @@ new hot path later.
 7. **Avoid per-frame `duplicate()` / string formatting** in HUD paths — only rebuild on change (dirty flag / signal), not every frame.
 8. **`queue_free`, never `free()`, on replicated nodes** — the spawner must observe the removal event.
 
+## Post-processing & render cost (measured 2026-11-19)
+
+Profiled with `godot_console.exe --path . --disable-vsync --print-fps --gpu-profile -- --test-host-local --test-host-map=res://maps/<map>.tscn` on an RTX 4070 Laptop at 1920×1080 (windowed), vsync disabled.
+
+**SSAO, SSIL and SSR are now off in every map.** They were enabled (`ssao_enabled`, `ssil_enabled`, `ssr_enabled` all `true`) in all 14 `maps/*.tscn` Environment blocks, even though SDFGI itself is disabled — they were pure cost. The lines are removed; the engine defaults are `false`, so there is nothing to re-set. `volumetric_fog_enabled` and `glow_enabled` were deliberately left on (they carry the look).
+
+| scene | before | after |
+|---|---|---|
+| `castle` GPU frame | 2.03 ms, 426 FPS | 1.28 ms, ≈590 FPS |
+| `castle` post FX (SSAO+SSIL+SSR) | 0.66 ms | 0 (removed) |
+| `bind` GPU frame | 2.30 ms, 304 FPS | 1.43 ms, ≈360 FPS |
+| lobby staging | 1.77 ms, 432 FPS | — |
+
+Remaining GPU budget on `castle` (1.28 ms): opaque pass 0.33, glow 0.19, tonemap 0.12, volumetric fog 0.13 (render+filter+integrate), sky 0.01, shadows 0.06, canvas 0.12. **Glow and volumetric fog are now the two largest removable effects** (~0.32 ms combined); the toon shader's per-light `paint_pattern()` cost sits inside the opaque pass (see above — bake it to a texture if it ever profiles hot).
+
+Draw calls are not the limiter on this hardware: `bind.tscn` is 2435 calls (1233 `StaticBody3D`, one collision shape each) at 2.75 ms. It is the first metric to watch on a weaker CPU.
+
+### Debug HUD metrics
+
+`Performance.TIME_PROCESS` is **not** current-frame CPU time. The engine reports the **largest value from the last second** and it includes render-draw/GPU-fence waits, so it routinely reads several times the real frame time (measured: 7.4 ms average beside a 1.67 ms / 600 FPS window; a single load spike reads 1269 ms for a whole second). `hud_controller.gd::_process` no longer prints it. The debug line now prints:
+
+- `frame` — wall-clock `1000 / fps`, averaged over the same 1 s window,
+- `phys max` — `TIME_PHYSICS_PROCESS`, labelled as a peak because it has the same last-second-max semantics.
+
+Do not profile CPU from the HUD line; use `--gpu-profile` for GPU and the editor profiler for CPU.
+
 ## Frame rate & vsync
 
 The rendered FPS is capped only by **VSync**, and that is Godot's *default* — this project sets no vsync key at all. `project.godot`'s `[display]` section contains only `window/size/viewport_width`, `window/size/viewport_height` and `window/stretch/mode`; there is no `display/window/vsync/vsync_mode` anywhere in the repo, so the effective value is Godot's default `1` (vsync **on**, locking FPS to the display refresh rate). `application/run/max_fps` and `Engine.max_fps` are likewise unset (default `0`, uncapped).
