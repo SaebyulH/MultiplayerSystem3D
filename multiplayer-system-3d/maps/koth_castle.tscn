@@ -37,8 +37,6 @@ tonemap_mode = 2
 sdfgi_use_occlusion = true
 sdfgi_cascades = 1
 sdfgi_y_scale = 0
-glow_enabled = true
-volumetric_fog_enabled = true
 volumetric_fog_density = 0.0042
 adjustment_enabled = true
 

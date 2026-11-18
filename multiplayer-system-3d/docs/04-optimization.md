@@ -380,18 +380,20 @@ new hot path later.
 
 Profiled with `godot_console.exe --path . --disable-vsync --print-fps --gpu-profile -- --test-host-local --test-host-map=res://maps/<map>.tscn` on an RTX 4070 Laptop at 1920×1080 (windowed), vsync disabled.
 
-**SSAO, SSIL and SSR are now off in every map.** They were enabled (`ssao_enabled`, `ssil_enabled`, `ssr_enabled` all `true`) in all 14 `maps/*.tscn` Environment blocks, even though SDFGI itself is disabled — they were pure cost. The lines are removed; the engine defaults are `false`, so there is nothing to re-set. `volumetric_fog_enabled` and `glow_enabled` were deliberately left on (they carry the look).
+**The whole screen-space stack is now off in every map.** All 14 `maps/*.tscn` Environment blocks had `ssao_enabled`, `ssil_enabled`, `ssr_enabled`, `glow_enabled` and `volumetric_fog_enabled` set to `true`, even though SDFGI itself is disabled — pure cost. The enabling lines are removed; the engine defaults are `false`, so there is nothing to re-set. The tuning keys those features left behind (`volumetric_fog_density`, `glow_bloom`, …) are inert while disabled and were deliberately kept, so re-enabling one feature needs a single `*_enabled = true` line.
 
 | scene | before | after |
 |---|---|---|
-| `castle` GPU frame | 2.03 ms, 426 FPS | 1.28 ms, ≈590 FPS |
-| `castle` post FX (SSAO+SSIL+SSR) | 0.66 ms | 0 (removed) |
-| `bind` GPU frame | 2.30 ms, 304 FPS | 1.43 ms, ≈360 FPS |
-| lobby staging | 1.77 ms, 432 FPS | — |
+| `castle` GPU frame | 2.03 ms | 0.84 ms |
+| `castle` removed post FX | SSAO+SSIL+SSR 0.66 ms, glow 0.19 ms, fog 0.13 ms | 0 |
+| `bind` GPU frame | 2.30 ms | 0.76 ms |
+| lobby staging (before) | 1.77 ms | — |
 
-Remaining GPU budget on `castle` (1.28 ms): opaque pass 0.33, glow 0.19, tonemap 0.12, volumetric fog 0.13 (render+filter+integrate), sky 0.01, shadows 0.06, canvas 0.12. **Glow and volumetric fog are now the two largest removable effects** (~0.32 ms combined); the toon shader's per-light `paint_pattern()` cost sits inside the opaque pass (see above — bake it to a texture if it ever profiles hot).
+FPS figures are **not** recorded here: spawn pose is randomised per run and other Godot instances on the machine contend for the same CPU/GPU, so uncapped FPS varied by >30 % between identical runs (castle measured 420–600 FPS across runs). Compare GPU pass totals, which are stable to ~0.05 ms.
 
-Draw calls are not the limiter on this hardware: `bind.tscn` is 2435 calls (1233 `StaticBody3D`, one collision shape each) at 2.75 ms. It is the first metric to watch on a weaker CPU.
+Remaining GPU budget on `castle` (0.84 ms): opaque pass 0.34, canvas 0.12, shadows 0.06, depth prepass 0.03, tonemap 0.04, sky ~0.01, culls ~0.08. **The toon shader's per-light `paint_pattern()` cost is now the largest remaining shader cost, inside the opaque pass** (see above — bake it to a texture if it ever profiles hot).
+
+Draw calls are not the limiter on this hardware: `bind.tscn` is 1233 `StaticBody3D` with one collision shape each, ~2400 calls, at 0.76 ms GPU. It is the first metric to watch on a weaker CPU.
 
 ### Debug HUD metrics
 
