@@ -103,6 +103,10 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 | 154 | 🟠 High | Netcode | ✅ FIXED 2026-11-19 — Results auto-return left the netfox tick loop dead: look/shoot worked in the returned lobby, movement did not |
 | 155 | 🟡 Medium | Flow | ✅ FIXED 2026-11-19 — A staging countdown coroutine could fire into the next session and swap the returned lobby to the match map |
 | 156 | 🟢 Low | Assets/Perf | Toon FX are selected by bare preset strings; a typo silently falls back, the grenade presets and the Carpet Bomb explosion preset exist only in the project copies of the vendored tables, and stacked 18 s nuke presets allocate a 700-instance batch each |
+| 158 | 🟡 Medium | Correctness | Water containment is an axis-aligned box approximation; rotated brushes leak water outside the brush |
+| 159 | 🟢 Low | UX | WET can retrigger while bobbing on the waterline (no exit cooldown / hysteresis) |
+| 160 | 🟡 Medium | AI | Bots have no swim intent and water adds no navmesh polygons |
+| 161 | 🟢 Low | Perf/Visuals | Transparent double-sided water doubles rasterised area and sits in the per-object sorted transparent queue |
 
 
 ---
@@ -1538,6 +1542,30 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 - **Effect camera state is deliberately conditional.** `enter_effect_view()` resets pan/focus only when `_view_mode != EFFECT`; switching effects must not call `frame_effect()`. If a future path frames on every selection, the user's orbit/pan/zoom is lost. The mannequin reference is parented under `get_effect_root()` (a sibling of the effect preview, never cleared by `EffectPreview._clear()`), so its visibility must be toggled by tab.
 - **Weapon→human pairing and locomotion preview are also rig invariants.** `play_weapon_animation` resolves the clip's `WeaponAnimGroup` and plays the paired `human_anim` through `_play_raw_human_clip`; `_weapon_human_sync` makes `stop_weapon_animation` release that human clip too. `set_locomotion_state` stops both raw players, re-enables the tree, writes the continuous blend direction and the ground-state blend, and forces `HoldBlend` to `0.0` — do not apply `_apply_animation_state` after it. The tree has no `speed_scale`; `set_animation_speed` switches it to MANUAL callback mode and `_process` advances it with `delta * speed` (restore IDLE at 1.0). Do not enable manual mode while the render timer is stopped, and do not expect the loadout screen to need it. A weapon whose groups are not authored simply plays without a human pair (the viewer shows no sync).
 - **Suggested fix / regression checks:** keep the rig's new methods additive and gated on `_view_mode`; re-run the H loadout preview (walk/sprint, weapon hold, ghost hover) after touching the rig; run a headless script that selects every effect and plays a human + weapon animation, checking `raw=true`, the `__viewer/...` current animation, `_weapon_human_sync`, the locomotion blend values, and that stopping restores the pose.
+
+### 158. Water containment is an axis-aligned box approximation
+
+- **Files:** `world/brush_entities/water_volume.gd` (`_ensure_bounds`, `contains_point`), `maps/map.gd:is_point_in_water`.
+- **Symptom / why:** `WaterVolume` caches one world-space `AABB` per generated `ConvexPolygonShape3D`. For the intended authoring shape — an axis-aligned box brush — the bounds are exact. A **rotated** brush's corners still fit the AABB, but the box also covers empty space diagonally, so the player swims in air outside the brush; a **concave** brush (several wedges in one entity) gets one box per convex shape, which is correct, but an L-shaped *single* brush is not representable and comes out as its bounding box.
+- **Suggested fix:** author water as axis-aligned boxes (documented in `docs/06-trenchbroom-entities.md`). If rotated pools become necessary, replace the AABB with exact point-in-convex-hull half-space tests: the convex `points` are already cached, and hull planes can be derived once per shape.
+
+### 159. WET can retrigger while bobbing at the waterline
+
+- **Files:** `player/player.gd` (`_update_server_water_state`).
+- **Symptom / why:** the effect is applied on the transition from "inside" to "outside", sampled once per real frame at the collider centre. A player floating exactly on the boundary can cross it repeatedly as reduced gravity and drag settle, re-applying an 8 s effect each time. Harmless (the effect does nothing but drive the HUD label and drips), but it can keep WET lit indefinitely while the player hovers at the surface.
+- **Suggested fix:** add a short cooldown (e.g. 0.25 s) or hysteresis — sample the body centre for "inside" and a point above it for "outside" — before applying on the exit edge.
+
+### 160. Bots have no swim intent, and water contributes no navmesh
+
+- **Files:** `player/bot_controller.gd` (unaided), `player/player.gd:_swim_move`.
+- **Symptom / why:** bots are `Player`s, so if one ends up inside a water volume it runs the same swim branch. `BotController` keeps steering along the navmesh and issuing ground jumps, which the swim branch cancels every tick, so the bot sinks and flails rather than crossing. The water brush is an `Area3D` with no static collider, so the navmesh baker produces no polygons over it — bots route around a pool, which is the safe failure mode.
+- **Suggested fix:** give `BotController` a water state (`player.is_body_in_water()` is already a cheap deterministic query) with a simple swim-toward-target input, or explicitly forbid water path segments in the navigation graph.
+
+### 161. Transparent double-sided water is a draw-order and overdraw cost
+
+- **Files:** `assets/materials/water_surface.gdshader`, `trenchbroom/textures/Material-LIB/Nature/Water/Water[swim].tres`.
+- **Symptom / why:** `cull_disabled` plus `blend_mix` is what makes the top surface visible from underneath, but it doubles the rasterised area (both faces of the volume draw) and puts the water in the transparent queue, sorted per object rather than per triangle. Large volumes, or several overlapping pools, show sorting seams where a water surface and another transparent object (scope glass, particles, another pool) intersect. The water group is also a full-screen-ish transparent surface over whatever is behind it.
+- **Suggested fix:** paint only the top face with the water texture and the rest with `skip` (documented authoring recipe) — that removes the side overdraw while keeping the surface visible from both sides. Keep pools modest in size; if overlapping transparent effects become common, move the water to an opaque deferred pass with a `depth_prepass_alpha` style trick.
 
 ## Not bugs, but worth knowing
 

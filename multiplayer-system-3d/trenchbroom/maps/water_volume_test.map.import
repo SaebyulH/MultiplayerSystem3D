@@ -1,0 +1,14 @@
+[remap]
+
+importer="func_godot.map"
+type="Resource"
+uid="uid://dwqb3ebmotptg"
+path="res://.godot/imported/water_volume_test.map-631253c3ad6a03d9b2f695b4c49fbf4e.tres"
+
+[deps]
+
+source_file="res://trenchbroom/maps/water_volume_test.map"
+dest_files=["res://.godot/imported/water_volume_test.map-631253c3ad6a03d9b2f695b4c49fbf4e.tres"]
+
+[params]
+

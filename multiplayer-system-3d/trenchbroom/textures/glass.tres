@@ -1,0 +1,13 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[ext_resource type="Texture2D" path="res://trenchbroom/textures/glass.png" id="1_albedo"]
+
+[resource]
+transparency = 1
+cull_mode = 2
+albedo_texture = ExtResource("1_albedo")
+albedo_color = Color(0.78, 0.9, 1, 0.35)
+metallic = 0.0
+metallic_specular = 0.9
+roughness = 0.05
+texture_filter = 2

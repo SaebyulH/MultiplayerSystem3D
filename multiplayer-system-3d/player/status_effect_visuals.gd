@@ -87,6 +87,18 @@ const CONFIGS := {
 		"scale_min": 0.1, "scale_max": 0.22, "quad": 0.26,
 		"local": true, "preprocess": 0.3,
 	},
+	# Water dripping off the body after leaving a pool.  Gravity does the work,
+	# so the drops fall well below the emitter box — the visibility AABB already
+	# accounts for a downward direction.
+	"wet": {
+		"texture": DEBRIS_TEX, "color": Color(0.55, 1.35, 1.8), "additive": true,
+		"amount": 14, "lifetime": 0.9, "offset": Vector3(0.0, 1.2, 0.0),
+		"box": Vector3(0.38, 0.55, 0.32), "direction": Vector3.DOWN, "spread": 25.0,
+		"velocity_min": 0.3, "velocity_max": 0.8,
+		"gravity": Vector3(0.0, -6.0, 0.0),
+		"scale_min": 0.08, "scale_max": 0.18, "quad": 0.12,
+		"local": false, "preprocess": 0.2,
+	},
 	# Golden shimmer while invincible.
 	"invincible": {
 		"texture": FLASH_TEX, "color": Color(2.0, 1.5, 0.3), "additive": true,

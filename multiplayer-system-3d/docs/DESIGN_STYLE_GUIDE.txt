@@ -306,6 +306,13 @@ HUD
   outlined in AMBER, opponent rows RED, teammates TEXT, each row carries a
   team-colour strip, portrait and fixed-width stat columns. PING is the last
   column: TEAL <= 40 ms, AMBER <= 90 ms, RED above, BOT / em dash when unknown.
+  Underwater: one full-screen tint built from INK mixed 22 % toward TEAL at
+  ~0.42 alpha, with a soft vignette and slow caustic bands. It fades over
+  ~0.2 s, sits below the status-effect borders, and is hidden while scoped
+  (the scope texture owns the screen). No screen-space distortion.
+  WET: uppercase label, TEAL, shown with its remaining seconds in the
+  status-effect row and the side list; world-space drips use the same particle
+  recipe as the other status effects.
 
 Debug UI
   Same palette and components as gameplay UI.  Debug colour is not an excuse

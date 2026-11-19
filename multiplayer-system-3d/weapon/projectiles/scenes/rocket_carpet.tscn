@@ -40,6 +40,7 @@ hurtbox_hit_mode = 2
 world_hit_mode = 2
 align_to_velocity = true
 trail_preset = "carpet_trail"
+underwater_trail_preset = "rockettrail_underwater"
 trail_scale = 0.8
 
 [node name="CollisionShape3D" parent="." index="0" unique_id=1810742212]

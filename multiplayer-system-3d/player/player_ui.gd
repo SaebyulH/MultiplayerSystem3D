@@ -92,6 +92,27 @@ var _effect_labels: Array[Label] = []
 var _border_container: Control
 var _border_overlays: Dictionary = {}  # effect_id -> ColorRect
 
+# Full-screen underwater tint.  Lives inside `_border_container` at index 0 so
+# the status-effect borders and the ADS scope draw over it, and fades in/out
+# instead of popping.
+var _underwater_overlay: ColorRect
+## 0..1, driven once per frame from the viewed player's water state.
+var _underwater_amount: float = 0.0
+const UNDERWATER_SHADER_PATH := "res://player/underwater_overlay.gdshader"
+## How fast the tint fades, in fraction per second.
+const UNDERWATER_FADE_SPEED := 5.0
+
+## Underwater audio muffle.  One low-pass on the Master bus, shared by the whole
+## process; only the HUD that currently owns the screen drives it.  Open (dry)
+## at 20.5 kHz is effectively bypass; submerged pulls the cutoff down so
+## gunfire, footsteps and explosions sound thick and distant.
+const UNDERWATER_AUDIO_OPEN_HZ := 20500.0
+const UNDERWATER_AUDIO_CUTOFF_HZ := 650.0
+## 0..1, same shape as the tint but deliberately independent of it — scoping
+## hides the tint, it must not un-muffle the mix.
+var _underwater_audio_amount: float = 0.0
+static var _underwater_lowpass: AudioEffectLowPassFilter = null
+
 # Side-panel list of active effects (right side, below weapon list).
 var _effect_list: VBoxContainer
 var _effect_list_labels: Dictionary = {}  # effect_id -> Label
@@ -470,6 +491,10 @@ func _build_fps() -> void:
 func _exit_tree() -> void:
 	if _fps_canvas:
 		_fps_canvas.queue_free()
+	# Release the underwater muffle if this HUD was driving it (map swap,
+	# disconnect, spectator rebind).  A surviving HUD re-applies next frame.
+	if _built:
+		_apply_underwater_lowpass(0.0)
 
 func _build_health() -> void:
 	# -- Container (left of the centered ability block) --
@@ -857,6 +882,28 @@ func _build_status_effects() -> void:
 	add_child(_border_container)
 	move_child(_border_container, 0)
 
+	# -- Underwater tint, behind every status border --
+	_underwater_overlay = ColorRect.new()
+	_underwater_overlay.anchor_left   = 0.0
+	_underwater_overlay.anchor_right  = 1.0
+	_underwater_overlay.anchor_top    = 0.0
+	_underwater_overlay.anchor_bottom = 1.0
+	_underwater_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_underwater_overlay.color = Color.WHITE
+	var underwater_shader := load(UNDERWATER_SHADER_PATH) as Shader
+	if underwater_shader != null:
+		var water_mat := ShaderMaterial.new()
+		water_mat.shader = underwater_shader
+		var tint := UITheme.INK.lerp(UITheme.TEAL, 0.22)
+		tint.a = 0.42
+		water_mat.set_shader_parameter("water_tint", tint)
+		_underwater_overlay.material = water_mat
+	else:
+		push_warning("Underwater overlay shader missing: %s" % UNDERWATER_SHADER_PATH)
+		_underwater_overlay.color = Color(UITheme.INK.r, UITheme.INK.g, UITheme.INK.b, 0.35)
+	_border_container.add_child(_underwater_overlay)
+	_underwater_overlay.visible = false
+
 	# -- Side-panel effect list (right edge, below weapon list) --
 	_effect_list = VBoxContainer.new()
 	_effect_list.anchor_left   = 1.0
@@ -897,6 +944,10 @@ func _process(delta: float) -> void:
 	# The FPS counter is peer-owned, not viewer-owned: keep it live even while
 	# our own HUD is hidden for spectator mode.  No-op for non-owner HUDs.
 	_update_fps()
+	# Audio muffle runs before the visibility gate: when the HUD is hidden by a
+	# dev toggle the mix must still open up, and when spectating exactly one HUD
+	# (the watched player's) is allowed to drive it.
+	_update_underwater_audio(delta)
 	# A match client learns its authority from the replicated `owner_peer_id`
 	# before `Player.bind_owner_peer()` calls on_owner_bound(): the rule above
 	# un-hides this Control while it is still unbuilt, and every widget below
@@ -912,6 +963,60 @@ func _process(delta: float) -> void:
 	_update_targeted_previews(delta)
 	_update_aimbot_circle()
 	_update_ability_cooldowns()
+	_update_underwater_overlay(delta)
+
+
+## Drive the Master-bus low-pass from the viewed player's water state.
+##
+## Only the HUD that owns the screen may touch the filter — the local player's,
+## or the watched player's while spectating.  A non-driving HUD returns without
+## writing, so two built HUDs can never fight over the cutoff.
+func _update_underwater_audio(delta: float) -> void:
+	if not _built or not is_instance_valid(_owner_player):
+		return
+	if not _spectator_bound and _owner_player.is_spectating:
+		# Our own HUD stays built but hidden while watching someone; the bound
+		# HUD is the driver.
+		return
+	var submerged := _should_show() and _owner_player.is_underwater_view()
+	_underwater_audio_amount = move_toward(
+		_underwater_audio_amount, 1.0 if submerged else 0.0, delta * UNDERWATER_FADE_SPEED)
+	_apply_underwater_lowpass(_underwater_audio_amount)
+
+
+## Add the low-pass to the Master bus once per process and set its cutoff.
+##
+## `AudioEffectLowPassFilter.cutoff_hz` is the only moving part; with the
+## effect absent Godot plays everything unfiltered, so an audio driver with no
+## Master bus simply no-ops.
+static func _apply_underwater_lowpass(amount: float) -> void:
+	if _underwater_lowpass == null:
+		var bus := AudioServer.get_bus_index("Master")
+		if bus < 0:
+			return
+		_underwater_lowpass = AudioEffectLowPassFilter.new()
+		_underwater_lowpass.cutoff_hz = UNDERWATER_AUDIO_OPEN_HZ
+		_underwater_lowpass.resonance = 0.5
+		AudioServer.add_bus_effect(bus, _underwater_lowpass)
+	_underwater_lowpass.cutoff_hz = lerpf(
+		UNDERWATER_AUDIO_OPEN_HZ, UNDERWATER_AUDIO_CUTOFF_HZ, clampf(amount, 0.0, 1.0))
+
+
+## Fade the underwater tint towards the viewed player's current state.
+##
+## The state is queried from the world each frame rather than mirrored through a
+## signal: `is_underwater_view()` is a pure map lookup, so it also works for a
+## remote player this peer is spectating (whose movement is not simulated here).
+## Hidden while scoped, where the scope texture owns the screen.
+func _update_underwater_overlay(delta: float) -> void:
+	if _underwater_overlay == null:
+		return
+	var submerged := is_instance_valid(_owner_player) and _owner_player.is_underwater_view()
+	var scoped := weapon_controller != null and weapon_controller.is_scoped_in()
+	var target := 1.0 if submerged and not scoped else 0.0
+	_underwater_amount = move_toward(_underwater_amount, target, delta * UNDERWATER_FADE_SPEED)
+	_underwater_overlay.visible = _underwater_amount > 0.001
+	_underwater_overlay.modulate.a = _underwater_amount
 
 
 ## Whether this HUD should be on screen: the local peer's own, non-bot player
@@ -1620,6 +1725,7 @@ func _rebuild_status_effects() -> void:
 			"burn":    lbl.modulate = Color(1.0, 0.55, 0.1)
 			"poison":  lbl.modulate = Color(0.7, 0.4, 1.0)
 			"stun":    lbl.modulate = Color(1.0, 0.9, 0.2)
+			"wet":     lbl.modulate = UITheme.TEAL
 			_:         lbl.modulate = Color(0.8, 0.8, 0.8)
 
 	_update_status_effect_countdowns()
@@ -1646,13 +1752,19 @@ func _update_status_effect_countdowns() -> void:
 		if i >= ids.size():
 			break
 		var id: String = ids[i]
-		_effect_labels[i].text = "%s %.1fs" % [id.capitalize(), times[id]]
+		_effect_labels[i].text = "%s %.1fs" % [_effect_label(id), times[id]]
 		_effect_labels[i].visible = true
 
 	for list_id in _effect_list_labels:
 		if times.has(list_id):
-			_effect_list_labels[list_id].text = "■ %s  %.1fs" % [list_id.capitalize(), times[list_id]]
+			_effect_list_labels[list_id].text = "■ %s  %.1fs" % [_effect_label(list_id), times[list_id]]
 			_effect_list_labels[list_id].visible = true
+
+
+## Display text for an effect id.  WET is the one acronym: it reads as a state
+## chip, not a word, and `capitalize()` would render it "Wet".
+func _effect_label(id: String) -> String:
+	return "WET" if id == "wet" else id.capitalize()
 
 
 func _create_border_overlay(col := Color.WHITE) -> ColorRect:

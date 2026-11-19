@@ -22,6 +22,15 @@ const TOON_TRAIL_SCENE := preload("res://effects/toon_trail/toon_trail.tscn")
 ## Purely cosmetic and local: every peer spawns its own from this scene value,
 ## so no RPC and nothing rides the synchronizer.
 @export var trail_preset: String = ""
+## Preset used while the projectile is inside a water volume.  Empty = never
+## switch; the projectile keeps [member trail_preset] everywhere.
+##
+## The swap is local on every peer, driven by the same replicated `WaterVolume`
+## geometry the swimmer uses (`Map.is_point_in_water`), so no RPC is needed and
+## every peer sees the same trail.  Mid-flight crossings restart the trail: the
+## old emission stops and drains while the underwater one begins at the
+## waterline, which is the intended read.
+@export var underwater_trail_preset: String = ""
 @export_range(0.05, 16.0, 0.01) var trail_scale: float = 1.0
 ## Local nozzle offset.  The trail treats the marker's -Z as its forward axis;
 ## `align_to_velocity` projectiles already point -Z along the flight path.
@@ -29,6 +38,12 @@ const TOON_TRAIL_SCENE := preload("res://effects/toon_trail/toon_trail.tscn")
 
 var _trail: Node3D
 var _trail_nozzle: Marker3D
+## Water state the running trail was chosen for.  Recomputed only when
+## [member underwater_trail_preset] is set, in `_process` (runs on every peer —
+## `_physics_process` is authority-only).
+var _trail_in_water := false
+## Cached map for the water query; re-resolved if a map swap frees it.
+var _water_map: Map = null
 
 # ── Falling alarm (nuke) ─────────────────────────────────────────────
 ## Optional looping siren while this projectile is in flight, used by the
@@ -94,8 +109,13 @@ func _ready() -> void:
 	_connect_detonate_signal()
 
 	if not Engine.is_editor_hint():
+		_trail_in_water = _is_underwater()
 		_start_trail()
 		_start_siren()
+		# The water check runs on every peer, so it cannot live in
+		# `_physics_process` (authority-only).  Do not process at all when the
+		# scene has no underwater variant.
+		set_process(not underwater_trail_preset.is_empty())
 
 
 ## Start the exhaust trail on this peer.  The trail node is parented to the
@@ -103,25 +123,63 @@ func _ready() -> void:
 ## replicates every direct child and only knows projectile scenes, and the
 ## trail must also outlive this projectile so its samples can drain.
 func _start_trail() -> void:
-	if trail_preset.is_empty() or not is_inside_tree():
+	var preset := _active_trail_preset()
+	if preset.is_empty() or not is_inside_tree():
 		return
 	var host := _effect_host()
 	if host == null:
 		return
-	_trail_nozzle = Marker3D.new()
-	_trail_nozzle.position = trail_nozzle_offset
-	add_child(_trail_nozzle)
+	# Reuse the nozzle across a mid-flight water crossing, so the trail restarts
+	# from the same point instead of snapping to a newly created marker.
+	if not is_instance_valid(_trail_nozzle):
+		_trail_nozzle = Marker3D.new()
+		_trail_nozzle.position = trail_nozzle_offset
+		add_child(_trail_nozzle)
 	var trail: Node3D = TOON_TRAIL_SCENE.instantiate() as Node3D
 	if trail == null:
 		return
 	trail.effect_scale = trail_scale
 	host.add_child(trail)
-	if not trail.start(trail_preset, _trail_nozzle):
+	if not trail.start(preset, _trail_nozzle):
 		trail.queue_free()
-		_trail_nozzle.queue_free()
-		_trail_nozzle = null
 		return
 	_trail = trail
+
+
+## The preset for the current water state.
+func _active_trail_preset() -> String:
+	if not underwater_trail_preset.is_empty() and _trail_in_water:
+		return underwater_trail_preset
+	return trail_preset
+
+
+## Swap the trail when a rocket crosses a water surface.
+##
+## `toon_trail.stop()` stops emitting and lets the existing fire/smoke drain, so
+## the old trail ends at the waterline while the new one starts there.  Runs on
+## every peer, from replicated map geometry only.
+func _process(_delta: float) -> void:
+	if Engine.is_editor_hint() or underwater_trail_preset.is_empty():
+		return
+	var in_water := _is_underwater()
+	if in_water == _trail_in_water:
+		return
+	_trail_in_water = in_water
+	_stop_trail()
+	_start_trail()
+
+
+## True while the projectile is inside a `WaterVolume`.  Same query the swimmer
+## uses; cached map, so a rocket in flight costs one AABB test per frame.
+func _is_underwater() -> bool:
+	if not is_instance_valid(_water_map):
+		_water_map = null
+		var spawn_parent := GameManager.spawn_parent
+		if spawn_parent != null:
+			_water_map = spawn_parent.get_node_or_null("Map") as Map
+	if _water_map == null:
+		return false
+	return _water_map.is_point_in_water(global_position)
 
 
 func _effect_host() -> Node3D:
@@ -285,6 +343,8 @@ func _on_body_entered(body: Node3D) -> void:
 		_attach_to(body)
 
 func start_explode():
+	# No trail left to re-preset while the projectile sits out its 10 s despawn.
+	set_process(false)
 	_stop_trail()
 	_stop_siren()
 	hide_model.rpc()

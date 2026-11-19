@@ -56,7 +56,9 @@ The project deliberately splits simulation responsibility. Getting this wrong (e
 | Concern | Mechanism | Where |
 |---|---|---|
 | Movement, jump, crouch, dash, shoulder-charge | **Rollback-simulated** (inputs rollback-synced; `_rollback_tick` re-simulates) | `player/player.tscn:446-452` |
+| Swimming (inside a `WaterVolume`) | **Rollback-simulated**, with containment **derived** from static map geometry — no synced state, no new input | `player.gd:_swim_move`, `maps/map.gd:is_point_in_water` |
 | Firing, reload, weapon switch, damage, status effects, score | **Server-authoritative RPC** | `weapon_controller.gd`, `status_effect_manager.gd`, `leaderboard_singleton.gd` |
+| `wet` on leaving water | **Server-authoritative RPC**, applied from a real-frame edge (not the tick) | `player.gd:_update_server_water_state` |
 
 ### RollbackSynchronizer config — `player/player.tscn:446-452`
 
@@ -87,6 +89,22 @@ A separate `TickInterpolator` (`player/player.tscn:440-444`) interpolates `:glob
 - `player/weapon_controller.gd:61-78`: fire state is polled raw in `_physics_process`, outside the rollback tick.
 
 Also excluded: the local ability-staging vars `queued_charge_trigger_dir` / `queued_bashdown_trigger_dir` / `queued_teleport_trigger_dir` (`player_input.gd:26-46`); `_gather()` copies them into the rollback input property each tick (`player_input.gd:102-107`).
+
+### Water is derived, not synced
+
+`Player._apply_movement_from_input()` takes the water branch after the noclip branch (`player.gd`: `if is_body_in_water(): _swim_move(delta); return`) and replaces the walking simulation. **Nothing about water is rollback state or a rollback input.** Two existing inputs drive it — `input_dir` (camera-relative, full 3D like noclip) and `jump_input`/`crouch` as up/down — so `player.tscn` is unchanged.
+
+Containment is a pure geometric test against the map's `WaterVolume` brushes:
+
+- `WaterVolume._ready()` caches one world-space AABB per generated `ConvexPolygonShape3D` and registers itself with its ancestor `Map`.
+- `Map.is_point_in_water()` walks that list — no physics query, no `Area3D` overlap, no signal.
+- The player samples its **collider centre** (`collider.global_position`, a direct child with a deterministic local offset). The camera would be wrong: its basis is not rollback state (top gotcha #4).
+
+The invariant: **the map is the same static scene on every peer**, so the query returns the same answer for the same rolled-back position. Area3D `body_entered`/`body_exited` are deliberately not used here — signals do not replay during re-simulation, so a predicting client and the server would disagree about when a swimmer entered the water. This is the same class of rule as the fire flags, inverted: state the tick *reads* must be deterministic, and map geometry is.
+
+`wet` is the one server-authoritative piece. `_update_server_water_state()` runs in `_physics_process` on the server only, compares the settled per-frame water state with the previous frame, and applies `defaults/status_effects/wet.tres` on the exit edge. It must never run inside `_rollback_tick` — a re-simulated tick would apply the effect again.
+
+**Projectile trails are the purely cosmetic exception.** `SimpleProjectile.underwater_trail_preset` swaps `rockettrail` / `carpet_trail` for `rockettrail_underwater` while the projectile is inside a volume. The check runs in `_process` on **every peer** from the same replicated geometry — `_physics_process` is authority-only, and a trail is local-only in the first place (`trail_preset` is a scene value, never networked). No RPC, nothing on a synchronizer; a mid-flight crossing stops the old trail at the waterline and starts the other preset there.
 
 ---
 
@@ -1066,10 +1084,12 @@ that `MovingBrush`, `RotatingBrush`, `ButtonBrush` and `PhysicsBrush` already us
 
 ## 9. Brush entities (TrenchBroom triggers, movers, buttons)
 
-The five brush entities under `world/brush_entities/` are map-authored nodes — they arrive on every
+The six brush entities under `world/brush_entities/` are map-authored nodes — they arrive on every
 peer inside the replicated map scene, exactly like `ControlPoint` or `HealthPackSpawner`. Nothing
 about them is rollback state and none of them carries a `MultiplayerSynchronizer`; the model is
-`PayloadNode`'s, not the Player's.
+`PayloadNode`'s, not the Player's. `water` is the newest and the only one the tick *reads*: it
+contributes no signal and no simulation of its own — `WaterVolume` is just a cached extent that
+`Map.is_point_in_water()` consults (see §1, "Water is derived, not synced").
 
 **Server-authoritative, with the map's node authority doing the work.** No map entity ever has
 `set_multiplayer_authority` called on it, so all of them inherit authority 1, and a plain

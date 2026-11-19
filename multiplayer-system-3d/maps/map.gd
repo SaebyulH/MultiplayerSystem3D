@@ -10,6 +10,13 @@ class_name Map
 var spi_spawn_locations: Array[Marker3D] = []
 var sci_spawn_locations: Array[Marker3D] = []
 
+## Every `WaterVolume` brush in this map, registered by the volume itself in its
+## `_ready()` (which runs after this node's `_enter_tree()`, so the clear below always
+## precedes registration).  Typed [Area3D] rather than [WaterVolume] on purpose: the
+## volume already references [Map], and a two-way `class_name` dependency is not worth
+## the one clean cast it buys.  Queried from `Player._rollback_tick()`, so the list must
+## be stable and the test must be pure geometry — see `WaterVolume.contains_point()`.
+var water_volumes: Array[Area3D] = []
 
 
 @export var despawn_location: Marker3D
@@ -77,6 +84,10 @@ func _enter_tree() -> void:
 	sci_spawn_locations.clear()
 	spi_spawn_locations.clear()
 
+	# Water volumes re-register from their own `_ready()`; this clear only has to beat the
+	# children, which it does because `_enter_tree()` is top-down and `_ready()` bottom-up.
+	water_volumes.clear()
+
 	for node in find_children("*", "Marker3D", true, false):
 		var spawn := node as PlayerSpawn
 		if spawn == null:
@@ -92,6 +103,34 @@ func _enter_tree() -> void:
 				# since that is the property's default.
 				spi_spawn_locations.append(spawn)
 				sci_spawn_locations.append(spawn)
+
+
+## Register a `WaterVolume` brush.  Called by the volume itself; idempotent.
+func register_water_volume(volume: Area3D) -> void:
+	if volume != null and not water_volumes.has(volume):
+		water_volumes.append(volume)
+
+
+## Unregister a `WaterVolume` brush.  Called from the volume's `_exit_tree()` so a map
+## swap cannot leave a freed node in the list.
+func unregister_water_volume(volume: Area3D) -> void:
+	water_volumes.erase(volume)
+
+
+## True when [param point] is inside any water brush of this map.
+##
+## Pure geometry over cached AABBs — no physics query, no signals — so it is deterministic
+## when called from `Player._rollback_tick()`.  Empty in maps with no water, which is the
+## pre-water behaviour.
+func is_point_in_water(point: Vector3) -> bool:
+	for volume in water_volumes:
+		if not is_instance_valid(volume):
+			continue
+		if not volume.has_method("contains_point"):
+			continue
+		if bool(volume.call("contains_point", point)):
+			return true
+	return false
 
 
 ## A random spawn for `team`: where to stand **and** which way to face.

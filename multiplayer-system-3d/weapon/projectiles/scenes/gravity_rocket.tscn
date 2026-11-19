@@ -52,6 +52,7 @@ align_to_velocity = true
 falloff_start = 10.0
 falloff_end = 30.0
 trail_preset = "rockettrail"
+underwater_trail_preset = "rockettrail_underwater"
 
 [node name="CollisionShape3D" parent="." index="0" unique_id=1810742212]
 shape = SubResource("SphereShape3D_21xcj")

@@ -7,6 +7,24 @@ const ADS_SPEED: float = 1.5
 const FALL_GRAVITY: float = 9.8
 const FALL_DAMAGE_SOUND: AudioStream = preload("res://assets/sounds/universfield-fast-body-fall-impact-352725.mp3")
 
+# ── Water ────────────────────────────────────────────────────────────────────
+# Swimming replaces the walking simulation inside a `WaterVolume` brush.  The
+# net downward force is SWIM_GRAVITY_SCALE x get_gravity() (~1.76 m/s^2 at the
+# project's 9.8) — inside the 0.1-0.25 g band water is meant to feel like — and
+# SWIM_DRAG removes velocity quickly, so movement reads as thick rather than
+# floaty.  Every value here is read inside the rollback tick and is a constant,
+# so all peers agree.
+const SWIM_SPEED: float = 3.6
+const SWIM_ACCELERATION: float = 18.0
+const SWIM_DRAG: float = 5.5
+const SWIM_GRAVITY_SCALE: float = 0.18
+## Hard velocity cap.  Doubles as the entry clamp: falling into water from any
+## height cannot carry its impact speed below the surface.
+const SWIM_MAX_SPEED: float = 4.5
+const SWIM_ADS_MULT: float = 0.75
+## Applied for a few seconds on the server when a player leaves water.
+const WET_EFFECT: StatusEffect = preload("res://defaults/status_effects/wet.tres")
+
 @export var acceleration: float = 25.0
 @export var friction: float = 30.0
 @export var air_acceleration: float = 25
@@ -275,6 +293,15 @@ var _character: Character = null
 var _charge_ability: ShoulderChargeAbility = null
 ## Cached passive air-control meter (FlyGirl only), read inside the rollback tick.
 var _air_control_ability: AirControlAbility = null
+
+## Map whose water volumes the rollback tick queries.  Cached and re-resolved only
+## when a map swap frees it — a per-tick node lookup would be wasteful, and the
+## query itself has to stay a pure geometric test.
+var _water_map: Map = null
+## Server-only WET edge.  Deliberately real-frame state, not rollback state: the
+## effect must be applied once per exit, never once per re-simulated tick.
+var _server_was_in_water: bool = false
+var _server_water_ready: bool = false
 
 ## Server-side list of players currently pinned to this charger (by name).
 var _pinned_players: Array[String] = []
@@ -1214,6 +1241,8 @@ func _physics_process(delta: float) -> void:
 	if multiplayer.is_server() and spawned and global_position.y < fall_kill_y:
 		attribute_component.apply_environmental_damage(attribute_component.max_health)
 
+	# WET is applied on the exit edge, on real frames only — never from the tick.
+	_update_server_water_state()
 	_track_fall_damage()
 
 	# Shoulder charge carry/stun (server-authoritative, real frames only).
@@ -1255,6 +1284,13 @@ func _track_fall_damage() -> void:
 		_max_fall_speed = 0.0
 		_was_airborne = false
 		return
+	# Water absorbs the fall: entering it at any speed must not count as a fall
+	# that later lands on the pool floor.  `is_on_floor()` is also stale while
+	# swimming (the water branch does not run `_force_update_is_on_floor`).
+	if is_body_in_water():
+		_max_fall_speed = 0.0
+		_was_airborne = false
+		return
 	if not is_on_floor():
 		_was_airborne = true
 		_max_fall_speed = maxf(_max_fall_speed, -velocity.y)
@@ -1285,6 +1321,11 @@ func _play_fall_damage_sound(pos: Vector3) -> void:
 
 func _update_footsteps(delta: float) -> void:
 	if not spawned:
+		_footstep_timer = FOOTSTEP_INTERVAL
+		return
+	# Swimming is silent.  A water floor would otherwise read as walking, and the
+	# sound event would put bots on a swimmer's trail through the water.
+	if is_body_in_water():
 		_footstep_timer = FOOTSTEP_INTERVAL
 		return
 	var h_speed := Vector2(velocity.x, velocity.z).length()
@@ -1474,6 +1515,156 @@ func _noclip_move(delta: float) -> void:
 
 	var knockback_decay: float = velocity.length() ** 2 * 10
 	knockback_velocity = knockback_velocity.move_toward(Vector3.ZERO, knockback_decay * delta)
+
+
+# ── Water ────────────────────────────────────────────────────────────────────
+# Containment is derived from the map's `WaterVolume` brushes every tick rather
+# than tracked through Area3D signals.  The map is a static replicated scene, so
+# a geometric test is identical on every peer and replays correctly when netfox
+# re-simulates a past tick — signals do not replay, and a synced boolean would be
+# overwritten by netfox mid-tick.  See `docs/02-netcode.md`.
+
+## The map whose water volumes this player tests.  Re-resolved only after a map
+## swap frees the cached node, so the rollback tick never does a node lookup.
+func _resolve_water_map() -> Map:
+	if is_instance_valid(_water_map):
+		return _water_map
+	_water_map = null
+	var spawn_parent := GameManager.spawn_parent
+	if spawn_parent != null:
+		_water_map = spawn_parent.get_node_or_null("Map") as Map
+	return _water_map
+
+
+## True when this player's body is inside a water volume.  Sampled at the
+## collider centre — a deterministic point (the collider is a direct child and
+## its local offset is written inside the tick), unlike the camera, whose basis
+## is not rollback state.
+func is_body_in_water() -> bool:
+	var map := _resolve_water_map()
+	if map == null:
+		return false
+	return map.is_point_in_water(collider.global_position)
+
+
+## Whether the view the local peer is currently looking through is below the
+## water surface.  First person uses the eye position, which is what the
+## screen-space tint should follow; everything else (third person, spectator,
+## another player's HUD) uses the body.
+func is_underwater_view() -> bool:
+	var map := _resolve_water_map()
+	if map == null:
+		return false
+	var point := collider.global_position
+	if not is_bot and is_owned_by_local_peer() and not third_person:
+		point = camera.global_position
+	return map.is_point_in_water(point)
+
+
+## Swimming: noclip-like steering with water's inertia and drag.
+##
+## W/S move along the camera's full 3D forward (look up and press W to ascend),
+## A/D strafe, and jump/crouch add direct up/down.  Collision is still resolved
+## against the world, so pool walls and floors stop the body even though the
+## water brush itself does not.
+func _swim_move(delta: float) -> void:
+	# Water is never a crouch.  Restore the capsule so the sample point, the
+	# camera and the body volume all stay at standing height.
+	is_crouching = false
+	var shape: CapsuleShape3D = collider.shape as CapsuleShape3D
+	if shape and _stand_collider_height > 0.0:
+		shape.height = _stand_collider_height
+		collider.position.y = _stand_collider_y
+		%Recoil.position.y = _stand_recoil_y
+
+	# Every ground/air technique is off in water.  Clearing the fields rather
+	# than suppressing the branches keeps the values rollback-consistent: a dash
+	# started on the bank must not resume when the player climbs out.
+	dash_time = 0.0
+	active_dash_dir = Vector3.ZERO
+	dash_grounded = false
+	dash_jump_locked = false
+	air_jumps_used = 0
+	air_dashes_used = 0
+	crouch_tap_timer = 0.0
+	charge_time = 0.0
+	charge_dir = Vector3.ZERO
+	bashdown_time = 0.0
+	bashdown_dir = Vector3.ZERO
+	bashdown_slamming = false
+	jump_held_prev = player_input.jump_input
+	dash_held_prev = player_input.dash_input
+	crouch_held_prev = player_input.crouch
+
+	var cam_basis: Basis = _movement_basis()
+	var fwd := -cam_basis.z
+	var rgt := cam_basis.x
+	var input := player_input.input_dir
+	# input_dir.y is -1 for W and +1 for S; negate it to swim along the true
+	# camera forward, exactly like noclip.
+	var wish := fwd * (-input.y) + rgt * input.x
+	var vertical := (1.0 if player_input.jump_input else 0.0) \
+		- (1.0 if player_input.crouch else 0.0)
+	wish += Vector3.UP * vertical
+	var wish_dir := wish.normalized() if wish.length_squared() > 0.0001 else Vector3.ZERO
+
+	speed = SWIM_SPEED
+	var calc_speed: float = _cmult(SWIM_SPEED, _character.speed_mult if _character else 1.0)
+	if ads:
+		calc_speed *= SWIM_ADS_MULT
+	var weapons := weapon_controller.get_weapons()
+	if not weapons.is_empty():
+		calc_speed = calc_speed * weapons[weapon_controller.current_weapon_index].player_speed_multiplier
+		calc_speed = calc_speed * weapon_controller.get_active_fire_speed_mult()
+	calc_speed *= get_status_speed_mult()
+
+	if wish_dir == Vector3.ZERO:
+		velocity = velocity.move_toward(Vector3.ZERO, SWIM_DRAG * delta)
+	else:
+		velocity = velocity.move_toward(wish_dir * calc_speed, SWIM_ACCELERATION * delta)
+
+	# Reduced gravity pulls a resting swimmer slowly down.  `gravity_flipped`
+	# is per-effect state set on the server, same as the walking path reads.
+	velocity += get_gravity() * SWIM_GRAVITY_SCALE * delta \
+		* (-1.0 if gravity_flipped else 1.0)
+	# Entry clamp and terminal cap in one: a dive arrives at any speed and
+	# leaves this tick at swim speed.
+	velocity = velocity.limit_length(SWIM_MAX_SPEED)
+
+	# The passive air-control pool refills out of the air.
+	_update_air_control_meter(delta, true, Vector3.ZERO)
+
+	# Same sandwich as walking: move_and_slide() advances by its own delta, so
+	# everything it integrates — knockback included — has to be scaled with it.
+	velocity *= NetworkTime.physics_factor
+	velocity += knockback_velocity * NetworkTime.physics_factor
+	move_and_slide()
+	velocity /= NetworkTime.physics_factor
+
+	var knockback_decay: float = velocity.length() ** 2 * 10
+	knockback_velocity = knockback_velocity.move_toward(Vector3.ZERO, knockback_decay * delta)
+
+	body.max_turn_speed = 0.0
+
+
+## Server-side WET edge, on real frames only.  Applying an effect from the
+## rollback tick would fire once per re-simulated tick, so the swimmers' ticks
+## stay pure and this compares the settled value once per frame.
+func _update_server_water_state() -> void:
+	if not multiplayer.is_server() or not spawned or is_spectating:
+		_server_was_in_water = false
+		_server_water_ready = false
+		return
+	var in_water := is_body_in_water()
+	if not _server_water_ready:
+		# First sample after a spawn only arms the edge, so spawning in water
+		# does not count as leaving it.
+		_server_was_in_water = in_water
+		_server_water_ready = true
+		return
+	if _server_was_in_water and not in_water and status_effect_manager != null:
+		status_effect_manager.apply_effect(WET_EFFECT, name)
+	_server_was_in_water = in_water
 
 
 ## Enable/disable the player's hurtbox areas.  Disabled during noclip so
@@ -1997,6 +2188,12 @@ func _apply_movement_from_input(delta):
 	# normal movement simulation entirely.
 	if has_noclip():
 		_noclip_move(delta)
+		return
+	# Water replaces the walking sim the same way noclip does, but keeps
+	# collision and reduced gravity.  Tested after noclip so the ghost still
+	# flies through a pool.
+	if is_body_in_water():
+		_swim_move(delta)
 		return
 	_force_update_is_on_floor()
 	var on_floor := is_on_floor()

@@ -46,6 +46,7 @@ gravity_scale = 0.0
 linear_velocity = Vector3(0, 0, -3)
 script = ExtResource("2_yfogt")
 trail_preset = "rockettrail"
+underwater_trail_preset = "rockettrail_underwater"
 hurtbox_hit_mode = 2
 world_hit_mode = 2
 align_to_velocity = true
