@@ -1,0 +1,2314 @@
+{
+  "materials/vgui/capture_icon_white.vmt": {
+    "in_mod": false,
+    "effects": [
+      "fireSmokeExplosion4",
+      "fireSmokeExplosion3",
+      "fireSmokeExplosion2",
+      "fireSmokeExplosion",
+      "fireSmoke_collumnP",
+      "fireSmoke_Collumn_mvmAcres",
+      "fireSmoke_Collumn_mvmAcres_sm"
+    ]
+  },
+  "materials/particle/fluidexplosions/fluidexplosion_cartoony.vmt": {
+    "in_mod": false,
+    "effects": [
+      "fireSmokeExplosion4",
+      "fireSmokeExplosion3",
+      "fireSmokeExplosion2",
+      "fireSmokeExplosion",
+      "fireSmoke_collumnP",
+      "fireSmoke_Collumn_mvmAcres",
+      "fireSmoke_Collumn_mvmAcres_sm"
+    ]
+  },
+  "materials/particle/flamethrowerfire/flamethrowerfire128_nodepth.vmt": {
+    "in_mod": false,
+    "effects": [
+      "fireSmoke_collumnP"
+    ]
+  },
+  "materials/particle/fluidexplosions/fluidexplosion.vmt": {
+    "in_mod": false,
+    "effects": [
+      "fireSmoke_collumnP",
+      "explosionTrail_seeds_mvm",
+      "fireSmoke_Collumn_mvmAcres",
+      "fireSmoke_Collumn_mvmAcres_sm"
+    ]
+  },
+  "materials/particle/fire_particle_8/fire_particle_8.vmt": {
+    "in_mod": false,
+    "effects": [
+      "fireSmoke_collumnP",
+      "explosionTrail_seeds_mvm",
+      "fireSmoke_Collumn_mvmAcres",
+      "fireSmoke_Collumn_mvmAcres_sm"
+    ]
+  },
+  "materials/particle/vistasmokev1/vistasmokev1.vmt": {
+    "in_mod": false,
+    "effects": [
+      "fireSmoke_collumnP",
+      "explosionTrail_seeds_mvm",
+      "fireSmoke_Collumn_mvmAcres",
+      "fireSmoke_Collumn_mvmAcres_sm"
+    ]
+  },
+  "materials/particle/the_wonderful_101/w101_toon_impact_03.vmt": {
+    "in_mod": true,
+    "vmt": {
+      "path": "source/materials/particle/the_wonderful_101/w101_toon_impact_03.vmt",
+      "bytes": 147,
+      "sha256": "d099721e861615b402e889fc510d3060bdc3a44f142eb1a484d30438dffb22ff"
+    },
+    "flags": {
+      "translucent": "1",
+      "overbrightfactor": "4",
+      "addself": "1"
+    },
+    "vtf": {
+      "path": "source/materials/particle/the_wonderful_101/w101_toon_impact_03.vtf",
+      "bytes": 87496,
+      "sha256": "6543b514c997060f4d5674702ea50695d846b9cf4e5fda3d2ef69106a3a47396"
+    },
+    "width": 256,
+    "height": 256,
+    "sheet_sequences": null,
+    "effects": [
+      "airburst_shockwave"
+    ]
+  },
+  "materials/particle/the_wonderful_101/w101_toon_impact_01.vmt": {
+    "in_mod": true,
+    "vmt": {
+      "path": "source/materials/particle/the_wonderful_101/w101_toon_impact_01.vmt",
+      "bytes": 147,
+      "sha256": "5958044b40b6b8457aabd5c93e6746791db9dcce82454fd1abeb349c466aa6fb"
+    },
+    "flags": {
+      "translucent": "1",
+      "overbrightfactor": "4",
+      "addself": "1"
+    },
+    "vtf": {
+      "path": "source/materials/particle/the_wonderful_101/w101_toon_impact_01.vtf",
+      "bytes": 87496,
+      "sha256": "a694e0c299ada0dc8fe82b5a328e19b11af5d8ddf08f8674974fdf278394d7a7"
+    },
+    "width": 256,
+    "height": 256,
+    "sheet_sequences": null,
+    "effects": [
+      "airburst_shockwave"
+    ]
+  },
+  "materials/particle/transformers_devastation/td_smoke_beam_1.vmt": {
+    "in_mod": true,
+    "vmt": {
+      "path": "source/materials/particle/transformers_devastation/td_smoke_beam_1.vmt",
+      "bytes": 228,
+      "sha256": "265eaaf27fcaa4877a0ee3d054cb4d41db25aa0bf0092376499ea87a78847939"
+    },
+    "flags": {
+      "additive": "1"
+    },
+    "vtf": {
+      "path": "source/materials/particle/transformers_devastation/td_smoke_beam_1.vtf",
+      "bytes": 87528,
+      "sha256": "1f3946ae7682319cf961b952ee1a5e666764121f375e913aeaae03b1ae185c4d"
+    },
+    "width": 128,
+    "height": 512,
+    "sheet_sequences": null,
+    "effects": [
+      "Explosions_MA_Dustup_2",
+      "ExplosionCore_Wall_underwater",
+      "ExplosionCore_MidAir"
+    ]
+  },
+  "materials/particle/smoke1/smoke1.vmt": {
+    "in_mod": false,
+    "effects": [
+      "ExplosionCore_Wall_underwater",
+      "ExplosionCore_buildings",
+      "ExplosionCore_MidAir_Flare",
+      "ExplosionCore_MidAir_underwater",
+      "ExplosionCore_sapperdestroyed"
+    ]
+  },
+  "materials/particle/the_wonderful_101/w101_toon_rock_debris.vmt": {
+    "in_mod": true,
+    "vmt": {
+      "path": "source/materials/particle/the_wonderful_101/w101_toon_rock_debris.vmt",
+      "bytes": 161,
+      "sha256": "b1dfba1c2172f2ab5327c315e141d97bed6afd181e6ba3cf9b9c7bfee9bd7a3e"
+    },
+    "flags": {
+      "translucent": "1"
+    },
+    "vtf": {
+      "path": "source/materials/particle/the_wonderful_101/w101_toon_rock_debris.vtf",
+      "bytes": 87996,
+      "sha256": "ac715450661297989c96962bd455b5eb71defdea13248b6786bd006a6eb98150"
+    },
+    "width": 256,
+    "height": 256,
+    "sheet_sequences": [
+      {
+        "id": 0,
+        "clamp": true,
+        "total_duration": 1.0,
+        "frames": [
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.001953125,
+                0.001953125,
+                0.498046875,
+                0.498046875
+              ],
+              [
+                0.001953125,
+                0.001953125,
+                0.498046875,
+                0.498046875
+              ],
+              [
+                0.001953125,
+                0.001953125,
+                0.498046875,
+                0.498046875
+              ],
+              [
+                0.001953125,
+                0.001953125,
+                0.498046875,
+                0.498046875
+              ]
+            ]
+          }
+        ]
+      },
+      {
+        "id": 1,
+        "clamp": true,
+        "total_duration": 1.0,
+        "frames": [
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.501953125,
+                0.001953125,
+                0.998046875,
+                0.498046875
+              ],
+              [
+                0.501953125,
+                0.001953125,
+                0.998046875,
+                0.498046875
+              ],
+              [
+                0.501953125,
+                0.001953125,
+                0.998046875,
+                0.498046875
+              ],
+              [
+                0.501953125,
+                0.001953125,
+                0.998046875,
+                0.498046875
+              ]
+            ]
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "clamp": true,
+        "total_duration": 1.0,
+        "frames": [
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.001953125,
+                0.501953125,
+                0.498046875,
+                0.998046875
+              ],
+              [
+                0.001953125,
+                0.501953125,
+                0.498046875,
+                0.998046875
+              ],
+              [
+                0.001953125,
+                0.501953125,
+                0.498046875,
+                0.998046875
+              ],
+              [
+                0.001953125,
+                0.501953125,
+                0.498046875,
+                0.998046875
+              ]
+            ]
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "clamp": true,
+        "total_duration": 1.0,
+        "frames": [
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.501953125,
+                0.501953125,
+                0.998046875,
+                0.998046875
+              ],
+              [
+                0.501953125,
+                0.501953125,
+                0.998046875,
+                0.998046875
+              ],
+              [
+                0.501953125,
+                0.501953125,
+                0.998046875,
+                0.998046875
+              ],
+              [
+                0.501953125,
+                0.501953125,
+                0.998046875,
+                0.998046875
+              ]
+            ]
+          }
+        ]
+      }
+    ],
+    "effects": [
+      "ExplosionCore_Wall_underwater",
+      "ExplosionCore_MidAir",
+      "ExplosionCore_MidAir_underwater"
+    ]
+  },
+  "materials/effects/debris/debris_chunk.vmt": {
+    "in_mod": false,
+    "effects": [
+      "ExplosionCore_Wall_underwater",
+      "ExplosionCore_buildings",
+      "ExplosionCore_MidAir",
+      "ExplosionCore_MidAir_underwater"
+    ]
+  },
+  "materials/particle/the_wonderful_101/w101_spark_02.vmt": {
+    "in_mod": true,
+    "vmt": {
+      "path": "source/materials/particle/the_wonderful_101/w101_spark_02.vmt",
+      "bytes": 168,
+      "sha256": "7ee76a0c11cc5d4e047d6a0e7c47cdff9c18c6bf044fe87561c076a1ce8c4e92"
+    },
+    "flags": {
+      "translucent": "1"
+    },
+    "vtf": {
+      "path": "source/materials/particle/the_wonderful_101/w101_spark_02.vtf",
+      "bytes": 5648,
+      "sha256": "449e63a8ea2ae0b1741517d2cf400cdf25119476db5c4afe5e611d7f32eb33a7"
+    },
+    "width": 32,
+    "height": 128,
+    "sheet_sequences": null,
+    "effects": [
+      "ExplosionCore_Wall_underwater",
+      "ExplosionCore_MidAir",
+      "ExplosionCore_MidAir_Flare"
+    ]
+  },
+  "materials/particle/transformers_devastation/td_spiketrail.vmt": {
+    "in_mod": true,
+    "vmt": {
+      "path": "source/materials/particle/transformers_devastation/td_spiketrail.vmt",
+      "bytes": 163,
+      "sha256": "b6b2156718168d42834bc1ea5e120782478135865f998a072bfcc43a938157b2"
+    },
+    "flags": {
+      "translucent": "1"
+    },
+    "vtf": {
+      "path": "source/materials/particle/transformers_devastation/td_spiketrail.vtf",
+      "bytes": 44084,
+      "sha256": "bb3a9e59a073f664f1f4111fd773167a7155fd025b4ba380a55db42978ae93af"
+    },
+    "width": 128,
+    "height": 256,
+    "sheet_sequences": [
+      {
+        "id": 0,
+        "clamp": true,
+        "total_duration": 1.0,
+        "frames": [
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.00390625,
+                0.001953125,
+                0.49609375,
+                0.998046875
+              ],
+              [
+                0.00390625,
+                0.001953125,
+                0.49609375,
+                0.998046875
+              ],
+              [
+                0.00390625,
+                0.001953125,
+                0.49609375,
+                0.998046875
+              ],
+              [
+                0.00390625,
+                0.001953125,
+                0.49609375,
+                0.998046875
+              ]
+            ]
+          }
+        ]
+      },
+      {
+        "id": 1,
+        "clamp": true,
+        "total_duration": 1.0,
+        "frames": [
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.50390625,
+                0.001953125,
+                0.99609375,
+                0.998046875
+              ],
+              [
+                0.50390625,
+                0.001953125,
+                0.99609375,
+                0.998046875
+              ],
+              [
+                0.50390625,
+                0.001953125,
+                0.99609375,
+                0.998046875
+              ],
+              [
+                0.50390625,
+                0.001953125,
+                0.99609375,
+                0.998046875
+              ]
+            ]
+          }
+        ]
+      }
+    ],
+    "effects": [
+      "ExplosionCore_Wall_underwater",
+      "ExplosionCore_buildings",
+      "ExplosionCore_MidAir",
+      "ExplosionCore_MidAir_Flare"
+    ]
+  },
+  "materials/particle/transformers_devastation/td_smoke_anim.vmt": {
+    "in_mod": true,
+    "vmt": {
+      "path": "source/materials/particle/transformers_devastation/td_smoke_anim.vmt",
+      "bytes": 120,
+      "sha256": "71ba9d42f21ef204c884b45bbddf20bdd3ab8afbb63c277bc94384588e57b49a"
+    },
+    "flags": {
+      "translucent": "1",
+      "blendframes": "1"
+    },
+    "vtf": {
+      "path": "source/materials/particle/transformers_devastation/td_smoke_anim.vtf",
+      "bytes": 350500,
+      "sha256": "72800ddb7a806f6b72a94cd246cb9a31097ec6c9ab447a9c0c22f770ebb3f218"
+    },
+    "width": 512,
+    "height": 512,
+    "sheet_sequences": [
+      {
+        "id": 0,
+        "clamp": true,
+        "total_duration": 10.0,
+        "frames": [
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.0009765625,
+                0.0009765625,
+                0.2490234375,
+                0.2490234375
+              ],
+              [
+                0.0009765625,
+                0.0009765625,
+                0.2490234375,
+                0.2490234375
+              ],
+              [
+                0.0009765625,
+                0.0009765625,
+                0.2490234375,
+                0.2490234375
+              ],
+              [
+                0.0009765625,
+                0.0009765625,
+                0.2490234375,
+                0.2490234375
+              ]
+            ]
+          },
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.2509765625,
+                0.0009765625,
+                0.4990234375,
+                0.2490234375
+              ],
+              [
+                0.2509765625,
+                0.0009765625,
+                0.4990234375,
+                0.2490234375
+              ],
+              [
+                0.2509765625,
+                0.0009765625,
+                0.4990234375,
+                0.2490234375
+              ],
+              [
+                0.2509765625,
+                0.0009765625,
+                0.4990234375,
+                0.2490234375
+              ]
+            ]
+          },
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.5009765625,
+                0.0009765625,
+                0.7490234375,
+                0.2490234375
+              ],
+              [
+                0.5009765625,
+                0.0009765625,
+                0.7490234375,
+                0.2490234375
+              ],
+              [
+                0.5009765625,
+                0.0009765625,
+                0.7490234375,
+                0.2490234375
+              ],
+              [
+                0.5009765625,
+                0.0009765625,
+                0.7490234375,
+                0.2490234375
+              ]
+            ]
+          },
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.7509765625,
+                0.0009765625,
+                0.9990234375,
+                0.2490234375
+              ],
+              [
+                0.7509765625,
+                0.0009765625,
+                0.9990234375,
+                0.2490234375
+              ],
+              [
+                0.7509765625,
+                0.0009765625,
+                0.9990234375,
+                0.2490234375
+              ],
+              [
+                0.7509765625,
+                0.0009765625,
+                0.9990234375,
+                0.2490234375
+              ]
+            ]
+          },
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.0009765625,
+                0.2509765625,
+                0.2490234375,
+                0.4990234375
+              ],
+              [
+                0.0009765625,
+                0.2509765625,
+                0.2490234375,
+                0.4990234375
+              ],
+              [
+                0.0009765625,
+                0.2509765625,
+                0.2490234375,
+                0.4990234375
+              ],
+              [
+                0.0009765625,
+                0.2509765625,
+                0.2490234375,
+                0.4990234375
+              ]
+            ]
+          },
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.2509765625,
+                0.2509765625,
+                0.4990234375,
+                0.4990234375
+              ],
+              [
+                0.2509765625,
+                0.2509765625,
+                0.4990234375,
+                0.4990234375
+              ],
+              [
+                0.2509765625,
+                0.2509765625,
+                0.4990234375,
+                0.4990234375
+              ],
+              [
+                0.2509765625,
+                0.2509765625,
+                0.4990234375,
+                0.4990234375
+              ]
+            ]
+          },
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.5009765625,
+                0.2509765625,
+                0.7490234375,
+                0.4990234375
+              ],
+              [
+                0.5009765625,
+                0.2509765625,
+                0.7490234375,
+                0.4990234375
+              ],
+              [
+                0.5009765625,
+                0.2509765625,
+                0.7490234375,
+                0.4990234375
+              ],
+              [
+                0.5009765625,
+                0.2509765625,
+                0.7490234375,
+                0.4990234375
+              ]
+            ]
+          },
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.7509765625,
+                0.2509765625,
+                0.9990234375,
+                0.4990234375
+              ],
+              [
+                0.7509765625,
+                0.2509765625,
+                0.9990234375,
+                0.4990234375
+              ],
+              [
+                0.7509765625,
+                0.2509765625,
+                0.9990234375,
+                0.4990234375
+              ],
+              [
+                0.7509765625,
+                0.2509765625,
+                0.9990234375,
+                0.4990234375
+              ]
+            ]
+          },
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.0009765625,
+                0.5009765625,
+                0.2490234375,
+                0.7490234375
+              ],
+              [
+                0.0009765625,
+                0.5009765625,
+                0.2490234375,
+                0.7490234375
+              ],
+              [
+                0.0009765625,
+                0.5009765625,
+                0.2490234375,
+                0.7490234375
+              ],
+              [
+                0.0009765625,
+                0.5009765625,
+                0.2490234375,
+                0.7490234375
+              ]
+            ]
+          },
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.2509765625,
+                0.5009765625,
+                0.4990234375,
+                0.7490234375
+              ],
+              [
+                0.2509765625,
+                0.5009765625,
+                0.4990234375,
+                0.7490234375
+              ],
+              [
+                0.2509765625,
+                0.5009765625,
+                0.4990234375,
+                0.7490234375
+              ],
+              [
+                0.2509765625,
+                0.5009765625,
+                0.4990234375,
+                0.7490234375
+              ]
+            ]
+          }
+        ]
+      }
+    ],
+    "effects": [
+      "ExplosionCore_Wall_underwater",
+      "ExplosionCore_buildings",
+      "ExplosionCore_MidAir",
+      "ExplosionCore_MidAir_underwater"
+    ]
+  },
+  "materials/particle/the_wonderful_101/w101_toon_smoke.vmt": {
+    "in_mod": true,
+    "vmt": {
+      "path": "source/materials/particle/the_wonderful_101/w101_toon_smoke.vmt",
+      "bytes": 155,
+      "sha256": "9adafd8bc76d59d801375c5cf462606b623ea1aaa81f56b0483daf460605952b"
+    },
+    "flags": {
+      "translucent": "1"
+    },
+    "vtf": {
+      "path": "source/materials/particle/the_wonderful_101/w101_toon_smoke.vtf",
+      "bytes": 87912,
+      "sha256": "cb2d737b715618bb7240636ff59fa48581aaacc1d2a6728e55224010cb4d2b49"
+    },
+    "width": 256,
+    "height": 256,
+    "sheet_sequences": [
+      {
+        "id": 0,
+        "clamp": true,
+        "total_duration": 1.0,
+        "frames": [
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.001953125,
+                0.001953125,
+                0.498046875,
+                0.498046875
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ]
+          }
+        ]
+      },
+      {
+        "id": 1,
+        "clamp": true,
+        "total_duration": 1.0,
+        "frames": [
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.501953125,
+                0.001953125,
+                0.998046875,
+                0.498046875
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ]
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "clamp": true,
+        "total_duration": 1.0,
+        "frames": [
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.001953125,
+                0.501953125,
+                0.498046875,
+                0.998046875
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ]
+          }
+        ]
+      }
+    ],
+    "effects": [
+      "ExplosionCore_Wall_underwater",
+      "ExplosionCore_buildings",
+      "ExplosionCore_MidAir",
+      "ExplosionCore_MidAir_underwater",
+      "ExplosionCore_sapperdestroyed"
+    ]
+  },
+  "materials/particle/transformers_devastation/td_starflash_add.vmt": {
+    "in_mod": true,
+    "vmt": {
+      "path": "source/materials/particle/transformers_devastation/td_starflash_add.vmt",
+      "bytes": 118,
+      "sha256": "53da6848f47825fe77c71b1712a456518dd85f308ae4cc3542a774ed9b41eab7"
+    },
+    "flags": {
+      "additive": "1",
+      "overbrightfactor": "5"
+    },
+    "vtf": {
+      "path": "source/materials/particle/transformers_devastation/td_starflash_add.vtf",
+      "bytes": 87632,
+      "sha256": "1fabab59e6f95d70a562c3a11d7ae9e7279997b1d445dfc8257dc7129f12af40"
+    },
+    "width": 256,
+    "height": 256,
+    "sheet_sequences": null,
+    "effects": [
+      "ExplosionCore_Wall_underwater",
+      "ExplosionCore_buildings",
+      "ExplosionCore_MidAir",
+      "ExplosionCore_MidAir_Flare",
+      "ExplosionCore_MidAir_underwater",
+      "ExplosionCore_sapperdestroyed"
+    ]
+  },
+  "materials/particle/circle.vmt": {
+    "in_mod": true,
+    "vmt": {
+      "path": "source/materials/particle/circle.vmt",
+      "bytes": 142,
+      "sha256": "f6d4b54da44704b2a654c5246792ca5b5144e3040f941e2fba40b65d1c4b099d"
+    },
+    "flags": {
+      "translucent": "1"
+    },
+    "vtf": {
+      "path": "source/materials/particle/circle.vtf",
+      "bytes": 22104,
+      "sha256": "571853ebadf0f51c20987e0b5d55f7041d857a47c0a6fbe72726e43073f17723"
+    },
+    "width": 128,
+    "height": 128,
+    "sheet_sequences": null,
+    "effects": [
+      "ExplosionCore_Wall_underwater",
+      "ExplosionCore_buildings",
+      "ExplosionCore_MidAir",
+      "ExplosionCore_MidAir_underwater"
+    ]
+  },
+  "materials/particle/transformers_devastation/td_spike_add.vmt": {
+    "in_mod": true,
+    "vmt": {
+      "path": "source/materials/particle/transformers_devastation/td_spike_add.vmt",
+      "bytes": 193,
+      "sha256": "cb24e429b7c9f831340d1fa499a197d34d62378dd44e873a04673de13b79d70d"
+    },
+    "flags": {
+      "additive": "1",
+      "translucent": "0"
+    },
+    "vtf": {
+      "path": "source/materials/particle/transformers_devastation/td_spike_add.vtf",
+      "bytes": 87640,
+      "sha256": "77c1ed1a1e46b52964d0da36eff6f9178ec64f2642a4f60d75a26e66c1094b60"
+    },
+    "width": 256,
+    "height": 256,
+    "sheet_sequences": null,
+    "effects": [
+      "ExplosionCore_Wall_underwater",
+      "ExplosionCore_buildings",
+      "ExplosionCore_MidAir",
+      "ExplosionCore_MidAir_Flare",
+      "ExplosionCore_MidAir_underwater",
+      "ExplosionCore_sapperdestroyed"
+    ]
+  },
+  "materials/effects/bubbles/bubble.vmt": {
+    "in_mod": false,
+    "effects": [
+      "ExplosionCore_Wall_underwater",
+      "ExplosionCore_MidAir_underwater"
+    ]
+  },
+  "materials/effects/circle1.vmt": {
+    "in_mod": false,
+    "effects": [
+      "Explosion_ShockWave_01"
+    ]
+  },
+  "materials/effects/debris/nutsnbolts.vmt": {
+    "in_mod": false,
+    "effects": [
+      "ExplosionCore_buildings",
+      "ExplosionCore_sapperdestroyed"
+    ]
+  },
+  "materials/particle/transformers_devastation/td_elec_sprite.vmt": {
+    "in_mod": true,
+    "vmt": {
+      "path": "source/materials/particle/transformers_devastation/td_elec_sprite.vmt",
+      "bytes": 133,
+      "sha256": "3e337bd4f3ca9d99a3a5bd9fa7975e0df962e8c7fb9ca12e3de881f1fea11dd0"
+    },
+    "flags": {
+      "translucent": "1",
+      "addself": "1",
+      "overbrightfactor": "2.5"
+    },
+    "vtf": {
+      "path": "source/materials/particle/transformers_devastation/td_elec_sprite.vtf",
+      "bytes": 175408,
+      "sha256": "41097d2558e1eac5dbb2a1e4a3507bf044c2fbe292cfa522e402d0eb14ef2279"
+    },
+    "width": 512,
+    "height": 256,
+    "sheet_sequences": [
+      {
+        "id": 0,
+        "clamp": true,
+        "total_duration": 1.0,
+        "frames": [
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.0009765625,
+                0.001953125,
+                0.2490234375,
+                0.498046875
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ]
+          }
+        ]
+      },
+      {
+        "id": 1,
+        "clamp": true,
+        "total_duration": 1.0,
+        "frames": [
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.2509765625,
+                0.001953125,
+                0.4990234375,
+                0.498046875
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ]
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "clamp": true,
+        "total_duration": 1.0,
+        "frames": [
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.5009765625,
+                0.001953125,
+                0.7490234375,
+                0.498046875
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ]
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "clamp": true,
+        "total_duration": 1.0,
+        "frames": [
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.7509765625,
+                0.001953125,
+                0.9990234375,
+                0.498046875
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ]
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "clamp": true,
+        "total_duration": 1.0,
+        "frames": [
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.0009765625,
+                0.501953125,
+                0.2490234375,
+                0.998046875
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ]
+          }
+        ]
+      }
+    ],
+    "effects": [
+      "ExplosionCore_buildings"
+    ]
+  },
+  "materials/particle/transformers_devastation/td_fire_1.vmt": {
+    "in_mod": true,
+    "vmt": {
+      "path": "source/materials/particle/transformers_devastation/td_fire_1.vmt",
+      "bytes": 135,
+      "sha256": "93be16db98dfed22c0e81e29ac08b9718a099dae2a7a20608bd6e38e45c5559b"
+    },
+    "flags": {
+      "translucent": "1",
+      "addself": "1",
+      "overbrightfactor": "5"
+    },
+    "vtf": {
+      "path": "source/materials/particle/transformers_devastation/td_fire_1.vtf",
+      "bytes": 350840,
+      "sha256": "0953eb61fe1b4163d4600b9b3998c8872aa442343d6fc40f457809b3139b40cb"
+    },
+    "width": 512,
+    "height": 512,
+    "sheet_sequences": [
+      {
+        "id": 0,
+        "clamp": true,
+        "total_duration": 15.0,
+        "frames": [
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.0009765625,
+                0.0009765625,
+                0.2490234375,
+                0.2490234375
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ]
+          },
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.2509765625,
+                0.0009765625,
+                0.4990234375,
+                0.2490234375
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ]
+          },
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.5009765625,
+                0.0009765625,
+                0.7490234375,
+                0.2490234375
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ]
+          },
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.7509765625,
+                0.0009765625,
+                0.9990234375,
+                0.2490234375
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ]
+          },
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.0009765625,
+                0.2509765625,
+                0.2490234375,
+                0.4990234375
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ]
+          },
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.2509765625,
+                0.2509765625,
+                0.4990234375,
+                0.4990234375
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ]
+          },
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.5009765625,
+                0.2509765625,
+                0.7490234375,
+                0.4990234375
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ]
+          },
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.7509765625,
+                0.2509765625,
+                0.9990234375,
+                0.4990234375
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ]
+          },
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.0009765625,
+                0.5009765625,
+                0.2490234375,
+                0.7490234375
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ]
+          },
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.2509765625,
+                0.5009765625,
+                0.4990234375,
+                0.7490234375
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ]
+          },
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.5009765625,
+                0.5009765625,
+                0.7490234375,
+                0.7490234375
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ]
+          },
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.7509765625,
+                0.5009765625,
+                0.9990234375,
+                0.7490234375
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ]
+          },
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.0009765625,
+                0.7509765625,
+                0.2490234375,
+                0.9990234375
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ]
+          },
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.2509765625,
+                0.7509765625,
+                0.4990234375,
+                0.9990234375
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ]
+          },
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.5009765625,
+                0.7509765625,
+                0.7490234375,
+                0.9990234375
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ]
+          }
+        ]
+      }
+    ],
+    "effects": [
+      "ExplosionCore_buildings",
+      "ExplosionCore_MidAir",
+      "ExplosionCore_MidAir_underwater"
+    ]
+  },
+  "materials/particle/the_wonderful_101/w101_toon_explosion_fire.vmt": {
+    "in_mod": true,
+    "vmt": {
+      "path": "source/materials/particle/the_wonderful_101/w101_toon_explosion_fire.vmt",
+      "bytes": 129,
+      "sha256": "cef207b6609dc225c30e07d4c8c6864a2d3617326775164d59dd5abf0ff82e34"
+    },
+    "flags": {
+      "translucent": "1",
+      "addself": "1",
+      "blendframes": "1"
+    },
+    "vtf": {
+      "path": "source/materials/particle/the_wonderful_101/w101_toon_explosion_fire.vtf",
+      "bytes": 350704,
+      "sha256": "3582c31815dcd7120a80a4d908bc24045f8cff79efc1609930c701e450361ed9"
+    },
+    "width": 512,
+    "height": 512,
+    "sheet_sequences": [
+      {
+        "id": 0,
+        "clamp": true,
+        "total_duration": 13.0,
+        "frames": [
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.0009765625,
+                0.0009765625,
+                0.2490234375,
+                0.2490234375
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ]
+          },
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.2509765625,
+                0.0009765625,
+                0.4990234375,
+                0.2490234375
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ]
+          },
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.5009765625,
+                0.0009765625,
+                0.7490234375,
+                0.2490234375
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ]
+          },
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.7509765625,
+                0.0009765625,
+                0.9990234375,
+                0.2490234375
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ]
+          },
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.0009765625,
+                0.2509765625,
+                0.2490234375,
+                0.4990234375
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ]
+          },
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.2509765625,
+                0.2509765625,
+                0.4990234375,
+                0.4990234375
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ]
+          },
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.5009765625,
+                0.2509765625,
+                0.7490234375,
+                0.4990234375
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ]
+          },
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.7509765625,
+                0.2509765625,
+                0.9990234375,
+                0.4990234375
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ]
+          },
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.0009765625,
+                0.5009765625,
+                0.2490234375,
+                0.7490234375
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ]
+          },
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.2509765625,
+                0.5009765625,
+                0.4990234375,
+                0.7490234375
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ]
+          },
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.5009765625,
+                0.5009765625,
+                0.7490234375,
+                0.7490234375
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ]
+          },
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.7509765625,
+                0.5009765625,
+                0.9990234375,
+                0.7490234375
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ]
+          },
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.0009765625,
+                0.7509765625,
+                0.2490234375,
+                0.9990234375
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ]
+          }
+        ]
+      }
+    ],
+    "effects": [
+      "ExplosionCore_buildings",
+      "ExplosionCore_MidAir",
+      "ExplosionCore_MidAir_underwater",
+      "ExplosionCore_sapperdestroyed"
+    ]
+  },
+  "materials/effects/softglow.vmt": {
+    "in_mod": false,
+    "effects": [
+      "ExplosionCore_buildings",
+      "ExplosionCore_MidAir",
+      "ExplosionCore_MidAir_Flare",
+      "ExplosionCore_MidAir_underwater"
+    ]
+  },
+  "materials/particle/transformers_devastation/td_smokering_unlit.vmt": {
+    "in_mod": true,
+    "vmt": {
+      "path": "source/materials/particle/transformers_devastation/td_smokering_unlit.vmt",
+      "bytes": 141,
+      "sha256": "abbfb395a1c1e3c6f8f111f889a4692723822b0589f4ab287d9babe8fb49d646"
+    },
+    "flags": {
+      "translucent": "1"
+    },
+    "vtf": {
+      "path": "source/materials/particle/transformers_devastation/td_smokering.vtf",
+      "bytes": 87616,
+      "sha256": "87c3c269c98fca1e55c81e3d559e0f8d6f218b773b2db87e13d2eb2d5c538118"
+    },
+    "width": 256,
+    "height": 256,
+    "sheet_sequences": null,
+    "effects": [
+      "ExplosionCore_MidAir",
+      "ExplosionCore_MidAir_underwater"
+    ]
+  },
+  "materials/particle/transformers_devastation/td_smokering.vmt": {
+    "in_mod": true,
+    "vmt": {
+      "path": "source/materials/particle/transformers_devastation/td_smokering.vmt",
+      "bytes": 107,
+      "sha256": "1861ef73e0dc1ed37a3b358f3730d38398475f4948bd8e9aa48386bb6ccdf462"
+    },
+    "flags": {
+      "translucent": "1"
+    },
+    "vtf": {
+      "path": "source/materials/particle/transformers_devastation/td_smokering.vtf",
+      "bytes": 87616,
+      "sha256": "87c3c269c98fca1e55c81e3d559e0f8d6f218b773b2db87e13d2eb2d5c538118"
+    },
+    "width": 256,
+    "height": 256,
+    "sheet_sequences": null,
+    "effects": [
+      "ExplosionCore_MidAir",
+      "ExplosionCore_MidAir_underwater"
+    ]
+  },
+  "materials/particle/transformers_devastation/td_smoke_beam_2.vmt": {
+    "in_mod": true,
+    "vmt": {
+      "path": "source/materials/particle/transformers_devastation/td_smoke_beam_2.vmt",
+      "bytes": 228,
+      "sha256": "9c8a98c072220690b83deeb6961a65f55f853dc7069edf2ca32b1b807c49f654"
+    },
+    "flags": {
+      "additive": "1"
+    },
+    "vtf": {
+      "path": "source/materials/particle/transformers_devastation/td_smoke_beam_2.vtf",
+      "bytes": 87528,
+      "sha256": "b68beb7537b7efbaf713ea03ac0452927a82231e1e4ba6412033eace21d907b0"
+    },
+    "width": 128,
+    "height": 512,
+    "sheet_sequences": null,
+    "effects": [
+      "ExplosionCore_MidAir_Flare"
+    ]
+  },
+  "materials/effects/laser1_5ob.vmt": {
+    "in_mod": true,
+    "vmt": {
+      "path": "source/materials/effects/laser1_5ob.vmt",
+      "bytes": 167,
+      "sha256": "de7ddf47d5ff474262cb8b8ad739466fc5b1a90955dc46baf8e384138a69c283"
+    },
+    "flags": {
+      "addself": "1",
+      "translucent": "1",
+      "overbrightfactor": "5"
+    },
+    "vtf": {
+      "path": "source/materials/effects/laser1_alpha.vtf",
+      "bytes": 900,
+      "sha256": "45e24e3e0916c71bb1651be0db9e1d33ffa009ba1e2e99aaa704921de3870cdd"
+    },
+    "width": 64,
+    "height": 2,
+    "sheet_sequences": null,
+    "effects": [
+      "ExplosionCore_MidAir_Flare"
+    ]
+  },
+  "materials/particle/ssb4u/cmn_flare_white.vmt": {
+    "in_mod": true,
+    "vmt": {
+      "path": "source/materials/particle/ssb4u/cmn_flare_white.vmt",
+      "bytes": 123,
+      "sha256": "9f32bc3387cf414820cafee0af49204cfa7138f4a17f8854f206dee84795aa6d"
+    },
+    "flags": {
+      "translucent": "1",
+      "addself": "1",
+      "overbrightfactor": "4"
+    },
+    "vtf": {
+      "path": "source/materials/particle/ssb4u/cmn_flare_white.vtf",
+      "bytes": 22104,
+      "sha256": "005acf9d61a8590361c3ba0c8278affd844385286169f89e19d59bc101fb894d"
+    },
+    "width": 128,
+    "height": 128,
+    "sheet_sequences": null,
+    "effects": [
+      "ExplosionCore_MidAir_Flare"
+    ]
+  },
+  "materials/particle/the_wonderful_101/w101_toon_smoke_jet.vmt": {
+    "in_mod": true,
+    "vmt": {
+      "path": "source/materials/particle/the_wonderful_101/w101_toon_smoke_jet.vmt",
+      "bytes": 157,
+      "sha256": "e0fc967cb5323afe27274598dcf011f85bade0cec41646f3ce32b48ba5db1e57"
+    },
+    "flags": {
+      "translucent": "1"
+    },
+    "vtf": {
+      "path": "source/materials/particle/the_wonderful_101/w101_toon_smoke_jet.vtf",
+      "bytes": 44084,
+      "sha256": "5068f599a7b66e94e915ad74a41b9c078bbe6c5a4a9d82314445b1f81dc86444"
+    },
+    "width": 256,
+    "height": 128,
+    "sheet_sequences": [
+      {
+        "id": 0,
+        "clamp": true,
+        "total_duration": 1.0,
+        "frames": [
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.001953125,
+                0.00390625,
+                0.498046875,
+                0.99609375
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ]
+          }
+        ]
+      },
+      {
+        "id": 1,
+        "clamp": true,
+        "total_duration": 1.0,
+        "frames": [
+          {
+            "duration": 1.0,
+            "uv_rects_left_top_right_bottom": [
+              [
+                0.501953125,
+                0.00390625,
+                0.998046875,
+                0.99609375
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ]
+          }
+        ]
+      }
+    ],
+    "effects": [
+      "ExplosionCore_MidAir_underwater",
+      "ExplosionCore_sapperdestroyed"
+    ]
+  },
+  "materials/effects/circle2.vmt": {
+    "in_mod": false,
+    "effects": [
+      "ExplosionCore_sapperdestroyed"
+    ]
+  }
+}

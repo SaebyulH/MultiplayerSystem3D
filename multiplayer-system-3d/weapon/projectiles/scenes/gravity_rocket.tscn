@@ -50,6 +50,7 @@ world_hit_mode = 2
 align_to_velocity = true
 falloff_start = 10.0
 falloff_end = 30.0
+trail_preset = "rockettrail"
 
 [node name="CollisionShape3D" parent="." index="0" unique_id=1810742212]
 shape = SubResource("SphereShape3D_21xcj")
@@ -62,6 +63,7 @@ shape = SubResource("SphereShape3D_84p14")
 
 [node name="ExplosionComponent" parent="." index="3" unique_id=473826993]
 splash_health_delta = -125
+effect_preset = "bigboom/ExplosionCore_MidAir_Flare"
 status_effects = Array[ExtResource("3_sj25q")]([SubResource("Resource_p1w0v")])
 
 [node name="MeshInstance3D2" type="MeshInstance3D" parent="." index="4" unique_id=251685809]

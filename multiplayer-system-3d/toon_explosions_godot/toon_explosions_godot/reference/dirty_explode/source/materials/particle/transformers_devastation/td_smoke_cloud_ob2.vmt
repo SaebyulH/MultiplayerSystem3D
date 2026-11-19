@@ -1,0 +1,6 @@
+"spritecard"
+{
+	"$basetexture" "particle\transformers_devastation\TD_smoke_cloud"
+$translucent	1
+$overbrightfactor	2
+}

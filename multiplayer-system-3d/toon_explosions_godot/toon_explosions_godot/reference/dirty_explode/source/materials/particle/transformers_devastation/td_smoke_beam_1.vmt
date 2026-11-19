@@ -1,0 +1,7 @@
+"Sprite"
+{
+	"$basetexture" "particle/transformers_devastation/TD_smoke_beam_1"
+	"$vertexcolor"		1
+	"$nocull"			1
+	"$spriterendermode" 4
+}

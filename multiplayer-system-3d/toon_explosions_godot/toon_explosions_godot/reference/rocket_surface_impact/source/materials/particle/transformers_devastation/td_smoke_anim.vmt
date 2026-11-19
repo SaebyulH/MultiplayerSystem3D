@@ -1,0 +1,6 @@
+"SpriteCard"
+{
+	"$basetexture" "particle\transformers_devastation\td_smoke_anim"
+	$translucent 	1
+	$blendframes	1
+}

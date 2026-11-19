@@ -1,0 +1,250 @@
+[
+  {
+    "id": "bigboom/fireSmokeExplosion4",
+    "package": "bigboom",
+    "root": 23,
+    "name": "fireSmokeExplosion4",
+    "group": "Fire, smoke and trails",
+    "systems": 2
+  },
+  {
+    "id": "bigboom/fireSmokeExplosion3",
+    "package": "bigboom",
+    "root": 151,
+    "name": "fireSmokeExplosion3",
+    "group": "Fire, smoke and trails",
+    "systems": 2
+  },
+  {
+    "id": "bigboom/fireSmokeExplosion2",
+    "package": "bigboom",
+    "root": 180,
+    "name": "fireSmokeExplosion2",
+    "group": "Fire, smoke and trails",
+    "systems": 2
+  },
+  {
+    "id": "bigboom/fireSmokeExplosion",
+    "package": "bigboom",
+    "root": 191,
+    "name": "fireSmokeExplosion",
+    "group": "Fire, smoke and trails",
+    "systems": 2
+  },
+  {
+    "id": "bigboom/fireSmoke_collumnP",
+    "package": "bigboom",
+    "root": 202,
+    "name": "fireSmoke_collumnP",
+    "group": "Fire, smoke and trails",
+    "systems": 8
+  },
+  {
+    "id": "bigboom/explosionTrail_seeds_mvm",
+    "package": "bigboom",
+    "root": 234,
+    "name": "explosionTrail_seeds_mvm",
+    "group": "Fire, smoke and trails",
+    "systems": 3
+  },
+  {
+    "id": "bigboom/fireSmoke_Collumn_mvmAcres",
+    "package": "bigboom",
+    "root": 291,
+    "name": "fireSmoke_Collumn_mvmAcres",
+    "group": "Fire, smoke and trails",
+    "systems": 6
+  },
+  {
+    "id": "bigboom/fireSmoke_Collumn_mvmAcres_sm",
+    "package": "bigboom",
+    "root": 306,
+    "name": "fireSmoke_Collumn_mvmAcres_sm",
+    "group": "Fire, smoke and trails",
+    "systems": 6
+  },
+  {
+    "id": "bigboom/airburst_shockwave",
+    "package": "bigboom",
+    "root": 321,
+    "name": "airburst_shockwave",
+    "group": "Components",
+    "systems": 2
+  },
+  {
+    "id": "bigboom/Explosions_MA_Dustup_2",
+    "package": "bigboom",
+    "root": 359,
+    "name": "Explosions_MA_Dustup_2",
+    "group": "Components",
+    "systems": 1
+  },
+  {
+    "id": "bigboom/ExplosionCore_Wall_underwater",
+    "package": "bigboom",
+    "root": 434,
+    "name": "ExplosionCore_Wall_underwater",
+    "group": "Core impacts",
+    "systems": 12
+  },
+  {
+    "id": "bigboom/Explosion_ShockWave_01",
+    "package": "bigboom",
+    "root": 876,
+    "name": "Explosion_ShockWave_01",
+    "group": "Components",
+    "systems": 1
+  },
+  {
+    "id": "bigboom/ExplosionCore_buildings",
+    "package": "bigboom",
+    "root": 885,
+    "name": "ExplosionCore_buildings",
+    "group": "Core impacts",
+    "systems": 13
+  },
+  {
+    "id": "bigboom/ExplosionCore_MidAir",
+    "package": "bigboom",
+    "root": 895,
+    "name": "ExplosionCore_MidAir",
+    "group": "Core impacts",
+    "systems": 16
+  },
+  {
+    "id": "bigboom/ExplosionCore_MidAir_Flare",
+    "package": "bigboom",
+    "root": 1124,
+    "name": "ExplosionCore_MidAir_Flare",
+    "group": "Core impacts",
+    "systems": 10
+  },
+  {
+    "id": "bigboom/ExplosionCore_MidAir_underwater",
+    "package": "bigboom",
+    "root": 1137,
+    "name": "ExplosionCore_MidAir_underwater",
+    "group": "Core impacts",
+    "systems": 15
+  },
+  {
+    "id": "bigboom/ExplosionCore_sapperdestroyed",
+    "package": "bigboom",
+    "root": 1295,
+    "name": "ExplosionCore_sapperdestroyed",
+    "group": "Core impacts",
+    "systems": 8
+  },
+  {
+    "id": "dirty_explode/cinefx_goldrush_burningbarrel",
+    "package": "dirty_explode",
+    "root": 62,
+    "name": "cinefx_goldrush_burningbarrel",
+    "group": "Aftermath",
+    "systems": 2
+  },
+  {
+    "id": "dirty_explode/cinefx_goldrush",
+    "package": "dirty_explode",
+    "root": 153,
+    "name": "cinefx_goldrush",
+    "group": "Payload set pieces",
+    "systems": 17
+  },
+  {
+    "id": "dirty_explode/asplode_hoodoo",
+    "package": "dirty_explode",
+    "root": 313,
+    "name": "asplode_hoodoo",
+    "group": "Payload set pieces",
+    "systems": 14
+  },
+  {
+    "id": "dirty_explode/asplode_hoodoo_smoke",
+    "package": "dirty_explode",
+    "root": 468,
+    "name": "asplode_hoodoo_smoke",
+    "group": "Aftermath",
+    "systems": 1
+  },
+  {
+    "id": "dirty_explode/explosionTrail_seeds_mvm",
+    "package": "dirty_explode",
+    "root": 679,
+    "name": "explosionTrail_seeds_mvm",
+    "group": "Fire, smoke and trails",
+    "systems": 3
+  },
+  {
+    "id": "dirty_explode/fireSmoke_Collumn_mvmAcres",
+    "package": "dirty_explode",
+    "root": 766,
+    "name": "fireSmoke_Collumn_mvmAcres",
+    "group": "Fire, smoke and trails",
+    "systems": 7
+  },
+  {
+    "id": "dirty_explode/fireSmoke_Collumn_mvmAcres_sm",
+    "package": "dirty_explode",
+    "root": 781,
+    "name": "fireSmoke_Collumn_mvmAcres_sm",
+    "group": "Fire, smoke and trails",
+    "systems": 6
+  },
+  {
+    "id": "dirty_explode/fluidSmokeExpl_ring_mvm",
+    "package": "dirty_explode",
+    "root": 796,
+    "name": "fluidSmokeExpl_ring_mvm",
+    "group": "Components",
+    "systems": 1
+  },
+  {
+    "id": "dirty_explode/fireSmoke_collumnP",
+    "package": "dirty_explode",
+    "root": 814,
+    "name": "fireSmoke_collumnP",
+    "group": "Fire, smoke and trails",
+    "systems": 14
+  },
+  {
+    "id": "dirty_explode/fireSmokeExplosion",
+    "package": "dirty_explode",
+    "root": 831,
+    "name": "fireSmokeExplosion",
+    "group": "Fire, smoke and trails",
+    "systems": 4
+  },
+  {
+    "id": "dirty_explode/fireSmokeExplosion2",
+    "package": "dirty_explode",
+    "root": 878,
+    "name": "fireSmokeExplosion2",
+    "group": "Fire, smoke and trails",
+    "systems": 4
+  },
+  {
+    "id": "dirty_explode/fireSmokeExplosion3",
+    "package": "dirty_explode",
+    "root": 888,
+    "name": "fireSmokeExplosion3",
+    "group": "Fire, smoke and trails",
+    "systems": 4
+  },
+  {
+    "id": "dirty_explode/fireSmokeExplosion4",
+    "package": "dirty_explode",
+    "root": 898,
+    "name": "fireSmokeExplosion4",
+    "group": "Fire, smoke and trails",
+    "systems": 4
+  },
+  {
+    "id": "dirty_explode/explosion_wave",
+    "package": "dirty_explode",
+    "root": 908,
+    "name": "explosion_wave",
+    "group": "Components",
+    "systems": 1
+  }
+]

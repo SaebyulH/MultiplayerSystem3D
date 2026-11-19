@@ -2,7 +2,7 @@ extends SimpleProjectile
 var _initial_speed: float = 0.0
 
 
-const REDIRECT_SPEED_MULTIPLIER := 5.0
+const REDIRECT_SPEED_MULTIPLIER := 25.0
 func _ready() -> void:
 	super()
 	_initial_speed = linear_velocity.length()

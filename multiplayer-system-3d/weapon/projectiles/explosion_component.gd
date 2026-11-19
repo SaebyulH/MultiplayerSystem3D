@@ -12,6 +12,15 @@ var exploded := false
 @export var splash_radius := 3.0
 @export var explosion_color := Color.WHITE
 
+## Optional toon explosion preset id from `effects/toon_explosions/profiles.json`
+## (for example `bigboom/ExplosionCore_MidAir`).  Empty keeps the legacy
+## rocket_impact burst, so existing projectiles are unchanged until they opt in.
+@export var effect_preset: String = ""
+## Multiplies the burst footprint derived from [member splash_radius].  The toon
+## presets carry their own absolute sizes, so use this to tune a preset's read
+## without touching its data.
+@export var effect_scale_multiplier := 1.0
+
 ## Status effects applied to every player hit by the explosion blast.
 ## Set in the scene or copied from WeaponFire.status_effects at spawn time.
 @export var status_effects: Array[StatusEffect] = []
@@ -41,6 +50,7 @@ var exploded := false
 ## Preloaded explosion scene — spawned on-demand instead of sitting
 ## idle as a child on every projectile.
 static var _explosion_scene: PackedScene = null
+static var _toon_explosion_scene: PackedScene = null
 
 
 # ----------------------------------------------------
@@ -71,7 +81,7 @@ func explode(falloff_multiplier: float = 1.0):
 			return
 
 		_apply_explosion_tick(shooter_name, shooter_team, falloff_multiplier)
-		_explode_visual.rpc(normal)
+		_explode_visual.rpc(normal, effect_preset)
 
 
 # ----------------------------------------------------
@@ -181,17 +191,41 @@ func _impact_normal() -> Vector3:
 
 
 @rpc("call_local", "reliable")
-func _explode_visual(normal: Vector3):
+func _explode_visual(normal: Vector3, preset: String = ""):
+	var host := _effect_host()
+	if host == null:
+		return
+	# The burst footprint rides the splash radius; play() orients it from the
+	# hit normal and the world's up vector.
+	var footprint: float = maxf(splash_radius * 0.5, 0.2) * effect_scale_multiplier
+
+	if not preset.is_empty():
+		if _toon_explosion_scene == null:
+			_toon_explosion_scene = load("res://effects/toon_explosions/toon_explosion.tscn")
+		if _toon_explosion_scene:
+			var toon := _toon_explosion_scene.instantiate()
+			toon.effect_scale = footprint
+			host.add_child(toon)
+			toon.play(preset, global_position, normal, Vector3.UP)
+			return
+
 	if _explosion_scene == null:
 		_explosion_scene = load("res://effects/rocket_impact/rocket_impact.tscn")
 
-	var parent := get_parent()
-	if not parent:
-		return
 	var explosion := _explosion_scene.instantiate()
-	# The burst footprint rides the splash radius; play() orients it from the
-	# hit normal and the world's up vector.
-	explosion.effect_scale = maxf(splash_radius * 0.5, 0.2)
+	explosion.effect_scale = footprint
 	explosion.tint = explosion_color
-	parent.add_child(explosion)
+	host.add_child(explosion)
 	explosion.play(global_position, normal, Vector3.UP)
+
+
+## The effect must outlive the projectile (which is freed 10 s after
+## detonating) and must not sit under the ProjectilesParent, whose
+## MultiplayerSpawner replicates every direct child and only knows projectile
+## scenes.  The world node above that parent is safe on every peer.
+func _effect_host() -> Node:
+	var parent := get_parent()
+	if parent == null:
+		return null
+	var world := parent.get_parent()
+	return world if world != null else parent

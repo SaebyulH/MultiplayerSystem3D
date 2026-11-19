@@ -1,0 +1,6 @@
+spritecard
+{
+$basetexture	"particle\transformers_devastation\TD_smokering"
+$translucent	1
+$nocull		1
+}

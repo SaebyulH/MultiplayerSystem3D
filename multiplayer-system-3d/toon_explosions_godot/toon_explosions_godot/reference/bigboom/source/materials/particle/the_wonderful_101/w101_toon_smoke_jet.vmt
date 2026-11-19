@@ -1,0 +1,8 @@
+"unlitgeneric"
+{
+	"$basetexture" "particle\the_wonderful_101\w101_toon_smoke_jet"
+	$translucent 1
+	"$vertexcolor"		1
+	$vertexalpha		1
+	"$nocull"			1
+}

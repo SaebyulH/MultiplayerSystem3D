@@ -102,6 +102,7 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 | 153 | 🟡 Medium | Netcode/UI | ✅ FIXED 2026-11-19 — Leaderboard showed the room host's ping as 0 ms on dedicated/VPS matches; the host row was forced to 0 before peer sampling |
 | 154 | 🟠 High | Netcode | ✅ FIXED 2026-11-19 — Results auto-return left the netfox tick loop dead: look/shoot worked in the returned lobby, movement did not |
 | 155 | 🟡 Medium | Flow | ✅ FIXED 2026-11-19 — A staging countdown coroutine could fire into the next session and swap the returned lobby to the match map |
+| 156 | 🟢 Low | Assets/Perf | Toon FX are selected by bare preset strings; a typo silently falls back, the grenade smoke preset exists only in the project copy of the vendored trail table, and stacked 18 s nuke presets allocate a 700-instance batch each |
 
 
 ---
@@ -1517,6 +1518,12 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 - **Symptom:** leaving during the 5 s staging countdown and returning to the lobby left the new lobby eventually swapping itself to the match map, setting `LOADING` and waiting out the map-ready barrier.
 - **Why:** the only post-timer guard was `is_instance_valid(GameManager.spawn_parent)`, and the rebuilt lobby's `world_1._ready()` repoints `GameManager.spawn_parent` to the new world — so a coroutine from the dead session passed it.
 - **Resolution:** `start_staging_match()` captures `_lifecycle_epoch` after its entry guards and re-checks it (plus `MatchSession.role == SERVER`) after the countdown and after `await_map_ready()`. `return_to_lobby()`, `join_party()` and `host_local_match()` bump the epoch.
+
+### 156. Toon FX are preset-string driven, and the grenade smoke preset is project-local
+
+- **Files:** `weapon/projectiles/explosion_component.gd` (`effect_preset`, `_explode_visual`), `weapon/projectiles/simple_projectile.gd` (`trail_preset`, `_start_trail`), `effects/toon_trail/trail_profiles.gd`, `effects/toon_explosions/profiles.json`.
+- **Symptom / why:** preset ids are unvalidated strings. An unknown explosion id makes `toon_explosion.play()` return `false` and the burst is invisible (the projectile still detonates); an unknown trail id leaves no trail. `grenade_smoke` was appended to the **project copy** of `trail_profiles.gd` only — re-copying `toon_rocket_trails_godot/` over `effects/toon_trail/` silently drops it and grenade/nuke trails disappear. Each toon explosion also allocates two 700-instance `MultiMesh` batches for its lifetime (the Goldrush nuke preset runs ~18 s), so overlapping nukes stack memory and per-frame sort/draw work with no global cap.
+- **Suggested fix:** validate `effect_preset` / `trail_preset` against the catalog once in `_ready()` and `push_warning` (debug builds) when missing; keep `grenade_smoke` in a project-owned table or re-append it in a sync step; if nuke spam becomes common, cap concurrent `toon_explosion` nodes or shorten the Goldrush preset.
 
 ## Not bugs, but worth knowing
 

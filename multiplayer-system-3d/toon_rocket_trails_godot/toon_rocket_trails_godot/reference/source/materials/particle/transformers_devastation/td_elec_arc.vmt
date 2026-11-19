@@ -1,0 +1,8 @@
+"Sprite"
+{
+	$basetexture	"particle/transformers_devastation/TD_elec_arc"
+	$vertexcolor		1
+	$vertexalpha		1
+	$spriterendermode		5
+	$blendframes		0
+}

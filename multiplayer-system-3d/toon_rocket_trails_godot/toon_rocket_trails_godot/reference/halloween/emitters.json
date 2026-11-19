@@ -1,0 +1,1354 @@
+{
+  "3175": {
+    "name": "rockettrail_airstrike_line",
+    "source_element_id": 3175,
+    "renderers": [
+      {
+        "functionName": "render_rope",
+        "operator start fadein": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadeout": 0.0,
+        "operator fade oscillate": 0.0,
+        "subdivision_count": 5,
+        "texel_size": 0.6000000238418579,
+        "texture_scroll_rate": -150.0
+      }
+    ],
+    "operators": [
+      {
+        "functionName": "Movement Basic",
+        "operator start fadein": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadeout": 0.0,
+        "operator fade oscillate": 0.0,
+        "gravity": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "drag": 0.0,
+        "max constraint passes": 3
+      },
+      {
+        "functionName": "Radius Scale",
+        "operator start fadein": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadeout": 0.0,
+        "operator fade oscillate": 0.0,
+        "start_time": 0.0,
+        "end_time": 0.25,
+        "radius_start_scale": 15.0,
+        "radius_end_scale": 0.0,
+        "ease_in_and_out": false,
+        "scale_bias": 0.5
+      },
+      {
+        "functionName": "Alpha Fade and Decay",
+        "end_fade_out_time": 0.25,
+        "start_fade_out_time": 0.20000000298023224,
+        "end_fade_in_time": 0.019999999552965164,
+        "start_fade_in_time": 0.0,
+        "end_alpha": 0.0,
+        "start_alpha": 0.0,
+        "operator fade oscillate": 0.0,
+        "operator end fadeout": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadein": 0.0
+      }
+    ],
+    "initializers": [
+      {
+        "functionName": "Position Within Sphere Random",
+        "operator start fadein": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadeout": 0.0,
+        "operator fade oscillate": 0.0,
+        "distance_min": 0.0,
+        "distance_max": 0.0,
+        "distance_bias": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "distance_bias_absolute_value": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "bias in local system": false,
+        "control_point_number": 0,
+        "speed_min": 0.0,
+        "speed_max": 20.0,
+        "speed_random_exponent": 1.0,
+        "speed_in_local_coordinate_system_min": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "speed_in_local_coordinate_system_max": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "create in model": 0,
+        "randomly distribute to highest supplied Control Point": false,
+        "randomly distribution growth time": 0.0
+      },
+      {
+        "functionName": "Alpha Random",
+        "operator start fadein": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadeout": 0.0,
+        "operator fade oscillate": 0.0,
+        "alpha_min": 0,
+        "alpha_max": 80,
+        "alpha_random_exponent": 1.0
+      },
+      {
+        "functionName": "Radius Random",
+        "radius_random_exponent": 1.0,
+        "radius_max": 3.0,
+        "radius_min": 0.30000001192092896,
+        "operator fade oscillate": 0.0,
+        "operator end fadeout": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadein": 0.0
+      },
+      {
+        "functionName": "Lifetime Random",
+        "lifetime_random_exponent": 1.0,
+        "lifetime_max": 9.0,
+        "lifetime_min": 4.0,
+        "operator fade oscillate": 0.0,
+        "operator end fadeout": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadein": 0.0
+      },
+      {
+        "functionName": "Remap Initial Scalar",
+        "only active within specified input range": false,
+        "output is scalar of initial random range": true,
+        "output maximum": 1.0,
+        "output minimum": 0.0,
+        "output field": 7,
+        "input maximum": 0.4000000059604645,
+        "input minimum": 0.0,
+        "input field": 8,
+        "emitter lifetime end time (seconds)": -1.0,
+        "emitter lifetime start time (seconds)": -1.0,
+        "operator fade oscillate": 0.0,
+        "operator end fadeout": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadein": 0.0
+      },
+      {
+        "functionName": "Color Random",
+        "operator start fadein": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadeout": 0.0,
+        "operator fade oscillate": 0.0,
+        "color1": [
+          199,
+          199,
+          199,
+          255
+        ],
+        "color2": [
+          144,
+          144,
+          144,
+          255
+        ],
+        "tint_perc": 0.0,
+        "tint control point": 0,
+        "tint clamp min": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "tint clamp max": [
+          255,
+          255,
+          255,
+          255
+        ],
+        "tint update movement threshold": 32.0
+      }
+    ],
+    "emitters": [
+      {
+        "functionName": "emit_continuously",
+        "operator start fadein": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadeout": 0.0,
+        "operator fade oscillate": 0.0,
+        "emission_start_time": 0.0,
+        "emission_rate": 10.0,
+        "emission_duration": 0.0,
+        "scale emission to used control points": 0.0,
+        "use parent particles for emission scaling": false
+      }
+    ],
+    "children": [
+      {
+        "child": 3178,
+        "delay": 0.0,
+        "source_edge_id": 3177,
+        "child_name": "rockettrail_airstrike_spin_1"
+      },
+      {
+        "child": 3192,
+        "delay": 0.0,
+        "source_edge_id": 3191,
+        "child_name": "rockettrail_airstrike_spin_2"
+      },
+      {
+        "child": 3206,
+        "delay": 0.0,
+        "source_edge_id": 3205,
+        "child_name": "rockettrail_airstrike_spin_3"
+      },
+      {
+        "child": 3220,
+        "delay": 0.0,
+        "source_edge_id": 3219,
+        "child_name": "rockettrail_airstrike_wisp"
+      }
+    ],
+    "forces": [],
+    "constraints": [
+      {
+        "functionName": "Collision via traces",
+        "operator start fadein": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadeout": 0.0,
+        "operator fade oscillate": 0.0,
+        "collision mode": 0,
+        "amount of bounce": 0.0,
+        "amount of slide": 0.0,
+        "radius scale": 1.0,
+        "brush only": true,
+        "collision group": "DEBRIS",
+        "control point offset for fast collisions": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "control point movement distance tolerance": 5.0,
+        "kill particle on collision": false,
+        "trace accuracy tolerance": 24.0
+      }
+    ],
+    "preventNameBasedLookup": false,
+    "max_particles": 64,
+    "initial_particles": 0,
+    "material": "particle\\transformers_devastation\\td_smoke_beam_2.vmt",
+    "bounding_box_min": [
+      -10.0,
+      -10.0,
+      -10.0
+    ],
+    "bounding_box_max": [
+      10.0,
+      10.0,
+      10.0
+    ],
+    "cull_radius": 0.0,
+    "cull_cost": 1.0,
+    "cull_control_point": 0,
+    "cull_replacement_definition": "",
+    "radius": 1.0,
+    "color": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "rotation": 0.0,
+    "rotation_speed": 0.0,
+    "sequence_number": 0,
+    "sequence_number 1": 0,
+    "group id": 0,
+    "maximum time step": 0.10000000149011612,
+    "maximum sim tick rate": 0.0,
+    "minimum sim tick rate": 0.0,
+    "minimum rendered frames": 0,
+    "control point to disable rendering if it is the camera": -1,
+    "maximum draw distance": 100000.0,
+    "time to sleep when not drawn": 8.0,
+    "Sort particles": true,
+    "batch particle systems": false,
+    "view model effect": false
+  },
+  "3178": {
+    "name": "rockettrail_airstrike_spin_1",
+    "source_element_id": 3178,
+    "renderers": [
+      {
+        "functionName": "render_rope",
+        "texture_scroll_rate": 0.0,
+        "texel_size": 1.0,
+        "subdivision_count": 5,
+        "operator fade oscillate": 0.0,
+        "operator end fadeout": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadein": 0.0
+      }
+    ],
+    "operators": [
+      {
+        "functionName": "Movement Basic",
+        "max constraint passes": 3,
+        "drag": 0.3499999940395355,
+        "gravity": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "operator fade oscillate": 0.0,
+        "operator end fadeout": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadein": 0.0
+      },
+      {
+        "functionName": "Lifespan Decay",
+        "operator fade oscillate": 0.0,
+        "operator end fadeout": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadein": 0.0
+      },
+      {
+        "functionName": "Alpha Fade and Decay",
+        "end_fade_out_time": 1.0,
+        "start_fade_out_time": 0.10000001639127731,
+        "end_fade_in_time": 0.10000001639127731,
+        "start_fade_in_time": 0.0,
+        "end_alpha": 0.0,
+        "start_alpha": 0.0,
+        "operator fade oscillate": 0.0,
+        "operator end fadeout": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadein": 0.0
+      },
+      {
+        "functionName": "Radius Scale",
+        "scale_bias": 0.8000000715255737,
+        "ease_in_and_out": false,
+        "radius_end_scale": 0.0,
+        "radius_start_scale": 10.0,
+        "end_time": 1.0,
+        "start_time": 0.0,
+        "operator fade oscillate": 0.0,
+        "operator end fadeout": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadein": 0.0
+      },
+      {
+        "functionName": "Movement Lock to Control Point",
+        "lock rotation": false,
+        "distance fade range": 0.0,
+        "end_fadeout_exponent": 1.0,
+        "end_fadeout_max": 1.0,
+        "end_fadeout_min": 1.0,
+        "start_fadeout_exponent": 1.0,
+        "start_fadeout_max": -1.0,
+        "start_fadeout_min": -1.0,
+        "control_point_number": 0,
+        "operator fade oscillate": 0.0,
+        "operator end fadeout": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadein": 0.0
+      }
+    ],
+    "initializers": [
+      {
+        "functionName": "Position Within Sphere Random",
+        "randomly distribution growth time": 0.0,
+        "randomly distribute to highest supplied Control Point": false,
+        "create in model": 0,
+        "speed_in_local_coordinate_system_max": [
+          0.0,
+          0.0,
+          200.0
+        ],
+        "speed_in_local_coordinate_system_min": [
+          0.0,
+          0.0,
+          200.0
+        ],
+        "speed_random_exponent": 1.0,
+        "speed_max": 0.0,
+        "speed_min": 0.0,
+        "control_point_number": 0,
+        "bias in local system": false,
+        "distance_bias_absolute_value": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "distance_bias": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "distance_max": 0.0,
+        "distance_min": 0.0,
+        "operator fade oscillate": 0.0,
+        "operator end fadeout": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadein": 0.0
+      },
+      {
+        "functionName": "Lifetime Random",
+        "lifetime_random_exponent": 1.0,
+        "lifetime_max": 0.3499999940395355,
+        "lifetime_min": 0.3499999940395355,
+        "operator fade oscillate": 0.0,
+        "operator end fadeout": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadein": 0.0
+      },
+      {
+        "functionName": "Color Random",
+        "tint update movement threshold": 32.0,
+        "tint clamp max": [
+          255,
+          255,
+          255,
+          255
+        ],
+        "tint clamp min": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "tint control point": 0,
+        "tint_perc": 0.0,
+        "color2": [
+          126,
+          126,
+          126,
+          255
+        ],
+        "color1": [
+          88,
+          88,
+          88,
+          255
+        ],
+        "operator fade oscillate": 0.0,
+        "operator end fadeout": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadein": 0.0
+      },
+      {
+        "functionName": "Alpha Random",
+        "alpha_random_exponent": 1.0,
+        "alpha_max": 160,
+        "alpha_min": 160,
+        "operator fade oscillate": 0.0,
+        "operator end fadeout": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadein": 0.0
+      },
+      {
+        "functionName": "Position Modify Offset Random",
+        "operator start fadein": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadeout": 0.0,
+        "operator fade oscillate": 0.0,
+        "control_point_number": 0,
+        "offset min": [
+          -10.0,
+          0.0,
+          0.0
+        ],
+        "offset max": [
+          -10.0,
+          0.0,
+          0.0
+        ],
+        "offset in local space 0/1": true,
+        "offset proportional to radius 0/1": false
+      }
+    ],
+    "emitters": [
+      {
+        "functionName": "emit_continuously",
+        "use parent particles for emission scaling": false,
+        "scale emission to used control points": 0.0,
+        "emission_duration": 0.0,
+        "emission_rate": 40.0,
+        "emission_start_time": 0.10000000149011612,
+        "operator fade oscillate": 0.0,
+        "operator end fadeout": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadein": 0.0
+      }
+    ],
+    "children": [],
+    "forces": [],
+    "constraints": [],
+    "preventNameBasedLookup": false,
+    "max_particles": 64,
+    "initial_particles": 0,
+    "material": "effects\\beam_generic_3_modulate.vmt",
+    "bounding_box_min": [
+      -10.0,
+      -10.0,
+      -10.0
+    ],
+    "bounding_box_max": [
+      10.0,
+      10.0,
+      10.0
+    ],
+    "cull_radius": 0.0,
+    "cull_cost": 1.0,
+    "cull_control_point": 0,
+    "cull_replacement_definition": "",
+    "radius": 1.0,
+    "color": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "rotation": 0.0,
+    "rotation_speed": 0.0,
+    "sequence_number": 0,
+    "sequence_number 1": 0,
+    "group id": 0,
+    "maximum time step": 0.10000000149011612,
+    "maximum sim tick rate": 0.0,
+    "minimum sim tick rate": 0.0,
+    "minimum rendered frames": 0,
+    "control point to disable rendering if it is the camera": -1,
+    "maximum draw distance": 100000.0,
+    "time to sleep when not drawn": 8.0,
+    "Sort particles": true,
+    "batch particle systems": false,
+    "view model effect": false
+  },
+  "3192": {
+    "name": "rockettrail_airstrike_spin_2",
+    "source_element_id": 3192,
+    "renderers": [
+      {
+        "functionName": "render_rope",
+        "operator start fadein": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadeout": 0.0,
+        "operator fade oscillate": 0.0,
+        "subdivision_count": 5,
+        "texel_size": 1.0,
+        "texture_scroll_rate": 0.0
+      }
+    ],
+    "operators": [
+      {
+        "functionName": "Lifespan Decay",
+        "operator start fadein": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadeout": 0.0,
+        "operator fade oscillate": 0.0
+      },
+      {
+        "functionName": "Movement Lock to Control Point",
+        "lock rotation": false,
+        "distance fade range": 0.0,
+        "end_fadeout_exponent": 1.0,
+        "end_fadeout_max": 1.0,
+        "end_fadeout_min": 1.0,
+        "start_fadeout_exponent": 1.0,
+        "start_fadeout_max": -1.0,
+        "start_fadeout_min": -1.0,
+        "control_point_number": 0,
+        "operator fade oscillate": 0.0,
+        "operator end fadeout": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadein": 0.0
+      },
+      {
+        "functionName": "Movement Basic",
+        "max constraint passes": 3,
+        "drag": 0.3499999940395355,
+        "gravity": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "operator fade oscillate": 0.0,
+        "operator end fadeout": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadein": 0.0
+      },
+      {
+        "functionName": "Radius Scale",
+        "scale_bias": 0.8000000715255737,
+        "ease_in_and_out": false,
+        "radius_end_scale": 0.0,
+        "radius_start_scale": 10.0,
+        "end_time": 1.0,
+        "start_time": 0.0,
+        "operator fade oscillate": 0.0,
+        "operator end fadeout": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadein": 0.0
+      },
+      {
+        "functionName": "Alpha Fade and Decay",
+        "operator start fadein": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadeout": 0.0,
+        "operator fade oscillate": 0.0,
+        "start_alpha": 0.0,
+        "end_alpha": 0.0,
+        "start_fade_in_time": 0.0,
+        "end_fade_in_time": 0.10000001639127731,
+        "start_fade_out_time": 0.10000001639127731,
+        "end_fade_out_time": 1.0
+      }
+    ],
+    "initializers": [
+      {
+        "functionName": "Position Within Sphere Random",
+        "operator start fadein": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadeout": 0.0,
+        "operator fade oscillate": 0.0,
+        "distance_min": 0.0,
+        "distance_max": 0.0,
+        "distance_bias": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "distance_bias_absolute_value": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "bias in local system": false,
+        "control_point_number": 0,
+        "speed_min": 0.0,
+        "speed_max": 0.0,
+        "speed_random_exponent": 1.0,
+        "speed_in_local_coordinate_system_min": [
+          0.0,
+          173.2050018310547,
+          -99.9999008178711
+        ],
+        "speed_in_local_coordinate_system_max": [
+          0.0,
+          173.2050018310547,
+          -99.9999008178711
+        ],
+        "create in model": 0,
+        "randomly distribute to highest supplied Control Point": false,
+        "randomly distribution growth time": 0.0
+      },
+      {
+        "functionName": "Lifetime Random",
+        "lifetime_random_exponent": 1.0,
+        "lifetime_max": 0.3499999940395355,
+        "lifetime_min": 0.3499999940395355,
+        "operator fade oscillate": 0.0,
+        "operator end fadeout": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadein": 0.0
+      },
+      {
+        "functionName": "Alpha Random",
+        "alpha_random_exponent": 1.0,
+        "alpha_max": 160,
+        "alpha_min": 160,
+        "operator fade oscillate": 0.0,
+        "operator end fadeout": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadein": 0.0
+      },
+      {
+        "functionName": "Position Modify Offset Random",
+        "offset proportional to radius 0/1": false,
+        "offset in local space 0/1": true,
+        "offset max": [
+          -10.0,
+          0.0,
+          0.0
+        ],
+        "offset min": [
+          -10.0,
+          0.0,
+          0.0
+        ],
+        "control_point_number": 0,
+        "operator fade oscillate": 0.0,
+        "operator end fadeout": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadein": 0.0
+      },
+      {
+        "functionName": "Color Random",
+        "operator start fadein": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadeout": 0.0,
+        "operator fade oscillate": 0.0,
+        "color1": [
+          88,
+          88,
+          88,
+          255
+        ],
+        "color2": [
+          126,
+          126,
+          126,
+          255
+        ],
+        "tint_perc": 0.0,
+        "tint control point": 0,
+        "tint clamp min": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "tint clamp max": [
+          255,
+          255,
+          255,
+          255
+        ],
+        "tint update movement threshold": 32.0
+      }
+    ],
+    "emitters": [
+      {
+        "functionName": "emit_continuously",
+        "operator start fadein": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadeout": 0.0,
+        "operator fade oscillate": 0.0,
+        "emission_start_time": 0.10000000149011612,
+        "emission_rate": 40.0,
+        "emission_duration": 0.0,
+        "scale emission to used control points": 0.0,
+        "use parent particles for emission scaling": false
+      }
+    ],
+    "children": [],
+    "forces": [],
+    "constraints": [],
+    "preventNameBasedLookup": false,
+    "max_particles": 64,
+    "initial_particles": 0,
+    "material": "effects\\beam_generic_3_modulate.vmt",
+    "bounding_box_min": [
+      -10.0,
+      -10.0,
+      -10.0
+    ],
+    "bounding_box_max": [
+      10.0,
+      10.0,
+      10.0
+    ],
+    "cull_radius": 0.0,
+    "cull_cost": 1.0,
+    "cull_control_point": 0,
+    "cull_replacement_definition": "",
+    "radius": 1.0,
+    "color": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "rotation": 0.0,
+    "rotation_speed": 0.0,
+    "sequence_number": 0,
+    "sequence_number 1": 0,
+    "group id": 0,
+    "maximum time step": 0.10000000149011612,
+    "maximum sim tick rate": 0.0,
+    "minimum sim tick rate": 0.0,
+    "minimum rendered frames": 0,
+    "control point to disable rendering if it is the camera": -1,
+    "maximum draw distance": 100000.0,
+    "time to sleep when not drawn": 8.0,
+    "Sort particles": true,
+    "batch particle systems": false,
+    "view model effect": false
+  },
+  "3206": {
+    "name": "rockettrail_airstrike_spin_3",
+    "source_element_id": 3206,
+    "renderers": [
+      {
+        "functionName": "render_rope",
+        "operator start fadein": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadeout": 0.0,
+        "operator fade oscillate": 0.0,
+        "subdivision_count": 5,
+        "texel_size": 1.0,
+        "texture_scroll_rate": 0.0
+      }
+    ],
+    "operators": [
+      {
+        "functionName": "Lifespan Decay",
+        "operator start fadein": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadeout": 0.0,
+        "operator fade oscillate": 0.0
+      },
+      {
+        "functionName": "Movement Lock to Control Point",
+        "lock rotation": false,
+        "distance fade range": 0.0,
+        "end_fadeout_exponent": 1.0,
+        "end_fadeout_max": 1.0,
+        "end_fadeout_min": 1.0,
+        "start_fadeout_exponent": 1.0,
+        "start_fadeout_max": -1.0,
+        "start_fadeout_min": -1.0,
+        "control_point_number": 0,
+        "operator fade oscillate": 0.0,
+        "operator end fadeout": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadein": 0.0
+      },
+      {
+        "functionName": "Movement Basic",
+        "max constraint passes": 3,
+        "drag": 0.3499999940395355,
+        "gravity": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "operator fade oscillate": 0.0,
+        "operator end fadeout": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadein": 0.0
+      },
+      {
+        "functionName": "Radius Scale",
+        "scale_bias": 0.8000000715255737,
+        "ease_in_and_out": false,
+        "radius_end_scale": 0.0,
+        "radius_start_scale": 10.0,
+        "end_time": 1.0,
+        "start_time": 0.0,
+        "operator fade oscillate": 0.0,
+        "operator end fadeout": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadein": 0.0
+      },
+      {
+        "functionName": "Alpha Fade and Decay",
+        "operator start fadein": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadeout": 0.0,
+        "operator fade oscillate": 0.0,
+        "start_alpha": 0.0,
+        "end_alpha": 0.0,
+        "start_fade_in_time": 0.0,
+        "end_fade_in_time": 0.10000001639127731,
+        "start_fade_out_time": 0.10000001639127731,
+        "end_fade_out_time": 1.0
+      }
+    ],
+    "initializers": [
+      {
+        "functionName": "Alpha Random",
+        "operator start fadein": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadeout": 0.0,
+        "operator fade oscillate": 0.0,
+        "alpha_min": 160,
+        "alpha_max": 160,
+        "alpha_random_exponent": 1.0
+      },
+      {
+        "functionName": "Lifetime Random",
+        "lifetime_random_exponent": 1.0,
+        "lifetime_max": 0.3499999940395355,
+        "lifetime_min": 0.3499999940395355,
+        "operator fade oscillate": 0.0,
+        "operator end fadeout": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadein": 0.0
+      },
+      {
+        "functionName": "Position Within Sphere Random",
+        "randomly distribution growth time": 0.0,
+        "randomly distribute to highest supplied Control Point": false,
+        "create in model": 0,
+        "speed_in_local_coordinate_system_max": [
+          0.0,
+          -173.2050018310547,
+          -99.9999008178711
+        ],
+        "speed_in_local_coordinate_system_min": [
+          0.0,
+          -173.2050018310547,
+          -99.9999008178711
+        ],
+        "speed_random_exponent": 1.0,
+        "speed_max": 0.0,
+        "speed_min": 0.0,
+        "control_point_number": 0,
+        "bias in local system": false,
+        "distance_bias_absolute_value": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "distance_bias": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "distance_max": 0.0,
+        "distance_min": 0.0,
+        "operator fade oscillate": 0.0,
+        "operator end fadeout": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadein": 0.0
+      },
+      {
+        "functionName": "Position Modify Offset Random",
+        "offset proportional to radius 0/1": false,
+        "offset in local space 0/1": true,
+        "offset max": [
+          -10.0,
+          0.0,
+          0.0
+        ],
+        "offset min": [
+          -10.0,
+          0.0,
+          0.0
+        ],
+        "control_point_number": 0,
+        "operator fade oscillate": 0.0,
+        "operator end fadeout": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadein": 0.0
+      },
+      {
+        "functionName": "Color Random",
+        "operator start fadein": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadeout": 0.0,
+        "operator fade oscillate": 0.0,
+        "color1": [
+          88,
+          88,
+          88,
+          255
+        ],
+        "color2": [
+          126,
+          126,
+          126,
+          255
+        ],
+        "tint_perc": 0.0,
+        "tint control point": 0,
+        "tint clamp min": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "tint clamp max": [
+          255,
+          255,
+          255,
+          255
+        ],
+        "tint update movement threshold": 32.0
+      }
+    ],
+    "emitters": [
+      {
+        "functionName": "emit_continuously",
+        "operator start fadein": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadeout": 0.0,
+        "operator fade oscillate": 0.0,
+        "emission_start_time": 0.10000000149011612,
+        "emission_rate": 40.0,
+        "emission_duration": 0.0,
+        "scale emission to used control points": 0.0,
+        "use parent particles for emission scaling": false
+      }
+    ],
+    "children": [],
+    "forces": [],
+    "constraints": [],
+    "preventNameBasedLookup": false,
+    "max_particles": 64,
+    "initial_particles": 0,
+    "material": "effects\\beam_generic_3_modulate.vmt",
+    "bounding_box_min": [
+      -10.0,
+      -10.0,
+      -10.0
+    ],
+    "bounding_box_max": [
+      10.0,
+      10.0,
+      10.0
+    ],
+    "cull_radius": 0.0,
+    "cull_cost": 1.0,
+    "cull_control_point": 0,
+    "cull_replacement_definition": "",
+    "radius": 1.0,
+    "color": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "rotation": 0.0,
+    "rotation_speed": 0.0,
+    "sequence_number": 0,
+    "sequence_number 1": 0,
+    "group id": 0,
+    "maximum time step": 0.10000000149011612,
+    "maximum sim tick rate": 0.0,
+    "minimum sim tick rate": 0.0,
+    "minimum rendered frames": 0,
+    "control point to disable rendering if it is the camera": -1,
+    "maximum draw distance": 100000.0,
+    "time to sleep when not drawn": 8.0,
+    "Sort particles": true,
+    "batch particle systems": false,
+    "view model effect": false
+  },
+  "3220": {
+    "name": "rockettrail_airstrike_wisp",
+    "source_element_id": 3220,
+    "renderers": [
+      {
+        "functionName": "render_rope",
+        "texture_scroll_rate": -150.0,
+        "texel_size": 0.6000000238418579,
+        "subdivision_count": 5,
+        "operator fade oscillate": 0.0,
+        "operator end fadeout": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadein": 0.0
+      }
+    ],
+    "operators": [
+      {
+        "functionName": "Movement Basic",
+        "max constraint passes": 3,
+        "drag": 0.0,
+        "gravity": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "operator fade oscillate": 0.0,
+        "operator end fadeout": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadein": 0.0
+      },
+      {
+        "functionName": "Radius Scale",
+        "scale_bias": 0.5,
+        "ease_in_and_out": false,
+        "radius_end_scale": 0.0,
+        "radius_start_scale": 15.0,
+        "end_time": 0.25,
+        "start_time": 0.0,
+        "operator fade oscillate": 0.0,
+        "operator end fadeout": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadein": 0.0
+      },
+      {
+        "functionName": "Alpha Fade and Decay",
+        "operator start fadein": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadeout": 0.0,
+        "operator fade oscillate": 0.0,
+        "start_alpha": 0.0,
+        "end_alpha": 0.0,
+        "start_fade_in_time": 0.0,
+        "end_fade_in_time": 0.019999999552965164,
+        "start_fade_out_time": 0.20000000298023224,
+        "end_fade_out_time": 0.25
+      }
+    ],
+    "initializers": [
+      {
+        "functionName": "Position Within Sphere Random",
+        "randomly distribution growth time": 0.0,
+        "randomly distribute to highest supplied Control Point": false,
+        "create in model": 0,
+        "speed_in_local_coordinate_system_max": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "speed_in_local_coordinate_system_min": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "speed_random_exponent": 1.0,
+        "speed_max": 20.0,
+        "speed_min": 0.0,
+        "control_point_number": 0,
+        "bias in local system": false,
+        "distance_bias_absolute_value": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "distance_bias": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "distance_max": 0.0,
+        "distance_min": 0.0,
+        "operator fade oscillate": 0.0,
+        "operator end fadeout": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadein": 0.0
+      },
+      {
+        "functionName": "Alpha Random",
+        "alpha_random_exponent": 1.0,
+        "alpha_max": 25,
+        "alpha_min": 0,
+        "operator fade oscillate": 0.0,
+        "operator end fadeout": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadein": 0.0
+      },
+      {
+        "functionName": "Radius Random",
+        "operator start fadein": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadeout": 0.0,
+        "operator fade oscillate": 0.0,
+        "radius_min": 0.30000001192092896,
+        "radius_max": 3.0,
+        "radius_random_exponent": 1.0
+      },
+      {
+        "functionName": "Lifetime Random",
+        "operator start fadein": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadeout": 0.0,
+        "operator fade oscillate": 0.0,
+        "lifetime_min": 4.0,
+        "lifetime_max": 9.0,
+        "lifetime_random_exponent": 1.0
+      },
+      {
+        "functionName": "Remap Initial Scalar",
+        "operator start fadein": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadeout": 0.0,
+        "operator fade oscillate": 0.0,
+        "emitter lifetime start time (seconds)": -1.0,
+        "emitter lifetime end time (seconds)": -1.0,
+        "input field": 8,
+        "input minimum": 0.0,
+        "input maximum": 0.4000000059604645,
+        "output field": 7,
+        "output minimum": 0.0,
+        "output maximum": 1.0,
+        "output is scalar of initial random range": true,
+        "only active within specified input range": false
+      },
+      {
+        "functionName": "Color Random",
+        "tint update movement threshold": 32.0,
+        "tint clamp max": [
+          255,
+          255,
+          255,
+          255
+        ],
+        "tint clamp min": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "tint control point": 0,
+        "tint_perc": 0.0,
+        "color2": [
+          144,
+          144,
+          144,
+          255
+        ],
+        "color1": [
+          199,
+          199,
+          199,
+          255
+        ],
+        "operator fade oscillate": 0.0,
+        "operator end fadeout": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadein": 0.0
+      }
+    ],
+    "emitters": [
+      {
+        "functionName": "emit_continuously",
+        "use parent particles for emission scaling": false,
+        "scale emission to used control points": 0.0,
+        "emission_duration": 0.0,
+        "emission_rate": 10.0,
+        "emission_start_time": 0.0,
+        "operator fade oscillate": 0.0,
+        "operator end fadeout": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadein": 0.0
+      }
+    ],
+    "children": [],
+    "forces": [],
+    "constraints": [
+      {
+        "functionName": "Collision via traces",
+        "trace accuracy tolerance": 24.0,
+        "kill particle on collision": false,
+        "control point movement distance tolerance": 5.0,
+        "control point offset for fast collisions": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "collision group": "DEBRIS",
+        "brush only": true,
+        "radius scale": 1.0,
+        "amount of slide": 0.0,
+        "amount of bounce": 0.0,
+        "collision mode": 0,
+        "operator fade oscillate": 0.0,
+        "operator end fadeout": 0.0,
+        "operator start fadeout": 0.0,
+        "operator end fadein": 0.0,
+        "operator start fadein": 0.0
+      }
+    ],
+    "preventNameBasedLookup": false,
+    "max_particles": 64,
+    "initial_particles": 0,
+    "material": "particle\\transformers_devastation\\td_smoke_beam_2.vmt",
+    "bounding_box_min": [
+      -10.0,
+      -10.0,
+      -10.0
+    ],
+    "bounding_box_max": [
+      10.0,
+      10.0,
+      10.0
+    ],
+    "cull_radius": 0.0,
+    "cull_cost": 1.0,
+    "cull_control_point": 0,
+    "cull_replacement_definition": "",
+    "radius": 1.0,
+    "color": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "rotation": 0.0,
+    "rotation_speed": 0.0,
+    "sequence_number": 0,
+    "sequence_number 1": 0,
+    "group id": 0,
+    "maximum time step": 0.10000000149011612,
+    "maximum sim tick rate": 0.0,
+    "minimum sim tick rate": 0.0,
+    "minimum rendered frames": 0,
+    "control point to disable rendering if it is the camera": -1,
+    "maximum draw distance": 100000.0,
+    "time to sleep when not drawn": 8.0,
+    "Sort particles": true,
+    "batch particle systems": false,
+    "view model effect": false
+  }
+}

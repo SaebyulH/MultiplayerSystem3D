@@ -1,0 +1,11 @@
+"unlitgeneric"
+{
+	"$basetexture" "Effects/whitebeam"
+	$vertexalpha		1
+	$translucent		1
+	$vertexcolor		1
+	$srgbtint		"[2 2 2]"
+}
+
+
+

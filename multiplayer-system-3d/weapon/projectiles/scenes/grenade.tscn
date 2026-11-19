@@ -39,6 +39,8 @@ world_hit_mode = 1
 align_to_velocity = false
 falloff_start = 10.0
 falloff_end = 30.0
+trail_preset = "grenade_smoke"
+trail_scale = 0.6
 
 [node name="CollisionShape3D" parent="." index="0" unique_id=1810742212]
 shape = SubResource("CapsuleShape3D_xcdij")

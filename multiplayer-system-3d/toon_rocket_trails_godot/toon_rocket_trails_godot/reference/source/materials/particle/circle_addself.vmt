@@ -1,0 +1,6 @@
+"SpriteCard"
+{
+	"$basetexture" "particle\circle"
+	$translucent	1
+	$addself		1
+}

@@ -1,0 +1,8 @@
+"spritecard"
+{
+	"$basetexture"	"particle/SSB4U/cmn_flare_white"
+	$translucent	1
+	$addself		1
+	$overbrightfactor	4
+
+}

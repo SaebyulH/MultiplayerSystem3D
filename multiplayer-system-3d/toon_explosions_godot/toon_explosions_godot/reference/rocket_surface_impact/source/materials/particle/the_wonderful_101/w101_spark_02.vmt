@@ -1,0 +1,9 @@
+unlitgeneric
+{
+	$basetexture "particle\the_wonderful_101\w101_spark_02"
+	$translucent 		1
+	$vertexcolor		1
+	$nocull			1
+	$vertexalpha		1
+	$srgbtint		"[5 5 5]"
+}

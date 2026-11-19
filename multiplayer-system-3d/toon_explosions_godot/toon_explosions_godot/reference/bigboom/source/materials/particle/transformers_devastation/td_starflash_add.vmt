@@ -1,0 +1,6 @@
+Spritecard
+{
+$basetexture "particle\transformers_devastation\TD_starflash_add"
+$additive		1
+$overbrightfactor	5
+}

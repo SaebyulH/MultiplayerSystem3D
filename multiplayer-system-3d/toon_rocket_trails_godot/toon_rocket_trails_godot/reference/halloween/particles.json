@@ -1,0 +1,4384 @@
+{
+  "source": "particles/halloween.pcf",
+  "particle_system_definitions": [
+    3175,
+    3178,
+    3192,
+    3206,
+    3220
+  ],
+  "schema": "Keys are original element indices. Attribute values are [DMX type, value].",
+  "elements": {
+    "3175": {
+      "type": "DmeParticleSystemDefinition",
+      "name": "rockettrail_airstrike_line",
+      "uuid": "b4fe1f23-c45f-4ca0-a518-06922f23a3ea",
+      "attributes": {
+        "renderers": [
+          "element_array",
+          [
+            3243
+          ]
+        ],
+        "operators": [
+          "element_array",
+          [
+            3240,
+            3241,
+            3242
+          ]
+        ],
+        "initializers": [
+          "element_array",
+          [
+            3234,
+            3235,
+            3236,
+            3237,
+            3238,
+            3239
+          ]
+        ],
+        "emitters": [
+          "element_array",
+          [
+            3233
+          ]
+        ],
+        "children": [
+          "element_array",
+          [
+            3177,
+            3191,
+            3205,
+            3219
+          ]
+        ],
+        "forces": [
+          "element_array",
+          []
+        ],
+        "constraints": [
+          "element_array",
+          [
+            3176
+          ]
+        ],
+        "preventNameBasedLookup": [
+          "bool",
+          false
+        ],
+        "max_particles": [
+          "int",
+          64
+        ],
+        "initial_particles": [
+          "int",
+          0
+        ],
+        "material": [
+          "string",
+          "particle\\transformers_devastation\\td_smoke_beam_2.vmt"
+        ],
+        "bounding_box_min": [
+          "vector3",
+          [
+            -10.0,
+            -10.0,
+            -10.0
+          ]
+        ],
+        "bounding_box_max": [
+          "vector3",
+          [
+            10.0,
+            10.0,
+            10.0
+          ]
+        ],
+        "cull_radius": [
+          "float",
+          0.0
+        ],
+        "cull_cost": [
+          "float",
+          1.0
+        ],
+        "cull_control_point": [
+          "int",
+          0
+        ],
+        "cull_replacement_definition": [
+          "string",
+          ""
+        ],
+        "radius": [
+          "float",
+          1.0
+        ],
+        "color": [
+          "color",
+          [
+            255,
+            255,
+            255,
+            255
+          ]
+        ],
+        "rotation": [
+          "float",
+          0.0
+        ],
+        "rotation_speed": [
+          "float",
+          0.0
+        ],
+        "sequence_number": [
+          "int",
+          0
+        ],
+        "sequence_number 1": [
+          "int",
+          0
+        ],
+        "group id": [
+          "int",
+          0
+        ],
+        "maximum time step": [
+          "float",
+          0.10000000149011612
+        ],
+        "maximum sim tick rate": [
+          "float",
+          0.0
+        ],
+        "minimum sim tick rate": [
+          "float",
+          0.0
+        ],
+        "minimum rendered frames": [
+          "int",
+          0
+        ],
+        "control point to disable rendering if it is the camera": [
+          "int",
+          -1
+        ],
+        "maximum draw distance": [
+          "float",
+          100000.0
+        ],
+        "time to sleep when not drawn": [
+          "float",
+          8.0
+        ],
+        "Sort particles": [
+          "bool",
+          true
+        ],
+        "batch particle systems": [
+          "bool",
+          false
+        ],
+        "view model effect": [
+          "bool",
+          false
+        ]
+      }
+    },
+    "3243": {
+      "type": "DmeParticleOperator",
+      "name": "render_rope",
+      "uuid": "d4bbdb63-351c-4016-8c4a-b67a7ec7dc10",
+      "attributes": {
+        "functionName": [
+          "string",
+          "render_rope"
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "subdivision_count": [
+          "int",
+          5
+        ],
+        "texel_size": [
+          "float",
+          0.6000000238418579
+        ],
+        "texture_scroll_rate": [
+          "float",
+          -150.0
+        ]
+      }
+    },
+    "3240": {
+      "type": "DmeParticleOperator",
+      "name": "Movement Basic",
+      "uuid": "1c6c7c2c-fdc8-4572-a041-d292171adc41",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Movement Basic"
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "gravity": [
+          "vector3",
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "drag": [
+          "float",
+          0.0
+        ],
+        "max constraint passes": [
+          "int",
+          3
+        ]
+      }
+    },
+    "3241": {
+      "type": "DmeParticleOperator",
+      "name": "Radius Scale",
+      "uuid": "3be630cd-fd2f-49b9-886f-acc03afe9254",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Radius Scale"
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "start_time": [
+          "float",
+          0.0
+        ],
+        "end_time": [
+          "float",
+          0.25
+        ],
+        "radius_start_scale": [
+          "float",
+          15.0
+        ],
+        "radius_end_scale": [
+          "float",
+          0.0
+        ],
+        "ease_in_and_out": [
+          "bool",
+          false
+        ],
+        "scale_bias": [
+          "float",
+          0.5
+        ]
+      }
+    },
+    "3242": {
+      "type": "DmeParticleOperator",
+      "name": "Alpha Fade and Decay",
+      "uuid": "362d81fc-8a21-48c8-ad61-eb03fc6d261a",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Alpha Fade and Decay"
+        ],
+        "end_fade_out_time": [
+          "float",
+          0.25
+        ],
+        "start_fade_out_time": [
+          "float",
+          0.20000000298023224
+        ],
+        "end_fade_in_time": [
+          "float",
+          0.019999999552965164
+        ],
+        "start_fade_in_time": [
+          "float",
+          0.0
+        ],
+        "end_alpha": [
+          "float",
+          0.0
+        ],
+        "start_alpha": [
+          "float",
+          0.0
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3234": {
+      "type": "DmeParticleOperator",
+      "name": "Position Within Sphere Random",
+      "uuid": "c950e322-bc2b-48a8-8809-3ebd8ba14d27",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Position Within Sphere Random"
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "distance_min": [
+          "float",
+          0.0
+        ],
+        "distance_max": [
+          "float",
+          0.0
+        ],
+        "distance_bias": [
+          "vector3",
+          [
+            1.0,
+            1.0,
+            1.0
+          ]
+        ],
+        "distance_bias_absolute_value": [
+          "vector3",
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "bias in local system": [
+          "bool",
+          false
+        ],
+        "control_point_number": [
+          "int",
+          0
+        ],
+        "speed_min": [
+          "float",
+          0.0
+        ],
+        "speed_max": [
+          "float",
+          20.0
+        ],
+        "speed_random_exponent": [
+          "float",
+          1.0
+        ],
+        "speed_in_local_coordinate_system_min": [
+          "vector3",
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "speed_in_local_coordinate_system_max": [
+          "vector3",
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "create in model": [
+          "int",
+          0
+        ],
+        "randomly distribute to highest supplied Control Point": [
+          "bool",
+          false
+        ],
+        "randomly distribution growth time": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3235": {
+      "type": "DmeParticleOperator",
+      "name": "Alpha Random",
+      "uuid": "fe56b148-764a-4c2c-b095-55ffa79bbbdd",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Alpha Random"
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "alpha_min": [
+          "int",
+          0
+        ],
+        "alpha_max": [
+          "int",
+          80
+        ],
+        "alpha_random_exponent": [
+          "float",
+          1.0
+        ]
+      }
+    },
+    "3236": {
+      "type": "DmeParticleOperator",
+      "name": "Radius Random",
+      "uuid": "22c6fe8a-47c2-4bad-9494-05f19f382edf",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Radius Random"
+        ],
+        "radius_random_exponent": [
+          "float",
+          1.0
+        ],
+        "radius_max": [
+          "float",
+          3.0
+        ],
+        "radius_min": [
+          "float",
+          0.30000001192092896
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3237": {
+      "type": "DmeParticleOperator",
+      "name": "Lifetime Random",
+      "uuid": "efa92e49-c6bb-4d15-be46-04e76f190adc",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Lifetime Random"
+        ],
+        "lifetime_random_exponent": [
+          "float",
+          1.0
+        ],
+        "lifetime_max": [
+          "float",
+          9.0
+        ],
+        "lifetime_min": [
+          "float",
+          4.0
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3238": {
+      "type": "DmeParticleOperator",
+      "name": "Remap Initial Scalar",
+      "uuid": "058e2904-772b-45ba-a42f-7cb5f3e848ad",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Remap Initial Scalar"
+        ],
+        "only active within specified input range": [
+          "bool",
+          false
+        ],
+        "output is scalar of initial random range": [
+          "bool",
+          true
+        ],
+        "output maximum": [
+          "float",
+          1.0
+        ],
+        "output minimum": [
+          "float",
+          0.0
+        ],
+        "output field": [
+          "int",
+          7
+        ],
+        "input maximum": [
+          "float",
+          0.4000000059604645
+        ],
+        "input minimum": [
+          "float",
+          0.0
+        ],
+        "input field": [
+          "int",
+          8
+        ],
+        "emitter lifetime end time (seconds)": [
+          "float",
+          -1.0
+        ],
+        "emitter lifetime start time (seconds)": [
+          "float",
+          -1.0
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3239": {
+      "type": "DmeParticleOperator",
+      "name": "Color Random",
+      "uuid": "84e34916-ffb8-4616-811a-d7ca875a72e3",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Color Random"
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "color1": [
+          "color",
+          [
+            199,
+            199,
+            199,
+            255
+          ]
+        ],
+        "color2": [
+          "color",
+          [
+            144,
+            144,
+            144,
+            255
+          ]
+        ],
+        "tint_perc": [
+          "float",
+          0.0
+        ],
+        "tint control point": [
+          "int",
+          0
+        ],
+        "tint clamp min": [
+          "color",
+          [
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "tint clamp max": [
+          "color",
+          [
+            255,
+            255,
+            255,
+            255
+          ]
+        ],
+        "tint update movement threshold": [
+          "float",
+          32.0
+        ]
+      }
+    },
+    "3233": {
+      "type": "DmeParticleOperator",
+      "name": "emit_continuously",
+      "uuid": "4e95f74a-5990-468d-842d-6462a1b24d08",
+      "attributes": {
+        "functionName": [
+          "string",
+          "emit_continuously"
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "emission_start_time": [
+          "float",
+          0.0
+        ],
+        "emission_rate": [
+          "float",
+          10.0
+        ],
+        "emission_duration": [
+          "float",
+          0.0
+        ],
+        "scale emission to used control points": [
+          "float",
+          0.0
+        ],
+        "use parent particles for emission scaling": [
+          "bool",
+          false
+        ]
+      }
+    },
+    "3177": {
+      "type": "DmeParticleChild",
+      "name": "rockettrail_airstrike_spin_1",
+      "uuid": "7d8359a0-66ce-4450-b7ca-44eb4b19ccf4",
+      "attributes": {
+        "child": [
+          "element",
+          3178
+        ],
+        "delay": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3178": {
+      "type": "DmeParticleSystemDefinition",
+      "name": "rockettrail_airstrike_spin_1",
+      "uuid": "09aa1d4f-68d3-458c-af65-eaf4e10d3dfa",
+      "attributes": {
+        "renderers": [
+          "element_array",
+          [
+            3190
+          ]
+        ],
+        "operators": [
+          "element_array",
+          [
+            3185,
+            3186,
+            3187,
+            3188,
+            3189
+          ]
+        ],
+        "initializers": [
+          "element_array",
+          [
+            3180,
+            3181,
+            3182,
+            3183,
+            3184
+          ]
+        ],
+        "emitters": [
+          "element_array",
+          [
+            3179
+          ]
+        ],
+        "children": [
+          "element_array",
+          []
+        ],
+        "forces": [
+          "element_array",
+          []
+        ],
+        "constraints": [
+          "element_array",
+          []
+        ],
+        "preventNameBasedLookup": [
+          "bool",
+          false
+        ],
+        "max_particles": [
+          "int",
+          64
+        ],
+        "initial_particles": [
+          "int",
+          0
+        ],
+        "material": [
+          "string",
+          "effects\\beam_generic_3_modulate.vmt"
+        ],
+        "bounding_box_min": [
+          "vector3",
+          [
+            -10.0,
+            -10.0,
+            -10.0
+          ]
+        ],
+        "bounding_box_max": [
+          "vector3",
+          [
+            10.0,
+            10.0,
+            10.0
+          ]
+        ],
+        "cull_radius": [
+          "float",
+          0.0
+        ],
+        "cull_cost": [
+          "float",
+          1.0
+        ],
+        "cull_control_point": [
+          "int",
+          0
+        ],
+        "cull_replacement_definition": [
+          "string",
+          ""
+        ],
+        "radius": [
+          "float",
+          1.0
+        ],
+        "color": [
+          "color",
+          [
+            255,
+            255,
+            255,
+            255
+          ]
+        ],
+        "rotation": [
+          "float",
+          0.0
+        ],
+        "rotation_speed": [
+          "float",
+          0.0
+        ],
+        "sequence_number": [
+          "int",
+          0
+        ],
+        "sequence_number 1": [
+          "int",
+          0
+        ],
+        "group id": [
+          "int",
+          0
+        ],
+        "maximum time step": [
+          "float",
+          0.10000000149011612
+        ],
+        "maximum sim tick rate": [
+          "float",
+          0.0
+        ],
+        "minimum sim tick rate": [
+          "float",
+          0.0
+        ],
+        "minimum rendered frames": [
+          "int",
+          0
+        ],
+        "control point to disable rendering if it is the camera": [
+          "int",
+          -1
+        ],
+        "maximum draw distance": [
+          "float",
+          100000.0
+        ],
+        "time to sleep when not drawn": [
+          "float",
+          8.0
+        ],
+        "Sort particles": [
+          "bool",
+          true
+        ],
+        "batch particle systems": [
+          "bool",
+          false
+        ],
+        "view model effect": [
+          "bool",
+          false
+        ]
+      }
+    },
+    "3190": {
+      "type": "DmeParticleOperator",
+      "name": "render_rope",
+      "uuid": "617fdf9b-d433-4352-8cc3-d372b7d7a78e",
+      "attributes": {
+        "functionName": [
+          "string",
+          "render_rope"
+        ],
+        "texture_scroll_rate": [
+          "float",
+          0.0
+        ],
+        "texel_size": [
+          "float",
+          1.0
+        ],
+        "subdivision_count": [
+          "int",
+          5
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3185": {
+      "type": "DmeParticleOperator",
+      "name": "Movement Basic",
+      "uuid": "dca24d72-a0bf-410c-b1ba-e1e633d1a827",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Movement Basic"
+        ],
+        "max constraint passes": [
+          "int",
+          3
+        ],
+        "drag": [
+          "float",
+          0.3499999940395355
+        ],
+        "gravity": [
+          "vector3",
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3186": {
+      "type": "DmeParticleOperator",
+      "name": "Lifespan Decay",
+      "uuid": "7a43261e-0a80-4bc1-baf5-63b0a0d748f5",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Lifespan Decay"
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3187": {
+      "type": "DmeParticleOperator",
+      "name": "Alpha Fade and Decay",
+      "uuid": "b07c90b8-61db-4ba1-8dc7-3de43ec8946f",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Alpha Fade and Decay"
+        ],
+        "end_fade_out_time": [
+          "float",
+          1.0
+        ],
+        "start_fade_out_time": [
+          "float",
+          0.10000001639127731
+        ],
+        "end_fade_in_time": [
+          "float",
+          0.10000001639127731
+        ],
+        "start_fade_in_time": [
+          "float",
+          0.0
+        ],
+        "end_alpha": [
+          "float",
+          0.0
+        ],
+        "start_alpha": [
+          "float",
+          0.0
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3188": {
+      "type": "DmeParticleOperator",
+      "name": "Radius Scale",
+      "uuid": "93a1fc5c-7f52-4ed5-bbcd-1c9b72e6bd71",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Radius Scale"
+        ],
+        "scale_bias": [
+          "float",
+          0.8000000715255737
+        ],
+        "ease_in_and_out": [
+          "bool",
+          false
+        ],
+        "radius_end_scale": [
+          "float",
+          0.0
+        ],
+        "radius_start_scale": [
+          "float",
+          10.0
+        ],
+        "end_time": [
+          "float",
+          1.0
+        ],
+        "start_time": [
+          "float",
+          0.0
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3189": {
+      "type": "DmeParticleOperator",
+      "name": "Movement Lock to Control Point",
+      "uuid": "540669df-63f5-4041-a74b-4b8128dea4e4",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Movement Lock to Control Point"
+        ],
+        "lock rotation": [
+          "bool",
+          false
+        ],
+        "distance fade range": [
+          "float",
+          0.0
+        ],
+        "end_fadeout_exponent": [
+          "float",
+          1.0
+        ],
+        "end_fadeout_max": [
+          "float",
+          1.0
+        ],
+        "end_fadeout_min": [
+          "float",
+          1.0
+        ],
+        "start_fadeout_exponent": [
+          "float",
+          1.0
+        ],
+        "start_fadeout_max": [
+          "float",
+          -1.0
+        ],
+        "start_fadeout_min": [
+          "float",
+          -1.0
+        ],
+        "control_point_number": [
+          "int",
+          0
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3180": {
+      "type": "DmeParticleOperator",
+      "name": "Position Within Sphere Random",
+      "uuid": "fbb7ec27-49c9-4502-84f8-dff20d9ddec7",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Position Within Sphere Random"
+        ],
+        "randomly distribution growth time": [
+          "float",
+          0.0
+        ],
+        "randomly distribute to highest supplied Control Point": [
+          "bool",
+          false
+        ],
+        "create in model": [
+          "int",
+          0
+        ],
+        "speed_in_local_coordinate_system_max": [
+          "vector3",
+          [
+            0.0,
+            0.0,
+            200.0
+          ]
+        ],
+        "speed_in_local_coordinate_system_min": [
+          "vector3",
+          [
+            0.0,
+            0.0,
+            200.0
+          ]
+        ],
+        "speed_random_exponent": [
+          "float",
+          1.0
+        ],
+        "speed_max": [
+          "float",
+          0.0
+        ],
+        "speed_min": [
+          "float",
+          0.0
+        ],
+        "control_point_number": [
+          "int",
+          0
+        ],
+        "bias in local system": [
+          "bool",
+          false
+        ],
+        "distance_bias_absolute_value": [
+          "vector3",
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "distance_bias": [
+          "vector3",
+          [
+            1.0,
+            1.0,
+            1.0
+          ]
+        ],
+        "distance_max": [
+          "float",
+          0.0
+        ],
+        "distance_min": [
+          "float",
+          0.0
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3181": {
+      "type": "DmeParticleOperator",
+      "name": "Lifetime Random",
+      "uuid": "98eb9c57-83b8-49ce-94aa-c4908737b8a5",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Lifetime Random"
+        ],
+        "lifetime_random_exponent": [
+          "float",
+          1.0
+        ],
+        "lifetime_max": [
+          "float",
+          0.3499999940395355
+        ],
+        "lifetime_min": [
+          "float",
+          0.3499999940395355
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3182": {
+      "type": "DmeParticleOperator",
+      "name": "Color Random",
+      "uuid": "3a876266-14df-4f29-ab64-78189b0f17a6",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Color Random"
+        ],
+        "tint update movement threshold": [
+          "float",
+          32.0
+        ],
+        "tint clamp max": [
+          "color",
+          [
+            255,
+            255,
+            255,
+            255
+          ]
+        ],
+        "tint clamp min": [
+          "color",
+          [
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "tint control point": [
+          "int",
+          0
+        ],
+        "tint_perc": [
+          "float",
+          0.0
+        ],
+        "color2": [
+          "color",
+          [
+            126,
+            126,
+            126,
+            255
+          ]
+        ],
+        "color1": [
+          "color",
+          [
+            88,
+            88,
+            88,
+            255
+          ]
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3183": {
+      "type": "DmeParticleOperator",
+      "name": "Alpha Random",
+      "uuid": "5dde4f39-180b-48a3-83ea-b4d9ff3c313a",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Alpha Random"
+        ],
+        "alpha_random_exponent": [
+          "float",
+          1.0
+        ],
+        "alpha_max": [
+          "int",
+          160
+        ],
+        "alpha_min": [
+          "int",
+          160
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3184": {
+      "type": "DmeParticleOperator",
+      "name": "Position Modify Offset Random",
+      "uuid": "6a517f92-8d7b-4a77-8726-3d7154c694e3",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Position Modify Offset Random"
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "control_point_number": [
+          "int",
+          0
+        ],
+        "offset min": [
+          "vector3",
+          [
+            -10.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "offset max": [
+          "vector3",
+          [
+            -10.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "offset in local space 0/1": [
+          "bool",
+          true
+        ],
+        "offset proportional to radius 0/1": [
+          "bool",
+          false
+        ]
+      }
+    },
+    "3179": {
+      "type": "DmeParticleOperator",
+      "name": "emit_continuously",
+      "uuid": "adbefd10-3f0b-4a76-8899-239b95e617d0",
+      "attributes": {
+        "functionName": [
+          "string",
+          "emit_continuously"
+        ],
+        "use parent particles for emission scaling": [
+          "bool",
+          false
+        ],
+        "scale emission to used control points": [
+          "float",
+          0.0
+        ],
+        "emission_duration": [
+          "float",
+          0.0
+        ],
+        "emission_rate": [
+          "float",
+          40.0
+        ],
+        "emission_start_time": [
+          "float",
+          0.10000000149011612
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3191": {
+      "type": "DmeParticleChild",
+      "name": "rockettrail_airstrike_spin_2",
+      "uuid": "24f0f5b6-5d51-41dc-8ac3-3d175422bc42",
+      "attributes": {
+        "child": [
+          "element",
+          3192
+        ],
+        "delay": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3192": {
+      "type": "DmeParticleSystemDefinition",
+      "name": "rockettrail_airstrike_spin_2",
+      "uuid": "f78a57b3-6128-461a-9fc4-bcbcca54ed06",
+      "attributes": {
+        "renderers": [
+          "element_array",
+          [
+            3204
+          ]
+        ],
+        "operators": [
+          "element_array",
+          [
+            3199,
+            3200,
+            3201,
+            3202,
+            3203
+          ]
+        ],
+        "initializers": [
+          "element_array",
+          [
+            3194,
+            3195,
+            3196,
+            3197,
+            3198
+          ]
+        ],
+        "emitters": [
+          "element_array",
+          [
+            3193
+          ]
+        ],
+        "children": [
+          "element_array",
+          []
+        ],
+        "forces": [
+          "element_array",
+          []
+        ],
+        "constraints": [
+          "element_array",
+          []
+        ],
+        "preventNameBasedLookup": [
+          "bool",
+          false
+        ],
+        "max_particles": [
+          "int",
+          64
+        ],
+        "initial_particles": [
+          "int",
+          0
+        ],
+        "material": [
+          "string",
+          "effects\\beam_generic_3_modulate.vmt"
+        ],
+        "bounding_box_min": [
+          "vector3",
+          [
+            -10.0,
+            -10.0,
+            -10.0
+          ]
+        ],
+        "bounding_box_max": [
+          "vector3",
+          [
+            10.0,
+            10.0,
+            10.0
+          ]
+        ],
+        "cull_radius": [
+          "float",
+          0.0
+        ],
+        "cull_cost": [
+          "float",
+          1.0
+        ],
+        "cull_control_point": [
+          "int",
+          0
+        ],
+        "cull_replacement_definition": [
+          "string",
+          ""
+        ],
+        "radius": [
+          "float",
+          1.0
+        ],
+        "color": [
+          "color",
+          [
+            255,
+            255,
+            255,
+            255
+          ]
+        ],
+        "rotation": [
+          "float",
+          0.0
+        ],
+        "rotation_speed": [
+          "float",
+          0.0
+        ],
+        "sequence_number": [
+          "int",
+          0
+        ],
+        "sequence_number 1": [
+          "int",
+          0
+        ],
+        "group id": [
+          "int",
+          0
+        ],
+        "maximum time step": [
+          "float",
+          0.10000000149011612
+        ],
+        "maximum sim tick rate": [
+          "float",
+          0.0
+        ],
+        "minimum sim tick rate": [
+          "float",
+          0.0
+        ],
+        "minimum rendered frames": [
+          "int",
+          0
+        ],
+        "control point to disable rendering if it is the camera": [
+          "int",
+          -1
+        ],
+        "maximum draw distance": [
+          "float",
+          100000.0
+        ],
+        "time to sleep when not drawn": [
+          "float",
+          8.0
+        ],
+        "Sort particles": [
+          "bool",
+          true
+        ],
+        "batch particle systems": [
+          "bool",
+          false
+        ],
+        "view model effect": [
+          "bool",
+          false
+        ]
+      }
+    },
+    "3204": {
+      "type": "DmeParticleOperator",
+      "name": "render_rope",
+      "uuid": "9fc1cb67-5f0e-45e2-9ca7-eb41fbefebe2",
+      "attributes": {
+        "functionName": [
+          "string",
+          "render_rope"
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "subdivision_count": [
+          "int",
+          5
+        ],
+        "texel_size": [
+          "float",
+          1.0
+        ],
+        "texture_scroll_rate": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3199": {
+      "type": "DmeParticleOperator",
+      "name": "Lifespan Decay",
+      "uuid": "32335117-d3cf-4909-adad-cda8edbec774",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Lifespan Decay"
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3200": {
+      "type": "DmeParticleOperator",
+      "name": "Movement Lock to Control Point",
+      "uuid": "22ffc3f2-c63a-4b2d-8bdd-a3271c137348",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Movement Lock to Control Point"
+        ],
+        "lock rotation": [
+          "bool",
+          false
+        ],
+        "distance fade range": [
+          "float",
+          0.0
+        ],
+        "end_fadeout_exponent": [
+          "float",
+          1.0
+        ],
+        "end_fadeout_max": [
+          "float",
+          1.0
+        ],
+        "end_fadeout_min": [
+          "float",
+          1.0
+        ],
+        "start_fadeout_exponent": [
+          "float",
+          1.0
+        ],
+        "start_fadeout_max": [
+          "float",
+          -1.0
+        ],
+        "start_fadeout_min": [
+          "float",
+          -1.0
+        ],
+        "control_point_number": [
+          "int",
+          0
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3201": {
+      "type": "DmeParticleOperator",
+      "name": "Movement Basic",
+      "uuid": "3f3627b8-7973-4694-be4b-f38702747e8d",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Movement Basic"
+        ],
+        "max constraint passes": [
+          "int",
+          3
+        ],
+        "drag": [
+          "float",
+          0.3499999940395355
+        ],
+        "gravity": [
+          "vector3",
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3202": {
+      "type": "DmeParticleOperator",
+      "name": "Radius Scale",
+      "uuid": "121f4515-2b61-4cd0-882a-1cdf3b6af1bb",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Radius Scale"
+        ],
+        "scale_bias": [
+          "float",
+          0.8000000715255737
+        ],
+        "ease_in_and_out": [
+          "bool",
+          false
+        ],
+        "radius_end_scale": [
+          "float",
+          0.0
+        ],
+        "radius_start_scale": [
+          "float",
+          10.0
+        ],
+        "end_time": [
+          "float",
+          1.0
+        ],
+        "start_time": [
+          "float",
+          0.0
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3203": {
+      "type": "DmeParticleOperator",
+      "name": "Alpha Fade and Decay",
+      "uuid": "b68306f6-5ebf-4130-a340-42019ba4886c",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Alpha Fade and Decay"
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "start_alpha": [
+          "float",
+          0.0
+        ],
+        "end_alpha": [
+          "float",
+          0.0
+        ],
+        "start_fade_in_time": [
+          "float",
+          0.0
+        ],
+        "end_fade_in_time": [
+          "float",
+          0.10000001639127731
+        ],
+        "start_fade_out_time": [
+          "float",
+          0.10000001639127731
+        ],
+        "end_fade_out_time": [
+          "float",
+          1.0
+        ]
+      }
+    },
+    "3194": {
+      "type": "DmeParticleOperator",
+      "name": "Position Within Sphere Random",
+      "uuid": "3e7d4c79-7c73-45f6-9570-7f29b8e9cd38",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Position Within Sphere Random"
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "distance_min": [
+          "float",
+          0.0
+        ],
+        "distance_max": [
+          "float",
+          0.0
+        ],
+        "distance_bias": [
+          "vector3",
+          [
+            1.0,
+            1.0,
+            1.0
+          ]
+        ],
+        "distance_bias_absolute_value": [
+          "vector3",
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "bias in local system": [
+          "bool",
+          false
+        ],
+        "control_point_number": [
+          "int",
+          0
+        ],
+        "speed_min": [
+          "float",
+          0.0
+        ],
+        "speed_max": [
+          "float",
+          0.0
+        ],
+        "speed_random_exponent": [
+          "float",
+          1.0
+        ],
+        "speed_in_local_coordinate_system_min": [
+          "vector3",
+          [
+            0.0,
+            173.2050018310547,
+            -99.9999008178711
+          ]
+        ],
+        "speed_in_local_coordinate_system_max": [
+          "vector3",
+          [
+            0.0,
+            173.2050018310547,
+            -99.9999008178711
+          ]
+        ],
+        "create in model": [
+          "int",
+          0
+        ],
+        "randomly distribute to highest supplied Control Point": [
+          "bool",
+          false
+        ],
+        "randomly distribution growth time": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3195": {
+      "type": "DmeParticleOperator",
+      "name": "Lifetime Random",
+      "uuid": "0c5d16db-6049-44d2-a30b-3edecb09d1eb",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Lifetime Random"
+        ],
+        "lifetime_random_exponent": [
+          "float",
+          1.0
+        ],
+        "lifetime_max": [
+          "float",
+          0.3499999940395355
+        ],
+        "lifetime_min": [
+          "float",
+          0.3499999940395355
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3196": {
+      "type": "DmeParticleOperator",
+      "name": "Alpha Random",
+      "uuid": "8b778dfd-4645-48b2-ac2c-d5e0dad30f55",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Alpha Random"
+        ],
+        "alpha_random_exponent": [
+          "float",
+          1.0
+        ],
+        "alpha_max": [
+          "int",
+          160
+        ],
+        "alpha_min": [
+          "int",
+          160
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3197": {
+      "type": "DmeParticleOperator",
+      "name": "Position Modify Offset Random",
+      "uuid": "acec6de0-5dd4-4373-92f4-3ce7277645f1",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Position Modify Offset Random"
+        ],
+        "offset proportional to radius 0/1": [
+          "bool",
+          false
+        ],
+        "offset in local space 0/1": [
+          "bool",
+          true
+        ],
+        "offset max": [
+          "vector3",
+          [
+            -10.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "offset min": [
+          "vector3",
+          [
+            -10.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "control_point_number": [
+          "int",
+          0
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3198": {
+      "type": "DmeParticleOperator",
+      "name": "Color Random",
+      "uuid": "a848e583-8bf5-4729-b973-a3e2e06ade18",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Color Random"
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "color1": [
+          "color",
+          [
+            88,
+            88,
+            88,
+            255
+          ]
+        ],
+        "color2": [
+          "color",
+          [
+            126,
+            126,
+            126,
+            255
+          ]
+        ],
+        "tint_perc": [
+          "float",
+          0.0
+        ],
+        "tint control point": [
+          "int",
+          0
+        ],
+        "tint clamp min": [
+          "color",
+          [
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "tint clamp max": [
+          "color",
+          [
+            255,
+            255,
+            255,
+            255
+          ]
+        ],
+        "tint update movement threshold": [
+          "float",
+          32.0
+        ]
+      }
+    },
+    "3193": {
+      "type": "DmeParticleOperator",
+      "name": "emit_continuously",
+      "uuid": "445c60e3-37e9-433c-b1a9-89e0ccf3766f",
+      "attributes": {
+        "functionName": [
+          "string",
+          "emit_continuously"
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "emission_start_time": [
+          "float",
+          0.10000000149011612
+        ],
+        "emission_rate": [
+          "float",
+          40.0
+        ],
+        "emission_duration": [
+          "float",
+          0.0
+        ],
+        "scale emission to used control points": [
+          "float",
+          0.0
+        ],
+        "use parent particles for emission scaling": [
+          "bool",
+          false
+        ]
+      }
+    },
+    "3205": {
+      "type": "DmeParticleChild",
+      "name": "rockettrail_airstrike_spin_3",
+      "uuid": "a65d8cf4-539a-4d2e-8c31-c14de52bb78f",
+      "attributes": {
+        "child": [
+          "element",
+          3206
+        ],
+        "delay": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3206": {
+      "type": "DmeParticleSystemDefinition",
+      "name": "rockettrail_airstrike_spin_3",
+      "uuid": "7c9acdf0-0bf9-4e89-b801-cffcf14e199a",
+      "attributes": {
+        "renderers": [
+          "element_array",
+          [
+            3218
+          ]
+        ],
+        "operators": [
+          "element_array",
+          [
+            3213,
+            3214,
+            3215,
+            3216,
+            3217
+          ]
+        ],
+        "initializers": [
+          "element_array",
+          [
+            3208,
+            3209,
+            3210,
+            3211,
+            3212
+          ]
+        ],
+        "emitters": [
+          "element_array",
+          [
+            3207
+          ]
+        ],
+        "children": [
+          "element_array",
+          []
+        ],
+        "forces": [
+          "element_array",
+          []
+        ],
+        "constraints": [
+          "element_array",
+          []
+        ],
+        "preventNameBasedLookup": [
+          "bool",
+          false
+        ],
+        "max_particles": [
+          "int",
+          64
+        ],
+        "initial_particles": [
+          "int",
+          0
+        ],
+        "material": [
+          "string",
+          "effects\\beam_generic_3_modulate.vmt"
+        ],
+        "bounding_box_min": [
+          "vector3",
+          [
+            -10.0,
+            -10.0,
+            -10.0
+          ]
+        ],
+        "bounding_box_max": [
+          "vector3",
+          [
+            10.0,
+            10.0,
+            10.0
+          ]
+        ],
+        "cull_radius": [
+          "float",
+          0.0
+        ],
+        "cull_cost": [
+          "float",
+          1.0
+        ],
+        "cull_control_point": [
+          "int",
+          0
+        ],
+        "cull_replacement_definition": [
+          "string",
+          ""
+        ],
+        "radius": [
+          "float",
+          1.0
+        ],
+        "color": [
+          "color",
+          [
+            255,
+            255,
+            255,
+            255
+          ]
+        ],
+        "rotation": [
+          "float",
+          0.0
+        ],
+        "rotation_speed": [
+          "float",
+          0.0
+        ],
+        "sequence_number": [
+          "int",
+          0
+        ],
+        "sequence_number 1": [
+          "int",
+          0
+        ],
+        "group id": [
+          "int",
+          0
+        ],
+        "maximum time step": [
+          "float",
+          0.10000000149011612
+        ],
+        "maximum sim tick rate": [
+          "float",
+          0.0
+        ],
+        "minimum sim tick rate": [
+          "float",
+          0.0
+        ],
+        "minimum rendered frames": [
+          "int",
+          0
+        ],
+        "control point to disable rendering if it is the camera": [
+          "int",
+          -1
+        ],
+        "maximum draw distance": [
+          "float",
+          100000.0
+        ],
+        "time to sleep when not drawn": [
+          "float",
+          8.0
+        ],
+        "Sort particles": [
+          "bool",
+          true
+        ],
+        "batch particle systems": [
+          "bool",
+          false
+        ],
+        "view model effect": [
+          "bool",
+          false
+        ]
+      }
+    },
+    "3218": {
+      "type": "DmeParticleOperator",
+      "name": "render_rope",
+      "uuid": "197553ed-692e-4d77-abce-ceb3259305a6",
+      "attributes": {
+        "functionName": [
+          "string",
+          "render_rope"
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "subdivision_count": [
+          "int",
+          5
+        ],
+        "texel_size": [
+          "float",
+          1.0
+        ],
+        "texture_scroll_rate": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3213": {
+      "type": "DmeParticleOperator",
+      "name": "Lifespan Decay",
+      "uuid": "afa166f6-220b-425f-b8a8-97db0a009bc5",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Lifespan Decay"
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3214": {
+      "type": "DmeParticleOperator",
+      "name": "Movement Lock to Control Point",
+      "uuid": "a9292ac6-6f55-4290-b484-d651e119cba3",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Movement Lock to Control Point"
+        ],
+        "lock rotation": [
+          "bool",
+          false
+        ],
+        "distance fade range": [
+          "float",
+          0.0
+        ],
+        "end_fadeout_exponent": [
+          "float",
+          1.0
+        ],
+        "end_fadeout_max": [
+          "float",
+          1.0
+        ],
+        "end_fadeout_min": [
+          "float",
+          1.0
+        ],
+        "start_fadeout_exponent": [
+          "float",
+          1.0
+        ],
+        "start_fadeout_max": [
+          "float",
+          -1.0
+        ],
+        "start_fadeout_min": [
+          "float",
+          -1.0
+        ],
+        "control_point_number": [
+          "int",
+          0
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3215": {
+      "type": "DmeParticleOperator",
+      "name": "Movement Basic",
+      "uuid": "8c5d25d3-1a07-4f59-a975-0547c1b29c84",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Movement Basic"
+        ],
+        "max constraint passes": [
+          "int",
+          3
+        ],
+        "drag": [
+          "float",
+          0.3499999940395355
+        ],
+        "gravity": [
+          "vector3",
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3216": {
+      "type": "DmeParticleOperator",
+      "name": "Radius Scale",
+      "uuid": "2d283d12-e558-4333-82c2-204f7ce9adf1",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Radius Scale"
+        ],
+        "scale_bias": [
+          "float",
+          0.8000000715255737
+        ],
+        "ease_in_and_out": [
+          "bool",
+          false
+        ],
+        "radius_end_scale": [
+          "float",
+          0.0
+        ],
+        "radius_start_scale": [
+          "float",
+          10.0
+        ],
+        "end_time": [
+          "float",
+          1.0
+        ],
+        "start_time": [
+          "float",
+          0.0
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3217": {
+      "type": "DmeParticleOperator",
+      "name": "Alpha Fade and Decay",
+      "uuid": "fbaa7d84-be5e-4af9-bf24-d17dfeaae2f7",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Alpha Fade and Decay"
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "start_alpha": [
+          "float",
+          0.0
+        ],
+        "end_alpha": [
+          "float",
+          0.0
+        ],
+        "start_fade_in_time": [
+          "float",
+          0.0
+        ],
+        "end_fade_in_time": [
+          "float",
+          0.10000001639127731
+        ],
+        "start_fade_out_time": [
+          "float",
+          0.10000001639127731
+        ],
+        "end_fade_out_time": [
+          "float",
+          1.0
+        ]
+      }
+    },
+    "3208": {
+      "type": "DmeParticleOperator",
+      "name": "Alpha Random",
+      "uuid": "9019fe0e-2eba-4059-8466-4cc4d75972b3",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Alpha Random"
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "alpha_min": [
+          "int",
+          160
+        ],
+        "alpha_max": [
+          "int",
+          160
+        ],
+        "alpha_random_exponent": [
+          "float",
+          1.0
+        ]
+      }
+    },
+    "3209": {
+      "type": "DmeParticleOperator",
+      "name": "Lifetime Random",
+      "uuid": "1a81d19d-99e7-43be-a085-8e01ab4b1156",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Lifetime Random"
+        ],
+        "lifetime_random_exponent": [
+          "float",
+          1.0
+        ],
+        "lifetime_max": [
+          "float",
+          0.3499999940395355
+        ],
+        "lifetime_min": [
+          "float",
+          0.3499999940395355
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3210": {
+      "type": "DmeParticleOperator",
+      "name": "Position Within Sphere Random",
+      "uuid": "15b7b88b-6f2d-4f90-adb7-b274ad765fe0",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Position Within Sphere Random"
+        ],
+        "randomly distribution growth time": [
+          "float",
+          0.0
+        ],
+        "randomly distribute to highest supplied Control Point": [
+          "bool",
+          false
+        ],
+        "create in model": [
+          "int",
+          0
+        ],
+        "speed_in_local_coordinate_system_max": [
+          "vector3",
+          [
+            0.0,
+            -173.2050018310547,
+            -99.9999008178711
+          ]
+        ],
+        "speed_in_local_coordinate_system_min": [
+          "vector3",
+          [
+            0.0,
+            -173.2050018310547,
+            -99.9999008178711
+          ]
+        ],
+        "speed_random_exponent": [
+          "float",
+          1.0
+        ],
+        "speed_max": [
+          "float",
+          0.0
+        ],
+        "speed_min": [
+          "float",
+          0.0
+        ],
+        "control_point_number": [
+          "int",
+          0
+        ],
+        "bias in local system": [
+          "bool",
+          false
+        ],
+        "distance_bias_absolute_value": [
+          "vector3",
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "distance_bias": [
+          "vector3",
+          [
+            1.0,
+            1.0,
+            1.0
+          ]
+        ],
+        "distance_max": [
+          "float",
+          0.0
+        ],
+        "distance_min": [
+          "float",
+          0.0
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3211": {
+      "type": "DmeParticleOperator",
+      "name": "Position Modify Offset Random",
+      "uuid": "e9c59767-b972-4fd7-962d-c0e0633d8bf5",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Position Modify Offset Random"
+        ],
+        "offset proportional to radius 0/1": [
+          "bool",
+          false
+        ],
+        "offset in local space 0/1": [
+          "bool",
+          true
+        ],
+        "offset max": [
+          "vector3",
+          [
+            -10.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "offset min": [
+          "vector3",
+          [
+            -10.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "control_point_number": [
+          "int",
+          0
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3212": {
+      "type": "DmeParticleOperator",
+      "name": "Color Random",
+      "uuid": "31cd8a29-9927-4db9-88d3-11ef61c75d6b",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Color Random"
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "color1": [
+          "color",
+          [
+            88,
+            88,
+            88,
+            255
+          ]
+        ],
+        "color2": [
+          "color",
+          [
+            126,
+            126,
+            126,
+            255
+          ]
+        ],
+        "tint_perc": [
+          "float",
+          0.0
+        ],
+        "tint control point": [
+          "int",
+          0
+        ],
+        "tint clamp min": [
+          "color",
+          [
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "tint clamp max": [
+          "color",
+          [
+            255,
+            255,
+            255,
+            255
+          ]
+        ],
+        "tint update movement threshold": [
+          "float",
+          32.0
+        ]
+      }
+    },
+    "3207": {
+      "type": "DmeParticleOperator",
+      "name": "emit_continuously",
+      "uuid": "46bd3068-8eff-417b-b9df-66d5a3dda58f",
+      "attributes": {
+        "functionName": [
+          "string",
+          "emit_continuously"
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "emission_start_time": [
+          "float",
+          0.10000000149011612
+        ],
+        "emission_rate": [
+          "float",
+          40.0
+        ],
+        "emission_duration": [
+          "float",
+          0.0
+        ],
+        "scale emission to used control points": [
+          "float",
+          0.0
+        ],
+        "use parent particles for emission scaling": [
+          "bool",
+          false
+        ]
+      }
+    },
+    "3219": {
+      "type": "DmeParticleChild",
+      "name": "rockettrail_airstrike_wisp",
+      "uuid": "c0b67db1-2702-4aad-b83a-4290d2adcb3a",
+      "attributes": {
+        "child": [
+          "element",
+          3220
+        ],
+        "delay": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3220": {
+      "type": "DmeParticleSystemDefinition",
+      "name": "rockettrail_airstrike_wisp",
+      "uuid": "26ba202b-477d-4861-8907-59c739715a8d",
+      "attributes": {
+        "renderers": [
+          "element_array",
+          [
+            3232
+          ]
+        ],
+        "operators": [
+          "element_array",
+          [
+            3229,
+            3230,
+            3231
+          ]
+        ],
+        "initializers": [
+          "element_array",
+          [
+            3223,
+            3224,
+            3225,
+            3226,
+            3227,
+            3228
+          ]
+        ],
+        "emitters": [
+          "element_array",
+          [
+            3222
+          ]
+        ],
+        "children": [
+          "element_array",
+          []
+        ],
+        "forces": [
+          "element_array",
+          []
+        ],
+        "constraints": [
+          "element_array",
+          [
+            3221
+          ]
+        ],
+        "preventNameBasedLookup": [
+          "bool",
+          false
+        ],
+        "max_particles": [
+          "int",
+          64
+        ],
+        "initial_particles": [
+          "int",
+          0
+        ],
+        "material": [
+          "string",
+          "particle\\transformers_devastation\\td_smoke_beam_2.vmt"
+        ],
+        "bounding_box_min": [
+          "vector3",
+          [
+            -10.0,
+            -10.0,
+            -10.0
+          ]
+        ],
+        "bounding_box_max": [
+          "vector3",
+          [
+            10.0,
+            10.0,
+            10.0
+          ]
+        ],
+        "cull_radius": [
+          "float",
+          0.0
+        ],
+        "cull_cost": [
+          "float",
+          1.0
+        ],
+        "cull_control_point": [
+          "int",
+          0
+        ],
+        "cull_replacement_definition": [
+          "string",
+          ""
+        ],
+        "radius": [
+          "float",
+          1.0
+        ],
+        "color": [
+          "color",
+          [
+            255,
+            255,
+            255,
+            255
+          ]
+        ],
+        "rotation": [
+          "float",
+          0.0
+        ],
+        "rotation_speed": [
+          "float",
+          0.0
+        ],
+        "sequence_number": [
+          "int",
+          0
+        ],
+        "sequence_number 1": [
+          "int",
+          0
+        ],
+        "group id": [
+          "int",
+          0
+        ],
+        "maximum time step": [
+          "float",
+          0.10000000149011612
+        ],
+        "maximum sim tick rate": [
+          "float",
+          0.0
+        ],
+        "minimum sim tick rate": [
+          "float",
+          0.0
+        ],
+        "minimum rendered frames": [
+          "int",
+          0
+        ],
+        "control point to disable rendering if it is the camera": [
+          "int",
+          -1
+        ],
+        "maximum draw distance": [
+          "float",
+          100000.0
+        ],
+        "time to sleep when not drawn": [
+          "float",
+          8.0
+        ],
+        "Sort particles": [
+          "bool",
+          true
+        ],
+        "batch particle systems": [
+          "bool",
+          false
+        ],
+        "view model effect": [
+          "bool",
+          false
+        ]
+      }
+    },
+    "3232": {
+      "type": "DmeParticleOperator",
+      "name": "render_rope",
+      "uuid": "08205359-0692-40ac-82d3-91c665eb9ceb",
+      "attributes": {
+        "functionName": [
+          "string",
+          "render_rope"
+        ],
+        "texture_scroll_rate": [
+          "float",
+          -150.0
+        ],
+        "texel_size": [
+          "float",
+          0.6000000238418579
+        ],
+        "subdivision_count": [
+          "int",
+          5
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3229": {
+      "type": "DmeParticleOperator",
+      "name": "Movement Basic",
+      "uuid": "57abaf5f-61ce-4065-bd2e-ca4235191c91",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Movement Basic"
+        ],
+        "max constraint passes": [
+          "int",
+          3
+        ],
+        "drag": [
+          "float",
+          0.0
+        ],
+        "gravity": [
+          "vector3",
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3230": {
+      "type": "DmeParticleOperator",
+      "name": "Radius Scale",
+      "uuid": "bd0129d3-553b-43ee-9886-9604434e55a2",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Radius Scale"
+        ],
+        "scale_bias": [
+          "float",
+          0.5
+        ],
+        "ease_in_and_out": [
+          "bool",
+          false
+        ],
+        "radius_end_scale": [
+          "float",
+          0.0
+        ],
+        "radius_start_scale": [
+          "float",
+          15.0
+        ],
+        "end_time": [
+          "float",
+          0.25
+        ],
+        "start_time": [
+          "float",
+          0.0
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3231": {
+      "type": "DmeParticleOperator",
+      "name": "Alpha Fade and Decay",
+      "uuid": "365cabfd-22fc-40d2-a098-891b54dec84a",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Alpha Fade and Decay"
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "start_alpha": [
+          "float",
+          0.0
+        ],
+        "end_alpha": [
+          "float",
+          0.0
+        ],
+        "start_fade_in_time": [
+          "float",
+          0.0
+        ],
+        "end_fade_in_time": [
+          "float",
+          0.019999999552965164
+        ],
+        "start_fade_out_time": [
+          "float",
+          0.20000000298023224
+        ],
+        "end_fade_out_time": [
+          "float",
+          0.25
+        ]
+      }
+    },
+    "3223": {
+      "type": "DmeParticleOperator",
+      "name": "Position Within Sphere Random",
+      "uuid": "6d0da2be-8238-4ff3-87b1-2fc72a84da29",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Position Within Sphere Random"
+        ],
+        "randomly distribution growth time": [
+          "float",
+          0.0
+        ],
+        "randomly distribute to highest supplied Control Point": [
+          "bool",
+          false
+        ],
+        "create in model": [
+          "int",
+          0
+        ],
+        "speed_in_local_coordinate_system_max": [
+          "vector3",
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "speed_in_local_coordinate_system_min": [
+          "vector3",
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "speed_random_exponent": [
+          "float",
+          1.0
+        ],
+        "speed_max": [
+          "float",
+          20.0
+        ],
+        "speed_min": [
+          "float",
+          0.0
+        ],
+        "control_point_number": [
+          "int",
+          0
+        ],
+        "bias in local system": [
+          "bool",
+          false
+        ],
+        "distance_bias_absolute_value": [
+          "vector3",
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "distance_bias": [
+          "vector3",
+          [
+            1.0,
+            1.0,
+            1.0
+          ]
+        ],
+        "distance_max": [
+          "float",
+          0.0
+        ],
+        "distance_min": [
+          "float",
+          0.0
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3224": {
+      "type": "DmeParticleOperator",
+      "name": "Alpha Random",
+      "uuid": "b236da8e-a295-4fb9-9a57-aa51c0850a32",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Alpha Random"
+        ],
+        "alpha_random_exponent": [
+          "float",
+          1.0
+        ],
+        "alpha_max": [
+          "int",
+          25
+        ],
+        "alpha_min": [
+          "int",
+          0
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3225": {
+      "type": "DmeParticleOperator",
+      "name": "Radius Random",
+      "uuid": "1019d7b1-2974-4cb6-84a0-d06e5de89594",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Radius Random"
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "radius_min": [
+          "float",
+          0.30000001192092896
+        ],
+        "radius_max": [
+          "float",
+          3.0
+        ],
+        "radius_random_exponent": [
+          "float",
+          1.0
+        ]
+      }
+    },
+    "3226": {
+      "type": "DmeParticleOperator",
+      "name": "Lifetime Random",
+      "uuid": "eba43726-6074-476a-977a-614777becd80",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Lifetime Random"
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "lifetime_min": [
+          "float",
+          4.0
+        ],
+        "lifetime_max": [
+          "float",
+          9.0
+        ],
+        "lifetime_random_exponent": [
+          "float",
+          1.0
+        ]
+      }
+    },
+    "3227": {
+      "type": "DmeParticleOperator",
+      "name": "Remap Initial Scalar",
+      "uuid": "35649fae-45ba-4a6a-8c9e-02aaa69a6592",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Remap Initial Scalar"
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "emitter lifetime start time (seconds)": [
+          "float",
+          -1.0
+        ],
+        "emitter lifetime end time (seconds)": [
+          "float",
+          -1.0
+        ],
+        "input field": [
+          "int",
+          8
+        ],
+        "input minimum": [
+          "float",
+          0.0
+        ],
+        "input maximum": [
+          "float",
+          0.4000000059604645
+        ],
+        "output field": [
+          "int",
+          7
+        ],
+        "output minimum": [
+          "float",
+          0.0
+        ],
+        "output maximum": [
+          "float",
+          1.0
+        ],
+        "output is scalar of initial random range": [
+          "bool",
+          true
+        ],
+        "only active within specified input range": [
+          "bool",
+          false
+        ]
+      }
+    },
+    "3228": {
+      "type": "DmeParticleOperator",
+      "name": "Color Random",
+      "uuid": "8a530475-3ff1-4425-b1e8-130fdb530bc9",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Color Random"
+        ],
+        "tint update movement threshold": [
+          "float",
+          32.0
+        ],
+        "tint clamp max": [
+          "color",
+          [
+            255,
+            255,
+            255,
+            255
+          ]
+        ],
+        "tint clamp min": [
+          "color",
+          [
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "tint control point": [
+          "int",
+          0
+        ],
+        "tint_perc": [
+          "float",
+          0.0
+        ],
+        "color2": [
+          "color",
+          [
+            144,
+            144,
+            144,
+            255
+          ]
+        ],
+        "color1": [
+          "color",
+          [
+            199,
+            199,
+            199,
+            255
+          ]
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3222": {
+      "type": "DmeParticleOperator",
+      "name": "emit_continuously",
+      "uuid": "cc604580-2430-415c-98e4-89dff41d32ec",
+      "attributes": {
+        "functionName": [
+          "string",
+          "emit_continuously"
+        ],
+        "use parent particles for emission scaling": [
+          "bool",
+          false
+        ],
+        "scale emission to used control points": [
+          "float",
+          0.0
+        ],
+        "emission_duration": [
+          "float",
+          0.0
+        ],
+        "emission_rate": [
+          "float",
+          10.0
+        ],
+        "emission_start_time": [
+          "float",
+          0.0
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3221": {
+      "type": "DmeParticleOperator",
+      "name": "Collision via traces",
+      "uuid": "4052d182-16a2-4ee5-9472-3b532604bef4",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Collision via traces"
+        ],
+        "trace accuracy tolerance": [
+          "float",
+          24.0
+        ],
+        "kill particle on collision": [
+          "bool",
+          false
+        ],
+        "control point movement distance tolerance": [
+          "float",
+          5.0
+        ],
+        "control point offset for fast collisions": [
+          "vector3",
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "collision group": [
+          "string",
+          "DEBRIS"
+        ],
+        "brush only": [
+          "bool",
+          true
+        ],
+        "radius scale": [
+          "float",
+          1.0
+        ],
+        "amount of slide": [
+          "float",
+          0.0
+        ],
+        "amount of bounce": [
+          "float",
+          0.0
+        ],
+        "collision mode": [
+          "int",
+          0
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ]
+      }
+    },
+    "3176": {
+      "type": "DmeParticleOperator",
+      "name": "Collision via traces",
+      "uuid": "c9553206-ef36-4e10-93c7-05293d8031d4",
+      "attributes": {
+        "functionName": [
+          "string",
+          "Collision via traces"
+        ],
+        "operator start fadein": [
+          "float",
+          0.0
+        ],
+        "operator end fadein": [
+          "float",
+          0.0
+        ],
+        "operator start fadeout": [
+          "float",
+          0.0
+        ],
+        "operator end fadeout": [
+          "float",
+          0.0
+        ],
+        "operator fade oscillate": [
+          "float",
+          0.0
+        ],
+        "collision mode": [
+          "int",
+          0
+        ],
+        "amount of bounce": [
+          "float",
+          0.0
+        ],
+        "amount of slide": [
+          "float",
+          0.0
+        ],
+        "radius scale": [
+          "float",
+          1.0
+        ],
+        "brush only": [
+          "bool",
+          true
+        ],
+        "collision group": [
+          "string",
+          "DEBRIS"
+        ],
+        "control point offset for fast collisions": [
+          "vector3",
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "control point movement distance tolerance": [
+          "float",
+          5.0
+        ],
+        "kill particle on collision": [
+          "bool",
+          false
+        ],
+        "trace accuracy tolerance": [
+          "float",
+          24.0
+        ]
+      }
+    }
+  }
+}

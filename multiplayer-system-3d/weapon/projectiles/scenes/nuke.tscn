@@ -63,6 +63,8 @@ world_hit_mode = 2
 align_to_velocity = true
 falloff_start = 10.0
 falloff_end = 30.0
+trail_preset = "grenade_smoke"
+trail_scale = 0.6
 
 [node name="CollisionShape3D" parent="." index="0" unique_id=1810742212]
 shape = SubResource("SphereShape3D_21xcj")
@@ -76,6 +78,7 @@ shape = SubResource("SphereShape3D_84p14")
 [node name="ExplosionComponent" parent="." index="3" unique_id=473826993]
 splash_health_delta = -200
 splash_radius = 5.0
+effect_preset = "dirty_explode/cinefx_goldrush"
 status_effects = Array[ExtResource("3_ocib1")]([SubResource("Resource_odo1h")])
 knockback_force = 40.0
 

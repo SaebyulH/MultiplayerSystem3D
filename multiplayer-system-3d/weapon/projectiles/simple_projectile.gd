@@ -15,6 +15,21 @@ var _local_offset: Transform3D
 var shooter_name: String
 var shooter_team: Player.Team
 
+# ── Toon exhaust trail ───────────────────────────────────────────────
+const TOON_TRAIL_SCENE := preload("res://effects/toon_trail/toon_trail.tscn")
+
+## Preset id from `effects/toon_trail/trail_profiles.gd`.  Empty = no trail.
+## Purely cosmetic and local: every peer spawns its own from this scene value,
+## so no RPC and nothing rides the synchronizer.
+@export var trail_preset: String = ""
+@export_range(0.05, 16.0, 0.01) var trail_scale: float = 1.0
+## Local nozzle offset.  The trail treats the marker's -Z as its forward axis;
+## `align_to_velocity` projectiles already point -Z along the flight path.
+@export var trail_nozzle_offset: Vector3 = Vector3.ZERO
+
+var _trail: Node3D
+var _trail_nozzle: Marker3D
+
 
 var _time_alive := 0.0
 var _distance_traveled := 0.0
@@ -67,6 +82,53 @@ func _ready() -> void:
 		_base_explosion_damage = _explosion_component.splash_health_delta
 
 	_connect_detonate_signal()
+
+	if not Engine.is_editor_hint():
+		_start_trail()
+
+
+## Start the exhaust trail on this peer.  The trail node is parented to the
+## world above the ProjectilesParent: that parent's MultiplayerSpawner
+## replicates every direct child and only knows projectile scenes, and the
+## trail must also outlive this projectile so its samples can drain.
+func _start_trail() -> void:
+	if trail_preset.is_empty() or not is_inside_tree():
+		return
+	var host := _effect_host()
+	if host == null:
+		return
+	_trail_nozzle = Marker3D.new()
+	_trail_nozzle.position = trail_nozzle_offset
+	add_child(_trail_nozzle)
+	var trail: Node3D = TOON_TRAIL_SCENE.instantiate() as Node3D
+	if trail == null:
+		return
+	trail.effect_scale = trail_scale
+	host.add_child(trail)
+	if not trail.start(trail_preset, _trail_nozzle):
+		trail.queue_free()
+		_trail_nozzle.queue_free()
+		_trail_nozzle = null
+		return
+	_trail = trail
+
+
+func _effect_host() -> Node3D:
+	var parent := get_parent()
+	if parent == null:
+		return null
+	var world := parent.get_parent()
+	return world as Node3D if world is Node3D else parent as Node3D
+
+
+func _stop_trail() -> void:
+	if is_instance_valid(_trail):
+		_trail.stop()
+	_trail = null
+
+
+func _exit_tree() -> void:
+	_stop_trail()
 
 
 ## Looks up the shooter's WeaponController and connects its signal_activated
@@ -185,6 +247,7 @@ func _on_body_entered(body: Node3D) -> void:
 		_attach_to(body)
 
 func start_explode():
+	_stop_trail()
 	hide_model.rpc()
 	freeze = true
 	# Multiply the explosion's base damage by the travel-time falloff so both

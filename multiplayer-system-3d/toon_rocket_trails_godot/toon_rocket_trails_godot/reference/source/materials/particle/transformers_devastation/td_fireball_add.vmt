@@ -1,0 +1,9 @@
+unlitgeneric
+{
+	$basetexture "particle\transformers_devastation\TD_fireball"
+	$additive			1
+	$translucent 		1
+	$vertexcolor		1
+	$nocull			1
+	$srgbtint			"[8 8 8]"
+}
