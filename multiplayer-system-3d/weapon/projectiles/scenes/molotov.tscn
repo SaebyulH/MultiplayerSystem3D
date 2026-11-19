@@ -3,6 +3,7 @@
 [ext_resource type="PackedScene" uid="uid://6mr0d18yn8po" path="res://weapon/projectiles/scenes/simple_projectile.tscn" id="1_vwv4c"]
 [ext_resource type="Script" uid="uid://bv0g4rnfelqch" path="res://components/status_effect/status_effect.gd" id="2_7idox"]
 [ext_resource type="Script" uid="uid://rkd4beux51mg" path="res://components/status_effect/effects/burn_effect.gd" id="3_vwv4c"]
+[ext_resource type="AudioStream" path="res://assets/sounds/explosions/explosion_molotov.mp3" id="9_snd"]
 
 [sub_resource type="CylinderShape3D" id="CylinderShape3D_h41pr"]
 height = 0.4248047
@@ -66,6 +67,8 @@ shape = SubResource("CylinderShape3D_kbhll")
 [node name="ExplosionComponent" parent="." index="3" unique_id=473826993]
 splash_health_delta = -20
 explosion_color = Color(2.0954168, 0.92764384, 0.7422831, 1)
+explosion_sound = ExtResource("9_snd")
+explosion_sound_volume_db = -12.0
 status_effects = Array[ExtResource("2_7idox")]([SubResource("Resource_vwv4c")])
 knockback_force = 0.0
 tick_count = 10

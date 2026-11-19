@@ -19,6 +19,9 @@ const CLAY := Color("#6a5857")
 ## Multiplied with every particle colour, so one scene covers fire (white),
 ## heal (green), poison (purple), etc.  Set before calling play().
 @export var tint := Color.WHITE
+## Preview-only playback multiplier (the asset viewer's speed slider).  Gameplay
+## never changes it, so it stays at 1.0 in every explosion.
+@export_range(0.05, 4.0, 0.01) var speed_scale := 1.0
 
 class Particle:
 	var position := Vector3.ZERO
@@ -254,7 +257,7 @@ func _spawn(event: Burst) -> void:
 		_particles.append(p)
 
 func _process(delta: float) -> void:
-	_advance(_clock + delta)
+	_advance(_clock + delta * speed_scale)
 	_draw_particles()
 	if _next_event == _events.size() and _particles.is_empty() and _playing:
 		_playing = false

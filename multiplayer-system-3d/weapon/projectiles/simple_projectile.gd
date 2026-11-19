@@ -30,6 +30,16 @@ const TOON_TRAIL_SCENE := preload("res://effects/toon_trail/toon_trail.tscn")
 var _trail: Node3D
 var _trail_nozzle: Marker3D
 
+# ── Falling alarm (nuke) ─────────────────────────────────────────────
+## Optional looping siren while this projectile is in flight, used by the
+## nuke.  Local per peer, like the trail: every peer starts its own copy.
+@export var fall_siren: AudioStream
+@export_range(-40.0, 12.0, 0.5) var fall_siren_volume_db := -14.0
+## 3D attenuation size in metres; large so the alarm carries across the map.
+@export_range(1.0, 120.0, 0.5) var fall_siren_unit_size := 50.0
+
+var _siren: AudioStreamPlayer3D
+
 
 var _time_alive := 0.0
 var _distance_traveled := 0.0
@@ -85,6 +95,7 @@ func _ready() -> void:
 
 	if not Engine.is_editor_hint():
 		_start_trail()
+		_start_siren()
 
 
 ## Start the exhaust trail on this peer.  The trail node is parented to the
@@ -127,8 +138,35 @@ func _stop_trail() -> void:
 	_trail = null
 
 
+## Loop [member fall_siren] from spawn until the projectile detonates.  The
+## stream is duplicated so enabling `loop` never mutates the loaded resource.
+func _start_siren() -> void:
+	if fall_siren == null or not is_inside_tree():
+		return
+	var stream: AudioStream = fall_siren.duplicate()
+	if stream is AudioStreamWAV:
+		(stream as AudioStreamWAV).loop_mode = AudioStreamWAV.LOOP_FORWARD
+	else:
+		stream.set("loop", true)
+	_siren = AudioStreamPlayer3D.new()
+	_siren.stream = stream
+	_siren.volume_db = fall_siren_volume_db
+	_siren.unit_size = fall_siren_unit_size
+	_siren.max_distance = 250.0
+	add_child(_siren)
+	_siren.play()
+
+
+func _stop_siren() -> void:
+	if is_instance_valid(_siren):
+		_siren.stop()
+		_siren.queue_free()
+	_siren = null
+
+
 func _exit_tree() -> void:
 	_stop_trail()
+	_stop_siren()
 
 
 ## Looks up the shooter's WeaponController and connects its signal_activated
@@ -248,6 +286,7 @@ func _on_body_entered(body: Node3D) -> void:
 
 func start_explode():
 	_stop_trail()
+	_stop_siren()
 	hide_model.rpc()
 	freeze = true
 	# Multiply the explosion's base damage by the travel-time falloff so both

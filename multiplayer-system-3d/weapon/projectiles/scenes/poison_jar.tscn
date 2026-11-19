@@ -3,6 +3,7 @@
 [ext_resource type="PackedScene" uid="uid://6mr0d18yn8po" path="res://weapon/projectiles/scenes/simple_projectile.tscn" id="1_173x6"]
 [ext_resource type="Script" uid="uid://bv0g4rnfelqch" path="res://components/status_effect/status_effect.gd" id="2_caexi"]
 [ext_resource type="Script" uid="uid://crig03jm0e8ha" path="res://components/status_effect/effects/poison_effect.gd" id="3_j0tvw"]
+[ext_resource type="AudioStream" path="res://assets/sounds/explosions/explosion_poison_jar.mp3" id="9_snd"]
 
 [sub_resource type="CylinderShape3D" id="CylinderShape3D_h41pr"]
 height = 0.60498047
@@ -56,6 +57,8 @@ shape = SubResource("CylinderShape3D_kbhll")
 [node name="ExplosionComponent" parent="." index="3" unique_id=473826993]
 splash_health_delta = -75.0
 explosion_color = Color(0.43137255, 0.19215687, 0.7882353, 1)
+explosion_sound = ExtResource("9_snd")
+explosion_sound_volume_db = -12.0
 status_effects = Array[ExtResource("2_caexi")]([SubResource("Resource_173x6")])
 tick_count = 20
 

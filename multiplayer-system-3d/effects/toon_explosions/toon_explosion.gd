@@ -12,6 +12,9 @@ const SOURCE_UNITS_TO_GODOT := 0.0125
 
 @export var auto_free := true
 @export_range(0.05, 20.0, 0.01, "or_greater") var effect_scale := 1.0
+## Preview-only playback multiplier (the asset viewer's speed slider).  Gameplay
+## never changes it, so it stays at 1.0 in every explosion.
+@export_range(0.05, 4.0, 0.01) var speed_scale := 1.0
 
 class Layer:
 	var data: Dictionary
@@ -264,7 +267,7 @@ func _move(delta: float) -> void:
 				p.velocity -= (1.0 + clampf(d.bounce, 0.0, 1.0)) * inward * _normal
 
 func _process(delta: float) -> void:
-	_advance(_time + delta)
+	_advance(_time + delta * speed_scale)
 	_draw()
 	if _particles.is_empty() and _next == _events.size():
 		set_process(false)

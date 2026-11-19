@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://buamjhy0cglsb"]
 
 [ext_resource type="PackedScene" uid="uid://6mr0d18yn8po" path="res://weapon/projectiles/scenes/simple_projectile.tscn" id="1_pq14p"]
+[ext_resource type="AudioStream" path="res://assets/sounds/explosions/explosion_carpet_bomb.wav" id="9_snd"]
 
 [sub_resource type="CylinderShape3D" id="CylinderShape3D_7n8ip"]
 height = 0.33398438
@@ -46,6 +47,10 @@ health_delta = 0.0
 [node name="CollisionShape3D" parent="HitboxComponent" index="0" unique_id=1314331169]
 transform = Transform3D(-0.5297595, 4.631305e-08, 2.0244077e-15, -4.631305e-08, -0.5297595, -4.631305e-08, -2.024408e-15, -4.631305e-08, 0.5297595, 0, 0, 0)
 shape = SubResource("CylinderShape3D_pq14p")
+
+[node name="ExplosionComponent" parent="." index="3"]
+explosion_sound = ExtResource("9_snd")
+explosion_sound_volume_db = -12.0
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." index="4" unique_id=650562878]
 transform = Transform3D(-0.20566359, 1.7979684e-08, 7.8591687e-16, 1.7979684e-08, 0.20566359, 8.881784e-16, -7.859169e-16, 8.881784e-16, -0.20566359, 0, 0, 0)

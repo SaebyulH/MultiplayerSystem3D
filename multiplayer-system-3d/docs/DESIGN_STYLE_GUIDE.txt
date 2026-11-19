@@ -254,6 +254,27 @@ Loadout (character select)
   secondary; LEAVE PARTY is the danger outline so LOCK IN stays the only
   filled RED element.
 
+Asset Viewer (dev)
+  Ink scrim, ASSET VIEWER Anton title, RED rule, TEAL DEV badge, CLOSE.
+  TabBar EFFECTS / AGENTS over a left list column, the 3D preview in the
+  centre (same LMB orbit / RMB pan / scroll zoom as the loadout screen), and
+  a right-hand control column.
+  Lists use the shared ink panel with a LINE border; group headers are TEAL
+  and uppercase with a count ("ASSAULT · 15"), selectable rows alternate a
+  subtle SLATE tint, and selection uses the standard TEAL card state.  This
+  is a developer tool, so density beats show — but it is not unstyled: no
+  raw engine-grey lists.
+  Sliders are UITheme.slider() (LINE track, TEAL fill) and print their value
+  ("1.00×", "4.00").  Effect controls include MANNEQUIN FOR SCALE (a stock
+  mannequin beside the stage as a size reference).  The locomotion block pairs
+  the continuous joystick pad with CROUCH / WALK / SPRINT toggle buttons
+  (selected = TEAL card state).  A RESET button appears whenever a slider or
+  the locomotion pad/state differs from its default.
+  Status lines above the animation lists state the current mode in TEAL
+  ("PLAYING <clip>", "SYNCED TO WEAPON") and MUTED otherwise
+  ("LOCOMOTION", "HOLD POSE").  Primary action is the RED close/danger slot
+  only where one is needed; the preview itself carries the visual weight.
+
 Pause
   Narrow ink panel: PAUSED title, RED rule, local agent portrait + name,
   full-width menu rows (RESUME primary, then secondary rows), LEAVE MATCH
@@ -298,6 +319,8 @@ Select: 120 ms, fill/border/opacity.
 Open/close: 120-160 ms fade; no bounce, no spring, no scale > 1.04.
 Pulsing text is reserved for the title prompt.
 No looping decoration in menus.  The 3D character preview is static by design.
+Exception: the dev Asset Viewer previews effects and animations by design; its
+motion is the content, not decoration.
 
 
 8. ACCESSIBILITY

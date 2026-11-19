@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://v27fq461i5vr"]
 
 [ext_resource type="PackedScene" uid="uid://6mr0d18yn8po" path="res://weapon/projectiles/scenes/simple_projectile.tscn" id="1_xcdij"]
+[ext_resource type="AudioStream" path="res://assets/sounds/explosions/explosion_grenade.mp3" id="9_snd"]
 
 [sub_resource type="PhysicsMaterial" id="PhysicsMaterial_7ijep"]
 bounce = 1.0
@@ -39,8 +40,8 @@ world_hit_mode = 1
 align_to_velocity = false
 falloff_start = 10.0
 falloff_end = 30.0
-trail_preset = "grenade_smoke"
-trail_scale = 0.6
+trail_preset = "grenade_ribbon"
+trail_scale = 0.8
 
 [node name="CollisionShape3D" parent="." index="0" unique_id=1810742212]
 shape = SubResource("CapsuleShape3D_xcdij")
@@ -53,6 +54,8 @@ shape = SubResource("CapsuleShape3D_fvy8b")
 
 [node name="ExplosionComponent" parent="." index="3" unique_id=473826993]
 splash_health_delta = -90
+explosion_sound = ExtResource("9_snd")
+explosion_sound_volume_db = -12.0
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." index="4" unique_id=650562878]
 transform = Transform3D(-0.20566359, 1.7979684e-08, 7.8591687e-16, -7.548928e-23, -8.989842e-09, 0.20566359, 1.7979684e-08, 0.20566359, 8.989842e-09, 0, 0, 0)

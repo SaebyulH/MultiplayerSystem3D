@@ -109,6 +109,8 @@ A dedicated server still preloads the player scene and staging map because it ru
 
 `world/world1.tscn:95-97` defines the `MultiplayerSpawner` (`spawn_path = "../SpawnParent"`) with 13 `_spawnable_scenes` uids (player + all maps, including lobby `uid://cgnm6fpurb2b2`).
 
+**The lobby also carries a dev Asset Viewer zone.** `AssetViewer` (`world/asset_viewer_area.gd`) is the same Area3D pattern as `PracticeRange`: it tracks local players, owns a crosshair `InteractionPrompt` ("E ASSET VIEWER"), and opens `world/asset_viewer.gd` lazily on first use. The menu is a local CanvasLayer that renders effects, agents, weapons and animations in its own `own_world_3d` SubViewport — no node, RPC or synchronizer touches gameplay or the replication path. See Stage 13.4b.
+
 **Practice dummies spawn while the map is added.** Any map may carry a `PracticeTargetSpawn` marker: its `_ready` runs inside the host's `spawn_parent.add_child(map)` at line 27-29, before `SpawnManager` exists, needs only `GameManager.spawn_parent` and `player.tscn`, and guards on `multiplayer.has_multiplayer_peer() and multiplayer.is_server()`. The lobby has both: its `PracticeDummy` marker spawns a fixed-respawn standing dummy, and `PracticeRange` spawns a separate run target when a run starts and frees it when the run ends. Either way the dummy is a normal Player added to `SpawnParent`, so the world spawner (already alive) replicates it to joiners. Clients never spawn; map teardown (`_exit_tree`) frees the marker dummy, which is what clears old dummies on a map swap. While a range run is live, `PracticeRange` grants every real player inside the zone infinite ammo (`Player.set_range_infinite_ammo`, a separate override from the dev hack) and revokes it when the run ends, the player leaves, or the map is torn down. The zone prompt's second line shows the last and best completion times, mirrored to clients by the progress/result broadcasts.
 
 ---
@@ -463,6 +465,88 @@ Client-host staging actions go through `MatchSession` RPCs:
 toggle), `request_start_match`, `request_end_match`, and
 `request_join_in_progress`. The server re-checks `host_player_id` where needed.
 
+### 13.4b Asset Viewer (dev)
+`world/asset_viewer_area.gd` opens `world/asset_viewer.gd` on E. It is a local
+dev tool with two tabs sharing one 3D preview:
+
+- **Effects** — the four live scene effects (`effects/muzzle_flash.tscn`,
+  `bullet_impact.tscn`, `explosion.tscn`, `rocket_impact/rocket_impact.tscn`)
+  plus every `ToonExplosion.effect_catalog()` (32) and `ToonTrail.catalog()`
+  (32) preset. The shared PREVIEW SPEED slider (persistent across both tabs,
+  with a numeric `×` readout) and a SCALE slider drive the running effect.
+  Both persist across effect selections (`SCALE` is user state, not a
+  per-entry default; every entry's authored default is `1.0`) and both have a
+  RESET button that appears only while the value differs from its default.
+  LOOP re-fires one-shots. Toon trails are painted by a nozzle that follows
+  the cursor over the preview, with an AUTO FLIGHT toggle that flies a looping
+  path. The cursor plane sits 1.5 m behind the stage point (away from the
+  camera) so the trail reads at depth instead of in the viewer's face.
+  **MANNEQUIN FOR SCALE** adds a stock mannequin beside the stage as a
+  real-world size reference; it is hidden on the Agents tab. The orbit, pan
+  and zoom you set are preserved when switching to another effect — only the
+  first entry into the Effects tab frames the camera.
+- **Agents** — every `Character` under `res://player/characters`, every
+  `Weapon` under the weapon folders (class restrictions ignored; grouped into
+  ASSAULT / ASSASSIN / ASSISTANCE / SHARED / TF2 / OTHER with counts), plus a
+  **NO WEAPON** row that empties the hand. A **locomotion preview** drives the
+  real AnimationTree: a continuous joystick sets the walk/crouch/sprint blend
+  direction and CROUCH / WALK / SPRINT buttons set the ground state; a RESET
+  appears when the pad/state differ from forward-walk. This path forces
+  `HoldBlend` to `0.0`. Below it are the mannequin's full animation list
+  (including the equipped weapon's injected human-anim library) and the weapon
+  model's own animation list. Playing a weapon clip **also plays its paired
+  human clip**, resolved through the weapon model's `WeaponAnimGroup`
+  (`gun_anim` → `human_anim`), so shoot/reload/hold previews match in-game.
+  LOOP applies to whichever clip is playing; human and weapon clips are
+  mutually exclusive (choosing one stops the other).
+
+Implementation notes:
+- `world/loadout/loadout_preview_rig.gd` gained an `EFFECT` view mode (the
+  pivot is hidden, the camera keeps orbit/pan/zoom and looks at a `_focus`
+  point), `screen_to_stage()` (container UV → camera-plane world point), and raw
+  animation browsing. Raw clips set `AnimationTree.active = false`; the source
+  `Animation` is duplicated into a runtime `__viewer` library so loop mode never
+  mutates the shared GLB resource, and the library is removed on stop.
+- `world/asset_viewer_catalog.gd` owns the explicit scene-effect list and lazily
+  scans characters/weapons.
+- `world/asset_viewer/effect_preview.gd` spawns and loops the effect nodes.
+  The impact normal is captured once when an effect is selected, so orbiting
+  the camera does not make the burst snap back to face the viewer on every
+  loop; selecting the effect again re-captures it. `toon_trail.gd`,
+  `toon_explosion.gd` and `rocket_impact.gd` gained a `speed_scale` export
+  (default 1.0), and `bullet_impact.gd` gained `auto_release` so the preview
+  instance never enters the gameplay impact pool.
+- RMB pan is **camera-plane panning**, shared by both tabs: the rig offsets the
+  agent pivot / effect focus along the camera's own right/up axes
+  (`_base_focus + basis.x * _pan.x + basis.y * _pan.y`). The effect focus keeps
+  the 0.6 m stage height, so the first drag cannot snap the camera down and the
+  drag direction stays correct after orbiting. World X/Y panning was wrong as
+  soon as `_orbit_yaw` changed.
+- Orbit/zoom is stateful for the whole session. Wheel zoom is multiplicative
+  over `ZOOM_MIN = 0.1` .. `ZOOM_MAX = 8.0` (shared with the loadout screen).
+  `enter_effect_view()` resets pan/focus only when it actually enters from
+  character mode; switching effects keeps the camera, and re-showing the tab
+  never re-frames it. Camera state is **not** carried between tabs: entering
+  Agents calls `reset_character_view()` (its own default orbit/zoom), and
+  entering Effects clears the framing flag so the next entry re-frames once
+  with the effect's default distance.
+- The agents tab shares the same speed value as the effects tab, and the scale
+  value persists across effects. Lists use TEAL group headers, a subtle
+  alternating row tint and panel chrome from `UITheme`; sliders print their
+  numeric value (`speed ×`, `scale`) and show a RESET button only while the
+  value is not the default. Status lines above the animation lists show
+  `LOCOMOTION` / `SYNCED TO WEAPON` / `PLAYING <clip>` so the current preview
+  mode is never ambiguous.
+- **Animation speed covers both playback paths.** Raw clips use
+  `AnimationPlayer.speed_scale`. `AnimationTree` has no `speed_scale` in Godot
+  4.7, so a non-1.0 preview speed puts that tree into
+  `ANIMATION_CALLBACK_MODE_PROCESS_MANUAL` and the rig's `_process` calls
+  `advance(delta * speed)` while the render timer runs; returning to 1.0
+  restores IDLE processing. The loadout screen never calls
+  `set_animation_speed`, so its tree stays automatic.
+- The menu keeps `class_select` (H) swallowed while open so the loadout screen
+  cannot stack on top.
+
 ### 13.5 Countdown and map-ready barrier
 `NetworkManager.start_staging_match(path)` sets COUNTDOWN, waits 5 s, sets
 LOADING with path + SHA-256, swaps the map locally, waits for
@@ -492,7 +576,9 @@ returns after 10 s. `GameModeComponent.match_won` is wired to
 `ui/ui_theme.gd` is autoloaded as **`UITheme`** (after `GameManager`). Its
 `_ready()` installs one `Theme` on the root Window, which cascades to every
 Control in the game (CanvasLayer children included). It also owns the palette
-constants, the Switzer UI font set and Anton display face, style builders, and the shared widgets used by
+constants, the Switzer UI font set and Anton display face, style builders
+(`panel_style`, `card_style`, `button_style`, `tab_style`, `slider`), and the
+shared widgets used by
 the shell: `map_card`, `character_card`, `roster_card`, `stat_row`, `badge`,
 `display_label`, `section_label`, `body_label`. New screens must use these
 instead of local colours. The written spec is

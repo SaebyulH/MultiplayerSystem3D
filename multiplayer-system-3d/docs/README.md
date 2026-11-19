@@ -8,6 +8,7 @@ Class-based team FPS (TF2-style hero shooter) on **Godot 4.7** (Forward Plus, Jo
 
 | # | File | What it covers | Read when… |
 |---|---|---|---|
+| 0 | [`00-game-overview.md`](00-game-overview.md) | Player-facing synopsis: pitch, cast, tone, modes, maps, match flow | you need to explain the game to a person, not the system to an engineer |
 | 1 | [`01-boot-sequence.md`](01-boot-sequence.md) | Press Play → loading → lobby → loadout → spawn → playing; join/leave/map-swap | anything about startup, menus, spawning, scene transitions |
 | 2 | [`02-netcode.md`](02-netcode.md) | Rollback vs server-authoritative split, authority model, `fire_intent` round-trip, determinism | anything about movement, firing, damage, sync, RPCs |
 | 3 | [`03-event-flow.md`](03-event-flow.md) | `NetworkEvents`/`NetworkTime` lifecycle, connection ordering invariants, teardown/re-host | anything about connect/disconnect, re-host, the "movement died" bug |

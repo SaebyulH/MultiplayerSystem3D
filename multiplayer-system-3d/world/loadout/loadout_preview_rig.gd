@@ -37,8 +37,8 @@ const INNER_MOUNT_TRANSFORM := Transform3D(Basis(), Vector3(0.0, -1.307, 0.009))
 ## 30 Hz is enough for a smooth walk and far cheaper than a per-frame second
 ## World3D render.
 const RENDER_INTERVAL := 0.033
-const ZOOM_MIN := 0.55
-const ZOOM_MAX := 1.8
+const ZOOM_MIN := 0.1
+const ZOOM_MAX := 8.0
 const WALK_FORWARD := Vector2(0, -1)
 
 var _viewport: SubViewport
@@ -79,6 +79,32 @@ var _center_offset := Vector3.ZERO
 var _floor_y := 0.0
 var _render_timer: Timer
 
+# ── Asset-viewer extensions (inert for the loadout screen) ───────────
+enum ViewMode { CHARACTER, EFFECT }
+var _view_mode := ViewMode.CHARACTER
+## Camera look-at target.  Always Vector3.ZERO in character mode.
+var _focus := Vector3.ZERO
+## Un-panned focus for the effect stage (the effect spawn point).  Pan is added
+## on top so the first drag does not snap the camera away from the stage.
+var _base_focus := Vector3.ZERO
+var _effect_root: Node3D = null
+## Raw-animation state.  While true the AnimationTree stays disabled or the
+## blend tree fights the AnimationPlayer clip.
+var _raw_anim_mode := false
+var _raw_weapon_anim := false
+## AnimationTree has no speed_scale in Godot 4.7.  Non-1.0 preview speeds put
+## the tree in MANUAL callback mode and advance() is driven from _process.
+var _tree_manual := false
+var _tree_speed := 1.0
+## True while the human clip was started by play_weapon_animation (paired anim),
+## so stopping the weapon also releases the human skeleton.
+var _weapon_human_sync := false
+var _anim_serial := 0
+## Runtime AnimationLibrary holding the duplicated (loop-mode-adjusted) clips.
+## Removed on stop so nothing accumulates and the authored GLB library is never
+## mutated.
+const PREVIEW_LIB := &"__viewer"
+
 
 func _ready() -> void:
 	_viewport = get_viewport() as SubViewport
@@ -87,6 +113,15 @@ func _ready() -> void:
 	_render_timer.timeout.connect(render_once)
 	add_child(_render_timer)
 	_render_timer.start()
+
+
+func _process(delta: float) -> void:
+	# Only the preview tree uses manual processing (see set_animation_speed).
+	if not _tree_manual or _tree == null or not is_instance_valid(_tree):
+		return
+	if _render_timer == null or _render_timer.is_stopped():
+		return
+	_tree.advance(delta * _tree_speed)
 
 
 func set_active(on: bool) -> void:
@@ -103,6 +138,15 @@ func set_active(on: bool) -> void:
 ## for the hover preview of an agent that is not selected yet.
 func show_character(char: Character, initial_weapon: Weapon, ghost := false) -> void:
 	_ghost = ghost
+	# Returning from the asset viewer's Effects tab restores the agent view.
+	# A raw animation clip must release the skeleton before the tree drives it.
+	_stop_raw_human_anim()
+	_view_mode = ViewMode.CHARACTER
+	_focus = Vector3.ZERO
+	if _pivot != null and is_instance_valid(_pivot):
+		_pivot.visible = true
+	if _tree != null:
+		_tree.active = true
 	if char == null or char.character_scene == null:
 		clear()
 		return
@@ -171,6 +215,10 @@ func _apply_model(char: Character, ghost: bool) -> void:
 
 
 func set_weapon(weapon: Weapon) -> void:
+	# The old model (and any runtime preview animations registered on it) is
+	# about to be freed.
+	_raw_weapon_anim = false
+	_weapon_human_sync = false
 	_weapon = weapon
 	_clear_weapon()
 	if _body == null:
@@ -184,7 +232,8 @@ func set_weapon(weapon: Weapon) -> void:
 func zoom(steps: float) -> void:
 	if _camera == null:
 		return
-	_zoom = clampf(_zoom - steps * 0.1, ZOOM_MIN, ZOOM_MAX)
+	# Multiplicative so the wide range is reachable in a handful of notches.
+	_zoom = clampf(_zoom * pow(0.85, steps), ZOOM_MIN, ZOOM_MAX)
 	_apply_camera()
 	render_once()
 
@@ -199,22 +248,36 @@ func orbit(delta_x: float, delta_y: float) -> void:
 	render_once()
 
 
-## Right-drag: pan the character in the camera plane.
+## Right-drag: pan in the camera's own right/up plane.  World X/Y panning broke
+## as soon as the camera orbited.  X follows the pointer (grab), Y is inverted
+## because screen-down is world-down.
 func pan(delta_x: float, delta_y: float) -> void:
 	if is_zero_approx(delta_x) and is_zero_approx(delta_y):
 		return
-	_pan.x = clampf(_pan.x - delta_x * 0.004, -3.0, 3.0)
+	_pan.x = clampf(_pan.x + delta_x * 0.004, -3.0, 3.0)
 	_pan.y = clampf(_pan.y - delta_y * 0.004, -3.0, 3.0)
 	_apply_pan()
 	render_once()
 
 
 func _apply_pan() -> void:
+	var basis := Basis.IDENTITY
+	if _camera != null and is_instance_valid(_camera):
+		basis = _camera.global_basis.orthonormalized()
+	var offset := basis.x * _pan.x + basis.y * _pan.y
+	if _view_mode == ViewMode.EFFECT:
+		# No agent to move: pan the camera target through the camera plane.
+		# Opposite sign from the character pivot: moving the camera shifts the
+		# stationary effect the other way on screen.
+		_focus = _base_focus - offset
+		if _camera != null:
+			_apply_camera()
+		return
 	if _pivot != null:
-		_pivot.position = _center_offset + Vector3(_pan.x, _pan.y, 0.0)
+		_pivot.position = _center_offset + offset
 	# The floor travels with the agent so panning never leaves it floating.
 	if _ground != null and is_instance_valid(_ground):
-		_ground.position = Vector3(_pan.x, _floor_y + _pan.y, 0.0)
+		_ground.position = Vector3(0.0, _floor_y, 0.0) + offset
 
 
 func set_preview_mode(mode: int) -> void:
@@ -237,6 +300,8 @@ func render_once() -> void:
 
 func clear() -> void:
 	_clear_weapon()
+	_raw_anim_mode = false
+	_raw_weapon_anim = false
 	if _pivot != null and is_instance_valid(_pivot):
 		remove_child(_pivot)
 		_pivot.queue_free()
@@ -251,6 +316,7 @@ func clear() -> void:
 	_leg_map = PackedInt32Array()
 	_leg_override = false
 	_tree = null
+	_tree_manual = false
 	_model = null
 	_model_skeleton = null
 	_gun_attach = null
@@ -260,6 +326,389 @@ func clear() -> void:
 
 func get_displayed_weapon() -> Weapon:
 	return _weapon
+
+
+# ─────────────────────────────────────────────
+#  Asset viewer: effect view
+# ─────────────────────────────────────────────
+
+## Retime the render timer.  The loadout screen keeps 30 Hz; the asset viewer
+## uses 60 Hz so fast one-shot effects read smoothly.
+func set_render_interval(seconds: float) -> void:
+	if _render_timer == null:
+		return
+	_render_timer.wait_time = maxf(seconds, 0.001)
+	if not _render_timer.is_stopped():
+		_render_timer.start()
+
+
+## Switch to the effect stage: the agent is hidden (and its blend tree stopped)
+## while the camera keeps the same orbit/pan/zoom controls.
+func enter_effect_view() -> void:
+	# Re-entering from character mode resets pan/focus once.  Calling this again
+	# while already in effect mode (switching effects) keeps the user's camera.
+	var entering := _view_mode != ViewMode.EFFECT
+	_view_mode = ViewMode.EFFECT
+	_stop_raw_human_anim()
+	_stop_raw_weapon_anim()
+	if _tree != null:
+		_tree.active = false
+	if _pivot != null and is_instance_valid(_pivot):
+		_pivot.visible = false
+	if entering:
+		_pan = Vector2.ZERO
+		_focus = _base_focus
+		_center_offset = Vector3.ZERO
+		_ensure_camera()
+		if _ground != null and is_instance_valid(_ground):
+			_ground.position = Vector3.ZERO
+		_apply_camera()
+	render_once()
+
+
+## Reset the character preview's orbit/pan/zoom to its default framing.  The
+## asset viewer calls this when entering the Agents tab so camera state never
+## carries over from the Effects tab (or vice versa).
+func reset_character_view() -> void:
+	_orbit_yaw = 0.0
+	_orbit_pitch = 0.08
+	_zoom = 1.0
+	_pan = Vector2.ZERO
+	_focus = Vector3.ZERO
+	_ensure_camera()
+	if _camera != null:
+		_apply_camera()
+
+
+## Frame the effect stage.  `distance` is the orbit radius; `focus` is the
+## camera look-at point (effect spawn point).
+func frame_effect(distance: float, focus := Vector3.ZERO) -> void:
+	_view_mode = ViewMode.EFFECT
+	_base_focus = focus
+	_focus = focus
+	_base_distance = maxf(distance, 0.2)
+	_zoom = 1.0
+	_orbit_yaw = 0.0
+	_orbit_pitch = 0.12
+	_pan = Vector2.ZERO
+	_ensure_camera()
+	_apply_camera()
+	render_once()
+
+
+## Node the asset viewer spawns effects under.  Sibling of the (hidden) agent
+## pivot so hiding the character never hides the effect.
+func get_effect_root() -> Node3D:
+	if _effect_root == null or not is_instance_valid(_effect_root):
+		_effect_root = Node3D.new()
+		_effect_root.name = "EffectRoot"
+		add_child(_effect_root)
+	return _effect_root
+
+
+func clear_effect_nodes() -> void:
+	if _effect_root == null or not is_instance_valid(_effect_root):
+		return
+	for child in _effect_root.get_children():
+		_effect_root.remove_child(child)
+		child.queue_free()
+
+
+func get_preview_camera() -> Camera3D:
+	_ensure_camera()
+	return _camera
+
+
+## Map a normalized SubViewportContainer position (0..1) to a world point on
+## the plane facing the camera through [param plane_point].  Uses the viewport's
+## own pixel size, because the SubViewportContainer stretches the viewport.
+func screen_to_stage(uv: Vector2, plane_point := Vector3.ZERO) -> Vector3:
+	_ensure_camera()
+	if _viewport == null or _camera == null:
+		return plane_point
+	var pixel := Vector2(uv.x * _viewport.size.x, uv.y * _viewport.size.y)
+	var origin := _camera.project_ray_origin(pixel)
+	var direction := _camera.project_ray_normal(pixel)
+	var normal := _camera.global_basis.z.normalized()
+	var plane := Plane(normal, normal.dot(plane_point))
+	var hit: Variant = plane.intersects_ray(origin, direction)
+	if hit is Vector3:
+		return hit
+	return plane_point
+
+
+func _ensure_camera() -> void:
+	if _camera == null:
+		_camera = _find_camera()
+	if _ground == null or not is_instance_valid(_ground):
+		if _viewport != null:
+			_ground = _viewport.find_child("Ground", true, false) as Node3D
+
+
+# ─────────────────────────────────────────────
+#  Asset viewer: raw animation browsing
+# ─────────────────────────────────────────────
+
+## Every animation available on the mannequin, including the weapon human-anim
+## library injected by set_weapon().  Includes the hidden "library/" prefix.
+func list_human_animations() -> PackedStringArray:
+	var out := PackedStringArray()
+	if _mannequin_animation == null:
+		return out
+	for name in _mannequin_animation.get_animation_list():
+		if String(name).begins_with("__viewer/"):
+			continue
+		out.append(name)
+	out.sort()
+	return out
+
+
+## Play [param name] on the mannequin as a raw clip.  The clip is duplicated so
+## loop mode never mutates the shared GLB animation resource.
+func play_human_animation(name: StringName, loop := true, speed := 1.0) -> bool:
+	if _mannequin_animation == null or _tree == null:
+		return false
+	var resolved := _resolve_preview_animation(_mannequin_animation, name)
+	if resolved == &"":
+		return false
+	return _play_raw_human_clip(resolved, loop, speed)
+
+
+## Shared path for the human list and the weapon→human pair.  [param resolved]
+## must already be an animation name present on the mannequin.
+func _play_raw_human_clip(resolved: StringName, loop: bool, speed: float) -> bool:
+	if _mannequin_animation == null or _tree == null:
+		return false
+	_raw_anim_mode = true
+	_tree.active = false
+	_leg_override = false
+	if _leg_source_animation != null:
+		_leg_source_animation.stop()
+	_clear_preview_library(_mannequin_animation)
+	var runtime := _register_preview_animation(_mannequin_animation, resolved, loop)
+	if runtime == &"":
+		_raw_anim_mode = false
+		_tree.active = true
+		return false
+	_mannequin_animation.speed_scale = maxf(speed, 0.01)
+	_mannequin_animation.play(runtime)
+	render_once()
+	return true
+
+
+func stop_human_animation() -> void:
+	_stop_raw_human_anim()
+	_apply_animation_state(_weapon)
+	render_once()
+
+
+func _stop_raw_human_anim() -> void:
+	if _raw_anim_mode and _mannequin_animation != null:
+		_mannequin_animation.stop()
+		_clear_preview_library(_mannequin_animation)
+	_raw_anim_mode = false
+	if _tree != null:
+		_tree.active = true
+
+
+## Live speed for whichever player is currently driving the preview.  Raw clips
+## use AnimationPlayer.speed_scale; the blend tree has no speed property, so it
+## switches to manual processing and is advanced from _process.
+func set_animation_speed(speed: float) -> void:
+	var value := maxf(speed, 0.01)
+	_tree_speed = value
+	if _mannequin_animation != null:
+		_mannequin_animation.speed_scale = value
+	var weapon_player := _weapon_anim_player()
+	if weapon_player != null:
+		weapon_player.speed_scale = value
+	_apply_tree_speed()
+
+
+func _apply_tree_speed() -> void:
+	if _tree == null or not is_instance_valid(_tree):
+		return
+	var manual := not is_equal_approx(_tree_speed, 1.0)
+	if manual and not _tree_manual:
+		_tree.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
+		_tree_manual = true
+	elif not manual and _tree_manual:
+		_tree.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_IDLE
+		_tree_manual = false
+
+
+func list_weapon_animations() -> PackedStringArray:
+	var out := PackedStringArray()
+	var player := _weapon_anim_player()
+	if player == null:
+		return out
+	for name in player.get_animation_list():
+		if String(name).begins_with("__viewer/"):
+			continue
+		out.append(name)
+	out.sort()
+	return out
+
+
+func play_weapon_animation(name: StringName, loop := true, speed := 1.0) -> bool:
+	var player := _weapon_anim_player()
+	if player == null:
+		return false
+	var resolved := _resolve_preview_animation(player, name)
+	if resolved == &"":
+		return false
+	_raw_weapon_anim = true
+	if _weapon_model is WeaponModel:
+		var wm := _weapon_model as WeaponModel
+		if wm.anim_tree != null:
+			wm.anim_tree.active = false
+	_clear_preview_library(player)
+	var runtime := _register_preview_animation(player, resolved, loop)
+	if runtime == &"":
+		_raw_weapon_anim = false
+		return false
+	player.speed_scale = maxf(speed, 0.01)
+	player.play(runtime)
+	# Play the paired human clip (shoot/reload/hold/…) in lock-step with the
+	# weapon clip.  The human library is injected by _apply_animation_state.
+	var human_anim := _paired_human_animation(resolved)
+	_weapon_human_sync = human_anim != &"" and _play_raw_human_clip(human_anim, loop, speed)
+	render_once()
+	return true
+
+
+func stop_weapon_animation() -> void:
+	_stop_raw_weapon_anim()
+	render_once()
+
+
+func _stop_raw_weapon_anim() -> void:
+	var had_human_sync := _weapon_human_sync
+	_weapon_human_sync = false
+	var player := _weapon_anim_player()
+	if player != null:
+		player.stop()
+		player.speed_scale = 1.0
+		_clear_preview_library(player)
+	_raw_weapon_anim = false
+	if _weapon_model is WeaponModel:
+		var wm := _weapon_model as WeaponModel
+		if wm.anim_tree != null:
+			wm.anim_tree.active = true
+		if wm.anim_player != null:
+			wm.play_anim_loop(WeaponAnimGroup.AnimSlot.HOLD)
+	if had_human_sync:
+		_stop_raw_human_anim()
+
+
+func _weapon_anim_player() -> AnimationPlayer:
+	if _weapon_model == null or not is_instance_valid(_weapon_model):
+		return null
+	if _weapon_model is WeaponModel:
+		var wm := _weapon_model as WeaponModel
+		if wm.anim_player != null:
+			return wm.anim_player
+	var players := _weapon_model.find_children("*", "AnimationPlayer", true, false)
+	if players.is_empty():
+		return null
+	return players[0] as AnimationPlayer
+
+
+## Human animation paired with a weapon clip through its WeaponAnimGroup.
+## Returns the fully-qualified "library/animation" path, or &"".  The library is
+## already on the mannequin because _apply_animation_state injected the weapon's
+## human_anims when the weapon was set.
+func _paired_human_animation(gun_anim: StringName) -> StringName:
+	if not (_weapon_model is WeaponModel):
+		return &""
+	var wm := _weapon_model as WeaponModel
+	var player := _weapon_anim_player()
+	var trimmed := String(gun_anim).strip_edges()
+	for group in wm.anim_groups:
+		if group == null:
+			continue
+		var candidate := group.gun_anim
+		if player != null:
+			var resolved := _resolve_preview_animation(player, group.gun_anim)
+			if resolved != &"":
+				candidate = resolved
+		if String(candidate).strip_edges() != trimmed \
+				and String(group.gun_anim).strip_edges() != trimmed:
+			continue
+		var path := wm.get_human_anim_path(group.slot)
+		if path != &"":
+			return path
+	return &""
+
+
+## Drive the real locomotion blend tree from the asset viewer's joystick and
+## CROUCH/WALK/SPRINT buttons.  [param state] is -1 crouch, 0 walk, 1 sprint;
+## [param direction] is the 8-way input vector (unit length or zero).  HoldBlend
+## is forced to 0.0 so the preview is pure locomotion, weapon or not.
+func set_locomotion_state(state: int, direction: Vector2) -> void:
+	if _tree == null or _mannequin_animation == null:
+		return
+	_stop_raw_human_anim()
+	_stop_raw_weapon_anim()
+	_leg_override = false
+	if _leg_source_animation != null:
+		_leg_source_animation.stop()
+	if _tree != null:
+		_tree.active = true
+	var dir := Vector2.ZERO
+	if direction.length_squared() > 0.0001:
+		dir = direction.normalized()
+	_tree.set("parameters/WalkBlendSpace/blend_position", dir)
+	_tree.set("parameters/CrouchBlendSpace/blend_position", dir)
+	_tree.set("parameters/SprintBlendSpace/blend_position", dir)
+	_tree.set("parameters/CrouchWalkSprintBlend3/blend_amount", float(clampi(state, -1, 1)))
+	_tree.set("parameters/JumpBlend/blend_amount", 0.0)
+	_tree.set("parameters/HoldBlend/blend_amount", 0.0)
+	render_once()
+
+
+## Resolve the authored name, tolerating the whitespace drift the imported GLB
+## clip names carry (the same rule as WeaponModel._resolve_animation).
+func _resolve_preview_animation(player: AnimationPlayer, name: StringName) -> StringName:
+	if name == &"":
+		return &""
+	if player.has_animation(name):
+		return name
+	var stripped := String(name).strip_edges()
+	for candidate in player.get_animation_list():
+		if String(candidate).strip_edges() == stripped:
+			return StringName(candidate)
+	return &""
+
+
+## Duplicate an animation into the runtime library so loop mode can be changed
+## without touching the shared resource.  Returns the "library/animation" name.
+func _register_preview_animation(player: AnimationPlayer, source: StringName,
+		loop: bool) -> StringName:
+	var src := player.get_animation(source)
+	if src == null:
+		return &""
+	var library: AnimationLibrary = null
+	if player.has_animation_library(PREVIEW_LIB):
+		library = player.get_animation_library(PREVIEW_LIB)
+	if library == null:
+		library = AnimationLibrary.new()
+		player.add_animation_library(PREVIEW_LIB, library)
+	_anim_serial += 1
+	var short_name := StringName("anim_%d" % _anim_serial)
+	var dup := src.duplicate(true) as Animation
+	if dup == null:
+		return &""
+	dup.loop_mode = Animation.LOOP_LINEAR if loop else Animation.LOOP_NONE
+	library.add_animation(short_name, dup)
+	return StringName(str(PREVIEW_LIB) + "/" + str(short_name))
+
+
+func _clear_preview_library(player: AnimationPlayer) -> void:
+	if player == null:
+		return
+	if player.has_animation_library(PREVIEW_LIB):
+		player.remove_animation_library(PREVIEW_LIB)
 
 
 # ─────────────────────────────────────────────
@@ -295,6 +744,7 @@ func _build_player_body() -> bool:
 		# Never share the blend tree resource across instances.
 		_tree.tree_root = _tree.tree_root.duplicate(true) as AnimationNodeBlendTree
 		_tree.active = true
+		_apply_tree_speed()
 	return _mannequin_skeleton != null
 
 
@@ -409,6 +859,10 @@ func _copy_mannequin_pose() -> void:
 # ─────────────────────────────────────────────
 
 func _apply_animation_state(weapon: Weapon) -> void:
+	# A raw AnimationPlayer clip owns the skeleton while the asset viewer browses
+	# animations; do not let set_weapon / show_character re-arm the blend tree.
+	if _raw_anim_mode:
+		return
 	if _tree == null or _mannequin_animation == null:
 		return
 
@@ -560,11 +1014,11 @@ func _apply_camera() -> void:
 		return
 	var distance := _base_distance * _zoom
 	var cos_pitch := cos(_orbit_pitch)
-	_camera.position = Vector3(
+	_camera.position = _focus + Vector3(
 		sin(_orbit_yaw) * cos_pitch * distance,
 		sin(_orbit_pitch) * distance,
 		-cos(_orbit_yaw) * cos_pitch * distance)
-	_camera.look_at(Vector3.ZERO)
+	_camera.look_at(_focus)
 
 
 func _place_ground(box: AABB) -> void:

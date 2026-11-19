@@ -14,6 +14,9 @@ const SHAPES := {"ring": 0, "smoke": 1, "fire": 2, "spark": 3, "star": 5, "glow"
 
 @export var auto_free := true
 @export_range(0.05, 16.0, 0.01) var effect_scale := 1.0
+## Preview-only playback multiplier (the asset viewer's speed slider).  Gameplay
+## never changes it, so it stays at 1.0 in every projectile.
+@export_range(0.05, 4.0, 0.01) var speed_scale := 1.0
 
 class Sample:
 	var position := Vector3.ZERO
@@ -144,7 +147,7 @@ func _material(shader: Shader, priority: int) -> ShaderMaterial:
 	return material
 
 func _process(delta: float) -> void:
-	if _advance(delta):
+	if _advance(delta * speed_scale):
 		_draw()
 	else:
 		_draw()

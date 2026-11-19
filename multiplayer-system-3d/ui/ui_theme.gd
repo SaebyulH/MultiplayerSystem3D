@@ -312,6 +312,22 @@ func input_style(focused: bool) -> StyleBoxFlat:
 	return s
 
 
+## HSlider styled from the shared palette.  The grabber icon still comes from
+## the engine default theme; the track and fill are TEAL on LINE like the
+## other selection chrome.
+func slider(value := 0.5, min_value := 0.0, max_value := 1.0, step := 0.01) -> HSlider:
+	var s := HSlider.new()
+	s.min_value = min_value
+	s.max_value = max_value
+	s.step = step
+	s.value = value
+	s.custom_minimum_size = Vector2(0, 22)
+	s.add_theme_stylebox_override("slider", flat_style(LINE, 2))
+	s.add_theme_stylebox_override("grabber_area", flat_style(TEAL, 2))
+	s.add_theme_stylebox_override("grabber_area_highlight", flat_style(TEAL.lightened(0.15), 2))
+	return s
+
+
 func tab_style(selected: bool, hovered := false) -> StyleBoxFlat:
 	var s := StyleBoxFlat.new()
 	s.bg_color = Color(0, 0, 0, 0)

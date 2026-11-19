@@ -21,6 +21,13 @@ var exploded := false
 ## without touching its data.
 @export var effect_scale_multiplier := 1.0
 
+## Optional one-shot played at the blast point.  Played from `_explode_visual`,
+## which is `call_local`, so every peer hears it without an extra RPC.
+@export var explosion_sound: AudioStream
+@export_range(-40.0, 12.0, 0.5) var explosion_sound_volume_db := -10.0
+## 3D attenuation size in metres; larger carries further.
+@export_range(1.0, 60.0, 0.5) var explosion_sound_unit_size := 12.0
+
 ## Status effects applied to every player hit by the explosion blast.
 ## Set in the scene or copied from WeaponFire.status_effects at spawn time.
 @export var status_effects: Array[StatusEffect] = []
@@ -81,7 +88,7 @@ func explode(falloff_multiplier: float = 1.0):
 			return
 
 		_apply_explosion_tick(shooter_name, shooter_team, falloff_multiplier)
-		_explode_visual.rpc(normal, effect_preset)
+		_explode_visual.rpc(normal, effect_preset, i == 0)
 
 
 # ----------------------------------------------------
@@ -191,10 +198,15 @@ func _impact_normal() -> Vector3:
 
 
 @rpc("call_local", "reliable")
-func _explode_visual(normal: Vector3, preset: String = ""):
+func _explode_visual(normal: Vector3, preset: String = "", play_sound: bool = true):
 	var host := _effect_host()
 	if host == null:
 		return
+	# Pulsing explosions (molotov, poison) call this once per tick; the sound is
+	# a single blast, so only the first tick plays it.
+	if explosion_sound and play_sound:
+		AudioPool.play(host, explosion_sound, Transform3D(Basis(), global_position),
+			1.0, explosion_sound_volume_db, explosion_sound_unit_size)
 	# The burst footprint rides the splash radius; play() orients it from the
 	# hit normal and the world's up vector.
 	var footprint: float = maxf(splash_radius * 0.5, 0.2) * effect_scale_multiplier

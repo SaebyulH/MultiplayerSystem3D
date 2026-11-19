@@ -21,7 +21,7 @@ unique_name_in_owner = true
 top_level = true
 
 [node name="ProjectileSpawner" type="MultiplayerSpawner" parent="ProjectilesParent" unique_id=1025370874]
-_spawnable_scenes = PackedStringArray("uid://bhmnsehfve81e", "uid://cccu8xmm1tqq7", "uid://dy7hw0uphca40", "uid://c7dssrsml4sfp", "uid://v27fq461i5vr", "uid://cgnec3kot6j8y", "uid://dfyafkr18mtuq", "uid://buamjhy0cglsb", "uid://glimbb6t0bbe", "uid://c0plytpiwyh8p", "uid://bsccbry77p51c", "uid://evq31o8nptpq", "uid://cjovmf7dj57cd", "uid://bo0edtxgakruc", "uid://oeshwpuiijrv", "uid://6mr0d18yn8po", "uid://daan6liu8ej2")
+_spawnable_scenes = PackedStringArray("uid://bhmnsehfve81e", "uid://cccu8xmm1tqq7", "uid://dy7hw0uphca40", "uid://c7dssrsml4sfp", "uid://v27fq461i5vr", "uid://cgnec3kot6j8y", "uid://dfyafkr18mtuq", "uid://buamjhy0cglsb", "uid://glimbb6t0bbe", "uid://c0plytpiwyh8p", "uid://bsccbry77p51c", "uid://evq31o8nptpq", "uid://cjovmf7dj57cd", "uid://bo0edtxgakruc", "uid://oeshwpuiijrv", "uid://6mr0d18yn8po", "uid://daan6liu8ej2", "uid://4jduqet7vhcj")
 spawn_path = NodePath("..")
 script = ExtResource("10_pspawn")
 

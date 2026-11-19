@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://bo0edtxgakruc"]
 
 [ext_resource type="PackedScene" uid="uid://6mr0d18yn8po" path="res://weapon/projectiles/scenes/simple_projectile.tscn" id="1_junr8"]
+[ext_resource type="AudioStream" path="res://assets/sounds/explosions/explosion_rocket.mp3" id="9_snd"]
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_21xcj"]
 radius = 0.36645794
@@ -52,6 +53,7 @@ shape = SubResource("SphereShape3D_84p14")
 [node name="ExplosionComponent" parent="." index="3" unique_id=473826993]
 splash_health_delta = -90
 effect_preset = "bigboom/ExplosionCore_MidAir"
+explosion_sound = ExtResource("9_snd")
 
 [node name="MeshInstance3D2" type="MeshInstance3D" parent="." index="4" unique_id=251685809]
 transform = Transform3D(-0.12494474, 1.0923015e-08, 4.7746024e-16, 0, -5.4615077e-09, 0.12494474, 1.0923015e-08, 0.12494474, 5.4615077e-09, 0, 0, 0.11489868)

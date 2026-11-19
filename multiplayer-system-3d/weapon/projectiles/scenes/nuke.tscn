@@ -4,6 +4,8 @@
 [ext_resource type="Script" uid="uid://blvxr87nax5n0" path="res://weapon/projectiles/scenes/gravity_rocket.gd" id="2_23iyw"]
 [ext_resource type="Script" uid="uid://bv0g4rnfelqch" path="res://components/status_effect/status_effect.gd" id="3_ocib1"]
 [ext_resource type="Script" uid="uid://rkd4beux51mg" path="res://components/status_effect/effects/burn_effect.gd" id="4_odo1h"]
+[ext_resource type="AudioStream" uid="uid://cnwme0qtjx2bd" path="res://assets/sounds/explosions/explosion_nuke.mp3" id="9_snd"]
+[ext_resource type="AudioStream" uid="uid://baox4jp8tenhn" path="res://assets/sounds/nuke_siren.mp3" id="10_siren"]
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_21xcj"]
 radius = 0.36645794
@@ -57,14 +59,15 @@ emission_energy_multiplier = 21.81
 [node name="SimpleProjectile" unique_id=1706686187 instance=ExtResource("1_odo1h")]
 linear_velocity = Vector3(0, 0, -5)
 script = ExtResource("2_23iyw")
+trail_preset = "grenade_smoke"
+trail_scale = 0.6
+fall_siren = ExtResource("10_siren")
 lifetime = 1000.0
 hurtbox_hit_mode = 2
 world_hit_mode = 2
 align_to_velocity = true
 falloff_start = 10.0
 falloff_end = 30.0
-trail_preset = "grenade_smoke"
-trail_scale = 0.6
 
 [node name="CollisionShape3D" parent="." index="0" unique_id=1810742212]
 shape = SubResource("SphereShape3D_21xcj")
@@ -76,9 +79,12 @@ health_delta = -1000.0
 shape = SubResource("SphereShape3D_84p14")
 
 [node name="ExplosionComponent" parent="." index="3" unique_id=473826993]
-splash_health_delta = -200
-splash_radius = 5.0
+splash_health_delta = -100.0
+splash_radius = 6.7
 effect_preset = "dirty_explode/cinefx_goldrush"
+explosion_sound = ExtResource("9_snd")
+explosion_sound_volume_db = -7.0
+explosion_sound_unit_size = 30.0
 status_effects = Array[ExtResource("3_ocib1")]([SubResource("Resource_odo1h")])
 knockback_force = 40.0
 

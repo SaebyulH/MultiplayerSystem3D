@@ -11,6 +11,11 @@ const DEFAULT_COLOR := Color(0.543, 0.452, 0.358, 0.145)
 const MAX_POOL: int = 64
 static var _pool: Array[BulletImpact] = []
 
+## When false, the impact plays where it was fired and is never detached into
+## the shared pool.  The asset viewer uses this so its preview instance cannot
+## be recycled into gameplay.
+@export var auto_release := true
+
 var _lifetime: float = 0.0
 var _elapsed: float = 0.0
 
@@ -52,7 +57,9 @@ func fire() -> void:
 func _process(delta: float) -> void:
 	_elapsed += delta
 	if _elapsed >= _lifetime:
-		_release()
+		set_process(false)
+		if auto_release:
+			_release()
 
 
 func _release() -> void:
