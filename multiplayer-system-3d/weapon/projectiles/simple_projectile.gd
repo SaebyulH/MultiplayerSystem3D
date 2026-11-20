@@ -52,6 +52,10 @@ var _water_map: Map = null
 @export_range(-40.0, 12.0, 0.5) var fall_siren_volume_db := -14.0
 ## 3D attenuation size in metres; large so the alarm carries across the map.
 @export_range(1.0, 120.0, 0.5) var fall_siren_unit_size := 50.0
+## When true, detonating also stops the shooter's global equip siren (the Davy
+## Crockett arming alarm).  The server broadcasts the stop to every peer; a
+## scene flag rather than a class test so any projectile can opt in.
+@export var stops_equip_siren_on_explosion: bool = false
 
 var _siren: AudioStreamPlayer3D
 
@@ -222,6 +226,16 @@ func _stop_siren() -> void:
 	_siren = null
 
 
+## Stop the shooter's global arming siren at detonation.  Only the server has
+## the authoritative `start_explode()` call; the RPC reaches every peer.
+func _stop_shooter_equip_siren() -> void:
+	if not stops_equip_siren_on_explosion or not multiplayer.is_server():
+		return
+	var shooter := GameManager.find_player(shooter_name)
+	if shooter != null and shooter.ability_manager != null:
+		shooter.ability_manager.stop_equip_siren_on_explosion.rpc()
+
+
 func _exit_tree() -> void:
 	_stop_trail()
 	_stop_siren()
@@ -343,6 +357,9 @@ func _on_body_entered(body: Node3D) -> void:
 		_attach_to(body)
 
 func start_explode():
+	# The Davy Crockett's global alarm runs from arming through flight; this is
+	# its normal end.  Server-authoritative RPC, so every peer stops together.
+	_stop_shooter_equip_siren()
 	# No trail left to re-preset while the projectile sits out its 10 s despawn.
 	set_process(false)
 	_stop_trail()

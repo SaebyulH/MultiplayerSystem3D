@@ -62,6 +62,7 @@ script = ExtResource("2_23iyw")
 trail_preset = "grenade_smoke"
 trail_scale = 0.6
 fall_siren = ExtResource("10_siren")
+stops_equip_siren_on_explosion = true
 lifetime = 1000.0
 hurtbox_hit_mode = 2
 world_hit_mode = 2

@@ -12,7 +12,7 @@ extends Ability
 ## Scales the fired shot's damage on top of the character's own damage amp.
 ## Applies **only** to this ability's shot — the normal weapon pipeline reads its
 ## own values, so a nerfed ability never changes the weapon it borrows art from.
-## Carpet Bomb authors 0.1 (ten percent) this way.
+## Blast Charges authors 0.1 (ten percent) this way.
 @export var damage_multiplier: float = 1.0
 
 func activate(player: Player) -> void:

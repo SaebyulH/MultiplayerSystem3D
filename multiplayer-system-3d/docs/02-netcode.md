@@ -311,7 +311,7 @@ Rules that fall out of where the stamp is applied:
 - **Both damage fields must be `float`.** `HitboxComponent.health_delta` always was; `ExplosionComponent.splash_health_delta` was declared `:= -75`, which infers **`int`**, so `-90 × 0.17` was stored as `-15` instead of `-15.3` (a 2 % under-count, and worse for smaller amps). It is now `: float = -75.0`; the `.tscn` values stay written as integer literals and coerce fine. Any new per-projectile damage export must be explicitly typed `float` for the same reason.
 - **`PlayerShield` reads the amped value for free**, because `shield.gd:207` absorbs `hitbox.health_delta` directly. That is a consistency win on the server and a divergence on clients — see `05-known-issues.md` #38.
 - **It is not replicated.** The projectile's `MultiplayerSynchronizer` carries only `global_transform` and `shooter_name`, so a client's copy holds the authored damage. Irrelevant for player damage (server-authoritative), but see #38 for the shield.
-- **Ability-fired shots add one more multiplier.** `_ability_damage_mult` is set by `fire_weapon_fire(..., damage_mult)` and folded into the projectile amp **and** both hitscan damage sites. It is always `1.0` on a normal shot (`fire_intent` resets it on the way in), so a normal weapon's authored damage is never touched. Calligraphy passes its drawing score; `WeaponFireAbility.damage_multiplier` passes the ability's authored value (Carpet Bomb: `0.1`, so the rocket launcher's own damage stays intact).
+- **Ability-fired shots add one more multiplier.** `_ability_damage_mult` is set by `fire_weapon_fire(..., damage_mult)` and folded into the projectile amp **and** both hitscan damage sites. It is always `1.0` on a normal shot (`fire_intent` resets it on the way in), so a normal weapon's authored damage is never touched. Calligraphy passes its drawing score; `WeaponFireAbility.damage_multiplier` passes the ability's authored value (Blast Charges: `0.1`, so the rocket launcher's own damage stays intact).
 
 **How this was verified (2026-09-25).** A throwaway headless harness drove the real chain — `_spawn_projectile` → `HitboxComponent._on_hurtbox_entered` / `ExplosionComponent.explode` → `HurtComponent._on_hurt_or_heal` → `AttributeComponent.apply_health_delta` — against real `Player` nodes and real weapon resources, once per character, comparing a Mannequin (`1.0`) shooter against a Stalker (`0.17`):
 
@@ -408,10 +408,13 @@ Self-targeted only, and split by what each flag actually gates:
 
 **Action abilities use the same arms-out presentation for their window.** `Player.is_ability_pose_active()` is derived from state every peer already has — `charge_time > 0` and `bashdown_time`/`bashdown_slamming` (rollback), plus the mirrored `noclip`, `heal_over_time` and calligraphy effects — so the pose agrees on every peer without a new replicated flag. `Player._process` edge-detects the change and calls `WeaponController.refresh_holstered()` once; `animation_tree.gd` targets HoldBlend `0.0` while posing.
 
+**The Davy Crockett arming window is the one non-effect pose.** `AbilityManager._rpc_equip_pose` (server → every peer, reliable) sets `_equip_pose_active` true at arm start and false at drop or cancel; `Player.is_ability_pose_active()` ORs it in. It is **visual only** — `WeaponController.set_weapon_visual_hidden`, never `_holstered` — for the same reason a weapon-fire burst is: the drop goes through `fire_weapon_fire()`, whose `_is_ready()` would refuse a real holster. The weapon model is hidden and HoldBlend sits at `0.0` for the whole arming/armed window; the gun returns when the bomb is dropped or the arm is cancelled.
+
 **The HUD's active-ability readout is broader than the pose.** `Player.get_active_ability_state()` returns `{ability, remaining, duration}` for:
 - charge / bashdown (rollback state, authored duration from the cached ability);
 - noclip (per-peer meter; authoritatively early-ended by the effect);
-- weapon-fire bursts/volleys (`WeaponFireAbility`, e.g. FlyGirl's Carpet Bomb): `WeaponController` records the wall-clock window `(shots - 1) × burst_post_shoot_delay` and the ability name; `Player` maps that name back to the ability for its icon. SERVER-mode abilities do not run `activate()` on the owner client, so `AbilityManager._request_cast` starts the same window locally (`start_ability_visual`) when it sends the cast; the shots themselves stay server-only;
+- an active **equip charge** (`DavyCrockettAbility`): `AbilityManager.get_equip_charge_state()` reports the arming window from the owner's local clock, so the icon and ring cover the 5 s charge. Once it completes the state empties and the HUD falls through to "USING DAVY CROCKETT", which is the cue that mouse1 now drops the bomb;
+- weapon-fire bursts/volleys (`WeaponFireAbility`, e.g. FlyGirl's Blast Charges): `WeaponController` records the wall-clock window `(shots - 1) × burst_post_shoot_delay` and the ability name; `Player` maps that name back to the ability for its icon. SERVER-mode abilities do not run `activate()` on the owner client, so `AbilityManager._request_cast` starts the same window locally (`start_ability_visual`) when it sends the cast; the shots themselves stay server-only;
 - any timed **self-effect** ability: each ability names the effect it keeps on the caster via `Ability.active_effect_id()` / `active_effect_duration()` (invisibility, wallhack, aimbot, `SelfEffectAbility`, heal-over-time), and the remaining time comes from the replicated effect mirror. Suffixed stacking ids resolve through `StatusEffectManager.base_effect_id()`;
 - calligraphy (state-driven, drawn with a full ring).
 
@@ -651,8 +654,9 @@ integrates in **both** directions: an active meter drains at 1 s/s, an inactive 
 deadline expire at the same instant, so `cooldown = 1.0` already means "one press per second" and the
 anti-spam gate needed no new machinery. `MeteredAbility._init()` pins it, along with `cast_type =
 INSTANT`, `max_charges = 1` and `cast_mode = SERVER` — each other value is silently broken: EQUIP is
-never cast from the ability key at all (the key only toggles `equipped_index`) and unequips itself via
-`_cast_equipped`; `max_charges > 1` would route the gate through `charge_interval`; CLIENT would run
+never cast from the ability key at all (the key only toggles `equipped_index`, and may start an equip
+charge — see the Davy Crockett section above) and unequips itself via `_cast_equipped`;
+`max_charges > 1` would route the gate through `charge_interval`; CLIENT would run
 the hooks off-server, where the `StatusEffectManager` calls they need are no-ops, so the meter would
 burn down with nothing happening.
 
@@ -730,6 +734,51 @@ amber once there is something to spend, matching the charge bars.
 **Not exercised:** a real two-peer session (the harness opens a local loopback server peer to make
 `StatusEffectManager` accept effects, but there is no second peer), and the movement/gameplay half of
 noclip itself, which is unchanged by this feature.
+
+### Equip-charge abilities — Davy Crockett
+
+Added 2026-11-20. `DavyCrockettAbility` (`player/abilities/davy_crockett_ability.gd`, assigned to
+FlyGirl in `player/characters/breacher.tres`) is the first **EQUIP ability with a charge**. The
+ability key arms the bomb; a siren starts for **every peer**; after `arming_time` (5 s) the fire
+button drops the nuke, and the siren keeps sounding through flight **until the bomb detonates**.
+Pressing the ability key again before the drop cancels it and stops the siren. `cast_type` is EQUIP,
+so the key only toggles `AbilityManager.equipped_index`; the actual shot still runs server-side
+through `activate_primary()` → `WeaponFireAbility.activate()`.
+
+**`Ability.equip_charge_duration()` is the opt-in.** It defaults to `0.0`, which is the original
+EQUIP behaviour every other ability had (mouse1 casts immediately). A positive duration makes the
+key start an arming window instead. `equip_charge_siren()` / `equip_charge_siren_volume_db()` supply
+the loop; both are authored data, so the shared `Ability` resource never carries per-player state.
+
+**The clock lives on `AbilityManager`, in two copies.** The owner's copy gates the fire button for
+responsiveness; the server's copy is authoritative and validates the cast from its own start time.
+`_begin_equip_charge()` starts the local window, plays the owner's siren immediately, and sends
+`_request_equip_charge.rpc_id(1, ...)`; `_server_equip_charge()` opens the server window and
+broadcasts `_rpc_equip_siren` (`@rpc("authority", "call_local", "reliable")`). Both the arm request
+and the cast cross the same link, so the two clocks line up; `EQUIP_SERVER_TOLERANCE` (0.15 s) only
+absorbs timer jitter. The server rejects a cast whose arming window is not open, so a client cannot
+skip the charge by sending early. The owner refuses mouse1 locally too (and stays equipped), which
+makes the same click work the instant the charge completes.
+
+**The siren is global and per-peer, and it lasts until detonation.** Each peer receives
+`_rpc_equip_siren` and starts a duplicated, loop-enabled, **non-positional** `AudioStreamPlayer`
+under that player's `AbilityManager` — deliberately not `AudioStreamPlayer3D`, so distance never
+attenuates it. Re-arming across peers is idempotent (`_equip_siren_slot`), so the owner's immediate
+local start and the server's broadcast do not restart the loop.
+
+The charged drop does **not** stop it: `_consume_equip_charge_local()` clears the arming window and
+marks `_equip_siren_bomb_in_flight`, so death/respawn leaves the alarm alone. The nuke projectile
+carries `stops_equip_siren_on_explosion = true` in `nuke.tscn`; its authority-side
+`start_explode()` calls `AbilityManager.stop_equip_siren_on_explosion.rpc()`, a
+`@rpc("authority", "call_local", "reliable")` broadcast, and every peer stops together. A cancel
+before the drop, or death while still arming, stops it immediately through
+`_rpc_equip_siren(false)`. A 60 s `EQUIP_SIREN_MAX_SECONDS` timer is a safety net only (refused
+shot, lost reliable packet, shooter disconnected); the nuke normally detonates long before it.
+
+**Third-party peers hear the siren but hold no charge state** — only the owner and server copies
+do, so a spectator's HUD does not draw the arming ring, and the third-party copy does not track
+`_equip_siren_bomb_in_flight`: it stops on the explosion broadcast and never owns the stop. See
+`05-known-issues.md` #162.
 
 ### Air Control — a metered ability whose pool is rollback state
 

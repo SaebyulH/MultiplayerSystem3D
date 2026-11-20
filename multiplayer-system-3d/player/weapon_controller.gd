@@ -2378,7 +2378,7 @@ func _refresh_holstered() -> void:
 	# calligraphy_release ordering documented above is unchanged.
 	var blocking := _parent_player != null and _parent_player.is_ability_pose_holster_active()
 	set_holstered(out_of_combat or blocking or (sem != null and sem.is_weapon_holstered()))
-	# Bursts (Carpet Bomb) hide the model without blocking the weapon, so the
+	# Bursts (Blast Charges) hide the model without blocking the weapon, so the
 	# burst itself can keep firing from the same WeaponController.
 	var visual := _parent_player != null and _parent_player.is_ability_pose_active() \
 		and not _holstered
@@ -2411,7 +2411,7 @@ func refresh_holstered() -> void:
 ##
 ## [param damage_mult] scales the shot's damage on top of the character's own amp.
 ## Calligraphy passes its drawing score; WeaponFireAbility passes its authored
-## damage_multiplier (Carpet Bomb's 0.1); everything else leaves it at 1.0.
+## damage_multiplier (Blast Charges's 0.1); everything else leaves it at 1.0.
 func fire_weapon_fire(fire: WeaponFire, interrupt_shooting: bool = true, ability_name: String = "", damage_mult: float = 1.0) -> void:
 	if not fire:
 		return

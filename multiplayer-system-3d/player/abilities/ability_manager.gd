@@ -90,6 +90,40 @@ var _meter_active: Array[bool] = []
 ## Index of the currently-equipped (EQUIP-cast) ability, or -1 when none.
 var equipped_index: int = -1
 
+## Equip-charge state (see Ability.equip_charge_duration).  The slot being
+## armed, or -1; the wall-clock instant the owner began arming; and a serial
+## that invalidates a stale siren-stop timer after a cancel/re-arm.
+##
+## Only the owner's and the server's copies hold this — a third-party peer hears
+## the siren but has no charge state (05-known-issues.md #162).  The server's
+## copy is what validates the cast; the owner's copy is the responsive gate.
+var _equip_charge_slot: int = -1
+var _equip_charge_start_ms: int = 0
+var _equip_siren_serial: int = 0
+## Slot whose siren is playing on this peer, or -1.  Makes a repeated start
+## (owner's local start + the server's broadcast) idempotent.
+var _equip_siren_slot: int = -1
+var _equip_siren: AudioStreamPlayer = null
+## True once the bomb has been dropped and the siren belongs to a projectile in
+## flight.  Owner and server only: it keeps a death/respawn from stopping the
+## alarm before the nuke detonates.  The explosion RPC stops the siren on every
+## peer, including the third-party copies that never held this flag.
+var _equip_siren_bomb_in_flight: bool = false
+## Replicated-on-every-peer pose flag: true from arm start until the drop or the
+## cancel.  Visual only — it hides the weapon model and drops HoldBlend to 0.0
+## (the Blast Charges presentation), never holsters, because the drop itself goes
+## through WeaponController.fire_weapon_fire(), which checks `_is_ready()`.
+var _equip_pose_active: bool = false
+
+## The server accepts a cast this many seconds before its own copy of the
+## charge clock completes, absorbing tick-timer jitter.  Both the arm request
+## and the cast cross the same link, so the two clocks normally line up.
+const EQUIP_SERVER_TOLERANCE := 0.15
+## Safety net only: if no explosion report ever arrives (the shot was refused,
+## the shooter disconnected, a reliable packet was lost), the siren still ends.
+## The nuke normally detonates long before this.
+const EQUIP_SIREN_MAX_SECONDS := 60.0
+
 func _ready() -> void:
 	_parent_player = get_parent() as Player
 	_resize_state()
@@ -106,6 +140,17 @@ func _resize_state() -> void:
 	for i in _meter_active.size():
 		if _meter_active[i]:
 			_set_meter(i, _ability_at(i), false)
+	# A character change invalidates any armed EQUIP ability on this peer.  A
+	# dropped bomb's siren is left alone (it ends at detonation), and a
+	# third-party copy never owns the stop — the server broadcasts it.
+	if _equip_siren_bomb_in_flight \
+			or (not _is_owning_client() and not multiplayer.is_server()):
+		_clear_equip_charge_local()
+	else:
+		_end_equip_charge_local()
+	# A character change invalidates the arming pose on every peer.  A dropped
+	# bomb is unaffected (its pose ended at the drop; only the siren continues).
+	_equip_pose_active = false
 	var n: int = abilities.size()
 	_cooldowns.resize(n)
 	_charge_bank.resize(n)
@@ -595,25 +640,316 @@ func _on_ability_key(index: int) -> void:
 		return
 	print("[Ability] on_key ", index, " -> ", ability.ability_name, " cast_type=", ability.cast_type)
 	if ability.cast_type == Ability.CastType.EQUIP:
-		# Toggle: press the same key again to unequip.
-		equipped_index = -1 if equipped_index == index else index
+		# Toggle: press the same key again to unequip (also cancels an equip
+		# charge and stops its siren).
+		if equipped_index == index:
+			_cancel_equip(index)
+			equipped_index = -1
+			return
+		# An armed ability with a charge must not start while its cooldown is
+		# closed: the siren would play for a bomb that mouse1 then refuses.
+		if ability.equip_charge_duration() > 0.0 and _is_on_cooldown(index):
+			return
+		if equipped_index >= 0:
+			_cancel_equip(equipped_index)
+		equipped_index = index
+		_begin_equip_charge(index)
 		return
 	_request_cast(index, 0)
 
 func _cast_equipped(mode: int) -> void:
 	if equipped_index < 0:
 		return
+	var ability := _ability_at(equipped_index)
+	if ability == null:
+		return
+	# An equip-charge ability is cast by the primary button only (LMB).  The
+	# secondary/tertiary hooks are empty on every current user, and spending the
+	# charge on a no-op would burn the cooldown without dropping the bomb.
+	if mode != 0 and ability.equip_charge_duration() > 0.0:
+		return
 	if _is_on_cooldown(equipped_index):
+		return
+	# The fire button is inert until the equip charge has finished.  Refusing
+	# here (rather than sending and letting the server reject) keeps the player
+	# equipped, so the same mouse1 works the moment the charge completes.
+	if not _equip_charge_ready(equipped_index):
 		return
 	var index: int = equipped_index
 	if not _request_cast(index, mode):
 		return
+	# The bomb is on its way: clear the charge but KEEP the siren running.  It
+	# stops when the nuke reports its explosion, not when it is dropped.
+	_consume_equip_charge_local()
 	# Unequip after this frame's physics so the fire press that cast the ability
 	# doesn't also fire the weapon (WeaponController suppresses while equipped).
 	_unequip.call_deferred()
 
 func _unequip() -> void:
 	equipped_index = -1
+
+
+#region Equip charge (Davy Crockett)
+
+## Start the arming window for [param index] on the owner's copy and tell the
+## server, which validates its own clock and broadcasts the siren.  A no-op for
+## an EQUIP ability with no charge (0 s).
+func _begin_equip_charge(index: int) -> void:
+	var ability := _ability_at(index)
+	if ability == null or ability.equip_charge_duration() <= 0.0:
+		return
+	_equip_charge_slot = index
+	_equip_charge_start_ms = Time.get_ticks_msec()
+	_equip_siren_bomb_in_flight = false
+	_equip_pose_active = true
+	_start_equip_siren(index, ability)
+	if multiplayer.is_server():
+		_server_equip_charge(index, true)
+	else:
+		_request_equip_charge.rpc_id(1, index, true)
+
+
+## Cancel an armed ability.  Stops the owner's siren immediately and tells the
+## server so every other peer stops theirs.
+func _cancel_equip(index: int) -> void:
+	var ability := _ability_at(index)
+	var had_charge := ability != null and ability.equip_charge_duration() > 0.0
+	_end_equip_charge_local()
+	if not had_charge:
+		return
+	if multiplayer.is_server():
+		_server_equip_charge(index, false)
+	else:
+		_request_equip_charge.rpc_id(1, index, false)
+
+
+## Drop any armed EQUIP ability.  Called from death/despawn on every peer.
+##
+## An **un-dropped** arming charge is cancelled and its siren stopped here.  A
+## bomb already in flight keeps its siren until detonation: neither death nor a
+## respawn silences it, and a third-party copy never owns the stop (the server
+## broadcast at the explosion does).
+func cancel_equip() -> void:
+	var index := _equip_charge_slot
+	var ability: Ability = _ability_at(index) if index >= 0 else null
+	var had_charge := ability != null and ability.equip_charge_duration() > 0.0
+	equipped_index = -1
+	if _equip_siren_bomb_in_flight:
+		_clear_equip_charge_local()
+		return
+	if not _is_owning_client() and not multiplayer.is_server():
+		_clear_equip_charge_local()
+		return
+	_end_equip_charge_local()
+	if not had_charge:
+		return
+	if multiplayer.is_server():
+		_server_equip_charge(index, false)
+	else:
+		_request_equip_charge.rpc_id(1, index, false)
+
+
+## True when the fire button may cast [param index].  An ability with no charge
+## is always ready; an armed one is ready after its authored duration.
+func _equip_charge_ready(index: int) -> bool:
+	var ability := _ability_at(index)
+	if ability == null:
+		return false
+	var duration := ability.equip_charge_duration()
+	if duration <= 0.0:
+		return true
+	if _equip_charge_slot != index:
+		return false
+	var elapsed := float(Time.get_ticks_msec() - _equip_charge_start_ms) / 1000.0
+	return elapsed >= duration
+
+
+## `{ability, remaining, duration}` while an equip charge is still filling, or
+## an empty dictionary.  Player merges this into the HUD's active-ability
+## readout so the icon and its draining ring show the arming window.
+func get_equip_charge_state() -> Dictionary:
+	if _equip_charge_slot < 0:
+		return {}
+	var ability := _ability_at(_equip_charge_slot)
+	if ability == null:
+		return {}
+	var duration := ability.equip_charge_duration()
+	if duration <= 0.0:
+		return {}
+	var elapsed := maxf(
+		float(Time.get_ticks_msec() - _equip_charge_start_ms) / 1000.0, 0.0)
+	var remaining := duration - elapsed
+	if remaining <= 0.0:
+		return {}
+	return {"ability": ability, "remaining": remaining, "duration": duration}
+
+
+## Clear the local arming window without touching the siren.  Used when the
+## bomb has been dropped (the siren now belongs to the projectile in flight) and
+## on third-party copies, which never own the siren's stop.
+func _clear_equip_charge_local() -> void:
+	_equip_charge_slot = -1
+	_equip_charge_start_ms = 0
+
+
+## The bomb was dropped: clear the charge and mark the running siren as
+## belonging to the projectile, so death/respawn leaves it alone until it
+## reports an explosion.
+func _consume_equip_charge_local() -> void:
+	_clear_equip_charge_local()
+	_equip_siren_bomb_in_flight = true
+	_equip_pose_active = false
+
+
+## Clear the local arming window and stop this peer's siren.  Does not touch
+## the server's copy (the server calls this for itself and broadcasts the stop).
+func _end_equip_charge_local() -> void:
+	_clear_equip_charge_local()
+	_equip_siren_bomb_in_flight = false
+	_equip_pose_active = false
+	_stop_equip_siren()
+
+
+## True from arm start until the drop/cancel.  Player ORs this into its
+## is_ability_pose_active() so every peer hides the weapon model and drops
+## HoldBlend to 0.0 for the whole arming window (Blast Charges's presentation).
+func is_equip_pose_active() -> bool:
+	return _equip_pose_active
+
+
+## Server-side authority for the arming window: opens it, validates a cast
+## against its own clock, and broadcasts the siren edges to every peer.
+func _server_equip_charge(index: int, on: bool) -> void:
+	if not multiplayer.is_server():
+		return
+	var ability := _ability_at(index)
+	if ability == null or ability.cast_type != Ability.CastType.EQUIP:
+		return
+	if ability.equip_charge_duration() <= 0.0:
+		return
+	if on:
+		if _parent_player == null or not _parent_player.spawned:
+			return
+		# No cooldown gate here: the owner already gates the key locally, and a
+		# server/client clock difference of a few ms must not leave the owner
+		# armed with a siren while the server refused.  The cast backstop still
+		# enforces the cooldown, and the 5 s charge cannot skip it.
+		_equip_charge_slot = index
+		_equip_charge_start_ms = Time.get_ticks_msec()
+		_rpc_equip_siren.rpc(index, true)
+		_rpc_equip_pose.rpc(true)
+	elif _equip_charge_slot == index:
+		_clear_equip_charge_local()
+		_equip_siren_bomb_in_flight = false
+		_rpc_equip_siren.rpc(index, false)
+		_rpc_equip_pose.rpc(false)
+
+
+## Server-side twin of _consume_equip_charge_local(): the drop succeeded, so
+## clear the arming window but leave the siren running for the projectile.
+func _server_consume_equip_charge(index: int) -> void:
+	if _equip_charge_slot != index:
+		return
+	_consume_equip_charge_local()
+	_rpc_equip_pose.rpc(false)
+
+
+## Owner -> server.  The owning peer is the only sender allowed to arm its own
+## ability; `index` resolves against this player's ability list on the server.
+@rpc("any_peer", "call_remote", "reliable")
+func _request_equip_charge(index: int, on: bool) -> void:
+	if not multiplayer.is_server():
+		return
+	if _parent_player == null or not _parent_player.is_rpc_sender_allowed(
+			multiplayer.get_remote_sender_id()):
+		return
+	_server_equip_charge(index, on)
+
+
+## Server -> every peer.  Starts/stops the global siren; the charge state stays
+## owner+server only (see the fields at the top).
+@rpc("authority", "call_local", "reliable")
+func _rpc_equip_siren(index: int, on: bool) -> void:
+	if on:
+		var ability := _ability_at(index)
+		if ability != null:
+			_start_equip_siren(index, ability)
+	else:
+		_equip_siren_bomb_in_flight = false
+		_stop_equip_siren()
+
+
+## Server -> every peer.  The arming pose is visual only (see
+## _equip_pose_active): every peer hides the shooter's weapon model and ramps
+## HoldBlend to 0.0, exactly like a weapon-fire burst, and restores it at drop.
+@rpc("authority", "call_local", "reliable")
+func _rpc_equip_pose(on: bool) -> void:
+	_equip_pose_active = on
+
+
+## Server -> every peer, sent by the nuke projectile when it detonates.  The
+## siren runs from arming through flight, so this is its normal end: it does not
+## care whether the siren still had an arming charge behind it.
+@rpc("authority", "call_local", "reliable")
+func stop_equip_siren_on_explosion() -> void:
+	_equip_siren_bomb_in_flight = false
+	_stop_equip_siren()
+
+
+## Non-positional, so every peer hears it regardless of distance.  Duplicated
+## per peer with looping enabled; a start on this peer while the same slot's
+## siren is already playing is ignored, which is how the owner's immediate
+## local start and the server's broadcast coexist.
+func _start_equip_siren(index: int, ability: Ability) -> void:
+	var stream := ability.equip_charge_siren()
+	if stream == null or ability.equip_charge_duration() <= 0.0 \
+			or not is_inside_tree():
+		return
+	if _equip_siren_slot == index and is_instance_valid(_equip_siren) \
+			and _equip_siren.playing:
+		return
+	_kill_equip_siren()
+	var looped: AudioStream = stream.duplicate()
+	if looped is AudioStreamWAV:
+		(looped as AudioStreamWAV).loop_mode = AudioStreamWAV.LOOP_FORWARD
+	else:
+		looped.set("loop", true)
+	_equip_siren = AudioStreamPlayer.new()
+	_equip_siren.stream = looped
+	_equip_siren.volume_db = ability.equip_charge_siren_volume_db()
+	_equip_siren_slot = index
+	add_child(_equip_siren)
+	_equip_siren.play()
+	# The siren runs until the nuke reports its explosion (or a cancel stops it).
+	# This timer is a safety net only, so a refused shot, a disconnect or a lost
+	# reliable packet cannot leave it looping forever.
+	_equip_siren_serial += 1
+	var serial := _equip_siren_serial
+	get_tree().create_timer(EQUIP_SIREN_MAX_SECONDS).timeout.connect(
+		_on_equip_siren_timeout.bind(serial))
+
+
+func _on_equip_siren_timeout(serial: int) -> void:
+	if serial != _equip_siren_serial:
+		return
+	_equip_siren_bomb_in_flight = false
+	_kill_equip_siren()
+
+
+func _stop_equip_siren() -> void:
+	_equip_siren_serial += 1
+	_kill_equip_siren()
+
+
+func _kill_equip_siren() -> void:
+	if is_instance_valid(_equip_siren):
+		_equip_siren.stop()
+		_equip_siren.queue_free()
+	_equip_siren = null
+	_equip_siren_slot = -1
+
+#endregion
+
 
 func _request_cast(index: int, mode: int) -> bool:
 	if index < 0 or index >= abilities.size():
@@ -728,6 +1064,18 @@ func _cast_ability(index: int, mode: int, target_names: Array = [], want_on: boo
 		return
 	if _is_on_cooldown(index):
 		return
+	# Equip-charge backstop: the server validates the arming window from its own
+	# clock, so a client cannot skip the siren by sending the cast early.  Both
+	# the arm request and the cast cross the same link, so the tolerance only
+	# absorbs tick-timer jitter.
+	var equip_duration := ability.equip_charge_duration()
+	if equip_duration > 0.0:
+		if _equip_charge_slot != index:
+			return
+		var armed_for := float(_now - _equip_charge_start_ms) / 1000.0
+		if armed_for + EQUIP_SERVER_TOLERANCE < equip_duration:
+			return
+		_server_consume_equip_charge(index)
 	print("[Ability] server casting ", ability.ability_name, " mode=", mode)
 	if ability is MeteredAbility:
 		# Checked before the targeted branch on purpose.  A metered ability is a

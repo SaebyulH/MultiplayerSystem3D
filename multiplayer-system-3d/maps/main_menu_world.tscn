@@ -790,6 +790,7 @@ metadata/_custom_type_script = "uid://cwu5cf7a0awcd"
 collision_mask = 0
 
 [node name="entity_0_mesh_instance" type="MeshInstance3D" parent="FuncGodotMap/entity_0_worldspawn" unique_id=57533420]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0017194748, 0.0069031715, 0.0021419525)
 mesh = SubResource("ArrayMesh_qwukf")
 
 [node name="entity_0_brush_0_collision_shape" type="CollisionShape3D" parent="FuncGodotMap/entity_0_worldspawn" unique_id=227395580]
@@ -1314,7 +1315,7 @@ shadow_enabled = true
 omni_range = 3.866
 
 [node name="OmniLight3D4" type="OmniLight3D" parent="." unique_id=963628254]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.821586, 8.357936, 6.59231)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.821586, 8.357936, 7.028467)
 light_color = Color(1.3528494, 0.69347197, 0, 1)
 light_energy = 5.866
 shadow_enabled = true

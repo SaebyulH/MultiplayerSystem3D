@@ -51,7 +51,7 @@ func _ready() -> void:
 
 func _test_resources(char: Character, air: AirControlAbility, carpet: WeaponFireAbility) -> void:
 	_check("FlyGirl slot 1 is AirControlAbility", air != null, str(char.abilities[0]))
-	_check("FlyGirl slot 2 is WeaponFireAbility (Carpet Bomb)", carpet != null,
+	_check("FlyGirl slot 2 is WeaponFireAbility (Blast Charges)", carpet != null,
 		str(char.abilities[1]))
 	if air != null:
 		_eq("air control is passive (not castable)", air.is_castable(), false)
@@ -60,8 +60,8 @@ func _test_resources(char: Character, air: AirControlAbility, carpet: WeaponFire
 		_eq("depleted air accel mult is Juggernaut's", air.depleted_air_accel_mult, 0.5)
 		_eq("depleted air cap mult is Juggernaut's", air.depleted_air_speed_cap_mult, 0.5)
 	if carpet != null:
-		_eq("Carpet Bomb max_charges", carpet.max_charges, 2)
-		_eq("Carpet Bomb damage_multiplier", carpet.damage_multiplier, 0.1)
+		_eq("Blast Charges max_charges", carpet.max_charges, 2)
+		_eq("Blast Charges damage_multiplier", carpet.damage_multiplier, 0.1)
 
 
 func _test_player(player: Player, air: AirControlAbility) -> void:

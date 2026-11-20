@@ -106,6 +106,29 @@ func active_effect_duration() -> float:
 	return 0.0
 
 
+## Seconds an EQUIP-cast ability must stay equipped before a fire button can
+## cast it.  0.0 — the default — is the original behaviour every EQUIP ability
+## had: mouse1 casts immediately after the ability key equips it.
+##
+## The clock lives on AbilityManager, never on this resource (an Ability is
+## shared by every player who holds it), and the server validates its own copy
+## of the clock before accepting the cast.
+func equip_charge_duration() -> float:
+	return 0.0
+
+
+## Optional looping stream played **non-positionally to every peer** while the
+## equip charge is running (see [method equip_charge_duration]).  The manager
+## duplicates it per peer and enables looping.  Null = no siren.
+func equip_charge_siren() -> AudioStream:
+	return null
+
+
+## Volume in dB for [method equip_charge_siren].
+func equip_charge_siren_volume_db() -> float:
+	return -6.0
+
+
 func activate(player: Player) -> void:
 	pass
 

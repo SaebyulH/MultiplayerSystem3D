@@ -1093,6 +1093,10 @@ func despawn():
 		_active_shield_fire.shield_current_hp = _active_shield_fire.shield_hp
 	if status_effect_manager:
 		status_effect_manager.clear_all_effects()
+	# Dying/disconnecting mid-arm must not leave the siren running for every
+	# peer, and must not leave a charge the next life could cash in.
+	if ability_manager:
+		ability_manager.cancel_equip()
 	set_wallhack_outline(false)
 	set_public_health_visible(false)
 	hide()
@@ -3024,11 +3028,17 @@ func is_bashing() -> bool:
 
 
 ## True while an action ability owns the body: shoulder charge, bashdown, noclip,
-## the heal channel, calligraphy, or a weapon-fire burst (Carpet Bomb).  The
-## animation tree drops HoldBlend to 0 for the whole window, so the arms read as
-## "casting" until a real ability animation replaces this placeholder.
+## the heal channel, calligraphy, an equip-charge arming window (Davy Crockett),
+## or a weapon-fire burst (Blast Charges).  The animation tree drops HoldBlend to
+## 0 for the whole window, so the arms read as "casting" until a real ability
+## animation replaces this placeholder.
 func is_ability_pose_active() -> bool:
 	if is_ability_pose_holster_active():
+		return true
+	# Davy Crockett's arming/armed window: visual only, like a weapon-fire
+	# burst — the drop itself is a WeaponController.fire_weapon_fire() call, and
+	# a real holster would make `_is_ready()` refuse it.
+	if ability_manager != null and ability_manager.is_equip_pose_active():
 		return true
 	# Weapon-fire bursts fire from the actual weapon, so they hide the model
 	# visually but must NOT set `_holstered`: the burst's next shot checks
@@ -3074,6 +3084,13 @@ func get_active_ability_state() -> Dictionary:
 		}
 	if status_effect_manager == null or ability_manager == null:
 		return {}
+	# An EQUIP ability that is still arming (Davy Crockett): the same icon+ring
+	# readout, draining over the charge window.  Once it completes the state
+	# empties and the HUD falls through to "USING <NAME>", which is the cue that
+	# mouse1 now works.
+	var equip_charge := ability_manager.get_equip_charge_state()
+	if not equip_charge.is_empty():
+		return equip_charge
 	if status_effect_manager.has_effect("noclip"):
 		for i in ability_manager.abilities.size():
 			var a := ability_manager.abilities[i]
@@ -3084,7 +3101,7 @@ func get_active_ability_state() -> Dictionary:
 					"remaining": ability_manager.get_meter_fraction(i) * max_meter,
 					"duration": max_meter,
 				}
-	# Ability-triggered bursts/volleys (Carpet Bomb, Davy Crockett, …): the
+	# Ability-triggered bursts/volleys (Blast Charges, Davy Crockett, …): the
 	# weapon controller owns their wall-clock window.
 	if weapon_controller != null:
 		var burst_name := weapon_controller.get_active_ability_name()

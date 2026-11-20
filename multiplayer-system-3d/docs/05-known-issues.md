@@ -102,11 +102,12 @@ The high-signal triage list: bugs, fragilities, and perf risks likely to cause f
 | 153 | 🟡 Medium | Netcode/UI | ✅ FIXED 2026-11-19 — Leaderboard showed the room host's ping as 0 ms on dedicated/VPS matches; the host row was forced to 0 before peer sampling |
 | 154 | 🟠 High | Netcode | ✅ FIXED 2026-11-19 — Results auto-return left the netfox tick loop dead: look/shoot worked in the returned lobby, movement did not |
 | 155 | 🟡 Medium | Flow | ✅ FIXED 2026-11-19 — A staging countdown coroutine could fire into the next session and swap the returned lobby to the match map |
-| 156 | 🟢 Low | Assets/Perf | Toon FX are selected by bare preset strings; a typo silently falls back, the grenade presets and the Carpet Bomb explosion preset exist only in the project copies of the vendored tables, and stacked 18 s nuke presets allocate a 700-instance batch each |
+| 156 | 🟢 Low | Assets/Perf | Toon FX are selected by bare preset strings; a typo silently falls back, the grenade presets and the Blast Charges explosion preset exist only in the project copies of the vendored tables, and stacked 18 s nuke presets allocate a 700-instance batch each |
 | 158 | 🟡 Medium | Correctness | Water containment is an axis-aligned box approximation; rotated brushes leak water outside the brush |
 | 159 | 🟢 Low | UX | WET can retrigger while bobbing on the waterline (no exit cooldown / hysteresis) |
 | 160 | 🟡 Medium | AI | Bots have no swim intent and water adds no navmesh polygons |
 | 161 | 🟢 Low | Perf/Visuals | Transparent double-sided water doubles rasterised area and sits in the per-object sorted transparent queue |
+| 162 | 🟢 Low | Netcode/UI | Equip-charge state (Davy Crockett) lives only on the owner's and server's `AbilityManager`; third-party peers hear the global siren but do not draw the arming ring, so a spectator HUD shows no charge |
 
 
 ---
