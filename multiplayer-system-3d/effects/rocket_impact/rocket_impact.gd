@@ -22,6 +22,9 @@ const CLAY := Color("#6a5857")
 ## Preview-only playback multiplier (the asset viewer's speed slider).  Gameplay
 ## never changes it, so it stays at 1.0 in every explosion.
 @export_range(0.05, 4.0, 0.01) var speed_scale := 1.0
+## Colour saturation applied after tint.  The Filmic tonemap desaturates bright
+## additive layers toward white, so >1 restores the authored hue.
+@export_range(0.0, 3.0, 0.05) var saturation := 1.45
 
 class Particle:
 	var position := Vector3.ZERO
@@ -71,6 +74,21 @@ var _clock := 0.0
 var _next_event := 0
 var _playing := false
 
+## Finished gameplay impacts are recycled instead of freed; `_ready()` allocates
+## the two MultiMesh batches.  Consumers use `acquire()` before instantiating.
+const POOL_LIMIT := 24
+static var _pool: Array = []
+
+static func acquire() -> Node3D:
+	while not _pool.is_empty():
+		var node := _pool.pop_back() as Node3D
+		if not is_instance_valid(node):
+			continue
+		if node.get_parent() != null:
+			node.get_parent().remove_child(node)
+		return node
+	return null
+
 func _ready() -> void:
 	top_level = true
 	_alpha = _make_batch(ALPHA_SHADER)
@@ -95,8 +113,12 @@ func play(impact_position: Vector3, surface_normal: Vector3, world_up := Vector3
 	var bounds := AABB(-extent, extent * 2.0)
 	_alpha.custom_aabb = bounds
 	_add.custom_aabb = bounds
-	_alpha_material.set_shader_parameter("tint", Vector3(tint.r, tint.g, tint.b))
-	_add_material.set_shader_parameter("tint", Vector3(tint.r, tint.g, tint.b))
+	if _alpha_material:
+		_alpha_material.set_shader_parameter("tint", Vector3(tint.r, tint.g, tint.b))
+		_alpha_material.set_shader_parameter("saturation", saturation)
+	if _add_material:
+		_add_material.set_shader_parameter("tint", Vector3(tint.r, tint.g, tint.b))
+		_add_material.set_shader_parameter("saturation", saturation)
 	_clock = 0.0
 	_next_event = 0
 	_particles.clear()
@@ -262,9 +284,27 @@ func _process(delta: float) -> void:
 	if _next_event == _events.size() and _particles.is_empty() and _playing:
 		_playing = false
 		set_process(false)
-		if auto_free:
-			queue_free()
 		finished.emit()
+		if auto_free:
+			_recycle()
+
+
+## Stop and park this impact for the next detonation; `play()` resets everything
+## except the two allocated batches and their materials.
+func _recycle() -> void:
+	_particles.clear()
+	_events.clear()
+	_dust_heads.clear()
+	_clock = 0.0
+	_next_event = 0
+	if _alpha != null:
+		_alpha.visible_instance_count = 0
+	if _add != null:
+		_add.visible_instance_count = 0
+	if _pool.size() < POOL_LIMIT:
+		_pool.append(self)
+	else:
+		queue_free()
 
 func _advance(target: float) -> void:
 	while _next_event < _events.size() and _events[_next_event].time <= target:
@@ -343,4 +383,4 @@ func _draw_particle(batch: MultiMesh, index: int, p: Particle, view: Basis) -> v
 	var basis := facing * Basis(Vector3.BACK, rotation) * Basis.from_scale(Vector3(size, size * p.stretch, size))
 	batch.set_instance_transform(index, Transform3D(basis, p.position))
 	batch.set_instance_color(index, color)
-	batch.set_instance_custom_data(index, Color(float(p.shape) / 10.0, age, p.seed, 1.0))
+	batch.set_instance_custom_data(index, Color(float(p.shape) / 16.0, age, p.seed, 0.125))

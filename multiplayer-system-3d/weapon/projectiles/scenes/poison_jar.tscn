@@ -42,6 +42,8 @@ world_hit_mode = 2
 align_to_velocity = false
 falloff_start = 10.0
 falloff_end = 30.0
+trail_preset = "grenade_ribbon"
+underwater_trail_preset = "rockettrail_underwater"
 
 [node name="CollisionShape3D" parent="." index="0" unique_id=1810742212]
 transform = Transform3D(-0.70883524, 6.196834e-08, 2.7087226e-15, 6.196834e-08, 0.70883524, 0, -2.708722e-15, 0, -0.70883524, 7.519108e-09, 0.08600857, 0)
@@ -56,6 +58,10 @@ shape = SubResource("CylinderShape3D_kbhll")
 
 [node name="ExplosionComponent" parent="." index="3" unique_id=473826993]
 splash_health_delta = -75.0
+effect_preset = "bigboom/ExplosionCore_MidAir"
+surface_effect_preset = "bigboom/ExplosionCore_Wall"
+underwater_effect_preset = "bigboom/ExplosionCore_MidAir_underwater"
+underwater_surface_effect_preset = "bigboom/ExplosionCore_Wall_underwater"
 explosion_color = Color(0.43137255, 0.19215687, 0.7882353, 1)
 explosion_sound = ExtResource("9_snd")
 explosion_sound_volume_db = -12.0

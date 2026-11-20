@@ -35,7 +35,10 @@ linear_velocity = Vector3(0, 0, -27)
 lifetime = 999.0
 hurtbox_hit_mode = 3
 world_hit_mode = 3
+shot_behaviour = 1
 align_to_velocity = true
+trail_preset = "grenade_ribbon"
+underwater_trail_preset = "rockettrail_underwater"
 
 [node name="CollisionShape3D" parent="." index="0" unique_id=1810742212]
 transform = Transform3D(-0.34807953, 3.043008e-08, 1.3301413e-15, -3.043008e-08, -0.34807953, -3.043008e-08, -1.3301407e-15, -3.043008e-08, 0.34807953, 0, 0, 0)
@@ -49,6 +52,10 @@ transform = Transform3D(-0.5297595, 4.631305e-08, 2.0244077e-15, -4.631305e-08, 
 shape = SubResource("CylinderShape3D_pq14p")
 
 [node name="ExplosionComponent" parent="." index="3"]
+effect_preset = "bigboom/ExplosionCore_MidAir"
+surface_effect_preset = "bigboom/ExplosionCore_Wall"
+underwater_effect_preset = "bigboom/ExplosionCore_MidAir_underwater"
+underwater_surface_effect_preset = "bigboom/ExplosionCore_Wall_underwater"
 explosion_sound = ExtResource("9_snd")
 explosion_sound_volume_db = -12.0
 

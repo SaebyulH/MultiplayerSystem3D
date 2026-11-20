@@ -39,7 +39,7 @@ linear_velocity = Vector3(0, 0, -20)
 hurtbox_hit_mode = 2
 world_hit_mode = 2
 align_to_velocity = true
-trail_preset = "carpet_trail"
+trail_preset = "rockettrail"
 underwater_trail_preset = "rockettrail_underwater"
 trail_scale = 0.8
 

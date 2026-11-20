@@ -471,7 +471,7 @@ dev tool with two tabs sharing one 3D preview:
 
 - **Effects** — the four live scene effects (`effects/muzzle_flash.tscn`,
   `bullet_impact.tscn`, `explosion.tscn`, `rocket_impact/rocket_impact.tscn`)
-  plus every `ToonExplosion.effect_catalog()` (32) and `ToonTrail.catalog()`
+  plus every `ToonExplosion.effect_catalog()` (42) and `ToonTrail.catalog()`
   (32) preset. The shared PREVIEW SPEED slider (persistent across both tabs,
   with a numeric `×` readout) and a SCALE slider drive the running effect.
   Both persist across effect selections (`SCALE` is user state, not a

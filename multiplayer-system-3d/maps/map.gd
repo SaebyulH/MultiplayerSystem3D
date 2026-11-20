@@ -17,6 +17,9 @@ var sci_spawn_locations: Array[Marker3D] = []
 ## the one clean cast it buys.  Queried from `Player._rollback_tick()`, so the list must
 ## be stable and the test must be pure geometry — see `WaterVolume.contains_point()`.
 var water_volumes: Array[Area3D] = []
+## Fast path for the per-projectile water check: most maps have no water at all,
+## so `is_point_in_water()` must not walk (or even touch) the list there.
+var has_water := false
 
 
 @export var despawn_location: Marker3D
@@ -87,6 +90,7 @@ func _enter_tree() -> void:
 	# Water volumes re-register from their own `_ready()`; this clear only has to beat the
 	# children, which it does because `_enter_tree()` is top-down and `_ready()` bottom-up.
 	water_volumes.clear()
+	has_water = false
 
 	for node in find_children("*", "Marker3D", true, false):
 		var spawn := node as PlayerSpawn
@@ -109,12 +113,14 @@ func _enter_tree() -> void:
 func register_water_volume(volume: Area3D) -> void:
 	if volume != null and not water_volumes.has(volume):
 		water_volumes.append(volume)
+		has_water = true
 
 
 ## Unregister a `WaterVolume` brush.  Called from the volume's `_exit_tree()` so a map
 ## swap cannot leave a freed node in the list.
 func unregister_water_volume(volume: Area3D) -> void:
 	water_volumes.erase(volume)
+	has_water = not water_volumes.is_empty()
 
 
 ## True when [param point] is inside any water brush of this map.
@@ -123,6 +129,8 @@ func unregister_water_volume(volume: Area3D) -> void:
 ## when called from `Player._rollback_tick()`.  Empty in maps with no water, which is the
 ## pre-water behaviour.
 func is_point_in_water(point: Vector3) -> bool:
+	if not has_water:
+		return false
 	for volume in water_volumes:
 		if not is_instance_valid(volume):
 			continue

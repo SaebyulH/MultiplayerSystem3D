@@ -1,0 +1,1326 @@
+// Game: MultiplayerSystem3D
+// Format: Valve
+// Generator: TrenchBroom 2026.2 (Build v2026.2 Release Win64)
+// entity 0
+{
+"mapversion" "220"
+"wad" ""
+"classname" "worldspawn"
+// brush 0
+{
+( -256 448 -176 ) ( -256 449 -176 ) ( -256 448 -175 ) Material-LIB/MedievalTiles/MedievalTiles[Green] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -688 -512 -176 ) ( -688 -512 -175 ) ( -687 -512 -176 ) Material-LIB/MedievalTiles/MedievalTiles[Green] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -688 448 -128 ) ( -687 448 -128 ) ( -688 449 -128 ) Material-LIB/MedievalTiles/MedievalTiles[Green] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -560 576 0 ) ( -560 577 0 ) ( -559 576 0 ) Material-LIB/MedievalTiles/MedievalTiles[Green] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -560 512 -144 ) ( -559 512 -144 ) ( -560 512 -143 ) Material-LIB/MedievalTiles/MedievalTiles[Green] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( 256 576 -144 ) ( 256 576 -143 ) ( 256 577 -144 ) Material-LIB/MedievalTiles/MedievalTiles[Green] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+}
+// brush 1
+{
+( 192 448 -48 ) ( 192 449 -48 ) ( 192 448 -47 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -720 -480 -48 ) ( -720 -480 -47 ) ( -719 -480 -48 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -720 448 0 ) ( -719 448 0 ) ( -720 449 0 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -592 576 176 ) ( -592 577 176 ) ( -591 576 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -592 -32 -16 ) ( -591 -32 -16 ) ( -592 -32 -15 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 224 576 -16 ) ( 224 576 -15 ) ( 224 577 -16 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 2
+{
+( -256 448 -32 ) ( -256 449 -32 ) ( -256 448 -31 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -1168 -448 -32 ) ( -1168 -448 -31 ) ( -1167 -448 -32 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -1168 448 0 ) ( -1167 448 0 ) ( -1168 449 0 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -1040 576 32 ) ( -1040 577 32 ) ( -1039 576 32 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -1040 32 0 ) ( -1039 32 0 ) ( -1040 32 1 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -224 576 0 ) ( -224 576 1 ) ( -224 577 0 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 3
+{
+( -160 448 -160 ) ( -160 449 -160 ) ( -160 448 -159 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -752 -448 -160 ) ( -752 -448 -159 ) ( -751 -448 -160 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -752 448 0 ) ( -751 448 0 ) ( -752 449 0 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -624 576 1 ) ( -624 577 1 ) ( -623 576 1 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -624 -192 -128 ) ( -623 -192 -128 ) ( -624 -192 -127 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 0 576 -128 ) ( 0 576 -127 ) ( 0 577 -128 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 4
+{
+( -256 448 0 ) ( -256 449 0 ) ( -256 448 1 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -1168 -64 0 ) ( -1168 -64 1 ) ( -1167 -64 0 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -1168 448 32 ) ( -1167 448 32 ) ( -1168 449 32 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -1040 576 320 ) ( -1040 577 320 ) ( -1039 576 320 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -1040 32 32 ) ( -1039 32 32 ) ( -1040 32 33 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -224 576 32 ) ( -224 576 33 ) ( -224 577 32 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 5
+{
+( -224 448 0 ) ( -224 449 0 ) ( -224 448 1 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -1136 -32 0 ) ( -1136 -32 1 ) ( -1135 -32 0 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -1136 448 0 ) ( -1135 448 0 ) ( -1136 449 0 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -1008 576 320 ) ( -1008 577 320 ) ( -1007 576 320 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -1008 32 32 ) ( -1007 32 32 ) ( -1008 32 33 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 0 576 32 ) ( 0 576 33 ) ( 0 577 32 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 6
+{
+( 168 384 48 ) ( 168 385 48 ) ( 168 384 49 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -1104 -480 48 ) ( -1104 -480 49 ) ( -1103 -480 48 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -1104 384 176 ) ( -1103 384 176 ) ( -1104 385 176 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -976 512 192 ) ( -976 513 192 ) ( -975 512 192 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -976 -32 80 ) ( -975 -32 80 ) ( -976 -32 81 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 288 512 80 ) ( 288 512 81 ) ( 288 513 80 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 7
+{
+( -224 -176 320 ) ( -224 -208 320 ) ( -224 -208 288 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -224 -208 320 ) ( -192 -208 320 ) ( -224 -208 288 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -224 -176 320 ) ( -192 -176 320 ) ( -192 -208 320 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -224 -176 288 ) ( -192 -176 320 ) ( -224 -176 320 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -192 -208 320 ) ( -192 -176 320 ) ( -224 -176 288 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+}
+// brush 8
+{
+( -128 448 -134 ) ( -128 449 -134 ) ( -128 448 -133 ) FreeStylized/wood_10_1k/wood_10_1k/wood_10_baseColor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -752 -416 -134 ) ( -752 -416 -133 ) ( -751 -416 -134 ) FreeStylized/wood_10_1k/wood_10_1k/wood_10_baseColor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -752 448 26 ) ( -751 448 26 ) ( -752 449 26 ) FreeStylized/wood_10_1k/wood_10_1k/wood_10_baseColor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -624 576 30 ) ( -624 577 30 ) ( -623 576 30 ) FreeStylized/wood_10_1k/wood_10_1k/wood_10_baseColor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -624 -224 -102 ) ( -623 -224 -102 ) ( -624 -224 -101 ) FreeStylized/wood_10_1k/wood_10_1k/wood_10_baseColor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -32 576 -102 ) ( -32 576 -101 ) ( -32 577 -102 ) FreeStylized/wood_10_1k/wood_10_1k/wood_10_baseColor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 9
+{
+( -124 448 -138 ) ( -124 449 -138 ) ( -124 448 -137 ) FreeStylized/wood_10_1k/wood_10_1k/wood_10_baseColor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -752 -412 -138 ) ( -752 -412 -137 ) ( -751 -412 -138 ) FreeStylized/wood_10_1k/wood_10_1k/wood_10_baseColor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -752 448 2 ) ( -751 448 2 ) ( -752 449 2 ) FreeStylized/wood_10_1k/wood_10_1k/wood_10_baseColor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -624 576 26 ) ( -624 577 26 ) ( -623 576 26 ) FreeStylized/wood_10_1k/wood_10_1k/wood_10_baseColor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -624 -228 -106 ) ( -623 -228 -106 ) ( -624 -228 -105 ) FreeStylized/wood_10_1k/wood_10_1k/wood_10_baseColor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -36 576 -106 ) ( -36 576 -105 ) ( -36 577 -106 ) FreeStylized/wood_10_1k/wood_10_1k/wood_10_baseColor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 10
+{
+( -272 448 160 ) ( -272 449 160 ) ( -272 448 161 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.0815 0.0815
+( -1168 -448 160 ) ( -1168 -448 161 ) ( -1167 -448 160 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.0815 0.0815
+( -1168 448 192 ) ( -1167 448 192 ) ( -1168 449 192 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.0815 0.0815
+( -1040 576 224 ) ( -1040 577 224 ) ( -1039 576 224 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.0815 0.0815
+( -1040 -64 192 ) ( -1039 -64 192 ) ( -1040 -64 193 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.0815 0.0815
+( -224 576 192 ) ( -224 576 193 ) ( -224 577 192 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.0815 0.0815
+}
+// brush 11
+{
+( 272 384 64 ) ( 272 385 64 ) ( 272 384 65 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -1104 -480 64 ) ( -1104 -480 65 ) ( -1103 -480 64 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -1104 384 192 ) ( -1103 384 192 ) ( -1104 385 192 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -976 512 352 ) ( -976 513 352 ) ( -975 512 352 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -976 -32 96 ) ( -975 -32 96 ) ( -976 -32 97 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 304 512 96 ) ( 304 512 97 ) ( 304 513 96 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 12
+{
+( 144 -296 176 ) ( 136 -312 80 ) ( 136 -200 80 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 192 -312 80 ) ( 136 -312 80 ) ( 144 -296 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 192 -312 80 ) ( 192 -200 80 ) ( 136 -200 80 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 144 -216 176 ) ( 192 -216 176 ) ( 192 -296 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 192 -216 176 ) ( 144 -216 176 ) ( 136 -200 80 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 192 -216 176 ) ( 192 -200 80 ) ( 192 -312 80 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 13
+{
+( 128 384 -32 ) ( 128 385 -32 ) ( 128 384 -31 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -1200 -320 -32 ) ( -1200 -320 -31 ) ( -1199 -320 -32 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -1200 384 48 ) ( -1199 384 48 ) ( -1200 385 48 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -1072 512 64 ) ( -1072 513 64 ) ( -1071 512 64 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -1072 -192 0 ) ( -1071 -192 0 ) ( -1072 -192 1 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 192 512 0 ) ( 192 512 1 ) ( 192 513 0 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 14
+{
+( 144 256 -32 ) ( 144 257 -32 ) ( 144 256 -31 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -1200 -368 -32 ) ( -1200 -368 -31 ) ( -1199 -368 -32 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -1200 256 0 ) ( -1199 256 0 ) ( -1200 257 0 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -1072 384 48 ) ( -1072 385 48 ) ( -1071 384 48 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -1072 -320 0 ) ( -1071 -320 0 ) ( -1072 -320 1 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 192 384 0 ) ( 192 384 1 ) ( 192 385 0 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 15
+{
+( 128 -208 48 ) ( 112 -208 0 ) ( 112 -192 0 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 128 -208 48 ) ( 192 -208 48 ) ( 192 -208 0 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 192 -208 0 ) ( 192 -192 0 ) ( 112 -192 0 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 128 -192 48 ) ( 192 -192 48 ) ( 192 -208 48 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 192 -192 0 ) ( 192 -192 48 ) ( 128 -192 48 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 192 -208 48 ) ( 192 -192 48 ) ( 192 -192 0 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 16
+{
+( 128 -320 48 ) ( 112 -320 0 ) ( 112 -304 0 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 128 -320 48 ) ( 192 -320 48 ) ( 192 -320 0 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 192 -320 0 ) ( 192 -304 0 ) ( 112 -304 0 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 128 -304 48 ) ( 192 -304 48 ) ( 192 -320 48 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 192 -304 0 ) ( 192 -304 48 ) ( 128 -304 48 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 192 -320 48 ) ( 192 -304 48 ) ( 192 -304 0 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 17
+{
+( 120 -304 16 ) ( 112 -304 0 ) ( 112 -208 0 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 120 -304 16 ) ( 192 -304 16 ) ( 192 -304 0 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 192 -304 0 ) ( 192 -208 0 ) ( 112 -208 0 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 120 -208 16 ) ( 192 -208 16 ) ( 192 -304 16 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 192 -208 0 ) ( 192 -208 16 ) ( 120 -208 16 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 192 -304 16 ) ( 192 -208 16 ) ( 192 -208 0 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 18
+{
+( 126 -322 72 ) ( 124 -324 64 ) ( 124 -188 64 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 126 -322 72 ) ( 192 -322 72 ) ( 192 -324 64 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 192 -324 64 ) ( 192 -188 64 ) ( 124 -188 64 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 126 -190 72 ) ( 192 -190 72 ) ( 192 -322 72 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 124 -188 64 ) ( 192 -188 64 ) ( 192 -190 72 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 192 -190 72 ) ( 192 -188 64 ) ( 192 -324 64 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 19
+{
+( 124 -188 64 ) ( 120 -184 80 ) ( 120 -328 80 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 192 -328 80 ) ( 192 -324 64 ) ( 124 -324 64 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 122 -324 72 ) ( 250 -316 72 ) ( 122 -316 72 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 120 -184 80 ) ( 192 -184 80 ) ( 192 -328 80 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 120 -184 80 ) ( 124 -188 64 ) ( 192 -188 64 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 192 -328 80 ) ( 192 -184 80 ) ( 192 -188 64 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 20
+{
+( 144 384 48 ) ( 144 385 48 ) ( 144 384 49 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -1128 -296 48 ) ( -1128 -296 49 ) ( -1127 -296 48 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -1128 384 176 ) ( -1127 384 176 ) ( -1128 385 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -1000 512 192 ) ( -1000 513 192 ) ( -999 512 192 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -1000 -216 80 ) ( -999 -216 80 ) ( -1000 -216 81 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 168 512 80 ) ( 168 512 81 ) ( 168 513 80 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 21
+{
+( 151.94482758620688 -296 287.3379310344827 ) ( 143.94482758620688 -312 191.33793103448275 ) ( 143.94482758620688 -200 191.33793103448275 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 192 -296.43243243243245 189.4054054054054 ) ( 136 -296.43243243243245 189.4054054054054 ) ( 144 -280.43243243243245 285.4054054054054 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 192 -312 192 ) ( 192 -200 192 ) ( 136 -200 192 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 144 -216 288 ) ( 192 -216 288 ) ( 192 -296 288 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( 192 -231.56756756756758 285.4054054054054 ) ( 144 -231.56756756756758 285.4054054054054 ) ( 136 -215.56756756756758 189.40540540540542 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 192 -216 288 ) ( 192 -200 192 ) ( 192 -312 192 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 22
+{
+( 168 384 64 ) ( 168 385 64 ) ( 168 384 65 ) FreeStylized/wood_planks_22_1k/wood_planks_22_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -1104 -480 64 ) ( -1104 -480 65 ) ( -1103 -480 64 ) FreeStylized/wood_planks_22_1k/wood_planks_22_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -1104 384 192 ) ( -1103 384 192 ) ( -1104 385 192 ) FreeStylized/wood_planks_22_1k/wood_planks_22_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -976 512 216 ) ( -976 513 216 ) ( -975 512 216 ) FreeStylized/wood_planks_22_1k/wood_planks_22_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -976 -32 96 ) ( -975 -32 96 ) ( -976 -32 97 ) FreeStylized/wood_planks_22_1k/wood_planks_22_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 176 512 96 ) ( 176 512 97 ) ( 176 513 96 ) FreeStylized/wood_planks_22_1k/wood_planks_22_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 23
+{
+( -224 544 160 ) ( -224 545 160 ) ( -224 544 161 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -1360 -336 160 ) ( -1360 -336 161 ) ( -1359 -336 160 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -1360 544 320 ) ( -1359 544 320 ) ( -1360 545 320 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -1232 672 336 ) ( -1232 673 336 ) ( -1231 672 336 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -1232 -304 192 ) ( -1231 -304 192 ) ( -1232 -304 193 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 272 672 192 ) ( 272 672 193 ) ( 272 673 192 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 24
+{
+( -224 -304 320 ) ( -224 -336 320 ) ( -224 -336 288 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -224 -336 320 ) ( -192 -336 320 ) ( -224 -336 288 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -224 -304 320 ) ( -192 -304 320 ) ( -192 -336 320 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -224 -304 288 ) ( -192 -304 320 ) ( -224 -304 320 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -192 -336 320 ) ( -192 -304 320 ) ( -224 -304 288 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+}
+// brush 25
+{
+( -224 672 160 ) ( -224 673 160 ) ( -224 672 161 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -1360 -208 160 ) ( -1360 -208 161 ) ( -1359 -208 160 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -1360 672 320 ) ( -1359 672 320 ) ( -1360 673 320 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -1232 800 336 ) ( -1232 801 336 ) ( -1231 800 336 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -1232 -176 192 ) ( -1231 -176 192 ) ( -1232 -176 193 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 272 800 192 ) ( 272 800 193 ) ( 272 801 192 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 26
+{
+( -224 -432 320 ) ( -224 -464 320 ) ( -224 -464 288 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -224 -464 320 ) ( -192 -464 320 ) ( -224 -464 288 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -224 -432 320 ) ( -192 -432 320 ) ( -192 -464 320 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -224 -432 288 ) ( -192 -432 320 ) ( -224 -432 320 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -192 -464 320 ) ( -192 -432 320 ) ( -224 -432 288 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+}
+// brush 27
+{
+( -224 400 160 ) ( -224 401 160 ) ( -224 400 161 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -1360 -480 160 ) ( -1360 -480 161 ) ( -1359 -480 160 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -1360 400 320 ) ( -1359 400 320 ) ( -1360 401 320 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -1232 528 336 ) ( -1232 529 336 ) ( -1231 528 336 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -1232 -448 192 ) ( -1231 -448 192 ) ( -1232 -448 193 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 272 528 192 ) ( 272 528 193 ) ( 272 529 192 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 28
+{
+( -224 -48 320 ) ( -224 -80 320 ) ( -224 -80 288 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -224 -80 320 ) ( -192 -80 320 ) ( -224 -80 288 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -224 -48 320 ) ( -192 -48 320 ) ( -192 -80 320 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -224 -48 288 ) ( -192 -48 320 ) ( -224 -48 320 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -192 -80 320 ) ( -192 -48 320 ) ( -224 -48 288 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+}
+// brush 29
+{
+( -224 800 160 ) ( -224 801 160 ) ( -224 800 161 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -1360 -80 160 ) ( -1360 -80 161 ) ( -1359 -80 160 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -1360 800 320 ) ( -1359 800 320 ) ( -1360 801 320 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -1232 928 336 ) ( -1232 929 336 ) ( -1231 928 336 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -1232 -48 192 ) ( -1231 -48 192 ) ( -1232 -48 193 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 272 928 192 ) ( 272 928 193 ) ( 272 929 192 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 30
+{
+( -144 1088 176 ) ( -144 1088 177 ) ( -144 1087 176 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 0 1.0000000000000002 0 0 ] [ 0 0 -1.0000000000000002 0 ] 0 0.063 0.063
+( 864 -464 208 ) ( 864 -464 209 ) ( 865 -464 208 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ -1.0000000000000002 0 0 0 ] [ 0 0 -1.0000000000000002 0 ] 0 0.063 0.063
+( 736 1088 336 ) ( 736 1087 336 ) ( 737 1088 336 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 864 960 352 ) ( 865 960 352 ) ( 864 959 352 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 736 -48 176 ) ( 737 -48 176 ) ( 736 -48 177 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 1.0000000000000002 0 0 0 ] [ 0 0 -1.0000000000000002 0 ] 0 0.063 0.063
+( -112 960 208 ) ( -112 959 208 ) ( -112 960 209 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 0 -1.0000000000000002 0 0 ] [ 0 0 -1.0000000000000002 0 ] 0 0.063 0.063
+}
+// brush 31
+{
+( -256 448 288 ) ( -256 449 288 ) ( -256 448 289 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -1168 -448 288 ) ( -1168 -448 289 ) ( -1167 -448 288 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -1168 448 320 ) ( -1167 448 320 ) ( -1168 449 320 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -1040 576 352 ) ( -1040 577 352 ) ( -1039 576 352 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -1040 -64 320 ) ( -1039 -64 320 ) ( -1040 -64 321 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -224 576 320 ) ( -224 576 321 ) ( -224 577 320 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 32
+{
+( -16 1088 176 ) ( -16 1088 177 ) ( -16 1087 176 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 0 1.0000000000000002 0 0 ] [ 0 0 -1.0000000000000002 0 ] 0 0.063 0.063
+( 992 -464 208 ) ( 992 -464 209 ) ( 993 -464 208 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ -1.0000000000000002 0 0 0 ] [ 0 0 -1.0000000000000002 0 ] 0 0.063 0.063
+( 864 1088 336 ) ( 864 1087 336 ) ( 865 1088 336 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 992 960 352 ) ( 993 960 352 ) ( 992 959 352 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 864 -48 176 ) ( 865 -48 176 ) ( 864 -48 177 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 1.0000000000000002 0 0 0 ] [ 0 0 -1.0000000000000002 0 ] 0 0.063 0.063
+( 16 960 208 ) ( 16 959 208 ) ( 16 960 209 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 0 -1.0000000000000002 0 0 ] [ 0 0 -1.0000000000000002 0 ] 0 0.063 0.063
+}
+// brush 33
+{
+( 112 1088 176 ) ( 112 1088 177 ) ( 112 1087 176 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 0 1.0000000000000002 0 0 ] [ 0 0 -1.0000000000000002 0 ] 0 0.063 0.063
+( 1120 -464 208 ) ( 1120 -464 209 ) ( 1121 -464 208 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ -1.0000000000000002 0 0 0 ] [ 0 0 -1.0000000000000002 0 ] 0 0.063 0.063
+( 992 1088 336 ) ( 992 1087 336 ) ( 993 1088 336 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 1120 960 352 ) ( 1121 960 352 ) ( 1120 959 352 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 992 -48 176 ) ( 993 -48 176 ) ( 992 -48 177 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 1.0000000000000002 0 0 0 ] [ 0 0 -1.0000000000000002 0 ] 0 0.063 0.063
+( 144 960 208 ) ( 144 959 208 ) ( 144 960 209 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 0 -1.0000000000000002 0 0 ] [ 0 0 -1.0000000000000002 0 ] 0 0.063 0.063
+}
+// brush 34
+{
+( 240 1088 176 ) ( 240 1088 177 ) ( 240 1087 176 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 0 1.0000000000000002 0 0 ] [ 0 0 -1.0000000000000002 0 ] 0 0.063 0.063
+( 1248 -464 208 ) ( 1248 -464 209 ) ( 1249 -464 208 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ -1.0000000000000002 0 0 0 ] [ 0 0 -1.0000000000000002 0 ] 0 0.063 0.063
+( 1120 1088 336 ) ( 1120 1087 336 ) ( 1121 1088 336 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 1248 960 352 ) ( 1249 960 352 ) ( 1248 959 352 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 1120 -48 176 ) ( 1121 -48 176 ) ( 1120 -48 177 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 1.0000000000000002 0 0 0 ] [ 0 0 -1.0000000000000002 0 ] 0 0.063 0.063
+( 272 960 208 ) ( 272 959 208 ) ( 272 960 209 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 0 -1.0000000000000002 0 0 ] [ 0 0 -1.0000000000000002 0 ] 0 0.063 0.063
+}
+// brush 35
+{
+( 32 -176 496 ) ( 32 -208 496 ) ( 32 -208 480 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 256 -208 352 ) ( 256 -176 352 ) ( 32 -176 480 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 32 -208 496 ) ( 256 -208 368 ) ( 256 -208 352 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 256 -176 352 ) ( 256 -176 368 ) ( 32 -176 496 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 32 -176 496 ) ( 256 -176 368 ) ( 256 -208 368 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 256 -208 368 ) ( 256 -176 368 ) ( 256 -176 352 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 36
+{
+( -224 -176 368 ) ( -224 -208 368 ) ( -224 -208 352 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -224 -176 368 ) ( 32 -176 496 ) ( 32 -208 496 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -224 -208 368 ) ( 32 -208 496 ) ( 32 -208 480 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 32 -176 480 ) ( 32 -176 496 ) ( -224 -176 368 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 32 -208 480 ) ( 32 -176 480 ) ( -224 -176 352 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 32 -208 496 ) ( 32 -176 496 ) ( 32 -176 480 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 37
+{
+( -224 1088 176 ) ( -224 1088 177 ) ( -224 1087 176 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 0 1.0000000000000002 0 0 ] [ 0 0 -1.0000000000000002 0 ] 0 0.063 0.063
+( 800 -464 208 ) ( 800 -464 209 ) ( 801 -464 208 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ -1.0000000000000002 0 0 0 ] [ 0 0 -1.0000000000000002 0 ] 0 0.063 0.063
+( 672 1088 336 ) ( 672 1087 336 ) ( 673 1088 336 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 800 960 352 ) ( 801 960 352 ) ( 800 959 352 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 672 -48 176 ) ( 673 -48 176 ) ( 672 -48 177 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 1.0000000000000002 0 0 0 ] [ 0 0 -1.0000000000000002 0 ] 0 0.063 0.063
+( -192 960 208 ) ( -192 959 208 ) ( -192 960 209 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 0 -1.0000000000000002 0 0 ] [ 0 0 -1.0000000000000002 0 ] 0 0.063 0.063
+}
+// brush 38
+{
+( -224 -48 368 ) ( -224 -80 368 ) ( -224 -80 352 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -224 -48 368 ) ( 32 -48 496 ) ( 32 -80 496 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -224 -80 368 ) ( 32 -80 496 ) ( 32 -80 480 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 32 -48 480 ) ( 32 -48 496 ) ( -224 -48 368 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 32 -80 480 ) ( 32 -48 480 ) ( -224 -48 352 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 32 -80 496 ) ( 32 -48 496 ) ( 32 -48 480 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 39
+{
+( 32 -48 496 ) ( 32 -80 496 ) ( 32 -80 480 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 256 -80 352 ) ( 256 -48 352 ) ( 32 -48 480 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 32 -80 496 ) ( 256 -80 368 ) ( 256 -80 352 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 256 -48 352 ) ( 256 -48 368 ) ( 32 -48 496 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 32 -48 496 ) ( 256 -48 368 ) ( 256 -80 368 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 256 -80 368 ) ( 256 -48 368 ) ( 256 -48 352 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 40
+{
+( -224 -304 368 ) ( -224 -336 368 ) ( -224 -336 352 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -224 -304 368 ) ( 32 -304 496 ) ( 32 -336 496 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -224 -336 368 ) ( 32 -336 496 ) ( 32 -336 480 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 32 -304 480 ) ( 32 -304 496 ) ( -224 -304 368 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 32 -336 480 ) ( 32 -304 480 ) ( -224 -304 352 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 32 -336 496 ) ( 32 -304 496 ) ( 32 -304 480 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 41
+{
+( 32 -304 496 ) ( 32 -336 496 ) ( 32 -336 480 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 256 -336 352 ) ( 256 -304 352 ) ( 32 -304 480 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 32 -336 496 ) ( 256 -336 368 ) ( 256 -336 352 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 256 -304 352 ) ( 256 -304 368 ) ( 32 -304 496 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 32 -304 496 ) ( 256 -304 368 ) ( 256 -336 368 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 256 -336 368 ) ( 256 -304 368 ) ( 256 -304 352 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 42
+{
+( -224 -432 368 ) ( -224 -464 368 ) ( -224 -464 352 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -224 -432 368 ) ( 32 -432 496 ) ( 32 -464 496 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -224 -464 368 ) ( 32 -464 496 ) ( 32 -464 480 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 32 -432 480 ) ( 32 -432 496 ) ( -224 -432 368 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 32 -464 480 ) ( 32 -432 480 ) ( -224 -432 352 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 32 -464 496 ) ( 32 -432 496 ) ( 32 -432 480 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 43
+{
+( 32 -432 496 ) ( 32 -464 496 ) ( 32 -464 480 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 256 -464 352 ) ( 256 -432 352 ) ( 32 -432 480 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 32 -464 496 ) ( 256 -464 368 ) ( 256 -464 352 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 256 -432 352 ) ( 256 -432 368 ) ( 32 -432 496 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 32 -432 496 ) ( 256 -432 368 ) ( 256 -464 368 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 256 -464 368 ) ( 256 -432 368 ) ( 256 -432 352 ) FreeStylized/wood_planks_11_1k/wood_planks_11_1k/wood_planks_11_baseColor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 44
+{
+( -224 -464 384 ) ( -224 -496 384 ) ( -224 -496 368 ) Material-LIB/Thatch/Thatch [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -224 -464 384 ) ( 32 -464 512 ) ( 32 -496 512 ) Material-LIB/Thatch/Thatch [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -224 -496 384 ) ( 32 -496 512 ) ( 32 -496 496 ) Material-LIB/Thatch/Thatch [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 32 -32 496 ) ( 32 -32 512 ) ( -224 -32 384 ) Material-LIB/Thatch/Thatch [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 32 -496 496 ) ( 32 -464 496 ) ( -224 -464 368 ) Material-LIB/Thatch/Thatch [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 32 -496 512 ) ( 32 -464 512 ) ( 32 -464 496 ) Material-LIB/Thatch/Thatch [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 45
+{
+( 32 -464 512 ) ( 32 -496 512 ) ( 32 -496 496 ) Material-LIB/Thatch/Thatch [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 256 -496 368 ) ( 256 -464 368 ) ( 32 -464 496 ) Material-LIB/Thatch/Thatch [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 32 -496 512 ) ( 256 -496 384 ) ( 256 -496 368 ) Material-LIB/Thatch/Thatch [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 256 -32 368 ) ( 256 -32 384 ) ( 32 -32 512 ) Material-LIB/Thatch/Thatch [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( 32 -464 512 ) ( 256 -464 384 ) ( 256 -496 384 ) Material-LIB/Thatch/Thatch [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( 256 -496 384 ) ( 256 -464 384 ) ( 256 -464 368 ) Material-LIB/Thatch/Thatch [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 46
+{
+( -224 -48 208 ) ( -224 -47 208 ) ( -224 -48 209 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -1136 -496 208 ) ( -1136 -496 209 ) ( -1135 -496 208 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -1136 -48 320 ) ( -1135 -48 320 ) ( -1136 -47 320 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -1008 80 368 ) ( -1008 81 368 ) ( -1007 80 368 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -1008 -480 240 ) ( -1007 -480 240 ) ( -1008 -480 241 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 256 80 240 ) ( 256 80 241 ) ( 256 81 240 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 47
+{
+( -224 400 208 ) ( -224 401 208 ) ( -224 400 209 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -1136 -48 208 ) ( -1136 -48 209 ) ( -1135 -48 208 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -1136 400 320 ) ( -1135 400 320 ) ( -1136 401 320 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -1008 528 368 ) ( -1008 529 368 ) ( -1007 528 368 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -1008 -32 240 ) ( -1007 -32 240 ) ( -1008 -32 241 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 256 528 240 ) ( 256 528 241 ) ( 256 529 240 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 48
+{
+( 32 -48 496 ) ( -224 -48 368 ) ( -224 -32 368 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1.0000000000000002 0 0 ] [ 1.0000000000000002 0 0 -883.43555 ] 0 0.163 0.163
+( 32 -48 496 ) ( 256 -48 368 ) ( -224 -48 368 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 256 -48 368 ) ( 256 -32 368 ) ( -224 -32 368 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -224 -32 368 ) ( 256 -32 368 ) ( 32 -32 496 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 32 -32 496 ) ( 256 -32 368 ) ( 256 -48 368 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+}
+// brush 49
+{
+( 32 -496 496 ) ( -224 -496 368 ) ( -224 -480 368 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1.0000000000000002 0 0 ] [ 1.0000000000000002 0 0 -883.43555 ] 0 0.163 0.163
+( 32 -496 496 ) ( 256 -496 368 ) ( -224 -496 368 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 256 -496 368 ) ( 256 -480 368 ) ( -224 -480 368 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -224 -480 368 ) ( 256 -480 368 ) ( 32 -480 496 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 32 -480 496 ) ( 256 -480 368 ) ( 256 -496 368 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+}
+// brush 50
+{
+( -1024 448 -176 ) ( -1024 449 -176 ) ( -1024 448 -175 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1200 448 -176 ) ( -1200 448 -175 ) ( -1199 448 -176 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1200 448 -128 ) ( -1199 448 -128 ) ( -1200 449 -128 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -1072 576 0 ) ( -1072 577 0 ) ( -1071 576 0 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -1072 1792 -144 ) ( -1071 1792 -144 ) ( -1072 1792 -143 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -256 576 -144 ) ( -256 576 -143 ) ( -256 577 -144 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+}
+// brush 51
+{
+( 64 448 0 ) ( 64 449 0 ) ( 64 448 1 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -816 -32 0 ) ( -816 -32 1 ) ( -815 -32 0 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -816 448 0 ) ( -815 448 0 ) ( -816 449 0 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -688 576 320 ) ( -688 577 320 ) ( -687 576 320 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -688 32 32 ) ( -687 32 32 ) ( -688 32 33 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 320 576 32 ) ( 320 576 33 ) ( 320 577 32 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 52
+{
+( 0 448 0 ) ( 0 449 0 ) ( 0 448 1 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -944 -32 0 ) ( -944 -32 1 ) ( -943 -32 0 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -944 448 128 ) ( -943 448 128 ) ( -944 449 128 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -816 576 320 ) ( -816 577 320 ) ( -815 576 320 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -816 32 32 ) ( -815 32 32 ) ( -816 32 33 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 64 576 32 ) ( 64 576 33 ) ( 64 577 32 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 53
+{
+( -256 896 0 ) ( -256 897 0 ) ( -256 896 1 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -1200 448 0 ) ( -1200 448 1 ) ( -1199 448 0 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -1200 896 0 ) ( -1199 896 0 ) ( -1200 897 0 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -1072 1024 320 ) ( -1072 1025 320 ) ( -1071 1024 320 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -1072 1024 32 ) ( -1071 1024 32 ) ( -1072 1024 33 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 224 1024 32 ) ( 224 1024 33 ) ( 224 1025 32 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 54
+{
+( 192 928 -48 ) ( 192 929 -48 ) ( 192 928 -47 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -720 32 -48 ) ( -720 32 -47 ) ( -719 32 -48 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -720 928 0 ) ( -719 928 0 ) ( -720 929 0 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -592 1056 320 ) ( -592 1057 320 ) ( -591 1056 320 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -592 448 -16 ) ( -591 448 -16 ) ( -592 448 -15 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 224 1056 -16 ) ( 224 1056 -15 ) ( 224 1057 -16 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 55
+{
+( -1024 -1280 -176 ) ( -1024 -1279 -176 ) ( -1024 -1280 -175 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1200 -1280 -176 ) ( -1200 -1280 -175 ) ( -1199 -1280 -176 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1200 -1280 -128 ) ( -1199 -1280 -128 ) ( -1200 -1279 -128 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -1072 -1152 0 ) ( -1072 -1151 0 ) ( -1071 -1152 0 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -1072 64 -144 ) ( -1071 64 -144 ) ( -1072 64 -143 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -256 -1152 -144 ) ( -256 -1152 -143 ) ( -256 -1151 -144 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+}
+// brush 56
+{
+( -448 -896 -176 ) ( -448 -895 -176 ) ( -448 -896 -175 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1200 64 -176 ) ( -1200 64 -175 ) ( -1199 64 -176 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1200 -896 -128 ) ( -1199 -896 -128 ) ( -1200 -895 -128 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -1072 -768 0 ) ( -1072 -767 0 ) ( -1071 -768 0 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -1072 448 -144 ) ( -1071 448 -144 ) ( -1072 448 -143 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -256 -768 -144 ) ( -256 -768 -143 ) ( -256 -767 -144 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+}
+// brush 57
+{
+( -1024 -896 -176 ) ( -1024 -895 -176 ) ( -1024 -896 -175 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1776 64 -176 ) ( -1776 64 -175 ) ( -1775 64 -176 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1776 -896 -128 ) ( -1775 -896 -128 ) ( -1776 -895 -128 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -1648 -768 0 ) ( -1648 -767 0 ) ( -1647 -768 0 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -1648 448 -144 ) ( -1647 448 -144 ) ( -1648 448 -143 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -832 -768 -144 ) ( -832 -768 -143 ) ( -832 -767 -144 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+}
+// brush 58
+{
+( -832 -896 -304 ) ( -832 -895 -304 ) ( -832 -896 -303 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1584 64 -304 ) ( -1584 64 -303 ) ( -1583 64 -304 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1584 -896 -256 ) ( -1583 -896 -256 ) ( -1584 -895 -256 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -1456 -768 -128 ) ( -1456 -767 -128 ) ( -1455 -768 -128 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -1456 448 -272 ) ( -1455 448 -272 ) ( -1456 448 -271 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -448 -768 -272 ) ( -448 -768 -271 ) ( -448 -767 -272 ) Material-LIB/Nature/FoliageGrass/FoliageGrass [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+}
+// brush 59
+{
+( -224 928 -48 ) ( -224 929 -48 ) ( -224 928 -47 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -1136 32 -48 ) ( -1136 32 -47 ) ( -1135 32 -48 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -1136 928 256 ) ( -1135 928 256 ) ( -1136 929 256 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -1008 1056 288 ) ( -1008 1057 288 ) ( -1007 1056 288 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -1008 448 -16 ) ( -1007 448 -16 ) ( -1008 448 -15 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -160 1056 -16 ) ( -160 1056 -15 ) ( -160 1057 -16 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 60
+{
+( -224 448 256 ) ( -224 384 256 ) ( -224 384 224 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -224 384 256 ) ( -160 384 256 ) ( -160 384 224 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -160 384 224 ) ( -160 448 192 ) ( -224 448 192 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -224 448 256 ) ( -160 448 256 ) ( -160 384 256 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -160 448 192 ) ( -160 448 256 ) ( -224 448 256 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -160 384 256 ) ( -160 448 256 ) ( -160 448 192 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 61
+{
+( -224 384 224 ) ( -224 384 256 ) ( -224 256 256 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -160 256 256 ) ( -160 384 224 ) ( -224 384 224 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -224 384 256 ) ( -160 384 256 ) ( -160 256 256 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -160 384 224 ) ( -160 384 256 ) ( -224 384 256 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -160 256 256 ) ( -160 384 256 ) ( -160 384 224 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1.0000000000000002 0 854.3804 ] [ 0 0 -1.0000000000000002 0 ] 0 0.163 0.163
+}
+// brush 62
+{
+( -224 224 256 ) ( -224 96 256 ) ( -224 96 224 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1.0000000000000002 0 854.3804 ] [ 0 0 -1.0000000000000002 0 ] 0 0.163 0.163
+( -224 96 224 ) ( -224 96 256 ) ( -160 96 256 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -160 96 256 ) ( -224 96 256 ) ( -224 224 256 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -224 224 256 ) ( -224 96 224 ) ( -160 96 224 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -160 96 224 ) ( -160 96 256 ) ( -160 224 256 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 63
+{
+( -224 96 256 ) ( -224 32 256 ) ( -224 32 192 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -224 32 192 ) ( -224 32 256 ) ( -160 32 256 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -160 32 256 ) ( -224 32 256 ) ( -224 96 256 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -224 96 224 ) ( -224 32 192 ) ( -160 32 192 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -160 96 256 ) ( -224 96 256 ) ( -224 96 224 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -160 32 256 ) ( -160 96 256 ) ( -160 96 224 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 64
+{
+( -96 928 -48 ) ( -96 929 -48 ) ( -96 928 -47 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -1008 32 -48 ) ( -1008 32 -47 ) ( -1007 32 -48 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -1008 928 256 ) ( -1007 928 256 ) ( -1008 929 256 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -880 1056 288 ) ( -880 1057 288 ) ( -879 1056 288 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -880 448 -16 ) ( -879 448 -16 ) ( -880 448 -15 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -32 1056 -16 ) ( -32 1056 -15 ) ( -32 1057 -16 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 65
+{
+( -96 96 256 ) ( -96 32 256 ) ( -96 32 192 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -96 32 192 ) ( -96 32 256 ) ( -32 32 256 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -32 32 256 ) ( -96 32 256 ) ( -96 96 256 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -96 96 224 ) ( -96 32 192 ) ( -32 32 192 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -32 96 256 ) ( -96 96 256 ) ( -96 96 224 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -32 32 256 ) ( -32 96 256 ) ( -32 96 224 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 66
+{
+( -96 224 256 ) ( -96 96 256 ) ( -96 96 224 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1.0000000000000002 0 854.3804 ] [ 0 0 -1.0000000000000002 0 ] 0 0.163 0.163
+( -96 96 224 ) ( -96 96 256 ) ( -32 96 256 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -32 96 256 ) ( -96 96 256 ) ( -96 224 256 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -96 224 256 ) ( -96 96 224 ) ( -32 96 224 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -32 96 224 ) ( -32 96 256 ) ( -32 224 256 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 67
+{
+( -96 384 224 ) ( -96 384 256 ) ( -96 256 256 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -32 256 256 ) ( -32 384 224 ) ( -96 384 224 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -96 384 256 ) ( -32 384 256 ) ( -32 256 256 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -32 384 224 ) ( -32 384 256 ) ( -96 384 256 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -32 256 256 ) ( -32 384 256 ) ( -32 384 224 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1.0000000000000002 0 854.3804 ] [ 0 0 -1.0000000000000002 0 ] 0 0.163 0.163
+}
+// brush 68
+{
+( -96 448 256 ) ( -96 384 256 ) ( -96 384 224 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -96 384 256 ) ( -32 384 256 ) ( -32 384 224 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -32 384 224 ) ( -32 448 192 ) ( -96 448 192 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -96 448 256 ) ( -32 448 256 ) ( -32 384 256 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -32 448 192 ) ( -32 448 256 ) ( -96 448 256 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -32 384 256 ) ( -32 448 256 ) ( -32 448 192 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 69
+{
+( -256 928 -16 ) ( -256 929 -16 ) ( -256 928 -15 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -1072 32 -16 ) ( -1072 32 -15 ) ( -1071 32 -16 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -1072 928 288 ) ( -1071 928 288 ) ( -1072 929 288 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -944 1056 320 ) ( -944 1057 320 ) ( -943 1056 320 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -944 448 16 ) ( -943 448 16 ) ( -944 448 17 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 0 1056 16 ) ( 0 1056 17 ) ( 0 1057 16 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 70
+{
+( -256 928 16 ) ( -256 929 16 ) ( -256 928 17 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -1072 -64 16 ) ( -1072 -64 17 ) ( -1071 -64 16 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -1072 928 320 ) ( -1071 928 320 ) ( -1072 929 320 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -944 1056 352 ) ( -944 1057 352 ) ( -943 1056 352 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -944 1024 48 ) ( -943 1024 48 ) ( -944 1024 49 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -224 1056 48 ) ( -224 1056 49 ) ( -224 1057 48 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 71
+{
+( 192 928 16 ) ( 192 929 16 ) ( 192 928 17 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -624 -64 16 ) ( -624 -64 17 ) ( -623 -64 16 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -624 928 320 ) ( -623 928 320 ) ( -624 929 320 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -496 1056 352 ) ( -496 1057 352 ) ( -495 1056 352 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -496 1024 48 ) ( -495 1024 48 ) ( -496 1024 49 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 224 1056 48 ) ( 224 1056 49 ) ( 224 1057 48 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 72
+{
+( -224 928 16 ) ( -224 929 16 ) ( -224 928 17 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -656 992 16 ) ( -656 992 17 ) ( -655 992 16 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -656 928 320 ) ( -655 928 320 ) ( -656 929 320 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -528 1056 352 ) ( -528 1057 352 ) ( -527 1056 352 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -528 1024 48 ) ( -527 1024 48 ) ( -528 1024 49 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 192 1056 48 ) ( 192 1056 49 ) ( 192 1057 48 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 73
+{
+( -32 928 16 ) ( -32 929 16 ) ( -32 928 17 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -848 -32 16 ) ( -848 -32 17 ) ( -847 -32 16 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -848 928 320 ) ( -847 928 320 ) ( -848 929 320 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -720 1056 352 ) ( -720 1057 352 ) ( -719 1056 352 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -720 480 48 ) ( -719 480 48 ) ( -720 480 49 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 0 1056 48 ) ( 0 1056 49 ) ( 0 1057 48 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 74
+{
+( 0 928 16 ) ( 0 929 16 ) ( 0 928 17 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -816 448 16 ) ( -816 448 17 ) ( -815 448 16 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -816 928 320 ) ( -815 928 320 ) ( -816 929 320 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -688 1056 352 ) ( -688 1057 352 ) ( -687 1056 352 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -688 480 48 ) ( -687 480 48 ) ( -688 480 49 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( 192 1056 48 ) ( 192 1056 49 ) ( 192 1057 48 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+// brush 75
+{
+( -1376 -768 256 ) ( -1376 -1024 0 ) ( -1376 -1024 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1376 -1024 0 ) ( -1024 -1024 0 ) ( -1024 -1024 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1376 -768 256 ) ( -1024 -768 256 ) ( -1024 -1024 0 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -1024 -1024 -128 ) ( -1024 -768 -128 ) ( -1376 -768 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -1024 -768 -128 ) ( -1024 -768 256 ) ( -1376 -768 256 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1024 -1024 0 ) ( -1024 -768 256 ) ( -1024 -768 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+}
+// brush 76
+{
+( -1376 -512 0 ) ( -1376 -768 256 ) ( -1376 -768 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1376 -768 256 ) ( -1024 -768 256 ) ( -1024 -768 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1024 -768 -128 ) ( -1024 -512 -128 ) ( -1376 -512 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -1024 -768 256 ) ( -1376 -768 256 ) ( -1376 -512 0 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -1024 -512 -128 ) ( -1024 -512 0 ) ( -1376 -512 0 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1024 -768 256 ) ( -1024 -512 0 ) ( -1024 -512 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+}
+// brush 77
+{
+( -1632 0 0 ) ( -1632 -256 256 ) ( -1632 -256 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1632 -256 256 ) ( -1280 -256 256 ) ( -1280 -256 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1280 -256 -128 ) ( -1280 0 -128 ) ( -1632 0 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -1280 -256 256 ) ( -1632 -256 256 ) ( -1632 0 0 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -1280 0 -128 ) ( -1280 0 0 ) ( -1632 0 0 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1280 -256 256 ) ( -1280 0 0 ) ( -1280 0 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+}
+// brush 78
+{
+( -1632 -256 256 ) ( -1632 -512 0 ) ( -1632 -512 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1632 -512 0 ) ( -1280 -512 0 ) ( -1280 -512 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1632 -256 256 ) ( -1280 -256 256 ) ( -1280 -512 0 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -1280 -512 -128 ) ( -1280 -256 -128 ) ( -1632 -256 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -1280 -256 -128 ) ( -1280 -256 256 ) ( -1632 -256 256 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1280 -512 0 ) ( -1280 -256 256 ) ( -1280 -256 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+}
+// brush 79
+{
+( -1376 512 0 ) ( -1376 256 256 ) ( -1376 256 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1376 256 256 ) ( -1024 256 256 ) ( -1024 256 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1024 256 -128 ) ( -1024 512 -128 ) ( -1376 512 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -1024 256 256 ) ( -1376 256 256 ) ( -1376 512 0 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -1024 512 -128 ) ( -1024 512 0 ) ( -1376 512 0 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1024 256 256 ) ( -1024 512 0 ) ( -1024 512 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+}
+// brush 80
+{
+( -1376 256 256 ) ( -1376 0 0 ) ( -1376 0 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1376 0 0 ) ( -1024 0 0 ) ( -1024 0 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1376 256 256 ) ( -1024 256 256 ) ( -1024 0 0 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -1024 0 -128 ) ( -1024 256 -128 ) ( -1376 256 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -1024 256 -128 ) ( -1024 256 256 ) ( -1376 256 256 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1024 0 0 ) ( -1024 256 256 ) ( -1024 256 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+}
+// brush 81
+{
+( -2144 256 0 ) ( -2144 0 256 ) ( -2144 0 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -2144 0 256 ) ( -1792 0 256 ) ( -1792 0 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1792 0 -128 ) ( -1792 256 -128 ) ( -2144 256 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -1792 0 256 ) ( -2144 0 256 ) ( -2144 256 0 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -1792 256 -128 ) ( -1792 256 0 ) ( -2144 256 0 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1792 0 256 ) ( -1792 256 0 ) ( -1792 256 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+}
+// brush 82
+{
+( -2144 0 256 ) ( -2144 -256 0 ) ( -2144 -256 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -2144 -256 0 ) ( -1792 -256 0 ) ( -1792 -256 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -2144 0 256 ) ( -1792 0 256 ) ( -1792 -256 0 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -1792 -256 -128 ) ( -1792 0 -128 ) ( -2144 0 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -1792 0 -128 ) ( -1792 0 256 ) ( -2144 0 256 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1792 -256 0 ) ( -1792 0 256 ) ( -1792 0 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+}
+// brush 83
+{
+( -2400 -256 0 ) ( -2400 -512 256 ) ( -2400 -512 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -2400 -512 256 ) ( -2048 -512 256 ) ( -2048 -512 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -2048 -512 -128 ) ( -2048 -256 -128 ) ( -2400 -256 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -2048 -512 256 ) ( -2400 -512 256 ) ( -2400 -256 0 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -2048 -256 -128 ) ( -2048 -256 0 ) ( -2400 -256 0 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -2048 -512 256 ) ( -2048 -256 0 ) ( -2048 -256 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+}
+// brush 84
+{
+( -2400 -512 256 ) ( -2400 -768 0 ) ( -2400 -768 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -2400 -768 0 ) ( -2048 -768 0 ) ( -2048 -768 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -2400 -512 256 ) ( -2048 -512 256 ) ( -2048 -768 0 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -2048 -768 -128 ) ( -2048 -512 -128 ) ( -2400 -512 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -2048 -512 -128 ) ( -2048 -512 256 ) ( -2400 -512 256 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -2048 -768 0 ) ( -2048 -512 256 ) ( -2048 -512 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+}
+// brush 85
+{
+( -2400 1024 0 ) ( -2400 768 256 ) ( -2400 768 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -2400 768 256 ) ( -2048 768 256 ) ( -2048 768 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -2048 768 -128 ) ( -2048 1024 -128 ) ( -2400 1024 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -2048 768 256 ) ( -2400 768 256 ) ( -2400 1024 0 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -2048 1024 -128 ) ( -2048 1024 0 ) ( -2400 1024 0 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -2048 768 256 ) ( -2048 1024 0 ) ( -2048 1024 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+}
+// brush 86
+{
+( -2400 768 256 ) ( -2400 512 0 ) ( -2400 512 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -2400 512 0 ) ( -2048 512 0 ) ( -2048 512 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -2400 768 256 ) ( -2048 768 256 ) ( -2048 512 0 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -2048 512 -128 ) ( -2048 768 -128 ) ( -2400 768 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -2048 768 -128 ) ( -2048 768 256 ) ( -2400 768 256 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -2048 512 0 ) ( -2048 768 256 ) ( -2048 768 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+}
+// brush 87
+{
+( -1632 1280 0 ) ( -1632 1024 256 ) ( -1632 1024 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1632 1024 256 ) ( -1280 1024 256 ) ( -1280 1024 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1280 1024 -128 ) ( -1280 1280 -128 ) ( -1632 1280 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -1280 1024 256 ) ( -1632 1024 256 ) ( -1632 1280 0 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -1280 1280 -128 ) ( -1280 1280 0 ) ( -1632 1280 0 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1280 1024 256 ) ( -1280 1280 0 ) ( -1280 1280 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+}
+// brush 88
+{
+( -1632 1024 256 ) ( -1632 768 0 ) ( -1632 768 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1632 768 0 ) ( -1280 768 0 ) ( -1280 768 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1632 1024 256 ) ( -1280 1024 256 ) ( -1280 768 0 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -1280 768 -128 ) ( -1280 1024 -128 ) ( -1632 1024 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -1280 1024 -128 ) ( -1280 1024 256 ) ( -1632 1024 256 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1280 768 0 ) ( -1280 1024 256 ) ( -1280 1024 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+}
+// brush 89
+{
+( -1888 768 0 ) ( -1888 512 256 ) ( -1888 512 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1888 512 256 ) ( -1536 512 256 ) ( -1536 512 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1536 512 -128 ) ( -1536 768 -128 ) ( -1888 768 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -1536 512 256 ) ( -1888 512 256 ) ( -1888 768 0 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -1536 768 -128 ) ( -1536 768 0 ) ( -1888 768 0 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1536 512 256 ) ( -1536 768 0 ) ( -1536 768 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+}
+// brush 90
+{
+( -1888 512 256 ) ( -1888 256 0 ) ( -1888 256 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1888 256 0 ) ( -1536 256 0 ) ( -1536 256 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1888 512 256 ) ( -1536 512 256 ) ( -1536 256 0 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -1536 256 -128 ) ( -1536 512 -128 ) ( -1888 512 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -1536 512 -128 ) ( -1536 512 256 ) ( -1888 512 256 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1536 256 0 ) ( -1536 512 256 ) ( -1536 512 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+}
+// brush 91
+{
+( -2400 1536 0 ) ( -2400 1280 256 ) ( -2400 1280 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -2400 1280 256 ) ( -2048 1280 256 ) ( -2048 1280 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -2048 1280 -128 ) ( -2048 1536 -128 ) ( -2400 1536 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -2048 1280 256 ) ( -2400 1280 256 ) ( -2400 1536 0 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -2048 1536 -128 ) ( -2048 1536 0 ) ( -2400 1536 0 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -2048 1280 256 ) ( -2048 1536 0 ) ( -2048 1536 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+}
+// brush 92
+{
+( -2400 1280 256 ) ( -2400 1024 0 ) ( -2400 1024 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -2400 1024 0 ) ( -2048 1024 0 ) ( -2048 1024 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -2400 1280 256 ) ( -2048 1280 256 ) ( -2048 1024 0 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -2048 1024 -128 ) ( -2048 1280 -128 ) ( -2400 1280 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -2048 1280 -128 ) ( -2048 1280 256 ) ( -2400 1280 256 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -2048 1024 0 ) ( -2048 1280 256 ) ( -2048 1280 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+}
+// brush 93
+{
+( -1376 1536 256 ) ( -1376 1280 0 ) ( -1376 1280 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1376 1280 0 ) ( -1024 1280 0 ) ( -1024 1280 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1376 1536 256 ) ( -1024 1536 256 ) ( -1024 1280 0 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -1024 1280 -128 ) ( -1024 1536 -128 ) ( -1376 1536 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -1024 1536 -128 ) ( -1024 1536 256 ) ( -1376 1536 256 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -1024 1280 0 ) ( -1024 1536 256 ) ( -1024 1536 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+}
+// brush 94
+{
+( -2912 256 0 ) ( -2912 0 256 ) ( -2912 0 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -2912 0 256 ) ( -2560 0 256 ) ( -2560 0 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -2560 0 -128 ) ( -2560 256 -128 ) ( -2912 256 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -2560 0 256 ) ( -2912 0 256 ) ( -2912 256 0 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 -0.037 -0.037
+( -2560 256 -128 ) ( -2560 256 0 ) ( -2912 256 0 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+( -2560 0 256 ) ( -2560 256 0 ) ( -2560 256 -128 ) FreeStylized/cliff_rocks_06_1k/cliff_rocks_06_1k/cliff_rocks_06_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 -0.037 -0.037
+}
+// brush 95
+{
+( -272 384 -32 ) ( -272 385 -32 ) ( -272 384 -31 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -1168 -528 -32 ) ( -1168 -528 -31 ) ( -1167 -528 -32 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -1168 384 0 ) ( -1167 384 0 ) ( -1168 385 0 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -1040 512 224 ) ( -1040 513 224 ) ( -1039 512 224 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.163 0.163
+( -1040 -448 0 ) ( -1039 -448 0 ) ( -1040 -448 1 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+( -192 512 0 ) ( -192 512 1 ) ( -192 513 0 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.163 0.163
+}
+}
+// entity 1
+{
+"classname" "PlayerSpawn"
+"origin" "-8 -224 18"
+"team" "2"
+}
+// entity 2
+{
+"classname" "PlayerSpawn"
+"origin" "8 -272 18"
+"team" "1"
+}
+// entity 3
+{
+"classname" "PlayerSpawn"
+"origin" "0 -332 16"
+"team" "0"
+}
+// entity 4
+{
+"classname" "func_group"
+"_tb_type" "_tb_group"
+"_tb_name" "Window"
+"_tb_id" "1"
+"_tb_linked_group_id" "5585fbb1-cfe7-4c97-80e8-f8181071f701"
+"_tb_transformation" "1 0 0 0 0 1 0 128 0 0 1 -32 0 0 0 1"
+// brush 0
+{
+( -248 -264 124 ) ( -248 -248 124 ) ( -248 -192 180 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 -1007.74585 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( -232 -190 194 ) ( -224 -190 194 ) ( -224 -262 122 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.74585 ] 270 0.063 0.063
+( -224 -264 124 ) ( -224 -248 124 ) ( -232 -248 124 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.74585 ] 90 0.063 0.063
+( -224 -250 126 ) ( -224 -194 182 ) ( -232 -194 182 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.7461 ] 90 0.063 0.063
+( -224 -224 180 ) ( -224 -224 196 ) ( -232 -224 196 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( -232 -264 124 ) ( -232 -192 196 ) ( -232 -192 180 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 -1007.74585 ] [ 0 0 -1 0 ] 270 0.063 0.063
+}
+// brush 1
+{
+( -244 -192 224 ) ( -244 -256 288 ) ( -244 -256 32 ) glass [ 0 1 0 -495.7461 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( -248 -256 32 ) ( -248 -256 288 ) ( -232 -256 288 ) glass [ 1 0 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
+( -248 -192 28 ) ( -248 -256 28 ) ( -232 -256 28 ) glass [ 1 0 0 0 ] [ 0 -1 0 495.7461 ] 90 0.063 0.063
+( -232 -298 246 ) ( -248 -298 246 ) ( -248 -234 182 ) glass [ 1 0 0 0 ] [ 0 -1 0 495.7461 ] 270 0.063 0.063
+( -232 -220 224 ) ( -248 -220 224 ) ( -248 -220 32 ) glass [ 1 0 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( -236 -256 288 ) ( -236 -192 224 ) ( -236 -192 32 ) glass [ 0 1 0 -495.7461 ] [ 0 0 -1 0 ] 270 0.063 0.063
+}
+// brush 2
+{
+( -256 736 -16 ) ( -256 737 -16 ) ( -256 736 -15 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 -1007.74585 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( -1168 -224 -16 ) ( -1168 -224 -15 ) ( -1167 -224 -16 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
+( -1168 736 32 ) ( -1167 736 32 ) ( -1168 737 32 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.74585 ] 90 0.063 0.063
+( -1040 864 160 ) ( -1040 865 160 ) ( -1039 864 160 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.74585 ] 270 0.063 0.063
+( -1040 -192 16 ) ( -1039 -192 16 ) ( -1040 -192 17 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( -224 864 16 ) ( -224 864 17 ) ( -224 865 16 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 -1007.74585 ] [ 0 0 -1 0 ] 270 0.063 0.063
+}
+// brush 3
+{
+( -244 -256 288 ) ( -244 -320 224 ) ( -244 -320 32 ) glass [ 0 1 0 -495.7461 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( -248 -292 224 ) ( -232 -292 224 ) ( -232 -292 32 ) glass [ 1 0 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
+( -248 -214 246 ) ( -232 -214 246 ) ( -232 -278 182 ) glass [ 1 0 0 0 ] [ 0 -1 0 495.7461 ] 270 0.063 0.063
+( -232 -320 28 ) ( -232 -256 28 ) ( -248 -256 28 ) glass [ 1 0 0 0 ] [ 0 -1 0 495.7461 ] 90 0.063 0.063
+( -232 -256 32 ) ( -232 -256 288 ) ( -248 -256 288 ) glass [ 1 0 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( -236 -320 224 ) ( -236 -256 288 ) ( -236 -256 32 ) glass [ 0 1 0 -495.7461 ] [ 0 0 -1 0 ] 270 0.063 0.063
+}
+// brush 4
+{
+( -256 608 -16 ) ( -256 609 -16 ) ( -256 608 -15 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 -1007.7456 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( -1168 -320 -16 ) ( -1168 -320 -15 ) ( -1167 -320 -16 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
+( -1168 608 32 ) ( -1167 608 32 ) ( -1168 609 32 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.7456 ] 90 0.063 0.063
+( -1040 736 160 ) ( -1040 737 160 ) ( -1039 736 160 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.7456 ] 270 0.063 0.063
+( -1040 -288 16 ) ( -1039 -288 16 ) ( -1040 -288 17 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( -224 736 16 ) ( -224 736 17 ) ( -224 737 16 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 -1007.7456 ] [ 0 0 -1 0 ] 270 0.063 0.063
+}
+// brush 5
+{
+( -248 -256 132 ) ( -248 -320 196 ) ( -248 -320 180 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 -1007.7456 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( -232 -288 196 ) ( -224 -288 196 ) ( -224 -288 180 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
+( -224 -318 182 ) ( -224 -262 126 ) ( -232 -262 126 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.7461 ] 90 0.063 0.063
+( -224 -262 122 ) ( -224 -254 130 ) ( -232 -254 130 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.74585 ] 90 0.063 0.063
+( -232 -258 130 ) ( -224 -258 130 ) ( -224 -322 194 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.7456 ] 270 0.063 0.063
+( -232 -320 196 ) ( -232 -256 132 ) ( -232 -264 124 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 -1007.7456 ] [ 0 0 -1 0 ] 270 0.063 0.063
+}
+// brush 6
+{
+( -248 704 -16 ) ( -248 705 -16 ) ( -248 704 -15 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 -1007.74585 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( -1168 -260 -16 ) ( -1168 -260 -15 ) ( -1167 -260 -16 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
+( -1168 704 32 ) ( -1167 704 32 ) ( -1168 705 32 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.74585 ] 90 0.063 0.063
+( -1040 832 124 ) ( -1040 833 124 ) ( -1039 832 124 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.74585 ] 270 0.063 0.063
+( -1040 -252 16 ) ( -1039 -252 16 ) ( -1040 -252 17 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( -232 832 16 ) ( -232 832 17 ) ( -232 833 16 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 -1007.74585 ] [ 0 0 -1 0 ] 270 0.063 0.063
+}
+// brush 7
+{
+( -256 -232 176 ) ( -256 -224 160 ) ( -256 -192 160 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 -1007.74585 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( -224 -232 176 ) ( -224 -224 160 ) ( -256 -224 160 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
+( -224 -224 160 ) ( -224 -192 160 ) ( -256 -192 160 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.74585 ] 90 0.063 0.063
+( -256 -192 176 ) ( -224 -192 176 ) ( -224 -232 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.74585 ] 270 0.063 0.063
+( -224 -192 160 ) ( -224 -192 176 ) ( -256 -192 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( -224 -232 176 ) ( -224 -192 176 ) ( -224 -192 160 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 -1007.74585 ] [ 0 0 -1 0 ] 270 0.063 0.063
+}
+// brush 8
+{
+( -256 -256 192 ) ( -256 -232 176 ) ( -256 -192 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 -1007.7461 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( -224 -256 192 ) ( -224 -232 176 ) ( -256 -232 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.74585 ] 90 0.063 0.063
+( -224 -232 176 ) ( -224 -192 176 ) ( -256 -192 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.74585 ] 90 0.063 0.063
+( -256 -192 192 ) ( -224 -192 192 ) ( -224 -256 192 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.74585 ] 270 0.063 0.063
+( -224 -192 176 ) ( -224 -192 192 ) ( -256 -192 192 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( -224 -256 192 ) ( -224 -192 192 ) ( -224 -192 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 -1007.7461 ] [ 0 0 -1 0 ] 270 0.063 0.063
+}
+// brush 9
+{
+( -256 -256 192 ) ( -256 -320 192 ) ( -256 -320 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 -1007.7461 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( -256 -320 192 ) ( -224 -320 192 ) ( -224 -320 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
+( -224 -320 176 ) ( -224 -280 176 ) ( -256 -280 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.7461 ] 90 0.063 0.063
+( -256 -256 192 ) ( -224 -256 192 ) ( -224 -320 192 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.7456 ] 270 0.063 0.063
+( -224 -280 176 ) ( -224 -256 192 ) ( -256 -256 192 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.7461 ] 90 0.063 0.063
+( -224 -320 192 ) ( -224 -256 192 ) ( -224 -280 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 -1007.7461 ] [ 0 0 -1 0 ] 270 0.063 0.063
+}
+// brush 10
+{
+( -256 -280 176 ) ( -256 -320 176 ) ( -256 -320 160 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 -1007.7456 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( -256 -320 176 ) ( -224 -320 176 ) ( -224 -320 160 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
+( -224 -320 160 ) ( -224 -288 160 ) ( -256 -288 160 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.7456 ] 90 0.063 0.063
+( -256 -280 176 ) ( -224 -280 176 ) ( -224 -320 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.7461 ] 270 0.063 0.063
+( -224 -288 160 ) ( -224 -280 176 ) ( -256 -280 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( -224 -320 176 ) ( -224 -280 176 ) ( -224 -288 160 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 -1007.7456 ] [ 0 0 -1 0 ] 270 0.063 0.063
+}
+// brush 11
+{
+( -248 712 -20 ) ( -248 713 -20 ) ( -248 712 -19 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 -1007.7461 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( -1168 -252 -20 ) ( -1168 -252 -19 ) ( -1167 -252 -20 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
+( -1168 712 116 ) ( -1167 712 116 ) ( -1168 713 116 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.7461 ] 90 0.063 0.063
+( -1040 840 120 ) ( -1040 841 120 ) ( -1039 840 120 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.7461 ] 270 0.063 0.063
+( -1040 -220 12 ) ( -1039 -220 12 ) ( -1040 -220 13 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( -232 840 12 ) ( -232 840 13 ) ( -232 841 12 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 -1007.7461 ] [ 0 0 -1 0 ] 270 0.063 0.063
+}
+// brush 12
+{
+( -248 672 -20 ) ( -248 673 -20 ) ( -248 672 -19 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 -1007.7461 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( -1168 -292 -20 ) ( -1168 -292 -19 ) ( -1167 -292 -20 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
+( -1168 672 116 ) ( -1167 672 116 ) ( -1168 673 116 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.7461 ] 90 0.063 0.063
+( -1040 800 120 ) ( -1040 801 120 ) ( -1039 800 120 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.7461 ] 270 0.063 0.063
+( -1040 -260 12 ) ( -1039 -260 12 ) ( -1040 -260 13 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( -232 800 12 ) ( -232 800 13 ) ( -232 801 12 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 -1007.7461 ] [ 0 0 -1 0 ] 270 0.063 0.063
+}
+// brush 13
+{
+( -248 712 -60 ) ( -248 713 -60 ) ( -248 712 -59 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 -1007.7461 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( -1168 -252 -60 ) ( -1168 -252 -59 ) ( -1167 -252 -60 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
+( -1168 712 76 ) ( -1167 712 76 ) ( -1168 713 76 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.7461 ] 90 0.063 0.063
+( -1040 840 80 ) ( -1040 841 80 ) ( -1039 840 80 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.7461 ] 270 0.063 0.063
+( -1040 -220 -28 ) ( -1039 -220 -28 ) ( -1040 -220 -27 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( -232 840 -28 ) ( -232 840 -27 ) ( -232 841 -28 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 -1007.7461 ] [ 0 0 -1 0 ] 270 0.063 0.063
+}
+// brush 14
+{
+( -248 672 -60 ) ( -248 673 -60 ) ( -248 672 -59 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 -1007.7461 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( -1168 -292 -60 ) ( -1168 -292 -59 ) ( -1167 -292 -60 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
+( -1168 672 76 ) ( -1167 672 76 ) ( -1168 673 76 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.7461 ] 90 0.063 0.063
+( -1040 800 80 ) ( -1040 801 80 ) ( -1039 800 80 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.7461 ] 270 0.063 0.063
+( -1040 -260 -28 ) ( -1039 -260 -28 ) ( -1040 -260 -27 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( -232 800 -28 ) ( -232 800 -27 ) ( -232 801 -28 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 -1007.7461 ] [ 0 0 -1 0 ] 270 0.063 0.063
+}
+// brush 15
+{
+( -224 -224 176 ) ( -224 -248 192 ) ( -224 -256 192 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 -1007.74585 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( -216 -256 192 ) ( -216 -232 176 ) ( -224 -232 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.74585 ] 90 0.063 0.063
+( -216 -232 176 ) ( -216 -224 176 ) ( -224 -224 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.74585 ] 90 0.063 0.063
+( -224 -248 192 ) ( -216 -248 192 ) ( -216 -256 192 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.7461 ] 270 0.063 0.063
+( -224 -224 176 ) ( -216 -224 176 ) ( -216 -248 192 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.7461 ] 270 0.063 0.063
+( -216 -248 192 ) ( -216 -224 176 ) ( -216 -232 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 -1007.74585 ] [ 0 0 -1 0 ] 270 0.063 0.063
+}
+// brush 16
+{
+( -224 -224 176 ) ( -224 -232 176 ) ( -224 -224 160 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 -1007.74585 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( -216 -232 176 ) ( -216 -224 160 ) ( -224 -224 160 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
+( -216 -224 160 ) ( -216 -216 160 ) ( -224 -216 160 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.7461 ] 90 0.063 0.063
+( -224 -224 176 ) ( -216 -224 176 ) ( -216 -232 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.74585 ] 270 0.063 0.063
+( -224 -216 160 ) ( -216 -216 160 ) ( -216 -224 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( -216 -224 176 ) ( -216 -216 160 ) ( -216 -224 160 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 -1007.74585 ] [ 0 0 -1 0 ] 270 0.063 0.063
+}
+// brush 17
+{
+( -224 736 -16 ) ( -224 737 -16 ) ( -224 736 -15 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 -1007.7461 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( -1160 -224 -16 ) ( -1160 -224 -15 ) ( -1159 -224 -16 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
+( -1160 736 0 ) ( -1159 736 0 ) ( -1160 737 0 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.7461 ] 90 0.063 0.063
+( -1032 864 160 ) ( -1032 865 160 ) ( -1031 864 160 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.7461 ] 270 0.063 0.063
+( -1032 -216 16 ) ( -1031 -216 16 ) ( -1032 -216 17 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( -216 864 16 ) ( -216 864 17 ) ( -216 865 16 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 -1007.7461 ] [ 0 0 -1 0 ] 270 0.063 0.063
+}
+// brush 18
+{
+( -224 -264 192 ) ( -224 -288 176 ) ( -224 -280 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 -1007.7456 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( -224 -264 192 ) ( -216 -264 192 ) ( -216 -288 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.7461 ] 270 0.063 0.063
+( -216 -288 176 ) ( -216 -280 176 ) ( -224 -280 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.7461 ] 90 0.063 0.063
+( -224 -256 192 ) ( -216 -256 192 ) ( -216 -264 192 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.7461 ] 270 0.063 0.063
+( -216 -280 176 ) ( -216 -256 192 ) ( -224 -256 192 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.7461 ] 90 0.063 0.063
+( -216 -264 192 ) ( -216 -256 192 ) ( -216 -280 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 -1007.7456 ] [ 0 0 -1 0 ] 270 0.063 0.063
+}
+// brush 19
+{
+( -224 -288 176 ) ( -224 -296 160 ) ( -224 -288 160 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 -1007.7456 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( -224 -288 176 ) ( -216 -288 176 ) ( -216 -296 160 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
+( -216 -296 160 ) ( -216 -288 160 ) ( -224 -288 160 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.7461 ] 90 0.063 0.063
+( -224 -280 176 ) ( -216 -280 176 ) ( -216 -288 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.7461 ] 270 0.063 0.063
+( -216 -288 160 ) ( -216 -280 176 ) ( -224 -280 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( -216 -288 176 ) ( -216 -280 176 ) ( -216 -288 160 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 -1007.7456 ] [ 0 0 -1 0 ] 270 0.063 0.063
+}
+// brush 20
+{
+( -224 608 -16 ) ( -224 609 -16 ) ( -224 608 -15 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 -1007.7461 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( -1160 -296 -16 ) ( -1160 -296 -15 ) ( -1159 -296 -16 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
+( -1160 608 0 ) ( -1159 608 0 ) ( -1160 609 0 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.7461 ] 90 0.063 0.063
+( -1032 736 160 ) ( -1032 737 160 ) ( -1031 736 160 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.7461 ] 270 0.063 0.063
+( -1032 -288 16 ) ( -1031 -288 16 ) ( -1032 -288 17 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( -216 736 16 ) ( -216 736 17 ) ( -216 737 16 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 -1007.7461 ] [ 0 0 -1 0 ] 270 0.063 0.063
+}
+// brush 21
+{
+( -272 736 -16 ) ( -272 737 -16 ) ( -272 736 -15 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 -1007.7461 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( -1200 -208 -16 ) ( -1200 -208 -15 ) ( -1199 -208 -16 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
+( -1200 736 0 ) ( -1199 736 0 ) ( -1200 737 0 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.7461 ] 90 0.063 0.063
+( -1072 864 192 ) ( -1072 865 192 ) ( -1071 864 192 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.7461 ] 270 0.063 0.063
+( -1072 -192 16 ) ( -1071 -192 16 ) ( -1072 -192 17 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( -256 864 16 ) ( -256 864 17 ) ( -256 865 16 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 -1007.7461 ] [ 0 0 -1 0 ] 270 0.063 0.063
+}
+// brush 22
+{
+( -272 624 -16 ) ( -272 625 -16 ) ( -272 624 -15 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 -1007.7461 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( -1200 -320 -16 ) ( -1200 -320 -15 ) ( -1199 -320 -16 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 270 0.063 0.063
+( -1200 624 0 ) ( -1199 624 0 ) ( -1200 625 0 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.7461 ] 90 0.063 0.063
+( -1072 752 192 ) ( -1072 753 192 ) ( -1071 752 192 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 1007.7461 ] 270 0.063 0.063
+( -1072 -304 16 ) ( -1071 -304 16 ) ( -1072 -304 17 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 90 0.063 0.063
+( -256 752 16 ) ( -256 752 17 ) ( -256 753 16 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 -1007.7461 ] [ 0 0 -1 0 ] 270 0.063 0.063
+}
+}
+// entity 5
+{
+"classname" "water"
+// brush 0
+{
+( -896 112 -160 ) ( -896 113 -160 ) ( -896 112 -159 ) Material-LIB/Nature/Water/Water[swim] [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -608 0 -160 ) ( -608 0 -159 ) ( -607 0 -160 ) Material-LIB/Nature/Water/Water[swim] [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -608 112 -192 ) ( -607 112 -192 ) ( -608 113 -192 ) Material-LIB/Nature/Water/Water[swim] [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -496 192 -32 ) ( -496 193 -32 ) ( -495 192 -32 ) Material-LIB/Nature/Water/Water[swim] [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -496 512 -144 ) ( -495 512 -144 ) ( -496 512 -143 ) Material-LIB/Nature/Water/Water[swim] [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -384 192 -144 ) ( -384 192 -143 ) ( -384 193 -144 ) Material-LIB/Nature/Water/Water[swim] [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+}
+// entity 6
+{
+"classname" "func_group"
+"_tb_type" "_tb_group"
+"_tb_name" "Window"
+"_tb_id" "12"
+"_tb_linked_group_id" "5585fbb1-cfe7-4c97-80e8-f8181071f701"
+"_tb_transformation" "1 0 0 0 0 1 0 0 0 0 1 -32 0 0 0 1"
+// brush 0
+{
+( -248 -392 124 ) ( -248 -376 124 ) ( -248 -320 180 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -232 -318 194 ) ( -224 -318 194 ) ( -224 -390 122 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -224 -392 124 ) ( -224 -376 124 ) ( -232 -376 124 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -224 -378 126 ) ( -224 -322 182 ) ( -232 -322 182 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -224 -352 180 ) ( -224 -352 196 ) ( -232 -352 196 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -232 -392 124 ) ( -232 -320 196 ) ( -232 -320 180 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 1
+{
+( -244 -320 224 ) ( -244 -384 288 ) ( -244 -384 32 ) glass [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -248 -384 32 ) ( -248 -384 288 ) ( -232 -384 288 ) glass [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -248 -320 28 ) ( -248 -384 28 ) ( -232 -384 28 ) glass [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -232 -426 246 ) ( -248 -426 246 ) ( -248 -362 182 ) glass [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -232 -348 224 ) ( -248 -348 224 ) ( -248 -348 32 ) glass [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -236 -384 288 ) ( -236 -320 224 ) ( -236 -320 32 ) glass [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 2
+{
+( -256 608 -16 ) ( -256 609 -16 ) ( -256 608 -15 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -1168 -352 -16 ) ( -1168 -352 -15 ) ( -1167 -352 -16 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -1168 608 32 ) ( -1167 608 32 ) ( -1168 609 32 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -1040 736 160 ) ( -1040 737 160 ) ( -1039 736 160 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -1040 -320 16 ) ( -1039 -320 16 ) ( -1040 -320 17 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -224 736 16 ) ( -224 736 17 ) ( -224 737 16 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 3
+{
+( -244 -384 288 ) ( -244 -448 224 ) ( -244 -448 32 ) glass [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -248 -420 224 ) ( -232 -420 224 ) ( -232 -420 32 ) glass [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -248 -342 246 ) ( -232 -342 246 ) ( -232 -406 182 ) glass [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -232 -448 28 ) ( -232 -384 28 ) ( -248 -384 28 ) glass [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -232 -384 32 ) ( -232 -384 288 ) ( -248 -384 288 ) glass [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -236 -448 224 ) ( -236 -384 288 ) ( -236 -384 32 ) glass [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 4
+{
+( -256 480 -16 ) ( -256 481 -16 ) ( -256 480 -15 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -1168 -448 -16 ) ( -1168 -448 -15 ) ( -1167 -448 -16 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -1168 480 32 ) ( -1167 480 32 ) ( -1168 481 32 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -1040 608 160 ) ( -1040 609 160 ) ( -1039 608 160 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -1040 -416 16 ) ( -1039 -416 16 ) ( -1040 -416 17 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -224 608 16 ) ( -224 608 17 ) ( -224 609 16 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 5
+{
+( -248 -384 132 ) ( -248 -448 196 ) ( -248 -448 180 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -232 -416 196 ) ( -224 -416 196 ) ( -224 -416 180 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -224 -446 182 ) ( -224 -390 126 ) ( -232 -390 126 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -224 -390 122 ) ( -224 -382 130 ) ( -232 -382 130 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -232 -386 130 ) ( -224 -386 130 ) ( -224 -450 194 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -232 -448 196 ) ( -232 -384 132 ) ( -232 -392 124 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 6
+{
+( -248 576 -16 ) ( -248 577 -16 ) ( -248 576 -15 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -1168 -388 -16 ) ( -1168 -388 -15 ) ( -1167 -388 -16 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -1168 576 32 ) ( -1167 576 32 ) ( -1168 577 32 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -1040 704 124 ) ( -1040 705 124 ) ( -1039 704 124 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -1040 -380 16 ) ( -1039 -380 16 ) ( -1040 -380 17 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -232 704 16 ) ( -232 704 17 ) ( -232 705 16 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 7
+{
+( -256 -360 176 ) ( -256 -352 160 ) ( -256 -320 160 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -224 -360 176 ) ( -224 -352 160 ) ( -256 -352 160 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -224 -352 160 ) ( -224 -320 160 ) ( -256 -320 160 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -256 -320 176 ) ( -224 -320 176 ) ( -224 -360 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -224 -320 160 ) ( -224 -320 176 ) ( -256 -320 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -224 -360 176 ) ( -224 -320 176 ) ( -224 -320 160 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 8
+{
+( -256 -384 192 ) ( -256 -360 176 ) ( -256 -320 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -224 -384 192 ) ( -224 -360 176 ) ( -256 -360 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -224 -360 176 ) ( -224 -320 176 ) ( -256 -320 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -256 -320 192 ) ( -224 -320 192 ) ( -224 -384 192 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -224 -320 176 ) ( -224 -320 192 ) ( -256 -320 192 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -224 -384 192 ) ( -224 -320 192 ) ( -224 -320 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 9
+{
+( -256 -384 192 ) ( -256 -448 192 ) ( -256 -448 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -256 -448 192 ) ( -224 -448 192 ) ( -224 -448 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -224 -448 176 ) ( -224 -408 176 ) ( -256 -408 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -256 -384 192 ) ( -224 -384 192 ) ( -224 -448 192 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -224 -408 176 ) ( -224 -384 192 ) ( -256 -384 192 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -224 -448 192 ) ( -224 -384 192 ) ( -224 -408 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 10
+{
+( -256 -408 176 ) ( -256 -448 176 ) ( -256 -448 160 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -256 -448 176 ) ( -224 -448 176 ) ( -224 -448 160 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -224 -448 160 ) ( -224 -416 160 ) ( -256 -416 160 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -256 -408 176 ) ( -224 -408 176 ) ( -224 -448 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -224 -416 160 ) ( -224 -408 176 ) ( -256 -408 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -224 -448 176 ) ( -224 -408 176 ) ( -224 -416 160 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 11
+{
+( -248 584 -20 ) ( -248 585 -20 ) ( -248 584 -19 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -1168 -380 -20 ) ( -1168 -380 -19 ) ( -1167 -380 -20 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -1168 584 116 ) ( -1167 584 116 ) ( -1168 585 116 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -1040 712 120 ) ( -1040 713 120 ) ( -1039 712 120 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -1040 -348 12 ) ( -1039 -348 12 ) ( -1040 -348 13 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -232 712 12 ) ( -232 712 13 ) ( -232 713 12 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 12
+{
+( -248 544 -20 ) ( -248 545 -20 ) ( -248 544 -19 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -1168 -420 -20 ) ( -1168 -420 -19 ) ( -1167 -420 -20 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -1168 544 116 ) ( -1167 544 116 ) ( -1168 545 116 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -1040 672 120 ) ( -1040 673 120 ) ( -1039 672 120 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -1040 -388 12 ) ( -1039 -388 12 ) ( -1040 -388 13 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -232 672 12 ) ( -232 672 13 ) ( -232 673 12 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 13
+{
+( -248 584 -60 ) ( -248 585 -60 ) ( -248 584 -59 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -1168 -380 -60 ) ( -1168 -380 -59 ) ( -1167 -380 -60 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -1168 584 76 ) ( -1167 584 76 ) ( -1168 585 76 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -1040 712 80 ) ( -1040 713 80 ) ( -1039 712 80 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -1040 -348 -28 ) ( -1039 -348 -28 ) ( -1040 -348 -27 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -232 712 -28 ) ( -232 712 -27 ) ( -232 713 -28 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 14
+{
+( -248 544 -60 ) ( -248 545 -60 ) ( -248 544 -59 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -1168 -420 -60 ) ( -1168 -420 -59 ) ( -1167 -420 -60 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -1168 544 76 ) ( -1167 544 76 ) ( -1168 545 76 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -1040 672 80 ) ( -1040 673 80 ) ( -1039 672 80 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -1040 -388 -28 ) ( -1039 -388 -28 ) ( -1040 -388 -27 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -232 672 -28 ) ( -232 672 -27 ) ( -232 673 -28 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 15
+{
+( -224 -352 176 ) ( -224 -376 192 ) ( -224 -384 192 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -216 -384 192 ) ( -216 -360 176 ) ( -224 -360 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -216 -360 176 ) ( -216 -352 176 ) ( -224 -352 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -224 -376 192 ) ( -216 -376 192 ) ( -216 -384 192 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -224 -352 176 ) ( -216 -352 176 ) ( -216 -376 192 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -216 -376 192 ) ( -216 -352 176 ) ( -216 -360 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 16
+{
+( -224 -352 176 ) ( -224 -360 176 ) ( -224 -352 160 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -216 -360 176 ) ( -216 -352 160 ) ( -224 -352 160 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -216 -352 160 ) ( -216 -344 160 ) ( -224 -344 160 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -224 -352 176 ) ( -216 -352 176 ) ( -216 -360 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -224 -344 160 ) ( -216 -344 160 ) ( -216 -352 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -216 -352 176 ) ( -216 -344 160 ) ( -216 -352 160 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 17
+{
+( -224 608 -16 ) ( -224 609 -16 ) ( -224 608 -15 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -1160 -352 -16 ) ( -1160 -352 -15 ) ( -1159 -352 -16 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -1160 608 0 ) ( -1159 608 0 ) ( -1160 609 0 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -1032 736 160 ) ( -1032 737 160 ) ( -1031 736 160 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -1032 -344 16 ) ( -1031 -344 16 ) ( -1032 -344 17 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -216 736 16 ) ( -216 736 17 ) ( -216 737 16 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 18
+{
+( -224 -392 192 ) ( -224 -416 176 ) ( -224 -408 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -224 -392 192 ) ( -216 -392 192 ) ( -216 -416 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -216 -416 176 ) ( -216 -408 176 ) ( -224 -408 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -224 -384 192 ) ( -216 -384 192 ) ( -216 -392 192 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -216 -408 176 ) ( -216 -384 192 ) ( -224 -384 192 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -216 -392 192 ) ( -216 -384 192 ) ( -216 -408 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 19
+{
+( -224 -416 176 ) ( -224 -424 160 ) ( -224 -416 160 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -224 -416 176 ) ( -216 -416 176 ) ( -216 -424 160 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -216 -424 160 ) ( -216 -416 160 ) ( -224 -416 160 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -224 -408 176 ) ( -216 -408 176 ) ( -216 -416 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -216 -416 160 ) ( -216 -408 176 ) ( -224 -408 176 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -216 -416 176 ) ( -216 -408 176 ) ( -216 -416 160 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 20
+{
+( -224 480 -16 ) ( -224 481 -16 ) ( -224 480 -15 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -1160 -424 -16 ) ( -1160 -424 -15 ) ( -1159 -424 -16 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -1160 480 0 ) ( -1159 480 0 ) ( -1160 481 0 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -1032 608 160 ) ( -1032 609 160 ) ( -1031 608 160 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -1032 -416 16 ) ( -1031 -416 16 ) ( -1032 -416 17 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -216 608 16 ) ( -216 608 17 ) ( -216 609 16 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 21
+{
+( -272 608 -16 ) ( -272 609 -16 ) ( -272 608 -15 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -1200 -336 -16 ) ( -1200 -336 -15 ) ( -1199 -336 -16 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -1200 608 0 ) ( -1199 608 0 ) ( -1200 609 0 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -1072 736 192 ) ( -1072 737 192 ) ( -1071 736 192 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -1072 -320 16 ) ( -1071 -320 16 ) ( -1072 -320 17 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -256 736 16 ) ( -256 736 17 ) ( -256 737 16 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+// brush 22
+{
+( -272 496 -16 ) ( -272 497 -16 ) ( -272 496 -15 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -1200 -448 -16 ) ( -1200 -448 -15 ) ( -1199 -448 -16 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -1200 496 0 ) ( -1199 496 0 ) ( -1200 497 0 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -1072 624 192 ) ( -1072 625 192 ) ( -1071 624 192 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 0.063 0.063
+( -1072 -432 16 ) ( -1071 -432 16 ) ( -1072 -432 17 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+( -256 624 16 ) ( -256 624 17 ) ( -256 625 16 ) FreeStylized/bricks_wall_12_1k/bricks_wall_12_1k/bricks_wall_12_basecolor_1k [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 0.063 0.063
+}
+}

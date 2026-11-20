@@ -8,6 +8,7 @@ The authoritative technical documentation lives in [`docs/`](docs/README.md) —
 
 - **First action every session:** read `docs/README.md` (the index). It is injected at session start by a `SessionStart` hook, then read the parts relevant to your task before touching code. Any UI work also reads `docs/DESIGN_STYLE_GUIDE.txt` (palette, typography, components, screen recipes) and uses `UITheme` (`ui/ui_theme.gd`) rather than local colours.
 - **Every code change must update the docs.** Update the matching `docs/*.md` part; if the change introduces a bug, fragility, or perf risk, add a TODO to `docs/05-known-issues.md` (file:line + symptom + suggested fix). A change without a docs update is incomplete.
+- **Projectile FX inventory:** `README-projectiles.md` is the running table of every projectile's air/water trail and explosion presets. Update it in the same change whenever a trail or effect changes.
 - When `CLAUDE.md` and `docs/` disagree, **`docs/` wins** — fix `CLAUDE.md` to match.
 
 ## Overview
@@ -331,6 +332,8 @@ Maps can be authored outside Godot in TrenchBroom via **func_godot** (`addons/fu
 ## Projectiles
 
 Projectiles and the tracer / decal / impact effects that ride the same parent are added to `GameManager.projectile_parent` — the world's `ProjectilesParent` in `world/world1.tscn`, resolved by `WeaponController._projectile_parent()`. **Do not parent them to the Player**: `Player.despawn()` calls `hide()` (which cascades to the whole subtree) and a disconnect frees the Player, either of which takes in-flight projectiles with it. The world's `ProjectileSpawner` replicates whatever lands there, so it must stay next to that parent.
+
+**Every projectile is shootable** (`SimpleProjectile.health`, authored at 1): a bullet takes its last hit point, and it either detonates (explosive — derived from the EXPLODE hit modes / fuse, with `mine.tscn` overriding `shot_behaviour` because its contact mode is STICK) or is deflected along the shot and re-owned by the deflector. Anyone may do it, owner included. The hit volume is a **new, oversized `ShotHurtbox` `Area3D`** (1 m sphere, `SHOT_HURTBOX_LAYER` = `1 << 4`) built in `_ready()` — each projectile scene's own `CollisionShape3D` is untouched. Hitscan pauses on it (the raw hit point is replaced by the projectile's position in `_fire_single_shot`), and projectile bullets find it through `_sweep_shot_hits()` (one authority-only ray per projectile per tick, armed after 0.2 s, excluding the bullet's own hurtbox). **No collision mask may include that layer** and the area's mask stays 0 — it is a ray target only, so projectiles never physically bump each other. Detail in `docs/02-netcode.md` §3, fragility notes in `05-known-issues.md` #164.
 
 ## ConnectionUtils (`network/connection_utils.gd`)
 

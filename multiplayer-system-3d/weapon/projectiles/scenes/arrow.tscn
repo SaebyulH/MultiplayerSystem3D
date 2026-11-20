@@ -35,6 +35,8 @@ hurtbox_hit_mode = 3
 world_hit_mode = 3
 align_to_velocity = true
 falloff_enabled = false
+trail_preset = "generic_trail"
+underwater_trail_preset = "rockettrail_underwater"
 
 [node name="CollisionShape3D" parent="." index="0" unique_id=1810742212]
 transform = Transform3D(-0.3480795, 3.0430073e-08, 1.3301409e-15, 5.4054674e-23, -1.5215036e-08, 0.3480795, 3.0430073e-08, 0.3480795, 1.5215036e-08, 2.5179938e-08, -1.2589969e-08, 0.28802496)

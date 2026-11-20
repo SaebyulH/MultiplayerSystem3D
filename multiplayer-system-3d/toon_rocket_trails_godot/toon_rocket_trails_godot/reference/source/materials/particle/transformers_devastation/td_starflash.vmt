@@ -1,7 +1,0 @@
-SpriteCard
-{
-$basetexture "particle\transformers_devastation\TD_starflash"
-$translucent	1
-$addself		1
-$overbrightfactor	5
-}

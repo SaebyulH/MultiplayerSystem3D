@@ -1,8 +1,0 @@
-{
-  "vpk": "toon_explosions_v1.1.vpk",
-  "vpk_sha256": "9753f4a12dc8a120bafff427a96b92cf7858163c08bf782d80ef287e92dd1557",
-  "source_pcf": "particles/bigboom.pcf",
-  "source_pcf_sha256": "5a583e7509e1f952635ce09d58d074be99953b08c0f9faff3723ef995aadeaa9",
-  "material_count": 33,
-  "included_material_count": 20
-}

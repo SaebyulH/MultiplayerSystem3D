@@ -35,6 +35,8 @@ linear_damp = 3.0
 angular_velocity = Vector3(0.017453292, 0.017453292, 0.017453292)
 lifetime = 4.0
 world_hit_mode = 3
+trail_preset = "generic_trail"
+underwater_trail_preset = "rockettrail_underwater"
 align_to_velocity = false
 
 [node name="HitboxComponent" parent="." index="2" unique_id=1963592485]

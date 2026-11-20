@@ -1,6 +1,6 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3 uid="uid://ceiplvef67veo"]
 
-[ext_resource type="Script" path="res://effects/toon_explosions/toon_explosion.gd" id="1"]
+[ext_resource type="Script" uid="uid://fltqml1086fq" path="res://effects/toon_explosions/toon_explosion.gd" id="1"]
 
-[node name="ToonExplosion" type="Node3D"]
+[node name="ToonExplosion" type="Node3D" unique_id=949640736]
 script = ExtResource("1")

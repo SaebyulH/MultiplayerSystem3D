@@ -12,10 +12,22 @@ var exploded := false
 @export var splash_radius := 3.0
 @export var explosion_color := Color.WHITE
 
-## Optional toon explosion preset id from `effects/toon_explosions/profiles.json`
-## (for example `bigboom/ExplosionCore_MidAir`).  Empty keeps the legacy
-## rocket_impact burst, so existing projectiles are unchanged until they opt in.
+## Optional toon explosion preset id from `effects/toon_explosions/explosion_profiles.gd`
+## (for example `bigboom/ExplosionCore_MidAir`).  This is the dry air-burst
+## preset.  Empty keeps the legacy rocket_impact burst, so existing projectiles
+## are unchanged until they opt in.
 @export var effect_preset: String = ""
+## Preset for a dry detonation against a solid surface.  Empty reuses
+## [member effect_preset].  See `README-explosions.md`: a surface impact wants
+## the contact point, the outward surface normal and the `ExplosionCore_Wall`
+## family.
+@export var surface_effect_preset: String = ""
+## Preset for a detonation whose blast centre is inside a water volume.  Empty
+## reuses [member effect_preset].
+@export var underwater_effect_preset: String = ""
+## Preset for a submerged detonation against a solid surface.  Empty falls back
+## to [member underwater_effect_preset].
+@export var underwater_surface_effect_preset: String = ""
 ## Multiplies the burst footprint derived from [member splash_radius].  The toon
 ## presets carry their own absolute sizes, so use this to tune a preset's read
 ## without touching its data.
@@ -58,6 +70,8 @@ var exploded := false
 ## idle as a child on every projectile.
 static var _explosion_scene: PackedScene = null
 static var _toon_explosion_scene: PackedScene = null
+const TOON_EXPLOSION_SCRIPT := preload("res://effects/toon_explosions/toon_explosion.gd")
+const ROCKET_IMPACT_SCRIPT := preload("res://effects/rocket_impact/rocket_impact.gd")
 
 
 # ----------------------------------------------------
@@ -67,16 +81,30 @@ static var _toon_explosion_scene: PackedScene = null
 ##   (1.0 = full damage).  Multiplied with the existing distance-based falloff
 ##   so rockets that have been in flight longer deal less damage across their
 ##   entire blast radius.
-func explode(falloff_multiplier: float = 1.0):
+## @param impact_normal — outward surface normal for a solid-surface detonation;
+##   [constant Vector3.ZERO] for an air burst (the guide then uses local up).
+## @param impact_point — world-space contact point for a surface detonation, or
+##   the burst centre in air.  Only the visual uses it; damage still measures
+##   from this component's origin.
+## @param submerged — true when the blast centre is inside a `WaterVolume`.
+## @param world_up — local gravity-up at the detonation; the effect uses it as
+##   the up axis (and as the normal itself for an air burst).
+func explode(falloff_multiplier: float = 1.0, impact_normal: Vector3 = Vector3.ZERO,
+		impact_point: Vector3 = Vector3.ZERO, submerged: bool = false,
+		world_up: Vector3 = Vector3.UP) -> void:
 	if exploded:
 		return
 	exploded = true
 
 	var shooter_name: String = get_parent().shooter_name if ("shooter_name" in get_parent()) else "NONE"
 	var shooter_team: Player.Team = get_parent().shooter_team if ("shooter_name" in get_parent()) else "NONE"
-	# Read once: the projectile is frozen on the first tick, so a later
-	# _impact_normal() call would fall back to world up.
-	var normal := _impact_normal()
+	# Read once: the projectile is frozen on the first tick, so the contact
+	# information is already latched by SimpleProjectile.start_explode().
+	var on_surface := not impact_normal.is_zero_approx()
+	var up := world_up.normalized() if not world_up.is_zero_approx() else Vector3.UP
+	var direction := impact_normal.normalized() if on_surface else up
+	var point := impact_point if not impact_point.is_zero_approx() else global_position
+	var preset := _resolve_preset(on_surface, submerged)
 
 	for i in range(tick_count):
 		if i > 0:
@@ -88,7 +116,7 @@ func explode(falloff_multiplier: float = 1.0):
 			return
 
 		_apply_explosion_tick(shooter_name, shooter_team, falloff_multiplier)
-		_explode_visual.rpc(normal, effect_preset, i == 0)
+		_explode_visual.rpc(point, direction, up, preset, i == 0)
 
 
 # ----------------------------------------------------
@@ -186,58 +214,80 @@ func _apply_explosion_tick(shooter_name: String, shooter_team: Player.Team, fall
 # ----------------------------------------------------
 # VISUAL EFFECT (replicated locally)
 # ----------------------------------------------------
-## Surface normal the impact plays against: opposite the parent projectile's
-## travel.  World up for a stationary airburst.
-func _impact_normal() -> Vector3:
-	var parent := get_parent()
-	if parent is RigidBody3D:
-		var velocity: Vector3 = (parent as RigidBody3D).linear_velocity
-		if velocity.length_squared() > 0.01:
-			return -velocity.normalized()
-	return Vector3.UP
+## Pick the preset for the detonation context.  The four authored slots keep
+## scenes explicit; empty slots fall back to the drier/less specific one.
+func _resolve_preset(on_surface: bool, submerged: bool) -> String:
+	if submerged:
+		if on_surface and not underwater_surface_effect_preset.is_empty():
+			return underwater_surface_effect_preset
+		if not underwater_effect_preset.is_empty():
+			return underwater_effect_preset
+		return effect_preset
+	if on_surface and not surface_effect_preset.is_empty():
+		return surface_effect_preset
+	return effect_preset
 
 
 @rpc("call_local", "reliable")
-func _explode_visual(normal: Vector3, preset: String = "", play_sound: bool = true):
+func _explode_visual(point: Vector3, normal: Vector3, up: Vector3,
+		preset: String = "", play_sound: bool = true) -> void:
 	var host := _effect_host()
 	if host == null:
 		return
 	# Pulsing explosions (molotov, poison) call this once per tick; the sound is
 	# a single blast, so only the first tick plays it.
 	if explosion_sound and play_sound:
-		AudioPool.play(host, explosion_sound, Transform3D(Basis(), global_position),
+		AudioPool.play(host, explosion_sound, Transform3D(Basis(), point),
 			1.0, explosion_sound_volume_db, explosion_sound_unit_size)
 	# The burst footprint rides the splash radius; play() orients it from the
-	# hit normal and the world's up vector.
+	# hit normal and the world's up vector.  `effect_scale` is a uniform metre
+	# multiplier inside the effect (no node scale), so this is a true scale.
 	var footprint: float = maxf(splash_radius * 0.5, 0.2) * effect_scale_multiplier
 
 	if not preset.is_empty():
-		if _toon_explosion_scene == null:
-			_toon_explosion_scene = load("res://effects/toon_explosions/toon_explosion.tscn")
-		if _toon_explosion_scene:
-			var toon := _toon_explosion_scene.instantiate()
-			toon.effect_scale = footprint
+		var toon: Node3D = TOON_EXPLOSION_SCRIPT.acquire()
+		if toon == null:
+			if _toon_explosion_scene == null:
+				_toon_explosion_scene = load("res://effects/toon_explosions/toon_explosion.tscn")
+			if _toon_explosion_scene:
+				toon = _toon_explosion_scene.instantiate()
+		if toon != null:
+			toon.set("auto_free", true)
+			toon.set("effect_scale", footprint)
+			toon.set("tint", explosion_color)
 			host.add_child(toon)
-			toon.play(preset, global_position, normal, Vector3.UP)
+			if not bool(toon.call("play", preset, point, normal, up)):
+				if OS.is_debug_build():
+					push_warning("ExplosionComponent: unknown toon preset '%s'" % preset)
+				toon.call("_recycle")
 			return
 
-	if _explosion_scene == null:
-		_explosion_scene = load("res://effects/rocket_impact/rocket_impact.tscn")
-
-	var explosion := _explosion_scene.instantiate()
-	explosion.effect_scale = footprint
-	explosion.tint = explosion_color
+	var explosion: Node3D = ROCKET_IMPACT_SCRIPT.acquire()
+	if explosion == null:
+		if _explosion_scene == null:
+			_explosion_scene = load("res://effects/rocket_impact/rocket_impact.tscn")
+		explosion = _explosion_scene.instantiate()
+	explosion.set("auto_free", true)
+	explosion.set("effect_scale", footprint)
+	explosion.set("tint", explosion_color)
 	host.add_child(explosion)
-	explosion.play(global_position, normal, Vector3.UP)
+	explosion.call("play", point, normal, up)
 
 
 ## The effect must outlive the projectile (which is freed 10 s after
 ## detonating) and must not sit under the ProjectilesParent, whose
 ## MultiplayerSpawner replicates every direct child and only knows projectile
 ## scenes.  The world node above that parent is safe on every peer.
+##
+## `self` is a child of the projectile, so the chain is
+## component -> projectile -> ProjectilesParent -> world.  This is the same host
+## `SimpleProjectile._effect_host()` resolves for the trail.
 func _effect_host() -> Node:
-	var parent := get_parent()
-	if parent == null:
+	var projectile := get_parent()
+	if projectile == null:
 		return null
-	var world := parent.get_parent()
-	return world if world != null else parent
+	var projectile_parent := projectile.get_parent()
+	if projectile_parent == null:
+		return projectile
+	var world := projectile_parent.get_parent()
+	return world if world != null else projectile_parent

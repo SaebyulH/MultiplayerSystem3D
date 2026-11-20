@@ -1,8 +1,0 @@
-{
-  "vpk": "toon_payload_explosions_dir.vpk",
-  "vpk_sha256": "4a83c836c15549221ba9b747caae3cbcf0fe394e6ce341cc69093d241bf1598f",
-  "source_pcf": "particles/dirty_explode.pcf",
-  "source_pcf_sha256": "c52fbd1a75204e1dfebee94850a55371cc70ad1d6a2ea570728cfe2e1f7af14a",
-  "material_count": 24,
-  "included_material_count": 15
-}

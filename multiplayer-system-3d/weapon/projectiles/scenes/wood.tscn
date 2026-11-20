@@ -16,6 +16,8 @@ script = ExtResource("2_2yx4b")
 world_hit_mode = 1
 align_to_velocity = false
 falloff_enabled = false
+trail_preset = "generic_trail"
+underwater_trail_preset = "rockettrail_underwater"
 
 [node name="CollisionShape3D" parent="." index="0" unique_id=1810742212]
 transform = Transform3D(-0.3480795, 5.2558544e-08, 2.2974068e-15, 0, -1.5215038e-08, 0.3480795, 5.2558544e-08, 0.3480795, 1.5215038e-08, 0, 0, 0)

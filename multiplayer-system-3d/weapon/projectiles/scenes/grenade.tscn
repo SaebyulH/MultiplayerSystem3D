@@ -41,6 +41,7 @@ align_to_velocity = false
 falloff_start = 10.0
 falloff_end = 30.0
 trail_preset = "grenade_ribbon"
+underwater_trail_preset = "rockettrail_underwater"
 trail_scale = 0.8
 
 [node name="CollisionShape3D" parent="." index="0" unique_id=1810742212]
@@ -54,6 +55,10 @@ shape = SubResource("CapsuleShape3D_fvy8b")
 
 [node name="ExplosionComponent" parent="." index="3" unique_id=473826993]
 splash_health_delta = -90
+effect_preset = "bigboom/ExplosionCore_MidAir"
+surface_effect_preset = "bigboom/ExplosionCore_Wall"
+underwater_effect_preset = "bigboom/ExplosionCore_MidAir_underwater"
+underwater_surface_effect_preset = "bigboom/ExplosionCore_Wall_underwater"
 explosion_sound = ExtResource("9_snd")
 explosion_sound_volume_db = -12.0
 

@@ -2864,7 +2864,11 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 			_exclude_rids.append((node as CollisionObject3D).get_rid())
 		query.exclude = _exclude_rids
 		query.collide_with_areas = true
-		query.collision_mask = (1 << 0) | (1 << 2) | (1 << 7)
+		# WORLD | HURTBOX | PROJECTILE-SHOT | RAGDOLL.  The projectile-shot layer
+		# is where each projectile's oversized `ShotHurtbox` Area3D lives; the
+		# ray stops on one and the branch below shoots the owning projectile.
+		# Nothing masks that layer, so this is the only thing it interacts with.
+		query.collision_mask = (1 << 0) | (1 << 2) | (1 << 4) | (1 << 7)
 		var result: Dictionary = space_state.intersect_ray(query)
 
 		# Bullets travel *through* bodies they cannot hurt: the shooter's own, and
@@ -2893,7 +2897,18 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 
 		if not result.is_empty():
 			var collider: Node3D = result.collider
-			_on_hitscan_hit.rpc(result.position, result.normal, muzzle_pos, flash_color, is_melee, orientation_dir)
+			# A projectile's ShotHurtbox is deliberately much larger than the
+			# projectile, so put the impact on the projectile itself (the shot
+			# line's closest approach) instead of sparking in mid-air.
+			var projectile: SimpleProjectile = null
+			if collider is SimpleProjectile or collider is Area3D:
+				projectile = SimpleProjectile.from_shot_collider(collider)
+			var impact_position: Vector3 = result.position
+			var impact_normal: Vector3 = result.normal
+			if projectile != null:
+				impact_position = projectile.global_position
+				impact_normal = -world_dir
+			_on_hitscan_hit.rpc(impact_position, impact_normal, muzzle_pos, flash_color, is_melee, orientation_dir)
 			if collider is HurtboxComponent:
 				if shape_hits != null:
 					var player_name: String = (collider as HurtboxComponent).get_owner_player().name
@@ -2942,6 +2957,13 @@ func _fire_single_shot(weapon: Weapon, weapon_fire_index: int, shot_dir: Vector3
 							_change_health_on_server.rpc_id(1, player_name, -damage, _parent_player.name, is_headshot, mult, is_backshot_crit)
 							if weapon_fire.hit_knockback > 0.0:
 								_apply_hit_knockback_on_server.rpc_id(1, player_name, world_dir, weapon_fire.hit_knockback)
+			elif projectile != null and multiplayer.is_server():
+				# Projectiles are shootable through their oversized ShotHurtbox
+				# area.  An explosive one detonates in the air, a non-explosive
+				# one deflects along the shot — and anyone may do it, so there is
+				# no team check here.
+				projectile.take_bullet_hit(
+						world_dir, _parent_player.name, _parent_player.team)
 			elif collider is PhysicalBone3D and multiplayer.is_server():
 				# Hit a ragdoll bone — jerk it in the shot direction.
 				var corpse := GameManager.find_ragdoll_corpse(collider)
