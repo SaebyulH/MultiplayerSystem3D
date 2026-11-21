@@ -18,7 +18,7 @@ All trails are local-only (`toon_trail`); every projectile now sets both `trail_
 | `rocket.tscn` | Rocket Launcher, Gravity Rocket Launcher | Contact | `rockettrail` | `rockettrail_underwater` | `MidAir` | `Wall` | `MidAir_uw` | `Wall_uw` |
 | `gravity_rocket.tscn` | Gravity Rocket Launcher | Contact | `rockettrail` | `rockettrail_underwater` | `MidAir_Flare` | `Wall_Flare` | `MidAir_Flare_uw` | `Wall_Flare_uw` |
 | `redirectable_rocket.tscn` | Redirectable Rocket Launcher | Contact, SIGNAL redirect | `rockettrail` | `rockettrail_underwater` | `MidAir` (yellow tint) | `Wall` (yellow tint) | `MidAir_uw` (yellow tint) | `Wall_uw` (yellow tint) |
-| `rocket_carpet.tscn` | Breacher / Blast Charges | Contact | `rockettrail` | `rockettrail_underwater` | `CarpetBomb_Flare` | `CarpetBomb_Flare` | `CarpetBomb_Flare` — **FIX** no underwater variant | `CarpetBomb_Flare` — **FIX** no underwater variant |
+| `rocket_carpet.tscn` | Breacher / Blast Charges | Contact | `rockettrail_lite` | `rockettrail_underwater_lite` | `CarpetBomb_Flare` | `CarpetBomb_Flare` | `CarpetBomb_Flare` — **FIX** no underwater variant | `CarpetBomb_Flare` — **FIX** no underwater variant |
 | `nuke.tscn` | Breacher / Davy Crockett | Contact | `grenade_smoke` | `rockettrail_underwater` | `Nuke_MidAir` | `goldrush` | `Nuke_MidAir_underwater` | `Nuke_Underwater` |
 | `grenade.tscn` | Grenade Launcher, Explodable Grenade Launcher | Fuse 2.3 s, hurtbox contact | `grenade_ribbon` | `rockettrail_underwater` | `MidAir` | `Wall` | `MidAir_uw` | `Wall_uw` |
 | `heal_grenade.tscn` | Heal Grenade Launcher | Contact, fuse 2.3 s | `grenade_ribbon` | `rockettrail_underwater` | `MidAir` (green tint) | `Wall` (green tint) | `MidAir_uw` (green tint) | `Wall_uw` (green tint) |
@@ -41,6 +41,6 @@ All trails are local-only (`toon_trail`); every projectile now sets both `trail_
 
 Notes:
 
-- `carpet_trail` was removed; the carpet rocket shares `rockettrail` with the other rockets.
+- `carpet_trail` was removed. Blast Charges fires 15 rockets per cast, so the carpet rocket uses `rockettrail_lite` / `rockettrail_underwater_lite`: the rocket trail with the long smoke ribbon and spark layer dropped, half the emission, capped samples and 3 subdivisions. Other rockets keep the full `rockettrail`.
 - `generic_trail` is the neutral ribbon used by every non-explosive projectile. `rockettrail_underwater` is the shared underwater bubble trail.
 - `rocket_carpet` is the only explosive still using a single all-context preset and therefore the only missing underwater explosion.

@@ -4,7 +4,10 @@ class_name JoinGrant
 ## Verifies the HMAC-SHA256 join grant issued by `lobbyd`.
 ##
 ## Token: `<base64url(payload)>.<base64url(hmac_sha256(secret, payload_b64))>`
-## Payload: {"v":1,"m":<match_id>,"p":<player_id>,"e":<unix_expiry>,"n":"<nonce>"}
+## Payload: {"v":1,"m":<match_id>,"p":<player_id>,"e":<unix_expiry>,"h":<0|1>,"n":"<nonce>"}
+##
+## `h` is the room-host claim: 1 only on the grant returned by lobbyd create.
+## Older lobbyd builds omit it; see `claims_host()`.
 ##
 ## The match server reads the secret from `MATCH_SECRET` (set by lobbyd on the
 ## child process) or `--match-secret=`.  With no secret configured the server
@@ -78,6 +81,22 @@ static func validate(token: String, expected_match_id: String = "") -> bool:
 			_reject("match id %s != %s" % [payload.get("m", "?"), expected_match_id])
 			return false
 	return true
+
+
+## True when a validated grant carries the room-host claim (`h` = 1).
+## Call only after `validate()` accepted the same token: this reads the payload
+## without checking the signature.  Old grants have no `h` and return false.
+static func claims_host(token: String) -> bool:
+	var parts := token.split(".")
+	if parts.size() != 2:
+		return false
+	var payload_bytes := _b64url_decode(parts[0])
+	if payload_bytes.is_empty():
+		return false
+	var parsed: Variant = JSON.parse_string(payload_bytes.get_string_from_utf8())
+	if not parsed is Dictionary:
+		return false
+	return int((parsed as Dictionary).get("h", 0)) == 1
 
 
 static func _reject(reason: String) -> void:

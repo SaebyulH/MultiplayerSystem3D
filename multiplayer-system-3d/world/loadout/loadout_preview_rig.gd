@@ -107,6 +107,9 @@ const PREVIEW_LIB := &"__viewer"
 
 
 func _ready() -> void:
+	# The preview owns its own AnimationTree stepping (see set_animation_speed),
+	# so keep it on native processing instead of the global 12 Hz pacing.
+	AnimationPacing.exempt(self)
 	_viewport = get_viewport() as SubViewport
 	_render_timer = Timer.new()
 	_render_timer.wait_time = RENDER_INTERVAL

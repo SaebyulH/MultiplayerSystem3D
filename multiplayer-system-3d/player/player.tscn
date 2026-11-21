@@ -2626,6 +2626,7 @@ visible = false
 script = ExtResource("37_rim")
 
 [node name="AreaLight3D" type="SpotLight3D" parent="RimPivot" unique_id=531010702]
+light_intensity_lumens = 9.8696044
 transform = Transform3D(0.54089504, 0, -0.84109014, 0, 1, 0, 0.84109014, 0, 0.54089504, -0.47315556, 0.6124753, 0.22463015)
 light_energy = 16.0
 light_indirect_energy = 0.0
@@ -2636,6 +2637,7 @@ spot_attenuation = -0.67
 spot_angle = 59.01
 
 [node name="AreaLight3D2" type="SpotLight3D" parent="RimPivot" unique_id=308907234]
+light_intensity_lumens = 9.8696044
 transform = Transform3D(0.6394577, 0, 0.76882625, 0, 1, 0, -0.76882625, 0, 0.6394577, 0.8276741, -0.016043067, 0.20734608)
 light_color = Color(0.9999998, 0.920137, 0.7799469, 1)
 light_energy = 16.0

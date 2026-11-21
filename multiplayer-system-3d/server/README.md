@@ -147,6 +147,53 @@ ssh -i ~/.ssh/dd_deploy root@104.248.149.78 \
 - Never deploy from a dirty tree without saying so — the exported binary embeds
   whatever scripts are on disk, not the last commit.
 
+## Deploy lobbyd (enables CREATE VPS)
+
+The game's `CREATE VPS` button calls lobbyd at `LobbyClient.DEFAULT_BASE_URL`
+(`http://104.248.149.78:18080`). lobbyd is **not** currently installed on the
+droplet; only the fixed match server is. Until lobbyd is deployed there,
+`CREATE VPS` fails and `CREATE LOCAL` still works.
+
+1. **Deploy the game binary first.** lobbyd spawns it for each match, and the
+   room-host grant claim lives in the GDScript inside it. Follow "Steps" above.
+2. **Stop the fixed server.** lobbyd allocates UDP `7000` first and checks only
+   its own table, not OS binds, so `7000` must be free:
+   `systemctl disable --now multiplayer-system-3d-server`.
+3. **Build and install lobbyd** from `server/lobbyd/` (`lobbyd`, `sha256.c`,
+   `sha256.h`, `Makefile`) to `/opt/ms3d/lobbyd/lobbyd`, owner `ms3d`.
+4. **Secret:** `/etc/ms3d/lobby.env`, mode `0600`, containing
+   `LOBBY_SECRET=<32-byte hex>`. Keep it persistent; random per run invalidates
+   grants on restart. The committed template is `server/systemd/lobby.env.example`.
+5. **Logs:** `install -d -o ms3d -g ms3d /var/log/ms3d/matches`.
+6. **Unit:** install `server/systemd/ms3d-lobbyd.service`. It runs:
+
+   ```sh
+   /opt/ms3d/lobbyd/lobbyd \
+     --bind 0.0.0.0 --port 18080 \
+     --advertise-host 104.248.149.78 \
+     --godot /opt/ms3d/server/multiplayer-system-3d-server \
+     --log-dir /var/log/ms3d/matches
+   ```
+
+   Do not pass `--project`: the exported binary embeds the project.
+7. **Firewall:** TCP `18080` and UDP `7000-7019`, in `ufw` and the
+   DigitalOcean cloud firewall.
+8. **Verify:** `curl http://104.248.149.78:18080/healthz`, then create a match
+   from a client. Confirm a child process, a `match-*.log`, and
+   `ss -lunp | grep -E ':(7000|18080)'`.
+
+Rollback: `systemctl disable --now ms3d-lobbyd`, restore the previous game
+binary, `systemctl enable --now multiplayer-system-3d-server`.
+
+**Security warning.** lobbyd has no TLS and no authentication on create/list or
+join. Anyone who can reach TCP 18080 can create up to 32 headless Godot
+processes and exhaust the droplet's memory and process table. Join-grant
+validation is still advisory on the match server (#149), so direct UDP joins to
+`7000-7019` are accepted. Do not expose this endpoint long-term without a TLS
+reverse proxy, authentication, and a per-IP create rate limit. The HMAC secret
+still appears on the child's argv (#128). If you put the lobby behind a proxy,
+update `LobbyClient.DEFAULT_BASE_URL` in `network/lobby_client.gd`.
+
 ## Security notes
 
 - Set `MATCH_SECRET` in the environment file; a server started without it

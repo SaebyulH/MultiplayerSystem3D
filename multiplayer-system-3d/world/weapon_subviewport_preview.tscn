@@ -15,10 +15,12 @@ transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 0.7,
 fov = 26.5
 
 [node name="OmniLight3D" type="OmniLight3D" parent="." unique_id=1230982930]
+light_intensity_lumens = 39.478418
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.14999938, 0.61751, 1.1243713)
 light_color = Color(0.64138085, 1, 1, 1)
 
 [node name="OmniLight3D2" type="OmniLight3D" parent="." unique_id=1734088563]
+light_intensity_lumens = 39.478418
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.6797167, -0.01799655, -0.88959396)
 light_color = Color(1, 0.49026394, 0.2443901, 1)
 
@@ -36,4 +38,5 @@ visible = false
 text = "No Class Selected"
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1418064702]
+light_intensity_lux = 3.1415927
 transform = Transform3D(0.8660254, -0.35355338, 0.35355338, -0.50000006, -0.6123725, 0.6123725, 0, -0.7071068, -0.7071068, 0, 1.60589, 0)

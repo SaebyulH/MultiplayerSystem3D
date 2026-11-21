@@ -44,6 +44,8 @@ class Particle:
 	var motion := Motion.DRIFT
 	var additive := false
 	var stretch := 1.0
+	## Per-frame depth for the back-to-front sort.
+	var depth := 0.0
 
 class Burst:
 	var time: float
@@ -71,6 +73,8 @@ var _normal := Vector3.UP
 var _tangent := Vector3.RIGHT
 var _bitangent := Vector3.FORWARD
 var _clock := 0.0
+## Last AnimationPacing.fx_stepped_time consumed by _process (fast FX tier).
+var _paced_time := 0.0
 var _next_event := 0
 var _playing := false
 
@@ -120,6 +124,7 @@ func play(impact_position: Vector3, surface_normal: Vector3, world_up := Vector3
 		_add_material.set_shader_parameter("tint", Vector3(tint.r, tint.g, tint.b))
 		_add_material.set_shader_parameter("saturation", saturation)
 	_clock = 0.0
+	_paced_time = AnimationPacing.fx_stepped_time
 	_next_event = 0
 	_particles.clear()
 	_events.clear()
@@ -278,8 +283,14 @@ func _spawn(event: Burst) -> void:
 	if p != null:
 		_particles.append(p)
 
-func _process(delta: float) -> void:
-	_advance(_clock + delta * speed_scale)
+func _process(_delta: float) -> void:
+	# Global pacing step, not the render delta (see animation_pacing.gd).
+	var step_time := AnimationPacing.fx_stepped_time
+	var dt := step_time - _paced_time
+	if dt <= 0.0:
+		return
+	_paced_time = step_time
+	_advance(_clock + dt * speed_scale)
 	_draw_particles()
 	if _next_event == _events.size() and _particles.is_empty() and _playing:
 		_playing = false
@@ -315,10 +326,14 @@ func _advance(target: float) -> void:
 		_next_event += 1
 	_integrate(target - _clock)
 	_clock = target
-	for i in range(_particles.size() - 1, -1, -1):
-		var p := _particles[i]
-		if _clock >= p.birth + p.lifetime:
-			_particles.remove_at(i)
+	# Compact in one pass; `remove_at` per death was O(n²).
+	var write := 0
+	for read in _particles.size():
+		var p := _particles[read]
+		if _clock < p.birth + p.lifetime:
+			_particles[write] = p
+			write += 1
+	_particles.resize(write)
 
 func _integrate(delta: float) -> void:
 	while delta > 0.000001:
@@ -336,15 +351,22 @@ func _integrate(delta: float) -> void:
 						p.velocity = p.velocity.bounce(_normal) * 0.55
 
 func _draw_particles() -> void:
+	if _particles.is_empty():
+		_alpha.visible_instance_count = 0
+		_add.visible_instance_count = 0
+		return
 	var camera := get_viewport().get_camera_3d()
 	var view := camera.global_transform.basis.orthonormalized() if camera else Basis.IDENTITY
+	var z := view.z
+	for p in _particles:
+		p.depth = p.position.dot(z)
+	# Sort in place: particle iteration order has no effect on simulation.
+	_particles.sort_custom(func(a: Particle, b: Particle) -> bool:
+		return a.depth < b.depth
+	)
 	var alpha_index := 0
 	var add_index := 0
-	var ordered := _particles.duplicate()
-	ordered.sort_custom(func(a: Particle, b: Particle) -> bool:
-		return a.position.dot(view.z) < b.position.dot(view.z)
-	)
-	for p in ordered:
+	for p in _particles:
 		if p.additive:
 			_draw_particle(_add, add_index, p, view)
 			add_index += 1

@@ -187,7 +187,10 @@ Match Menu (HostServer)
   subtitle + CLOSE.  Tab bar under a 1 px divider.
   START MATCH: left = 3-column map-card grid (thumbnails mandatory); right =
   briefing panel with large preview, name, mode badge, mode description,
-  match-name field, full-width RED CREATE MATCH.
+  match-name field, then a two-button row (RED CREATE LOCAL, SECONDARY
+  CREATE VPS) with a micro status line under it.  Both buttons are 52 px,
+  EXTRA BOLD, and stretch equally; VPS is disabled with a tooltip when the
+  lobby is disabled (`--no-lobby`).
   FIND MATCH: server cards with map thumbnail, name, LAN/Online source,
   players, state, JOIN button; direct IP row at the bottom.
   PARTY: centred unavailable panel, no fake controls.

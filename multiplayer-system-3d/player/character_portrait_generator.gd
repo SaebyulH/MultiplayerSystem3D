@@ -331,6 +331,9 @@ func _build_preview_sun(s: Dictionary) -> DirectionalLight3D:
 
 	sun.light_color = s["sun_color"]
 	sun.light_energy = s["sun_energy"]
+	# Physical light units are on (project.godot).  π lux reproduces the old
+	# unitless look: physical packs dir lights as energy × lux vs energy × π.
+	sun.light_intensity_lux = 3.1415927
 
 	# Both hardcoded on the engine's preview sun rather than stored in the cfg.
 	sun.shadow_enabled = true
@@ -368,6 +371,9 @@ func _build_preview_environment(s: Dictionary) -> Environment:
 
 	var env := Environment.new()
 	env.background_mode = Environment.BG_CLEAR_COLOR
+	# Physical light units make bg_intensity (nits) live, default 30 000.  The
+	# sky ambient is baked from the background energy, so pin it to the old 1.0.
+	env.background_intensity = 1.0
 	env.sky = sky
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
 	env.reflected_light_source = Environment.REFLECTION_SOURCE_SKY

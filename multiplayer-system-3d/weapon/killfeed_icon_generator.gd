@@ -297,6 +297,9 @@ func _add_lighting(root_3d: Node3D, cam: Camera3D) -> void:
 	key_light.name = "KeyLight"
 	key_light.rotation_degrees = Vector3(-35.0, 90.0, 0.0)
 	key_light.light_energy = KEY_LIGHT_ENERGY
+	# Physical light units are on (project.godot).  π lux reproduces the old
+	# unitless look: physical packs dir lights as energy × lux vs energy × π.
+	key_light.light_intensity_lux = 3.1415927
 	key_light.shadow_enabled = false
 	root_3d.add_child(key_light)
 

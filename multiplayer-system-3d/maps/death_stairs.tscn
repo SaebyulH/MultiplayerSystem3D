@@ -23,6 +23,7 @@ sky_material = SubResource("PanoramaSkyMaterial_wnf2b")
 
 [sub_resource type="Environment" id="Environment_yhcpw"]
 background_mode = 2
+background_intensity = 1.0
 sky = SubResource("Sky_yhcpw")
 tonemap_mode = 2
 sdfgi_use_occlusion = true
@@ -4630,6 +4631,7 @@ team = 1
 transform = Transform3D(-1.0314262, -0.5157132, 0.2977471, 0, 0.59549415, 1.0314263, -0.5954943, 0.8932413, -0.5157131, 3.0370588, 96.89906, 7.2762985)
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=517602722]
+light_intensity_lux = 3.1415927
 transform = Transform3D(0.72554255, -0.33358252, -0.6019226, 0.68817735, 0.35169467, 0.63460445, 0, -0.87466204, 0.48473334, 0, 52.90313, -9.391209)
 shadow_enabled = true
 

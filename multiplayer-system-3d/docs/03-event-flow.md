@@ -245,6 +245,13 @@ with a JSON announce and an instance id. The DIRECT row accepts `ip[:port]` or a
 join code. Both call `join_party(..., use_match_session=true)`. The LAN announce
 is unauthenticated metadata; the join is still validated by the handshake.
 
+REFRESH runs the LAN scan and `LobbyClient.list_matches()` concurrently. The
+lobby HTTP timeout is 3 s and a failure only appends "VPS unavailable: …" to the
+status; it never holds back the LAN cards. `LobbyClient` is configured from
+`--lobby=URL` if present, otherwise `LobbyClient.DEFAULT_BASE_URL`;
+`--no-lobby` disables it. The default is configured at boot without making any
+request, so an unreachable VPS does not delay startup.
+
 ## C lobby join
 
 `lobbyd` (`server/lobbyd/lobbyd.c`) is metadata only; gameplay still uses the
@@ -270,6 +277,14 @@ Invariants:
   `BAD_TOKEN` and no Player node, which blocked every direct-IP join to a server
   with `MATCH_SECRET` set. Restore the refusal once lobbyd admission is the only
   join path.
+- **The create grant carries the room-host claim.** lobbyd emits
+  `"h": 1` only from `POST /v1/matches`; join grants carry `"h": 0`. After
+  `Grant.validate()` accepts the token, `hello` calls `Grant.claims_host()` and
+  promotes the creator, even when a joiner's `hello` arrived first. The claim is
+  one-shot (`_host_claimed`), so a replayed host grant cannot demote the current
+  host. Without a claim the first hello is still the host (LAN, direct IP, old
+  lobbyd). Because the grant check is advisory, a server with no
+  `MATCH_SECRET` trusts any token, claim included — no stronger than #149.
 - **The client sends `hello` only after its world exists**, as above. The grant
   changes nothing about that ordering.
 - **Maps still load locally.** The lobby never carries map bytes.

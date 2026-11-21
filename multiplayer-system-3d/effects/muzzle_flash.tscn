@@ -115,7 +115,7 @@ fixed_fps = 60
 process_material = SubResource("ParticleProcessMaterial_7h41p")
 draw_pass_1 = ExtResource("4_w0kxa")
 
-[node name="Sparks" type="GPUParticles3D" parent="." unique_id=905139697]
+[node name="Sparks" type="GPUParticles3D" parent="." unique_id=905139697 groups=["fx_rate"]]
 transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 0, 0, 0)
 material_override = SubResource("StandardMaterial3D_5a2ty")
 emitting = false
@@ -127,6 +127,7 @@ process_material = SubResource("ParticleProcessMaterial_ptjn3")
 draw_pass_1 = SubResource("QuadMesh_nf5fu")
 
 [node name="OmniLight3D" type="OmniLight3D" parent="." unique_id=1801894434]
+light_intensity_lumens = 39.478418
 transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 0, 0, 0)
 visible = false
 light_color = Color(1, 0.8059726, 0.706985, 1)

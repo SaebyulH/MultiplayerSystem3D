@@ -35,12 +35,14 @@ NetworkEvents="*uid://bdmobxxptryj0"
 NetworkPerformance="*uid://cqgf7aqmjfoa3"
 GameManager="*uid://dvhvb2d8hlxoy"
 UITheme="*res://ui/ui_theme.gd"
+AnimationPacing="*res://singletons/animation_pacing.gd"
 
 [display]
 
 window/size/viewport_width=1920
 window/size/viewport_height=1080
 window/stretch/mode="canvas_items"
+window/vsync/vsync_mode=2
 
 [editor_plugins]
 
@@ -238,3 +240,5 @@ common/physics_ticks_per_second=90
 [rendering]
 
 rendering_device/driver.windows="d3d12"
+renderer/rendering_method="mobile"
+lights_and_shadows/use_physical_light_units=true

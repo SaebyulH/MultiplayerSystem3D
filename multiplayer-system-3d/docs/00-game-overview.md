@@ -91,9 +91,9 @@ The game boots into a **3D lobby** rather than a flat menu — a normal playable
 From there:
 
 1. Walk to the **HostServer** terminal and press E to open the **Match Menu**.
-2. **START MATCH** shows a grid of map thumbnails with mode descriptions and a briefing preview. Picking one creates the match and opens the **staging room**.
+2. **START MATCH** shows a grid of map thumbnails with mode descriptions and a briefing preview. Pick a map, then choose **CREATE LOCAL** (an in-process LAN server) or **CREATE VPS** (a dedicated server created through the lobby). Both open the **staging room**.
 3. The staging room uses the chosen map's thumbnail as its background and shows the roster for both teams (or a single FFA list for Deathmatch). Players pick an agent from a class-grouped strip, can open the full loadout editor, and mark themselves ready with **LOCK IN**. The host starts the match.
-4. **FIND MATCH** lists LAN servers discovered automatically, plus a direct IP/join-code row. There is no external service required; a host can also run a dedicated server or be listed through an optional central browser.
+4. **FIND MATCH** merges LAN servers discovered automatically with VPS matches listed by the lobby, plus a direct IP/join-code row. Local play needs no external service; the VPS browser is enabled by default and can be disabled with `--no-lobby`.
 5. During a match, Esc opens a pause menu; when the match ends, a results screen shows the scoreboard and returns everyone to the lobby.
 
 Bots fill empty slots and are configurable — team, skill and individual traits — so a match can be played solo, co-op against bots, or with a mix of humans and bots.

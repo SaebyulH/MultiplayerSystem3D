@@ -21,10 +21,15 @@ for _ in $(seq 1 100); do
 done
 
 python3 - "$PORT" <<'PY'
-import json, sys, urllib.request
+import base64, json, sys, urllib.request
 
 port = int(sys.argv[1])
 base = f"http://127.0.0.1:{port}"
+
+def grant_payload(token):
+    p = token.split(".")[0]
+    p += "=" * (-len(p) % 4)
+    return json.loads(base64.urlsafe_b64decode(p).decode())
 
 def call(method, path):
     req = urllib.request.Request(base + path, method=method)
@@ -42,6 +47,7 @@ assert created["host"] is True
 assert len(created["code"]) == 5
 assert created["endpoint"].startswith("127.0.0.1:")
 assert "." in created["grant"]
+assert grant_payload(created["grant"])["h"] == 1, "create grant must claim room host"
 
 status, listed = call("GET", "/v1/matches")
 assert status == 200
@@ -52,6 +58,7 @@ assert status == 200 and detail["match_id"] == created["match_id"], detail
 
 status, joined = call("POST", f"/v1/matches/{created['code']}/join")
 assert status == 200 and joined["host"] is False, (status, joined)
+assert grant_payload(joined["grant"])["h"] == 0, "join grant must not claim room host"
 assert joined["players"] == 2, joined
 
 status, left = call("POST", f"/v1/matches/{created['match_id']}/leave")

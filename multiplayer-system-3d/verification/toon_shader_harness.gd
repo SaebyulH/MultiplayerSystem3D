@@ -85,6 +85,9 @@ func _ready() -> void:
 
 	var light := DirectionalLight3D.new()
 	light.rotation_degrees = Vector3(-30.0, 40.0, 0.0)
+	# Physical light units are on (project.godot).  π lux reproduces the old
+	# unitless look: physical packs dir lights as energy × lux vs energy × π.
+	light.light_intensity_lux = 3.1415927
 	light.shadow_enabled = true
 	add_child(light)
 
@@ -258,6 +261,8 @@ func _environment() -> WorldEnvironment:
 	sky_mat.ground_horizon_color = Color(0.55, 0.53, 0.5)
 	sky.sky_material = sky_mat
 	e.background_mode = Environment.BG_SKY
+	# Physical light units make bg_intensity (nits) live, default 30 000.
+	e.background_intensity = 1.0
 	e.sky = sky
 	e.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
 	e.ambient_light_sky_contribution = 0.4

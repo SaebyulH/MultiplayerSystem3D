@@ -1,10 +1,11 @@
-[gd_resource type="ShaderMaterial" format=3]
+[gd_resource type="ShaderMaterial" format=3 uid="uid://yopuavavjcl2"]
 
-[ext_resource type="Shader" path="res://assets/materials/water_surface.gdshader" id="1_shader"]
-[ext_resource type="Texture2D" path="res://trenchbroom/textures/Material-LIB/Nature/Water/Water[swim].png" id="2_albedo"]
-[ext_resource type="Texture2D" path="res://trenchbroom/textures/Material-LIB/Nature/Water/Water[swim]_normal.png" id="3_normal"]
+[ext_resource type="Shader" uid="uid://kwedj4sq4flj" path="res://assets/materials/water_surface.gdshader" id="1_shader"]
+[ext_resource type="Texture2D" uid="uid://do46rltwnt8mp" path="res://trenchbroom/textures/Material-LIB/Nature/Water/Water[swim].png" id="2_albedo"]
+[ext_resource type="Texture2D" uid="uid://dht0aet7jxdfs" path="res://trenchbroom/textures/Material-LIB/Nature/Water/Water[swim]_normal.png" id="3_normal"]
 
 [resource]
+render_priority = 0
 shader = ExtResource("1_shader")
 shader_parameter/albedo_texture = ExtResource("2_albedo")
 shader_parameter/normal_texture = ExtResource("3_normal")

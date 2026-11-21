@@ -20,8 +20,14 @@ var _preview_image: TextureRect
 var _preview_name: Label
 var _preview_mode: Label
 var _preview_desc: Label
-var _create_btn: Button
+var _create_local_btn: Button
+var _create_vps_btn: Button
+var _create_status: Label
 var _busy := false
+var _refresh_pending := 0
+var _refresh_found := 0
+var _refresh_lobby_failed := false
+var _refresh_lobby_error := ""
 
 
 func _ready() -> void:
@@ -167,24 +173,52 @@ func _build_start_tab() -> Control:
 	pv.add_child(_match_name)
 
 	var hint := UITheme.body_label(
-		"Team assignment, bots and START are in the staging room.  With no external lobby service this creates an in-process listen server.",
+		"Team assignment, bots and START are in the staging room.  CREATE LOCAL hosts an in-process LAN server; CREATE VPS asks the lobby for a dedicated server and needs internet.",
 		UITheme.FS_MICRO, UITheme.DIM_TEXT)
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	pv.add_child(hint)
 
-	_create_btn = Button.new()
-	_create_btn.text = "CREATE MATCH"
-	_create_btn.custom_minimum_size = Vector2(0, 52)
-	_create_btn.add_theme_font_override("font", UITheme.FONT_EXTRABOLD)
-	_create_btn.add_theme_font_size_override("font_size", 17)
-	_create_btn.add_theme_stylebox_override("normal", UITheme.button_style(UITheme.Kind.PRIMARY))
-	_create_btn.add_theme_stylebox_override("hover", UITheme.button_style(UITheme.Kind.PRIMARY, true))
-	_create_btn.add_theme_stylebox_override("pressed", UITheme.button_style(UITheme.Kind.PRIMARY, false, true))
-	_create_btn.pressed.connect(_on_create_match)
-	pv.add_child(_create_btn)
+	var create_row := HBoxContainer.new()
+	create_row.add_theme_constant_override("separation", 8)
+	pv.add_child(create_row)
+
+	_create_local_btn = _make_create_button("CREATE LOCAL", UITheme.Kind.PRIMARY)
+	_create_local_btn.pressed.connect(_on_create_local)
+	create_row.add_child(_create_local_btn)
+
+	_create_vps_btn = _make_create_button("CREATE VPS", UITheme.Kind.SECONDARY)
+	_create_vps_btn.pressed.connect(_on_create_vps)
+	create_row.add_child(_create_vps_btn)
+
+	_create_status = UITheme.body_label("", UITheme.FS_MICRO, UITheme.MUTED)
+	_create_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	pv.add_child(_create_status)
 
 	_select_map(_initial_map_path())
 	return tab
+
+
+func _make_create_button(text: String, kind: int) -> Button:
+	var btn := Button.new()
+	btn.text = text
+	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	btn.custom_minimum_size = Vector2(0, 52)
+	btn.add_theme_font_override("font", UITheme.FONT_EXTRABOLD)
+	btn.add_theme_font_size_override("font_size", 17)
+	btn.add_theme_stylebox_override("normal", UITheme.button_style(kind))
+	btn.add_theme_stylebox_override("hover", UITheme.button_style(kind, true))
+	btn.add_theme_stylebox_override("pressed", UITheme.button_style(kind, false, true))
+	return btn
+
+
+func _update_create_buttons() -> void:
+	if _create_local_btn == null or _create_vps_btn == null:
+		return
+	var host_ok := MatchSession.local_is_host()
+	var map_ok := _selected_map_path != ""
+	_create_local_btn.disabled = not host_ok or not map_ok or _busy
+	_create_vps_btn.disabled = not host_ok or not map_ok or _busy or not LobbyClient.is_enabled()
+	_create_vps_btn.tooltip_text = "" if LobbyClient.is_enabled() else "VPS lobby disabled (--no-lobby)."
 
 
 func _on_map_card_hover(path: String) -> void:
@@ -211,7 +245,7 @@ func _select_map(path: String) -> void:
 		card.add_theme_stylebox_override("hover", UITheme.card_style(
 			UITheme.State.SELECTED if selected else UITheme.State.HOVER))
 	_on_map_card_hover(path)
-	_create_btn.disabled = path == ""
+	_update_create_buttons()
 
 
 func _initial_map_path() -> String:
@@ -368,9 +402,10 @@ func open_menu() -> void:
 	PlayerInput.ui_open = true
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	_tabs.current_tab = 0
+	_create_status.text = "" if LobbyClient.is_enabled() else "VPS lobby disabled (--no-lobby)."
 	if _selected_map_path == "" or not _map_buttons.has(_selected_map_path):
 		_select_map(_initial_map_path())
-	_create_btn.disabled = not MatchSession.local_is_host()
+	_update_create_buttons()
 
 
 func close_menu() -> void:
@@ -387,14 +422,20 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 
-func _on_create_match() -> void:
+func _can_create() -> bool:
+	if _busy:
+		return false
 	if not MatchSession.local_is_host():
-		_status.text = "Only the party leader can start a match."
-		return
-	if LobbyClient.is_enabled():
-		_create_via_lobby()
-		return
+		_create_status.text = "Only the party leader can start a match."
+		return false
 	if _selected_map_path == "":
+		_create_status.text = "Select a map first."
+		return false
+	return true
+
+
+func _on_create_local() -> void:
+	if not _can_create():
 		return
 	GameManager.pending_match_map = _selected_map_path
 	# Deathmatch is free-for-all; every other mode is SPI vs SCI.  The staging
@@ -413,16 +454,24 @@ func _on_create_match() -> void:
 	NetworkManager.host_local_match(NetworkManager.SERVER_PORT, NetworkManager.LOBBY_MAP_PATH)
 
 
-func _create_via_lobby() -> void:
-	if _busy:
+func _on_create_vps() -> void:
+	if not _can_create():
+		return
+	if not LobbyClient.is_enabled():
+		_create_status.text = "VPS lobby disabled. Use CREATE LOCAL or launch with --lobby=URL."
 		return
 	_busy = true
-	_status.text = "Creating match..."
+	_update_create_buttons()
+	_create_status.text = "Creating VPS match..."
 	var result: Dictionary = await LobbyClient.create_match()
 	_busy = false
+	_update_create_buttons()
 	if not result.has("endpoint") or not result.has("grant"):
-		_status.text = "Create failed: %s" % result.get("error", "unknown")
+		_create_status.text = "CREATE VPS failed: %s" % result.get("error", "unknown")
 		return
+	# Staging preselects this map.  This is not a listen-server config, so
+	# pending_host_setup stays untouched.
+	GameManager.pending_match_map = _selected_map_path
 	close_menu()
 	await NetworkManager.join_match(str(result["endpoint"]), str(result["grant"]))
 
@@ -431,36 +480,69 @@ func _refresh_servers() -> void:
 	if _busy:
 		return
 	_busy = true
+	_update_create_buttons()
 	for child in _lan_list.get_children():
 		_lan_list.remove_child(child)
 		child.queue_free()
 	_status.text = "Refreshing..."
-	if not LobbyClient.is_enabled() and not LanDiscovery.is_enabled():
+	_refresh_found = 0
+	_refresh_lobby_failed = false
+	_refresh_lobby_error = ""
+	_refresh_pending = 0
+	if LobbyClient.is_enabled():
+		_refresh_pending += 1
+	if LanDiscovery.is_enabled():
+		_refresh_pending += 1
+	if _refresh_pending == 0:
 		_status.text = "No discovery sources enabled."
 		_busy = false
+		_update_create_buttons()
 		return
-	var count := 0
+	# Both sources run concurrently.  A dead VPS must not delay LAN rows.
 	if LobbyClient.is_enabled():
-		var matches: Array = await LobbyClient.list_matches()
-		for entry in matches:
-			if not entry is Dictionary:
-				continue
-			var m := entry as Dictionary
-			var code := str(m.get("code", ""))
-			if code == "":
-				continue
-			m["source"] = "lobbyd"
-			_lan_list.add_child(_make_server_card(m))
-			count += 1
+		_refresh_lobby_source()
 	if LanDiscovery.is_enabled():
-		var entries: Array[Dictionary] = await LanDiscovery.discover(0.7)
-		for entry in entries:
-			var copy: Dictionary = entry.duplicate()
-			copy["source"] = "lan"
-			_lan_list.add_child(_make_server_card(copy))
-			count += 1
-	_status.text = "%d server(s)." % count
+		_refresh_lan_source()
+
+
+func _refresh_lobby_source() -> void:
+	var matches: Array = await LobbyClient.list_matches()
+	if LobbyClient.last_error != "":
+		_refresh_lobby_failed = true
+		_refresh_lobby_error = LobbyClient.last_error
+	for entry in matches:
+		if not entry is Dictionary:
+			continue
+		var m := entry as Dictionary
+		var code := str(m.get("code", ""))
+		if code == "":
+			continue
+		m["source"] = "lobbyd"
+		_lan_list.add_child(_make_server_card(m))
+		_refresh_found += 1
+	_finish_refresh_part()
+
+
+func _refresh_lan_source() -> void:
+	var entries: Array[Dictionary] = await LanDiscovery.discover(0.7)
+	for entry in entries:
+		var copy: Dictionary = entry.duplicate()
+		copy["source"] = "lan"
+		_lan_list.add_child(_make_server_card(copy))
+		_refresh_found += 1
+	_finish_refresh_part()
+
+
+func _finish_refresh_part() -> void:
+	_refresh_pending -= 1
+	if _refresh_pending > 0:
+		return
 	_busy = false
+	_update_create_buttons()
+	var text := "%d server(s)." % _refresh_found
+	if _refresh_lobby_failed:
+		text += "  VPS unavailable: %s" % _refresh_lobby_error
+	_status.text = text
 
 
 func _on_join_entry(entry: Dictionary) -> void:

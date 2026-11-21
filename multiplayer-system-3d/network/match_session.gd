@@ -50,6 +50,9 @@ var phase: int = Protocol.Phase.STAGING
 var _ready_flags: Dictionary = {}
 var local_ready := false
 var host_player_id: int = 0
+## True once a signed grant carrying the room-host claim (`h` = 1) has been
+## accepted.  A later claimed grant cannot demote the current host.
+var _host_claimed := false
 var server_tick_rate: int = 90
 ## The UDP port the match server actually bound (host side).  Used by LAN
 ## discovery and by the joiner.
@@ -289,6 +292,21 @@ func broadcast_host(new_host_id: int) -> void:
 		print("[MATCH] host is now player %d" % new_host_id)
 
 
+## Server-side host change that also fixes the roster entries' `host` flags.
+func _set_room_host(player_id: int) -> void:
+	if player_id == 0:
+		return
+	if host_player_id != 0 and host_player_id != player_id:
+		var old: Dictionary = _players.get(host_player_id, {})
+		if not old.is_empty():
+			old["host"] = false
+	var entry: Dictionary = _players.get(player_id, {})
+	if not entry.is_empty():
+		entry["host"] = true
+	if host_player_id != player_id:
+		broadcast_host.rpc(player_id)
+
+
 func _arg_value(prefix: String) -> String:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with(prefix):
@@ -370,6 +388,7 @@ func reset() -> void:
 	welcome_count = 0
 	phase = Protocol.Phase.STAGING
 	host_player_id = 0
+	_host_claimed = false
 	server_tick_rate = 90
 	_players.clear()
 	_peer_to_player.clear()
@@ -560,8 +579,13 @@ func hello(version: int, build_id: String, display_name: String,
 	# so a server running with MATCH_SECRET set rejected every joiner and left
 	# them on the staging "WAITING FOR HOST" screen.  Accept the join anyway and
 	# restore the refusal once lobbyd admission is the only join path.
-	if not Grant.validate(join_grant_token, match_id):
+	var grant_ok := Grant.validate(join_grant_token, match_id)
+	if not grant_ok:
 		push_warning("[MATCH] peer %d joined without a valid join grant" % peer_id)
+	# Only a grant that validated may claim the room host.  Without a secret the
+	# existing dev posture validates anything, so this is exactly as strong as
+	# join authentication already is.  Old lobbyd grants have no `h` field.
+	var claims_host := grant_ok and Grant.claims_host(join_grant_token)
 
 	if _peer_to_player.has(peer_id):
 		# Duplicate hello (the client retried, or both sides raced a reconnect).
@@ -579,15 +603,24 @@ func hello(version: int, build_id: String, display_name: String,
 		_send_error(peer_id, Protocol.ErrorCode.SERVER_BUSY, "No free player slot")
 		return
 
+	# The lobbyd create grant claims room host, so the creator keeps the role
+	# even when a joiner's `hello` lands first.  A claimed grant also promotes
+	# over the provisional first-hello host.  With no claim anywhere (LAN,
+	# direct IP, old lobbyd), the first hello stays the host.
+	var becomes_host := claims_host and not _host_claimed
+	if not _host_claimed and host_player_id == 0:
+		becomes_host = true
 	_players[player_id] = {
 		"peer_id": peer_id,
 		"name": display_name if display_name != "" else str(player_id),
-		"host": host_player_id == 0,
+		"host": becomes_host,
 		"state": SlotState.CONNECTED,
 	}
 	_peer_to_player[peer_id] = player_id
-	if host_player_id == 0:
-		host_player_id = player_id
+	if becomes_host:
+		_set_room_host(player_id)
+	if claims_host and not _host_claimed:
+		_host_claimed = true
 
 	# Hide existing players' state sync from this peer until its own node is up.
 	if _spawn_manager != null and _spawn_manager.has_method("hide_players_from_peer"):

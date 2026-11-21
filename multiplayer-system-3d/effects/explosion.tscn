@@ -315,7 +315,7 @@ shader_parameter/near_fade_distance = 2.0
 script = ExtResource("1_m0j43")
 particles = [NodePath("Debris"), NodePath("Cloud"), NodePath("Smoke"), NodePath("Flames"), NodePath("Sparks"), NodePath("Boom"), NodePath("Ring"), NodePath("SmokeRings")]
 
-[node name="Debris" type="GPUParticles3D" parent="." unique_id=14220078]
+[node name="Debris" type="GPUParticles3D" parent="." unique_id=14220078 groups=["fx_rate"]]
 material_override = SubResource("StandardMaterial3D_debris")
 emitting = false
 amount = 15
@@ -364,7 +364,7 @@ fixed_fps = 30
 process_material = SubResource("Hy_ppm_flames")
 draw_pass_1 = SubResource("QuadMesh_jhnc4")
 
-[node name="Sparks" type="GPUParticles3D" parent="." unique_id=3002]
+[node name="Sparks" type="GPUParticles3D" parent="." unique_id=3002 groups=["fx_rate"]]
 material_override = SubResource("Hy_mat_spark")
 emitting = false
 amount = 6

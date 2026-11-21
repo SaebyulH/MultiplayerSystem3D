@@ -104,7 +104,7 @@ The invariant: **the map is the same static scene on every peer**, so the query 
 
 `wet` is the one server-authoritative piece. `_update_server_water_state()` runs in `_physics_process` on the server only, compares the settled per-frame water state with the previous frame, and applies `defaults/status_effects/wet.tres` on the exit edge. It must never run inside `_rollback_tick` — a re-simulated tick would apply the effect again.
 
-**Projectile trails are the purely cosmetic exception.** `SimpleProjectile.underwater_trail_preset` swaps the scene's `trail_preset` (`rockettrail`, `grenade_ribbon`, `grenade_smoke` or `generic_trail`) for `rockettrail_underwater` while the projectile is inside a volume. The check runs in `_process` on **every peer** from the same replicated geometry, throttled to 10 Hz per projectile (waterless maps short-circuit on `Map.has_water`) — `_physics_process` is authority-only, and a trail is local-only in the first place (`trail_preset` is a scene value, never networked). No RPC, nothing on a synchronizer; a mid-flight crossing stops the old trail at the waterline and starts the other preset there. The explosion preset is chosen the same way, on the server at detonation (`SimpleProjectile._is_point_underwater(point)` selects the `_underwater` BigBoom variant) and carried by the existing `_explode_visual` RPC, so no new state is added. A detonation's surface context is the latched collision contact: `_integrate_forces()` refreshes it each physics step while the hull touches something, `_attach_to()` latches it for sticky projectiles (world layer only), and no contact at detonation means MidAir. No rays or shape queries. `_is_stuck` rides the projectile's `MultiplayerSynchronizer` only so every peer's local trail stops at the surface; a stationary nozzle would otherwise emit forever.
+**Projectile trails are the purely cosmetic exception.** `SimpleProjectile.underwater_trail_preset` swaps the scene's `trail_preset` (`rockettrail`, `rockettrail_lite`, `grenade_ribbon`, `grenade_smoke` or `generic_trail`) for its underwater variant while the projectile is inside a volume. The check runs in `_process` on **every peer** from the same replicated geometry, throttled to 10 Hz per projectile (waterless maps short-circuit on `Map.has_water`) — `_physics_process` is authority-only, and a trail is local-only in the first place (`trail_preset` is a scene value, never networked). No RPC, nothing on a synchronizer; a mid-flight crossing stops the old trail at the waterline and starts the other preset there. The explosion preset is chosen the same way, on the server at detonation (`SimpleProjectile._is_point_underwater(point)` selects the `_underwater` BigBoom variant) and carried by the existing `_explode_visual` RPC, so no new state is added. A detonation's surface context is the latched collision contact: `_integrate_forces()` refreshes it each physics step while the hull touches something, `_attach_to()` latches it for sticky projectiles (world layer only), and no contact at detonation means MidAir. No rays or shape queries. `_is_stuck` rides the projectile's `MultiplayerSynchronizer` only so every peer's local trail stops at the surface; a stationary nozzle would otherwise emit forever.
 
 ---
 
@@ -1346,6 +1346,15 @@ they already have, with no RPC and no per-frame work.
   `ping_ms_for()` returns -1 for an unknown row (bot, reserved slot, legacy
   P2P). The leaderboard rewrites only its ping labels on `pings_changed` so a
   snapshot never rebuilds the table or resets its scroll position.
+- **The room host is the lobbyd create-grant holder, with a first-hello fallback.**
+  On a dedicated or lobbyd-spawned match `host_player_id` used to be whichever
+  client's `hello` landed first, so a joiner could take the role from the
+  creator. lobbyd now marks its create grant with `h: 1` (join grants get
+  `h: 0`); `JoinGrant.claims_host()` reads it after `Grant.validate()` accepts
+  the token, and `hello` promotes that player. A claim also overrides a
+  provisional first-hello host. `_host_claimed` makes the claim one-shot so a
+  replayed host grant cannot demote the current host. With no claim (LAN,
+  direct IP, an older lobbyd) the first hello remains the host.
 - **Staging actions are server-validated RPCs:** `request_set_staging_map`,
   `request_add_bot`, `request_set_ready`, `request_set_team`,
   `request_switch_team`, `request_join_in_progress`, `request_start_match`,

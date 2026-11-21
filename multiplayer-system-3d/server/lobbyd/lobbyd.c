@@ -270,6 +270,66 @@ static int alloc_udp_port(void)
 	return -1;
 }
 
+/* Is `port` bound by any process?  Reads /proc/net/udp{,6}; if neither file
+ * can be opened, assume ready rather than blocking create forever. */
+static int udp_port_bound_file(const char *path, int port)
+{
+	FILE *f = fopen(path, "r");
+	if (!f)
+		return -1;
+	char want[8];
+	snprintf(want, sizeof(want), "%04X", port);
+	char line[512];
+	int bound = 0;
+	/* Skip the header. */
+	if (!fgets(line, sizeof(line), f)) {
+		fclose(f);
+		return 0;
+	}
+	while (fgets(line, sizeof(line), f)) {
+		unsigned sl;
+		char local[80], rem[80];
+		if (sscanf(line, "%u: %79s %79s", &sl, local, rem) != 3)
+			continue;
+		char *colon = strrchr(local, ':');
+		if (colon && strcasecmp(colon + 1, want) == 0) {
+			bound = 1;
+			break;
+		}
+	}
+	fclose(f);
+	return bound;
+}
+
+static int udp_port_bound(int port)
+{
+	int v4 = udp_port_bound_file("/proc/net/udp", port);
+	if (v4 > 0)
+		return 1;
+	int v6 = udp_port_bound_file("/proc/net/udp6", port);
+	if (v6 > 0)
+		return 1;
+	if (v4 < 0 && v6 < 0)
+		return 1;
+	return 0;
+}
+
+/* create must not answer before the child owns its UDP port: the client
+ * connects immediately and a missed first attempt is not retried. */
+static int wait_for_udp_bound(int port, pid_t pid, int timeout_ms)
+{
+	int waited = 0;
+	while (waited < timeout_ms) {
+		if (udp_port_bound(port))
+			return 1;
+		if (pid > 0 && kill(pid, 0) != 0 && errno == ESRCH)
+			return 0;
+		usleep(50 * 1000);
+		waited += 50;
+	}
+	return udp_port_bound(port);
+}
+
 static void make_code(char *out)
 {
 	for (;;) {
@@ -287,16 +347,17 @@ static void make_code(char *out)
 	}
 }
 
-/* Payload: {"v":1,"m":<id>,"p":0,"e":<exp>,"n":"<nonce>"} */
-static int make_grant(uint64_t match_id, char *out, size_t cap)
+/* Payload: {"v":1,"m":<id>,"p":0,"e":<exp>,"h":<0|1>,"n":"<nonce>"}.
+ * `h` is the room-host claim: 1 only on the grant returned by create. */
+static int make_grant(uint64_t match_id, int is_host, char *out, size_t cap)
 {
 	char nonce[17];
 	random_hex(nonce, 16);
 	char payload[160];
 	int n = snprintf(payload, sizeof(payload),
-		"{\"v\":1,\"m\":%llu,\"p\":0,\"e\":%lld,\"n\":\"%s\"}",
+		"{\"v\":1,\"m\":%llu,\"p\":0,\"e\":%lld,\"h\":%d,\"n\":\"%s\"}",
 		(unsigned long long)match_id,
-		(long long)time(NULL) + GRANT_TTL_SECONDS,
+		(long long)time(NULL) + GRANT_TTL_SECONDS, is_host ? 1 : 0,
 		nonce);
 	if (n <= 0 || (size_t)n >= sizeof(payload))
 		return -1;
@@ -478,12 +539,28 @@ static int create_match(char *resp, size_t cap)
 	make_code(m->code);
 
 	char grant[512];
-	if (make_grant(m->id, grant, sizeof(grant)) != 0) {
+	if (make_grant(m->id, 1, grant, sizeof(grant)) != 0) {
 		m->used = 0;
 		return 503;
 	}
 
 	spawn_match(m);
+	if (!g_no_spawn && g_godot[0] != '\0') {
+		if (m->pid <= 0) {
+			logmsg("match %llu: spawn failed; freeing slot",
+				(unsigned long long)m->id);
+			m->used = 0;
+			return 503;
+		}
+		if (!wait_for_udp_bound(m->udp_port, m->pid, 12000)) {
+			logmsg("match %llu: pid %d did not bind udp %d; killing",
+				(unsigned long long)m->id, (int)m->pid, m->udp_port);
+			kill(m->pid, SIGTERM);
+			m->pid = 0;
+			m->used = 0;
+			return 503;
+		}
+	}
 
 	size_t len = 0;
 	appendf(resp, cap, &len,
@@ -502,7 +579,7 @@ static int join_match(match_t *m, char *resp, size_t cap)
 	if (m->players >= m->max_players)
 		return 409;
 	char grant[512];
-	if (make_grant(m->id, grant, sizeof(grant)) != 0)
+	if (make_grant(m->id, 0, grant, sizeof(grant)) != 0)
 		return 503;
 	m->players++;
 	size_t len = 0;

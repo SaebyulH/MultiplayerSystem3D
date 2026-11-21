@@ -26,7 +26,8 @@ const PRELOAD_FRACTION := 0.7
 ##   --legacy-p2p             old auto-host P2P behaviour (no longer the default)
 ##   --port=N                 match server UDP port (default 8080)
 ##   --match-id=N             match id passed by lobbyd to a dedicated server
-##   --lobby=http://host:port enable the C lobby; boots the 3D shell
+##   --lobby=http://host:port override the default VPS lobby URL
+##   --no-lobby               disable the C lobby (LAN/direct only)
 ##   --lobby-create           create a match through the lobby, then connect
 ##   --lobby-join=CODE        join a lobby match by code, then connect
 ##   --test-host-local        boot the shell, then host a listen server (test)
@@ -38,6 +39,7 @@ const ARG_CONNECT_PREFIX := "--connect="
 const ARG_PORT_PREFIX := "--port="
 const ARG_MATCH_ID_PREFIX := "--match-id="
 const ARG_LOBBY_PREFIX := "--lobby="
+const ARG_NO_LOBBY := "--no-lobby"
 const ARG_LOBBY_CREATE := "--lobby-create"
 const ARG_LOBBY_JOIN_PREFIX := "--lobby-join="
 const ARG_TEST_HOST_LOCAL := "--test-host-local"
@@ -56,8 +58,12 @@ func _boot() -> void:
 	var args := OS.get_cmdline_user_args()
 	var port := _int_arg(args, ARG_PORT_PREFIX, NetworkManager.SERVER_PORT)
 	var lobby_url := _arg_value(args, ARG_LOBBY_PREFIX)
-	if lobby_url != "":
+	if args.has(ARG_NO_LOBBY):
+		LobbyClient.configure("")
+	elif lobby_url != "":
 		LobbyClient.configure(lobby_url)
+	else:
+		LobbyClient.configure(LobbyClient.DEFAULT_BASE_URL)
 
 	if args.has(ARG_SERVER):
 		# The dedicated server still loads the player scene and staging map, so
@@ -91,12 +97,9 @@ func _boot() -> void:
 		return
 	elif args.has(ARG_LISTEN_SERVER):
 		await NetworkManager.boot_listen_server(port)
-	elif lobby_url != "":
-		# Lobby-enabled shell: the 3D lobby's zones create/browse matches.
-		await NetworkManager.boot_offline_lobby()
 	else:
-		# Default: local 3D shell with no external service.  Host Match starts an
-		# in-process listen server; Join uses the match-session handshake.
+		# Default shell: the lobby is configured by default, so the Match Menu can
+		# create locally or through the VPS lobby.  Boot never blocks on HTTP.
 		await NetworkManager.boot_offline_lobby()
 		if args.has(ARG_TEST_HOST_LOCAL):
 			var test_map := _arg_value(args, ARG_TEST_HOST_MAP_PREFIX)

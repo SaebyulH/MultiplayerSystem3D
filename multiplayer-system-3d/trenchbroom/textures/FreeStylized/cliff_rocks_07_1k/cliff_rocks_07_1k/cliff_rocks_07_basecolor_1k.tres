@@ -1,0 +1,8 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://bmskfgfol43to"]
+
+[ext_resource type="Texture2D" uid="uid://cjocslq57wgq1" path="res://trenchbroom/textures/FreeStylized/cliff_rocks_07_1k/cliff_rocks_07_1k/cliff_rocks_07_basecolor_1k.png" id="1_gh70p"]
+
+[resource]
+albedo_texture = ExtResource("1_gh70p")
+metallic_specular = 0.0
+texture_filter = 2

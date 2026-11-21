@@ -75,9 +75,8 @@ func _is_leader() -> bool:
 	return MatchSession.local_is_host()
 
 
-## Local 3D shell: pressing E hosts a match with no external service.  With the
-## C lobby enabled it allocates a lobbyd server instead; otherwise it starts an
-## in-process listen server.
+## Local 3D shell: pressing E opens the Match Menu.  CREATE LOCAL starts an
+## in-process listen server; CREATE VPS allocates a lobbyd server.
 func _lobby_shell() -> bool:
 	return NetworkManager.role == NetworkManager.Role.OFFLINE
 

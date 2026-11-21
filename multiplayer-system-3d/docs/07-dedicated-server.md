@@ -1,14 +1,17 @@
 # Dedicated-server migration
 
 > **Status: P5 complete; P6 verification/deploy assets in place.** The default
-> boot is the local 3D shell with no external service: HostServer opens the host
-> menu and boots an in-process listen server into the chosen map; the Match
-> Menu's FIND MATCH tab has LAN discovery and a DIRECT row, both using the
-> match-session handshake.
+> boot is the local 3D shell. HostServer opens the Match Menu, whose START MATCH
+> tab offers **CREATE LOCAL** (in-process listen server) and **CREATE VPS**
+> (lobbyd-created dedicated server); FIND MATCH merges LAN discovery, lobbyd
+> rows and a DIRECT row, all using the match-session handshake. `LobbyClient` is
+> configured by default from `LobbyClient.DEFAULT_BASE_URL`; `--lobby=URL`
+> overrides it and `--no-lobby` disables it.
 > `--legacy-p2p` keeps the old auto-host path. Match sessions have stable player
 > IDs, local map loading with SHA-256, prediction, reconnect/resume, single-use
 > resume tokens, heartbeat/reaper, host migration, RPC authority/owner checks,
-> rate limits, and allowlists. The C `lobbyd` is optional (`--lobby=...`).
+> rate limits, and allowlists. The C `lobbyd` must be deployed for CREATE VPS to
+> work; it is control-plane only.
 >
 > Remaining operational work: the chunked join state / spawn ACK (#127), the
 > map-ready barrier (#126), lobbyd's control channel and child re-adoption
@@ -81,11 +84,11 @@ combat stays server-authoritative.
 | `player/player.tscn` | `enable_input_broadcast=false`; state intervals tuned in `Player._ready`. |
 | `server/lobbyd/lobbyd.c` + `sha256.c` | C lobby/allocator/supervisor: HTTP JSON API, short codes, UDP port allocation, HMAC-SHA256 grants, `fork`/`execv` of one headless Godot per match, child reaping, SIGTERM drain. |
 | `server/lobbyd/Makefile` / `smoke.sh` / `run_dev.sh` | Build, API smoke test (no Godot), and the WSL dev runner that spawns the Windows Godot binary. |
-| `network/lobby_client.gd` | Autoload `LobbyClient`: create/list/join HTTP calls; disabled unless `--lobby=http://host:port` is set. |
-| `network/join_grant.gd` | HMAC-SHA256 grant verification on the match server (`MATCH_SECRET` or `--match-secret=`). Empty secret = dev accept-all; as of #149 a configured secret also does not block a join (the check is advisory). |
-| `network/match_session.gd` | Also hosts `request_start_match` (server re-checks the sender is the room host) and sends the grant in `hello`. |
-| `world/globe_menu.gd` | The Match Menu opened by HostServer: START MATCH map grid/preview/CREATE; FIND MATCH lists LAN and lobbyd matches and has the DIRECT IP/code row; PARTY is a placeholder. |
-| `world/host_server_area.gd` | Lobby shell: "Create Match" allocates via lobbyd. Lobby staging: "Start Match" opens the map picker. Legacy P2P unchanged. |
+| `network/lobby_client.gd` | Autoload `LobbyClient`: create/list/join HTTP calls. Enabled by default against `DEFAULT_BASE_URL`; `--lobby=http://host:port` overrides, `--no-lobby` disables. Keeps `last_error` so the menu can report an unreachable VPS. |
+| `network/join_grant.gd` | HMAC-SHA256 grant verification on the match server (`MATCH_SECRET` or `--match-secret=`), plus `claims_host()` for the create grant's `h` flag. Empty secret = dev accept-all; as of #149 a configured secret also does not block a join (the check is advisory). |
+| `network/match_session.gd` | Hosts `hello`/`welcome` and `request_start_match` (server re-checks the sender is the room host). The room host is the create-grant holder, with a first-hello fallback; `_host_claimed` makes the claim one-shot. |
+| `world/globe_menu.gd` | The Match Menu opened by HostServer: START MATCH map grid/preview plus CREATE LOCAL / CREATE VPS; FIND MATCH lists LAN and lobbyd matches concurrently and has the DIRECT IP/code row; PARTY is a placeholder. |
+| `world/host_server_area.gd` | Lobby shell: opens the Match Menu. Lobby staging: "Start Match" opens the map picker. Legacy P2P unchanged. |
 | `world/host_menu.gd` | Start Match while connected as a client sends `MatchSession.request_start_match` to the server instead of calling `load_match_map` locally. |
 
 Verified commands (Windows dev, headless):
@@ -120,23 +123,31 @@ cover: existing-player state is still pushed by the old `rpc_sync_full_state`
 path after node readiness, and there is no `map_ready` barrier on a map swap
 (#126).
 
-## No-service local play (default)
+## Default play (local shell, lobby configured)
 
 Launching with no flags boots the local 3D shell on an `OfflineMultiplayerPeer`
 (the offline peer reports `unique_id=1`, so the local player is the leader).
+`LobbyClient` is configured with `DEFAULT_BASE_URL` at boot, but no HTTP request
+is made until the Match Menu needs one.
 
 - **Host Match** (`HostServer` zone, the Globe) opens `world/globe_menu.gd`.
-  Its Start Match tab picks the target map; CREATE MATCH stores it in
-  `GameManager.pending_match_map` and boots a listen server into the **lobby
-  staging map**, not directly into the match map. The staging room then owns
-  team/bot/ready/start controls. The old `host_menu.tscn` path is legacy.
-  Start reaches the match through `NetworkManager.start_staging_match()`:
-  COUNTDOWN -> LOADING + `MAP_READY` barrier -> ACTIVE -> respawn.
+  Its Start Match tab picks the target map, then offers two buttons:
+  - `CREATE LOCAL` stores the map in `GameManager.pending_match_map` and boots
+    an in-process listen server into the **lobby staging map**, not directly into
+    the match map. The staging room then owns team/bot/ready/start controls.
+    Start reaches the match through `NetworkManager.start_staging_match()`:
+    COUNTDOWN -> LOADING + `MAP_READY` barrier -> ACTIVE -> respawn.
+  - `CREATE VPS` stores the map in `pending_match_map`, calls
+    `LobbyClient.create_match()`, and joins the returned endpoint with its grant.
+    The creator's create grant carries the room-host claim, so they can press
+    START GAME in staging even if a joiner's `hello` arrives first.
+  The old `host_menu.tscn` path is legacy.
 - **Ports:** the listen server tries `8080`, `8081`, … up to 16 ports and keeps
   the first free one. A second host on one machine therefore hosts on 8081
   instead of exiting. A local host failure (no free port) returns to the shell.
-- **Join Match** (Match Menu → **FIND MATCH**) lists LAN and, with `--lobby`,
-  lobbyd matches, plus the DIRECT row:
+- **Join Match** (Match Menu → **FIND MATCH**) lists LAN and lobbyd matches
+  concurrently, plus the DIRECT row. A failed lobbyd request appends
+  "VPS unavailable: …" and does not delay the LAN rows (3 s HTTP timeout):
   - **LAN**: `LanDiscovery.discover()` probes UDP `7355-7370` on `127.0.0.1`,
     every local /24 broadcast and `255.255.255.255`, and lists hosts (map,
     players/max, state, IP:port). Each host answers on `7355 + (port - 8080)`
@@ -147,8 +158,9 @@ Launching with no flags boots the local 3D shell on an `OfflineMultiplayerPeer`
   local maps, heartbeat and resume apply.
 - **Start Match** in staging opens the map picker; a listen host loads the map
   directly, a dedicated host sends `request_start_match`.
-- **No lobbyd, no WSL, no second process.** lobbyd is only needed for the
-  central server browser (`--lobby=...`). `--no-discovery` disables the LAN
+- **Local play needs no lobbyd.** `CREATE LOCAL` plus LAN/direct joins work with
+  the lobby unreachable or disabled; `CREATE VPS` and the lobbyd browser rows do
+  not. `--no-lobby` disables the lobby; `--no-discovery` disables the LAN
   announce/probe.
 
 Test hooks:
@@ -191,15 +203,26 @@ HTTP API (loopback, no TLS in dev; terminate TLS at a proxy in production):
 | `POST /v1/matches/{id}/leave` | decrement the grant count |
 
 Grant token: `base64url(payload).base64url(HMAC-SHA256(secret, payload_b64))`,
-payload `{"v":1,"m":<match_id>,"p":0,"e":<exp>,"n":"<nonce>"}`. The match
-server rejects it before adding a player (`BAD_TOKEN`). lobbyd allocates UDP
-ports `7000-7019`, passes the secret to the child, and reaps the child on exit.
+payload `{"v":1,"m":<match_id>,"p":0,"e":<exp>,"h":<0|1>,"n":"<nonce>"}`. `h`
+is the room-host claim: 1 only on the create grant, 0 on join grants. The match
+server validates it and rejects it before adding a player (`BAD_TOKEN`); as of
+#149 the check is advisory, so the claim is only as trustworthy as join
+authentication. lobbyd allocates UDP ports `7000-7019` from its own table (it
+does not check OS binds), passes the secret to the child, and reaps the child on
+exit. `create_match` fails 503 if the child process does not start, and waits up
+to 12 s for the child's UDP port to appear in `/proc/net/udp{,6}` before
+answering, so the client's immediate ENet connect sees a live server. The
+client's create request uses a 15 s timeout; browse/join stay at 3 s.
 
 Client routes:
 
 ```sh
-# Lobby-enabled 3D shell (browse/create zones active)
+# Default shell: lobby configured from DEFAULT_BASE_URL
+"...godot_console.exe" --path .
+
+# Override or disable the lobby
 "...godot_console.exe" --path . -- --lobby=http://127.0.0.1:18080
+"...godot_console.exe" --path . -- --no-lobby
 
 # Headless vertical-slice tests
 "...godot_console.exe" --path . --headless --quit-after 1500 -- \
@@ -207,6 +230,27 @@ Client routes:
 "...godot_console.exe" --path . --headless --quit-after 900 -- \
     --lobby=http://127.0.0.1:18080 --lobby-join=ABCDE --auto-loadout --test-move
 ```
+
+### Deploying lobbyd on the VPS
+
+`server/README.md` has the full procedure. Summary:
+
+1. Deploy the exported match binary first; lobbyd spawns it.
+2. Stop the fixed `multiplayer-system-3d-server.service`. It occupies UDP 7000,
+   which lobbyd allocates first.
+3. Install lobbyd and run it with `--bind 0.0.0.0 --port 18080
+   --advertise-host 104.248.149.78 --godot
+   /opt/ms3d/server/multiplayer-system-3d-server` (no `--project`; the export
+   embeds the project). Committed deployment assets:
+   `server/systemd/ms3d-lobbyd.service` and `server/systemd/lobby.env.example`.
+4. Open TCP 18080 and UDP 7000-7019 in `ufw` and the cloud firewall.
+5. Verify `/healthz` and one create/join.
+
+**Security:** lobbyd has no TLS and no authentication on create/list/join, and
+its current grant validation is advisory (#149). Anyone reaching TCP 18080 can
+create headless Godot processes until the droplet is exhausted. Put it behind a
+TLS reverse proxy with authentication and a create rate limit before exposing it
+long-term. If the URL changes, update `LobbyClient.DEFAULT_BASE_URL`.
 
 Verified on P3: lobbyd creates and spawns match servers, a Windows client
 connects with a validated grant, loads the staging map locally, spawns and

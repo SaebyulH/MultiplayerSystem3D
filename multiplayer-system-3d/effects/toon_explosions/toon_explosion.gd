@@ -51,6 +51,11 @@ class Particle:
 	var spin := 0.0
 	var seed := 0.0
 	var length := 0.0
+	# Per-frame draw cache, filled once in _draw() and reused by every pass.
+	var depth := 0.0
+	var frame_age := 0.0
+	var frame_tint := Color.WHITE
+	var frame_radius := 0.0
 
 class Emission:
 	var layer: Layer
@@ -91,7 +96,14 @@ var _impact_basis := Basis.IDENTITY
 var _world_basis := Basis.IDENTITY
 var _units := SOURCE_UNITS_TO_GODOT
 var _time := 0.0
+## Last AnimationPacing.stepped_time consumed by _process.  Visuals advance in
+## the global pacing steps, not per render frame.
+var _paced_time := 0.0
 var _next := 0
+## Reused draw scratch: no per-frame array allocation.
+var _visible: Array[Particle] = []
+var _batches: Array[MultiMesh] = []
+var _batch_counts := [0, 0, 0, 0]
 
 static func _load_profiles() -> void:
 	if _profiles.is_empty():
@@ -115,6 +127,7 @@ func _ready() -> void:
 	_add = _make_batch(ADD, 2)
 	_self_add = _make_batch(SELF_ADD, 1)
 	_center = _make_batch(CENTER_SHADER, 0)
+	_batches = [_alpha, _add, _self_add, _center]
 	var rope_instance := MeshInstance3D.new()
 	rope_instance.mesh = _rope
 	var material := ShaderMaterial.new()
@@ -155,6 +168,7 @@ func play(effect_id: String, point: Vector3, normal: Vector3 = Vector3.UP, world
 		_rng.seed = seed_value
 	_clear_simulation()
 	_time = 0.0
+	_paced_time = AnimationPacing.stepped_time
 	_next = 0
 	_plan(_profiles.packages[entry.package], str(int(entry.root)), 0.0, null)
 	_events.sort_custom(func(a: Emission, b: Emission) -> bool:
@@ -171,6 +185,7 @@ func _clear_simulation() -> void:
 	_particles.clear()
 	_layers.clear()
 	_events.clear()
+	_visible.clear()
 
 func _exit_tree() -> void:
 	_clear_simulation()
@@ -329,12 +344,26 @@ func _advance(target: float) -> void:
 	_time = target
 	_expire()
 
+## Compact dead particles in one write-index pass per array.  The old
+## `erase` + `remove_at` per death was O(n²) on large explosions; this preserves
+## order (rope layers depend on it) and allocates nothing.
 func _expire() -> void:
-	for index in range(_particles.size() - 1, -1, -1):
-		var p := _particles[index]
-		if _time >= p.birth + p.life:
-			p.layer.particles.erase(p)
-			_particles.remove_at(index)
+	var write := 0
+	for read in _particles.size():
+		var p := _particles[read]
+		if _time < p.birth + p.life:
+			_particles[write] = p
+			write += 1
+	_particles.resize(write)
+	for layer in _layers:
+		var arr := layer.particles
+		var layer_write := 0
+		for read in arr.size():
+			var p := arr[read]
+			if _time < p.birth + p.life:
+				arr[layer_write] = p
+				layer_write += 1
+		arr.resize(layer_write)
 
 func _move(delta: float) -> void:
 	if delta <= 0.0:
@@ -359,8 +388,15 @@ func _move(delta: float) -> void:
 			if inward < 0.0:
 				p.velocity -= (1.0 + clampf(d.bounce, 0.0, 1.0)) * inward * _normal
 
-func _process(delta: float) -> void:
-	_advance(_time + delta * speed_scale)
+func _process(_delta: float) -> void:
+	# Consume the global pacing clock instead of the render delta: the simulation
+	# still runs at real speed, it just updates at AnimationPacing.fps.
+	var step_time := AnimationPacing.stepped_time
+	var dt := step_time - _paced_time
+	if dt <= 0.0:
+		return
+	_paced_time = step_time
+	_advance(_time + dt * speed_scale)
 	_draw()
 	if _particles.is_empty() and _next == _events.size():
 		set_process(false)
@@ -373,6 +409,7 @@ func _process(delta: float) -> void:
 ## stay; `play()` resets the simulation and transform.
 func _recycle() -> void:
 	_clear_simulation()
+	_visible.clear()
 	_time = 0.0
 	_next = 0
 	_rope.clear_surfaces()
@@ -392,35 +429,48 @@ func _phase(from: float, to: float, t: float) -> float:
 func _draw() -> void:
 	var camera := get_viewport().get_camera_3d()
 	var view := camera.global_basis.orthonormalized() if camera else Basis.IDENTITY
-	var visible: Array[Particle] = []
+	# Cache age/tint/radius/depth once per particle for this frame.  Every draw
+	# pass below reuses them; invisible particles never enter the sort.
+	_visible.clear()
+	var z := view.z
 	for p in _particles:
 		if not p.layer.data.draw:
 			continue
-		var pass_group := _preview_group(p.layer.data)
-		if preview_layer == PreviewLayer.ALL or preview_layer == pass_group:
-			visible.append(p)
-	visible.sort_custom(func(a: Particle, b: Particle) -> bool:
-		return view.z.dot(a.position) < view.z.dot(b.position)
+		if preview_layer != PreviewLayer.ALL and preview_layer != _preview_group(p.layer.data):
+			continue
+		var age := clampf((_time - p.birth) / p.life, 0.0, 1.0)
+		var tint := _particle_tint(p, p.layer.data, age)
+		if tint.a < 0.008:
+			continue
+		p.frame_age = age
+		p.frame_tint = tint
+		p.frame_radius = _particle_radius(p, p.layer.data, age)
+		p.depth = z.dot(p.position)
+		_visible.append(p)
+	_visible.sort_custom(func(a: Particle, b: Particle) -> bool:
+		return a.depth < b.depth
 	)
 	if preview_layer in [PreviewLayer.ALL, PreviewLayer.DEBRIS_AND_SPARKS]:
 		_draw_ropes(view)
 	else:
 		_rope.clear_surfaces()
-	var batches: Array[MultiMesh] = [_alpha, _add, _self_add, _center]
-	var counts := [0, 0, 0, 0]
-	for p in visible:
+	_batch_counts[0] = 0
+	_batch_counts[1] = 0
+	_batch_counts[2] = 0
+	_batch_counts[3] = 0
+	for p in _visible:
 		if source_informed and p.layer.data.has("center_card"):
-			if counts[3] < CAPACITY and _draw_center_card(p, p.layer.data.center_card, counts[3], view):
-				counts[3] += 1
+			if _batch_counts[3] < CAPACITY and _draw_center_card(p, p.layer.data.center_card, _batch_counts[3], view):
+				_batch_counts[3] += 1
 			continue
 		for draw_pass: Dictionary in p.layer.data.passes:
 			var mode := int(draw_pass.mode)
-			if int(draw_pass.shape) == 10 or counts[mode] >= CAPACITY:
+			if int(draw_pass.shape) == 10 or _batch_counts[mode] >= CAPACITY:
 				continue
-			if _draw_particle(batches[mode], counts[mode], p, draw_pass, view):
-				counts[mode] += 1
-	for index in batches.size():
-		batches[index].visible_instance_count = counts[index]
+			if _draw_particle(_batches[mode], _batch_counts[mode], p, draw_pass, view):
+				_batch_counts[mode] += 1
+	for index in _batches.size():
+		_batches[index].visible_instance_count = _batch_counts[index]
 
 func _preview_group(data: Dictionary) -> PreviewLayer:
 	if data.has("center_card"):
@@ -429,7 +479,7 @@ func _preview_group(data: Dictionary) -> PreviewLayer:
 
 func _draw_center_card(p: Particle, profile: Dictionary, index: int, view: Basis) -> bool:
 	var elapsed := maxf(0.0, _time - p.birth)
-	var age := clampf(elapsed / p.life, 0.0, 1.0)
+	var age := p.frame_age
 	var d := p.layer.data
 	var sequences: Array = profile.sequences
 	var sequence: Dictionary = sequences[mini(int(p.seed * sequences.size()), sequences.size() - 1)]
@@ -443,8 +493,8 @@ func _draw_center_card(p: Particle, profile: Dictionary, index: int, view: Basis
 	var part := fposmod(frame, 1.0) if profile.interpolate else 0.0
 	var a: Array = frames[base]
 	var b: Array = frames[mini(base + 1, frames.size() - 1)]
-	var tint := _particle_tint(p, d, age)
-	var radius := _particle_radius(p, d, age)
+	var tint := p.frame_tint
+	var radius := p.frame_radius
 	var width := lerpf(a[1], b[1], part)
 	var height := lerpf(a[0], b[0], part)
 	var occupancy := lerpf(a[2], b[2], part)
@@ -467,6 +517,16 @@ func _draw_center_card(p: Particle, profile: Dictionary, index: int, view: Basis
 	return true
 
 func _draw_ropes(view: Basis) -> void:
+	var has_rope := false
+	for layer in _layers:
+		if layer.particles.size() >= 2 and layer.data.passes.any(func(pass_data: Dictionary) -> bool:
+			return int(pass_data.shape) == 10
+		):
+			has_rope = true
+			break
+	if not has_rope:
+		_rope.clear_surfaces()
+		return
 	_rope.clear_surfaces()
 	var open := false
 	for layer in _layers:
@@ -486,6 +546,15 @@ func _draw_ropes(view: Basis) -> void:
 		for i in path.size() - 1:
 			var a := path[i]
 			var b := path[i + 1]
+			var age_a := clampf((_time - a.birth) / a.life, 0.0, 1.0)
+			var age_b := clampf((_time - b.birth) / b.life, 0.0, 1.0)
+			var col_a := _particle_tint(a, layer.data, age_a)
+			var col_b := _particle_tint(b, layer.data, age_b)
+			var next_u := distances[i + 1] / texture_scale
+			var u := distances[i] / texture_scale
+			# Faded segments would emit no vertices; skip their geometry work.
+			if maxf(col_a.a, col_b.a) < 0.008 or next_u <= u:
+				continue
 			var previous := path[maxi(i - 1, 0)].position
 			var following := path[mini(i + 2, path.size() - 1)].position
 			var axis_a := (b.position - previous).cross(view.z).normalized()
@@ -498,27 +567,20 @@ func _draw_ropes(view: Basis) -> void:
 				axis_a = -axis_a
 			if axis_b.dot(axis_a) < 0.0:
 				axis_b = -axis_b
-			var age_a := clampf((_time - a.birth) / a.life, 0.0, 1.0)
-			var age_b := clampf((_time - b.birth) / b.life, 0.0, 1.0)
-			var col_a := _particle_tint(a, layer.data, age_a)
-			var col_b := _particle_tint(b, layer.data, age_b)
 			last_side = axis_b
-			var u := distances[i] / texture_scale
-			var next_u := distances[i + 1] / texture_scale
 			var start_fraction := distances[i] / length
 			var end_fraction := distances[i + 1] / length
-			if maxf(col_a.a, col_b.a) >= 0.008 and next_u > u:
-				if not open:
-					_rope.surface_begin(Mesh.PRIMITIVE_TRIANGLES)
-					open = true
-				var side_a := axis_a * _particle_radius(a, layer.data, age_a)
-				var side_b := axis_b * _particle_radius(b, layer.data, age_b)
-				_rope_vertex(a.position - side_a, Vector2(u, 0.0), col_a, start_fraction)
-				_rope_vertex(a.position + side_a, Vector2(u, 1.0), col_a, start_fraction)
-				_rope_vertex(b.position - side_b, Vector2(next_u, 0.0), col_b, end_fraction)
-				_rope_vertex(b.position - side_b, Vector2(next_u, 0.0), col_b, end_fraction)
-				_rope_vertex(a.position + side_a, Vector2(u, 1.0), col_a, start_fraction)
-				_rope_vertex(b.position + side_b, Vector2(next_u, 1.0), col_b, end_fraction)
+			if not open:
+				_rope.surface_begin(Mesh.PRIMITIVE_TRIANGLES)
+				open = true
+			var side_a := axis_a * _particle_radius(a, layer.data, age_a)
+			var side_b := axis_b * _particle_radius(b, layer.data, age_b)
+			_rope_vertex(a.position - side_a, Vector2(u, 0.0), col_a, start_fraction)
+			_rope_vertex(a.position + side_a, Vector2(u, 1.0), col_a, start_fraction)
+			_rope_vertex(b.position - side_b, Vector2(next_u, 0.0), col_b, end_fraction)
+			_rope_vertex(b.position - side_b, Vector2(next_u, 0.0), col_b, end_fraction)
+			_rope_vertex(a.position + side_a, Vector2(u, 1.0), col_a, start_fraction)
+			_rope_vertex(b.position + side_b, Vector2(next_u, 1.0), col_b, end_fraction)
 	if open:
 		_rope.surface_end()
 
@@ -562,11 +624,9 @@ func _particle_radius(p: Particle, d: Dictionary, age: float) -> float:
 
 func _draw_particle(batch: MultiMesh, index: int, p: Particle, draw_pass: Dictionary, view: Basis) -> bool:
 	var d := p.layer.data
-	var age := clampf((_time - p.birth) / p.life, 0.0, 1.0)
-	var tint := _particle_tint(p, d, age)
-	if tint.a < 0.008:
-		return false
-	var size := _particle_radius(p, d, age)
+	var age := p.frame_age
+	var tint := p.frame_tint
+	var size := p.frame_radius
 	var width := size
 	var height := size
 	var shape := int(draw_pass.shape)

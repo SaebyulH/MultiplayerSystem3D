@@ -45,6 +45,8 @@ var _source: Node3D
 var _last_position := Vector3.ZERO
 var _rng := RandomNumberGenerator.new()
 var _time := 0.0
+## Last AnimationPacing.fx_stepped_time consumed by _process (fast FX tier).
+var _paced_time := 0.0
 var _emitting := false
 var _current_position := Vector3.ZERO
 var _current_forward := Vector3.FORWARD
@@ -138,6 +140,7 @@ func start(preset_id: String, nozzle: Node3D, seed_value := -1) -> bool:
 	_current_position = Vector3.ZERO
 	_current_forward = -nozzle.global_basis.z.normalized()
 	_time = 0.0
+	_paced_time = AnimationPacing.fx_stepped_time
 	_emitting = true
 	if _alpha != null:
 		_alpha.visible_instance_count = 0
@@ -226,8 +229,15 @@ func _material(shader: Shader, priority: int) -> ShaderMaterial:
 	_shared_materials[key] = material
 	return material
 
-func _process(delta: float) -> void:
-	var alive := _advance(delta * speed_scale)
+func _process(_delta: float) -> void:
+	# Global pacing step, not the render delta: same real-time speed, fixed
+	# update rate (see singletons/animation_pacing.gd).
+	var step_time := AnimationPacing.fx_stepped_time
+	var dt := step_time - _paced_time
+	if dt <= 0.0:
+		return
+	_paced_time = step_time
+	var alive := _advance(dt * speed_scale)
 	_draw()
 	if alive:
 		return

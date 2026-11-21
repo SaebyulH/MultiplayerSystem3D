@@ -44,14 +44,15 @@ The engine then loads the main scene `res://world/main.tscn` (a `Control` root `
 | `--listen-server [--port=N]` | `NetworkManager.boot_listen_server()` — host + play in one process; fails loudly if the port is taken. |
 | `--offline` | `NetworkManager.boot_offline_lobby()` — local 3D lobby shell on `OfflineMultiplayerPeer`. |
 | `--connect=host[:port]` | `NetworkManager.join_party()` — direct-IP dev client; the join flow owns the loading screen. |
-| `--lobby=http://host:port` | Configures `LobbyClient` and boots the offline 3D shell; the HostServer zone creates a match through lobbyd and the Match Menu's FIND MATCH tab lists lobbyd matches. |
+| `--lobby=http://host:port` | Overrides the default VPS lobby URL (`LobbyClient.DEFAULT_BASE_URL`) and boots the offline 3D shell. The Match Menu can create through lobbyd and FIND MATCH lists lobbyd matches. |
+| `--no-lobby` | Disables `LobbyClient` (LAN and direct IP only). Useful for deterministic offline runs and tests. |
 | `--lobby-create` | Creates a match through lobbyd, then connects to the returned endpoint with its grant. |
 | `--lobby-join=CODE` | Joins a lobbyd match by code, then connects with its grant. |
 | `--match-id=N` | Set by lobbyd on a dedicated server; bound into the join-grant check. |
 | `--test-host-local [--test-host-map=res://maps/X.tscn]` | Boots the local shell, then starts an in-process listen server (test hook for the Host Match flow). |
 | `--test-lan` | Boots the shell, scans the LAN discovery range, prints servers, exits. |
 | `--no-discovery` | Disables the LAN announce/probe sockets. |
-| **no flags (default)** | `NetworkManager.boot_offline_lobby()` — local 3D shell with no external service. HostServer opens the Match Menu: START MATCH creates a listen server in-process, FIND MATCH joins LAN/direct via the match-session handshake. |
+| **no flags (default)** | `NetworkManager.boot_offline_lobby()` — local 3D shell. The lobby is configured with `LobbyClient.DEFAULT_BASE_URL` at boot (no HTTP request is made until the menu needs one). HostServer opens the Match Menu: START MATCH offers CREATE LOCAL (in-process listen server) and CREATE VPS (lobbyd), FIND MATCH merges LAN and lobbyd rows plus direct IP. |
 | `--legacy-p2p` | `NetworkManager.boot_to_lobby()` — old auto-host P2P behaviour. |
 
 `--auto-loadout` is a test hook for headless runs: it confirms the initial random loadout so a client actually spawns without mouse input. It is ignored on a dedicated server.
@@ -235,7 +236,7 @@ The same rule governs the other apply sites — `_apply_loadout` (client, `:918-
 
 ## Stage 7 — Join flow: `join_party(ip)` → client
 
-`world/globe_menu.gd` — the Match Menu's **FIND MATCH** tab is the only join entry point: REFRESH builds LAN cards (`LanDiscovery.discover()`) and, when `LobbyClient` is enabled, lobbyd cards; the DIRECT row resolves `ip[:port]` or a 6-char code (`_on_join_ip`) and JOIN LOCAL dials `127.0.0.1`. Every path closes the menu and calls `NetworkManager.join_party(address, port, use_session)`.
+`world/globe_menu.gd` — the Match Menu's **FIND MATCH** tab is the only join entry point: REFRESH runs the LAN scan (`LanDiscovery.discover()`) and the lobbyd list **concurrently**, so an unreachable VPS cannot delay LAN rows; the DIRECT row resolves `ip[:port]` or a 6-char code (`_on_join_ip`) and JOIN LOCAL dials `127.0.0.1`. Every path closes the menu and calls `NetworkManager.join_party(address, port, use_session)`.
 
 `network/network_manager.gd` — `join_party(host_ip, port)`:
 - `LoadingScreen.show_screen(0.1, "Connecting…")` — re-shows the boot loading screen to mask the connect-time spike (see Stage 8 / `05-known-issues.md` #18).
@@ -407,11 +408,20 @@ three tabs:
 - **Start Match** — a map-card grid built from `MapData.map_image`
   thumbnails (the source is `ConnectionUtils.scan_map_data()`); hovering or
   selecting a card fills the briefing panel with the large preview, map name,
-  mode badge and mode description. `CREATE MATCH` starts an in-process listen
-  server in the lobby map (or a lobbyd match when `LobbyClient` is enabled).
+  mode badge and mode description. Two buttons follow:
+  - `CREATE LOCAL` writes `GameManager.pending_match_map` /
+    `pending_host_setup` and calls `NetworkManager.host_local_match()` — an
+    in-process listen server in the lobby map, visible to other clients through
+    LAN discovery.
+  - `CREATE VPS` writes `pending_match_map` and calls
+    `LobbyClient.create_match()`, then `NetworkManager.join_match()`. It is
+    disabled when `LobbyClient` is disabled (`--no-lobby`); failures are shown
+    under the buttons.
 - **Find Match** — merged LAN (`LanDiscovery`) and lobbyd cards. LAN rows show
   the map thumbnail when the announced map name matches a `MapData`; the
-  direct-IP field remains, using the 6-character `ConnectionUtils` IP code.
+  direct-IP field remains, using the 6-character `ConnectionUtils` IP code. A
+  failed lobbyd request appends "VPS unavailable: …" to the status instead of
+  blocking the list.
 - **Party** — disabled placeholder; the party service is not implemented.
 
 `scan_map_data()` ignores entries with no gameplay mode, so tool scenes
@@ -472,7 +482,7 @@ dev tool with two tabs sharing one 3D preview:
 - **Effects** — the four live scene effects (`effects/muzzle_flash.tscn`,
   `bullet_impact.tscn`, `explosion.tscn`, `rocket_impact/rocket_impact.tscn`)
   plus every `ToonExplosion.effect_catalog()` (42) and `ToonTrail.catalog()`
-  (32) preset. The shared PREVIEW SPEED slider (persistent across both tabs,
+  (34) preset. The shared PREVIEW SPEED slider (persistent across both tabs,
   with a numeric `×` readout) and a SCALE slider drive the running effect.
   Both persist across effect selections (`SCALE` is user state, not a
   per-entry default; every entry's authored default is `1.0`) and both have a
@@ -583,6 +593,25 @@ the shell: `map_card`, `character_card`, `roster_card`, `stat_row`, `badge`,
 `display_label`, `section_label`, `body_label`. New screens must use these
 instead of local colours. The written spec is
 [`DESIGN_STYLE_GUIDE.txt`](DESIGN_STYLE_GUIDE.txt).
+
+### 13.9 Animation pacing (FrankenFPS: 12 Hz base + 48 Hz fast tier) — OFF by default
+`singletons/animation_pacing.gd` is autoloaded as **`AnimationPacing`**, after
+`UITheme`. **`ENABLED` is `false`**, so nothing is paced today — every visual
+runs natively at the render rate. Turn it on with `ENABLED := true` or
+`AnimationPacing.set_enabled(true)`; `set_enabled(false)` restores native
+processing. With it on: It runs two clocks. The **base** tier (`BASE_FPS` 12) walks every
+`AnimationPlayer`/`AnimationTree` added to the tree, sets
+`callback_mode_process = MANUAL` and calls `advance()` in fixed 1/12 s steps;
+untagged `GPUParticles3D`/`CPUParticles3D` get `fixed_fps = 12` (GPU
+interpolation off) and the procedural toon explosion body reads
+`AnimationPacing.stepped_time`. The **fast** tier (`FX_FPS` 48) does the same
+for effect elements tagged with the `fx_rate` group or via
+`AnimationPacing.mark_fx()`, and `rocket_impact.gd` + `toon_trail.gd` read
+`AnimationPacing.fx_stepped_time`. **Speed is unchanged** — each step advances
+by the real time elapsed on that clock. Change either rate at the constants or
+with `set_fps()` / `set_fx_fps()` (`0` = native for that tier).
+`world/loadout/loadout_preview_rig.gd` exempts itself because it drives its own
+manual stepping.
 
 `return_to_lobby()` sets the server phase to CLOSED when leaving a RESULTS
 session (so clients skip the resume path), and a LISTEN_SERVER host now

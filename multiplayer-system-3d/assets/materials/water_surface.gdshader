@@ -4,10 +4,10 @@
 //
 // Two scrolling samples of the same normal map at different speeds and scales
 // give the ripples motion without a second texture.  The material is
-// transparent and cull-disabled on purpose: a water brush is a closed volume,
+// transparent on purpose: a water brush is a closed volume,
 // and the player must still see the top surface while swimming underneath it.
 shader_type spatial;
-render_mode blend_mix, cull_disabled, depth_draw_never, diffuse_burley,
+render_mode blend_mix, depth_draw_never, diffuse_burley,
 		specular_schlick_ggx;
 
 uniform sampler2D albedo_texture : source_color, filter_linear_mipmap, repeat_enable;

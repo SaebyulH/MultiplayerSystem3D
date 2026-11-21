@@ -1,0 +1,32 @@
+[Unit]
+Description=MultiplayerSystem3D lobbyd (per-match server supervisor)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ms3d
+Group=ms3d
+WorkingDirectory=/opt/ms3d/lobbyd
+EnvironmentFile=/etc/ms3d/lobby.env
+ExecStart=/opt/ms3d/lobbyd/lobbyd \
+    --bind 0.0.0.0 --port 18080 \
+    --advertise-host 104.248.149.78 \
+    --godot /opt/ms3d/server/multiplayer-system-3d-server \
+    --log-dir /var/log/ms3d/matches
+Restart=on-failure
+RestartSec=2
+LimitNOFILE=65536
+# lobbyd plus every match child inherit this cgroup.  The droplet has 2 GB;
+# leave headroom for the OS and cap at roughly two match servers' peak.
+MemoryHigh=1600M
+MemoryMax=1850M
+TasksMax=512
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/ms3d /var/log/ms3d
+
+[Install]
+WantedBy=multi-user.target

@@ -15,6 +15,7 @@ sky_material = SubResource("PanoramaSkyMaterial_w84c5")
 
 [sub_resource type="Environment" id="Environment_bjhbo"]
 background_mode = 2
+background_intensity = 1.0
 sky = SubResource("Sky_wnf2b")
 tonemap_mode = 2
 sdfgi_use_occlusion = true
@@ -36,6 +37,7 @@ script = ExtResource("1_p28ue")
 despawn_location = NodePath("Despawn")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=2069420995]
+light_intensity_lux = 3.1415927
 transform = Transform3D(-0.8908388, -0.44324797, 0.09968805, 0.09477368, 0.033290077, 0.9949423, -0.4443247, 0.8957808, 0.012352136, 0, 0, 0)
 shadow_enabled = true
 
@@ -1495,6 +1497,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 42.60966, 33.26846, 17.929104
 size = Vector3(5.2041016, 0.74713135, 2.862877)
 
 [node name="OmniLight3D" type="OmniLight3D" parent="." unique_id=635883030]
+light_intensity_lumens = 39.478418
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.2045407, 9.146532, 3.751134)
 light_color = Color(1, 0.7411765, 0.41568628, 1)
 light_energy = 20.0
@@ -1504,6 +1507,7 @@ light_specular = 0.0
 omni_range = 14.0
 
 [node name="OmniLight3D2" type="OmniLight3D" parent="." unique_id=286709239]
+light_intensity_lumens = 39.478418
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -32.616028, 10.768494, 10.0526705)
 light_color = Color(1, 0.7411765, 0.41568628, 1)
 light_energy = 20.0
@@ -1513,6 +1517,7 @@ light_specular = 0.0
 omni_range = 14.0
 
 [node name="OmniLight3D11" type="OmniLight3D" parent="." unique_id=1514661856]
+light_intensity_lumens = 39.478418
 transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 1.3839722, 4.7684937, -15.2806635)
 light_color = Color(1, 0.7411765, 0.41568628, 1)
 light_energy = 20.0
@@ -1522,6 +1527,7 @@ light_specular = 0.0
 omni_range = 14.0
 
 [node name="OmniLight3D12" type="OmniLight3D" parent="." unique_id=303111038]
+light_intensity_lumens = 39.478418
 transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 16.383972, 6.7684937, -2.2806616)
 light_color = Color(1, 0.7411765, 0.41568628, 1)
 light_energy = 20.0
@@ -1531,6 +1537,7 @@ light_specular = 0.0
 omni_range = 14.0
 
 [node name="OmniLight3D13" type="OmniLight3D" parent="." unique_id=1836653624]
+light_intensity_lumens = 39.478418
 transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, -13.616028, 6.7684937, -2.2806635)
 light_color = Color(1, 0.7411765, 0.41568628, 1)
 light_energy = 20.0
@@ -1540,6 +1547,7 @@ light_specular = 0.0
 omni_range = 14.0
 
 [node name="OmniLight3D3" type="OmniLight3D" parent="." unique_id=337264969]
+light_intensity_lumens = 39.478418
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 23.383972, 10.768494, 10.0526705)
 light_color = Color(1, 0.7411765, 0.41568628, 1)
 light_energy = 20.0
@@ -1549,6 +1557,7 @@ light_specular = 0.0
 omni_range = 14.0
 
 [node name="OmniLight3D4" type="OmniLight3D" parent="." unique_id=1551151463]
+light_intensity_lumens = 39.478418
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 46.383972, 10.768494, 10.0526705)
 light_color = Color(1, 0.7411765, 0.41568628, 1)
 light_energy = 20.0
